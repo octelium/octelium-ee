@@ -1,0 +1,20 @@
+module github.com/octelium/octelium-ee/pkg
+
+go 1.25.8
+
+require (
+	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
+	github.com/octelium/octelium/pkg v0.0.0-20260328140600-fdf433d563b3
+	github.com/pkg/errors v0.9.1
+	google.golang.org/protobuf v1.36.11
+)
+
+require (
+	golang.org/x/net v0.48.0 // indirect
+	golang.org/x/sys v0.39.0 // indirect
+	golang.org/x/text v0.32.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20251202230838-ff82c1b0f217 // indirect
+	google.golang.org/grpc v1.79.3 // indirect
+)
+
+replace github.com/octelium/octelium/apis => ../apis

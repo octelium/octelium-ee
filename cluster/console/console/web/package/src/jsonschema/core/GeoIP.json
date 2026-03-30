@@ -1,0 +1,153 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/GeoIP",
+    "definitions": {
+        "GeoIP": {
+            "properties": {
+                "ip": {
+                    "type": "string"
+                },
+                "ipVersion": {
+                    "enum": [
+                        "IP_VERSION_UNKNOWN",
+                        "V4",
+                        "V6"
+                    ],
+                    "type": "string",
+                    "title": "IP Version"
+                },
+                "country": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.GeoIP.Country",
+                    "additionalProperties": false
+                },
+                "region": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.GeoIP.Region",
+                    "additionalProperties": false
+                },
+                "city": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.GeoIP.City",
+                    "additionalProperties": false
+                },
+                "continent": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.GeoIP.Continent",
+                    "additionalProperties": false
+                },
+                "network": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.GeoIP.Network",
+                    "additionalProperties": false
+                },
+                "timezone": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.GeoIP.Timezone",
+                    "additionalProperties": false
+                },
+                "postalCode": {
+                    "type": "string"
+                },
+                "coordinates": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.GeoIP.Coordinates",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Geo IP"
+        },
+        "octelium.api.main.core.v1.GeoIP.City": {
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "City"
+        },
+        "octelium.api.main.core.v1.GeoIP.Continent": {
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Continent"
+        },
+        "octelium.api.main.core.v1.GeoIP.Coordinates": {
+            "properties": {
+                "latitude": {
+                    "type": "number"
+                },
+                "longitude": {
+                    "type": "number"
+                },
+                "accuracyRadius": {
+                    "type": "number"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Coordinates"
+        },
+        "octelium.api.main.core.v1.GeoIP.Country": {
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Country"
+        },
+        "octelium.api.main.core.v1.GeoIP.Network": {
+            "properties": {
+                "asn": {
+                    "type": "integer"
+                },
+                "isp": {
+                    "type": "string"
+                },
+                "organization": {
+                    "type": "string"
+                },
+                "domain": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Network"
+        },
+        "octelium.api.main.core.v1.GeoIP.Region": {
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Region"
+        },
+        "octelium.api.main.core.v1.GeoIP.Timezone": {
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "offset": {
+                    "type": "number"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Timezone"
+        }
+    }
+}

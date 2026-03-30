@@ -1,0 +1,212 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/Scope",
+    "definitions": {
+        "Scope": {
+            "properties": {
+                "service": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Scope.Service",
+                    "additionalProperties": false,
+                    "description": "Service means that this is a Service scope"
+                },
+                "api": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Scope.API",
+                    "additionalProperties": false,
+                    "description": "API means that this is an API scope"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "service"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "api"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "service"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "api"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Scope"
+        },
+        "octelium.api.main.core.v1.Scope.API": {
+            "properties": {
+                "all": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Scope.API.All",
+                    "additionalProperties": false,
+                    "description": "All means allow access to all APIs"
+                },
+                "filter": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Scope.API.Filter",
+                    "additionalProperties": false,
+                    "description": "Filter filters access to certain APIs or certain methods of certain APIs"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "all"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "filter"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "all"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "filter"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "API"
+        },
+        "octelium.api.main.core.v1.Scope.API.All": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "All"
+        },
+        "octelium.api.main.core.v1.Scope.API.Filter": {
+            "properties": {
+                "packages": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Packages is the list of gRPC packages"
+                },
+                "services": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Services is the list of gRPC services"
+                },
+                "methods": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Methods is the list of gRPC methods"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Filter"
+        },
+        "octelium.api.main.core.v1.Scope.Service": {
+            "properties": {
+                "all": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Scope.Service.All",
+                    "additionalProperties": false,
+                    "description": "All means allow access to all Services"
+                },
+                "filter": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Scope.Service.Filter",
+                    "additionalProperties": false,
+                    "description": "Filter filters access to certain Services or certain Namespaces"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "all"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "filter"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "all"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "filter"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Service"
+        },
+        "octelium.api.main.core.v1.Scope.Service.All": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "All"
+        },
+        "octelium.api.main.core.v1.Scope.Service.Filter": {
+            "properties": {
+                "names": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Names is the list of allowed Service names"
+                },
+                "namespaces": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Namespaces is the list of allowed Namespace names"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Filter"
+        }
+    }
+}

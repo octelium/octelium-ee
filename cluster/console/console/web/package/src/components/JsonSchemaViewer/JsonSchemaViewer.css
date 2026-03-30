@@ -1,0 +1,51 @@
+/* src/components/JsonSchemaViewer.css */
+/* ... (previous styles) ... */
+
+.schema-node.schema-error span {
+  background-color: #ffe0e0;
+  padding: 2px 5px;
+  border-radius: 3px;
+}
+
+.schema-ref-link code {
+  cursor: help; /* Indicate it's a reference */
+  /* border-bottom: 1px dotted #666; */ /* Optional: visual cue */
+  background-color: #e8f4ff; /* Light blue background for refs */
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: monospace;
+}
+
+.schema-ref-definition {
+  /* Optional: Style the block where a definition is first shown */
+  /* border: 1px dashed #007bff; */
+  /* background-color: #f8f9fa; */
+  /* padding-top: 10px; */
+  /* margin-top: 5px; */
+}
+
+.schema-ref-definition > div:first-child {
+  /* Style the header part */
+  /* font-weight: bold; */
+}
+
+.schema-composition {
+  margin-top: 8px;
+  margin-bottom: 8px;
+  padding: 8px;
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.schema-composition > strong {
+  display: block;
+  margin-bottom: 5px;
+  color: #333;
+}
+
+/* Add some space before properties/items if following composition */
+.schema-composition + .schema-properties,
+.schema-composition + .schema-array-items {
+  margin-top: 10px;
+}

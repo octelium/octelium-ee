@@ -1,0 +1,239 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/DirectoryProviderUserList",
+    "definitions": {
+        "DirectoryProviderUserList": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version of the object."
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource name (i.e. `SecretList`)."
+                },
+                "items": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.enterprise.v1.DirectoryProviderUser"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Items is the list of Secrets."
+                },
+                "listResponseMeta": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ListResponseMeta",
+                    "additionalProperties": false,
+                    "description": "ListResponseMeta is common information about the list."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Directory Provider User List"
+        },
+        "octelium.api.main.enterprise.v1.DirectoryProviderUser": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version of the object."
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource name (i.e. `Secret`)."
+                },
+                "metadata": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Metadata",
+                    "additionalProperties": false,
+                    "description": "octelium.api.main.meta.v1.Metadata is the object's metadata."
+                },
+                "spec": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DirectoryProviderUser.Spec",
+                    "additionalProperties": false,
+                    "description": "Spec is the Secret specification."
+                },
+                "status": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DirectoryProviderUser.Status",
+                    "additionalProperties": false,
+                    "description": "Status is the current status of the Secret."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Directory Provider User"
+        },
+        "octelium.api.main.enterprise.v1.DirectoryProviderUser.Spec": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Spec"
+        },
+        "octelium.api.main.enterprise.v1.DirectoryProviderUser.Status": {
+            "properties": {
+                "directoryProviderRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                },
+                "userRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                },
+                "attrs": {
+                    "additionalProperties": true,
+                    "type": "object"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Status"
+        },
+        "octelium.api.main.meta.v1.ListResponseMeta": {
+            "properties": {
+                "page": {
+                    "type": "integer",
+                    "description": "Page is the page number. Starts with zero."
+                },
+                "itemsPerPage": {
+                    "type": "integer",
+                    "description": "ItemsPerPage is number of items per page."
+                },
+                "totalCount": {
+                    "type": "integer",
+                    "description": "TotalCount is the total count of items that can be obtained."
+                },
+                "hasMore": {
+                    "type": "boolean",
+                    "description": "HasMore shows whether there a next page is available"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "List Response Meta"
+        },
+        "octelium.api.main.meta.v1.Metadata": {
+            "properties": {
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the unique UUID value for the object assigned by the Cluster. Read-only."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name of the object. It must be unique within a certain API/Version/Kind tuple."
+                },
+                "createdAt": {
+                    "type": "string",
+                    "description": "CreatedAt is the timestamp of creation of the object. Read-only.",
+                    "format": "date-time"
+                },
+                "updatedAt": {
+                    "type": "string",
+                    "description": "UpdatedAt is the timestamp of when the object was last updated. Read-only.",
+                    "format": "date-time"
+                },
+                "displayName": {
+                    "type": "string",
+                    "description": "DisplayName is the name that can be shown publicly for the object. Doesn't need to be unique."
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Description is used to describe the object in a short sentence. Maximum characters are 1000."
+                },
+                "labels": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "Labels is a map of string keys and values to organize objects."
+                },
+                "tags": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Tags is an optional array of tags that classify the Resource."
+                },
+                "annotations": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "Labels is a map of string keys and values that can be used to store metadata about the object."
+                },
+                "picURL": {
+                    "type": "string",
+                    "description": "PicURL is the Picture URL of the resource."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is a unique ID that represent the current version of the resource object. Used by the Cluster to detect updates."
+                },
+                "lastResourceVersion": {
+                    "type": "string",
+                    "description": "LastResourceVersion is the ResourceVersion of the last update of the Resource."
+                },
+                "actorRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "ActorRef is the object reference to the Actor resource, typically a Session, who is responsible for the current resource change. If ActorRef is not set, then the current change of the resource was done by the Cluster"
+                },
+                "actorOperation": {
+                    "type": "string",
+                    "description": "ActorOperation is the gRPC full method triggered by the actorRef to modify the Resource"
+                },
+                "isSystem": {
+                    "type": "boolean",
+                    "description": "IsSystem means that the resource is created by the Cluster and it cannot be managed by the administrators. Read-only."
+                },
+                "specLabels": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "SpecLabels is map used internally by the Cluster for quick searches among lists of objects. Read-only."
+                },
+                "isUserHidden": {
+                    "type": "boolean",
+                    "description": "IsUserHidden means that the resource object is hidden from ordinary Users and should not be exposed via the User APIs."
+                },
+                "isSystemHidden": {
+                    "type": "boolean",
+                    "description": "IsSystemHidden means that the resource object is hidden by the Cluster and should not be exposed via the APIs."
+                },
+                "systemLabels": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "SystemLabels is a similar map to specLabels. Used only by the Cluster."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Metadata"
+        },
+        "octelium.api.main.meta.v1.ObjectReference": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version of the reference resource"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource kind. A kind is unique per an APIVersion."
+                },
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the resource object UID. A UID is unique across the entire Cluster."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the resource object name. A name is unique per a certain kind."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is the resourceVersion of the resource."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Object Reference"
+        }
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/UpgradeClusterResponse",
+    "definitions": {
+        "UpgradeClusterResponse": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Upgrade Cluster Response"
+        }
+    }
+}

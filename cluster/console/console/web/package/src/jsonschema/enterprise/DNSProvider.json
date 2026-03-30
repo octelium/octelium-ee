@@ -1,0 +1,644 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/DNSProvider",
+    "definitions": {
+        "DNSProvider": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version of the object."
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource name (i.e. `Secret`)."
+                },
+                "metadata": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Metadata",
+                    "additionalProperties": false,
+                    "description": "octelium.api.main.meta.v1.Metadata is the object's metadata."
+                },
+                "spec": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DNSProvider.Spec",
+                    "additionalProperties": false,
+                    "description": "Spec is the Secret specification."
+                },
+                "status": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DNSProvider.Status",
+                    "additionalProperties": false,
+                    "description": "Status is the current status of the Secret."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "DNS Provider"
+        },
+        "octelium.api.main.enterprise.v1.DNSProvider.Spec": {
+            "properties": {
+                "cloudflare": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DNSProvider.Spec.Cloudflare",
+                    "additionalProperties": false
+                },
+                "aws": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DNSProvider.Spec.AWS",
+                    "additionalProperties": false,
+                    "description": "AWS is AWS's Route53 specific options."
+                },
+                "digitalocean": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DNSProvider.Spec.DigitalOcean",
+                    "additionalProperties": false,
+                    "description": "Digitalocean is DigitalOcean's specific options."
+                },
+                "google": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DNSProvider.Spec.Google",
+                    "additionalProperties": false,
+                    "description": "Google is GCP's Cloud DNS specific options."
+                },
+                "azure": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DNSProvider.Spec.Azure",
+                    "additionalProperties": false,
+                    "description": "Azure is Azure DNS specific options."
+                },
+                "linode": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DNSProvider.Spec.Linode",
+                    "additionalProperties": false,
+                    "description": "Linode is Linode's specific options."
+                },
+                "ovh": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DNSProvider.Spec.OVH",
+                    "additionalProperties": false,
+                    "description": "OVH is OVH specific options."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "cloudflare"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "aws"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "digitalocean"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "google"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "azure"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "linode"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "ovh"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "cloudflare"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "aws"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "digitalocean"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "google"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "azure"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "linode"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "ovh"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Spec"
+        },
+        "octelium.api.main.enterprise.v1.DNSProvider.Spec.AWS": {
+            "properties": {
+                "accessKeyID": {
+                    "type": "string",
+                    "description": "AccessKeyID is the `AWS_ACCESS_KEY_ID` value of your credentials.  SecretAccessKey is the `AWS_SECRET_ACCESS_KEY` value for your credentials."
+                },
+                "secretAccessKey": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DNSProvider.Spec.AWS.SecretAccessKey",
+                    "additionalProperties": false
+                },
+                "region": {
+                    "type": "string",
+                    "description": "Region is the AWS region code (e.g. `us-east-1`)."
+                },
+                "assumeRoleARN": {
+                    "type": "string",
+                    "description": "AssumeRoleARN is the assumed role (e.g. `arn:aws:iam::YYYYYYYYYYYY:role/dns-manager`)"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "AWS"
+        },
+        "octelium.api.main.enterprise.v1.DNSProvider.Spec.AWS.SecretAccessKey": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Secret Access Key"
+        },
+        "octelium.api.main.enterprise.v1.DNSProvider.Spec.Azure": {
+            "properties": {
+                "clientID": {
+                    "type": "string"
+                },
+                "clientSecret": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DNSProvider.Spec.Azure.ClientSecret",
+                    "additionalProperties": false
+                },
+                "subscriptionID": {
+                    "type": "string"
+                },
+                "tenantID": {
+                    "type": "string"
+                },
+                "resourceGroupName": {
+                    "type": "string"
+                },
+                "cloud": {
+                    "type": "string",
+                    "description": "Cloud is the Azure cloud environment, valid values are `public`, `china`, `usgovernment` and `german`. Empty value is equivalent to `public`."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Azure"
+        },
+        "octelium.api.main.enterprise.v1.DNSProvider.Spec.Azure.ClientSecret": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Client Secret"
+        },
+        "octelium.api.main.enterprise.v1.DNSProvider.Spec.Cloudflare": {
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "description": "Email is the Cloudflare's account email"
+                },
+                "apiToken": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DNSProvider.Spec.Cloudflare.APIToken",
+                    "additionalProperties": false
+                },
+                "proxied": {
+                    "type": "boolean",
+                    "description": "Proxied sets the IP addresses to proxied mode. Not used currently."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Cloudflare"
+        },
+        "octelium.api.main.enterprise.v1.DNSProvider.Spec.Cloudflare.APIToken": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "API Token",
+            "description": "APIToken is the Cloudflare's API token."
+        },
+        "octelium.api.main.enterprise.v1.DNSProvider.Spec.DigitalOcean": {
+            "properties": {
+                "apiToken": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DNSProvider.Spec.DigitalOcean.APIToken",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Digital Ocean"
+        },
+        "octelium.api.main.enterprise.v1.DNSProvider.Spec.DigitalOcean.APIToken": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "API Token"
+        },
+        "octelium.api.main.enterprise.v1.DNSProvider.Spec.Google": {
+            "properties": {
+                "project": {
+                    "type": "string",
+                    "description": "Project is the GCP project name."
+                },
+                "serviceAccount": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DNSProvider.Spec.Google.ServiceAccount",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Google"
+        },
+        "octelium.api.main.enterprise.v1.DNSProvider.Spec.Google.ServiceAccount": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Service Account"
+        },
+        "octelium.api.main.enterprise.v1.DNSProvider.Spec.Linode": {
+            "properties": {
+                "apiToken": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DNSProvider.Spec.Linode.APIToken",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Linode"
+        },
+        "octelium.api.main.enterprise.v1.DNSProvider.Spec.Linode.APIToken": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "API Token"
+        },
+        "octelium.api.main.enterprise.v1.DNSProvider.Spec.OVH": {
+            "properties": {
+                "endpoint": {
+                    "type": "string",
+                    "description": "Endpoint is the API endpoint (e.g. `ovh-eu`)"
+                },
+                "applicationKey": {
+                    "type": "string"
+                },
+                "applicationSecret": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DNSProvider.Spec.OVH.ApplicationSecret",
+                    "additionalProperties": false
+                },
+                "consumerKey": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "OVH"
+        },
+        "octelium.api.main.enterprise.v1.DNSProvider.Spec.OVH.ApplicationSecret": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Application Secret"
+        },
+        "octelium.api.main.enterprise.v1.DNSProvider.Status": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Status"
+        },
+        "octelium.api.main.meta.v1.Metadata": {
+            "properties": {
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the unique UUID value for the object assigned by the Cluster. Read-only."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name of the object. It must be unique within a certain API/Version/Kind tuple."
+                },
+                "createdAt": {
+                    "type": "string",
+                    "description": "CreatedAt is the timestamp of creation of the object. Read-only.",
+                    "format": "date-time"
+                },
+                "updatedAt": {
+                    "type": "string",
+                    "description": "UpdatedAt is the timestamp of when the object was last updated. Read-only.",
+                    "format": "date-time"
+                },
+                "displayName": {
+                    "type": "string",
+                    "description": "DisplayName is the name that can be shown publicly for the object. Doesn't need to be unique."
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Description is used to describe the object in a short sentence. Maximum characters are 1000."
+                },
+                "labels": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "Labels is a map of string keys and values to organize objects."
+                },
+                "tags": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Tags is an optional array of tags that classify the Resource."
+                },
+                "annotations": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "Labels is a map of string keys and values that can be used to store metadata about the object."
+                },
+                "picURL": {
+                    "type": "string",
+                    "description": "PicURL is the Picture URL of the resource."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is a unique ID that represent the current version of the resource object. Used by the Cluster to detect updates."
+                },
+                "lastResourceVersion": {
+                    "type": "string",
+                    "description": "LastResourceVersion is the ResourceVersion of the last update of the Resource."
+                },
+                "actorRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "ActorRef is the object reference to the Actor resource, typically a Session, who is responsible for the current resource change. If ActorRef is not set, then the current change of the resource was done by the Cluster"
+                },
+                "actorOperation": {
+                    "type": "string",
+                    "description": "ActorOperation is the gRPC full method triggered by the actorRef to modify the Resource"
+                },
+                "isSystem": {
+                    "type": "boolean",
+                    "description": "IsSystem means that the resource is created by the Cluster and it cannot be managed by the administrators. Read-only."
+                },
+                "specLabels": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "SpecLabels is map used internally by the Cluster for quick searches among lists of objects. Read-only."
+                },
+                "isUserHidden": {
+                    "type": "boolean",
+                    "description": "IsUserHidden means that the resource object is hidden from ordinary Users and should not be exposed via the User APIs."
+                },
+                "isSystemHidden": {
+                    "type": "boolean",
+                    "description": "IsSystemHidden means that the resource object is hidden by the Cluster and should not be exposed via the APIs."
+                },
+                "systemLabels": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "SystemLabels is a similar map to specLabels. Used only by the Cluster."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Metadata"
+        },
+        "octelium.api.main.meta.v1.ObjectReference": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version of the reference resource"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource kind. A kind is unique per an APIVersion."
+                },
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the resource object UID. A UID is unique across the entire Cluster."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the resource object name. A name is unique per a certain kind."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is the resourceVersion of the resource."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Object Reference"
+        }
+    }
+}

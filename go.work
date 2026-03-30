@@ -1,0 +1,25 @@
+go 1.25.8
+
+toolchain go1.25.8
+
+use (
+	./apis
+	./cluster/apiserver
+	./cluster/cloudman
+	./cluster/clusterman
+	./cluster/collector
+	./cluster/common
+	./cluster/console
+	./cluster/dirsync
+	./cluster/genesis
+	./cluster/logstore
+	./cluster/metricstore
+	./cluster/mockapiserver
+	./cluster/nocturne
+	./cluster/publicserver
+	./cluster/rscserver
+	./cluster/rscstore
+	./cluster/secretman
+	./cluster/policyportal
+	./pkg
+)

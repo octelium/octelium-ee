@@ -1,0 +1,44 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/IssueCertificateRequest",
+    "definitions": {
+        "IssueCertificateRequest": {
+            "properties": {
+                "certificateRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Issue Certificate Request"
+        },
+        "octelium.api.main.meta.v1.ObjectReference": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version of the reference resource"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource kind. A kind is unique per an APIVersion."
+                },
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the resource object UID. A UID is unique across the entire Cluster."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the resource object name. A name is unique per a certain kind."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is the resourceVersion of the resource."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Object Reference"
+        }
+    }
+}

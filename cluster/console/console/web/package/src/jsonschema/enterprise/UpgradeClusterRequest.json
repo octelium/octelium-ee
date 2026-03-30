@@ -1,0 +1,66 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/UpgradeClusterRequest",
+    "definitions": {
+        "UpgradeClusterRequest": {
+            "properties": {
+                "request": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Upgrade Cluster Request"
+        },
+        "octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request": {
+            "properties": {
+                "core": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.Core",
+                    "additionalProperties": false
+                },
+                "packageEnterprise": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.PackageEnterprise",
+                    "additionalProperties": false
+                },
+                "packageCordium": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.PackageCordium",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request"
+        },
+        "octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.Core": {
+            "properties": {
+                "version": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Core"
+        },
+        "octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.PackageCordium": {
+            "properties": {
+                "version": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Package Cordium"
+        },
+        "octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.PackageEnterprise": {
+            "properties": {
+                "version": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Package Enterprise"
+        }
+    }
+}

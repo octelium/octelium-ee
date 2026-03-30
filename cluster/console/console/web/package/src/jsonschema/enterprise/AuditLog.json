@@ -1,0 +1,119 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/AuditLog",
+    "definitions": {
+        "AuditLog": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version (i.e. \"core/v1\")"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the kind (i.e. \"Log\")"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.LogMetadata",
+                    "additionalProperties": false,
+                    "description": "Metadata is the metadata"
+                },
+                "entry": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.AuditLog.Entry",
+                    "additionalProperties": false,
+                    "description": "Entry is the Log entry information"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Audit Log"
+        },
+        "octelium.api.main.enterprise.v1.AuditLog.Entry": {
+            "properties": {
+                "resourceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                },
+                "operation": {
+                    "type": "string"
+                },
+                "sessionRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                },
+                "userRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                },
+                "deviceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                },
+                "package": {
+                    "type": "string"
+                },
+                "service": {
+                    "type": "string"
+                },
+                "method": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Entry"
+        },
+        "octelium.api.main.meta.v1.LogMetadata": {
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "ID is the unique ID for the log entry"
+                },
+                "createdAt": {
+                    "type": "string",
+                    "description": "CreatedAt is the timestamp of creation.",
+                    "format": "date-time"
+                },
+                "actorRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "Actor is the actor whose action triggered the log entry (i.e. the User, their Session and Device if available)"
+                },
+                "targetRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "Target is the target of the action that triggered the log entry (e.g. the Service and its Namespace in the case of a SERVICE log entry)"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Log Metadata"
+        },
+        "octelium.api.main.meta.v1.ObjectReference": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version of the reference resource"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource kind. A kind is unique per an APIVersion."
+                },
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the resource object UID. A UID is unique across the entire Cluster."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the resource object name. A name is unique per a certain kind."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is the resourceVersion of the resource."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Object Reference"
+        }
+    }
+}

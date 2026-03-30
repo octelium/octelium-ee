@@ -1,0 +1,521 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/AuthenticatorList",
+    "definitions": {
+        "AuthenticatorList": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version (i.e. \"core/v1\")"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource name (i.e. `GroupList`)."
+                },
+                "items": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Authenticator"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Items is the list of Groups."
+                },
+                "listResponseMeta": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ListResponseMeta",
+                    "additionalProperties": false,
+                    "description": "ListResponseMeta is common information about the list."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Authenticator List"
+        },
+        "octelium.api.main.core.v1.Authenticator": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version (i.e. \"core/v1\")"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource name (i.e. `Group`)."
+                },
+                "metadata": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Metadata",
+                    "additionalProperties": false,
+                    "description": "octelium.api.main.meta.v1.Metadata is the object's metadata."
+                },
+                "spec": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Authenticator.Spec",
+                    "additionalProperties": false,
+                    "description": "Spec is the Group specification."
+                },
+                "status": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Authenticator.Status",
+                    "additionalProperties": false,
+                    "description": "Status is the current status of the Group."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Authenticator"
+        },
+        "octelium.api.main.core.v1.Authenticator.Spec": {
+            "properties": {
+                "displayName": {
+                    "type": "string"
+                },
+                "state": {
+                    "enum": [
+                        "STATE_UNKNOWN",
+                        "ACTIVE",
+                        "PENDING",
+                        "REJECTED"
+                    ],
+                    "type": "string",
+                    "title": "State"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Spec"
+        },
+        "octelium.api.main.core.v1.Authenticator.Status": {
+            "properties": {
+                "userRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                },
+                "deviceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                },
+                "type": {
+                    "enum": [
+                        "TYPE_UNKNOWN",
+                        "FIDO",
+                        "TOTP",
+                        "TPM"
+                    ],
+                    "type": "string",
+                    "title": "Type"
+                },
+                "info": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Authenticator.Status.Info",
+                    "additionalProperties": false
+                },
+                "authenticationAttempt": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Authenticator.Status.AuthenticationAttempt",
+                    "additionalProperties": false
+                },
+                "lastAuthenticationAttempts": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Authenticator.Status.AuthenticationAttempt"
+                    },
+                    "additionalProperties": false,
+                    "type": "array"
+                },
+                "successfulAuthentications": {
+                    "type": "integer"
+                },
+                "failedAuthentications": {
+                    "type": "integer"
+                },
+                "totalAuthenticationAttempts": {
+                    "type": "integer"
+                },
+                "ext": {
+                    "additionalProperties": {
+                        "additionalProperties": true,
+                        "type": "object"
+                    },
+                    "type": "object"
+                },
+                "isRegistered": {
+                    "type": "boolean"
+                },
+                "description": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Status"
+        },
+        "octelium.api.main.core.v1.Authenticator.Status.AuthenticationAttempt": {
+            "properties": {
+                "createdAt": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "encryptedChallengeRequest": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Authenticator.Status.EncryptedData",
+                    "additionalProperties": false
+                },
+                "encryptedDataMap": {
+                    "additionalProperties": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Authenticator.Status.EncryptedData",
+                        "additionalProperties": false
+                    },
+                    "type": "object"
+                },
+                "dataMap": {
+                    "additionalProperties": {
+                        "type": "string",
+                        "format": "binary",
+                        "binaryEncoding": "base64"
+                    },
+                    "type": "object"
+                },
+                "sessionRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Authentication Attempt"
+        },
+        "octelium.api.main.core.v1.Authenticator.Status.EncryptedData": {
+            "properties": {
+                "ciphertext": {
+                    "type": "string",
+                    "format": "binary",
+                    "binaryEncoding": "base64"
+                },
+                "nonce": {
+                    "type": "string",
+                    "format": "binary",
+                    "binaryEncoding": "base64"
+                },
+                "keySecretRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Encrypted Data"
+        },
+        "octelium.api.main.core.v1.Authenticator.Status.Info": {
+            "properties": {
+                "fido": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Authenticator.Status.Info.FIDO",
+                    "additionalProperties": false
+                },
+                "totp": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Authenticator.Status.Info.TOTP",
+                    "additionalProperties": false
+                },
+                "tpm": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Authenticator.Status.Info.TPM",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fido"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "totp"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "tpm"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fido"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "totp"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "tpm"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Info"
+        },
+        "octelium.api.main.core.v1.Authenticator.Status.Info.FIDO": {
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "format": "binary",
+                    "binaryEncoding": "base64"
+                },
+                "publicKey": {
+                    "type": "string",
+                    "format": "binary",
+                    "binaryEncoding": "base64"
+                },
+                "type": {
+                    "enum": [
+                        "TYPE_UNKNOWN",
+                        "ROAMING",
+                        "PLATFORM"
+                    ],
+                    "type": "string",
+                    "title": "Type"
+                },
+                "aaguid": {
+                    "type": "string"
+                },
+                "isPasskey": {
+                    "type": "boolean"
+                },
+                "idHash": {
+                    "type": "string",
+                    "format": "binary",
+                    "binaryEncoding": "base64"
+                },
+                "backupEligible": {
+                    "type": "boolean"
+                },
+                "isAttestationVerified": {
+                    "type": "boolean"
+                },
+                "isSoftware": {
+                    "type": "boolean"
+                },
+                "isHardware": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "FIDO"
+        },
+        "octelium.api.main.core.v1.Authenticator.Status.Info.TOTP": {
+            "properties": {
+                "sharedSecret": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Authenticator.Status.EncryptedData",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "TOTP"
+        },
+        "octelium.api.main.core.v1.Authenticator.Status.Info.TPM": {
+            "properties": {
+                "akBytes": {
+                    "type": "string",
+                    "format": "binary",
+                    "binaryEncoding": "base64"
+                },
+                "attestationParameters": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Authenticator.Status.Info.TPM.AttestationParameters",
+                    "additionalProperties": false
+                },
+                "ekPublicKey": {
+                    "type": "string",
+                    "format": "binary",
+                    "binaryEncoding": "base64"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "TPM"
+        },
+        "octelium.api.main.core.v1.Authenticator.Status.Info.TPM.AttestationParameters": {
+            "properties": {
+                "public": {
+                    "type": "string",
+                    "format": "binary",
+                    "binaryEncoding": "base64"
+                },
+                "createData": {
+                    "type": "string",
+                    "format": "binary",
+                    "binaryEncoding": "base64"
+                },
+                "createAttestation": {
+                    "type": "string",
+                    "format": "binary",
+                    "binaryEncoding": "base64"
+                },
+                "createSignature": {
+                    "type": "string",
+                    "format": "binary",
+                    "binaryEncoding": "base64"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Attestation Parameters"
+        },
+        "octelium.api.main.meta.v1.ListResponseMeta": {
+            "properties": {
+                "page": {
+                    "type": "integer",
+                    "description": "Page is the page number. Starts with zero."
+                },
+                "itemsPerPage": {
+                    "type": "integer",
+                    "description": "ItemsPerPage is number of items per page."
+                },
+                "totalCount": {
+                    "type": "integer",
+                    "description": "TotalCount is the total count of items that can be obtained."
+                },
+                "hasMore": {
+                    "type": "boolean",
+                    "description": "HasMore shows whether there a next page is available"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "List Response Meta"
+        },
+        "octelium.api.main.meta.v1.Metadata": {
+            "properties": {
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the unique UUID value for the object assigned by the Cluster. Read-only."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name of the object. It must be unique within a certain API/Version/Kind tuple."
+                },
+                "createdAt": {
+                    "type": "string",
+                    "description": "CreatedAt is the timestamp of creation of the object. Read-only.",
+                    "format": "date-time"
+                },
+                "updatedAt": {
+                    "type": "string",
+                    "description": "UpdatedAt is the timestamp of when the object was last updated. Read-only.",
+                    "format": "date-time"
+                },
+                "displayName": {
+                    "type": "string",
+                    "description": "DisplayName is the name that can be shown publicly for the object. Doesn't need to be unique."
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Description is used to describe the object in a short sentence. Maximum characters are 1000."
+                },
+                "labels": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "Labels is a map of string keys and values to organize objects."
+                },
+                "tags": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Tags is an optional array of tags that classify the Resource."
+                },
+                "annotations": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "Labels is a map of string keys and values that can be used to store metadata about the object."
+                },
+                "picURL": {
+                    "type": "string",
+                    "description": "PicURL is the Picture URL of the resource."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is a unique ID that represent the current version of the resource object. Used by the Cluster to detect updates."
+                },
+                "lastResourceVersion": {
+                    "type": "string",
+                    "description": "LastResourceVersion is the ResourceVersion of the last update of the Resource."
+                },
+                "actorRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "ActorRef is the object reference to the Actor resource, typically a Session, who is responsible for the current resource change. If ActorRef is not set, then the current change of the resource was done by the Cluster"
+                },
+                "actorOperation": {
+                    "type": "string",
+                    "description": "ActorOperation is the gRPC full method triggered by the actorRef to modify the Resource"
+                },
+                "isSystem": {
+                    "type": "boolean",
+                    "description": "IsSystem means that the resource is created by the Cluster and it cannot be managed by the administrators. Read-only."
+                },
+                "specLabels": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "SpecLabels is map used internally by the Cluster for quick searches among lists of objects. Read-only."
+                },
+                "isUserHidden": {
+                    "type": "boolean",
+                    "description": "IsUserHidden means that the resource object is hidden from ordinary Users and should not be exposed via the User APIs."
+                },
+                "isSystemHidden": {
+                    "type": "boolean",
+                    "description": "IsSystemHidden means that the resource object is hidden by the Cluster and should not be exposed via the APIs."
+                },
+                "systemLabels": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "SystemLabels is a similar map to specLabels. Used only by the Cluster."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Metadata"
+        },
+        "octelium.api.main.meta.v1.ObjectReference": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version of the reference resource"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource kind. A kind is unique per an APIVersion."
+                },
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the resource object UID. A UID is unique across the entire Cluster."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the resource object name. A name is unique per a certain kind."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is the resourceVersion of the resource."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Object Reference"
+        }
+    }
+}

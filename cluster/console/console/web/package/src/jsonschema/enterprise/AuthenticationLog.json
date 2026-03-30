@@ -1,0 +1,688 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/AuthenticationLog",
+    "definitions": {
+        "AuthenticationLog": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version (i.e. \"core/v1\")"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the kind (i.e. \"Log\")"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.LogMetadata",
+                    "additionalProperties": false,
+                    "description": "Metadata is the metadata"
+                },
+                "entry": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.AuthenticationLog.Entry",
+                    "additionalProperties": false,
+                    "description": "Entry is the Log entry information"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Authentication Log"
+        },
+        "octelium.api.main.core.v1.GeoIP": {
+            "properties": {
+                "ip": {
+                    "type": "string"
+                },
+                "ipVersion": {
+                    "enum": [
+                        "IP_VERSION_UNKNOWN",
+                        "V4",
+                        "V6"
+                    ],
+                    "type": "string",
+                    "title": "IP Version"
+                },
+                "country": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.GeoIP.Country",
+                    "additionalProperties": false
+                },
+                "region": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.GeoIP.Region",
+                    "additionalProperties": false
+                },
+                "city": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.GeoIP.City",
+                    "additionalProperties": false
+                },
+                "continent": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.GeoIP.Continent",
+                    "additionalProperties": false
+                },
+                "network": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.GeoIP.Network",
+                    "additionalProperties": false
+                },
+                "timezone": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.GeoIP.Timezone",
+                    "additionalProperties": false
+                },
+                "postalCode": {
+                    "type": "string"
+                },
+                "coordinates": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.GeoIP.Coordinates",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Geo IP"
+        },
+        "octelium.api.main.core.v1.GeoIP.City": {
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "City"
+        },
+        "octelium.api.main.core.v1.GeoIP.Continent": {
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Continent"
+        },
+        "octelium.api.main.core.v1.GeoIP.Coordinates": {
+            "properties": {
+                "latitude": {
+                    "type": "number"
+                },
+                "longitude": {
+                    "type": "number"
+                },
+                "accuracyRadius": {
+                    "type": "number"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Coordinates"
+        },
+        "octelium.api.main.core.v1.GeoIP.Country": {
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Country"
+        },
+        "octelium.api.main.core.v1.GeoIP.Network": {
+            "properties": {
+                "asn": {
+                    "type": "integer"
+                },
+                "isp": {
+                    "type": "string"
+                },
+                "organization": {
+                    "type": "string"
+                },
+                "domain": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Network"
+        },
+        "octelium.api.main.core.v1.GeoIP.Region": {
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Region"
+        },
+        "octelium.api.main.core.v1.GeoIP.Timezone": {
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "offset": {
+                    "type": "number"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Timezone"
+        },
+        "octelium.api.main.core.v1.Session.Status.Authentication": {
+            "properties": {
+                "info": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Session.Status.Authentication.Info",
+                    "additionalProperties": false
+                },
+                "setAt": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "tokenID": {
+                    "type": "string"
+                },
+                "accessTokenDuration": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false
+                },
+                "refreshTokenDuration": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Authentication"
+        },
+        "octelium.api.main.core.v1.Session.Status.Authentication.Info": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "TYPE_UNSET",
+                        "CREDENTIAL",
+                        "INTERNAL",
+                        "REFRESH_TOKEN",
+                        "EXTERNAL",
+                        "IDENTITY_PROVIDER",
+                        "AUTHENTICATOR"
+                    ],
+                    "type": "string",
+                    "title": "Type"
+                },
+                "external": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Session.Status.Authentication.Info.External",
+                    "additionalProperties": false
+                },
+                "identityProvider": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Session.Status.Authentication.Info.IdentityProvider",
+                    "additionalProperties": false
+                },
+                "credential": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Session.Status.Authentication.Info.Credential",
+                    "additionalProperties": false
+                },
+                "authenticator": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Session.Status.Authentication.Info.Authenticator",
+                    "additionalProperties": false
+                },
+                "aal": {
+                    "enum": [
+                        "AAL_UNSET",
+                        "AAL1",
+                        "AAL2",
+                        "AAL3"
+                    ],
+                    "type": "string",
+                    "title": "AAL"
+                },
+                "downstream": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Session.Status.Authentication.Info.Downstream",
+                    "additionalProperties": false
+                },
+                "geoip": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.GeoIP",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "external"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "identityProvider"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "credential"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "authenticator"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "external"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "identityProvider"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "credential"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "authenticator"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Info"
+        },
+        "octelium.api.main.core.v1.Session.Status.Authentication.Info.Authenticator": {
+            "properties": {
+                "authenticatorRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                },
+                "type": {
+                    "enum": [
+                        "TYPE_UNKNOWN",
+                        "FIDO",
+                        "TOTP",
+                        "TPM"
+                    ],
+                    "type": "string",
+                    "title": "Type"
+                },
+                "info": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Session.Status.Authentication.Info.Authenticator.Info",
+                    "additionalProperties": false
+                },
+                "mode": {
+                    "enum": [
+                        "MODE_UNSET",
+                        "DEFAULT",
+                        "PASSKEY",
+                        "MFA"
+                    ],
+                    "type": "string",
+                    "title": "Mode"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Authenticator"
+        },
+        "octelium.api.main.core.v1.Session.Status.Authentication.Info.Authenticator.Info": {
+            "properties": {
+                "fido": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Session.Status.Authentication.Info.Authenticator.Info.FIDO",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fido"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fido"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Info"
+        },
+        "octelium.api.main.core.v1.Session.Status.Authentication.Info.Authenticator.Info.FIDO": {
+            "properties": {
+                "userPresent": {
+                    "type": "boolean"
+                },
+                "userVerified": {
+                    "type": "boolean"
+                },
+                "isHardware": {
+                    "type": "boolean"
+                },
+                "isSoftware": {
+                    "type": "boolean"
+                },
+                "isAttestationVerified": {
+                    "type": "boolean"
+                },
+                "isPasskey": {
+                    "type": "boolean"
+                },
+                "aaguid": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "FIDO"
+        },
+        "octelium.api.main.core.v1.Session.Status.Authentication.Info.Credential": {
+            "properties": {
+                "credentialRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                },
+                "type": {
+                    "enum": [
+                        "TYPE_UNKNOWN",
+                        "AUTH_TOKEN",
+                        "OAUTH2",
+                        "ACCESS_TOKEN"
+                    ],
+                    "type": "string",
+                    "title": "Type"
+                },
+                "tokenID": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Credential"
+        },
+        "octelium.api.main.core.v1.Session.Status.Authentication.Info.Downstream": {
+            "properties": {
+                "ipAddress": {
+                    "type": "string"
+                },
+                "userAgent": {
+                    "type": "string"
+                },
+                "clientVersion": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Downstream"
+        },
+        "octelium.api.main.core.v1.Session.Status.Authentication.Info.External": {
+            "properties": {
+                "ownerRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                },
+                "attrs": {
+                    "additionalProperties": true,
+                    "type": "object"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "External"
+        },
+        "octelium.api.main.core.v1.Session.Status.Authentication.Info.IdentityProvider": {
+            "properties": {
+                "identityProviderRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                },
+                "type": {
+                    "enum": [
+                        "TYPE_UNKNOWN",
+                        "GITHUB",
+                        "OIDC",
+                        "SAML",
+                        "OIDC_IDENTITY_TOKEN"
+                    ],
+                    "type": "string",
+                    "title": "Type"
+                },
+                "identifier": {
+                    "type": "string"
+                },
+                "picURL": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Identity Provider"
+        },
+        "octelium.api.main.enterprise.v1.AuthenticationLog.Entry": {
+            "properties": {
+                "sessionRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                },
+                "userRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                },
+                "deviceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                },
+                "authentication": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Session.Status.Authentication",
+                    "additionalProperties": false
+                },
+                "authenticationIndex": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Entry"
+        },
+        "octelium.api.main.meta.v1.Duration": {
+            "properties": {
+                "milliseconds": {
+                    "type": "integer",
+                    "description": "Milliseconds is the duration set in milliseconds"
+                },
+                "seconds": {
+                    "type": "integer",
+                    "description": "Seconds is the duration set in seconds"
+                },
+                "minutes": {
+                    "type": "integer",
+                    "description": "Minutes is the duration set in minutes"
+                },
+                "hours": {
+                    "type": "integer",
+                    "description": "Hours is the duration set in hours"
+                },
+                "days": {
+                    "type": "integer",
+                    "description": "Days is the duration set in days"
+                },
+                "weeks": {
+                    "type": "integer",
+                    "description": "Weeks is the duration set in weeks"
+                },
+                "months": {
+                    "type": "integer",
+                    "description": "Months is the duration set in months"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "milliseconds"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "seconds"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "minutes"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "hours"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "days"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "weeks"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "months"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "milliseconds"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "seconds"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "minutes"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "hours"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "days"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "weeks"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "months"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Duration"
+        },
+        "octelium.api.main.meta.v1.LogMetadata": {
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "ID is the unique ID for the log entry"
+                },
+                "createdAt": {
+                    "type": "string",
+                    "description": "CreatedAt is the timestamp of creation.",
+                    "format": "date-time"
+                },
+                "actorRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "Actor is the actor whose action triggered the log entry (i.e. the User, their Session and Device if available)"
+                },
+                "targetRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "Target is the target of the action that triggered the log entry (e.g. the Service and its Namespace in the case of a SERVICE log entry)"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Log Metadata"
+        },
+        "octelium.api.main.meta.v1.ObjectReference": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version of the reference resource"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource kind. A kind is unique per an APIVersion."
+                },
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the resource object UID. A UID is unique across the entire Cluster."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the resource object name. A name is unique per a certain kind."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is the resourceVersion of the resource."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Object Reference"
+        }
+    }
+}

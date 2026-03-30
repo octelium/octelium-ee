@@ -1,0 +1,204 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/Condition",
+    "definitions": {
+        "Condition": {
+            "properties": {
+                "matchAny": {
+                    "type": "boolean",
+                    "description": "MatchAny matches anything"
+                },
+                "match": {
+                    "type": "string",
+                    "description": "Match contains a single CEL expression"
+                },
+                "all": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition.All",
+                    "additionalProperties": false,
+                    "description": "All acts as a logical AND operator on its list of CEL expressions"
+                },
+                "any": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition.Any",
+                    "additionalProperties": false,
+                    "description": "Any acts as a logical OR operator on its list of CEL expressions"
+                },
+                "not": {
+                    "type": "string",
+                    "description": "Not acts as a logical NOT operator of a single CEL expression"
+                },
+                "none": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition.None",
+                    "additionalProperties": false,
+                    "description": "None acts as a logical NOR operator on its list of CEL expressions (i.e. none of the expressions matches)"
+                },
+                "opa": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition.OPA",
+                    "additionalProperties": false,
+                    "description": "OPA contains an OPA (Open Policy Agent) Rego script"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "matchAny"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "match"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "all"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "any"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "not"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "none"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "opa"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "matchAny"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "match"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "all"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "any"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "not"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "none"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "opa"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Condition"
+        },
+        "octelium.api.main.core.v1.Condition.All": {
+            "properties": {
+                "of": {
+                    "items": {
+                        "$ref": "#/definitions/Condition"
+                    },
+                    "additionalProperties": false,
+                    "type": "array"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "All"
+        },
+        "octelium.api.main.core.v1.Condition.Any": {
+            "properties": {
+                "of": {
+                    "items": {
+                        "$ref": "#/definitions/Condition"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Expressions is the list of CEL expressions"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Any"
+        },
+        "octelium.api.main.core.v1.Condition.None": {
+            "properties": {
+                "of": {
+                    "items": {
+                        "$ref": "#/definitions/Condition"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Expressions is the list of CEL expressions"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "None"
+        },
+        "octelium.api.main.core.v1.Condition.OPA": {
+            "properties": {
+                "inline": {
+                    "type": "string",
+                    "description": "Inline is the OPA Rego script directly provided as a string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "inline"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "inline"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "OPA"
+        }
+    }
+}

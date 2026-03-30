@@ -1,0 +1,11 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/IssueCertificateResponse",
+    "definitions": {
+        "IssueCertificateResponse": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Issue Certificate Response"
+        }
+    }
+}

@@ -1,0 +1,3950 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/ServiceList",
+    "definitions": {
+        "ServiceList": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version (i.e. \"core/v1\")"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource name (i.e. `ServiceList`)."
+                },
+                "items": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Service"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Items is the list of Services."
+                },
+                "listResponseMeta": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ListResponseMeta",
+                    "additionalProperties": false,
+                    "description": "ListResponseMeta is common information about the list."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Service List"
+        },
+        "octelium.api.main.core.v1.Condition": {
+            "properties": {
+                "matchAny": {
+                    "type": "boolean",
+                    "description": "MatchAny matches anything"
+                },
+                "match": {
+                    "type": "string",
+                    "description": "Match contains a single CEL expression"
+                },
+                "all": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition.All",
+                    "additionalProperties": false,
+                    "description": "All acts as a logical AND operator on its list of CEL expressions"
+                },
+                "any": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition.Any",
+                    "additionalProperties": false,
+                    "description": "Any acts as a logical OR operator on its list of CEL expressions"
+                },
+                "not": {
+                    "type": "string",
+                    "description": "Not acts as a logical NOT operator of a single CEL expression"
+                },
+                "none": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition.None",
+                    "additionalProperties": false,
+                    "description": "None acts as a logical NOR operator on its list of CEL expressions (i.e. none of the expressions matches)"
+                },
+                "opa": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition.OPA",
+                    "additionalProperties": false,
+                    "description": "OPA contains an OPA (Open Policy Agent) Rego script"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "matchAny"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "match"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "all"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "any"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "not"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "none"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "opa"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "matchAny"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "match"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "all"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "any"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "not"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "none"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "opa"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Condition"
+        },
+        "octelium.api.main.core.v1.Condition.All": {
+            "properties": {
+                "of": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Condition"
+                    },
+                    "additionalProperties": false,
+                    "type": "array"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "All"
+        },
+        "octelium.api.main.core.v1.Condition.Any": {
+            "properties": {
+                "of": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Condition"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Expressions is the list of CEL expressions"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Any"
+        },
+        "octelium.api.main.core.v1.Condition.None": {
+            "properties": {
+                "of": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Condition"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Expressions is the list of CEL expressions"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "None"
+        },
+        "octelium.api.main.core.v1.Condition.OPA": {
+            "properties": {
+                "inline": {
+                    "type": "string",
+                    "description": "Inline is the OPA Rego script directly provided as a string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "inline"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "inline"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "OPA"
+        },
+        "octelium.api.main.core.v1.InlinePolicy": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name of the inline Policy"
+                },
+                "spec": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Policy.Spec",
+                    "additionalProperties": false,
+                    "description": "Spec is the Policy spec"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Inline Policy"
+        },
+        "octelium.api.main.core.v1.Policy.Spec": {
+            "properties": {
+                "rules": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Policy.Spec.Rule"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Rules is the list of Policy rules"
+                },
+                "enforcementRules": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Policy.Spec.EnforcementRule"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "EnforcementRules is the list of enforcement rules that are typically used as a precondition for using the Policy rules. You can simply extract your shared conditions from your rules and write them instead inside enforcementRules for better performance and readability"
+                },
+                "attrs": {
+                    "additionalProperties": true,
+                    "type": "object"
+                },
+                "isDisabled": {
+                    "type": "boolean",
+                    "description": "IsDisabled disables (i.e. deactivates) the Policy. You can use this to temporarily disable enforcing the Policy altogether instead of having to delete it or de-attach it from the different Resources attaching it."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Spec"
+        },
+        "octelium.api.main.core.v1.Policy.Spec.EnforcementRule": {
+            "properties": {
+                "condition": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition",
+                    "additionalProperties": false,
+                    "description": "Condition is the enforcement rule's Condition"
+                },
+                "effect": {
+                    "enum": [
+                        "EFFECT_UNKNOWN",
+                        "ENFORCE",
+                        "IGNORE"
+                    ],
+                    "type": "string",
+                    "title": "Effect"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Enforcement Rule"
+        },
+        "octelium.api.main.core.v1.Policy.Spec.Rule": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name is an optional name for the rule. It is currently useful in Logs to understand which rule triggered the Policy."
+                },
+                "condition": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition",
+                    "additionalProperties": false,
+                    "description": "Condition is the rule's Condition that must match in order for the rule, and subsequently the Policy as whole, to match"
+                },
+                "effect": {
+                    "enum": [
+                        "EFFECT_UNKNOWN",
+                        "ALLOW",
+                        "DENY"
+                    ],
+                    "type": "string",
+                    "title": "Effect"
+                },
+                "priority": {
+                    "type": "integer",
+                    "description": "Priority is an integer that sets the rule priority level. The lower the number, the higher the priority. Currently the range of numbers is between -4 (i.e. the highest priority) and 4 (i.e. the lowest priority)."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Rule"
+        },
+        "octelium.api.main.core.v1.Service": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version (i.e. \"core/v1\")"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource name (i.e. `Service`)."
+                },
+                "metadata": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Metadata",
+                    "additionalProperties": false,
+                    "description": "octelium.api.main.meta.v1.Metadata is the object's metadata."
+                },
+                "spec": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec",
+                    "additionalProperties": false,
+                    "description": "Spec is the Service specification."
+                },
+                "status": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Status",
+                    "additionalProperties": false,
+                    "description": "Status is the current status of the Service."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Service"
+        },
+        "octelium.api.main.core.v1.Service.Spec": {
+            "properties": {
+                "port": {
+                    "type": "integer",
+                    "description": "Port is the port number used by the listener. If not set, Octelium will try to assume the number from the backend URL. (e.g. if the backend's URL scheme is `http` then the port number is 80)."
+                },
+                "mode": {
+                    "enum": [
+                        "MODE_UNSET",
+                        "TCP",
+                        "UDP",
+                        "HTTP",
+                        "SSH",
+                        "KUBERNETES",
+                        "POSTGRES",
+                        "MYSQL",
+                        "GRPC",
+                        "WEB",
+                        "DNS"
+                    ],
+                    "type": "string",
+                    "title": "Mode"
+                },
+                "authorization": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Authorization",
+                    "additionalProperties": false,
+                    "description": "Authorization sets the authorization-related configuration"
+                },
+                "config": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config",
+                    "additionalProperties": false,
+                    "description": "Config sets the listener's application-layer specific options."
+                },
+                "dynamicConfig": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.DynamicConfig",
+                    "additionalProperties": false,
+                    "description": "DynamicConfig sets the dynamic configuration options. DynamicConfig can simply dynamically override the global/static Service configuration via programmable CEL rules that take identity and context into account."
+                },
+                "isTLS": {
+                    "type": "boolean",
+                    "description": "IsTLS enables TLS for the listener using its Namespace certificate (i.e. You have to enable TLS at the Namespace level in order to enable this field)."
+                },
+                "isPublic": {
+                    "type": "boolean",
+                    "description": "IsPublic enables the client-less public \"BeyondCorp\" mode access for the Service. Only works for HTTP-based Service modes for now."
+                },
+                "isAnonymous": {
+                    "type": "boolean",
+                    "description": "IsAnonymous turns a publicly exposed HTTP-based Service into an anonymously exposed Service that can be anonymously accessed publicly. In other words, this turns off authentication and authorization for the Service. This requires the isPublic field to be enabled too. Refer to the docs for more."
+                },
+                "deployment": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Deployment",
+                    "additionalProperties": false,
+                    "description": "Deployment sets The Service's underlying deployment configurations."
+                },
+                "isDisabled": {
+                    "type": "boolean",
+                    "description": "IsDisabled disables the Service. Simply the Service stops accepting requests altogether as if it is not running."
+                },
+                "attrs": {
+                    "additionalProperties": true,
+                    "type": "object"
+                },
+                "region": {
+                    "type": "string",
+                    "description": "Region explicitly sets the Region name in which the Service is deployed.By default, a Service is deployed in the \"default\" Region."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Spec"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Authorization": {
+            "properties": {
+                "policies": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Policies is the list of standalone Policies"
+                },
+                "inlinePolicies": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.InlinePolicy"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "InlinePolicies is the list of inline Policies"
+                },
+                "enableAnonymous": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Authorization"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name is a unique name the describes the Config. Only needed for Configs described within the DynamicConfig. The default Config is assumed to have the name \"default\"."
+                },
+                "clientCertificate": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.ClientCertificate",
+                    "additionalProperties": false,
+                    "description": "ClientCertificate sets mTLS-related configuration (i.e. the client x509 certificate chain and its corresponding private key) to authenticate to an upstream that requires mTLS. This is unused for certain modes such as SSH since it does not use mTLS."
+                },
+                "upstream": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Upstream",
+                    "additionalProperties": false,
+                    "description": "Upstream is the Service detailed upstream information. Only one of the URL or Upstream must be set."
+                },
+                "parent": {
+                    "type": "string",
+                    "description": "Parent is the name of the parent configuration"
+                },
+                "tls": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.TLS",
+                    "additionalProperties": false
+                },
+                "http": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP",
+                    "additionalProperties": false,
+                    "description": "HTTP sets HTTP-specific configuration"
+                },
+                "ssh": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.SSH",
+                    "additionalProperties": false,
+                    "description": "SSH sets SSH-specific configuration"
+                },
+                "postgres": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Postgres",
+                    "additionalProperties": false,
+                    "description": "Postgres sets PostgreSQL-specific configuration"
+                },
+                "mysql": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.MySQL",
+                    "additionalProperties": false,
+                    "description": "MySQL (EXPERIMENTAL) sets MySQL-specific configuration"
+                },
+                "kubernetes": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Kubernetes",
+                    "additionalProperties": false,
+                    "description": "Kubernetes sets Kubernetes-specific configuration"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "http"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "ssh"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "postgres"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "mysql"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "kubernetes"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "http"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "ssh"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "postgres"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "mysql"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "kubernetes"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Config"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.ClientCertificate": {
+            "properties": {
+                "trustedCAs": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Client Certificate"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP": {
+            "properties": {
+                "auth": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Auth",
+                    "additionalProperties": false,
+                    "description": "Auth sets authentication-to-upstream specific configuration"
+                },
+                "header": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Header",
+                    "additionalProperties": false,
+                    "description": "Header sets request and response header manipulation options"
+                },
+                "path": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Path",
+                    "additionalProperties": false,
+                    "description": "Path sets the request path options"
+                },
+                "cors": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.CORS",
+                    "additionalProperties": false,
+                    "description": "CORS sets the Cross-Origin Resource Sharing (CORS)-specific options. Read more at https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers."
+                },
+                "isUpstreamHTTP2": {
+                    "type": "boolean",
+                    "description": "IsUpstreamHTTP2 sets HTTP connections to the upstream to HTTP/2. Not enabled by default."
+                },
+                "listenHTTP2": {
+                    "type": "boolean",
+                    "description": "ListenHTTP2 sets the Service to listen to HTTP 2.0 connections. This is only enabled by default for Services using TLS. This field has to be enabled in the in the \"default\" or global Configuration (as opposed to named dynamic Configs) in order to actually work."
+                },
+                "enableRequestBuffering": {
+                    "type": "boolean",
+                    "description": "EnableRequestBuffering buffers the entire request body before sending it to the upstream. This can be used to check the request body content for access control and dynamic configuration. This means that it has to be enabled in the \"default\" or global Configuration (as opposed to named dynamic Configs) in order to actually work."
+                },
+                "body": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Body",
+                    "additionalProperties": false,
+                    "description": "Body sets the body-specific options."
+                },
+                "response": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Response",
+                    "additionalProperties": false,
+                    "description": "Response sets the response-specific configurations"
+                },
+                "plugins": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Plugins is the list of plugins"
+                },
+                "visibility": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Visibility",
+                    "additionalProperties": false,
+                    "description": "Visibility sets the visibility/access logging specific options"
+                },
+                "retry": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Retry",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "HTTP"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Auth": {
+            "properties": {
+                "bearer": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Auth.Bearer",
+                    "additionalProperties": false,
+                    "description": "Bearer sets bearer authentication details"
+                },
+                "basic": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Auth.Basic",
+                    "additionalProperties": false,
+                    "description": "Basis sets basic authentication details"
+                },
+                "custom": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Auth.Custom",
+                    "additionalProperties": false,
+                    "description": "Custom sets authentication inside custom header"
+                },
+                "oauth2ClientCredentials": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Auth.OAuth2ClientCredentials",
+                    "additionalProperties": false,
+                    "description": "OAuth2ClientCredentials sets OAuth2 client credentials authentication flow details"
+                },
+                "sigv4": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Auth.Sigv4",
+                    "additionalProperties": false,
+                    "description": "Sigv4 sets the AWS signature v4 authentication details"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "bearer"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "basic"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "custom"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "oauth2ClientCredentials"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "sigv4"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "bearer"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "basic"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "custom"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "oauth2ClientCredentials"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "sigv4"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Auth"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Auth.Basic": {
+            "properties": {
+                "username": {
+                    "type": "string",
+                    "description": "Username is the username value of HTTP basic authentication"
+                },
+                "password": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Auth.Basic.Password",
+                    "additionalProperties": false,
+                    "description": "Password is the password value of HTTP basic authentication"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Basic"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Auth.Basic.Password": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Password"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Auth.Bearer": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Bearer"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Auth.Custom": {
+            "properties": {
+                "header": {
+                    "type": "string",
+                    "description": "Header is the name of the HTTP header (e.g. \"X-Custom-Auth\")"
+                },
+                "value": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Auth.Custom.Value",
+                    "additionalProperties": false,
+                    "description": "Value is the value of the header"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Custom"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Auth.Custom.Value": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Value"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Auth.OAuth2ClientCredentials": {
+            "properties": {
+                "clientID": {
+                    "type": "string",
+                    "description": "ClientID sets the OAuth2 client ID"
+                },
+                "clientSecret": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Auth.OAuth2ClientCredentials.ClientSecret",
+                    "additionalProperties": false,
+                    "description": "ClientSecret sets the OAuth2 client secret"
+                },
+                "tokenURL": {
+                    "type": "string",
+                    "description": "TokenURL sets the token URL endpoint"
+                },
+                "scopes": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Scopes is the list of OAuth2 scopes"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "O Auth 2 Client Credentials"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Auth.OAuth2ClientCredentials.ClientSecret": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Client Secret"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Auth.Sigv4": {
+            "properties": {
+                "accessKeyID": {
+                    "type": "string"
+                },
+                "secretAccessKey": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Auth.Sigv4.SecretAccessKey",
+                    "additionalProperties": false
+                },
+                "region": {
+                    "type": "string"
+                },
+                "service": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Sigv 4"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Auth.Sigv4.SecretAccessKey": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Secret Access Key"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Body": {
+            "properties": {
+                "mode": {
+                    "enum": [
+                        "MODE_UNSET",
+                        "JSON"
+                    ],
+                    "type": "string",
+                    "title": "Mode"
+                },
+                "maxRequestSize": {
+                    "type": "integer",
+                    "description": "MaxRequestSize sets the max body request byte size."
+                },
+                "validation": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Body.Validation",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Body"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Body.Validation": {
+            "properties": {
+                "jsonSchema": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Body.Validation.JSONSchema",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "jsonSchema"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "jsonSchema"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Validation"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Body.Validation.JSONSchema": {
+            "properties": {
+                "inline": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "inline"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "inline"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "JSON Schema"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.CORS": {
+            "properties": {
+                "allowOriginStringMatch": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "AllowOriginStringMatch is the list of  patterns that match allowed origins."
+                },
+                "allowMethods": {
+                    "type": "string",
+                    "description": "AllowMethods specifies the content for the access-control-allow-methods header."
+                },
+                "allowHeaders": {
+                    "type": "string",
+                    "description": "AllowHeaders specifies the content for the access-control-allow-headers header."
+                },
+                "exposeHeaders": {
+                    "type": "string",
+                    "description": "ExposeHeaders specifies the content for the access-control-expose-headers header."
+                },
+                "maxAge": {
+                    "type": "string",
+                    "description": "MaxAge specifies the content for the access-control-max-age header."
+                },
+                "allowCredentials": {
+                    "type": "boolean",
+                    "description": "AllowCredentials specifies whether the resource allows credentials."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "CORS"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Header": {
+            "properties": {
+                "addRequestHeaders": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Header.KeyValue"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "AddRequestHeaders is the list of request headers to be added."
+                },
+                "removeRequestHeaders": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "RemoveRequestHeaders is the list of request headers to be removed."
+                },
+                "addResponseHeaders": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Header.KeyValue"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "AddResponseHeaders is the list of response headers to be added."
+                },
+                "removeResponseHeaders": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "RemoveResponseHeaders is the list of response headers to be removed."
+                },
+                "forwardedMode": {
+                    "enum": [
+                        "UNSET",
+                        "DROP",
+                        "OBFUSCATE",
+                        "TRANSPARENT"
+                    ],
+                    "type": "string",
+                    "title": "Forwarded Mode"
+                },
+                "host": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Header.Host",
+                    "additionalProperties": false
+                },
+                "authorizationMode": {
+                    "enum": [
+                        "AUTHORIZATION_MODE_UNSET",
+                        "PASS",
+                        "DELETE"
+                    ],
+                    "type": "string",
+                    "title": "Authorization Mode"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Header"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Header.Host": {
+            "properties": {
+                "preserve": {
+                    "type": "boolean"
+                },
+                "value": {
+                    "type": "string"
+                },
+                "eval": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "preserve"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "value"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "eval"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "preserve"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "value"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "eval"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Host"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Header.KeyValue": {
+            "properties": {
+                "key": {
+                    "type": "string",
+                    "description": "Key is the header's name."
+                },
+                "value": {
+                    "type": "string",
+                    "description": "Value is the header's value."
+                },
+                "eval": {
+                    "type": "string"
+                },
+                "append": {
+                    "type": "boolean",
+                    "description": "Append appends the header value instead of setting/overwriting/replacing it which is the default behavior."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "value"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "eval"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "value"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "eval"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Key Value"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Path": {
+            "properties": {
+                "addPrefix": {
+                    "type": "string",
+                    "description": "AddPrefix adds a prefix to the request path."
+                },
+                "removePrefix": {
+                    "type": "string",
+                    "description": "RemovePrefix removes a prefix from the request path. You can use both RemovePrefix and AddPrefix at the same time to replace a prefix by another one."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Path"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin": {
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "isDisabled": {
+                    "type": "boolean"
+                },
+                "phase": {
+                    "enum": [
+                        "PHASE_UNSET",
+                        "PRE_AUTH",
+                        "POST_AUTH"
+                    ],
+                    "type": "string",
+                    "title": "Phase"
+                },
+                "condition": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition",
+                    "additionalProperties": false
+                },
+                "extProc": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.ExtProc",
+                    "additionalProperties": false
+                },
+                "lua": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.Lua",
+                    "additionalProperties": false
+                },
+                "direct": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.Direct",
+                    "additionalProperties": false
+                },
+                "rateLimit": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.RateLimit",
+                    "additionalProperties": false
+                },
+                "cache": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.Cache",
+                    "additionalProperties": false
+                },
+                "jsonSchema": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.JSONSchema",
+                    "additionalProperties": false
+                },
+                "path": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.Path",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "extProc"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "lua"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "direct"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "rateLimit"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "cache"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "jsonSchema"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "path"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "extProc"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "lua"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "direct"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "rateLimit"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "cache"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "jsonSchema"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "path"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Plugin"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.Cache": {
+            "properties": {
+                "key": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.Cache.Key",
+                    "additionalProperties": false
+                },
+                "ttl": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false
+                },
+                "maxSize": {
+                    "type": "integer"
+                },
+                "useXCacheHeader": {
+                    "type": "boolean"
+                },
+                "allowUnsafeMethods": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Cache"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.Cache.Key": {
+            "properties": {
+                "eval": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "eval"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "eval"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Key"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.Direct": {
+            "properties": {
+                "statusCode": {
+                    "type": "integer"
+                },
+                "body": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.Direct.Body",
+                    "additionalProperties": false
+                },
+                "headers": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.Direct.KeyValue"
+                    },
+                    "additionalProperties": false,
+                    "type": "array"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Direct"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.Direct.Body": {
+            "properties": {
+                "inline": {
+                    "type": "string"
+                },
+                "inlineBytes": {
+                    "type": "string",
+                    "format": "binary",
+                    "binaryEncoding": "base64"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "inline"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "inlineBytes"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "inline"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "inlineBytes"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Body"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.Direct.KeyValue": {
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Key Value"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.ExtProc": {
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "container": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.ExtProc.Container",
+                    "additionalProperties": false
+                },
+                "processingMode": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.ExtProc.ProcessingMode",
+                    "additionalProperties": false
+                },
+                "messageTimeout": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "address"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "container"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "address"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "container"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Ext Proc"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.ExtProc.Container": {
+            "properties": {
+                "image": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Container"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.ExtProc.ProcessingMode": {
+            "properties": {
+                "requestHeaderMode": {
+                    "enum": [
+                        "HEADER_SEND_MODE_UNSET",
+                        "SEND",
+                        "SKIP"
+                    ],
+                    "type": "string",
+                    "title": "Header Send Mode"
+                },
+                "responseHeaderMode": {
+                    "enum": [
+                        "HEADER_SEND_MODE_UNSET",
+                        "SEND",
+                        "SKIP"
+                    ],
+                    "type": "string",
+                    "title": "Header Send Mode"
+                },
+                "requestBodyMode": {
+                    "enum": [
+                        "BODY_SEND_MODE_UNSET",
+                        "NONE",
+                        "BUFFERED"
+                    ],
+                    "type": "string",
+                    "title": "Body Send Mode"
+                },
+                "responseBodyMode": {
+                    "enum": [
+                        "BODY_SEND_MODE_UNSET",
+                        "NONE",
+                        "BUFFERED"
+                    ],
+                    "type": "string",
+                    "title": "Body Send Mode"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Processing Mode"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.JSONSchema": {
+            "properties": {
+                "inline": {
+                    "type": "string"
+                },
+                "statusCode": {
+                    "type": "integer"
+                },
+                "body": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.JSONSchema.Body",
+                    "additionalProperties": false
+                },
+                "headers": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.JSONSchema.KeyValue"
+                    },
+                    "additionalProperties": false,
+                    "type": "array"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "inline"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "inline"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "JSON Schema"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.JSONSchema.Body": {
+            "properties": {
+                "inline": {
+                    "type": "string"
+                },
+                "inlineBytes": {
+                    "type": "string",
+                    "format": "binary",
+                    "binaryEncoding": "base64"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "inline"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "inlineBytes"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "inline"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "inlineBytes"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Body"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.JSONSchema.KeyValue": {
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Key Value"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.Lua": {
+            "properties": {
+                "inline": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "inline"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "inline"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Lua"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.Path": {
+            "properties": {
+                "addPrefix": {
+                    "type": "string",
+                    "description": "AddPrefix adds a prefix to the request path."
+                },
+                "removePrefix": {
+                    "type": "string",
+                    "description": "RemovePrefix removes a prefix from the request path. You can use both RemovePrefix and AddPrefix at the same time to replace a prefix by another one."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Path"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.RateLimit": {
+            "properties": {
+                "statusCode": {
+                    "type": "integer"
+                },
+                "body": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.RateLimit.Body",
+                    "additionalProperties": false
+                },
+                "key": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.RateLimit.Key",
+                    "additionalProperties": false
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "window": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false
+                },
+                "headers": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.RateLimit.KeyValue"
+                    },
+                    "additionalProperties": false,
+                    "type": "array"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Rate Limit"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.RateLimit.Body": {
+            "properties": {
+                "inline": {
+                    "type": "string"
+                },
+                "inlineBytes": {
+                    "type": "string",
+                    "format": "binary",
+                    "binaryEncoding": "base64"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "inline"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "inlineBytes"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "inline"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "inlineBytes"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Body"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.RateLimit.Key": {
+            "properties": {
+                "eval": {
+                    "type": "string"
+                },
+                "perSession": {
+                    "type": "boolean"
+                },
+                "perUser": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "eval"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "perSession"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "perUser"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "eval"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "perSession"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "perUser"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Key"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.RateLimit.KeyValue": {
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Key Value"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Response": {
+            "properties": {
+                "direct": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Response.Direct",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "direct"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "direct"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Response"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Response.Direct": {
+            "properties": {
+                "statusCode": {
+                    "type": "integer"
+                },
+                "contentType": {
+                    "type": "string"
+                },
+                "inline": {
+                    "type": "string"
+                },
+                "inlineBytes": {
+                    "type": "string",
+                    "format": "binary",
+                    "binaryEncoding": "base64"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "inline"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "inlineBytes"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "inline"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "inlineBytes"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Direct"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Retry": {
+            "properties": {
+                "maxRetries": {
+                    "type": "integer"
+                },
+                "initialInterval": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false
+                },
+                "maxInterval": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false
+                },
+                "maxElapsedTime": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false
+                },
+                "multiplier": {
+                    "type": "number"
+                },
+                "statusCodes": {
+                    "items": {
+                        "type": "integer"
+                    },
+                    "type": "array"
+                },
+                "retryOnServerErrors": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Retry"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.HTTP.Visibility": {
+            "properties": {
+                "enableRequestBody": {
+                    "type": "boolean",
+                    "description": "Capture the request body"
+                },
+                "enableRequestBodyMap": {
+                    "type": "boolean",
+                    "description": "Capture the request body map, currently JSON"
+                },
+                "enableResponseBody": {
+                    "type": "boolean",
+                    "description": "Capture the response body"
+                },
+                "enableResponseBodyMap": {
+                    "type": "boolean",
+                    "description": "Capture the response body map, currently JSON"
+                },
+                "includeRequestHeaders": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "includeResponseHeaders": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "includeAllRequestHeaders": {
+                    "type": "boolean"
+                },
+                "includeAllResponseHeaders": {
+                    "type": "boolean"
+                },
+                "excludeRequestHeaders": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "excludeResponseHeaders": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Visibility"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.Kubernetes": {
+            "properties": {
+                "kubeconfig": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Kubernetes.Kubeconfig",
+                    "additionalProperties": false,
+                    "description": "Kubeconfig sets the cluster configuration from a kubeconfig. Only one of ClusterInfo or Kubeconfig must be set."
+                },
+                "bearerToken": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Kubernetes.BearerToken",
+                    "additionalProperties": false
+                },
+                "clientCertificate": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.ClientCertificate",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "kubeconfig"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "bearerToken"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "clientCertificate"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "kubeconfig"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "bearerToken"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "clientCertificate"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Kubernetes"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.Kubernetes.BearerToken": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                },
+                "trustedCAs": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Bearer Token"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.Kubernetes.Kubeconfig": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                },
+                "context": {
+                    "type": "string",
+                    "description": "Context is the kubeconfig context (e.g. \"kubernetes-admin@kubernetes\")"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Kubeconfig"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.MySQL": {
+            "properties": {
+                "user": {
+                    "type": "string"
+                },
+                "auth": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.MySQL.Auth",
+                    "additionalProperties": false
+                },
+                "database": {
+                    "type": "string"
+                },
+                "isTLS": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "My SQL"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.MySQL.Auth": {
+            "properties": {
+                "password": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.MySQL.Auth.Password",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "password"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "password"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Auth"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.MySQL.Auth.Password": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Password"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.Postgres": {
+            "properties": {
+                "user": {
+                    "type": "string",
+                    "description": "User is the postgres user. If set, it overrides the user values requested by the downstreams. If not set, the user values requested by the downstreams is forwarded to the upstream as is."
+                },
+                "auth": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Postgres.Auth",
+                    "additionalProperties": false,
+                    "description": "Auth sets the upstream authentication information"
+                },
+                "database": {
+                    "type": "string",
+                    "description": "Database is the name of the database. If set, it overrides the database values requested by the downstreams. If not set, the database values requested by the downstreams is forwarded to the upstream as is."
+                },
+                "sslMode": {
+                    "enum": [
+                        "SSL_MODE_UNSET",
+                        "DISABLE",
+                        "REQUIRE"
+                    ],
+                    "type": "string",
+                    "title": "SSL Mode"
+                },
+                "authorization": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Postgres.Authorization",
+                    "additionalProperties": false,
+                    "description": "Authorization sets PostgreSQL-specific authorization configuration"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Postgres"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.Postgres.Auth": {
+            "properties": {
+                "password": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Postgres.Auth.Password",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "password"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "password"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Auth"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.Postgres.Auth.Password": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Password"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.Postgres.Authorization": {
+            "properties": {
+                "mode": {
+                    "enum": [
+                        "MODE_UNSET",
+                        "ALL",
+                        "NONE"
+                    ],
+                    "type": "string",
+                    "title": "Mode"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Authorization"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.SSH": {
+            "properties": {
+                "user": {
+                    "type": "string",
+                    "description": "User is the SSH user. If set, this value overrides the SSH user requested by the downstreams. If not set, then downstream's value is forwarded to the upstream."
+                },
+                "auth": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.SSH.Auth",
+                    "additionalProperties": false,
+                    "description": "Auth sets authentication related information"
+                },
+                "upstreamHostKey": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.SSH.UpstreamHostKey",
+                    "additionalProperties": false,
+                    "description": "UpstreamHostKey sets the upstream's host public key"
+                },
+                "enableLocalPortForwarding": {
+                    "type": "boolean",
+                    "description": "EnableLocalPortForwarding enables local port forwarding (i.e. \"direct-tcpip\")"
+                },
+                "enableSubsystem": {
+                    "type": "boolean",
+                    "description": "EnableSubsystem enable subsystem requests"
+                },
+                "eSSHMode": {
+                    "type": "boolean",
+                    "description": "eSSHMode enables the \"embedded SSH\" mode. This means that the upstream is served by an Octelium client rather than a typical SSH server. Refer to the docs for more."
+                },
+                "visibility": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.SSH.Visibility",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "SSH"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.SSH.Auth": {
+            "properties": {
+                "password": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.SSH.Auth.Password",
+                    "additionalProperties": false,
+                    "description": "Password sets the password used for authentication. Only one of Password or PrivateKey is used."
+                },
+                "privateKey": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.SSH.Auth.PrivateKey",
+                    "additionalProperties": false,
+                    "description": "PrivateKey sets the private key used for authentication. Only one of Password or PrivateKey is used."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "password"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "privateKey"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "password"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "privateKey"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Auth"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.SSH.Auth.Password": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Password"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.SSH.Auth.PrivateKey": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Private Key"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.SSH.UpstreamHostKey": {
+            "properties": {
+                "insecureIgnoreHostKey": {
+                    "type": "boolean",
+                    "description": "InsecureIgnoreHostKey ignores verifying the upstream server public key during the handshake. This is extremely NOT recommended for use in production"
+                },
+                "key": {
+                    "type": "string",
+                    "description": "Key specifies the upstream public key"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "insecureIgnoreHostKey"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "key"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "insecureIgnoreHostKey"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "key"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Upstream Host Key"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.SSH.Visibility": {
+            "properties": {
+                "disableSessionRecording": {
+                    "type": "boolean"
+                },
+                "enableSessionStdinRecording": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Visibility"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.TLS": {
+            "properties": {
+                "trustedCAs": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "appendToSystemPool": {
+                    "type": "boolean"
+                },
+                "insecureSkipVerify": {
+                    "type": "boolean"
+                },
+                "clientCertificate": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.TLS.ClientCertificate",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "TLS"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.TLS.ClientCertificate": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Client Certificate"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.Upstream": {
+            "properties": {
+                "user": {
+                    "type": "string",
+                    "description": "User is the User name if the upstream should be served by an active Connection of a User. If set, that means that the Service is served by any connected client owned by that User and willing to serve the Service."
+                },
+                "url": {
+                    "type": "string",
+                    "description": "URL is the canonical URL of the upstream. Examples are`http://example.com`, `postgres://pg.default.svc`, `tcp://my-custom-app:9090`,  and `https://api.sandbox.paypal.com`."
+                },
+                "loadbalance": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Upstream.Loadbalance",
+                    "additionalProperties": false,
+                    "description": "Loadbalance is the list of upstreams in case you have more than one upstream. You either use the main upstream or the loadbalance list."
+                },
+                "container": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container",
+                    "additionalProperties": false,
+                    "description": "Container sets the Upstream to a managed container deployed on the same Kubernetes cluster that hosts the OCtelium Cluster"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "url"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "loadbalance"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "container"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "url"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "loadbalance"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "container"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Upstream"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container": {
+            "properties": {
+                "port": {
+                    "type": "integer",
+                    "description": "Port is the port exposed by the managed container"
+                },
+                "image": {
+                    "type": "string",
+                    "description": "Image is the image URL of the container"
+                },
+                "command": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Command overrides the container image's command"
+                },
+                "args": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Args is the list of command arguments that override the image arguments"
+                },
+                "env": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.Env"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Env is the list of environment variables"
+                },
+                "replicas": {
+                    "type": "integer",
+                    "description": "Replicas is the number of replicas of this container"
+                },
+                "credentials": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.Credentials",
+                    "additionalProperties": false,
+                    "description": "Credentials sets the credentials if the image is hosted on a private container registry"
+                },
+                "resourceLimit": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.ResourceLimit",
+                    "additionalProperties": false,
+                    "description": "ResourceLimit sets the container resource limits"
+                },
+                "securityContext": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.SecurityContext",
+                    "additionalProperties": false,
+                    "description": "SecurityContext sets k8s security context related configs"
+                },
+                "volumes": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.Volume"
+                    },
+                    "additionalProperties": false,
+                    "type": "array"
+                },
+                "volumeMounts": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.VolumeMount"
+                    },
+                    "additionalProperties": false,
+                    "type": "array"
+                },
+                "livenessProbe": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.Probe",
+                    "additionalProperties": false
+                },
+                "readinessProbe": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.Probe",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Container"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.Credentials": {
+            "properties": {
+                "usernamePassword": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.Credentials.UsernamePassword",
+                    "additionalProperties": false,
+                    "description": "UsernamePassword uses a username and password to authenticate to the container registry"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "usernamePassword"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "usernamePassword"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Credentials"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.Credentials.UsernamePassword": {
+            "properties": {
+                "username": {
+                    "type": "string",
+                    "description": "Username is the username used to authenticate to the container registry"
+                },
+                "password": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.Credentials.UsernamePassword.Password",
+                    "additionalProperties": false,
+                    "description": "Password is the password used to authenticate to the container registry"
+                },
+                "server": {
+                    "type": "string",
+                    "description": "Server is the container registry server (e.g. \"ghcr.io\" or \"quay.io\")"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Username Password"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.Credentials.UsernamePassword.Password": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the Password"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Password"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.Env": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name is  the environment variable key"
+                },
+                "value": {
+                    "type": "string",
+                    "description": "Value is the environment variable value"
+                },
+                "fromSecret": {
+                    "type": "string",
+                    "description": "FromSecret gets the value of the environment variable from an Octelium Secret"
+                },
+                "kubernetesSecretRef": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.Env.KubernetesSecretRef",
+                    "additionalProperties": false,
+                    "description": "KubernetesSecretRef uses a Kubernetes secret as the environment variable value"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "value"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "kubernetesSecretRef"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "value"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "kubernetesSecretRef"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Env"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.Env.KubernetesSecretRef": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name is the Kubernetes secret name"
+                },
+                "key": {
+                    "type": "string",
+                    "description": "Key is the Kubernetes secret data key"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Kubernetes Secret Ref"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.Probe": {
+            "properties": {
+                "httpGet": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.Probe.HTTPGet",
+                    "additionalProperties": false
+                },
+                "tcpSocket": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.Probe.TCPSocket",
+                    "additionalProperties": false
+                },
+                "grpc": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.Probe.GRPC",
+                    "additionalProperties": false
+                },
+                "initialDelaySeconds": {
+                    "type": "integer"
+                },
+                "timeoutSeconds": {
+                    "type": "integer"
+                },
+                "periodSeconds": {
+                    "type": "integer"
+                },
+                "successThreshold": {
+                    "type": "integer"
+                },
+                "failureThreshold": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "httpGet"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "tcpSocket"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "grpc"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "httpGet"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "tcpSocket"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "grpc"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Probe"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.Probe.GRPC": {
+            "properties": {
+                "port": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "GRPC"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.Probe.HTTPGet": {
+            "properties": {
+                "path": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "HTTP Get"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.Probe.TCPSocket": {
+            "properties": {
+                "port": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "TCP Socket"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.ResourceLimit": {
+            "properties": {
+                "cpu": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.ResourceLimit.CPU",
+                    "additionalProperties": false,
+                    "description": "CPU sets the CPU-related limit"
+                },
+                "memory": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.ResourceLimit.Memory",
+                    "additionalProperties": false,
+                    "description": "Memory sets the memory-related limit"
+                },
+                "ext": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "Ext represents the map of extended/custom resource limits such as GPU requests"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Resource Limit"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.ResourceLimit.CPU": {
+            "properties": {
+                "millicores": {
+                    "type": "integer",
+                    "description": "Millicores is the integer that sets the limit milli-cores"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "CPU"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.ResourceLimit.Memory": {
+            "properties": {
+                "megabytes": {
+                    "type": "integer",
+                    "description": "Megabytes is the integer that set the limit in megabytes"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Memory"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.SecurityContext": {
+            "properties": {
+                "readOnlyRootFilesystem": {
+                    "type": "boolean",
+                    "description": "ReadOnlyRootFilesystem sets the root filesystem to read-only"
+                },
+                "runAsUser": {
+                    "type": "integer",
+                    "description": "RunAsUser sets the UID of the container user."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Security Context"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.Volume": {
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "persistentVolumeClaim": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.Volume.PersistentVolumeClaim",
+                    "additionalProperties": false
+                },
+                "emptyDir": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.Volume.EmptyDir",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "persistentVolumeClaim"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "emptyDir"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "persistentVolumeClaim"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "emptyDir"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Volume"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.Volume.EmptyDir": {
+            "properties": {
+                "sizeLimitMegabytes": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Empty Dir"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.Volume.PersistentVolumeClaim": {
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Persistent Volume Claim"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.VolumeMount": {
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "mountPath": {
+                    "type": "string"
+                },
+                "subPath": {
+                    "type": "string"
+                },
+                "readOnly": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Volume Mount"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.Upstream.Loadbalance": {
+            "properties": {
+                "endpoints": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Upstream.Loadbalance.Endpoint"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Endpoints is the list of endpoints"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Loadbalance"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.Upstream.Loadbalance.Endpoint": {
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "URL is the canonical URL of the upstream. Examples are`http://example.com`, `postgres://pg.default.svc`, `tcp://my-custom-app:9090`,  and `https://api.sandbox.paypal.com`."
+                },
+                "user": {
+                    "type": "string",
+                    "description": "User is the User name if the upstream should be served by an active Connection of a User. If set, that means that the Service is served by any connected client owned by that User and willing to serve the Service."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Endpoint"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Deployment": {
+            "properties": {
+                "replicas": {
+                    "type": "integer",
+                    "description": "Replicas sets the number of replicas of a deployed Service."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Deployment"
+        },
+        "octelium.api.main.core.v1.Service.Spec.DynamicConfig": {
+            "properties": {
+                "configs": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Configs is the list of named configurations that will override the global/default Service configuration if a rule matches."
+                },
+                "rules": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.DynamicConfig.Rule"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Rules is the list of rules that are checked on a per-request basis, if a rule matches its named configuration is used as the Service configuration for that specific request."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Dynamic Config"
+        },
+        "octelium.api.main.core.v1.Service.Spec.DynamicConfig.Rule": {
+            "properties": {
+                "condition": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition",
+                    "additionalProperties": false,
+                    "description": "Condition is the condition"
+                },
+                "configName": {
+                    "type": "string",
+                    "description": "configName is the name of the namedConfig that is used if the rule matches."
+                },
+                "eval": {
+                    "type": "string",
+                    "description": "Eval is the CEL expression that evaluates the Service config"
+                },
+                "opa": {
+                    "type": "string",
+                    "description": "OPA is the Rego OPA script that evaluates the Service config"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "configName"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "eval"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "opa"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "configName"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "eval"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "opa"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Rule"
+        },
+        "octelium.api.main.core.v1.Service.Status": {
+            "properties": {
+                "addresses": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Service.Status.Address"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Addresses is the list of private addresses used by the Service for client-based connections."
+                },
+                "namespaceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "NamespaceRef is the reference of the owner Namespace"
+                },
+                "managedService": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Status.ManagedService",
+                    "additionalProperties": false
+                },
+                "regionRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                },
+                "primaryHostname": {
+                    "type": "string"
+                },
+                "additionalHostnames": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "port": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Status"
+        },
+        "octelium.api.main.core.v1.Service.Status.Address": {
+            "properties": {
+                "dualStackIP": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.DualStackIP",
+                    "additionalProperties": false
+                },
+                "podRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Address"
+        },
+        "octelium.api.main.core.v1.Service.Status.ManagedService": {
+            "properties": {
+                "image": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "integer"
+                },
+                "hasSubdomain": {
+                    "type": "boolean"
+                },
+                "forwardHost": {
+                    "type": "boolean"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "k8sLabels": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object"
+                },
+                "command": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "args": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "imagePullSecret": {
+                    "type": "string"
+                },
+                "healthCheck": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Status.ManagedService.HealthCheck",
+                    "additionalProperties": false
+                },
+                "resourceLimit": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Status.ManagedService.ResourceLimit",
+                    "additionalProperties": false
+                },
+                "readOnlyFileSystem": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Managed Service"
+        },
+        "octelium.api.main.core.v1.Service.Status.ManagedService.HealthCheck": {
+            "properties": {
+                "grpc": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Status.ManagedService.HealthCheck.GRPC",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "grpc"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "grpc"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Health Check"
+        },
+        "octelium.api.main.core.v1.Service.Status.ManagedService.HealthCheck.GRPC": {
+            "properties": {
+                "port": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "GRPC"
+        },
+        "octelium.api.main.core.v1.Service.Status.ManagedService.ResourceLimit": {
+            "properties": {
+                "cpu": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Status.ManagedService.ResourceLimit.CPU",
+                    "additionalProperties": false
+                },
+                "memory": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Status.ManagedService.ResourceLimit.Memory",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Resource Limit"
+        },
+        "octelium.api.main.core.v1.Service.Status.ManagedService.ResourceLimit.CPU": {
+            "properties": {
+                "millicores": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "CPU"
+        },
+        "octelium.api.main.core.v1.Service.Status.ManagedService.ResourceLimit.Memory": {
+            "properties": {
+                "megabytes": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Memory"
+        },
+        "octelium.api.main.meta.v1.DualStackIP": {
+            "properties": {
+                "ipv4": {
+                    "type": "string",
+                    "description": "IPv4 is the IPv4 address."
+                },
+                "ipv6": {
+                    "type": "string",
+                    "description": "IPv6 is the IPv6 address."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Dual Stack IP"
+        },
+        "octelium.api.main.meta.v1.Duration": {
+            "properties": {
+                "milliseconds": {
+                    "type": "integer",
+                    "description": "Milliseconds is the duration set in milliseconds"
+                },
+                "seconds": {
+                    "type": "integer",
+                    "description": "Seconds is the duration set in seconds"
+                },
+                "minutes": {
+                    "type": "integer",
+                    "description": "Minutes is the duration set in minutes"
+                },
+                "hours": {
+                    "type": "integer",
+                    "description": "Hours is the duration set in hours"
+                },
+                "days": {
+                    "type": "integer",
+                    "description": "Days is the duration set in days"
+                },
+                "weeks": {
+                    "type": "integer",
+                    "description": "Weeks is the duration set in weeks"
+                },
+                "months": {
+                    "type": "integer",
+                    "description": "Months is the duration set in months"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "milliseconds"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "seconds"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "minutes"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "hours"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "days"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "weeks"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "months"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "milliseconds"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "seconds"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "minutes"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "hours"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "days"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "weeks"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "months"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Duration"
+        },
+        "octelium.api.main.meta.v1.ListResponseMeta": {
+            "properties": {
+                "page": {
+                    "type": "integer",
+                    "description": "Page is the page number. Starts with zero."
+                },
+                "itemsPerPage": {
+                    "type": "integer",
+                    "description": "ItemsPerPage is number of items per page."
+                },
+                "totalCount": {
+                    "type": "integer",
+                    "description": "TotalCount is the total count of items that can be obtained."
+                },
+                "hasMore": {
+                    "type": "boolean",
+                    "description": "HasMore shows whether there a next page is available"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "List Response Meta"
+        },
+        "octelium.api.main.meta.v1.Metadata": {
+            "properties": {
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the unique UUID value for the object assigned by the Cluster. Read-only."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name of the object. It must be unique within a certain API/Version/Kind tuple."
+                },
+                "createdAt": {
+                    "type": "string",
+                    "description": "CreatedAt is the timestamp of creation of the object. Read-only.",
+                    "format": "date-time"
+                },
+                "updatedAt": {
+                    "type": "string",
+                    "description": "UpdatedAt is the timestamp of when the object was last updated. Read-only.",
+                    "format": "date-time"
+                },
+                "displayName": {
+                    "type": "string",
+                    "description": "DisplayName is the name that can be shown publicly for the object. Doesn't need to be unique."
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Description is used to describe the object in a short sentence. Maximum characters are 1000."
+                },
+                "labels": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "Labels is a map of string keys and values to organize objects."
+                },
+                "tags": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Tags is an optional array of tags that classify the Resource."
+                },
+                "annotations": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "Labels is a map of string keys and values that can be used to store metadata about the object."
+                },
+                "picURL": {
+                    "type": "string",
+                    "description": "PicURL is the Picture URL of the resource."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is a unique ID that represent the current version of the resource object. Used by the Cluster to detect updates."
+                },
+                "lastResourceVersion": {
+                    "type": "string",
+                    "description": "LastResourceVersion is the ResourceVersion of the last update of the Resource."
+                },
+                "actorRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "ActorRef is the object reference to the Actor resource, typically a Session, who is responsible for the current resource change. If ActorRef is not set, then the current change of the resource was done by the Cluster"
+                },
+                "actorOperation": {
+                    "type": "string",
+                    "description": "ActorOperation is the gRPC full method triggered by the actorRef to modify the Resource"
+                },
+                "isSystem": {
+                    "type": "boolean",
+                    "description": "IsSystem means that the resource is created by the Cluster and it cannot be managed by the administrators. Read-only."
+                },
+                "specLabels": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "SpecLabels is map used internally by the Cluster for quick searches among lists of objects. Read-only."
+                },
+                "isUserHidden": {
+                    "type": "boolean",
+                    "description": "IsUserHidden means that the resource object is hidden from ordinary Users and should not be exposed via the User APIs."
+                },
+                "isSystemHidden": {
+                    "type": "boolean",
+                    "description": "IsSystemHidden means that the resource object is hidden by the Cluster and should not be exposed via the APIs."
+                },
+                "systemLabels": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "SystemLabels is a similar map to specLabels. Used only by the Cluster."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Metadata"
+        },
+        "octelium.api.main.meta.v1.ObjectReference": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version of the reference resource"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource kind. A kind is unique per an APIVersion."
+                },
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the resource object UID. A UID is unique across the entire Cluster."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the resource object name. A name is unique per a certain kind."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is the resourceVersion of the resource."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Object Reference"
+        }
+    }
+}

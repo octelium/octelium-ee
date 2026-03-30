@@ -1,0 +1,301 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/InlinePolicy",
+    "definitions": {
+        "InlinePolicy": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name of the inline Policy"
+                },
+                "spec": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Policy.Spec",
+                    "additionalProperties": false,
+                    "description": "Spec is the Policy spec"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Inline Policy"
+        },
+        "octelium.api.main.core.v1.Condition": {
+            "properties": {
+                "matchAny": {
+                    "type": "boolean",
+                    "description": "MatchAny matches anything"
+                },
+                "match": {
+                    "type": "string",
+                    "description": "Match contains a single CEL expression"
+                },
+                "all": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition.All",
+                    "additionalProperties": false,
+                    "description": "All acts as a logical AND operator on its list of CEL expressions"
+                },
+                "any": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition.Any",
+                    "additionalProperties": false,
+                    "description": "Any acts as a logical OR operator on its list of CEL expressions"
+                },
+                "not": {
+                    "type": "string",
+                    "description": "Not acts as a logical NOT operator of a single CEL expression"
+                },
+                "none": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition.None",
+                    "additionalProperties": false,
+                    "description": "None acts as a logical NOR operator on its list of CEL expressions (i.e. none of the expressions matches)"
+                },
+                "opa": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition.OPA",
+                    "additionalProperties": false,
+                    "description": "OPA contains an OPA (Open Policy Agent) Rego script"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "matchAny"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "match"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "all"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "any"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "not"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "none"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "opa"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "matchAny"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "match"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "all"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "any"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "not"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "none"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "opa"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Condition"
+        },
+        "octelium.api.main.core.v1.Condition.All": {
+            "properties": {
+                "of": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Condition"
+                    },
+                    "additionalProperties": false,
+                    "type": "array"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "All"
+        },
+        "octelium.api.main.core.v1.Condition.Any": {
+            "properties": {
+                "of": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Condition"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Expressions is the list of CEL expressions"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Any"
+        },
+        "octelium.api.main.core.v1.Condition.None": {
+            "properties": {
+                "of": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Condition"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Expressions is the list of CEL expressions"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "None"
+        },
+        "octelium.api.main.core.v1.Condition.OPA": {
+            "properties": {
+                "inline": {
+                    "type": "string",
+                    "description": "Inline is the OPA Rego script directly provided as a string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "inline"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "inline"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "OPA"
+        },
+        "octelium.api.main.core.v1.Policy.Spec": {
+            "properties": {
+                "rules": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Policy.Spec.Rule"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Rules is the list of Policy rules"
+                },
+                "enforcementRules": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Policy.Spec.EnforcementRule"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "EnforcementRules is the list of enforcement rules that are typically used as a precondition for using the Policy rules. You can simply extract your shared conditions from your rules and write them instead inside enforcementRules for better performance and readability"
+                },
+                "attrs": {
+                    "additionalProperties": true,
+                    "type": "object"
+                },
+                "isDisabled": {
+                    "type": "boolean",
+                    "description": "IsDisabled disables (i.e. deactivates) the Policy. You can use this to temporarily disable enforcing the Policy altogether instead of having to delete it or de-attach it from the different Resources attaching it."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Spec"
+        },
+        "octelium.api.main.core.v1.Policy.Spec.EnforcementRule": {
+            "properties": {
+                "condition": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition",
+                    "additionalProperties": false,
+                    "description": "Condition is the enforcement rule's Condition"
+                },
+                "effect": {
+                    "enum": [
+                        "EFFECT_UNKNOWN",
+                        "ENFORCE",
+                        "IGNORE"
+                    ],
+                    "type": "string",
+                    "title": "Effect"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Enforcement Rule"
+        },
+        "octelium.api.main.core.v1.Policy.Spec.Rule": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name is an optional name for the rule. It is currently useful in Logs to understand which rule triggered the Policy."
+                },
+                "condition": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition",
+                    "additionalProperties": false,
+                    "description": "Condition is the rule's Condition that must match in order for the rule, and subsequently the Policy as whole, to match"
+                },
+                "effect": {
+                    "enum": [
+                        "EFFECT_UNKNOWN",
+                        "ALLOW",
+                        "DENY"
+                    ],
+                    "type": "string",
+                    "title": "Effect"
+                },
+                "priority": {
+                    "type": "integer",
+                    "description": "Priority is an integer that sets the rule priority level. The lower the number, the higher the priority. Currently the range of numbers is between -4 (i.e. the highest priority) and 4 (i.e. the lowest priority)."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Rule"
+        }
+    }
+}

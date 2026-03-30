@@ -1,0 +1,517 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/IsAuthorizedRequest",
+    "definitions": {
+        "IsAuthorizedRequest": {
+            "properties": {
+                "sessionRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                },
+                "userRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                },
+                "deviceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                },
+                "serviceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                },
+                "namespaceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                },
+                "request": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "sessionRef"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "userRef"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "deviceRef"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "sessionRef"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "userRef"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "deviceRef"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "serviceRef"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "namespaceRef"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "serviceRef"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "namespaceRef"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Is Authorized Request"
+        },
+        "octelium.api.main.core.v1.RequestContext.Request": {
+            "properties": {
+                "http": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.HTTP",
+                    "additionalProperties": false,
+                    "description": "HTTP is the HTTP specific details."
+                },
+                "ssh": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.SSH",
+                    "additionalProperties": false
+                },
+                "kubernetes": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.Kubernetes",
+                    "additionalProperties": false
+                },
+                "grpc": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.GRPC",
+                    "additionalProperties": false
+                },
+                "postgres": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.Postgres",
+                    "additionalProperties": false
+                },
+                "dns": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.DNS",
+                    "additionalProperties": false
+                },
+                "ip": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "http"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "ssh"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "kubernetes"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "grpc"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "postgres"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "dns"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "http"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "ssh"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "kubernetes"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "grpc"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "postgres"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "dns"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Request"
+        },
+        "octelium.api.main.core.v1.RequestContext.Request.DNS": {
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "typeID": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "DNS"
+        },
+        "octelium.api.main.core.v1.RequestContext.Request.GRPC": {
+            "properties": {
+                "http": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.HTTP",
+                    "additionalProperties": false
+                },
+                "method": {
+                    "type": "string"
+                },
+                "service": {
+                    "type": "string"
+                },
+                "serviceFullName": {
+                    "type": "string"
+                },
+                "package": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "GRPC"
+        },
+        "octelium.api.main.core.v1.RequestContext.Request.HTTP": {
+            "properties": {
+                "headers": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "Headers is the map of HTTP request headers."
+                },
+                "method": {
+                    "type": "string",
+                    "description": "Method is the HTTP method (e.g. `GET`, `POST`)."
+                },
+                "path": {
+                    "type": "string",
+                    "description": "Path is the HTTP path without query params."
+                },
+                "host": {
+                    "type": "string",
+                    "description": "Host is the HTTP request `Host` or 'Authority` header value."
+                },
+                "protocol": {
+                    "type": "string",
+                    "description": "Protocol is the HTTP protocol (i.e. `HTTP/1.0`, `HTTP/1.1` or `HTTP/2`)"
+                },
+                "size": {
+                    "type": "integer",
+                    "description": "Size is the HTTP request size in bytes. If unknown, it must be -1."
+                },
+                "scheme": {
+                    "type": "string",
+                    "description": "Scheme is the request scheme"
+                },
+                "body": {
+                    "type": "string",
+                    "description": "Body is the request body",
+                    "format": "binary",
+                    "binaryEncoding": "base64"
+                },
+                "bodyMap": {
+                    "additionalProperties": true,
+                    "type": "object",
+                    "description": "BodyMap is the serialized request body. Currently used with JSON."
+                },
+                "uri": {
+                    "type": "string",
+                    "description": "URI is the request path including the query"
+                },
+                "queryParams": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "QueryParams is the map of HTTP request query params. Params only assumes single-valued query params. If you want to check multi-valued params then you need to instead parse the URI field."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "HTTP"
+        },
+        "octelium.api.main.core.v1.RequestContext.Request.Kubernetes": {
+            "properties": {
+                "http": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.HTTP",
+                    "additionalProperties": false
+                },
+                "verb": {
+                    "type": "string"
+                },
+                "apiPrefix": {
+                    "type": "string"
+                },
+                "apiGroup": {
+                    "type": "string"
+                },
+                "apiVersion": {
+                    "type": "string"
+                },
+                "namespace": {
+                    "type": "string"
+                },
+                "resource": {
+                    "type": "string"
+                },
+                "subresource": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Kubernetes"
+        },
+        "octelium.api.main.core.v1.RequestContext.Request.Postgres": {
+            "properties": {
+                "connect": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.Postgres.Connect",
+                    "additionalProperties": false
+                },
+                "query": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.Postgres.Query",
+                    "additionalProperties": false
+                },
+                "parse": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.Postgres.Parse",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "connect"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "query"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "parse"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "connect"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "query"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "parse"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Postgres"
+        },
+        "octelium.api.main.core.v1.RequestContext.Request.Postgres.Connect": {
+            "properties": {
+                "user": {
+                    "type": "string"
+                },
+                "database": {
+                    "type": "string"
+                },
+                "applicationName": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Connect"
+        },
+        "octelium.api.main.core.v1.RequestContext.Request.Postgres.Parse": {
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "query": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Parse"
+        },
+        "octelium.api.main.core.v1.RequestContext.Request.Postgres.Query": {
+            "properties": {
+                "query": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Query"
+        },
+        "octelium.api.main.core.v1.RequestContext.Request.SSH": {
+            "properties": {
+                "connect": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.SSH.Connect",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "connect"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "connect"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "SSH"
+        },
+        "octelium.api.main.core.v1.RequestContext.Request.SSH.Connect": {
+            "properties": {
+                "user": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Connect"
+        },
+        "octelium.api.main.meta.v1.ObjectReference": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version of the reference resource"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource kind. A kind is unique per an APIVersion."
+                },
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the resource object UID. A UID is unique across the entire Cluster."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the resource object name. A name is unique per a certain kind."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is the resourceVersion of the resource."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Object Reference"
+        }
+    }
+}

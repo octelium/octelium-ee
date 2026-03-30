@@ -1,0 +1,145 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/DeviceExtInfo",
+    "definitions": {
+        "DeviceExtInfo": {
+            "properties": {
+                "deviceManagerRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                },
+                "deviceManagerDetails": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Device Ext Info"
+        },
+        "octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails": {
+            "properties": {
+                "crowdstrike": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails.Crowdstrike",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "crowdstrike"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "crowdstrike"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Device Manager Details"
+        },
+        "octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails.Crowdstrike": {
+            "properties": {
+                "info": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails.Crowdstrike.Info",
+                    "additionalProperties": false
+                },
+                "assessment": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails.Crowdstrike.Assessment",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Crowdstrike"
+        },
+        "octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails.Crowdstrike.Assessment": {
+            "properties": {
+                "lastSyncAt": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "overall": {
+                    "type": "integer"
+                },
+                "os": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Assessment"
+        },
+        "octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails.Crowdstrike.Info": {
+            "properties": {
+                "lastSyncAt": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "serialNumber": {
+                    "type": "string"
+                },
+                "macAddress": {
+                    "type": "string"
+                },
+                "osBuild": {
+                    "type": "string"
+                },
+                "osVersion": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "agentVersion": {
+                    "type": "string"
+                },
+                "deviceID": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Info"
+        },
+        "octelium.api.main.meta.v1.ObjectReference": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version of the reference resource"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource kind. A kind is unique per an APIVersion."
+                },
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the resource object UID. A UID is unique across the entire Cluster."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the resource object name. A name is unique per a certain kind."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is the resourceVersion of the resource."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Object Reference"
+        }
+    }
+}

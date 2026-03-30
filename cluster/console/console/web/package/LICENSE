@@ -1,0 +1,267 @@
+OCTELIUM ENTERPRISE SOURCE-AVAILABLE LICENSE
+Version 1.0
+Copyright (c) 2025-present Octelium Labs, LLC. All rights reserved.
+
+By accessing, copying, modifying, or using the Software, you agree to be bound
+by this License. If you do not agree, do not access or use the Software.
+
+1. DEFINITIONS
+
+   1.1 "Licensor" means Octelium Labs, LLC.
+
+   1.2 "Software" means all source code, compiled code, configuration files,
+       documentation, and associated materials made available in this repository,
+       including any Modifications (as defined in Section 1.7) whether or not
+       such Modifications have been submitted to Licensor.
+
+   1.3 "Commercial Agreement" means a valid, fully executed written agreement
+       between you (or your Organization) and Licensor that expressly grants
+       rights beyond those in this License.
+
+   1.4 "Production Environment" means any system, infrastructure, or deployment
+       that (a) serves external users or customers, (b) processes live or real
+       business data, (c) is part of a revenue-generating activity, (d) acts as
+       a staging, pre-production, testing, or continuous integration/continuous
+       deployment (CI/CD) environment supporting or intended to support the
+       foregoing, or (e) provides network access to or otherwise directly
+       supports systems that meet criteria (a)–(d).
+
+   1.5 "Personal Use" means use solely by a natural person on systems that
+       person personally owns or controls, exclusively for that individual's
+       own non-commercial, non-professional purposes, and not (a) on behalf of
+       or for the benefit of any Organization, employer, or client; (b) in
+       connection with any consulting, contracting, or freelance activity;
+       or (c) to provide services or functionality to any other person or entity.
+       For the avoidance of doubt, any use that is conducted through, on behalf
+       of, or for the benefit of an Organization does not qualify as Personal
+       Use, regardless of whether the individual is the sole owner or operator
+       of that Organization.
+
+   1.6 "Compete" means to develop, market, or operate a commercial product or
+       service that provides functionality substantially similar to the core
+       functionality of the Software, including but not limited to zero-trust
+       network access (ZTNA). This includes using, analyzing, or benchmarking
+       the Software for the purpose of developing such a product or service,
+       whether or not the resulting product contains any code derived from
+       the Software.
+
+   1.7 "Modification" means any work, including source code, patches, bug fixes,
+       improvements, or derivative works, that is based on or derived from the
+       Software or that modifies any file of the Software.
+
+   1.8 "Organization" means any legal entity, including without limitation
+       corporations, partnerships, non-profits, sole proprietorships, and
+       any other form of business, government, or professional enterprise.
+
+   1.9 Commercial Agreement Supersession. If you or your Organization have
+       entered into a Commercial Agreement with Licensor covering the Software,
+       the terms of that Commercial Agreement shall govern your use of the
+       Software and supersede this License to the extent of any conflict.
+
+2. LICENSE GRANT — PERSONAL USE
+
+   Subject to your compliance with this License, Licensor grants natural persons
+   a perpetual, limited, non-exclusive, non-transferable, non-sublicensable,
+   revocable license to:
+
+   (a) access, reproduce, and modify the Software solely to create Modifications
+       for Personal Use; and
+   (b) run the Software and Modifications on systems you personally own or
+       control;
+
+   solely for Personal Use as defined in Section 1.5. This grant does not
+   expire provided your use remains within the Personal Use definition.
+   If your use at any point exceeds Personal Use, this Section 2 grant
+   terminates immediately and Section 3 (or a Commercial Agreement) governs.
+
+   For the avoidance of doubt, any Modification you create under this Section
+   remains subject to this License in its entirety. You may not exercise any
+   rights in your Modification beyond those granted in this Section 2.
+
+3. LICENSE GRANT — ORGANIZATIONAL EVALUATION
+
+   Subject to your compliance with this License, Licensor grants Organizations
+   a limited, non-exclusive, non-transferable, non-sublicensable, revocable
+   license to:
+
+   (a) access, reproduce, and modify the Software solely to create Modifications
+       for internal evaluation purposes; and
+   (b) run the Software and Modifications on systems you own or control;
+
+   solely for internal, non-production evaluation, testing, and proof-of-concept
+   purposes within your Organization.
+
+   For the avoidance of doubt, any Modification you create under this Section
+   remains subject to this License in its entirety. You may not exercise any
+   rights in your Modification beyond those granted in this Section 3.
+
+4. RESTRICTIONS
+
+   Unless you have a valid Commercial Agreement with Licensor expressly
+   permitting the activity, you shall not:
+
+   4.1 Production and Commercial Use. Deploy or use the Software or any
+       Modification in a Production Environment, in connection with a commercial
+       offering, or to generate revenue directly or indirectly.
+
+   4.2 External Provision. Make the Software's or any Modification's
+       functionality available to any third party, including without limitation
+       through a hosted service, software-as-a-service offering, API, or managed
+       service, regardless of whether any copy of the Software or Modification
+       is distributed or transferred.
+
+   4.3 Competitive Use. Use the Software or any Modification, in whole or in
+       part, to Compete with Licensor or to assist any third party in competing
+       with Licensor.
+
+   4.4 Distribution. Copy, distribute, publish, transmit, or make the Software
+       or any Modification available to any third party. For clarity, this
+       prohibits hosting the Software or any Modification in a public repository
+       (e.g., a public GitHub fork), though hosting in a strictly private
+       repository accessible only to individuals authorized under this License
+       for Personal Use or internal Organizational evaluation is permitted.
+
+   4.5 Bypass of License Controls. Remove, alter, or obscure any copyright
+       notice, license notice, or other proprietary marking in the Software
+       or any Modification.
+
+   4.6 Transfer. Assign, sublicense, sell, rent, lease, or otherwise transfer
+       rights in the Software or any Modification without Licensor's prior
+       written consent.
+
+   For the avoidance of doubt, the restrictions in this Section 4 apply to
+   Personal Use licensees to the extent not inconsistent with Section 2.
+   Personal Use does not permit any activity listed in Sections 4.1 through 4.6.
+
+5. MODIFICATIONS — OWNERSHIP AND LICENSE-BACK
+
+   5.1 Your Ownership. As between you and Licensor, you retain copyright
+       ownership of the original creative expression in any Modification you
+       author, subject to Licensor's underlying ownership of the Software from
+       which the Modification is derived.
+
+   5.2 License-Back to Licensor. By creating any Modification, you hereby
+       grant Licensor a perpetual, irrevocable, worldwide, royalty-free,
+       fully paid-up, transferable, sublicensable license under all of your
+       intellectual property rights (including copyright and patent rights)
+       to use, reproduce, prepare derivative works of, distribute, perform,
+       display, and otherwise exploit such Modification in any form and for
+       any purpose, including without limitation incorporation into Licensor's
+       products and services, without any obligation of attribution,
+       compensation, or consent.
+
+   5.3 Moral Rights Waiver. To the extent permitted by applicable law, you
+       hereby irrevocably waive any moral rights or rights of attribution in
+       any Modification you create.
+
+   5.4 Contributor License Agreement. If you wish to formally submit a
+       Modification to Licensor for potential inclusion in the Software,
+       you must first execute Licensor's Contributor License Agreement
+       ("CLA"), available at https://octelium.com/cla. Submissions made without
+       executing the CLA will not be considered. The license-back in
+       Section 5.2 applies regardless of whether a CLA is executed and
+       regardless of whether a Modification is formally submitted.
+
+   5.5 Representation. By creating a Modification, you represent that:
+       (a) you are the sole author of the Modification or have the right
+       to grant the license in Section 5.2; (b) the Modification does not
+       infringe the intellectual property rights of any third party; and
+       (c) if you created the Modification in the course of employment or
+       under contract, you have obtained all necessary permissions from
+       your employer or client to grant the rights in Section 5.2.
+
+6. OWNERSHIP AND RESERVATION OF RIGHTS
+
+   The Software is proprietary to Licensor. All right, title, and interest in
+   and to the Software, including all patent rights, copyright rights, trade
+   secret rights, and other intellectual property rights, are and shall remain
+   the exclusive property of Licensor. No rights are granted to you except as
+   expressly stated in Sections 2 and 3. All rights not expressly granted are
+   reserved by Licensor.
+
+7. FEEDBACK
+
+   If you provide Licensor with suggestions, ideas, bug reports, or other
+   feedback regarding the Software that does not constitute a Modification
+   ("Feedback"), you hereby grant Licensor a perpetual, irrevocable,
+   worldwide, royalty-free license to use, reproduce, modify, and incorporate
+   such Feedback into its products and services without any obligation to you.
+   You retain ownership of your Feedback, but Licensor may use it without
+   restriction or compensation. Feedback that constitutes a Modification is
+   governed by Section 5, not this Section 7.
+
+8. TERMINATION
+
+   8.1 Automatic Termination. This License terminates automatically, without
+       notice, upon your breach of any provision of this License.
+
+   8.2 Effect of Termination. Upon termination: (a) all rights granted
+       hereunder cease immediately; (b) you must promptly destroy or return
+       all copies of the Software and all Modifications in your possession
+       or control; and (c) you must certify such destruction in writing
+       upon Licensor's request.
+
+   8.3 Survival. Sections 5, 6, 7, 8.2, 9, 10, and 11 survive termination.
+
+9. DISCLAIMER OF WARRANTIES
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. TO THE MAXIMUM
+   EXTENT PERMITTED BY APPLICABLE LAW, OCTELIUM LABS, LLC FURTHER DISCLAIMS
+   ALL STATUTORY WARRANTIES. IN NO EVENT SHALL OCTELIUM LABS, LLC OR ITS
+   CONTRIBUTORS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY,
+   WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+   IN THE SOFTWARE.
+
+10. LIMITATION OF LIABILITY
+
+    TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL
+    OCTELIUM LABS, LLC BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL,
+    EXEMPLARY, PUNITIVE, OR CONSEQUENTIAL DAMAGES (INCLUDING LOSS OF PROFITS,
+    LOSS OF DATA, LOSS OF GOODWILL, BUSINESS INTERRUPTION, OR COST OF
+    SUBSTITUTE GOODS OR SERVICES), HOWEVER CAUSED AND UNDER ANY THEORY OF
+    LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, TORT, OR OTHERWISE,
+    ARISING OUT OF OR RELATING TO THIS LICENSE OR THE SOFTWARE, EVEN IF
+    ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. OCTELIUM LABS, LLC'S TOTAL
+    CUMULATIVE LIABILITY ARISING OUT OF OR RELATING TO THIS LICENSE SHALL
+    NOT EXCEED ONE HUNDRED U.S. DOLLARS ($100.00). THE FOREGOING LIMITATIONS
+    SHALL APPLY TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, REGARDLESS
+    OF WHETHER LICENSOR HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES,
+    BUT SHALL NOT APPLY TO DAMAGES CAUSED BY LICENSOR'S GROSS NEGLIGENCE OR
+    WILLFUL MISCONDUCT.
+
+11. GENERAL
+
+    11.1 Governing Law. This License is governed by the laws of the State of
+         Delaware, excluding its conflict-of-law rules.
+
+    11.2 Jurisdiction. Each party irrevocably submits to the exclusive
+         jurisdiction of the state and federal courts located in Wilmington,
+         Delaware for resolution of any dispute arising out of this License.
+
+    11.3 Export Compliance. You agree to comply with all applicable export
+         control laws and regulations in connection with your use of the Software.
+
+    11.4 Entire Agreement. This License constitutes the entire agreement between
+         you and Licensor with respect to evaluation and personal use of the
+         Software and supersedes all prior agreements on that subject.
+
+    11.5 Severability. If any provision of this License is found unenforceable,
+         that provision shall be modified to the minimum extent necessary to make
+         it enforceable, and the remainder of the License shall continue in
+         full force.
+
+    11.6 Waiver. Licensor's failure to enforce any provision of this License
+         shall not constitute a waiver of its right to do so in the future.
+
+    11.7 Amendment. Licensor may update this License for future versions of the
+         Software. Your continued use of a version after a license update does
+         not bind you to the updated terms for that version.
+
+THIRD-PARTY COMPONENTS
+
+Certain components of the Software are subject to third-party licenses identified
+in the NOTICES file or within the relevant source files. Such third-party licenses
+govern those components and are not superseded by this License.

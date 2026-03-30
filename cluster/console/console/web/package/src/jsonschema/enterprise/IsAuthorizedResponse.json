@@ -1,0 +1,226 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/IsAuthorizedResponse",
+    "definitions": {
+        "IsAuthorizedResponse": {
+            "properties": {
+                "isAuthorized": {
+                    "type": "boolean"
+                },
+                "reason": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Common.Reason",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Is Authorized Response"
+        },
+        "octelium.api.main.core.v1.AccessLog.Entry.Common.Reason": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "TYPE_UNKNOWN_REASON",
+                        "SESSION_NOT_ACTIVE",
+                        "DEVICE_NOT_ACTIVE",
+                        "USER_DEACTIVATED",
+                        "SCOPE_UNAUTHORIZED",
+                        "POLICY_MATCH",
+                        "NO_POLICY_MATCH",
+                        "SESSION_CLIENT_TYPE_INVALID",
+                        "SESSION_LOCKED",
+                        "USER_LOCKED",
+                        "DEVICE_LOCKED",
+                        "AUTHENTICATOR_AUTHENTICATION_REQUIRED",
+                        "AUTHENTICATOR_REGISTRATION_REQUIRED",
+                        "SESSION_EXPIRED",
+                        "ACCESS_TOKEN_EXPIRED"
+                    ],
+                    "type": "string",
+                    "title": "Type"
+                },
+                "details": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Reason"
+        },
+        "octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details": {
+            "properties": {
+                "policyMatch": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.PolicyMatch",
+                    "additionalProperties": false
+                },
+                "sessionNotActive": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.SessionNotActive",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "policyMatch"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "sessionNotActive"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "policyMatch"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "sessionNotActive"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Details"
+        },
+        "octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.PolicyMatch": {
+            "properties": {
+                "policy": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.PolicyMatch.Policy",
+                    "additionalProperties": false,
+                    "description": "Policy is the standalone Policy whose rule match triggered the decision"
+                },
+                "inlinePolicy": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.PolicyMatch.InlinePolicy",
+                    "additionalProperties": false,
+                    "description": "InlinePolicy is the inline Policy of a resource whose rule match triggered the decision"
+                },
+                "ruleName": {
+                    "type": "string"
+                },
+                "priority": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "policy"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "inlinePolicy"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "policy"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "inlinePolicy"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Policy Match"
+        },
+        "octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.PolicyMatch.InlinePolicy": {
+            "properties": {
+                "resourceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "ResourceRef is the reference to the Resource whose inline Policy triggered the rule match"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name of the inline Policy if available"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Inline Policy"
+        },
+        "octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.PolicyMatch.Policy": {
+            "properties": {
+                "policyRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "PolicyRef is the reference to the Policy"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Policy"
+        },
+        "octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.SessionNotActive": {
+            "properties": {
+                "state": {
+                    "enum": [
+                        "STATE_UNKNOWN",
+                        "ACTIVE",
+                        "PENDING",
+                        "REJECTED"
+                    ],
+                    "type": "string",
+                    "title": "State"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Session Not Active"
+        },
+        "octelium.api.main.meta.v1.ObjectReference": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version of the reference resource"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource kind. A kind is unique per an APIVersion."
+                },
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the resource object UID. A UID is unique across the entire Cluster."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the resource object name. A name is unique per a certain kind."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is the resourceVersion of the resource."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Object Reference"
+        }
+    }
+}
