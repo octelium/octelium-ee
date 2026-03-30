@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/octelium/octelium-ee/cluster/common/components"
-	"github.com/octelium/octelium-ee/cluster/common/ovutils"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/cluster/common/vutils"
 	gcomponents "github.com/octelium/octelium/cluster/genesis/genesis/components"
@@ -61,15 +60,7 @@ var tcpProtocol = k8scorev1.ProtocolTCP
 var udpProtocol = k8scorev1.ProtocolUDP
 
 func getImagePullSecrets() []k8scorev1.LocalObjectReference {
-	if ovutils.IsPrivateRegistry() {
-		return []k8scorev1.LocalObjectReference{
-			{
-				Name: "octelium-regcred",
-			},
-		}
-	} else {
-		return nil
-	}
+	return nil
 }
 
 func getComponentName(arg string) string {
