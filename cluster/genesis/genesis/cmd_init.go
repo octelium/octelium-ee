@@ -143,9 +143,8 @@ func (g *Genesis) installOcteliumResources(ctx context.Context, clusterCfg *core
 				},
 				Status: &corev1.Service_Status{
 					ManagedService: &corev1.Service_Status_ManagedService{
-						Type:            "apiserver",
-						Image:           oc.GetImage(oc.APIServer, ""),
-						ImagePullSecret: "octelium-regcred",
+						Type:  "apiserver",
+						Image: oc.GetImage(oc.APIServer, ""),
 						HealthCheck: &corev1.Service_Status_ManagedService_HealthCheck{
 							Type: &corev1.Service_Status_ManagedService_HealthCheck_Grpc{
 								Grpc: &corev1.Service_Status_ManagedService_HealthCheck_GRPC{
@@ -179,7 +178,6 @@ func (g *Genesis) installOcteliumResources(ctx context.Context, clusterCfg *core
 					ManagedService: &corev1.Service_Status_ManagedService{
 						Image:              oc.GetImage(oc.PublicServer, ""),
 						ReadOnlyFileSystem: true,
-						ImagePullSecret:    "octelium-regcred",
 						HealthCheck: &corev1.Service_Status_ManagedService_HealthCheck{
 							Type: &corev1.Service_Status_ManagedService_HealthCheck_Grpc{
 								Grpc: &corev1.Service_Status_ManagedService_HealthCheck_GRPC{
@@ -216,7 +214,6 @@ func (g *Genesis) installOcteliumResources(ctx context.Context, clusterCfg *core
 					ManagedService: &corev1.Service_Status_ManagedService{
 						Image:              oc.GetImage(oc.DirSync, ""),
 						ReadOnlyFileSystem: true,
-						ImagePullSecret:    "octelium-regcred",
 						HealthCheck: &corev1.Service_Status_ManagedService_HealthCheck{
 							Type: &corev1.Service_Status_ManagedService_HealthCheck_Grpc{
 								Grpc: &corev1.Service_Status_ManagedService_HealthCheck_GRPC{
@@ -248,7 +245,6 @@ func (g *Genesis) installOcteliumResources(ctx context.Context, clusterCfg *core
 				Status: &corev1.Service_Status{
 					ManagedService: &corev1.Service_Status_ManagedService{
 						Image:              oc.GetImage(oc.Console, ""),
-						ImagePullSecret:    "octelium-regcred",
 						ReadOnlyFileSystem: true,
 						HealthCheck: &corev1.Service_Status_ManagedService_HealthCheck{
 							Type: &corev1.Service_Status_ManagedService_HealthCheck_Grpc{

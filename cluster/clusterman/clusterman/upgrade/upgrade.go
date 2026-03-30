@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
-	"github.com/octelium/octelium-ee/cluster/common/ovutils"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/cluster/common/k8sutils"
@@ -185,17 +184,6 @@ func getGenesisJob(domain string, regionName string, pkg string, version string)
 				Spec: k8scorev1.PodSpec{
 					ServiceAccountName: "octelium-nocturne",
 					RestartPolicy:      k8scorev1.RestartPolicyNever,
-					ImagePullSecrets: func() []k8scorev1.LocalObjectReference {
-						if ovutils.IsPrivateRegistry() {
-							return []k8scorev1.LocalObjectReference{
-								{
-									Name: "octelium-regcred",
-								},
-							}
-						} else {
-							return nil
-						}
-					}(),
 
 					Containers: []k8scorev1.Container{
 						{
