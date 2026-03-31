@@ -27,7 +27,7 @@ octops install-package <DOMAIN> --package octeliumee
 You can override that location via the `--kubeconfig` flag (by default is located at `$HOME/.kube/config`) as follows:
 
 ```bash
-./bin/octops install-package <DOMAIN> --package octeliumee --kubeconfig </PATH/TO/KUNECONFIG>
+octops install-package <DOMAIN> --package octeliumee --kubeconfig </PATH/TO/KUNECONFIG>
 ```
 
 

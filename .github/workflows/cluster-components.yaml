@@ -196,5 +196,5 @@ jobs:
               "${ANNOTATIONS[@]}" \
               -t "$TAG" \
               "${BASE_IMAGE}:${VERSION}-amd64"
-              # "${BASE_IMAGE}:${VERSION}-arm64"
+              "${BASE_IMAGE}:${VERSION}-arm64"
           done
