@@ -9,8 +9,8 @@ REGISTRY ?= ghcr.io
 IMAGE_PREFIX := octelium
 
 COMMIT := $(shell git rev-parse HEAD)
-TAG := $(shell git describe --exact-match $(COMMIT) 2>/dev/null)
-BRANCH := $(shell git rev-parse --abbrev-ref HEAD | grep -v '^HEAD$$')
+TAG := $(shell git describe --tags --exact-match $(COMMIT) 2>/dev/null)
+BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 
 LDFLAGS_PATH := $(REPOSITORY)/pkg/utils/ldflags
 
@@ -18,13 +18,14 @@ LDF_IMAGE_REGISTRY := $(LDFLAGS_PATH).ImageRegistry=$(REGISTRY)
 LDF_IMAGE_REGISTRY_PREFIX := $(LDFLAGS_PATH).ImageRegistryPrefix=$(IMAGE_PREFIX)
 LDF_COMMIT := $(LDFLAGS_PATH).GitCommit=$(COMMIT)
 LDF_TAG := $(LDFLAGS_PATH).GitTag=$(TAG)
+LDF_SEMVER := $(LDFLAGS_PATH).SemVer=$(TAG)
 LDF_BRANCH := $(LDFLAGS_PATH).GitBranch=$(BRANCH)
 
 GENERATED_API_DOCS_DIR := ./tmp/docs/apis
 GENERATED_API_DOCS_TEMP := ./unsorted/protoc/template.tmpl
 GO_BIN_DIR := $${HOME}/go/bin
 
-LDFLAGS := -ldflags '-X $(LDF_COMMIT) -X $(LDF_TAG) -X $(LDF_BRANCH)\
+LDFLAGS := -ldflags '-X $(LDF_COMMIT) -X $(LDF_TAG) -X $(LDF_BRANCH) -X $(LDF_SEMVER)\
 -X $(LDF_IMAGE_REGISTRY) -X $(LDF_IMAGE_REGISTRY_PREFIX)'
 
 PROTO_GO_OPT := --go_opt=paths=source_relative
@@ -36,12 +37,6 @@ PROTO_IN_CLIENT := $(PROTO_IN_PREFIX)/client
 PROTO_IN_RSC := $(PROTO_IN_PREFIX)/rsc
 
 CMD_TIDY := go mod tidy
-
-build-cli-octeliumctl:
-	CGO_ENABLED=0 go build $(LDFLAGS) -o bin/ github.com/octelium/octelium-ee/client/octeliumctl
-
-build-cli-octops:
-	CGO_ENABLED=0 go build $(LDFLAGS) -o bin/ github.com/octelium/octelium-ee/client/octops
 
 build-rscserver:
 	CGO_ENABLED=0 GOOS=linux go build $(LDFLAGS) -o bin/octeliumee-rscserver github.com/octelium/octelium-ee/cluster/rscserver
@@ -179,7 +174,6 @@ gen-json-schema:
 tidy:
 	cd apis; $(CMD_TIDY)
 	cd pkg; $(CMD_TIDY)
-	# cd client/octops; $(CMD_TIDY)
 	cd cluster/common; $(CMD_TIDY)
 	cd cluster/rscserver; $(CMD_TIDY)
 	cd cluster/apiserver; $(CMD_TIDY)
