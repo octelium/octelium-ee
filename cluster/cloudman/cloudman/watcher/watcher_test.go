@@ -58,7 +58,9 @@ func TestNeedsIssuance(t *testing.T) {
 			Metadata: &metav1.Metadata{
 				Name: utilrand.GetRandomStringCanonical(8),
 			},
-			Spec: &enterprisev1.Certificate_Spec{},
+			Spec: &enterprisev1.Certificate_Spec{
+				Mode: enterprisev1.Certificate_Spec_MANAGED,
+			},
 			Status: &enterprisev1.Certificate_Status{
 				Issuance: &enterprisev1.Certificate_Status_Issuance{
 					State: enterprisev1.Certificate_Status_Issuance_FAILED,
@@ -84,7 +86,9 @@ func TestNeedsIssuance(t *testing.T) {
 			Metadata: &metav1.Metadata{
 				Name: utilrand.GetRandomStringCanonical(8),
 			},
-			Spec: &enterprisev1.Certificate_Spec{},
+			Spec: &enterprisev1.Certificate_Spec{
+				Mode: enterprisev1.Certificate_Spec_MANAGED,
+			},
 			Status: &enterprisev1.Certificate_Status{
 				Issuance: &enterprisev1.Certificate_Status_Issuance{
 					State: enterprisev1.Certificate_Status_Issuance_ISSUANCE_REQUESTED,
@@ -135,7 +139,9 @@ func TestNeedsIssuance(t *testing.T) {
 			Metadata: &metav1.Metadata{
 				Name: utilrand.GetRandomStringCanonical(8),
 			},
-			Spec: &enterprisev1.Certificate_Spec{},
+			Spec: &enterprisev1.Certificate_Spec{
+				Mode: enterprisev1.Certificate_Spec_MANAGED,
+			},
 			Status: &enterprisev1.Certificate_Status{
 				Issuance: &enterprisev1.Certificate_Status_Issuance{
 					IssuanceStartedAt: pbutils.Timestamp(time.Now().Add(-2 * time.Hour)),
@@ -163,7 +169,9 @@ func TestNeedsIssuance(t *testing.T) {
 			Metadata: &metav1.Metadata{
 				Name: utilrand.GetRandomStringCanonical(8),
 			},
-			Spec: &enterprisev1.Certificate_Spec{},
+			Spec: &enterprisev1.Certificate_Spec{
+				Mode: enterprisev1.Certificate_Spec_MANAGED,
+			},
 			Status: &enterprisev1.Certificate_Status{
 				Issuance: &enterprisev1.Certificate_Status_Issuance{
 					IssuanceStartedAt: pbutils.Now(),
@@ -190,7 +198,9 @@ func TestNeedsIssuance(t *testing.T) {
 			Metadata: &metav1.Metadata{
 				Name: utilrand.GetRandomStringCanonical(8),
 			},
-			Spec: &enterprisev1.Certificate_Spec{},
+			Spec: &enterprisev1.Certificate_Spec{
+				Mode: enterprisev1.Certificate_Spec_MANAGED,
+			},
 			Status: &enterprisev1.Certificate_Status{
 				Issuance: &enterprisev1.Certificate_Status_Issuance{
 					IssuanceStartedAt: pbutils.Now(),
