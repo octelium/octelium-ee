@@ -26,7 +26,6 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	admin "google.golang.org/api/admin/directory/v1"
-	"google.golang.org/api/option"
 )
 
 type Opts struct {
@@ -52,17 +51,19 @@ func NewProvider(ctx context.Context, octeliumC octeliumc.ClientInterface, o *Op
 		return nil, err
 	}
 
-	scopes := []string{
-		admin.AdminDirectoryUserReadonlyScope,
-		admin.AdminDirectoryGroupReadonlyScope,
-	}
+	/*
+		scopes := []string{
+			admin.AdminDirectoryUserReadonlyScope,
+			admin.AdminDirectoryGroupReadonlyScope,
+		}
 
-	srv, err := admin.NewService(ctx,
-		option.WithScopes(scopes...),
-	)
-	if err != nil {
-		return nil, err
-	}
+		srv, err := admin.NewService(ctx,
+			option.WithScopes(scopes...),
+		)
+		if err != nil {
+			return nil, err
+		}
+	*/
 
 	if dp.Spec.GetGoogleWorkspace() == nil {
 		return nil, errors.Errorf("")
@@ -77,7 +78,7 @@ func NewProvider(ctx context.Context, octeliumC octeliumc.ClientInterface, o *Op
 			OcteliumC:  octeliumC,
 			IsEmbedded: true,
 		}),
-		srv: srv,
+		// srv: srv,
 	}, nil
 }
 
