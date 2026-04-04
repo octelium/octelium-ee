@@ -6,10 +6,6 @@ const store = configureStore({
   reducer: {
     settings: settingsReducer,
   },
-  /*
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(ConnMiddleware()),
-*/
 });
 
 export default store;

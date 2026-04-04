@@ -218,7 +218,7 @@ export const itemList = [
 
   {
     type: `group`,
-    title: <>Group</>,
+    title: <>User belongs to Group</>,
     components: {
       Value: (props: { item: Expression }) => {
         const { item } = props;

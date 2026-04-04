@@ -19,6 +19,8 @@ const resourceComponentInfo: ResourceComponentInfo = {
     // @ts-ignore
     Main: Main,
   },
+  unCreatable: true,
+  unDeletable: true,
 };
 
 export default resourceComponentInfo;
