@@ -1,9 +1,8 @@
 import * as EnterpriseP from "@/apis/enterprisev1/enterprisev1";
-import * as React from "react";
-import { Group, Switch, Tabs, TextInput } from "@mantine/core";
-import { useResourceForm } from "@/pages/utils/form";
-import { match } from "ts-pattern";
 import SelectSecret from "@/components/ResourceLayout/SelectSecret";
+import { Group, Switch, Tabs, TextInput } from "@mantine/core";
+import * as React from "react";
+import { match } from "ts-pattern";
 
 const Edit = (props: {
   item: EnterpriseP.DNSProvider;
@@ -60,6 +59,45 @@ const Edit = (props: {
                     }),
                   };
                 });
+            })
+            .with("digitalocean", () => {
+              match(init.spec!.type.oneofKind)
+                .with(`digitalocean`, () => {
+                  req.spec!.type = init.spec!.type;
+                })
+                .otherwise(() => {
+                  req.spec!.type = {
+                    oneofKind: "digitalocean",
+                    digitalocean:
+                      EnterpriseP.DNSProvider_Spec_DigitalOcean.create({
+                        apiToken: {
+                          type: {
+                            oneofKind: "fromSecret",
+                            fromSecret: "",
+                          },
+                        },
+                      }),
+                  };
+                });
+            })
+            .with("linode", () => {
+              match(init.spec!.type.oneofKind)
+                .with(`linode`, () => {
+                  req.spec!.type = init.spec!.type;
+                })
+                .otherwise(() => {
+                  req.spec!.type = {
+                    oneofKind: "linode",
+                    linode: EnterpriseP.DNSProvider_Spec_Linode.create({
+                      apiToken: {
+                        type: {
+                          oneofKind: "fromSecret",
+                          fromSecret: "",
+                        },
+                      },
+                    }),
+                  };
+                });
             });
 
           updateReq();
@@ -68,6 +106,8 @@ const Edit = (props: {
         <Tabs.List>
           <Tabs.Tab value="cloudflare">Cloudflare</Tabs.Tab>
           <Tabs.Tab value="aws">AWS Route 53</Tabs.Tab>
+          <Tabs.Tab value="digitalocean">DigitalOcean</Tabs.Tab>
+          <Tabs.Tab value="linode">Linode</Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel value="cloudflare">
@@ -85,7 +125,7 @@ const Edit = (props: {
                       (x) => {
                         x.cloudflare.email = v.target.value;
                         updateReq();
-                      }
+                      },
                     );
                   }}
                 />
@@ -107,9 +147,9 @@ const Edit = (props: {
                           (x) => {
                             x.fromSecret = v ?? "";
                             updateReq();
-                          }
+                          },
                         );
-                      }
+                      },
                     );
                   }}
                 />
@@ -122,13 +162,89 @@ const Edit = (props: {
                       (x) => {
                         x.cloudflare.proxied = v.target.checked;
                         updateReq();
-                      }
+                      },
                     );
                   }}
                 />
               </Group>
             </>
           )}
+        </Tabs.Panel>
+        <Tabs.Panel value="digitalocean">
+          {match(req.spec?.type)
+            .when(
+              (x) => x?.oneofKind === `digitalocean`,
+              (digitalocean) => {
+                return (
+                  <div>
+                    {match(digitalocean.digitalocean.apiToken?.type)
+                      .when(
+                        (x) => x?.oneofKind === `fromSecret`,
+                        (d) => {
+                          return (
+                            <div>
+                              <Group grow>
+                                <SelectSecret
+                                  api="enterprise"
+                                  defaultValue={d.fromSecret}
+                                  onChange={(v) => {
+                                    d.fromSecret = v ?? "";
+                                    updateReq();
+                                  }}
+                                />
+                              </Group>
+                            </div>
+                          );
+                        },
+                      )
+                      .otherwise(() => (
+                        <></>
+                      ))}
+                  </div>
+                );
+              },
+            )
+            .otherwise(() => (
+              <></>
+            ))}
+        </Tabs.Panel>
+        <Tabs.Panel value="linode">
+          {match(req.spec?.type)
+            .when(
+              (x) => x?.oneofKind === `linode`,
+              (linode) => {
+                return (
+                  <div>
+                    {match(linode.linode.apiToken?.type)
+                      .when(
+                        (x) => x?.oneofKind === `fromSecret`,
+                        (d) => {
+                          return (
+                            <div>
+                              <Group grow>
+                                <SelectSecret
+                                  api="enterprise"
+                                  defaultValue={d.fromSecret}
+                                  onChange={(v) => {
+                                    d.fromSecret = v ?? "";
+                                    updateReq();
+                                  }}
+                                />
+                              </Group>
+                            </div>
+                          );
+                        },
+                      )
+                      .otherwise(() => (
+                        <></>
+                      ))}
+                  </div>
+                );
+              },
+            )
+            .otherwise(() => (
+              <></>
+            ))}
         </Tabs.Panel>
         <Tabs.Panel value="aws">
           {req.spec!.type.oneofKind === `aws` && (
@@ -145,7 +261,7 @@ const Edit = (props: {
                       (x) => {
                         x.aws.accessKeyID = v.target.value;
                         updateReq();
-                      }
+                      },
                     );
                   }}
                 />
@@ -161,7 +277,7 @@ const Edit = (props: {
                       (x) => {
                         x.aws.region = v.target.value;
                         updateReq();
-                      }
+                      },
                     );
                   }}
                 />
@@ -176,17 +292,18 @@ const Edit = (props: {
                       (x) => {
                         x.aws.assumeRoleARN = v.target.value;
                         updateReq();
-                      }
+                      },
                     );
                   }}
                 />
 
                 <SelectSecret
                   api="enterprise"
+                  label="Secret Access Key"
                   defaultValue={match(req.spec!.type.aws.secretAccessKey?.type)
                     .when(
                       (x) => x?.oneofKind === `fromSecret`,
-                      (x) => x.fromSecret
+                      (x) => x.fromSecret,
                     )
                     .otherwise(() => undefined)}
                   onChange={(v) => {
@@ -198,9 +315,9 @@ const Edit = (props: {
                           (x) => {
                             x.fromSecret = v ?? "";
                             updateReq();
-                          }
+                          },
                         );
-                      }
+                      },
                     );
                   }}
                 />
