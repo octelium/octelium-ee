@@ -385,6 +385,10 @@ export const invalidateResourceList = (arg: Resource) => {
   });
 
   queryClient.invalidateQueries({
+    queryKey: [`listSelectComponent`, getAPI(arg), arg.kind],
+  });
+
+  queryClient.invalidateQueries({
     queryKey: ["visibility", getAPI(arg), "summary", arg.kind],
   });
 };

@@ -37,13 +37,7 @@ const SelectResource = (props: {
   });
 
   const { isLoading, isSuccess, data, error } = useQuery({
-    queryKey: [
-      `listSelectComponent`,
-      api,
-      kind,
-      // @ts-ignore
-      getPBResourceListFromAPI(api)![`List${kind}Options`]["toJsonString"](req),
-    ],
+    queryKey: [`listSelectComponent`, api, kind],
     queryFn: async () => {
       // @ts-ignore
       const d = await getClientResourceList(api)?.[`list${kind}`](req);

@@ -54,18 +54,6 @@ const Edit = (props: {
               }}
             >
               <Group grow>
-                <TextInput
-                  label="Name"
-                  // required
-                  description="Set the rule name"
-                  placeholder="my-rule"
-                  value={req.spec!.rules[ruleIdx].name}
-                  onChange={(v) => {
-                    req.spec!.rules[ruleIdx].name = v.target.value;
-                    updateReq();
-                  }}
-                />
-
                 <Select
                   label="Effect"
                   required
@@ -94,6 +82,17 @@ const Edit = (props: {
                   onChange={(v) => {
                     req.spec!.rules[ruleIdx].effect =
                       CoreP.Policy_Spec_Rule_Effect[v as "ALLOW"];
+                    updateReq();
+                  }}
+                />
+                <TextInput
+                  label="Name"
+                  // required
+                  description="Set an optional, descriptive name for the rule"
+                  placeholder="my-rule"
+                  value={req.spec!.rules[ruleIdx].name}
+                  onChange={(v) => {
+                    req.spec!.rules[ruleIdx].name = v.target.value;
                     updateReq();
                   }}
                 />
