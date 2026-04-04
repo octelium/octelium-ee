@@ -72,11 +72,6 @@ func doSetCert(ctx context.Context, octeliumC octeliumc.ClientInterface, ns *cor
 		return err
 	}
 
-	iss, err := cloudmanutils.GetDefaultCertificateIssuer(ctx, octeliumC)
-	if err != nil {
-		return err
-	}
-
 	cc, err := octeliumC.EnterpriseV1Utils().GetClusterConfig(ctx)
 	if err != nil {
 		return err
@@ -88,6 +83,16 @@ func doSetCert(ctx context.Context, octeliumC octeliumc.ClientInterface, ns *cor
 		}
 		return enterprisev1.Certificate_Spec_MANUAL
 	}()
+
+	var certificateIssuerRef *metav1.ObjectReference
+	switch mode {
+	case enterprisev1.Certificate_Spec_MANAGED:
+		iss, err := cloudmanutils.GetDefaultCertificateIssuer(ctx, octeliumC)
+		if err != nil {
+			return err
+		}
+		certificateIssuerRef = umetav1.GetObjectReference(iss)
+	}
 
 	if _, err := octeliumC.EnterpriseC().CreateCertificate(ctx, &enterprisev1.Certificate{
 		Metadata: &metav1.Metadata{
@@ -110,7 +115,7 @@ func doSetCert(ctx context.Context, octeliumC octeliumc.ClientInterface, ns *cor
 
 			}(),
 			NamespaceRef:         umetav1.GetObjectReference(ns),
-			CertificateIssuerRef: umetav1.GetObjectReference(iss),
+			CertificateIssuerRef: certificateIssuerRef,
 		},
 	}); err != nil {
 		return err

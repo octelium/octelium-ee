@@ -10,6 +10,7 @@ package cloudman
 
 import (
 	"context"
+	"time"
 
 	isscontroller "github.com/octelium/octelium-ee/cluster/cloudman/cloudman/controllers/certificateissuers"
 	crtcontroller "github.com/octelium/octelium-ee/cluster/cloudman/cloudman/controllers/certificates"
@@ -20,10 +21,12 @@ import (
 	regioncontroller "github.com/octelium/octelium-ee/cluster/cloudman/cloudman/controllers/regions"
 	svccontroller "github.com/octelium/octelium-ee/cluster/cloudman/cloudman/controllers/services"
 	eewatchers "github.com/octelium/octelium-ee/cluster/common/watchers"
+	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/cluster/common/commoninit"
 	"github.com/octelium/octelium/cluster/common/healthcheck"
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/cluster/common/watchers"
+	"github.com/octelium/octelium/pkg/grpcerr"
 	"go.uber.org/zap"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
@@ -41,22 +44,9 @@ func Run(ctx context.Context) error {
 		return err
 	}
 
-	/*
-		if err := doRegisterACMEAccount(ctx, octeliumC); err != nil {
-			zap.L().Error("Could not register initial ACME account", zap.Error(err))
-		}
-	*/
-
-	/*
-		if err := doInit(ctx, octeliumC); err != nil {
-			return err
-		}
-	*/
-
 	watcher.InitWatcher(octeliumC).Run(ctx)
 
 	svcCtl := svccontroller.NewController(octeliumC)
-	// secretCtl := secretcontroller.NewController(octeliumC)
 	ccCtl := cccontroller.NewController(octeliumC)
 	regionCtl := regioncontroller.NewController(octeliumC)
 	gwCtl := gwcontroller.NewController(octeliumC)
@@ -64,6 +54,10 @@ func Run(ctx context.Context) error {
 	issCtl := isscontroller.NewController(octeliumC)
 	nsCtl := nscontroller.NewController(octeliumC)
 	dnsPCtl := dnspcontroller.NewController(octeliumC)
+
+	if err := waitForDefaultCertificateIssuer(ctx, octeliumC); err != nil {
+		zap.L().Warn("Could not waitForDefaultCertificateIssuer", zap.Error(err))
+	}
 
 	{
 		watcher := watchers.NewCoreV1(octeliumC)
@@ -105,116 +99,26 @@ func Run(ctx context.Context) error {
 	}
 
 	healthcheck.Run(vutils.HealthCheckPortMain)
-	zap.S().Debugf("Cloud Manager is running...")
+	zap.L().Info("Cloud Manager is running...")
 
 	<-ctx.Done()
 
 	return nil
 }
 
-/*
-func doInit(ctx context.Context, octeliumC octeliumc.ClientInterface) error {
-	_, err := octeliumC.EnterpriseC().GetCertificateIssuer(ctx, &rmetav1.GetOptions{
-		Name: "default",
-	})
-	if err != nil {
-		if !grpcerr.IsNotFound(err) {
-			return err
-		}
-	} else {
-		return nil
-	}
-
-	zap.L().Debug("Creating default CertificateIssuer")
-
-	cc, err := octeliumC.CoreV1Utils().GetClusterConfig(ctx)
-	if err != nil {
-		return err
-	}
-
-	_, err = octeliumC.EnterpriseC().CreateCertificateIssuer(ctx, &enterprisev1.CertificateIssuer{
-		Metadata: &metav1.Metadata{
+func waitForDefaultCertificateIssuer(ctx context.Context, octeliumC octeliumc.ClientInterface) error {
+	for range 150 {
+		if _, err := octeliumC.EnterpriseC().GetCertificateIssuer(ctx, &rmetav1.GetOptions{
 			Name: "default",
-			// IsSystem: true,
-		},
-		Spec: &enterprisev1.CertificateIssuer_Spec{
-			Type: &enterprisev1.CertificateIssuer_Spec_Acme{
-				Acme: &enterprisev1.CertificateIssuer_Spec_ACME{
-					Email: fmt.Sprintf("contact@%s", cc.Status.Domain),
-					Solver: &enterprisev1.CertificateIssuer_Spec_ACME_Solver{
-						Type: &enterprisev1.CertificateIssuer_Spec_ACME_Solver_Dns{
-							Dns: &enterprisev1.CertificateIssuer_Spec_ACME_Solver_DNS{},
-						},
-					},
-				},
-			},
-		},
-		Status: &enterprisev1.CertificateIssuer_Status{},
-	})
-	if err != nil {
-		return err
-	}
-
-	zap.L().Debug("Successfully created default CertificateIssuer")
-
-	return nil
-}
-*/
-
-/*
-func doInitCertificates(ctx context.Context, octeliumC octeliumc.ClientInterface, iss *enterprisev1.CertificateIssuer) error {
-
-	nsList, err := octeliumC.CoreC().ListNamespace(ctx, &rmetav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-
-	for _, ns := range nsList.Items {
-		_, err := octeliumC.EnterpriseC().GetCertificate(ctx, &rmetav1.GetOptions{
-			Name: fmt.Sprintf("ns-%s", ns.Metadata.Name),
-		})
-		if err == nil {
-			continue
-		}
-		if !grpcerr.IsNotFound(err) {
-			return err
-		}
-
-		if _, err := octeliumC.EnterpriseC().CreateCertificate(ctx, &enterprisev1.Certificate{
-			Metadata: &metav1.Metadata{
-				Name: fmt.Sprintf("ns-%s", ns.Metadata.Name),
-			},
-			Spec: &enterprisev1.Certificate_Spec{},
-			Status: &enterprisev1.Certificate_Status{
-				NamespaceRef:         umetav1.GetObjectReference(ns),
-				CertificateIssuerRef: umetav1.GetObjectReference(iss),
-			},
-		}); err != nil {
+		}); err == nil {
+			return nil
+		} else if grpcerr.IsNotFound(err) {
+			zap.L().Debug("Could not find default certIssuer. Trying again...")
+			time.Sleep(1 * time.Second)
+		} else {
 			return err
 		}
 	}
-	return nil
-}
-*/
-/*
-func doRegisterACMEAccount(ctx context.Context, octeliumC octeliumc.ClientInterface) error {
-	hasAccount, err := acmec.HasAccount(ctx, octeliumC)
-	if err != nil {
-		return err
-	}
-
-	if hasAccount {
-		zap.S().Debugf("Already has an ACME account. No need to register a new one.")
-		return nil
-	}
-
-	zap.S().Debugf("Registering initial ACME account")
-	if err := cloudmanutils.RegisterACMEAccount(ctx, octeliumC); err != nil {
-		return err
-	}
-
-	zap.L().Debug("Successfully registered ACME account")
 
 	return nil
 }
-*/
