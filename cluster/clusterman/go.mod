@@ -4,8 +4,8 @@ go 1.25.8
 
 require (
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20260328140600-fdf433d563b3
-	github.com/octelium/octelium/pkg v0.0.0-20260328140600-fdf433d563b3
+	github.com/octelium/octelium/cluster/common v0.0.0-20260403181525-3d68fc772d1a
+	github.com/octelium/octelium/pkg v0.0.0-20260403181525-3d68fc772d1a
 	github.com/pkg/errors v0.9.1
 	go.uber.org/zap v1.27.1
 	golang.org/x/oauth2 v0.35.0 // indirect
@@ -14,8 +14,8 @@ require (
 require (
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-20250516172457-ae6f09fa68bf
 	github.com/octelium/octelium-ee/cluster/genesis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/client/common v0.0.0-20260328140600-fdf433d563b3
-	github.com/octelium/octelium/cluster/genesis v0.0.0-20260328140600-fdf433d563b3
+	github.com/octelium/octelium/client/common v0.0.0-20260403181525-3d68fc772d1a
+	github.com/octelium/octelium/cluster/genesis v0.0.0-20260403181525-3d68fc772d1a
 	github.com/spf13/cobra v1.10.2
 	k8s.io/api v0.35.2
 	k8s.io/apimachinery v0.35.2
@@ -42,7 +42,7 @@ require (
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
-	github.com/go-jose/go-jose/v4 v4.1.3 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/analysis v0.23.0 // indirect
@@ -81,7 +81,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000 // indirect
-	github.com/octelium/octelium/octelium-go v0.0.0-20260328140600-fdf433d563b3 // indirect
+	github.com/octelium/octelium/octelium-go v0.0.0-20260403181525-3d68fc772d1a // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/opentracing/opentracing-go v1.2.1-0.20220228012449-10b1cf09e00b // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect

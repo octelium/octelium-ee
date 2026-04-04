@@ -7,8 +7,8 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.26.6
 	github.com/aws/aws-sdk-go-v2/credentials v1.16.16 // indirect
 	github.com/hashicorp/vault/api v1.15.0
-	github.com/octelium/octelium/cluster/common v0.0.0-20260328140600-fdf433d563b3
-	github.com/octelium/octelium/pkg v0.0.0-20260328140600-fdf433d563b3
+	github.com/octelium/octelium/cluster/common v0.0.0-20260403181525-3d68fc772d1a
+	github.com/octelium/octelium/pkg v0.0.0-20260403181525-3d68fc772d1a
 	github.com/pkg/errors v0.9.1
 	go.uber.org/zap v1.27.1
 	google.golang.org/api v0.180.0
@@ -29,7 +29,7 @@ require (
 	github.com/lib/pq v1.11.2
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260328140600-fdf433d563b3
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260403181525-3d68fc772d1a
 	github.com/stretchr/testify v1.11.1
 )
 
@@ -62,7 +62,7 @@ require (
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
-	github.com/go-jose/go-jose/v4 v4.1.3 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect

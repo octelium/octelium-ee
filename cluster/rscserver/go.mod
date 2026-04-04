@@ -6,9 +6,9 @@ require (
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20260328140600-fdf433d563b3
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260328140600-fdf433d563b3
-	github.com/octelium/octelium/pkg v0.0.0-20260328140600-fdf433d563b3
+	github.com/octelium/octelium/cluster/common v0.0.0-20260403181525-3d68fc772d1a
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260403181525-3d68fc772d1a
+	github.com/octelium/octelium/pkg v0.0.0-20260403181525-3d68fc772d1a
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.8.1
 	go.uber.org/zap v1.27.1
@@ -23,7 +23,7 @@ require (
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/doug-martin/goqu/v9 v9.19.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
-	github.com/go-jose/go-jose/v4 v4.1.3 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-redis/redis/v8 v8.11.5 // indirect

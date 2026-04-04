@@ -7,9 +7,9 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20260328140600-fdf433d563b3
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260328140600-fdf433d563b3
-	github.com/octelium/octelium/pkg v0.0.0-20260328140600-fdf433d563b3
+	github.com/octelium/octelium/cluster/common v0.0.0-20260403181525-3d68fc772d1a
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260403181525-3d68fc772d1a
+	github.com/octelium/octelium/pkg v0.0.0-20260403181525-3d68fc772d1a
 	github.com/pkg/errors v0.9.1
 	go.uber.org/zap v1.27.1
 	google.golang.org/grpc v1.79.3
@@ -32,7 +32,7 @@ require (
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-faster/city v1.0.1 // indirect
 	github.com/go-faster/errors v0.7.1 // indirect
-	github.com/go-jose/go-jose/v4 v4.1.3 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect

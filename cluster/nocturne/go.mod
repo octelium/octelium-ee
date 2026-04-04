@@ -7,8 +7,8 @@ require (
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20260328140600-fdf433d563b3
-	github.com/octelium/octelium/pkg v0.0.0-20260328140600-fdf433d563b3
+	github.com/octelium/octelium/cluster/common v0.0.0-20260403181525-3d68fc772d1a
+	github.com/octelium/octelium/pkg v0.0.0-20260403181525-3d68fc772d1a
 	go.opentelemetry.io/collector/pdata v1.52.0
 	go.uber.org/zap v1.27.1
 	k8s.io/apimachinery v0.35.2
@@ -22,7 +22,7 @@ require (
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
-	github.com/go-jose/go-jose/v4 v4.1.3 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/analysis v0.22.2 // indirect
 	github.com/go-openapi/errors v0.22.0 // indirect

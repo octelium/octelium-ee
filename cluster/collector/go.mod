@@ -6,8 +6,8 @@ require (
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20260328140600-fdf433d563b3
-	github.com/octelium/octelium/pkg v0.0.0-20260328140600-fdf433d563b3
+	github.com/octelium/octelium/cluster/common v0.0.0-20260403181525-3d68fc772d1a
+	github.com/octelium/octelium/pkg v0.0.0-20260403181525-3d68fc772d1a
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awss3exporter v0.140.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuredataexplorerexporter v0.140.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuremonitorexporter v0.140.0
@@ -138,7 +138,7 @@ require (
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-faster/city v1.0.1 // indirect
 	github.com/go-faster/errors v0.7.1 // indirect
-	github.com/go-jose/go-jose/v4 v4.1.3 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
@@ -206,7 +206,7 @@ require (
 	github.com/mostynb/go-grpc-compression v1.2.3 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f // indirect
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260328140600-fdf433d563b3 // indirect
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260403181525-3d68fc772d1a // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/sumologicextension v0.140.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/common v0.140.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal v0.140.0 // indirect
