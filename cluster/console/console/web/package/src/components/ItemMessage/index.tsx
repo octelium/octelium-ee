@@ -1,10 +1,10 @@
 import * as React from "react";
 
-import { Collapse } from "@mantine/core";
+import { Button, Collapse } from "@mantine/core";
 
+import { ChevronDown, ChevronUp, Plus } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import Label from "../Label";
-import { Plus, ChevronDown, ChevronUp } from "lucide-react";
 
 interface Props {
   children?: React.ReactNode;
@@ -29,7 +29,7 @@ const ItemMessage = (props: Props) => {
   return (
     <div className="mt-6">
       <div
-        className="font-bold text-sm text-black mb-4 border-b-[1px] border-b-gray-300 cursor-pointer flex items-center"
+        className="pd-2 font-bold text-sm text-black mb-4 border-b-[1px] border-b-gray-300 cursor-pointer flex items-center"
         onClick={() => {
           if (isObjNull) {
             if (props.onSet) {
@@ -55,8 +55,8 @@ const ItemMessage = (props: Props) => {
         </button>
         <span
           className={twMerge(
-            isObjNull ? "text-gray-600" : "text-black",
-            "mr-2"
+            isExpanded ? "text-black" : "text-gray-600",
+            "mr-2",
           )}
         >
           {props.title}
@@ -71,10 +71,10 @@ const ItemMessage = (props: Props) => {
             className={twMerge(
               "inline-flex items-center mx-2",
               "bg-black text-white font-bold p-1 rounded-full text-xs",
-              "shadow",
+              "shadow-xl",
               "transition-all duration-300",
               "hover:bg-gray-800 cursor-pointer",
-              "mr-2"
+              "mr-2",
             )}
             onClick={(e) => {
               e.stopPropagation();
@@ -87,21 +87,6 @@ const ItemMessage = (props: Props) => {
             <Plus />
           </button>
         )}
-        {/*
-        {!props.obj && (
-          <Button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (props.onSet) {
-                props.onSet();
-                setIsExpanded(true);
-              }
-            }}
-          >
-            Not set (Set!)
-          </Button>
-        )}
-        */}
       </div>
 
       {props.obj && (
@@ -111,6 +96,23 @@ const ItemMessage = (props: Props) => {
           </div>
         </Collapse>
       )}
+
+      <div className="my-4 flex items-center justify-center w-full">
+        <Button
+          size="xs"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (props.onAddListItem) {
+              props.onAddListItem();
+              setIsExpanded(true);
+            }
+          }}
+        >
+          <div className="flex items-center">
+            <Plus /> <span className="ml-1">Add Item</span>
+          </div>
+        </Button>
+      </div>
     </div>
   );
 };
