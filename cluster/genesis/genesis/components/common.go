@@ -25,7 +25,6 @@ import (
 const componentNocturne = components.Nocturne
 const componentCloudMan = components.CloudMan
 const componentCollector = components.Collector
-const componentAPIServer = components.APIServer
 const componentRscServer = components.RscServer
 const componentSecretMan = components.SecretMan
 const componentClusterMan = components.ClusterMan
@@ -33,8 +32,6 @@ const componentLogStore = components.LogStore
 const componentRscStore = components.RscStore
 const componentMetricStore = components.MetricStore
 const componentPolicyPortal = components.PolicyPortal
-
-const componentIngressDataPlane = "ingress-dataplane"
 
 func defaultAnnotations() map[string]string {
 
