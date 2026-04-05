@@ -39,18 +39,18 @@ func (s *server) doCreateDEK(ctx context.Context) error {
 
 	k, err := utilrand.GetRandomBytes(32)
 	if err != nil {
-		return err
+		return grpcutils.InternalWithErr(err)
 	}
 	uid := vutils.UUIDv4()
 
 	kek, err := s.chooseKEK(ctx)
 	if err != nil {
-		return err
+		return grpcutils.InternalWithErr(err)
 	}
 
 	ciphertext, err := kek.Encrypt(ctx, uid, k)
 	if err != nil {
-		return err
+		return grpcutils.InternalWithErr(err)
 	}
 
 	zap.L().Debug("Creating a new DEK", zap.String("uid", uid), zap.String("kek", kek.UID()))
@@ -187,14 +187,13 @@ func (s *server) doListDEK(ctx context.Context) ([]*dek, error) {
 }
 
 func (s *server) chooseKEK(ctx context.Context) (stores.Store, error) {
-	itmList, err := s.octeliumC.EnterpriseC().ListSecretStore(ctx, &rmetav1.ListOptions{})
+	ss, err := s.octeliumC.EnterpriseC().GetSecretStore(ctx, &rmetav1.GetOptions{
+		Name: "default",
+	})
 	if err != nil {
 		return nil, err
 	}
-	if len(itmList.Items) < 1 {
-		return nil, errors.Errorf("Could not choose a KEK. No SecretStores found...")
-	}
-	return s.getKEKFromSecretStore(ctx, itmList.Items[0])
+	return s.getKEKFromSecretStore(ctx, ss)
 }
 
 func (s *server) getKEKByUID(ctx context.Context, uid string) (stores.Store, error) {

@@ -63,6 +63,7 @@ const (
 	MainService_GetSecretStore_FullMethodName                      = "/octelium.api.main.enterprise.v1.MainService/GetSecretStore"
 	MainService_ListSecretStore_FullMethodName                     = "/octelium.api.main.enterprise.v1.MainService/ListSecretStore"
 	MainService_UpdateSecretStore_FullMethodName                   = "/octelium.api.main.enterprise.v1.MainService/UpdateSecretStore"
+	MainService_SynchronizeSecretStore_FullMethodName              = "/octelium.api.main.enterprise.v1.MainService/SynchronizeSecretStore"
 	MainService_CreateDeviceManager_FullMethodName                 = "/octelium.api.main.enterprise.v1.MainService/CreateDeviceManager"
 	MainService_GetDeviceManager_FullMethodName                    = "/octelium.api.main.enterprise.v1.MainService/GetDeviceManager"
 	MainService_ListDeviceManager_FullMethodName                   = "/octelium.api.main.enterprise.v1.MainService/ListDeviceManager"
@@ -75,26 +76,20 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MainServiceClient interface {
-	// GetClusterConfig gets the Cluster Configuration.
 	GetClusterConfig(ctx context.Context, in *GetClusterConfigRequest, opts ...grpc.CallOption) (*ClusterConfig, error)
-	// UpdateConfig updates the Cluster Configuration.
 	UpdateClusterConfig(ctx context.Context, in *ClusterConfig, opts ...grpc.CallOption) (*ClusterConfig, error)
 	CreateCollectorExporter(ctx context.Context, in *CollectorExporter, opts ...grpc.CallOption) (*CollectorExporter, error)
 	GetCollectorExporter(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*CollectorExporter, error)
 	ListCollectorExporter(ctx context.Context, in *ListCollectorExporterOptions, opts ...grpc.CallOption) (*CollectorExporterList, error)
 	UpdateCollectorExporter(ctx context.Context, in *CollectorExporter, opts ...grpc.CallOption) (*CollectorExporter, error)
 	DeleteCollectorExporter(ctx context.Context, in *metav1.DeleteOptions, opts ...grpc.CallOption) (*metav1.OperationResult, error)
-	// rpc CreateDNSProvider(DNSProvider) returns (DNSProvider) {}
 	GetDNSProvider(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*DNSProvider, error)
 	ListDNSProvider(ctx context.Context, in *ListDNSProviderOptions, opts ...grpc.CallOption) (*DNSProviderList, error)
 	UpdateDNSProvider(ctx context.Context, in *DNSProvider, opts ...grpc.CallOption) (*DNSProvider, error)
-	// rpc CreateCertificate(Certificate) returns (Certificate) {}
 	GetCertificate(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*Certificate, error)
 	UpdateCertificate(ctx context.Context, in *Certificate, opts ...grpc.CallOption) (*Certificate, error)
 	ListCertificate(ctx context.Context, in *ListCertificateOptions, opts ...grpc.CallOption) (*CertificateList, error)
 	IssueCertificate(ctx context.Context, in *IssueCertificateRequest, opts ...grpc.CallOption) (*IssueCertificateResponse, error)
-	// rpc CreateCertificateIssuer(CertificateIssuer) returns (CertificateIssuer)
-	// {}
 	GetCertificateIssuer(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*CertificateIssuer, error)
 	ListCertificateIssuer(ctx context.Context, in *ListCertificateIssuerOptions, opts ...grpc.CallOption) (*CertificateIssuerList, error)
 	UpdateCertificateIssuer(ctx context.Context, in *CertificateIssuer, opts ...grpc.CallOption) (*CertificateIssuer, error)
@@ -117,10 +112,10 @@ type MainServiceClient interface {
 	GetSecret(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*Secret, error)
 	// UpdateSecret creates a Secret
 	UpdateSecret(ctx context.Context, in *Secret, opts ...grpc.CallOption) (*Secret, error)
-	// rpc CreateSecretStore(SecretStore) returns (SecretStore) {}
 	GetSecretStore(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*SecretStore, error)
 	ListSecretStore(ctx context.Context, in *ListSecretStoreOptions, opts ...grpc.CallOption) (*SecretStoreList, error)
 	UpdateSecretStore(ctx context.Context, in *SecretStore, opts ...grpc.CallOption) (*SecretStore, error)
+	SynchronizeSecretStore(ctx context.Context, in *SynchronizeSecretStoreRequest, opts ...grpc.CallOption) (*SynchronizeSecretStoreResponse, error)
 	CreateDeviceManager(ctx context.Context, in *DeviceManager, opts ...grpc.CallOption) (*DeviceManager, error)
 	GetDeviceManager(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*DeviceManager, error)
 	ListDeviceManager(ctx context.Context, in *ListDeviceManagerOptions, opts ...grpc.CallOption) (*DeviceManagerList, error)
@@ -477,6 +472,16 @@ func (c *mainServiceClient) UpdateSecretStore(ctx context.Context, in *SecretSto
 	return out, nil
 }
 
+func (c *mainServiceClient) SynchronizeSecretStore(ctx context.Context, in *SynchronizeSecretStoreRequest, opts ...grpc.CallOption) (*SynchronizeSecretStoreResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SynchronizeSecretStoreResponse)
+	err := c.cc.Invoke(ctx, MainService_SynchronizeSecretStore_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *mainServiceClient) CreateDeviceManager(ctx context.Context, in *DeviceManager, opts ...grpc.CallOption) (*DeviceManager, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeviceManager)
@@ -541,26 +546,20 @@ func (c *mainServiceClient) GetCoreCondition(ctx context.Context, in *Condition,
 // All implementations must embed UnimplementedMainServiceServer
 // for forward compatibility.
 type MainServiceServer interface {
-	// GetClusterConfig gets the Cluster Configuration.
 	GetClusterConfig(context.Context, *GetClusterConfigRequest) (*ClusterConfig, error)
-	// UpdateConfig updates the Cluster Configuration.
 	UpdateClusterConfig(context.Context, *ClusterConfig) (*ClusterConfig, error)
 	CreateCollectorExporter(context.Context, *CollectorExporter) (*CollectorExporter, error)
 	GetCollectorExporter(context.Context, *metav1.GetOptions) (*CollectorExporter, error)
 	ListCollectorExporter(context.Context, *ListCollectorExporterOptions) (*CollectorExporterList, error)
 	UpdateCollectorExporter(context.Context, *CollectorExporter) (*CollectorExporter, error)
 	DeleteCollectorExporter(context.Context, *metav1.DeleteOptions) (*metav1.OperationResult, error)
-	// rpc CreateDNSProvider(DNSProvider) returns (DNSProvider) {}
 	GetDNSProvider(context.Context, *metav1.GetOptions) (*DNSProvider, error)
 	ListDNSProvider(context.Context, *ListDNSProviderOptions) (*DNSProviderList, error)
 	UpdateDNSProvider(context.Context, *DNSProvider) (*DNSProvider, error)
-	// rpc CreateCertificate(Certificate) returns (Certificate) {}
 	GetCertificate(context.Context, *metav1.GetOptions) (*Certificate, error)
 	UpdateCertificate(context.Context, *Certificate) (*Certificate, error)
 	ListCertificate(context.Context, *ListCertificateOptions) (*CertificateList, error)
 	IssueCertificate(context.Context, *IssueCertificateRequest) (*IssueCertificateResponse, error)
-	// rpc CreateCertificateIssuer(CertificateIssuer) returns (CertificateIssuer)
-	// {}
 	GetCertificateIssuer(context.Context, *metav1.GetOptions) (*CertificateIssuer, error)
 	ListCertificateIssuer(context.Context, *ListCertificateIssuerOptions) (*CertificateIssuerList, error)
 	UpdateCertificateIssuer(context.Context, *CertificateIssuer) (*CertificateIssuer, error)
@@ -583,10 +582,10 @@ type MainServiceServer interface {
 	GetSecret(context.Context, *metav1.GetOptions) (*Secret, error)
 	// UpdateSecret creates a Secret
 	UpdateSecret(context.Context, *Secret) (*Secret, error)
-	// rpc CreateSecretStore(SecretStore) returns (SecretStore) {}
 	GetSecretStore(context.Context, *metav1.GetOptions) (*SecretStore, error)
 	ListSecretStore(context.Context, *ListSecretStoreOptions) (*SecretStoreList, error)
 	UpdateSecretStore(context.Context, *SecretStore) (*SecretStore, error)
+	SynchronizeSecretStore(context.Context, *SynchronizeSecretStoreRequest) (*SynchronizeSecretStoreResponse, error)
 	CreateDeviceManager(context.Context, *DeviceManager) (*DeviceManager, error)
 	GetDeviceManager(context.Context, *metav1.GetOptions) (*DeviceManager, error)
 	ListDeviceManager(context.Context, *ListDeviceManagerOptions) (*DeviceManagerList, error)
@@ -704,6 +703,9 @@ func (UnimplementedMainServiceServer) ListSecretStore(context.Context, *ListSecr
 }
 func (UnimplementedMainServiceServer) UpdateSecretStore(context.Context, *SecretStore) (*SecretStore, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateSecretStore not implemented")
+}
+func (UnimplementedMainServiceServer) SynchronizeSecretStore(context.Context, *SynchronizeSecretStoreRequest) (*SynchronizeSecretStoreResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SynchronizeSecretStore not implemented")
 }
 func (UnimplementedMainServiceServer) CreateDeviceManager(context.Context, *DeviceManager) (*DeviceManager, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateDeviceManager not implemented")
@@ -1356,6 +1358,24 @@ func _MainService_UpdateSecretStore_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MainService_SynchronizeSecretStore_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SynchronizeSecretStoreRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MainServiceServer).SynchronizeSecretStore(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MainService_SynchronizeSecretStore_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MainServiceServer).SynchronizeSecretStore(ctx, req.(*SynchronizeSecretStoreRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _MainService_CreateDeviceManager_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeviceManager)
 	if err := dec(in); err != nil {
@@ -1606,6 +1626,10 @@ var MainService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateSecretStore",
 			Handler:    _MainService_UpdateSecretStore_Handler,
+		},
+		{
+			MethodName: "SynchronizeSecretStore",
+			Handler:    _MainService_SynchronizeSecretStore_Handler,
 		},
 		{
 			MethodName: "CreateDeviceManager",

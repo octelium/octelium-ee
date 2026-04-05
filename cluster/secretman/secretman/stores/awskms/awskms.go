@@ -56,20 +56,6 @@ func NewStore(ctx context.Context, opts *stores.StoreOpts) (*store, error) {
 		return nil, errors.Errorf("Not a AWS Secret Manager")
 	}
 
-	/*
-		cfg, err := config.LoadDefaultConfig(ctx,
-			config.WithRegion(spec.Region),
-			config.WithCredentialsProvider(credentials.StaticCredentialsProvider{
-				Value: aws.Credentials{
-					AccessKeyID:     spec.AccessKeyID,
-					SecretAccessKey: "",
-				},
-			}))
-		if err != nil {
-			return nil, err
-		}
-	*/
-
 	cfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
 		return nil, err

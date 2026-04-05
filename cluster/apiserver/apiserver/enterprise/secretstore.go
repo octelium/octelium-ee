@@ -17,7 +17,9 @@ import (
 	apisrvcommon "github.com/octelium/octelium/cluster/apiserver/apiserver/common"
 	"github.com/octelium/octelium/cluster/apiserver/apiserver/serr"
 	"github.com/octelium/octelium/cluster/common/apivalidation"
+	"github.com/octelium/octelium/cluster/common/grpcutils"
 	"github.com/octelium/octelium/cluster/common/urscsrv"
+	"github.com/octelium/octelium/pkg/common/pbutils"
 )
 
 /*
@@ -161,4 +163,34 @@ func (s *Server) ListSecretStore(ctx context.Context, req *enterprisev1.ListSecr
 	}
 
 	return itemList, nil
+}
+
+func (s *Server) SynchronizeSecretStore(ctx context.Context,
+	req *enterprisev1.SynchronizeSecretStoreRequest) (*enterprisev1.SynchronizeSecretStoreResponse, error) {
+
+	if err := apivalidation.CheckObjectRef(req.SecretStoreRef, &apivalidation.CheckGetOptionsOpts{}); err != nil {
+		return nil, err
+	}
+
+	item, err := s.octeliumC.EnterpriseC().GetSecretStore(ctx,
+		apivalidation.ObjectReferenceToRGetOptions(req.SecretStoreRef))
+	if err != nil {
+		return nil, err
+	}
+
+	if item.Status.Synchronization != nil &&
+		item.Status.Synchronization.State == enterprisev1.SecretStore_Status_Synchronization_SYNCING {
+		return nil, grpcutils.InvalidArg("SecretStore is already SYNCING")
+	}
+
+	item.Status.Synchronization = &enterprisev1.SecretStore_Status_Synchronization{
+		CreatedAt: pbutils.Now(),
+		State:     enterprisev1.SecretStore_Status_Synchronization_SYNC_REQUESTED,
+	}
+
+	if _, err := s.octeliumC.EnterpriseC().UpdateSecretStore(ctx, item); err != nil {
+		return nil, err
+	}
+
+	return &enterprisev1.SynchronizeSecretStoreResponse{}, nil
 }

@@ -22,19 +22,14 @@ import (
 )
 
 type store struct {
-	// c           kubernetes.Interface
 	secretStore *enterprisev1.SecretStore
 	secret      []byte
 }
 
 var secTest = utilrand.GetRandomBytesMust(32)
 
-func NewStore(ctx context.Context, o *stores.StoreOpts,
-
-// k8sC kubernetes.Interface
-) (*store, error) {
+func NewStore(ctx context.Context, o *stores.StoreOpts) (*store, error) {
 	ret := &store{
-		// c:           k8sC,
 		secretStore: o.SecretStore,
 	}
 
@@ -109,23 +104,5 @@ func (s *store) UID() string {
 }
 
 func (s *store) Initialize(ctx context.Context) error {
-
 	return nil
-	/*
-		secret, err := utilrand.GetRandomBytes(32)
-		if err != nil {
-			return err
-		}
-		_, err = k8sutils.CreateOrUpdateSecret(ctx, s.c, &k8scorev1.Secret{
-			ObjectMeta: k8smetav1.ObjectMeta{
-				Name:      s.secretStore.Metadata.Name,
-				Namespace: vutils.K8sNS,
-			},
-			Data: map[string][]byte{
-				"data": secret,
-			},
-		})
-
-		return err
-	*/
 }

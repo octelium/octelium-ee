@@ -78,7 +78,7 @@ func (s *server) run(ctx context.Context) error {
 	go func() {
 		zap.S().Debug("running gRPC server.")
 		if err := srv.Serve(lis); err != nil {
-			zap.S().Infof("gRPC server closed: %+v", err)
+			zap.L().Info("gRPC server closed", zap.Error(err))
 		}
 	}()
 
@@ -130,7 +130,7 @@ func Run(ctx context.Context) error {
 	}
 	healthcheck.Run(vutils.HealthCheckPortMain)
 
-	zap.L().Debug("SecretManager is now running")
+	zap.L().Info("SecretManager is now running")
 
 	<-ctx.Done()
 

@@ -116,7 +116,6 @@ func (s *store) Decrypt(ctx context.Context, uid string, ciphertext []byte) ([]b
 }
 
 func (s *store) Close() error {
-
 	return nil
 }
 

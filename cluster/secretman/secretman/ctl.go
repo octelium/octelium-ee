@@ -19,21 +19,28 @@ import (
 
 func (s *server) onSecretManUpdate(ctx context.Context, new, old *enterprisev1.SecretStore) error {
 
-	if pbutils.IsEqual(new.Spec, old.Spec) && pbutils.IsEqual(new.Status, old.Status) {
-		return nil
+	if s.shouldSync(new, old) {
+		if err := s.doSync(ctx, new); err != nil {
+			zap.L().Warn("Could not synchronize", zap.Any("ss", new), zap.Error(err))
+		}
 	}
 
-	if new.Status.Type == old.Status.Type {
-		return nil
+	return nil
+}
+
+func (s *server) shouldSync(new, old *enterprisev1.SecretStore) bool {
+	if pbutils.IsEqual(new.Status.Synchronization, old.Status.Synchronization) {
+		return false
 	}
 
-	switch {
-	case new.Status.State == enterprisev1.SecretStore_Status_LOADING &&
-		old.Status.State != enterprisev1.SecretStore_Status_LOADING:
-	default:
-		return nil
-	}
+	return new.Status.Synchronization != nil &&
+		new.Status.Synchronization.State == enterprisev1.SecretStore_Status_Synchronization_SYNC_REQUESTED &&
+		(old == nil ||
+			old.Status.Synchronization == nil ||
+			old.Status.Synchronization.State != enterprisev1.SecretStore_Status_Synchronization_SYNC_REQUESTED)
+}
 
+func (s *server) doSync(ctx context.Context, new *enterprisev1.SecretStore) error {
 	zap.L().Info("Starting rotating DEKs")
 
 	store, err := s.getKEKFromSecretStore(ctx, new)
@@ -43,6 +50,21 @@ func (s *server) onSecretManUpdate(ctx context.Context, new, old *enterprisev1.S
 
 	s.deks.RLock()
 	defer s.deks.RUnlock()
+
+	{
+		ss, err := s.octeliumC.EnterpriseC().GetSecretStore(ctx, &rmetav1.GetOptions{
+			Uid: new.Metadata.Uid,
+		})
+		if err != nil {
+			return err
+		}
+
+		ss.Status.Synchronization.State = enterprisev1.SecretStore_Status_Synchronization_SYNCING
+
+		if _, err := s.octeliumC.EnterpriseC().UpdateSecretStore(ctx, ss); err != nil {
+			return err
+		}
+	}
 
 	for _, dek := range s.deks.dekMap {
 		enc, err := store.Encrypt(ctx, dek.uid, dek.key)
@@ -64,12 +86,21 @@ func (s *server) onSecretManUpdate(ctx context.Context, new, old *enterprisev1.S
 
 	ss.Status.State = enterprisev1.SecretStore_Status_OK
 
+	ss.Status.Synchronization.State = enterprisev1.SecretStore_Status_Synchronization_SUCCESS
+	ss.Status.Synchronization.CompletedAt = pbutils.Now()
+
+	ss.Status.LastSynchronizations = append([]*enterprisev1.SecretStore_Status_Synchronization{
+		ss.Status.Synchronization,
+	}, ss.Status.LastSynchronizations...)
+
+	ss.Status.Synchronization = nil
+
 	_, err = s.octeliumC.EnterpriseC().UpdateSecretStore(ctx, ss)
 	if err != nil {
 		return err
 	}
 
-	zap.L().Info("Successfully rotatd DEKs")
+	zap.L().Info("Successfully rotated DEKs")
 
 	return nil
 }
