@@ -318,7 +318,7 @@ const ResourceListC = (props: {
               className={twMerge(
                 "flex text-center items-center justify-center",
                 "font-bold text-4xl text-gray-600",
-                "my-16"
+                "my-16",
               )}
             >
               No {props.itemsList.kind.replace(/List$/, "")} Found
@@ -398,6 +398,7 @@ const useListReq = () => {
 
   // @ts-ignore
   let req = getPBResourceListFromAPI(apiKind.api)![
+    // @ts-ignore
     `List${apiKind.kind}Options`
   ]["create"]({
     common: CommonListOptions.create({}),
@@ -444,6 +445,7 @@ const useListReq = () => {
 
     // @ts-ignore
     const req2 = getClientResourceListP(apiKind.api)![
+      // @ts-ignore
       `List${apiKind.kind}Options`
     ][`fromJsonString`](JSON.stringify(parsedQry));
     // @ts-ignore
@@ -482,7 +484,7 @@ const ResourceListPage = (props: { info: ResourceComponentInfo }) => {
     queryFn: async () => {
       // @ts-ignore
       return await getClientResourceList(apiKind.api)[`list${apiKind.kind}`](
-        req
+        req,
       );
     },
   });

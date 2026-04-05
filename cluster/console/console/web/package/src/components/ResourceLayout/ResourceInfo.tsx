@@ -1,5 +1,6 @@
 import {
   getRefNameQueryArgStr,
+  getResourcePath,
   hasAccessLog,
   hasAuditLog,
   hasAuthenticationLog,
@@ -90,7 +91,18 @@ const ResourceInfo = (props: { resource: Resource }) => {
       )}
 
       <InfoItem title="Detailed Info">
-        <ResourceYAML item={item} size="xs" />
+        <div className="flex items-center">
+          <ResourceYAML item={item} size="xs" />
+          <Button
+            size={"compact-xs"}
+            variant="outline"
+            component={Link}
+            className="mx-1"
+            to={`${getResourcePath(item)}`}
+          >
+            Details
+          </Button>
+        </div>
       </InfoItem>
 
       <InfoItem title="Created">
