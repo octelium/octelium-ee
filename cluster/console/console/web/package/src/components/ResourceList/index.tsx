@@ -174,6 +174,38 @@ const ResourceListLabelWithItemRef = (props: {
   );
 };
 
+export const ResourceHoverCard = (props: {
+  children?: React.ReactNode;
+  itemRef: ObjectReference;
+}) => {
+  const r = useResourceFromRef(props.itemRef);
+
+  if (!r || !r.isSuccess || !r.data) {
+    return <></>;
+  }
+
+  return (
+    <HoverCard
+      width={460}
+      shadow="md"
+      withArrow
+      openDelay={200}
+      closeDelay={400}
+      transitionProps={{
+        transition: "pop",
+      }}
+      zIndex={30}
+    >
+      <HoverCard.Target>{props.children}</HoverCard.Target>
+      <HoverCard.Dropdown className="shadow-md">
+        <div className="w-full">
+          <ResourceInfo resource={r.data} />
+        </div>
+      </HoverCard.Dropdown>
+    </HoverCard>
+  );
+};
+
 export const ResourceListLabel = (props: {
   children?: React.ReactNode;
   label?: string;

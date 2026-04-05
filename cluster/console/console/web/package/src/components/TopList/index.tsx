@@ -2,22 +2,26 @@ import { formatNumber } from "@/utils";
 import {
   getRefNameQueryArgStr,
   getResourcePath,
+  getResourceRef,
   printResourceNameWithDisplay,
   Resource,
 } from "@/utils/pb";
 import { Link } from "react-router-dom";
+import { ResourceHoverCard } from "../ResourceList";
 
 const TopListItem = (props: { item: Resource }) => {
   const { item } = props;
   const x = item;
   return (
     <div className="w-full my-2">
-      <Link
-        className="font-bold text-slate-600 hover:text-black transition-all duration-700"
-        to={getResourcePath(x)}
-      >
-        {printResourceNameWithDisplay(x)}
-      </Link>
+      <ResourceHoverCard itemRef={getResourceRef(x)}>
+        <Link
+          className="font-bold text-slate-600 hover:text-black transition-all duration-700"
+          to={getResourcePath(x)}
+        >
+          {printResourceNameWithDisplay(x)}
+        </Link>
+      </ResourceHoverCard>
     </div>
   );
 };
