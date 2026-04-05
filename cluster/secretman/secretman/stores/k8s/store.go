@@ -12,6 +12,7 @@ import (
 	"context"
 	"crypto/aes"
 	"crypto/cipher"
+	"encoding/base64"
 	"os"
 
 	"github.com/octelium/octelium-ee/cluster/secretman/secretman/stores"
@@ -35,7 +36,16 @@ func NewStore(ctx context.Context, o *stores.StoreOpts) (*store, error) {
 
 	var err error
 	if ldflags.IsTest() {
-		ret.secret = secTest
+		if val := os.Getenv("OCTELIUM_TEST_SS_SECRET"); val != "" {
+			valBytes, err := base64.StdEncoding.DecodeString(val)
+			if err != nil {
+				return nil, err
+			}
+			ret.secret = valBytes
+		} else {
+			ret.secret = secTest
+		}
+
 	} else {
 		ret.secret, err = os.ReadFile("/octelium-kek")
 		if err != nil {
