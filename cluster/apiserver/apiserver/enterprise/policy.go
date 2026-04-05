@@ -200,7 +200,7 @@ func (s *Server) getExpression(in *enterprisev1.Condition_Expression) string {
 		return fmt.Sprintf(`ctx.%s.metadata.name == "%s"`, strings.ToLower(arg.Kind), arg.Name)
 	}
 
-	isAPIServer := `ctx.service.systemLabels["octelium-apiserver"] == "true" && ctx.service.status.namespaceRef.name == "octelium"`
+	isAPIServer := `ctx.service.systemLabels["octelium-apiserver"] == "true" && ctx.service.status.namespaceRef.name == "octelium-api"`
 	isAPServerwithAPI := func(arg string) string {
 		return fmt.Sprintf(`ctx.request.grpc.serviceFullName == "octelium.api.main.%s.v1.MainService"`, arg)
 	}
