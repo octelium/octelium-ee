@@ -201,8 +201,8 @@ func (s *Server) getExpression(in *enterprisev1.Condition_Expression) string {
 	}
 
 	isAPIServer := `ctx.service.systemLabels["octelium-apiserver"] == "true" && ctx.service.status.namespaceRef.name == "octelium-api"`
-	isAPServerwithAPI := func(arg string) string {
-		return fmt.Sprintf(`ctx.request.grpc.serviceFullName == "octelium.api.main.%s.v1.MainService"`, arg)
+	isAPServerWithAPI := func(arg string) string {
+		return fmt.Sprintf(`ctx.request.grpc.package == "octelium.api.main.%s.v1"`, arg)
 	}
 
 	switch in.Type.(type) {
@@ -303,13 +303,13 @@ func (s *Server) getExpression(in *enterprisev1.Condition_Expression) string {
 	case *enterprisev1.Condition_Expression_ApiServer:
 		return isAPIServer
 	case *enterprisev1.Condition_Expression_ApiServerCore:
-		return fmt.Sprintf("%s && %s", isAPIServer, isAPServerwithAPI("core"))
+		return fmt.Sprintf("%s && %s", isAPIServer, isAPServerWithAPI("core"))
 	case *enterprisev1.Condition_Expression_ApiServerUser:
-		return fmt.Sprintf("%s && %s", isAPIServer, isAPServerwithAPI("user"))
+		return fmt.Sprintf("%s && %s", isAPIServer, isAPServerWithAPI("user"))
 	case *enterprisev1.Condition_Expression_ApiServerEnterprise:
-		return fmt.Sprintf("%s && %s", isAPIServer, isAPServerwithAPI("enterprise"))
+		return fmt.Sprintf("%s && %s", isAPIServer, isAPServerWithAPI("enterprise"))
 	case *enterprisev1.Condition_Expression_ApiServerCordium:
-		return fmt.Sprintf("%s && %s", isAPIServer, isAPServerwithAPI("cordium"))
+		return fmt.Sprintf("%s && %s", isAPIServer, isAPServerWithAPI("cordium"))
 	default:
 		return ""
 	}
