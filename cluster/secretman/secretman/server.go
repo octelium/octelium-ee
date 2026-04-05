@@ -165,10 +165,13 @@ func (s *server) setDEKMap(ctx context.Context) error {
 		return err
 	}
 
+	s.deks.Lock()
+	s.deks.dekMap = make(map[string]*dek)
 	for _, dek := range deks {
 		zap.L().Debug("Setting dek", zap.String("uid", dek.uid))
 		s.deks.dekMap[dek.uid] = dek
 	}
+	s.deks.Unlock()
 
 	return nil
 }

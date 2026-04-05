@@ -48,9 +48,6 @@ func (s *server) doSync(ctx context.Context, new *enterprisev1.SecretStore) erro
 		return err
 	}
 
-	s.deks.RLock()
-	defer s.deks.RUnlock()
-
 	{
 		ss, err := s.octeliumC.EnterpriseC().GetSecretStore(ctx, &rmetav1.GetOptions{
 			Uid: new.Metadata.Uid,
@@ -66,15 +63,24 @@ func (s *server) doSync(ctx context.Context, new *enterprisev1.SecretStore) erro
 		}
 	}
 
-	for _, dek := range s.deks.dekMap {
-		enc, err := store.Encrypt(ctx, dek.uid, dek.key)
-		if err != nil {
-			return err
+	if err := func() error {
+		s.deks.RLock()
+		defer s.deks.RUnlock()
+
+		for _, dek := range s.deks.dekMap {
+			enc, err := store.Encrypt(ctx, dek.uid, dek.key)
+			if err != nil {
+				return err
+			}
+
+			if err := s.doUpdateDEK(ctx, dek.uid, enc, "", store.UID()); err != nil {
+				return err
+			}
 		}
 
-		if err := s.doUpdateDEK(ctx, dek.uid, enc, "", store.UID()); err != nil {
-			return err
-		}
+		return nil
+	}(); err != nil {
+		return err
 	}
 
 	ss, err := s.octeliumC.EnterpriseC().GetSecretStore(ctx, &rmetav1.GetOptions{
