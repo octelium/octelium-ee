@@ -32,6 +32,7 @@ import (
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
+	"golang.org/x/exp/slices"
 )
 
 func TestGroup(t *testing.T) {
@@ -464,6 +465,74 @@ func TestGroup(t *testing.T) {
 		assert.NotNil(t, err)
 		assert.True(t, grpcerr.IsNotFound(err))
 
+	}
+
+	{
+		reqURL, _ := url.Parse("http://localhost/scim/v2/Groups")
+
+		path := reqURL.String()
+		zap.L().Debug("path", zap.String("val", path))
+
+		req := &resourceGroup{
+			resourceCommon: resourceCommon{
+				ExternalID: utilrand.GetRandomString(12),
+				Schemas:    []string{"urn:ietf:params:scim:schemas:core:2.0:Group"},
+				Meta: resourceMeta{
+					ResourceType: "Group",
+				},
+			},
+			DisplayName: "group2@example.com",
+			Members: []resourceGroupMember{
+				{
+					Value: dpUsr.Metadata.Uid,
+				},
+			},
+		}
+
+		reqBody, err := json.Marshal(req)
+		assert.Nil(t, err)
+		reqHTTP := httptest.NewRequest("POST", path, bytes.NewBuffer(reqBody))
+
+		reqHTTP = reqHTTP.WithContext(context.WithValue(reqHTTP.Context(), middlewares.CtxRequestContext, &middlewares.RequestContext{
+			DirectoryProvider: idp,
+		}))
+
+		w := httptest.NewRecorder()
+
+		srv.handleCreateGroup(w, reqHTTP)
+
+		resp := w.Result()
+		bb, err := io.ReadAll(resp.Body)
+		assert.Nil(t, err)
+		resp.Body.Close()
+
+		assert.Equal(t, http.StatusCreated, resp.StatusCode)
+
+		res := &resourceGroup{}
+		err = json.Unmarshal(bb, res)
+		assert.Nil(t, err)
+
+		dpGrp, err = srv.octeliumC.EnterpriseC().GetDirectoryProviderGroup(ctx, &rmetav1.GetOptions{
+			Uid: res.ID,
+		})
+		assert.Nil(t, err)
+		grp, err = srv.octeliumC.CoreC().GetGroup(ctx, &rmetav1.GetOptions{
+			Uid: dpGrp.Status.GroupRef.Uid,
+		})
+		assert.Nil(t, err)
+
+		scimGroup, err := srv.toGroupSCIM(dpGrp)
+		assert.Nil(t, err)
+		assert.True(t, reflect.DeepEqual(res, scimGroup))
+
+		assert.Equal(t, "group2@example.com", grp.Metadata.DisplayName)
+
+		usr, err := srv.octeliumC.CoreC().GetUser(ctx, &rmetav1.GetOptions{
+			Uid: dpUsr.Status.UserRef.Uid,
+		})
+		assert.Nil(t, err)
+
+		assert.True(t, slices.Contains(usr.Spec.Groups, grp.Metadata.Name))
 	}
 
 }

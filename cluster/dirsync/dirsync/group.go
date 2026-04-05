@@ -120,6 +120,12 @@ func (s *server) handleCreateGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	for _, member := range scimGroup.Members {
+		if err := s.addGroupToUser(ctx, member.Value, group); err != nil {
+			zap.L().Warn("Could not addGroupToUser", zap.Error(err))
+		}
+	}
+
 	res, err := s.toGroupSCIM(dpGroup)
 	if err != nil {
 		s.setErrorInternal(w, err)
@@ -183,6 +189,13 @@ func (s *server) handleUpdateGroup(w http.ResponseWriter, r *http.Request) {
 		s.setErrorInternal(w, err)
 		return
 	}
+
+	for _, member := range scimGroup.Members {
+		if err := s.addGroupToUser(ctx, member.Value, group); err != nil {
+			zap.L().Warn("Could not addGroupToUser", zap.Error(err))
+		}
+	}
+
 	res, err := s.toGroupSCIM(dpGroup)
 	if err != nil {
 		s.setErrorInternal(w, err)
