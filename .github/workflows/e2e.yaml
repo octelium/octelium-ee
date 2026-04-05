@@ -1,0 +1,29 @@
+name: tests-e2e
+permissions:
+  contents: read
+on: workflow_dispatch
+jobs:
+  test:
+    strategy:
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.runner }}
+    name: test-${{ matrix.runner }}
+    steps:
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes libssl-dev
+      - name: Set up go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "${{env.GO_VERSION}}"
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v4
+      - name: Run
+        run: |
+          go version
+          which go
+          whoami
+          make build-e2e
+          ./bin/octeliumee-e2e
