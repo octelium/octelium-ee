@@ -43,7 +43,7 @@ func (s *server) handleCreateGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	zap.L().Debug("got req", zap.Any("scimGroup", scimGroup), zap.Any("idp", reqCtx.DirectoryProvider))
+	zap.L().Debug("got create req", zap.Any("scimGroup", scimGroup), zap.Any("idp", reqCtx.DirectoryProvider))
 
 	{
 		_, err := s.octeliumC.EnterpriseC().GetDirectoryProviderGroup(ctx, &rmetav1.GetOptions{

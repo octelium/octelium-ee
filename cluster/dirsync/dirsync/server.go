@@ -147,58 +147,228 @@ func (s *server) handleServiceProviderConfig(w http.ResponseWriter, r *http.Requ
 
 func (s *server) handleSchemas(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/scim+json")
+
+	resources := []schemasResponseResource{
+		{
+			Schemas:     []string{"urn:ietf:params:scim:schemas:core:2.0:Schema"},
+			ID:          "urn:ietf:params:scim:schemas:core:2.0:User",
+			Name:        "User",
+			Description: "User Account",
+			Attributes: []schemasResponseResourceAttribute{
+				{
+					Name:        "userName",
+					Type:        "string",
+					MultiValued: false,
+					Description: "Unique identifier for the User",
+					Required:    true,
+					CaseExact:   false,
+					Mutability:  "readWrite",
+					Returned:    "default",
+					Uniqueness:  "server",
+				},
+				{
+					Name:        "name",
+					Type:        "complex",
+					MultiValued: false,
+					Description: "The components of the user's real name.",
+					Mutability:  "readWrite",
+					Returned:    "default",
+					SubAttributes: []schemasResponseResourceAttribute{
+						{
+							Name:        "formatted",
+							Type:        "string",
+							Description: "The full name, including all middle names, titles, and suffixes as appropriate, formatted for display.",
+							Mutability:  "readWrite",
+						},
+						{
+							Name:        "familyName",
+							Type:        "string",
+							Description: "The family name of the User, or last name in most Western languages.",
+							Mutability:  "readWrite",
+						},
+						{
+							Name:        "givenName",
+							Type:        "string",
+							Description: "The given name of the User, or first name in most Western languages.",
+							Mutability:  "readWrite",
+						},
+					},
+				},
+				{
+					Name:        "displayName",
+					Type:        "string",
+					MultiValued: false,
+					Description: "The name of the User, suitable for display to end-users.",
+					Mutability:  "readWrite",
+					Returned:    "default",
+				},
+				{
+					Name:        "profileUrl",
+					Type:        "reference",
+					MultiValued: false,
+					Description: "A fully qualified URL pointing to a page representing the User's online profile.",
+					Mutability:  "readWrite",
+					Returned:    "default",
+				},
+				{
+					Name:        "locale",
+					Type:        "string",
+					MultiValued: false,
+					Description: "Used to indicate the User's default location for purposes of localizing items such as currency, date time format, or numerical representations.",
+					Mutability:  "readWrite",
+					Returned:    "default",
+				},
+				{
+					Name:        "active",
+					Type:        "boolean",
+					MultiValued: false,
+					Description: "A Boolean value indicating the User's administrative status.",
+					Mutability:  "readWrite",
+					Returned:    "default",
+				},
+				{
+					Name:        "password",
+					Type:        "string",
+					MultiValued: false,
+					Description: "The User's cleartext password.",
+					Mutability:  "writeOnly",
+					Returned:    "never",
+				},
+				{
+					Name:        "emails",
+					Type:        "complex",
+					MultiValued: true,
+					Description: "Email addresses for the user.",
+					Mutability:  "readWrite",
+					Returned:    "default",
+					SubAttributes: []schemasResponseResourceAttribute{
+						{
+							Name:        "value",
+							Type:        "string",
+							Description: "Email addresses for the user.",
+							Mutability:  "readWrite",
+						},
+						{
+							Name:        "display",
+							Type:        "string",
+							Description: "A human-readable name, primarily used for display purposes.",
+							Mutability:  "readWrite",
+						},
+						{
+							Name:        "type",
+							Type:        "string",
+							Description: "A label indicating the attribute's function, e.g., 'work' or 'home'.",
+							Mutability:  "readWrite",
+						},
+						{
+							Name:        "primary",
+							Type:        "boolean",
+							Description: "A boolean value indicating the 'primary' or preferred attribute value for this attribute.",
+							Mutability:  "readWrite",
+						},
+					},
+				},
+				{
+					Name:        "photos",
+					Type:        "complex",
+					MultiValued: true,
+					Description: "URLs of photos of the User.",
+					Mutability:  "readWrite",
+					Returned:    "default",
+					SubAttributes: []schemasResponseResourceAttribute{
+						{
+							Name:        "value",
+							Type:        "reference",
+							Description: "URL of a photo of the User.",
+							Mutability:  "readWrite",
+						},
+						{
+							Name:        "type",
+							Type:        "string",
+							Description: "A label indicating the attribute's function, i.e., 'photo' or 'thumbnail'.",
+							Mutability:  "readWrite",
+						},
+						{
+							Name:        "primary",
+							Type:        "boolean",
+							Description: "A boolean value indicating the 'primary' or preferred attribute value for this attribute.",
+							Mutability:  "readWrite",
+						},
+					},
+				},
+			},
+			Meta: schemasResponseResourceAttributeMeta{
+				ResourceType: "Schema",
+				Location:     "/v2/Schemas/urn:ietf:params:scim:schemas:core:2.0:User",
+			},
+		},
+		{
+			Schemas:     []string{"urn:ietf:params:scim:schemas:core:2.0:Schema"},
+			ID:          "urn:ietf:params:scim:schemas:core:2.0:Group",
+			Name:        "Group",
+			Description: "Group",
+			Attributes: []schemasResponseResourceAttribute{
+				{
+					Name:        "displayName",
+					Type:        "string",
+					MultiValued: false,
+					Description: "A human-readable name for the Group.",
+					Required:    false,
+					CaseExact:   false,
+					Returned:    "default",
+					Uniqueness:  "none",
+					Mutability:  "readWrite",
+				},
+				{
+					Name:        "members",
+					Type:        "complex",
+					MultiValued: true,
+					Description: "A list of members of the Group.",
+					SubAttributes: []schemasResponseResourceAttribute{
+						{
+							Name:        "value",
+							Type:        "string",
+							Description: "Identifier of the member of this Group.",
+							Mutability:  "immutable",
+							Returned:    "default",
+						},
+						{
+							Name:        "$ref",
+							Type:        "reference",
+							Description: "The URI of the corresponding Resource.",
+							Mutability:  "readOnly",
+							Returned:    "default",
+						},
+						{
+							Name:        "display",
+							Type:        "string",
+							Description: "A human-readable name for the member.",
+							Mutability:  "readOnly",
+							Returned:    "default",
+						},
+						{
+							Name:        "type",
+							Type:        "string",
+							Description: "The type of Resource (e.g., 'User' or 'Group').",
+							Mutability:  "immutable",
+							Returned:    "default",
+						},
+					},
+				},
+			},
+			Meta: schemasResponseResourceAttributeMeta{
+				ResourceType: "Schema",
+				Location:     "/v2/Schemas/urn:ietf:params:scim:schemas:core:2.0:Group",
+			},
+		},
+	}
+
 	resp := &schemasResponse{
 		Schemas:      []string{"urn:ietf:params:scim:api:messages:2.0:ListResponse"},
 		ItemsPerPage: 50,
 		StartIndex:   1,
-		TotalResults: 2,
-		Resources: []schemasResponseResource{
-			{
-				Schemas:     []string{"urn:ietf:params:scim:schemas:core:2.0:Schema"},
-				ID:          "urn:ietf:params:scim:schemas:core:2.0:User",
-				Name:        "User",
-				Description: "User Account",
-				Attributes: []schemasResponseResourceAttribute{
-					{
-						Name:        "userName",
-						Type:        "string",
-						MultiValued: false,
-						Description: "Unique identifier for the User",
-						Required:    true,
-						CaseExact:   false,
-						Mutability:  "readWrite",
-						Returned:    "default",
-						Uniqueness:  "server",
-					},
-				},
-				Meta: schemasResponseResourceAttributeMeta{
-					ResourceType: "Schema",
-					Location:     "/v2/Schemas/urn:ietf:params:scim:schemas:core:2.0:User",
-				},
-			},
-			{
-				Schemas:     []string{"urn:ietf:params:scim:schemas:core:2.0:Schema"},
-				ID:          "urn:ietf:params:scim:schemas:core:2.0:Group",
-				Name:        "Group",
-				Description: "Group",
-				Attributes: []schemasResponseResourceAttribute{
-					{
-						Name:        "displayName",
-						Type:        "string",
-						MultiValued: false,
-						Description: "A human-readable name for the Group.",
-						Required:    false,
-						CaseExact:   false,
-						Returned:    "default",
-						Uniqueness:  "none",
-					},
-				},
-				Meta: schemasResponseResourceAttributeMeta{
-					ResourceType: "Schema",
-					Location:     "/v2/Schemas/urn:ietf:params:scim:schemas:core:2.0:Group",
-				},
-			},
-		},
+		TotalResults: len(resources),
+		Resources:    resources,
 	}
 
 	respBytes, err := json.Marshal(resp)
@@ -329,6 +499,9 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	case r.URL.Path == fmt.Sprintf("%s/ResourceTypes", s.getPrefix(dp)) && r.Method == http.MethodGet:
 		s.handleResourceTypes(w, r)
+		return
+	case r.URL.Path == fmt.Sprintf("%s/Schemas", s.getPrefix(dp)) && r.Method == http.MethodGet:
+		s.handleSchemas(w, r)
 		return
 	default:
 		zap.L().Debug("Invalid path", zap.String("path", r.URL.Path))

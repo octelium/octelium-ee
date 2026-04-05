@@ -16,6 +16,8 @@ import (
 	"net/http"
 	"strings"
 
+	"slices"
+
 	"github.com/asaskevich/govalidator"
 	"github.com/gosimple/slug"
 	"github.com/octelium/octelium-ee/cluster/dirsync/dirsync/middlewares"
@@ -33,7 +35,6 @@ import (
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	"golang.org/x/exp/slices"
 )
 
 func (s *server) handleCreateUser(w http.ResponseWriter, r *http.Request) {

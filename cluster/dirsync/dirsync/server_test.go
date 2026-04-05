@@ -154,4 +154,17 @@ func TestServer(t *testing.T) {
 		assert.Equal(t, 2, len(resp.Resources))
 		assert.Equal(t, "User", resp.Resources[0].Name)
 	}
+
+	{
+		r, err := client.R().Get(fmt.Sprintf("http://%s/scim/%s/Schemas", httpSrv.Addr, dp.Status.Id))
+		assert.Nil(t, err, "%+v", err)
+		assert.True(t, r.IsSuccess())
+
+		resp := &schemasResponse{}
+		err = json.Unmarshal(r.Body(), resp)
+		assert.Nil(t, err)
+		assert.Equal(t, 2, len(resp.Resources))
+		assert.Equal(t, "User", resp.Resources[0].Name)
+		assert.Equal(t, "userName", resp.Resources[0].Attributes[0].Name)
+	}
 }

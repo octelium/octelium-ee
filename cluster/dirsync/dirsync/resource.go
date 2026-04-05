@@ -132,16 +132,17 @@ type schemasResponseResource struct {
 }
 
 type schemasResponseResourceAttribute struct {
-	Name        string                               `json:"name,omitempty"`
-	Type        string                               `json:"type,omitempty"`
-	MultiValued bool                                 `json:"multiValued,omitempty"`
-	Description string                               `json:"description,omitempty"`
-	Required    bool                                 `json:"required,omitempty"`
-	CaseExact   bool                                 `json:"caseExact,omitempty"`
-	Mutability  string                               `json:"mutability,omitempty"`
-	Returned    string                               `json:"returned,omitempty"`
-	Uniqueness  string                               `json:"uniqueness,omitempty"`
-	Meta        schemasResponseResourceAttributeMeta `json:"meta,omitempty"`
+	Name          string                               `json:"name,omitempty"`
+	Type          string                               `json:"type,omitempty"`
+	MultiValued   bool                                 `json:"multiValued,omitempty"`
+	Description   string                               `json:"description,omitempty"`
+	Required      bool                                 `json:"required,omitempty"`
+	CaseExact     bool                                 `json:"caseExact,omitempty"`
+	Mutability    string                               `json:"mutability,omitempty"`
+	Returned      string                               `json:"returned,omitempty"`
+	Uniqueness    string                               `json:"uniqueness,omitempty"`
+	Meta          schemasResponseResourceAttributeMeta `json:"meta,omitempty"`
+	SubAttributes []schemasResponseResourceAttribute   `json:"subAttributes,omitempty"`
 }
 
 type schemasResponseResourceAttributeMeta struct {
