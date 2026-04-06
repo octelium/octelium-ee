@@ -281,9 +281,13 @@ AUTH_TOKEN=$(cat $OCTELIUM_AUTH_TOKEN_SAVE_PATH)
 
 sleep 3
 
-OCTELIUM_INSECURE_TLS=true octelium login --domain localhost --auth-token $AUTH_TOKEN
-
-OCTELIUM_INSECURE_TLS=true octeliumctl create secret pg --value ${PG_PASSWORD}
+OCTELIUM_INSECURE_TLS=true
+octelium login --domain localhost --auth-token $AUTH_TOKEN
+echo -e "Successfully logged in"
+octelium status
+octelium get svc
+octeliumctl get svc
+octeliumctl create secret pg --value ${PG_PASSWORD}
 
 source ~/.bashrc
 echo -e "\e[1mThe Cluster has been successfully installed. Open a new tab to start using octelium and octeliumctl commands.\e[0m"
