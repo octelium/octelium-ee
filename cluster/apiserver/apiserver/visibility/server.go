@@ -11,20 +11,15 @@ package visibility
 import (
 	"context"
 	"fmt"
-	"math"
 	"os"
-	"time"
 
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
 	pb "github.com/octelium/octelium/apis/main/visibilityv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcorev1"
+	oc "github.com/octelium/octelium/cluster/common/octeliumc"
 	"github.com/octelium/octelium/pkg/utils/ldflags"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 type ServerAccessLog struct {
@@ -32,45 +27,6 @@ type ServerAccessLog struct {
 	pb.UnimplementedAccessLogServiceServer
 
 	c pb.AccessLogServiceClient
-}
-
-func getDialOpts() []grpc.DialOption {
-
-	unaryTries := uint(32)
-
-	if ldflags.IsTest() {
-		unaryTries = 1
-	}
-
-	retryCodes := []codes.Code{
-		codes.Unavailable,
-		codes.ResourceExhausted,
-		codes.Unknown,
-		codes.Aborted,
-		codes.DataLoss,
-		codes.Internal,
-		codes.DeadlineExceeded,
-	}
-
-	unaryMiddlewares := []grpc.UnaryClientInterceptor{
-		grpc_retry.UnaryClientInterceptor(
-			grpc_retry.WithMax(unaryTries),
-			grpc_retry.WithBackoff(grpc_retry.BackoffLinear(1000*time.Millisecond)),
-			grpc_retry.WithCodes(retryCodes...)),
-	}
-
-	streamMiddlewares := []grpc.StreamClientInterceptor{
-		grpc_retry.StreamClientInterceptor(
-			grpc_retry.WithMax(math.MaxUint32),
-			grpc_retry.WithBackoff(grpc_retry.BackoffLinear(1000*time.Millisecond)),
-			grpc_retry.WithCodes(retryCodes...)),
-	}
-
-	return []grpc.DialOption{
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithUnaryInterceptor(grpc_middleware.ChainUnaryClient(unaryMiddlewares...)),
-		grpc.WithStreamInterceptor(grpc_middleware.ChainStreamClient(streamMiddlewares...)),
-	}
 }
 
 func NewServerMain(ctx context.Context, octeliumC octeliumc.ClientInterface) (*ServerAccessLog, error) {
@@ -83,8 +39,12 @@ func NewServerMain(ctx context.Context, octeliumC octeliumc.ClientInterface) (*S
 		host = "octeliumee-logstore.octelium.svc:8080"
 	}
 
-	grpcConn, err := grpc.Dial(
-		host, getDialOpts()...,
+	grpcOpts, err := oc.DefaultDialOpts(ctx)
+	if err != nil {
+		return nil, err
+	}
+	grpcConn, err := grpc.NewClient(
+		host, grpcOpts...,
 	)
 	if err != nil {
 		return nil, err
@@ -115,8 +75,12 @@ func NewServerResource(ctx context.Context, octeliumC octeliumc.ClientInterface)
 		host = "octeliumee-rscstore.octelium.svc:8080"
 	}
 
-	grpcConn, err := grpc.Dial(
-		host, getDialOpts()...,
+	grpcOpts, err := oc.DefaultDialOpts(ctx)
+	if err != nil {
+		return nil, err
+	}
+	grpcConn, err := grpc.NewClient(
+		host, grpcOpts...,
 	)
 	if err != nil {
 		return nil, err
@@ -159,8 +123,12 @@ func NewServerAuthenticationLog(ctx context.Context, octeliumC octeliumc.ClientI
 		host = "octeliumee-logstore.octelium.svc:8080"
 	}
 
-	grpcConn, err := grpc.Dial(
-		host, getDialOpts()...,
+	grpcOpts, err := oc.DefaultDialOpts(ctx)
+	if err != nil {
+		return nil, err
+	}
+	grpcConn, err := grpc.NewClient(
+		host, grpcOpts...,
 	)
 	if err != nil {
 		return nil, err
@@ -182,8 +150,12 @@ func NewServerComponentLog(ctx context.Context, octeliumC octeliumc.ClientInterf
 		host = "octeliumee-logstore.octelium.svc:8080"
 	}
 
-	grpcConn, err := grpc.Dial(
-		host, getDialOpts()...,
+	grpcOpts, err := oc.DefaultDialOpts(ctx)
+	if err != nil {
+		return nil, err
+	}
+	grpcConn, err := grpc.NewClient(
+		host, grpcOpts...,
 	)
 	if err != nil {
 		return nil, err
@@ -212,8 +184,12 @@ func NewServerAuditLog(ctx context.Context, octeliumC octeliumc.ClientInterface)
 		host = "octeliumee-logstore.octelium.svc:8080"
 	}
 
-	grpcConn, err := grpc.Dial(
-		host, getDialOpts()...,
+	grpcOpts, err := oc.DefaultDialOpts(ctx)
+	if err != nil {
+		return nil, err
+	}
+	grpcConn, err := grpc.NewClient(
+		host, grpcOpts...,
 	)
 	if err != nil {
 		return nil, err
@@ -235,8 +211,12 @@ func NewServerMetric(ctx context.Context, octeliumC octeliumc.ClientInterface) (
 		host = "octeliumee-metricstore.octelium.svc:8080"
 	}
 
-	grpcConn, err := grpc.Dial(
-		host, getDialOpts()...,
+	grpcOpts, err := oc.DefaultDialOpts(ctx)
+	if err != nil {
+		return nil, err
+	}
+	grpcConn, err := grpc.NewClient(
+		host, grpcOpts...,
 	)
 	if err != nil {
 		return nil, err

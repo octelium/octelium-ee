@@ -10,18 +10,12 @@ package policyportal
 
 import (
 	"context"
-	"math"
-	"time"
 
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	pb "github.com/octelium/octelium/apis/main/enterprisev1"
-	"github.com/octelium/octelium/pkg/utils/ldflags"
+	oc "github.com/octelium/octelium/cluster/common/octeliumc"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 type Server struct {
@@ -30,7 +24,7 @@ type Server struct {
 	c pb.PolicyPortalServiceClient
 }
 
-func NewServer(octeliumC octeliumc.ClientInterface) (*Server, error) {
+func NewServer(ctx context.Context, octeliumC octeliumc.ClientInterface) (*Server, error) {
 
 	var host string
 
@@ -38,8 +32,13 @@ func NewServer(octeliumC octeliumc.ClientInterface) (*Server, error) {
 		host = "octeliumee-policyportal.octelium.svc:8080"
 	}
 
-	grpcConn, err := grpc.Dial(
-		host, getDialOpts()...,
+	grpcOpts, err := oc.DefaultDialOpts(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	grpcConn, err := grpc.NewClient(
+		host, grpcOpts...,
 	)
 	if err != nil {
 		return nil, err
@@ -53,43 +52,4 @@ func NewServer(octeliumC octeliumc.ClientInterface) (*Server, error) {
 
 func (s *Server) IsAuthorized(ctx context.Context, req *enterprisev1.IsAuthorizedRequest) (*enterprisev1.IsAuthorizedResponse, error) {
 	return s.c.IsAuthorized(ctx, req)
-}
-
-func getDialOpts() []grpc.DialOption {
-
-	unaryTries := uint(32)
-
-	if ldflags.IsTest() {
-		unaryTries = 1
-	}
-
-	retryCodes := []codes.Code{
-		codes.Unavailable,
-		codes.ResourceExhausted,
-		codes.Unknown,
-		codes.Aborted,
-		codes.DataLoss,
-		codes.Internal,
-		codes.DeadlineExceeded,
-	}
-
-	unaryMiddlewares := []grpc.UnaryClientInterceptor{
-		grpc_retry.UnaryClientInterceptor(
-			grpc_retry.WithMax(unaryTries),
-			grpc_retry.WithBackoff(grpc_retry.BackoffLinear(1000*time.Millisecond)),
-			grpc_retry.WithCodes(retryCodes...)),
-	}
-
-	streamMiddlewares := []grpc.StreamClientInterceptor{
-		grpc_retry.StreamClientInterceptor(
-			grpc_retry.WithMax(math.MaxUint32),
-			grpc_retry.WithBackoff(grpc_retry.BackoffLinear(1000*time.Millisecond)),
-			grpc_retry.WithCodes(retryCodes...)),
-	}
-
-	return []grpc.DialOption{
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithUnaryInterceptor(grpc_middleware.ChainUnaryClient(unaryMiddlewares...)),
-		grpc.WithStreamInterceptor(grpc_middleware.ChainStreamClient(streamMiddlewares...)),
-	}
 }

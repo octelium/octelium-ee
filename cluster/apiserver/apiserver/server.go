@@ -93,7 +93,7 @@ func Run(ctx context.Context) error {
 		return err
 	}
 
-	policyPortalSrv, err := policyportal.NewServer(octeliumC)
+	policyPortalSrv, err := policyportal.NewServer(ctx, octeliumC)
 	if err != nil {
 		return err
 	}
