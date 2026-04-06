@@ -96,6 +96,19 @@ func (p *provider) getExporter(ctx context.Context, exp *enterprisev1.CollectorE
 				}
 				return nil
 			}(),
+			Headers: func() map[string]string {
+				if len(spec.Headers) < 1 {
+					return nil
+				}
+
+				ret := make(map[string]string)
+
+				for _, hdr := range spec.Headers {
+					ret[hdr.Key] = hdr.Value
+				}
+
+				return ret
+			}(),
 		}
 		ret.exp = c
 
@@ -157,7 +170,19 @@ func (p *provider) getExporter(ctx context.Context, exp *enterprisev1.CollectorE
 			Endpoint:        spec.Endpoint,
 			MetricsEndpoint: spec.MetricsEndpoint,
 			LogsEndpoint:    spec.LogsEndpoint,
-			Headers:         spec.Headers,
+			Headers: func() map[string]string {
+				if len(spec.Headers) < 1 {
+					return nil
+				}
+
+				ret := make(map[string]string)
+
+				for _, hdr := range spec.Headers {
+					ret[hdr.Key] = hdr.Value
+				}
+
+				return ret
+			}(),
 		}
 		ret.exp = c
 
