@@ -272,6 +272,11 @@ kubectl wait --for=condition=available deployment/octeliumee-clusterman --namesp
 kubectl wait --for=condition=available deployment/octeliumee-cloudman --namespace octelium --timeout=600s
 kubectl wait --for=condition=available deployment/octeliumee-secretman --namespace octelium --timeout=600s
 
+
+kubectl get pods -A
+kubectl get deployment -A
+kubectl get svc -A
+
 AUTH_TOKEN=$(cat $OCTELIUM_AUTH_TOKEN_SAVE_PATH)
 
 sleep 3
