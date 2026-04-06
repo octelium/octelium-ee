@@ -13,7 +13,6 @@ import (
 
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
-	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	apisrvcommon "github.com/octelium/octelium/cluster/apiserver/apiserver/common"
 	"github.com/octelium/octelium/cluster/apiserver/apiserver/serr"
 	"github.com/octelium/octelium/cluster/common/apivalidation"
@@ -62,10 +61,7 @@ func (s *Server) GetSecretStore(ctx context.Context, req *metav1.GetOptions) (*e
 		return nil, err
 	}
 
-	ret, err := s.octeliumC.EnterpriseC().GetSecretStore(ctx, &rmetav1.GetOptions{
-		Uid:  req.Uid,
-		Name: req.Name,
-	})
+	ret, err := s.octeliumC.EnterpriseC().GetSecretStore(ctx, apivalidation.GetOptionsToRGetOptions(req))
 	if err != nil {
 		return nil, serr.K8sNotFoundOrInternalWithErr(err)
 	}
@@ -110,7 +106,7 @@ func (s *Server) UpdateSecretStore(ctx context.Context, req *enterprisev1.Secret
 		return nil, err
 	}
 
-	item, err := s.octeliumC.EnterpriseC().GetSecretStore(ctx, &rmetav1.GetOptions{Name: req.Metadata.Name})
+	item, err := s.octeliumC.EnterpriseC().GetSecretStore(ctx, apivalidation.ObjectToRGetOptions(req))
 	if err != nil {
 		return nil, err
 	}
@@ -120,28 +116,12 @@ func (s *Server) UpdateSecretStore(ctx context.Context, req *enterprisev1.Secret
 
 	switch item.Spec.Type.(type) {
 	case *enterprisev1.SecretStore_Spec_AwsKeyManagementService:
-		if item.Status.Type != enterprisev1.SecretStore_Status_TYPE_AWS_KMS {
-			item.Status.State = enterprisev1.SecretStore_Status_LOADING
-		}
-
 		item.Status.Type = enterprisev1.SecretStore_Status_TYPE_AWS_KMS
 	case *enterprisev1.SecretStore_Spec_AzureKeyVault_:
-		if item.Status.Type != enterprisev1.SecretStore_Status_TYPE_AZURE_KEY_VAULT {
-			item.Status.State = enterprisev1.SecretStore_Status_LOADING
-		}
-
 		item.Status.Type = enterprisev1.SecretStore_Status_TYPE_AZURE_KEY_VAULT
 	case *enterprisev1.SecretStore_Spec_GoogleCloudKeyManagementService_:
-		if item.Status.Type != enterprisev1.SecretStore_Status_TYPE_GCP_KMS {
-			item.Status.State = enterprisev1.SecretStore_Status_LOADING
-		}
-
 		item.Status.Type = enterprisev1.SecretStore_Status_TYPE_GCP_KMS
 	case *enterprisev1.SecretStore_Spec_HashicorpVault_:
-		if item.Status.Type != enterprisev1.SecretStore_Status_TYPE_HASHICORP_VAULT {
-			item.Status.State = enterprisev1.SecretStore_Status_LOADING
-		}
-
 		item.Status.Type = enterprisev1.SecretStore_Status_TYPE_HASHICORP_VAULT
 	case *enterprisev1.SecretStore_Spec_Kubernetes_:
 		item.Status.Type = enterprisev1.SecretStore_Status_KUBERNETES

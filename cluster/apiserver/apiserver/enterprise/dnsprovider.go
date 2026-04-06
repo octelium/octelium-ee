@@ -70,10 +70,7 @@ func (s *Server) GetDNSProvider(ctx context.Context, req *metav1.GetOptions) (*e
 		return nil, err
 	}
 
-	ret, err := s.octeliumC.EnterpriseC().GetDNSProvider(ctx, &rmetav1.GetOptions{
-		Uid:  req.Uid,
-		Name: req.Name,
-	})
+	ret, err := s.octeliumC.EnterpriseC().GetDNSProvider(ctx, apivalidation.GetOptionsToRGetOptions(req))
 	if err != nil {
 		return nil, serr.K8sNotFoundOrInternalWithErr(err)
 	}
@@ -131,7 +128,7 @@ func (s *Server) UpdateDNSProvider(ctx context.Context, req *enterprisev1.DNSPro
 		return nil, err
 	}
 
-	item, err := s.octeliumC.EnterpriseC().GetDNSProvider(ctx, &rmetav1.GetOptions{Name: req.Metadata.Name})
+	item, err := s.octeliumC.EnterpriseC().GetDNSProvider(ctx, apivalidation.ObjectToRGetOptions(req))
 	if err != nil {
 		return nil, err
 	}

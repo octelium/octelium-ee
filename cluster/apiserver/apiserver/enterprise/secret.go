@@ -30,7 +30,7 @@ func (s *Server) CreateSecret(ctx context.Context, req *enterprisev1.Secret) (*e
 	}
 
 	{
-		_, err := s.octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{Name: req.Metadata.Name})
+		_, err := s.octeliumC.EnterpriseC().GetSecret(ctx, apivalidation.ObjectToRGetOptions(req))
 		if err == nil {
 			return nil, grpcutils.AlreadyExists("The Secret %s already exists", req.Metadata.Name)
 		}
@@ -73,7 +73,7 @@ func (s *Server) DeleteSecret(ctx context.Context, req *metav1.DeleteOptions) (*
 		return nil, err
 	}
 
-	sec, err := s.octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{Name: req.Name, Uid: req.Uid})
+	sec, err := s.octeliumC.EnterpriseC().GetSecret(ctx, apivalidation.DeleteOptionsToRGetOptions(req))
 	if err != nil {
 		return nil, serr.InternalWithErr(err)
 	}
@@ -95,10 +95,7 @@ func (s *Server) GetSecret(ctx context.Context, req *metav1.GetOptions) (*enterp
 		return nil, err
 	}
 
-	ret, err := s.octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
-		Uid:  req.Uid,
-		Name: req.Name,
-	})
+	ret, err := s.octeliumC.EnterpriseC().GetSecret(ctx, apivalidation.GetOptionsToRGetOptions(req))
 	if err != nil {
 		return nil, serr.K8sNotFoundOrInternalWithErr(err)
 	}
@@ -118,9 +115,7 @@ func (s *Server) UpdateSecret(ctx context.Context, req *enterprisev1.Secret) (*e
 		return nil, err
 	}
 
-	sec, err := s.octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
-		Name: req.Metadata.Name,
-	})
+	sec, err := s.octeliumC.EnterpriseC().GetSecret(ctx, apivalidation.ObjectToRGetOptions(req))
 	if err != nil {
 		return nil, serr.K8sNotFoundOrInternalWithErr(err)
 	}

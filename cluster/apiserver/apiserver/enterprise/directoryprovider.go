@@ -41,7 +41,7 @@ func (s *Server) CreateDirectoryProvider(ctx context.Context, req *enterprisev1.
 		return nil, err
 	}
 
-	_, err := s.octeliumC.EnterpriseC().GetDirectoryProvider(ctx, &rmetav1.GetOptions{Name: req.Metadata.Name})
+	_, err := s.octeliumC.EnterpriseC().GetDirectoryProvider(ctx, apivalidation.ObjectToRGetOptions(req))
 	if err == nil {
 		return nil, serr.InvalidArg("The DirectoryProvider %s already exists", req.Metadata.Name)
 	}
@@ -158,10 +158,7 @@ func (s *Server) GetDirectoryProvider(ctx context.Context, req *metav1.GetOption
 		return nil, err
 	}
 
-	ret, err := s.octeliumC.EnterpriseC().GetDirectoryProvider(ctx, &rmetav1.GetOptions{
-		Uid:  req.Uid,
-		Name: req.Name,
-	})
+	ret, err := s.octeliumC.EnterpriseC().GetDirectoryProvider(ctx, apivalidation.GetOptionsToRGetOptions(req))
 	if err != nil {
 		return nil, serr.K8sNotFoundOrInternalWithErr(err)
 	}
@@ -181,7 +178,7 @@ func (s *Server) ListDirectoryProvider(ctx context.Context, req *enterprisev1.Li
 
 func (s *Server) DeleteDirectoryProvider(ctx context.Context, req *metav1.DeleteOptions) (*metav1.OperationResult, error) {
 
-	g, err := s.octeliumC.EnterpriseC().GetDirectoryProvider(ctx, &rmetav1.GetOptions{Name: req.Name, Uid: req.Uid})
+	g, err := s.octeliumC.EnterpriseC().GetDirectoryProvider(ctx, apivalidation.DeleteOptionsToRGetOptions(req))
 	if err != nil {
 		return nil, err
 	}
@@ -208,7 +205,7 @@ func (s *Server) UpdateDirectoryProvider(ctx context.Context, req *enterprisev1.
 		return nil, err
 	}
 
-	item, err := s.octeliumC.EnterpriseC().GetDirectoryProvider(ctx, &rmetav1.GetOptions{Name: req.Metadata.Name})
+	item, err := s.octeliumC.EnterpriseC().GetDirectoryProvider(ctx, apivalidation.ObjectToRGetOptions(req))
 	if err != nil {
 		return nil, err
 	}
@@ -356,10 +353,8 @@ func (s *Server) ListDirectoryProviderUser(ctx context.Context, req *enterprisev
 			return nil, err
 		}
 
-		dp, err := s.octeliumC.EnterpriseC().GetDirectoryProvider(ctx, &rmetav1.GetOptions{
-			Uid:  req.DirectoryProviderRef.Uid,
-			Name: req.DirectoryProviderRef.Name,
-		})
+		dp, err := s.octeliumC.EnterpriseC().GetDirectoryProvider(ctx,
+			apivalidation.ObjectReferenceToRGetOptions(req.DirectoryProviderRef))
 		if err != nil {
 			return nil, err
 		}

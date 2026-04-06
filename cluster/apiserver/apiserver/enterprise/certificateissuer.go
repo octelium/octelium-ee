@@ -13,15 +13,14 @@ import (
 
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
-	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	apisrvcommon "github.com/octelium/octelium/cluster/apiserver/apiserver/common"
 	"github.com/octelium/octelium/cluster/apiserver/apiserver/serr"
 	"github.com/octelium/octelium/cluster/common/apivalidation"
 	"github.com/octelium/octelium/cluster/common/grpcutils"
 	"github.com/octelium/octelium/cluster/common/urscsrv"
-	"github.com/octelium/octelium/pkg/grpcerr"
 )
 
+/*
 func (s *Server) CreateCertificateIssuer(ctx context.Context, req *enterprisev1.CertificateIssuer) (*enterprisev1.CertificateIssuer, error) {
 
 	if err := apivalidation.ValidateCommon(req, &apivalidation.ValidateCommonOpts{
@@ -33,7 +32,7 @@ func (s *Server) CreateCertificateIssuer(ctx context.Context, req *enterprisev1.
 	}
 
 	{
-		_, err := s.octeliumC.EnterpriseC().GetCertificateIssuer(ctx, &rmetav1.GetOptions{Name: req.Metadata.Name})
+		_, err := s.octeliumC.EnterpriseC().GetCertificateIssuer(ctx, apivalidation.ObjectToRGetOptions(req))
 		if err == nil {
 			return nil, grpcutils.AlreadyExists("The CertificateIssuer %s already exists", req.Metadata.Name)
 		}
@@ -59,16 +58,14 @@ func (s *Server) CreateCertificateIssuer(ctx context.Context, req *enterprisev1.
 
 	return item, nil
 }
+*/
 
 func (s *Server) GetCertificateIssuer(ctx context.Context, req *metav1.GetOptions) (*enterprisev1.CertificateIssuer, error) {
 	if err := apisrvcommon.CheckGetOrDeleteOptions(req); err != nil {
 		return nil, err
 	}
 
-	ret, err := s.octeliumC.EnterpriseC().GetCertificateIssuer(ctx, &rmetav1.GetOptions{
-		Uid:  req.Uid,
-		Name: req.Name,
-	})
+	ret, err := s.octeliumC.EnterpriseC().GetCertificateIssuer(ctx, apivalidation.GetOptionsToRGetOptions(req))
 	if err != nil {
 		return nil, serr.K8sNotFoundOrInternalWithErr(err)
 	}
@@ -86,9 +83,10 @@ func (s *Server) ListCertificateIssuer(ctx context.Context, req *enterprisev1.Li
 	return itemList, nil
 }
 
+/*
 func (s *Server) DeleteCertificateIssuer(ctx context.Context, req *metav1.DeleteOptions) (*metav1.OperationResult, error) {
 
-	g, err := s.octeliumC.EnterpriseC().GetCertificateIssuer(ctx, &rmetav1.GetOptions{Name: req.Name, Uid: req.Uid})
+	g, err := s.octeliumC.EnterpriseC().GetCertificateIssuer(ctx, apivalidation.DeleteOptionsToRGetOptions(req))
 	if err != nil {
 		return nil, err
 	}
@@ -109,6 +107,8 @@ func (s *Server) DeleteCertificateIssuer(ctx context.Context, req *metav1.Delete
 	return &metav1.OperationResult{}, nil
 }
 
+*/
+
 func (s *Server) UpdateCertificateIssuer(ctx context.Context, req *enterprisev1.CertificateIssuer) (*enterprisev1.CertificateIssuer, error) {
 
 	if err := apivalidation.ValidateCommon(req, &apivalidation.ValidateCommonOpts{
@@ -123,7 +123,7 @@ func (s *Server) UpdateCertificateIssuer(ctx context.Context, req *enterprisev1.
 		return nil, err
 	}
 
-	item, err := s.octeliumC.EnterpriseC().GetCertificateIssuer(ctx, &rmetav1.GetOptions{Name: req.Metadata.Name})
+	item, err := s.octeliumC.EnterpriseC().GetCertificateIssuer(ctx, apivalidation.ObjectToRGetOptions(req))
 	if err != nil {
 		return nil, err
 	}

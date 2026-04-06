@@ -33,7 +33,7 @@ func (s *Server) CreateCollectorExporter(ctx context.Context, req *enterprisev1.
 		return nil, err
 	}
 
-	_, err := s.octeliumC.EnterpriseC().GetCollectorExporter(ctx, &rmetav1.GetOptions{Name: req.Metadata.Name})
+	_, err := s.octeliumC.EnterpriseC().GetCollectorExporter(ctx, apivalidation.ObjectToRGetOptions(req))
 	if err == nil {
 		return nil, serr.InvalidArg("The CollectorExporter %s already exists", req.Metadata.Name)
 	}
@@ -46,6 +46,10 @@ func (s *Server) CreateCollectorExporter(ctx context.Context, req *enterprisev1.
 		Metadata: apisrvcommon.MetadataFrom(req.Metadata),
 		Spec:     req.Spec,
 		Status:   &enterprisev1.CollectorExporter_Status{},
+	}
+
+	if err := s.validateCollectorExporter(ctx, item); err != nil {
+		return nil, err
 	}
 
 	item, err = s.octeliumC.EnterpriseC().CreateCollectorExporter(ctx, item)
@@ -61,10 +65,7 @@ func (s *Server) GetCollectorExporter(ctx context.Context, req *metav1.GetOption
 		return nil, err
 	}
 
-	ret, err := s.octeliumC.EnterpriseC().GetCollectorExporter(ctx, &rmetav1.GetOptions{
-		Uid:  req.Uid,
-		Name: req.Name,
-	})
+	ret, err := s.octeliumC.EnterpriseC().GetCollectorExporter(ctx, apivalidation.GetOptionsToRGetOptions(req))
 	if err != nil {
 		return nil, serr.K8sNotFoundOrInternalWithErr(err)
 	}
@@ -84,7 +85,7 @@ func (s *Server) ListCollectorExporter(ctx context.Context, req *enterprisev1.Li
 
 func (s *Server) DeleteCollectorExporter(ctx context.Context, req *metav1.DeleteOptions) (*metav1.OperationResult, error) {
 
-	g, err := s.octeliumC.EnterpriseC().GetCollectorExporter(ctx, &rmetav1.GetOptions{Name: req.Name, Uid: req.Uid})
+	g, err := s.octeliumC.EnterpriseC().GetCollectorExporter(ctx, apivalidation.DeleteOptionsToRGetOptions(req))
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +108,7 @@ func (s *Server) UpdateCollectorExporter(ctx context.Context, req *enterprisev1.
 		return nil, err
 	}
 
-	item, err := s.octeliumC.EnterpriseC().GetCollectorExporter(ctx, &rmetav1.GetOptions{Name: req.Metadata.Name})
+	item, err := s.octeliumC.EnterpriseC().GetCollectorExporter(ctx, apivalidation.ObjectToRGetOptions(req))
 	if err != nil {
 		return nil, err
 	}
@@ -118,6 +119,10 @@ func (s *Server) UpdateCollectorExporter(ctx context.Context, req *enterprisev1.
 
 	apisrvcommon.MetadataUpdate(item.Metadata, req.Metadata)
 	item.Spec = req.Spec
+
+	if err := s.validateCollectorExporter(ctx, item); err != nil {
+		return nil, err
+	}
 
 	item, err = s.octeliumC.EnterpriseC().UpdateCollectorExporter(ctx, item)
 	if err != nil {

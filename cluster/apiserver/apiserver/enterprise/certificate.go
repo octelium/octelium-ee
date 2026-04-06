@@ -34,7 +34,7 @@ func (s *Server) CreateCertificate(ctx context.Context, req *enterprisev1.Certif
 	}
 
 	{
-		_, err := s.octeliumC.EnterpriseC().GetCertificate(ctx, &rmetav1.GetOptions{Name: req.Metadata.Name})
+		_, err := s.octeliumC.EnterpriseC().GetCertificate(ctx, apivalidation.ObjectToRGetOptions(req))
 		if err == nil {
 			return nil, grpcutils.AlreadyExists("The Certificate %s already exists", req.Metadata.Name)
 		}
@@ -66,10 +66,7 @@ func (s *Server) GetCertificate(ctx context.Context, req *metav1.GetOptions) (*e
 		return nil, err
 	}
 
-	ret, err := s.octeliumC.EnterpriseC().GetCertificate(ctx, &rmetav1.GetOptions{
-		Uid:  req.Uid,
-		Name: req.Name,
-	})
+	ret, err := s.octeliumC.EnterpriseC().GetCertificate(ctx, apivalidation.GetOptionsToRGetOptions(req))
 	if err != nil {
 		return nil, serr.K8sNotFoundOrInternalWithErr(err)
 	}
@@ -89,7 +86,7 @@ func (s *Server) ListCertificate(ctx context.Context, req *enterprisev1.ListCert
 
 func (s *Server) DeleteCertificate(ctx context.Context, req *metav1.DeleteOptions) (*metav1.OperationResult, error) {
 
-	g, err := s.octeliumC.EnterpriseC().GetCertificate(ctx, &rmetav1.GetOptions{Name: req.Name, Uid: req.Uid})
+	g, err := s.octeliumC.EnterpriseC().GetCertificate(ctx, apivalidation.DeleteOptionsToRGetOptions(req))
 	if err != nil {
 		return nil, err
 	}
@@ -124,11 +121,7 @@ func (s *Server) UpdateCertificate(ctx context.Context, req *enterprisev1.Certif
 		return nil, err
 	}
 
-	item, err := s.octeliumC.EnterpriseC().GetCertificate(ctx,
-		&rmetav1.GetOptions{
-			Name: req.Metadata.Name,
-			Uid:  req.Metadata.Uid,
-		})
+	item, err := s.octeliumC.EnterpriseC().GetCertificate(ctx, apivalidation.ObjectToRGetOptions(req))
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +156,8 @@ func (s *Server) IssueCertificate(ctx context.Context, req *enterprisev1.IssueCe
 		return nil, err
 	}
 
-	crt, err := s.octeliumC.EnterpriseC().GetCertificate(ctx, apivalidation.ObjectReferenceToRGetOptions(req.CertificateRef))
+	crt, err := s.octeliumC.EnterpriseC().GetCertificate(ctx,
+		apivalidation.ObjectReferenceToRGetOptions(req.CertificateRef))
 	if err != nil {
 		return nil, serr.K8sNotFoundOrInternalWithErr(err)
 	}
