@@ -247,46 +247,6 @@ config:
 EOF
 
 
-
-kubectl_wait_deployment() {
-  local deployment="$1"
-  local namespace="${2:-octelium}"
-  local timeout="${3:-600s}"
-  local retries="${4:-20}"
-  local delay="${5:-3}"
-
-  local transient_errors="(operation was canceled|context canceled|not found|notfound)"
-
-  local nocasematch_was_set
-  shopt -q nocasematch && nocasematch_was_set=1
-  shopt -s nocasematch
-  [[ -z "$nocasematch_was_set" ]] && trap 'shopt -u nocasematch' RETURN
-
-  for ((i=1; i<=retries; i++)); do
-    output=$(kubectl wait deployment "$deployment" \
-      -n "$namespace" \
-      --for=condition=available \
-      --timeout="$timeout" 2>&1)
-    rc=$?
-
-    if [ $rc -eq 0 ]; then
-      return 0
-    fi
-
-    if [[ "$output" =~ $transient_errors ]]; then
-      echo "kubectl wait not ready (attempt $i/$retries), retrying in ${delay}s..."
-      sleep "$delay"
-      continue
-    fi
-
-    echo "$output"
-    return $rc
-  done
-
-  echo "kubectl wait failed after $retries retries"
-  return 1
-}
-
 kubectl wait --for=condition=available deployment/octelium-ingress-dataplane --namespace octelium --timeout=600s
 kubectl wait --for=condition=available deployment/octelium-ingress --namespace octelium --timeout=600s
 
@@ -301,14 +261,16 @@ kubectl wait --for=condition=available deployment/svc-default-default --namespac
 
 octops install-package ${DOMAIN} --version ${VERSION} --package octeliumee
 
-sleep 10
+echo -e "\e[1mSleeping till ee package is installed...\e[0m"
 
-kubectl_wait_deployment octeliumee-rscserver
-kubectl_wait_deployment octeliumee-nocturne
-kubectl_wait_deployment svc-enterprise-octelium-api
-kubectl_wait_deployment octeliumee-clusterman
-kubectl_wait_deployment octeliumee-cloudman
-kubectl_wait_deployment octeliumee-secretman
+sleep 100
+
+kubectl wait --for=condition=available deployment/octeliumee-rscserver --namespace octelium --timeout=600s
+kubectl wait --for=condition=available deployment/octeliumee-nocturne --namespace octelium --timeout=600s
+kubectl wait --for=condition=available deployment/svc-enterprise-octelium-api --namespace octelium --timeout=600s
+kubectl wait --for=condition=available deployment/octeliumee-clusterman --namespace octelium --timeout=600s
+kubectl wait --for=condition=available deployment/octeliumee-cloudman --namespace octelium --timeout=600s
+kubectl wait --for=condition=available deployment/octeliumee-secretman --namespace octelium --timeout=600s
 
 AUTH_TOKEN=$(cat $OCTELIUM_AUTH_TOKEN_SAVE_PATH)
 
