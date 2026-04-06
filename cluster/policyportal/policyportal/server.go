@@ -24,6 +24,7 @@ import (
 	"github.com/octelium/octelium/cluster/common/grpcutils"
 	"github.com/octelium/octelium/cluster/common/healthcheck"
 	"github.com/octelium/octelium/cluster/common/sessionc"
+	"github.com/octelium/octelium/cluster/common/spiffec"
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/cluster/common/watchers"
 	"github.com/octelium/octelium/cluster/octovigil/octovigil"
@@ -83,8 +84,16 @@ func NewServer(ctx context.Context, octeliumC octeliumc.ClientInterface) (*Serve
 }
 
 func (s *Server) run(ctx context.Context) error {
+	cred, err := spiffec.GetGRPCServerCred(ctx, nil)
+	if err != nil {
+		return err
+	}
 
-	grpcSrv := grpc.NewServer()
+	grpcSrv := grpc.NewServer(
+		cred,
+		grpc.ReadBufferSize(32*1024),
+		grpc.MaxConcurrentStreams(1000000),
+	)
 	enterprisev1.RegisterPolicyPortalServiceServer(grpcSrv, s)
 	go func() {
 

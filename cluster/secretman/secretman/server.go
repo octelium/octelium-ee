@@ -23,6 +23,7 @@ import (
 	"github.com/octelium/octelium/cluster/common/commoninit"
 	"github.com/octelium/octelium/cluster/common/healthcheck"
 	"github.com/octelium/octelium/cluster/common/postgresutils"
+	"github.com/octelium/octelium/cluster/common/spiffec"
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -67,7 +68,16 @@ func newServer(ctx context.Context,
 
 func (s *server) run(ctx context.Context) error {
 
-	srv := grpc.NewServer()
+	cred, err := spiffec.GetGRPCServerCred(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	srv := grpc.NewServer(
+		cred,
+		grpc.ReadBufferSize(32*1024),
+		grpc.MaxConcurrentStreams(1000000),
+	)
 	csecretmanv1.RegisterMainServiceServer(srv, s)
 
 	lis, err := net.Listen("tcp", ":8080")

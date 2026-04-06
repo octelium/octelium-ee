@@ -18,6 +18,7 @@ import (
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
 	"github.com/octelium/octelium/apis/main/visibilityv1"
 	"github.com/octelium/octelium/cluster/common/healthcheck"
+	"github.com/octelium/octelium/cluster/common/spiffec"
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/utils/ldflags"
 	"github.com/patrickmn/go-cache"
@@ -105,8 +106,16 @@ func Run(ctx context.Context) error {
 }
 
 func (s *Server) initGRPC(ctx context.Context) error {
+	cred, err := spiffec.GetGRPCServerCred(ctx, nil)
+	if err != nil {
+		return err
+	}
 
-	grpcSrv := grpc.NewServer()
+	grpcSrv := grpc.NewServer(
+		cred,
+		grpc.ReadBufferSize(32*1024),
+		grpc.MaxConcurrentStreams(1000000),
+	)
 
 	srv := s.newSrvMetric()
 
