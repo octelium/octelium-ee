@@ -20,6 +20,7 @@ import (
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcorev1"
 	"github.com/octelium/octelium/cluster/common/healthcheck"
+	oc "github.com/octelium/octelium/cluster/common/octeliumc"
 	"github.com/octelium/octelium/cluster/common/spiffec"
 	"github.com/octelium/octelium/cluster/common/vutils"
 	watchercore "github.com/octelium/octelium/cluster/common/watchers"
@@ -29,8 +30,6 @@ import (
 	"go.opentelemetry.io/collector/pdata/plog/plogotlp"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/backoff"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 const tstAddr = "localhost:32123"
@@ -98,14 +97,9 @@ func newServer(ctx context.Context, octeliumC octeliumc.ClientInterface) (*Serve
 	}
 
 	{
-		grpcOpts := []grpc.DialOption{
-			grpc.WithConnectParams(grpc.ConnectParams{
-				Backoff: backoff.DefaultConfig,
-			}),
-		}
-
-		{
-			grpcOpts = append(grpcOpts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		grpcOpts, err := oc.DefaultDialOpts(ctx)
+		if err != nil {
+			return nil, err
 		}
 
 		conn, err := grpc.NewClient(getAddr(), grpcOpts...)

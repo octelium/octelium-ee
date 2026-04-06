@@ -17,6 +17,7 @@ import (
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
+	oc "github.com/octelium/octelium/cluster/common/octeliumc"
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
@@ -26,8 +27,6 @@ import (
 	"go.opentelemetry.io/collector/pdata/plog/plogotlp"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/backoff"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 type Controller struct {
@@ -47,14 +46,10 @@ func NewController(
 	ctx context.Context,
 	octeliumC octeliumc.ClientInterface,
 ) (*Controller, error) {
-	grpcOpts := []grpc.DialOption{
-		grpc.WithConnectParams(grpc.ConnectParams{
-			Backoff: backoff.DefaultConfig,
-		}),
-	}
 
-	{
-		grpcOpts = append(grpcOpts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	grpcOpts, err := oc.DefaultDialOpts(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	conn, err := grpc.NewClient(getAddr(), grpcOpts...)
