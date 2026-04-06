@@ -26,6 +26,7 @@ import (
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/client/common/client"
+	"github.com/octelium/octelium/client/common/cliutils"
 	"github.com/octelium/octelium/cluster/common/k8sutils"
 	"github.com/octelium/octelium/cluster/common/vutils"
 	utils_cert "github.com/octelium/octelium/pkg/utils/cert"
@@ -539,6 +540,10 @@ func (s *server) installClusterCert(ctx context.Context) error {
 func (s *server) runSDK(ctx context.Context) error {
 
 	t := s.t
+	if err := cliutils.OpenDB(""); err != nil {
+		return err
+	}
+	defer cliutils.CloseDB()
 
 	conn, err := client.GetGRPCClientConn(ctx, s.domain)
 	assert.Nil(t, err)
