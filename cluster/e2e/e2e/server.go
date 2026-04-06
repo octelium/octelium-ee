@@ -24,6 +24,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
 	"github.com/octelium/octelium/apis/main/corev1"
+	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/client/common/client"
 	"github.com/octelium/octelium/client/common/cliutils"
@@ -466,6 +467,15 @@ func (s *server) checkComponents(ctx context.Context) error {
 		"rscserver",
 		"octovigil",
 		"gwagent",
+
+		"clusterman",
+		"secretman",
+		"logstore",
+		"rscstore",
+		"metricstore",
+		"cloudman",
+		"collector",
+		"policyportal",
 	}
 
 	zap.L().Debug("Starting checking components",
@@ -549,17 +559,71 @@ func (s *server) runSDK(ctx context.Context) error {
 	assert.Nil(t, err)
 	defer conn.Close()
 
-	c := corev1.NewMainServiceClient(conn)
+	coreC := corev1.NewMainServiceClient(conn)
 
-	_, err = c.CreateUser(ctx, &corev1.User{
-		Metadata: &metav1.Metadata{
-			Name: utilrand.GetRandomStringCanonical(8),
-		},
-		Spec: &corev1.User_Spec{
-			Type: corev1.User_Spec_WORKLOAD,
-		},
-	})
-	assert.Nil(t, err)
+	enterpriseC := enterprisev1.NewMainServiceClient(conn)
+
+	{
+		_, err = coreC.CreateUser(ctx, &corev1.User{
+			Metadata: &metav1.Metadata{
+				Name: utilrand.GetRandomStringCanonical(8),
+			},
+			Spec: &corev1.User_Spec{
+				Type: corev1.User_Spec_WORKLOAD,
+			},
+		})
+		assert.Nil(t, err)
+	}
+	{
+		_, err := enterpriseC.GetClusterConfig(ctx, &enterprisev1.GetClusterConfigRequest{})
+		assert.Nil(t, err)
+	}
+
+	{
+		sec, err := enterpriseC.CreateSecret(ctx, &enterprisev1.Secret{
+			Metadata: &metav1.Metadata{
+				Name: utilrand.GetRandomStringCanonical(8),
+			},
+			Spec: &enterprisev1.Secret_Spec{},
+			Data: &enterprisev1.Secret_Data{
+				Type: &enterprisev1.Secret_Data_Value{
+					Value: utilrand.GetRandomStringCanonical(32),
+				},
+			},
+		})
+		assert.Nil(t, err)
+
+		sec.Data = &enterprisev1.Secret_Data{
+			Type: &enterprisev1.Secret_Data_Value{
+				Value: utilrand.GetRandomStringCanonical(32),
+			},
+		}
+
+		sec, err = enterpriseC.UpdateSecret(ctx, sec)
+		assert.Nil(t, err)
+
+		_, err = enterpriseC.DeleteSecret(ctx, &metav1.DeleteOptions{
+			Name: sec.Metadata.Name,
+		})
+		assert.Nil(t, err)
+	}
+
+	{
+		_, err = enterpriseC.GetDNSProvider(ctx, &metav1.GetOptions{
+			Name: "default",
+		})
+		assert.Nil(t, err)
+
+		_, err = enterpriseC.GetCertificateIssuer(ctx, &metav1.GetOptions{
+			Name: "default",
+		})
+		assert.Nil(t, err)
+
+		_, err = enterpriseC.GetSecretStore(ctx, &metav1.GetOptions{
+			Name: "default",
+		})
+		assert.Nil(t, err)
+	}
 
 	return nil
 }
