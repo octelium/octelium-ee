@@ -16,9 +16,8 @@ import (
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
-	"github.com/octelium/octelium/cluster/common/k8sutils"
+	"github.com/octelium/octelium/client/octops/commands/install"
 	"github.com/octelium/octelium/cluster/common/vutils"
-	"github.com/octelium/octelium/pkg/utils/ldflags"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -181,58 +180,8 @@ func getGenesisJob(domain string, regionName string, pkg string, version string)
 				ObjectMeta: k8smetav1.ObjectMeta{
 					Labels: labels,
 				},
-				Spec: k8scorev1.PodSpec{
-					ServiceAccountName: "octelium-nocturne",
-					RestartPolicy:      k8scorev1.RestartPolicyNever,
-
-					Containers: []k8scorev1.Container{
-						{
-							Name: "octelium-genesis",
-							Image: func() string {
-								if version != "" {
-									return getGenesisImage(pkg, version)
-								}
-
-								return getGenesisImage(pkg, "latest")
-								/*
-									if ldflags.IsDev() {
-										return getGenesisImage(pkg, "")
-									} else {
-										return getGenesisImage(pkg, "latest")
-									}
-								*/
-							}(),
-							ImagePullPolicy: k8sutils.GetImagePullPolicy(),
-							Args:            []string{"upgrade"},
-							Env: func() []k8scorev1.EnvVar {
-								ret := []k8scorev1.EnvVar{
-									{
-										Name:  "OCTELIUM_DOMAIN",
-										Value: domain,
-									},
-									{
-										Name:  "OCTELIUM_REGION_NAME",
-										Value: regionName,
-									},
-								}
-
-								return ret
-							}(),
-						},
-					},
-				},
+				Spec: install.GetGenesisPodSpec(domain, "upgrade", version, "octelium-nocturne", pkg, regionName),
 			},
 		},
 	}
-}
-
-func getGenesisImage(pkg, version string) string {
-	return getGenesisNSImage(pkg, version)
-}
-
-func getGenesisNSImage(pkg string, version string) string {
-	if pkg == "" {
-		pkg = "octelium"
-	}
-	return ldflags.GetImage(fmt.Sprintf("%s-genesis", pkg), version)
 }

@@ -15,6 +15,7 @@ require (
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-20250516172457-ae6f09fa68bf
 	github.com/octelium/octelium-ee/cluster/genesis v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/client/common v0.0.0-20260403181525-3d68fc772d1a
+	github.com/octelium/octelium/client/octops v0.0.0-20260403181525-3d68fc772d1a
 	github.com/octelium/octelium/cluster/genesis v0.0.0-20260403181525-3d68fc772d1a
 	github.com/spf13/cobra v1.10.2
 	k8s.io/api v0.35.2
