@@ -186,11 +186,9 @@ export interface CollectorExporter_Spec_OTLP {
      */
     endpoint: string;
     /**
-     * @generated from protobuf field: map<string, string> headers = 2
+     * @generated from protobuf field: repeated octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.KeyValue headers = 2
      */
-    headers: {
-        [key: string]: string;
-    };
+    headers: CollectorExporter_Spec_OTLP_KeyValue[];
     /**
      * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth auth = 3
      */
@@ -307,6 +305,19 @@ export interface CollectorExporter_Spec_OTLP_Auth_Custom_Value {
     };
 }
 /**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.KeyValue
+ */
+export interface CollectorExporter_Spec_OTLP_KeyValue {
+    /**
+     * @generated from protobuf field: string key = 1
+     */
+    key: string;
+    /**
+     * @generated from protobuf field: string value = 2
+     */
+    value: string;
+}
+/**
  * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP
  */
 export interface CollectorExporter_Spec_OTLPHTTP {
@@ -315,11 +326,9 @@ export interface CollectorExporter_Spec_OTLPHTTP {
      */
     endpoint: string;
     /**
-     * @generated from protobuf field: map<string, string> headers = 2
+     * @generated from protobuf field: repeated octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.KeyValue headers = 2
      */
-    headers: {
-        [key: string]: string;
-    };
+    headers: CollectorExporter_Spec_OTLPHTTP_KeyValue[];
     /**
      * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth auth = 3
      */
@@ -446,6 +455,19 @@ export interface CollectorExporter_Spec_OTLPHTTP_Auth_Custom_Value {
     } | {
         oneofKind: undefined;
     };
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.KeyValue
+ */
+export interface CollectorExporter_Spec_OTLPHTTP_KeyValue {
+    /**
+     * @generated from protobuf field: string key = 1
+     */
+    key: string;
+    /**
+     * @generated from protobuf field: string value = 2
+     */
+    value: string;
 }
 /**
  * @generated from protobuf enum octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Mode
@@ -2845,6 +2867,56 @@ export interface SecretStore_Status {
      * @generated from protobuf field: octelium.api.main.enterprise.v1.SecretStore.Status.State state = 2
      */
     state: SecretStore_Status_State;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization synchronization = 3
+     */
+    synchronization?: SecretStore_Status_Synchronization;
+    /**
+     * @generated from protobuf field: repeated octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization lastSynchronizations = 4
+     */
+    lastSynchronizations: SecretStore_Status_Synchronization[];
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization
+ */
+export interface SecretStore_Status_Synchronization {
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp createdAt = 1
+     */
+    createdAt?: Timestamp;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization.State state = 2
+     */
+    state: SecretStore_Status_Synchronization_State;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp completedAt = 3
+     */
+    completedAt?: Timestamp;
+}
+/**
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization.State
+ */
+export enum SecretStore_Status_Synchronization_State {
+    /**
+     * @generated from protobuf enum value: STATE_UNSET = 0;
+     */
+    STATE_UNSET = 0,
+    /**
+     * @generated from protobuf enum value: SYNC_REQUESTED = 1;
+     */
+    SYNC_REQUESTED = 1,
+    /**
+     * @generated from protobuf enum value: SYNCING = 2;
+     */
+    SYNCING = 2,
+    /**
+     * @generated from protobuf enum value: SUCCESS = 3;
+     */
+    SUCCESS = 3,
+    /**
+     * @generated from protobuf enum value: FAILED = 4;
+     */
+    FAILED = 4
 }
 /**
  * @generated from protobuf enum octelium.api.main.enterprise.v1.SecretStore.Status.Type
@@ -4127,6 +4199,20 @@ export interface UpgradeClusterRequest_Request_PackageCordium {
  */
 export interface UpgradeClusterResponse {
 }
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.SynchronizeSecretStoreRequest
+ */
+export interface SynchronizeSecretStoreRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference secretStoreRef = 1
+     */
+    secretStoreRef?: ObjectReference;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.SynchronizeSecretStoreResponse
+ */
+export interface SynchronizeSecretStoreResponse {
+}
 // @generated message type with reflection information, may provide speed optimized methods
 class GetClusterConfigRequest$Type extends MessageType<GetClusterConfigRequest> {
     constructor() {
@@ -4460,7 +4546,7 @@ class CollectorExporter_Spec_OTLP$Type extends MessageType<CollectorExporter_Spe
     constructor() {
         super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP", [
             { no: 1, name: "endpoint", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "headers", kind: "map", K: 9 /*ScalarType.STRING*/, V: { kind: "scalar", T: 9 /*ScalarType.STRING*/ } },
+            { no: 2, name: "headers", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => CollectorExporter_Spec_OTLP_KeyValue },
             { no: 3, name: "auth", kind: "message", T: () => CollectorExporter_Spec_OTLP_Auth },
             { no: 4, name: "noTLS", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
@@ -4468,7 +4554,7 @@ class CollectorExporter_Spec_OTLP$Type extends MessageType<CollectorExporter_Spe
     create(value?: PartialMessage<CollectorExporter_Spec_OTLP>): CollectorExporter_Spec_OTLP {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.endpoint = "";
-        message.headers = {};
+        message.headers = [];
         message.noTLS = false;
         if (value !== undefined)
             reflectionMergePartial<CollectorExporter_Spec_OTLP>(this, message, value);
@@ -4482,8 +4568,8 @@ class CollectorExporter_Spec_OTLP$Type extends MessageType<CollectorExporter_Spe
                 case /* string endpoint */ 1:
                     message.endpoint = reader.string();
                     break;
-                case /* map<string, string> headers */ 2:
-                    this.binaryReadMap2(message.headers, reader, options);
+                case /* repeated octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.KeyValue headers */ 2:
+                    message.headers.push(CollectorExporter_Spec_OTLP_KeyValue.internalBinaryRead(reader, reader.uint32(), options));
                     break;
                 case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth auth */ 3:
                     message.auth = CollectorExporter_Spec_OTLP_Auth.internalBinaryRead(reader, reader.uint32(), options, message.auth);
@@ -4502,29 +4588,13 @@ class CollectorExporter_Spec_OTLP$Type extends MessageType<CollectorExporter_Spe
         }
         return message;
     }
-    private binaryReadMap2(map: CollectorExporter_Spec_OTLP["headers"], reader: IBinaryReader, options: BinaryReadOptions): void {
-        let len = reader.uint32(), end = reader.pos + len, key: keyof CollectorExporter_Spec_OTLP["headers"] | undefined, val: CollectorExporter_Spec_OTLP["headers"][any] | undefined;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case 1:
-                    key = reader.string();
-                    break;
-                case 2:
-                    val = reader.string();
-                    break;
-                default: throw new globalThis.Error("unknown map entry field for octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.headers");
-            }
-        }
-        map[key ?? ""] = val ?? "";
-    }
     internalBinaryWrite(message: CollectorExporter_Spec_OTLP, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
         /* string endpoint = 1; */
         if (message.endpoint !== "")
             writer.tag(1, WireType.LengthDelimited).string(message.endpoint);
-        /* map<string, string> headers = 2; */
-        for (let k of globalThis.Object.keys(message.headers))
-            writer.tag(2, WireType.LengthDelimited).fork().tag(1, WireType.LengthDelimited).string(k).tag(2, WireType.LengthDelimited).string(message.headers[k]).join();
+        /* repeated octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.KeyValue headers = 2; */
+        for (let i = 0; i < message.headers.length; i++)
+            CollectorExporter_Spec_OTLP_KeyValue.internalBinaryWrite(message.headers[i], writer.tag(2, WireType.LengthDelimited).fork(), options).join();
         /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth auth = 3; */
         if (message.auth)
             CollectorExporter_Spec_OTLP_Auth.internalBinaryWrite(message.auth, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
@@ -4870,11 +4940,66 @@ class CollectorExporter_Spec_OTLP_Auth_Custom_Value$Type extends MessageType<Col
  */
 export const CollectorExporter_Spec_OTLP_Auth_Custom_Value = new CollectorExporter_Spec_OTLP_Auth_Custom_Value$Type();
 // @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_OTLP_KeyValue$Type extends MessageType<CollectorExporter_Spec_OTLP_KeyValue> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.KeyValue", [
+            { no: 1, name: "key", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "value", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_OTLP_KeyValue>): CollectorExporter_Spec_OTLP_KeyValue {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.key = "";
+        message.value = "";
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_OTLP_KeyValue>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_OTLP_KeyValue): CollectorExporter_Spec_OTLP_KeyValue {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string key */ 1:
+                    message.key = reader.string();
+                    break;
+                case /* string value */ 2:
+                    message.value = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_OTLP_KeyValue, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string key = 1; */
+        if (message.key !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.key);
+        /* string value = 2; */
+        if (message.value !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.value);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.KeyValue
+ */
+export const CollectorExporter_Spec_OTLP_KeyValue = new CollectorExporter_Spec_OTLP_KeyValue$Type();
+// @generated message type with reflection information, may provide speed optimized methods
 class CollectorExporter_Spec_OTLPHTTP$Type extends MessageType<CollectorExporter_Spec_OTLPHTTP> {
     constructor() {
         super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP", [
             { no: 1, name: "endpoint", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "headers", kind: "map", K: 9 /*ScalarType.STRING*/, V: { kind: "scalar", T: 9 /*ScalarType.STRING*/ } },
+            { no: 2, name: "headers", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => CollectorExporter_Spec_OTLPHTTP_KeyValue },
             { no: 3, name: "auth", kind: "message", T: () => CollectorExporter_Spec_OTLPHTTP_Auth },
             { no: 4, name: "logsEndpoint", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 5, name: "metricsEndpoint", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
@@ -4885,7 +5010,7 @@ class CollectorExporter_Spec_OTLPHTTP$Type extends MessageType<CollectorExporter
     create(value?: PartialMessage<CollectorExporter_Spec_OTLPHTTP>): CollectorExporter_Spec_OTLPHTTP {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.endpoint = "";
-        message.headers = {};
+        message.headers = [];
         message.logsEndpoint = "";
         message.metricsEndpoint = "";
         message.mode = 0;
@@ -4902,8 +5027,8 @@ class CollectorExporter_Spec_OTLPHTTP$Type extends MessageType<CollectorExporter
                 case /* string endpoint */ 1:
                     message.endpoint = reader.string();
                     break;
-                case /* map<string, string> headers */ 2:
-                    this.binaryReadMap2(message.headers, reader, options);
+                case /* repeated octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.KeyValue headers */ 2:
+                    message.headers.push(CollectorExporter_Spec_OTLPHTTP_KeyValue.internalBinaryRead(reader, reader.uint32(), options));
                     break;
                 case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth auth */ 3:
                     message.auth = CollectorExporter_Spec_OTLPHTTP_Auth.internalBinaryRead(reader, reader.uint32(), options, message.auth);
@@ -4931,29 +5056,13 @@ class CollectorExporter_Spec_OTLPHTTP$Type extends MessageType<CollectorExporter
         }
         return message;
     }
-    private binaryReadMap2(map: CollectorExporter_Spec_OTLPHTTP["headers"], reader: IBinaryReader, options: BinaryReadOptions): void {
-        let len = reader.uint32(), end = reader.pos + len, key: keyof CollectorExporter_Spec_OTLPHTTP["headers"] | undefined, val: CollectorExporter_Spec_OTLPHTTP["headers"][any] | undefined;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case 1:
-                    key = reader.string();
-                    break;
-                case 2:
-                    val = reader.string();
-                    break;
-                default: throw new globalThis.Error("unknown map entry field for octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.headers");
-            }
-        }
-        map[key ?? ""] = val ?? "";
-    }
     internalBinaryWrite(message: CollectorExporter_Spec_OTLPHTTP, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
         /* string endpoint = 1; */
         if (message.endpoint !== "")
             writer.tag(1, WireType.LengthDelimited).string(message.endpoint);
-        /* map<string, string> headers = 2; */
-        for (let k of globalThis.Object.keys(message.headers))
-            writer.tag(2, WireType.LengthDelimited).fork().tag(1, WireType.LengthDelimited).string(k).tag(2, WireType.LengthDelimited).string(message.headers[k]).join();
+        /* repeated octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.KeyValue headers = 2; */
+        for (let i = 0; i < message.headers.length; i++)
+            CollectorExporter_Spec_OTLPHTTP_KeyValue.internalBinaryWrite(message.headers[i], writer.tag(2, WireType.LengthDelimited).fork(), options).join();
         /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth auth = 3; */
         if (message.auth)
             CollectorExporter_Spec_OTLPHTTP_Auth.internalBinaryWrite(message.auth, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
@@ -5307,6 +5416,61 @@ class CollectorExporter_Spec_OTLPHTTP_Auth_Custom_Value$Type extends MessageType
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Custom.Value
  */
 export const CollectorExporter_Spec_OTLPHTTP_Auth_Custom_Value = new CollectorExporter_Spec_OTLPHTTP_Auth_Custom_Value$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_OTLPHTTP_KeyValue$Type extends MessageType<CollectorExporter_Spec_OTLPHTTP_KeyValue> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.KeyValue", [
+            { no: 1, name: "key", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "value", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_OTLPHTTP_KeyValue>): CollectorExporter_Spec_OTLPHTTP_KeyValue {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.key = "";
+        message.value = "";
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_OTLPHTTP_KeyValue>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_OTLPHTTP_KeyValue): CollectorExporter_Spec_OTLPHTTP_KeyValue {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string key */ 1:
+                    message.key = reader.string();
+                    break;
+                case /* string value */ 2:
+                    message.value = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_OTLPHTTP_KeyValue, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string key = 1; */
+        if (message.key !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.key);
+        /* string value = 2; */
+        if (message.value !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.value);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.KeyValue
+ */
+export const CollectorExporter_Spec_OTLPHTTP_KeyValue = new CollectorExporter_Spec_OTLPHTTP_KeyValue$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class CollectorExporter_Spec_PrometheusRemoteWrite$Type extends MessageType<CollectorExporter_Spec_PrometheusRemoteWrite> {
     constructor() {
@@ -12003,13 +12167,16 @@ class SecretStore_Status$Type extends MessageType<SecretStore_Status> {
     constructor() {
         super("octelium.api.main.enterprise.v1.SecretStore.Status", [
             { no: 1, name: "type", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.SecretStore.Status.Type", SecretStore_Status_Type] },
-            { no: 2, name: "state", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.SecretStore.Status.State", SecretStore_Status_State] }
+            { no: 2, name: "state", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.SecretStore.Status.State", SecretStore_Status_State] },
+            { no: 3, name: "synchronization", kind: "message", T: () => SecretStore_Status_Synchronization },
+            { no: 4, name: "lastSynchronizations", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => SecretStore_Status_Synchronization }
         ]);
     }
     create(value?: PartialMessage<SecretStore_Status>): SecretStore_Status {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.type = 0;
         message.state = 0;
+        message.lastSynchronizations = [];
         if (value !== undefined)
             reflectionMergePartial<SecretStore_Status>(this, message, value);
         return message;
@@ -12024,6 +12191,12 @@ class SecretStore_Status$Type extends MessageType<SecretStore_Status> {
                     break;
                 case /* octelium.api.main.enterprise.v1.SecretStore.Status.State state */ 2:
                     message.state = reader.int32();
+                    break;
+                case /* octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization synchronization */ 3:
+                    message.synchronization = SecretStore_Status_Synchronization.internalBinaryRead(reader, reader.uint32(), options, message.synchronization);
+                    break;
+                case /* repeated octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization lastSynchronizations */ 4:
+                    message.lastSynchronizations.push(SecretStore_Status_Synchronization.internalBinaryRead(reader, reader.uint32(), options));
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -12043,6 +12216,12 @@ class SecretStore_Status$Type extends MessageType<SecretStore_Status> {
         /* octelium.api.main.enterprise.v1.SecretStore.Status.State state = 2; */
         if (message.state !== 0)
             writer.tag(2, WireType.Varint).int32(message.state);
+        /* octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization synchronization = 3; */
+        if (message.synchronization)
+            SecretStore_Status_Synchronization.internalBinaryWrite(message.synchronization, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization lastSynchronizations = 4; */
+        for (let i = 0; i < message.lastSynchronizations.length; i++)
+            SecretStore_Status_Synchronization.internalBinaryWrite(message.lastSynchronizations[i], writer.tag(4, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -12053,6 +12232,67 @@ class SecretStore_Status$Type extends MessageType<SecretStore_Status> {
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.SecretStore.Status
  */
 export const SecretStore_Status = new SecretStore_Status$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SecretStore_Status_Synchronization$Type extends MessageType<SecretStore_Status_Synchronization> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization", [
+            { no: 1, name: "createdAt", kind: "message", T: () => Timestamp },
+            { no: 2, name: "state", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization.State", SecretStore_Status_Synchronization_State] },
+            { no: 3, name: "completedAt", kind: "message", T: () => Timestamp }
+        ]);
+    }
+    create(value?: PartialMessage<SecretStore_Status_Synchronization>): SecretStore_Status_Synchronization {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.state = 0;
+        if (value !== undefined)
+            reflectionMergePartial<SecretStore_Status_Synchronization>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: SecretStore_Status_Synchronization): SecretStore_Status_Synchronization {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* google.protobuf.Timestamp createdAt */ 1:
+                    message.createdAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.createdAt);
+                    break;
+                case /* octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization.State state */ 2:
+                    message.state = reader.int32();
+                    break;
+                case /* google.protobuf.Timestamp completedAt */ 3:
+                    message.completedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.completedAt);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: SecretStore_Status_Synchronization, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* google.protobuf.Timestamp createdAt = 1; */
+        if (message.createdAt)
+            Timestamp.internalBinaryWrite(message.createdAt, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization.State state = 2; */
+        if (message.state !== 0)
+            writer.tag(2, WireType.Varint).int32(message.state);
+        /* google.protobuf.Timestamp completedAt = 3; */
+        if (message.completedAt)
+            Timestamp.internalBinaryWrite(message.completedAt, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.SecretStore.Status.Synchronization
+ */
+export const SecretStore_Status_Synchronization = new SecretStore_Status_Synchronization$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class SecretStoreList$Type extends MessageType<SecretStoreList> {
     constructor() {
@@ -16299,6 +16539,90 @@ class UpgradeClusterResponse$Type extends MessageType<UpgradeClusterResponse> {
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.UpgradeClusterResponse
  */
 export const UpgradeClusterResponse = new UpgradeClusterResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SynchronizeSecretStoreRequest$Type extends MessageType<SynchronizeSecretStoreRequest> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.SynchronizeSecretStoreRequest", [
+            { no: 1, name: "secretStoreRef", kind: "message", T: () => ObjectReference }
+        ]);
+    }
+    create(value?: PartialMessage<SynchronizeSecretStoreRequest>): SynchronizeSecretStoreRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<SynchronizeSecretStoreRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: SynchronizeSecretStoreRequest): SynchronizeSecretStoreRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference secretStoreRef */ 1:
+                    message.secretStoreRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.secretStoreRef);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: SynchronizeSecretStoreRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.ObjectReference secretStoreRef = 1; */
+        if (message.secretStoreRef)
+            ObjectReference.internalBinaryWrite(message.secretStoreRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.SynchronizeSecretStoreRequest
+ */
+export const SynchronizeSecretStoreRequest = new SynchronizeSecretStoreRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SynchronizeSecretStoreResponse$Type extends MessageType<SynchronizeSecretStoreResponse> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.SynchronizeSecretStoreResponse", []);
+    }
+    create(value?: PartialMessage<SynchronizeSecretStoreResponse>): SynchronizeSecretStoreResponse {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<SynchronizeSecretStoreResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: SynchronizeSecretStoreResponse): SynchronizeSecretStoreResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: SynchronizeSecretStoreResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.SynchronizeSecretStoreResponse
+ */
+export const SynchronizeSecretStoreResponse = new SynchronizeSecretStoreResponse$Type();
 /**
  * @generated ServiceType for protobuf service octelium.api.main.enterprise.v1.MainService
  */
@@ -16337,6 +16661,7 @@ export const MainService = new ServiceType("octelium.api.main.enterprise.v1.Main
     { name: "GetSecretStore", options: {}, I: GetOptions, O: SecretStore },
     { name: "ListSecretStore", options: {}, I: ListSecretStoreOptions, O: SecretStoreList },
     { name: "UpdateSecretStore", options: {}, I: SecretStore, O: SecretStore },
+    { name: "SynchronizeSecretStore", options: {}, I: SynchronizeSecretStoreRequest, O: SynchronizeSecretStoreResponse },
     { name: "CreateDeviceManager", options: {}, I: DeviceManager, O: DeviceManager },
     { name: "GetDeviceManager", options: {}, I: GetOptions, O: DeviceManager },
     { name: "ListDeviceManager", options: {}, I: ListDeviceManagerOptions, O: DeviceManagerList },

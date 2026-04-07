@@ -1,7 +1,8 @@
 import * as EnterpriseP from "@/apis/enterprisev1/enterprisev1";
+import ItemMessage from "@/components/ItemMessage";
 
 import SelectSecret from "@/components/ResourceLayout/SelectSecret";
-import { Group, Switch, Tabs, TextInput } from "@mantine/core";
+import { CloseButton, Group, Switch, Tabs, TextInput } from "@mantine/core";
 import * as React from "react";
 import { match } from "ts-pattern";
 
@@ -19,7 +20,6 @@ const Edit = (props: {
     onUpdate(req);
   };
 
-  
   if (!req.spec) {
     return <></>;
   }
@@ -1011,6 +1011,66 @@ const Edit = (props: {
                       />
                     </Group>
 
+                    <Group grow>
+                      <ItemMessage
+                        title="Add Headers"
+                        obj={otlp.otlp.headers}
+                        isList
+                        onSet={() => {
+                          otlp.otlp.headers.push(
+                            EnterpriseP.CollectorExporter_Spec_OTLP_KeyValue.create(),
+                          );
+
+                          updateReq();
+                        }}
+                        onAddListItem={() => {
+                          otlp.otlp.headers.push(
+                            EnterpriseP.CollectorExporter_Spec_OTLP_KeyValue.create(),
+                          );
+
+                          updateReq();
+                        }}
+                      >
+                        {otlp.otlp.headers.map((x, idx) => (
+                          <div className="w-full flex mb-3" key={idx}>
+                            <CloseButton
+                              size={"sm"}
+                              variant="subtle"
+                              className="mr-2"
+                              onClick={() => {
+                                otlp.otlp.headers.splice(idx, 1);
+                                updateReq();
+                              }}
+                            ></CloseButton>
+                            <Group className="flex w-full" grow>
+                              <TextInput
+                                required
+                                label="Key"
+                                description="Set the Header key"
+                                placeholder="MY_KEY"
+                                value={x.key}
+                                onChange={(v) => {
+                                  x.key = v.target.value;
+                                  updateReq();
+                                }}
+                              />
+                              <TextInput
+                                required
+                                label="Value"
+                                description="Set the Header value"
+                                placeholder="my-value"
+                                value={x.value}
+                                onChange={(v) => {
+                                  x.value = v.target.value;
+                                  updateReq();
+                                }}
+                              />
+                            </Group>
+                          </div>
+                        ))}
+                      </ItemMessage>
+                    </Group>
+
                     <Tabs
                       defaultValue={otlp.otlp.auth?.type.oneofKind}
                       onChange={(v) => {
@@ -1319,6 +1379,7 @@ const Edit = (props: {
                     <Group grow>
                       <TextInput
                         label="Log Endpoint"
+                        description="Override the logs endpoint"
                         placeholder={`https://otlp-receiver.example.com/v1/logs`}
                         value={otlp.otlpHTTP.logsEndpoint}
                         onChange={(v) => {
@@ -1334,6 +1395,7 @@ const Edit = (props: {
 
                       <TextInput
                         label="Metrics Endpoint"
+                        description="Override the metrics endpoint"
                         placeholder={`https://otlp-receiver.example.com/v1/metrics`}
                         value={otlp.otlpHTTP.metricsEndpoint}
                         onChange={(v) => {
@@ -1346,6 +1408,66 @@ const Edit = (props: {
                           );
                         }}
                       />
+                    </Group>
+
+                    <Group grow>
+                      <ItemMessage
+                        title="Add Headers"
+                        obj={otlp.otlpHTTP.headers}
+                        isList
+                        onSet={() => {
+                          otlp.otlpHTTP.headers.push(
+                            EnterpriseP.CollectorExporter_Spec_OTLPHTTP_KeyValue.create(),
+                          );
+
+                          updateReq();
+                        }}
+                        onAddListItem={() => {
+                          otlp.otlpHTTP.headers.push(
+                            EnterpriseP.CollectorExporter_Spec_OTLPHTTP_KeyValue.create(),
+                          );
+
+                          updateReq();
+                        }}
+                      >
+                        {otlp.otlpHTTP.headers.map((x, idx) => (
+                          <div className="w-full flex mb-3" key={idx}>
+                            <CloseButton
+                              size={"sm"}
+                              variant="subtle"
+                              className="mr-2"
+                              onClick={() => {
+                                otlp.otlpHTTP.headers.splice(idx, 1);
+                                updateReq();
+                              }}
+                            ></CloseButton>
+                            <Group className="flex w-full" grow>
+                              <TextInput
+                                required
+                                label="Key"
+                                description="Set the Header key"
+                                placeholder="MY_KEY"
+                                value={x.key}
+                                onChange={(v) => {
+                                  x.key = v.target.value;
+                                  updateReq();
+                                }}
+                              />
+                              <TextInput
+                                required
+                                label="Value"
+                                description="Set the Header value"
+                                placeholder="my-value"
+                                value={x.value}
+                                onChange={(v) => {
+                                  x.value = v.target.value;
+                                  updateReq();
+                                }}
+                              />
+                            </Group>
+                          </div>
+                        ))}
+                      </ItemMessage>
                     </Group>
 
                     <Tabs

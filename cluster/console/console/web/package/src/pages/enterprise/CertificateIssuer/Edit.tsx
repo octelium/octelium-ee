@@ -1,10 +1,8 @@
 import * as EnterpriseP from "@/apis/enterprisev1/enterprisev1";
 
 import { Group, Tabs, TextInput } from "@mantine/core";
-import { useResourceForm } from "@/pages/utils/form";
-import { match } from "ts-pattern";
-import SelectSecret from "@/components/ResourceLayout/SelectSecret";
 import { useState } from "react";
+import { match } from "ts-pattern";
 
 const Edit = (props: {
   item: EnterpriseP.CertificateIssuer;
@@ -62,7 +60,7 @@ const Edit = (props: {
                       (x) => x?.oneofKind === `acme`,
                       (x) => {
                         x.acme.email = v.target.value;
-                      }
+                      },
                     );
                     updateReq();
                   }}
@@ -77,7 +75,7 @@ const Edit = (props: {
                       (x) => x?.oneofKind === `acme`,
                       (x) => {
                         x.acme.server = v.target.value;
-                      }
+                      },
                     );
                     updateReq();
                   }}

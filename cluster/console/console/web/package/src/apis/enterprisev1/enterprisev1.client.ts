@@ -24,6 +24,8 @@ import type { Condition } from "./enterprisev1";
 import type { DeviceManagerList } from "./enterprisev1";
 import type { ListDeviceManagerOptions } from "./enterprisev1";
 import type { DeviceManager } from "./enterprisev1";
+import type { SynchronizeSecretStoreResponse } from "./enterprisev1";
+import type { SynchronizeSecretStoreRequest } from "./enterprisev1";
 import type { SecretStoreList } from "./enterprisev1";
 import type { ListSecretStoreOptions } from "./enterprisev1";
 import type { SecretStore } from "./enterprisev1";
@@ -68,14 +70,10 @@ import type { RpcOptions } from "@protobuf-ts/runtime-rpc";
  */
 export interface IMainServiceClient {
     /**
-     * GetClusterConfig gets the Cluster Configuration.
-     *
      * @generated from protobuf rpc: GetClusterConfig
      */
     getClusterConfig(input: GetClusterConfigRequest, options?: RpcOptions): UnaryCall<GetClusterConfigRequest, ClusterConfig>;
     /**
-     * UpdateConfig updates the Cluster Configuration.
-     *
      * @generated from protobuf rpc: UpdateClusterConfig
      */
     updateClusterConfig(input: ClusterConfig, options?: RpcOptions): UnaryCall<ClusterConfig, ClusterConfig>;
@@ -100,8 +98,6 @@ export interface IMainServiceClient {
      */
     deleteCollectorExporter(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult>;
     /**
-     * rpc CreateDNSProvider(DNSProvider) returns (DNSProvider) {}
-     *
      * @generated from protobuf rpc: GetDNSProvider
      */
     getDNSProvider(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, DNSProvider>;
@@ -114,8 +110,6 @@ export interface IMainServiceClient {
      */
     updateDNSProvider(input: DNSProvider, options?: RpcOptions): UnaryCall<DNSProvider, DNSProvider>;
     /**
-     * rpc CreateCertificate(Certificate) returns (Certificate) {}
-     *
      * @generated from protobuf rpc: GetCertificate
      */
     getCertificate(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, Certificate>;
@@ -132,9 +126,6 @@ export interface IMainServiceClient {
      */
     issueCertificate(input: IssueCertificateRequest, options?: RpcOptions): UnaryCall<IssueCertificateRequest, IssueCertificateResponse>;
     /**
-     * rpc CreateCertificateIssuer(CertificateIssuer) returns (CertificateIssuer)
-     * {}
-     *
      * @generated from protobuf rpc: GetCertificateIssuer
      */
     getCertificateIssuer(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, CertificateIssuer>;
@@ -213,8 +204,6 @@ export interface IMainServiceClient {
      */
     updateSecret(input: Secret, options?: RpcOptions): UnaryCall<Secret, Secret>;
     /**
-     * rpc CreateSecretStore(SecretStore) returns (SecretStore) {}
-     *
      * @generated from protobuf rpc: GetSecretStore
      */
     getSecretStore(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, SecretStore>;
@@ -226,6 +215,10 @@ export interface IMainServiceClient {
      * @generated from protobuf rpc: UpdateSecretStore
      */
     updateSecretStore(input: SecretStore, options?: RpcOptions): UnaryCall<SecretStore, SecretStore>;
+    /**
+     * @generated from protobuf rpc: SynchronizeSecretStore
+     */
+    synchronizeSecretStore(input: SynchronizeSecretStoreRequest, options?: RpcOptions): UnaryCall<SynchronizeSecretStoreRequest, SynchronizeSecretStoreResponse>;
     /**
      * @generated from protobuf rpc: CreateDeviceManager
      */
@@ -261,8 +254,6 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
     constructor(private readonly _transport: RpcTransport) {
     }
     /**
-     * GetClusterConfig gets the Cluster Configuration.
-     *
      * @generated from protobuf rpc: GetClusterConfig
      */
     getClusterConfig(input: GetClusterConfigRequest, options?: RpcOptions): UnaryCall<GetClusterConfigRequest, ClusterConfig> {
@@ -270,8 +261,6 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<GetClusterConfigRequest, ClusterConfig>("unary", this._transport, method, opt, input);
     }
     /**
-     * UpdateConfig updates the Cluster Configuration.
-     *
      * @generated from protobuf rpc: UpdateClusterConfig
      */
     updateClusterConfig(input: ClusterConfig, options?: RpcOptions): UnaryCall<ClusterConfig, ClusterConfig> {
@@ -314,8 +303,6 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<DeleteOptions, OperationResult>("unary", this._transport, method, opt, input);
     }
     /**
-     * rpc CreateDNSProvider(DNSProvider) returns (DNSProvider) {}
-     *
      * @generated from protobuf rpc: GetDNSProvider
      */
     getDNSProvider(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, DNSProvider> {
@@ -337,8 +324,6 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<DNSProvider, DNSProvider>("unary", this._transport, method, opt, input);
     }
     /**
-     * rpc CreateCertificate(Certificate) returns (Certificate) {}
-     *
      * @generated from protobuf rpc: GetCertificate
      */
     getCertificate(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, Certificate> {
@@ -367,9 +352,6 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<IssueCertificateRequest, IssueCertificateResponse>("unary", this._transport, method, opt, input);
     }
     /**
-     * rpc CreateCertificateIssuer(CertificateIssuer) returns (CertificateIssuer)
-     * {}
-     *
      * @generated from protobuf rpc: GetCertificateIssuer
      */
     getCertificateIssuer(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, CertificateIssuer> {
@@ -499,8 +481,6 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<Secret, Secret>("unary", this._transport, method, opt, input);
     }
     /**
-     * rpc CreateSecretStore(SecretStore) returns (SecretStore) {}
-     *
      * @generated from protobuf rpc: GetSecretStore
      */
     getSecretStore(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, SecretStore> {
@@ -522,45 +502,52 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<SecretStore, SecretStore>("unary", this._transport, method, opt, input);
     }
     /**
+     * @generated from protobuf rpc: SynchronizeSecretStore
+     */
+    synchronizeSecretStore(input: SynchronizeSecretStoreRequest, options?: RpcOptions): UnaryCall<SynchronizeSecretStoreRequest, SynchronizeSecretStoreResponse> {
+        const method = this.methods[34], opt = this._transport.mergeOptions(options);
+        return stackIntercept<SynchronizeSecretStoreRequest, SynchronizeSecretStoreResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
      * @generated from protobuf rpc: CreateDeviceManager
      */
     createDeviceManager(input: DeviceManager, options?: RpcOptions): UnaryCall<DeviceManager, DeviceManager> {
-        const method = this.methods[34], opt = this._transport.mergeOptions(options);
+        const method = this.methods[35], opt = this._transport.mergeOptions(options);
         return stackIntercept<DeviceManager, DeviceManager>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: GetDeviceManager
      */
     getDeviceManager(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, DeviceManager> {
-        const method = this.methods[35], opt = this._transport.mergeOptions(options);
+        const method = this.methods[36], opt = this._transport.mergeOptions(options);
         return stackIntercept<GetOptions, DeviceManager>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: ListDeviceManager
      */
     listDeviceManager(input: ListDeviceManagerOptions, options?: RpcOptions): UnaryCall<ListDeviceManagerOptions, DeviceManagerList> {
-        const method = this.methods[36], opt = this._transport.mergeOptions(options);
+        const method = this.methods[37], opt = this._transport.mergeOptions(options);
         return stackIntercept<ListDeviceManagerOptions, DeviceManagerList>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: UpdateDeviceManager
      */
     updateDeviceManager(input: DeviceManager, options?: RpcOptions): UnaryCall<DeviceManager, DeviceManager> {
-        const method = this.methods[37], opt = this._transport.mergeOptions(options);
+        const method = this.methods[38], opt = this._transport.mergeOptions(options);
         return stackIntercept<DeviceManager, DeviceManager>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: DeleteDeviceManager
      */
     deleteDeviceManager(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult> {
-        const method = this.methods[38], opt = this._transport.mergeOptions(options);
+        const method = this.methods[39], opt = this._transport.mergeOptions(options);
         return stackIntercept<DeleteOptions, OperationResult>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: GetCoreCondition
      */
     getCoreCondition(input: Condition, options?: RpcOptions): UnaryCall<Condition, Condition$> {
-        const method = this.methods[39], opt = this._transport.mergeOptions(options);
+        const method = this.methods[40], opt = this._transport.mergeOptions(options);
         return stackIntercept<Condition, Condition$>("unary", this._transport, method, opt, input);
     }
 }
