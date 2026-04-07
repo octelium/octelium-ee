@@ -4,9 +4,7 @@ go 1.25.8
 
 require (
 	github.com/go-resty/resty/v2 v2.17.2
-	github.com/go-sql-driver/mysql v1.9.3
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
-	github.com/lib/pq v1.11.2
 	github.com/octelium/octelium/apis v0.0.0-20260403181525-3d68fc772d1a
 	github.com/octelium/octelium/client/common v0.0.0-20260403181525-3d68fc772d1a
 	github.com/octelium/octelium/cluster/common v0.0.0-20260403181525-3d68fc772d1a
@@ -21,7 +19,6 @@ require (
 )
 
 require (
-	filippo.io/edwards25519 v1.1.1 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/chzyer/readline v1.5.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect

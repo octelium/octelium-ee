@@ -17,19 +17,23 @@ import (
 	"net/http"
 	"os"
 	"os/user"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/go-resty/resty/v2"
-	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/lib/pq"
+
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
+	"github.com/octelium/octelium/apis/main/userv1"
+	"github.com/octelium/octelium/apis/main/visibilityv1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vcorev1"
 	"github.com/octelium/octelium/client/common/client"
 	"github.com/octelium/octelium/client/common/cliutils"
 	"github.com/octelium/octelium/cluster/common/k8sutils"
 	"github.com/octelium/octelium/cluster/common/vutils"
+	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	utils_cert "github.com/octelium/octelium/pkg/utils/cert"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/pkg/errors"
@@ -561,7 +565,32 @@ func (s *server) runSDK(ctx context.Context) error {
 
 	coreC := corev1.NewMainServiceClient(conn)
 
+	userC := userv1.NewMainServiceClient(conn)
+
 	enterpriseC := enterprisev1.NewMainServiceClient(conn)
+	accessLogC := visibilityv1.NewAccessLogServiceClient(conn)
+	auditLogC := visibilityv1.NewAuditLogServiceClient(conn)
+	authenticationLogC := visibilityv1.NewAuthenticationLogServiceClient(conn)
+	visibilityCoreC := vcorev1.NewResourceServiceClient(conn)
+	policyPortalC := enterprisev1.NewPolicyPortalServiceClient(conn)
+
+	status, err := userC.GetStatus(ctx, &userv1.GetStatusRequest{})
+	assert.Nil(t, err)
+
+	meUsr, err := coreC.GetUser(ctx, &metav1.GetOptions{
+		Name: status.User.Metadata.Name,
+	})
+	assert.Nil(t, err)
+
+	meSess, err := coreC.GetSession(ctx, &metav1.GetOptions{
+		Uid: status.Session.Metadata.Uid,
+	})
+	assert.Nil(t, err)
+
+	eeAPISvc, err := coreC.GetService(ctx, &metav1.GetOptions{
+		Name: "enterprise.octelium-api",
+	})
+	assert.Nil(t, err)
 
 	{
 		_, err = coreC.CreateUser(ctx, &corev1.User{
@@ -623,6 +652,106 @@ func (s *server) runSDK(ctx context.Context) error {
 			Name: "default",
 		})
 		assert.Nil(t, err)
+	}
+
+	{
+		res, err := accessLogC.ListAccessLog(ctx, &visibilityv1.ListAccessLogRequest{})
+		assert.Nil(t, err)
+
+		assert.True(t, len(res.Items) > 0)
+	}
+
+	{
+		res, err := accessLogC.ListAccessLog(ctx, &visibilityv1.ListAccessLogRequest{
+			UserRef: umetav1.GetObjectReference(meUsr),
+		})
+		assert.Nil(t, err)
+
+		assert.True(t, len(res.Items) > 0)
+
+		for _, itm := range res.Items {
+			assert.Equal(t, status.User.Metadata.Uid, itm.Entry.Common.UserRef.Uid)
+		}
+	}
+
+	{
+		res, err := auditLogC.ListAuditLog(ctx, &visibilityv1.ListAuditLogRequest{
+			UserRef: umetav1.GetObjectReference(meUsr),
+		})
+		assert.Nil(t, err)
+
+		assert.True(t, len(res.Items) > 0)
+
+		for _, itm := range res.Items {
+			assert.Equal(t, status.User.Metadata.Uid, itm.Entry.UserRef.Uid)
+		}
+	}
+
+	{
+		res, err := authenticationLogC.ListAuthenticationLog(ctx, &visibilityv1.ListAuthenticationLogRequest{
+			UserRef: umetav1.GetObjectReference(meUsr),
+		})
+		assert.Nil(t, err)
+
+		assert.True(t, len(res.Items) > 0)
+
+		for _, itm := range res.Items {
+			assert.Equal(t, status.User.Metadata.Uid, itm.Entry.UserRef.Uid)
+		}
+	}
+
+	{
+		res, err := policyPortalC.IsAuthorized(ctx, &enterprisev1.IsAuthorizedRequest{
+			Downstream: &enterprisev1.IsAuthorizedRequest_SessionRef{
+				SessionRef: umetav1.GetObjectReference(meSess),
+			},
+			Upstream: &enterprisev1.IsAuthorizedRequest_ServiceRef{
+				ServiceRef: umetav1.GetObjectReference(eeAPISvc),
+			},
+		})
+		assert.Nil(t, err)
+
+		assert.True(t, res.IsAuthorized)
+	}
+
+	{
+		usr, err := coreC.CreateUser(ctx, &corev1.User{
+			Metadata: &metav1.Metadata{
+				Name: utilrand.GetRandomStringCanonical(8),
+			},
+			Spec: &corev1.User_Spec{
+				Type: corev1.User_Spec_WORKLOAD,
+			},
+		})
+		assert.Nil(t, err)
+
+		res, err := policyPortalC.IsAuthorized(ctx, &enterprisev1.IsAuthorizedRequest{
+			Downstream: &enterprisev1.IsAuthorizedRequest_UserRef{
+				UserRef: umetav1.GetObjectReference(usr),
+			},
+			Upstream: &enterprisev1.IsAuthorizedRequest_ServiceRef{
+				ServiceRef: umetav1.GetObjectReference(eeAPISvc),
+			},
+		})
+		assert.Nil(t, err)
+
+		assert.False(t, res.IsAuthorized)
+	}
+
+	{
+		res, err := visibilityCoreC.ListUser(ctx, &vcorev1.ListUserOptions{})
+		assert.Nil(t, err)
+
+		usrList, err := coreC.ListUser(ctx, &corev1.ListUserOptions{})
+		assert.Nil(t, err)
+
+		assert.Equal(t, res.ListResponseMeta.TotalCount, usrList.ListResponseMeta.TotalCount)
+
+		for _, usr := range usrList.Items {
+			assert.True(t, slices.ContainsFunc(res.Items, func(itm *corev1.User) bool {
+				return itm.Metadata.Uid == usr.Metadata.Uid
+			}))
+		}
 	}
 
 	return nil
