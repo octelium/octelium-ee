@@ -1,6 +1,6 @@
 import * as EnterpriseP from "@/apis/enterprisev1/enterprisev1";
 import SelectSecret from "@/components/ResourceLayout/SelectSecret";
-import { Group, Switch, Tabs, TextInput } from "@mantine/core";
+import { Group, Tabs, TextInput } from "@mantine/core";
 import * as React from "react";
 import { match } from "ts-pattern";
 
@@ -117,6 +117,7 @@ const Edit = (props: {
                 <TextInput
                   required
                   label="Email"
+                  description="Set the Cloudflare's account email"
                   placeholder="cloudflare@example.com"
                   value={req.spec!.type.cloudflare.email}
                   onChange={(v) => {
@@ -132,6 +133,8 @@ const Edit = (props: {
 
                 <SelectSecret
                   api="enterprise"
+                  label="API Token"
+                  description="Set the API Token Secret"
                   defaultValue={
                     req.spec!.type.cloudflare.apiToken?.type.oneofKind ===
                     `fromSecret`
@@ -153,7 +156,9 @@ const Edit = (props: {
                     );
                   }}
                 />
-                <Switch
+                {/**
+                
+                 <Switch
                   label="Proxied"
                   checked={req.spec?.type.cloudflare.proxied}
                   onChange={(v) => {
@@ -166,6 +171,7 @@ const Edit = (props: {
                     );
                   }}
                 />
+                **/}
               </Group>
             </>
           )}
@@ -186,6 +192,8 @@ const Edit = (props: {
                               <Group grow>
                                 <SelectSecret
                                   api="enterprise"
+                                  label="API Token"
+                                  description="Set the API Token Secret"
                                   defaultValue={d.fromSecret}
                                   onChange={(v) => {
                                     d.fromSecret = v ?? "";
@@ -225,6 +233,8 @@ const Edit = (props: {
                                 <SelectSecret
                                   api="enterprise"
                                   defaultValue={d.fromSecret}
+                                  label="API Token"
+                                  description="Set the API Token Secret"
                                   onChange={(v) => {
                                     d.fromSecret = v ?? "";
                                     updateReq();

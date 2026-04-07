@@ -2,7 +2,14 @@ import * as EnterpriseP from "@/apis/enterprisev1/enterprisev1";
 import ItemMessage from "@/components/ItemMessage";
 
 import SelectSecret from "@/components/ResourceLayout/SelectSecret";
-import { CloseButton, Group, Switch, Tabs, TextInput } from "@mantine/core";
+import {
+  CloseButton,
+  Group,
+  Select,
+  Switch,
+  Tabs,
+  TextInput,
+} from "@mantine/core";
 import * as React from "react";
 import { match } from "ts-pattern";
 
@@ -1369,6 +1376,7 @@ const Edit = (props: {
                             (x) => x?.oneofKind === `otlpHTTP`,
                             (x) => {
                               x.otlpHTTP.endpoint = v.target.value;
+
                               updateReq();
                             },
                           );
@@ -1406,6 +1414,83 @@ const Edit = (props: {
                               updateReq();
                             },
                           );
+                        }}
+                      />
+                    </Group>
+
+                    <Group grow>
+                      <Select
+                        label="Mode"
+                        description="Set the message mode"
+                        data={[
+                          {
+                            label: "JSON",
+                            value:
+                              EnterpriseP.CollectorExporter_Spec_OTLPHTTP_Mode[
+                                EnterpriseP.CollectorExporter_Spec_OTLPHTTP_Mode
+                                  .JSON
+                              ],
+                          },
+                          {
+                            label: "Proto",
+                            value:
+                              EnterpriseP.CollectorExporter_Spec_OTLPHTTP_Mode[
+                                EnterpriseP.CollectorExporter_Spec_OTLPHTTP_Mode
+                                  .PROTO
+                              ],
+                          },
+                        ]}
+                        value={
+                          EnterpriseP.CollectorExporter_Spec_OTLPHTTP_Mode[
+                            otlp.otlpHTTP.mode
+                          ]
+                        }
+                        onChange={(v) => {
+                          otlp.otlpHTTP.mode =
+                            EnterpriseP.CollectorExporter_Spec_OTLPHTTP_Mode[
+                              v as "PROTO"
+                            ];
+                          updateReq();
+                        }}
+                      />
+
+                      <Select
+                        label="Compression"
+                        description="Set the compression type"
+                        data={[
+                          {
+                            label: "Gzip",
+                            value:
+                              EnterpriseP
+                                .CollectorExporter_Spec_OTLPHTTP_Compression[
+                                EnterpriseP
+                                  .CollectorExporter_Spec_OTLPHTTP_Compression
+                                  .GZIP
+                              ],
+                          },
+                          {
+                            label: "None",
+                            value:
+                              EnterpriseP
+                                .CollectorExporter_Spec_OTLPHTTP_Compression[
+                                EnterpriseP
+                                  .CollectorExporter_Spec_OTLPHTTP_Compression
+                                  .NONE
+                              ],
+                          },
+                        ]}
+                        value={
+                          EnterpriseP
+                            .CollectorExporter_Spec_OTLPHTTP_Compression[
+                            otlp.otlpHTTP.compression
+                          ]
+                        }
+                        onChange={(v) => {
+                          otlp.otlpHTTP.compression =
+                            EnterpriseP.CollectorExporter_Spec_OTLPHTTP_Compression[
+                              v as "NONE"
+                            ];
+                          updateReq();
                         }}
                       />
                     </Group>
