@@ -223,7 +223,7 @@ func (s *server) doListDataSecret(ctx context.Context, req *csecretmanv1.ListSec
 	}
 
 	dbItems := []*dbItem{}
-
+	defer rows.Close()
 	for rows.Next() {
 		itm := &dbItem{}
 		if err := rows.Scan(&itm.uid, &itm.resourceVersion, &itm.ciphertext, &itm.keyUID); err != nil {

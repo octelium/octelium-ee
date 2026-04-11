@@ -157,7 +157,7 @@ func (s *server) doListDEK(ctx context.Context) ([]*dek, error) {
 	}
 
 	var ret []*dek
-
+	defer rows.Close()
 	for rows.Next() {
 		var uid string
 		var keyUID string

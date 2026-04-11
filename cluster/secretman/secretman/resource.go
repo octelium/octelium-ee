@@ -45,7 +45,7 @@ func (s *server) setStaleSecretResources(ctx context.Context) error {
 	if err != nil {
 		return rerr.InternalWithErr(err)
 	}
-
+	defer rows.Close()
 	for rows.Next() {
 		var data []byte
 		var count int
