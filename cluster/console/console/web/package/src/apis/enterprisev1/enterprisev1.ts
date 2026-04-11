@@ -33,6 +33,7 @@ import { Service_Spec_Mode } from "../corev1/corev1";
 import { Device_Status_OSType } from "../corev1/corev1";
 import { User_Spec_Type } from "../corev1/corev1";
 import { AccessLog_Entry_Common_Reason } from "../corev1/corev1";
+import { InlinePolicy } from "../corev1/corev1";
 import { RequestContext_Request } from "../corev1/corev1";
 import { LogMetadata } from "../metav1/metav1";
 import { ObjectReference } from "../metav1/metav1";
@@ -3470,6 +3471,27 @@ export interface IsAuthorizedRequest {
      * @generated from protobuf field: octelium.api.main.core.v1.RequestContext.Request request = 6
      */
     request?: RequestContext_Request;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.IsAuthorizedRequest.Additional additional = 7
+     */
+    additional?: IsAuthorizedRequest_Additional;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.IsAuthorizedRequest.Additional
+ */
+export interface IsAuthorizedRequest_Additional {
+    /**
+     * Policies is the list of standalone Policies
+     *
+     * @generated from protobuf field: repeated string policies = 1
+     */
+    policies: string[];
+    /**
+     * InlinePolicies is the list of inline Policies
+     *
+     * @generated from protobuf field: repeated octelium.api.main.core.v1.InlinePolicy inlinePolicies = 2
+     */
+    inlinePolicies: InlinePolicy[];
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.IsAuthorizedResponse
@@ -13685,7 +13707,8 @@ class IsAuthorizedRequest$Type extends MessageType<IsAuthorizedRequest> {
             { no: 3, name: "deviceRef", kind: "message", oneof: "downstream", T: () => ObjectReference },
             { no: 4, name: "serviceRef", kind: "message", oneof: "upstream", T: () => ObjectReference },
             { no: 5, name: "namespaceRef", kind: "message", oneof: "upstream", T: () => ObjectReference },
-            { no: 6, name: "request", kind: "message", T: () => RequestContext_Request }
+            { no: 6, name: "request", kind: "message", T: () => RequestContext_Request },
+            { no: 7, name: "additional", kind: "message", T: () => IsAuthorizedRequest_Additional }
         ]);
     }
     create(value?: PartialMessage<IsAuthorizedRequest>): IsAuthorizedRequest {
@@ -13734,6 +13757,9 @@ class IsAuthorizedRequest$Type extends MessageType<IsAuthorizedRequest> {
                 case /* octelium.api.main.core.v1.RequestContext.Request request */ 6:
                     message.request = RequestContext_Request.internalBinaryRead(reader, reader.uint32(), options, message.request);
                     break;
+                case /* octelium.api.main.enterprise.v1.IsAuthorizedRequest.Additional additional */ 7:
+                    message.additional = IsAuthorizedRequest_Additional.internalBinaryRead(reader, reader.uint32(), options, message.additional);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -13764,6 +13790,9 @@ class IsAuthorizedRequest$Type extends MessageType<IsAuthorizedRequest> {
         /* octelium.api.main.core.v1.RequestContext.Request request = 6; */
         if (message.request)
             RequestContext_Request.internalBinaryWrite(message.request, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.IsAuthorizedRequest.Additional additional = 7; */
+        if (message.additional)
+            IsAuthorizedRequest_Additional.internalBinaryWrite(message.additional, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -13774,6 +13803,61 @@ class IsAuthorizedRequest$Type extends MessageType<IsAuthorizedRequest> {
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.IsAuthorizedRequest
  */
 export const IsAuthorizedRequest = new IsAuthorizedRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class IsAuthorizedRequest_Additional$Type extends MessageType<IsAuthorizedRequest_Additional> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.IsAuthorizedRequest.Additional", [
+            { no: 1, name: "policies", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "inlinePolicies", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => InlinePolicy }
+        ]);
+    }
+    create(value?: PartialMessage<IsAuthorizedRequest_Additional>): IsAuthorizedRequest_Additional {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.policies = [];
+        message.inlinePolicies = [];
+        if (value !== undefined)
+            reflectionMergePartial<IsAuthorizedRequest_Additional>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: IsAuthorizedRequest_Additional): IsAuthorizedRequest_Additional {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated string policies */ 1:
+                    message.policies.push(reader.string());
+                    break;
+                case /* repeated octelium.api.main.core.v1.InlinePolicy inlinePolicies */ 2:
+                    message.inlinePolicies.push(InlinePolicy.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: IsAuthorizedRequest_Additional, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated string policies = 1; */
+        for (let i = 0; i < message.policies.length; i++)
+            writer.tag(1, WireType.LengthDelimited).string(message.policies[i]);
+        /* repeated octelium.api.main.core.v1.InlinePolicy inlinePolicies = 2; */
+        for (let i = 0; i < message.inlinePolicies.length; i++)
+            InlinePolicy.internalBinaryWrite(message.inlinePolicies[i], writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.IsAuthorizedRequest.Additional
+ */
+export const IsAuthorizedRequest_Additional = new IsAuthorizedRequest_Additional$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class IsAuthorizedResponse$Type extends MessageType<IsAuthorizedResponse> {
     constructor() {

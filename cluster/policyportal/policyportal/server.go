@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
+	"github.com/octelium/octelium/apis/cluster/coctovigilv1"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
@@ -325,7 +326,15 @@ func (s *Server) IsAuthorized(ctx context.Context,
 		return nil, grpcutils.InvalidArg("")
 	}
 
-	res, err := s.s.DoAuthorize(ctx, reqCtx, nil)
+	var additional *coctovigilv1.Authorization
+	if req.Additional != nil {
+		additional = &coctovigilv1.Authorization{
+			Policies:       req.Additional.Policies,
+			InlinePolicies: req.Additional.InlinePolicies,
+		}
+	}
+
+	res, err := s.s.DoAuthorize(ctx, reqCtx, additional)
 	if err != nil {
 		return nil, err
 	}

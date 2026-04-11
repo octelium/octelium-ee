@@ -9,6 +9,7 @@ import {
 } from "@/apis/corev1/corev1";
 import {
   IsAuthorizedRequest,
+  IsAuthorizedRequest_Additional,
   IsAuthorizedResponse,
 } from "@/apis/enterprisev1/enterprisev1";
 import { ObjectReference } from "@/apis/metav1/metav1";
@@ -22,6 +23,8 @@ import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
 import { getPolicyReason } from "../AccessLogViewer";
 import EditItem from "../EditItem";
+import SelectInlinePolicies from "../ResourceLayout/SelectInlinePolicies";
+import SelectPolicies from "../ResourceLayout/SelectPolicies";
 import SelectResource from "../ResourceLayout/SelectResource";
 import { ResourceListLabel } from "../ResourceList";
 import AnimatedConnector from "./Connector";
@@ -302,6 +305,47 @@ const PolicyTester = (props: {}) => {
               <></>
             ))}
         </div>
+      </div>
+
+      <div className="w-full my-10">
+        <EditItem
+          title="Additional Policies"
+          description="Test additional Policies/InLinePolicies without adding them to your Resources"
+          obj={req.additional}
+          onSet={() => {
+            req.additional = IsAuthorizedRequest_Additional.create({});
+            updateReq();
+          }}
+          onUnset={() => {
+            req.additional = undefined;
+            updateReq();
+          }}
+        >
+          {req.additional && (
+            <div className="w-full">
+              <SelectPolicies
+                policies={req.additional.policies}
+                onUpdate={(v) => {
+                  if (!v) {
+                    req.additional!.policies = [];
+                  } else {
+                    req.additional!.policies = v;
+                  }
+
+                  updateReq();
+                }}
+              />
+
+              <SelectInlinePolicies
+                inlinePolicies={req.additional.inlinePolicies}
+                onUpdate={(v) => {
+                  req.additional!.inlinePolicies = v;
+                  updateReq();
+                }}
+              />
+            </div>
+          )}
+        </EditItem>
       </div>
 
       <div className="w-full my-10">
