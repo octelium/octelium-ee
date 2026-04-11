@@ -65,7 +65,8 @@ func (s *server) doGetDataSecret(ctx context.Context, req *csecretmanv1.GetSecre
 	}
 
 	return &dataSecret{
-		Data: data,
+		Data:   data,
+		KeyUID: keyUID,
 	}, nil
 }
 
