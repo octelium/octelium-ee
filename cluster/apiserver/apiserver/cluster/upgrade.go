@@ -25,6 +25,12 @@ func (s *Server) UpgradeCluster(ctx context.Context, req *enterprisev1.UpgradeCl
 		return nil, err
 	}
 
+	if cc.Status.UpgradeRequest != nil {
+		cc.Status.LastUpgradeRequests = append(
+			[]*enterprisev1.ClusterConfig_Status_UpgradeRequest{cc.Status.UpgradeRequest},
+			cc.Status.LastUpgradeRequests...)
+	}
+
 	cc.Status.UpgradeRequest = &enterprisev1.ClusterConfig_Status_UpgradeRequest{
 		CreatedAt: pbutils.Now(),
 		State:     enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADE_REQUESTED,
