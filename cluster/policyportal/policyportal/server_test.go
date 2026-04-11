@@ -32,5 +32,5 @@ func TestServer(t *testing.T) {
 
 	srv.s.DoAuthorize(ctx, &corev1.RequestContext{
 		Request: &corev1.RequestContext_Request{},
-	})
+	}, nil)
 }

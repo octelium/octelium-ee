@@ -325,7 +325,7 @@ func (s *Server) IsAuthorized(ctx context.Context,
 		return nil, grpcutils.InvalidArg("")
 	}
 
-	res, err := s.s.DoAuthorize(ctx, reqCtx)
+	res, err := s.s.DoAuthorize(ctx, reqCtx, nil)
 	if err != nil {
 		return nil, err
 	}
