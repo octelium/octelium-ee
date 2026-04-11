@@ -143,13 +143,19 @@ func (s *server) doUpdateDataSecret(ctx context.Context, req *csecretmanv1.SetSe
 	return nil
 }
 
-func (s *server) chooseDEK(ctx context.Context) (*dek, error) {
+func (s *server) chooseDEK(_ context.Context) (*dek, error) {
 	s.deks.RLock()
 	defer s.deks.RUnlock()
 
-	for _, v := range s.deks.dekMap {
-		return v, nil
+	if s.deks.cur != nil {
+		return s.deks.cur, nil
 	}
+
+	/*
+		for _, v := range s.deks.dekMap {
+			return v, nil
+		}
+	*/
 
 	return nil, errors.Errorf("Could not find a DEK")
 }

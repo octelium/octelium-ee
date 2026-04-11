@@ -13,6 +13,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"fmt"
+	"time"
 
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
@@ -75,7 +76,7 @@ func (s *server) doCreateDEK(ctx context.Context) error {
 		return grpcutils.InternalWithErr(err)
 	}
 
-	zap.L().Debug("Creating DEK done...", zap.String("uid", uid), zap.String("kek", kek.UID()))
+	zap.L().Info("Successfully created DEK", zap.String("uid", uid), zap.String("kek", kek.UID()))
 
 	return nil
 }
@@ -144,7 +145,7 @@ func (s *server) doGetDEK(ctx context.Context, uid string) (*dek, error) {
 func (s *server) doListDEK(ctx context.Context) ([]*dek, error) {
 
 	ds := goqu.From(dekTable).
-		Select("uid", "ciphertext", "key_uid", "key_version")
+		Select("uid", "ciphertext", "key_uid", "key_version", "created_at").Order(goqu.I("created_at").Asc())
 
 	sqln, sqlargs, err := ds.ToSQL()
 	if err != nil {
@@ -163,7 +164,8 @@ func (s *server) doListDEK(ctx context.Context) ([]*dek, error) {
 		var keyUID string
 		var keyVersion string
 		var ciphertext []byte
-		if err := rows.Scan(&uid, &ciphertext, &keyUID, &keyVersion); err != nil {
+		var createdAt time.Time
+		if err := rows.Scan(&uid, &ciphertext, &keyUID, &keyVersion, &createdAt); err != nil {
 			return nil, grpcutils.InternalWithErr(err)
 		}
 
@@ -178,8 +180,9 @@ func (s *server) doListDEK(ctx context.Context) ([]*dek, error) {
 		}
 
 		ret = append(ret, &dek{
-			key: plaintext,
-			uid: uid,
+			key:       plaintext,
+			uid:       uid,
+			createdAt: createdAt,
 		})
 	}
 

@@ -11,6 +11,7 @@ package secretman
 import (
 	"context"
 	"testing"
+	"time"
 
 	otests "github.com/octelium/octelium-ee/cluster/common/tests"
 	"github.com/octelium/octelium-ee/cluster/secretman/secretman/migrations"
@@ -75,8 +76,12 @@ func TestDEK(t *testing.T) {
 	err = srv.setDEKMap(ctx)
 	assert.Nil(t, err)
 
+	assert.True(t, len(srv.deks.dekMap) == 1)
+
 	dek, err := srv.chooseDEK(ctx)
 	assert.Nil(t, err)
+	assert.False(t, dek.createdAt.IsZero())
+	assert.True(t, dek.createdAt.After(time.Now().Add(-1*time.Minute)))
 
 	val, err := utilrand.GetRandomBytes(32)
 	assert.Nil(t, err)
@@ -88,4 +93,29 @@ func TestDEK(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, val, plaintext)
+
+	{
+		err = srv.doCreateDEK(ctx)
+		assert.Nil(t, err)
+
+		err = srv.setDEKMap(ctx)
+		assert.Nil(t, err)
+		assert.True(t, len(srv.deks.dekMap) == 2)
+
+		dek2, err := srv.chooseDEK(ctx)
+		assert.Nil(t, err)
+
+		assert.True(t, dek.uid != dek2.uid)
+		assert.True(t, dek2.createdAt.After(dek.createdAt))
+
+		val, err := utilrand.GetRandomBytes(32)
+		assert.Nil(t, err)
+
+		ciphertext, err := dek2.encrypt(val)
+		assert.Nil(t, err)
+
+		plaintext, err := dek2.decrypt(ciphertext.Ciphertext)
+		assert.Nil(t, err)
+		assert.Equal(t, val, plaintext)
+	}
 }

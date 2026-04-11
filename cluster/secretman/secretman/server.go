@@ -12,13 +12,13 @@ import (
 	"context"
 	"database/sql"
 	"net"
+	"slices"
 	"sync"
 
 	_ "github.com/lib/pq"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/watchers"
 	"github.com/octelium/octelium-ee/cluster/secretman/secretman/migrations"
-	"github.com/octelium/octelium-ee/cluster/secretman/secretman/stores"
 	"github.com/octelium/octelium/apis/cluster/csecretmanv1"
 	"github.com/octelium/octelium/cluster/common/commoninit"
 	"github.com/octelium/octelium/cluster/common/healthcheck"
@@ -30,38 +30,27 @@ import (
 )
 
 type server struct {
-	sync.Mutex
-
 	csecretmanv1.MainServiceServer
 	octeliumC octeliumc.ClientInterface
-	// k8sC      kubernetes.Interface
-
-	db *sql.DB
+	db        *sql.DB
 
 	deks struct {
 		sync.RWMutex
 		dekMap map[string]*dek
-	}
-
-	keks struct {
-		sync.RWMutex
-		kekMap map[string]stores.Store
+		cur    *dek
 	}
 }
 
 func newServer(ctx context.Context,
 	octeliumC octeliumc.ClientInterface,
-	// k8sC kubernetes.Interface,
 	db *sql.DB) (*server, error) {
 
 	ret := &server{
 		octeliumC: octeliumC,
-		// k8sC:      k8sC,
-		db: db,
+		db:        db,
 	}
 
 	ret.deks.dekMap = make(map[string]*dek)
-	ret.keks.kekMap = make(map[string]stores.Store)
 
 	return ret, nil
 }
@@ -175,13 +164,25 @@ func (s *server) setDEKMap(ctx context.Context) error {
 		return err
 	}
 
+	s.doSetDEKMap(deks)
+
+	return nil
+}
+
+func (s *server) doSetDEKMap(deks []*dek) {
+	slices.SortFunc(deks, func(a, b *dek) int {
+		return a.createdAt.Compare(b.createdAt)
+	})
+
 	s.deks.Lock()
 	s.deks.dekMap = make(map[string]*dek)
 	for _, dek := range deks {
 		zap.L().Debug("Setting dek", zap.String("uid", dek.uid))
 		s.deks.dekMap[dek.uid] = dek
 	}
-	s.deks.Unlock()
 
-	return nil
+	if len(deks) > 0 {
+		s.deks.cur = deks[len(deks)-1]
+	}
+	s.deks.Unlock()
 }

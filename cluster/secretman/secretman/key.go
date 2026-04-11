@@ -11,6 +11,7 @@ package secretman
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"time"
 
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/pkg/errors"
@@ -22,8 +23,9 @@ type dekEncryptionOutptut struct {
 }
 
 type dek struct {
-	uid string
-	key []byte
+	uid       string
+	key       []byte
+	createdAt time.Time
 }
 
 func (k *dek) encrypt(plaintext []byte) (*dekEncryptionOutptut, error) {
