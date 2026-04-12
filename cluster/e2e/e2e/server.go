@@ -34,6 +34,7 @@ import (
 	"github.com/octelium/octelium/cluster/common/k8sutils"
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
+	"github.com/octelium/octelium/pkg/grpcerr"
 	utils_cert "github.com/octelium/octelium/pkg/utils/cert"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/pkg/errors"
@@ -171,6 +172,10 @@ func (s *server) run(ctx context.Context) error {
 		assert.Equal(t, http.StatusUnauthorized, res.StatusCode())
 	}
 
+	if err := s.runSCIM(ctx); err != nil {
+		return err
+	}
+
 	if err := s.runSDK(ctx); err != nil {
 		return err
 	}
@@ -274,7 +279,7 @@ type CustomT struct {
 	errs int
 }
 
-func (t *CustomT) Errorf(format string, args ...interface{}) {
+func (t *CustomT) Errorf(format string, args ...any) {
 	t.errs++
 	zap.S().Errorf(format, args...)
 }
@@ -753,6 +758,232 @@ func (s *server) runSDK(ctx context.Context) error {
 			}))
 		}
 	}
+
+	return nil
+}
+
+func (s *server) runSCIM(ctx context.Context) error {
+	t := s.t
+
+	if err := cliutils.OpenDB(""); err != nil {
+		return err
+	}
+	defer cliutils.CloseDB()
+
+	conn, err := client.GetGRPCClientConn(ctx, s.domain)
+	assert.Nil(t, err)
+	defer conn.Close()
+
+	coreC := corev1.NewMainServiceClient(conn)
+	enterpriseC := enterprisev1.NewMainServiceClient(conn)
+
+	dp, err := enterpriseC.CreateDirectoryProvider(ctx, &enterprisev1.DirectoryProvider{
+		Metadata: &metav1.Metadata{
+			Name: utilrand.GetRandomStringCanonical(8),
+		},
+		Spec: &enterprisev1.DirectoryProvider_Spec{
+			Type: &enterprisev1.DirectoryProvider_Spec_Scim{
+				Scim: &enterprisev1.DirectoryProvider_Spec_SCIM{},
+			},
+		},
+	})
+	assert.Nil(t, err)
+
+	scimBaseURL := fmt.Sprintf(`https://dirsync.octelium.%s/scim/%s`, s.domain, dp.Status.Id)
+
+	tknResp, err := enterpriseC.GenerateDirectoryProviderCredential(ctx,
+		&enterprisev1.GenerateDirectoryProviderCredentialRequest{
+			DirectoryProviderRef: umetav1.GetObjectReference(dp),
+			Mode:                 enterprisev1.GenerateDirectoryProviderCredentialRequest_BEARER,
+		})
+	assert.Nil(t, err)
+
+	scimClient := s.httpC().
+		SetBaseURL(scimBaseURL).
+		SetAuthScheme("Bearer").
+		SetAuthToken(tknResp.GetBearer().AccessToken).
+		SetHeader("Content-Type", "application/scim+json").
+		SetHeader("Accept", "application/scim+json")
+
+	discoveryEndpoints := []string{"/ServiceProviderConfig", "/ResourceTypes", "/Schemas"}
+	for _, ep := range discoveryEndpoints {
+		res, err := scimClient.R().Get(ep)
+		assert.Nil(t, err)
+		assert.Equal(t, http.StatusOK, res.StatusCode())
+	}
+
+	var userRes map[string]any
+
+	createRes, err := scimClient.R().
+		SetBody(map[string]any{
+			"schemas":  []string{"urn:ietf:params:scim:schemas:core:2.0:User"},
+			"userName": "john.doe@octelium.com",
+			"name": map[string]any{
+				"givenName":  "John",
+				"familyName": "Doe",
+			},
+			"active": true,
+			"emails": []map[string]any{
+				{
+					"primary": true,
+					"value":   "john.doe@octelium.com",
+					"type":    "work",
+				},
+			},
+		}).
+		SetResult(&userRes).
+		Post("/Users")
+
+	assert.Nil(t, err)
+	assert.Equal(t, http.StatusCreated, createRes.StatusCode())
+
+	usrList, err := enterpriseC.ListDirectoryProviderUser(ctx,
+		&enterprisev1.ListDirectoryProviderUserOptions{
+			DirectoryProviderRef: umetav1.GetObjectReference(dp),
+		})
+	assert.Nil(t, err)
+
+	assert.True(t, len(usrList.Items) == 1)
+
+	usr, err := coreC.GetUser(ctx, &metav1.GetOptions{
+		Uid: usrList.Items[0].Status.UserRef.Uid,
+	})
+	assert.Nil(t, err)
+
+	assert.Equal(t, "john.doe@octelium.com", usr.Spec.Email)
+
+	userID, ok := userRes["id"].(string)
+	assert.True(t, ok)
+	assert.NotEmpty(t, userID)
+
+	getRes, err := scimClient.R().Get(fmt.Sprintf("/Users/%s", userID))
+	assert.Nil(t, err)
+	assert.Equal(t, http.StatusOK, getRes.StatusCode())
+
+	putRes, err := scimClient.R().
+		SetBody(map[string]any{
+			"schemas":  []string{"urn:ietf:params:scim:schemas:core:2.0:User"},
+			"userName": "test.scim.updated@octelium.com",
+			"name": map[string]any{
+				"givenName":  "John",
+				"familyName": "Linus",
+			},
+			"active": false,
+			"emails": []map[string]any{
+				{
+					"primary": true,
+					"value":   "john.doe.updated@octelium.com",
+					"type":    "work",
+				},
+			},
+		}).
+		Put(fmt.Sprintf("/Users/%s", userID))
+	assert.Nil(t, err)
+	assert.Equal(t, http.StatusOK, putRes.StatusCode())
+
+	usr, err = coreC.GetUser(ctx, &metav1.GetOptions{
+		Uid: usrList.Items[0].Status.UserRef.Uid,
+	})
+	assert.Nil(t, err)
+
+	assert.Equal(t, "john.doe.updated@octelium.com", usr.Spec.Email)
+	assert.True(t, usr.Spec.IsDisabled)
+
+	var groupRes map[string]any
+
+	cGroupRes, err := scimClient.R().
+		SetBody(map[string]any{
+			"schemas":     []string{"urn:ietf:params:scim:schemas:core:2.0:Group"},
+			"displayName": "Test Group",
+		}).
+		SetResult(&groupRes).
+		Post("/Groups")
+
+	assert.Nil(t, err)
+	assert.Equal(t, http.StatusCreated, cGroupRes.StatusCode())
+
+	groupID, ok := groupRes["id"].(string)
+	assert.True(t, ok)
+	assert.NotEmpty(t, groupID)
+
+	groupList, err := enterpriseC.ListDirectoryProviderGroup(ctx,
+		&enterprisev1.ListDirectoryProviderGroupOptions{
+			DirectoryProviderRef: umetav1.GetObjectReference(dp),
+		})
+	assert.Nil(t, err)
+
+	assert.True(t, len(groupList.Items) == 1)
+
+	grp, err := coreC.GetGroup(ctx, &metav1.GetOptions{
+		Uid: groupList.Items[0].Status.GroupRef.Uid,
+	})
+	assert.Nil(t, err)
+
+	patchAddRes, err := scimClient.R().
+		SetBody(map[string]any{
+			"schemas": []string{"urn:ietf:params:scim:api:messages:2.0:PatchOp"},
+			"Operations": []map[string]any{
+				{
+					"op":   "add",
+					"path": "members",
+					"value": []map[string]any{
+						{
+							"value": userID,
+						},
+					},
+				},
+			},
+		}).
+		Patch(fmt.Sprintf("/Groups/%s", groupID))
+	assert.Nil(t, err)
+	assert.Contains(t, []int{http.StatusOK, http.StatusNoContent}, patchAddRes.StatusCode())
+
+	usr, err = coreC.GetUser(ctx, &metav1.GetOptions{
+		Uid: usrList.Items[0].Status.UserRef.Uid,
+	})
+	assert.Nil(t, err)
+	assert.True(t, slices.Contains(usr.Spec.Groups, grp.Metadata.Name))
+
+	patchRemoveRes, err := scimClient.R().
+		SetBody(map[string]any{
+			"schemas": []string{"urn:ietf:params:scim:api:messages:2.0:PatchOp"},
+			"Operations": []map[string]any{
+				{
+					"op":   "remove",
+					"path": fmt.Sprintf("members[value eq \"%s\"]", userID),
+				},
+			},
+		}).
+		Patch(fmt.Sprintf("/Groups/%s", groupID))
+	assert.Nil(t, err)
+	assert.Contains(t,
+		[]int{http.StatusOK, http.StatusNoContent}, patchRemoveRes.StatusCode())
+
+	usr, err = coreC.GetUser(ctx, &metav1.GetOptions{
+		Uid: usrList.Items[0].Status.UserRef.Uid,
+	})
+	assert.Nil(t, err)
+	assert.False(t, slices.Contains(usr.Spec.Groups, grp.Metadata.Name))
+
+	delGroupRes, err := scimClient.R().Delete(fmt.Sprintf("/Groups/%s", groupID))
+	assert.Nil(t, err)
+	assert.Equal(t, http.StatusNoContent, delGroupRes.StatusCode())
+
+	delUserRes, err := scimClient.R().Delete(fmt.Sprintf("/Users/%s", userID))
+	assert.Nil(t, err)
+	assert.Equal(t, http.StatusNoContent, delUserRes.StatusCode())
+
+	_, err = coreC.GetUser(ctx, &metav1.GetOptions{
+		Uid: usrList.Items[0].Status.UserRef.Uid,
+	})
+	assert.NotNil(t, err)
+	assert.True(t, grpcerr.IsNotFound(err))
+
+	_, err = coreC.GetGroup(ctx, &metav1.GetOptions{
+		Uid: groupList.Items[0].Status.GroupRef.Uid,
+	})
+	assert.NotNil(t, err)
+	assert.True(t, grpcerr.IsNotFound(err))
 
 	return nil
 }
