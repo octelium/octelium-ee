@@ -452,13 +452,10 @@ func (s *server) handlePatchGroup(w http.ResponseWriter, r *http.Request) {
 					s.setErrorBadRequestWithErr(w, errors.Errorf("displayName must be a string"))
 					return
 				}
-
 				scimGroup.DisplayName = val
-
 			}
 		case "add":
-			switch strings.ToLower(op.Path) {
-			case "members":
+			if strings.ToLower(op.Path) == "members" {
 				members, ok := op.Value.([]any)
 				if !ok {
 					s.setErrorBadRequestWithErr(w, errors.Errorf("members must be a list of objects"))
@@ -466,22 +463,18 @@ func (s *server) handlePatchGroup(w http.ResponseWriter, r *http.Request) {
 				}
 
 				for _, mem := range members {
-
 					v, ok := mem.(map[string]any)
 					if !ok {
-						zap.L().Debug("Could not cast to map string any")
 						continue
 					}
 
 					valueAny, ok := v["value"]
 					if !ok {
-						zap.L().Debug("Could not cast to map string any")
 						continue
 					}
 
 					value, ok := valueAny.(string)
 					if !ok {
-						zap.L().Debug("Could not cast to map string any")
 						continue
 					}
 
@@ -490,11 +483,32 @@ func (s *server) handlePatchGroup(w http.ResponseWriter, r *http.Request) {
 							zap.Any("member", mem), zap.String("groupUID", group.Metadata.Uid), zap.Error(err))
 					}
 				}
-
 			}
 		case "remove":
-			switch strings.ToLower(op.Path) {
-			case "members":
+			lowerPath := strings.ToLower(op.Path)
+			if strings.HasPrefix(lowerPath, "members[value eq") {
+				parts := strings.Split(op.Path, `"`)
+				if len(parts) >= 3 {
+					uid := parts[1]
+					if err := s.removeGroupFromUser(ctx, uid, group); err != nil {
+						zap.L().Warn("Could not remove Group from User via path filter",
+							zap.String("memberUID", uid), zap.String("groupUID", group.Metadata.Uid), zap.Error(err))
+					}
+				} else {
+					partsSingle := strings.Split(op.Path, "'")
+					if len(partsSingle) >= 3 {
+						uid := partsSingle[1]
+						if err := s.removeGroupFromUser(ctx, uid, group); err != nil {
+							zap.L().Warn("Could not remove Group from User via path filter",
+								zap.String("memberUID", uid), zap.String("groupUID", group.Metadata.Uid), zap.Error(err))
+						}
+					}
+				}
+			} else if lowerPath == "members" {
+				if op.Value == nil {
+					continue
+				}
+
 				members, ok := op.Value.([]any)
 				if !ok {
 					s.setErrorBadRequestWithErr(w, errors.Errorf("members must be a list of objects"))
@@ -502,31 +516,26 @@ func (s *server) handlePatchGroup(w http.ResponseWriter, r *http.Request) {
 				}
 
 				for _, mem := range members {
-
 					v, ok := mem.(map[string]any)
 					if !ok {
-						zap.L().Debug("Could not cast to map string any")
 						continue
 					}
 
 					valueAny, ok := v["value"]
 					if !ok {
-						zap.L().Debug("Could not cast to map string any")
 						continue
 					}
 
 					value, ok := valueAny.(string)
 					if !ok {
-						zap.L().Debug("Could not cast to map string any")
 						continue
 					}
 
 					if err := s.removeGroupFromUser(ctx, value, group); err != nil {
-						zap.L().Warn("Could not remove Group from User",
+						zap.L().Warn("Could not remove Group from User via value payload",
 							zap.Any("member", mem), zap.String("groupUID", group.Metadata.Uid), zap.Error(err))
 					}
 				}
-
 			}
 		default:
 			s.setErrorBadRequestWithErr(w, errors.Errorf("Invalid patch operation type"))
