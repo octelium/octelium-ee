@@ -141,7 +141,7 @@ func (s *server) handleServiceProviderConfig(w http.ResponseWriter, r *http.Requ
 		s.setErrorInternal(w, err)
 		return
 	}
-	w.WriteHeader(http.StatusCreated)
+
 	w.Write(resBytes)
 }
 
