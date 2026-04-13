@@ -6,13 +6,14 @@ import {
   printResourceNameWithDisplay,
   printServiceMode,
 } from "@/utils/pb";
-import { Select, Switch, TextInput } from "@mantine/core";
+import { Group, Select, Switch, TextInput } from "@mantine/core";
 import { match } from "ts-pattern";
 import SelectResource from "../ResourceLayout/SelectResource";
 import TimeAgo from "../TimeAgo";
 import TimestampPicker from "../TimestampPicker";
 
 import { ObjectReference } from "@/apis/metav1/metav1";
+import { useEffect, useState } from "react";
 import { useResourceFromRef } from "../ResourceLayout/utils";
 import SelectCountry from "../SelectCountry";
 
@@ -1719,6 +1720,136 @@ export const itemList = [
               }}
               size="lg"
             />
+          </div>
+        );
+      },
+    },
+  },
+
+  {
+    type: `requestHTTPHasHeader`,
+    title: <>Request HTTP Header Exists</>,
+    components: {
+      Value: (props: { item: Expression }) => {
+        const { item } = props;
+
+        if (item.type.oneofKind !== `requestHTTPHasHeader`) {
+          return <></>;
+        }
+
+        return (
+          <div>
+            <>{item.type.requestHTTPHasHeader.value}</>
+          </div>
+        );
+      },
+      Edit: (props: {
+        item?: Expression;
+        onUpdate: (item?: Expression) => void;
+      }) => {
+        const { item } = props;
+
+        return (
+          <div>
+            <TextInput
+              required
+              label="Header"
+              placeholder="User-Agent"
+              value={
+                props.item?.type.oneofKind === `requestHTTPHasHeader`
+                  ? props.item.type.requestHTTPHasHeader.value
+                  : undefined
+              }
+              onChange={(v) => {
+                props.onUpdate(
+                  Expression.create({
+                    type: {
+                      oneofKind: `requestHTTPHasHeader`,
+                      requestHTTPHasHeader: {
+                        value: v.target.value,
+                      },
+                    },
+                  }),
+                );
+              }}
+            />
+          </div>
+        );
+      },
+    },
+  },
+
+  {
+    type: `requestHTTPHeaderValue`,
+    title: <>Request HTTP Header Value</>,
+    components: {
+      Value: (props: { item: Expression }) => {
+        const { item } = props;
+
+        if (item.type.oneofKind !== `requestHTTPHeaderValue`) {
+          return <></>;
+        }
+
+        return (
+          <div>
+            <>{`${item.type.requestHTTPHeaderValue.header} = ${item.type.requestHTTPHeaderValue.value}`}</>
+          </div>
+        );
+      },
+      Edit: (props: {
+        item?: Expression;
+        onUpdate: (item?: Expression) => void;
+      }) => {
+        const { item } = props;
+
+        let [header, setHeader] = useState("");
+        let [val, setVal] = useState("");
+
+        useEffect(() => {
+          props.onUpdate(
+            Expression.create({
+              type: {
+                oneofKind: `requestHTTPHeaderValue`,
+                requestHTTPHeaderValue: {
+                  header,
+                  value: val,
+                },
+              },
+            }),
+          );
+        }, [header, val]);
+
+        return (
+          <div>
+            <Group grow>
+              <TextInput
+                required
+                label="Header"
+                placeholder="User-Agent"
+                value={
+                  props.item?.type.oneofKind === `requestHTTPHeaderValue`
+                    ? props.item.type.requestHTTPHeaderValue.header
+                    : undefined
+                }
+                onChange={(v) => {
+                  setHeader(v.target.value);
+                }}
+              />
+
+              <TextInput
+                required
+                label="Value"
+                placeholder="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                value={
+                  props.item?.type.oneofKind === `requestHTTPHeaderValue`
+                    ? props.item.type.requestHTTPHeaderValue.value
+                    : undefined
+                }
+                onChange={(v) => {
+                  setVal(v.target.value);
+                }}
+              />
+            </Group>
           </div>
         );
       },

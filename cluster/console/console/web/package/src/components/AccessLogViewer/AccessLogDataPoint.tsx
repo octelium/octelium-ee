@@ -53,6 +53,7 @@ const AccessLogDataPoint = (props: {
             <div>
               <DurationPicker
                 value={interval}
+                title="Resolution duration interval"
                 onChange={(v) => {
                   setInterval(v);
                 }}

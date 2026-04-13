@@ -310,6 +310,13 @@ func (s *Server) getExpression(in *enterprisev1.Condition_Expression) string {
 		return fmt.Sprintf("%s && %s", isAPIServer, isAPServerWithAPI("enterprise"))
 	case *enterprisev1.Condition_Expression_ApiServerCordium:
 		return fmt.Sprintf("%s && %s", isAPIServer, isAPServerWithAPI("cordium"))
+	case *enterprisev1.Condition_Expression_RequestHTTPHasHeader_:
+		return fmt.Sprintf(`"%s" in ctx.request.http.headers`, in.GetRequestHTTPHasHeader().Value)
+	case *enterprisev1.Condition_Expression_RequestHTTPHeaderValue_:
+		return fmt.Sprintf(`ctx.request.http.headers["%s"] == "%s"`,
+			in.GetRequestHTTPHeaderValue().Header, in.GetRequestHTTPHeaderValue().Value)
+	case *enterprisev1.Condition_Expression_RequestHTTPMethod_:
+		return fmt.Sprintf(`ctx.request.http.method == "%s"`, in.GetRequestHTTPMethod().Value)
 	default:
 		return ""
 	}

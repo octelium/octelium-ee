@@ -3795,6 +3795,24 @@ export interface Condition_Expression {
          */
         apiServerCordium: Condition_Expression_APIServerCordium;
     } | {
+        oneofKind: "requestHTTPMethod";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod requestHTTPMethod = 34
+         */
+        requestHTTPMethod: Condition_Expression_RequestHTTPMethod;
+    } | {
+        oneofKind: "requestHTTPHasHeader";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader requestHTTPHasHeader = 35
+         */
+        requestHTTPHasHeader: Condition_Expression_RequestHTTPHasHeader;
+    } | {
+        oneofKind: "requestHTTPHeaderValue";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue requestHTTPHeaderValue = 36
+         */
+        requestHTTPHeaderValue: Condition_Expression_RequestHTTPHeaderValue;
+    } | {
         oneofKind: undefined;
     };
 }
@@ -4047,6 +4065,37 @@ export interface Condition_Expression_RequestHTTPPathPrefix {
 export interface Condition_Expression_RequestHTTPPathExact {
     /**
      * @generated from protobuf field: string value = 1
+     */
+    value: string;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod
+ */
+export interface Condition_Expression_RequestHTTPMethod {
+    /**
+     * @generated from protobuf field: string value = 1
+     */
+    value: string;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader
+ */
+export interface Condition_Expression_RequestHTTPHasHeader {
+    /**
+     * @generated from protobuf field: string value = 1
+     */
+    value: string;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue
+ */
+export interface Condition_Expression_RequestHTTPHeaderValue {
+    /**
+     * @generated from protobuf field: string header = 1
+     */
+    header: string;
+    /**
+     * @generated from protobuf field: string value = 2
      */
     value: string;
 }
@@ -14235,7 +14284,10 @@ class Condition_Expression$Type extends MessageType<Condition_Expression> {
             { no: 30, name: "apiServerCore", kind: "message", oneof: "type", T: () => Condition_Expression_APIServerCore },
             { no: 31, name: "apiServerUser", kind: "message", oneof: "type", T: () => Condition_Expression_APIServerUser },
             { no: 32, name: "apiServerEnterprise", kind: "message", oneof: "type", T: () => Condition_Expression_APIServerEnterprise },
-            { no: 33, name: "apiServerCordium", kind: "message", oneof: "type", T: () => Condition_Expression_APIServerCordium }
+            { no: 33, name: "apiServerCordium", kind: "message", oneof: "type", T: () => Condition_Expression_APIServerCordium },
+            { no: 34, name: "requestHTTPMethod", kind: "message", oneof: "type", T: () => Condition_Expression_RequestHTTPMethod },
+            { no: 35, name: "requestHTTPHasHeader", kind: "message", oneof: "type", T: () => Condition_Expression_RequestHTTPHasHeader },
+            { no: 36, name: "requestHTTPHeaderValue", kind: "message", oneof: "type", T: () => Condition_Expression_RequestHTTPHeaderValue }
         ]);
     }
     create(value?: PartialMessage<Condition_Expression>): Condition_Expression {
@@ -14448,6 +14500,24 @@ class Condition_Expression$Type extends MessageType<Condition_Expression> {
                         apiServerCordium: Condition_Expression_APIServerCordium.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).apiServerCordium)
                     };
                     break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod requestHTTPMethod */ 34:
+                    message.type = {
+                        oneofKind: "requestHTTPMethod",
+                        requestHTTPMethod: Condition_Expression_RequestHTTPMethod.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestHTTPMethod)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader requestHTTPHasHeader */ 35:
+                    message.type = {
+                        oneofKind: "requestHTTPHasHeader",
+                        requestHTTPHasHeader: Condition_Expression_RequestHTTPHasHeader.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestHTTPHasHeader)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue requestHTTPHeaderValue */ 36:
+                    message.type = {
+                        oneofKind: "requestHTTPHeaderValue",
+                        requestHTTPHeaderValue: Condition_Expression_RequestHTTPHeaderValue.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestHTTPHeaderValue)
+                    };
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -14559,6 +14629,15 @@ class Condition_Expression$Type extends MessageType<Condition_Expression> {
         /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium apiServerCordium = 33; */
         if (message.type.oneofKind === "apiServerCordium")
             Condition_Expression_APIServerCordium.internalBinaryWrite(message.type.apiServerCordium, writer.tag(33, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod requestHTTPMethod = 34; */
+        if (message.type.oneofKind === "requestHTTPMethod")
+            Condition_Expression_RequestHTTPMethod.internalBinaryWrite(message.type.requestHTTPMethod, writer.tag(34, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader requestHTTPHasHeader = 35; */
+        if (message.type.oneofKind === "requestHTTPHasHeader")
+            Condition_Expression_RequestHTTPHasHeader.internalBinaryWrite(message.type.requestHTTPHasHeader, writer.tag(35, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue requestHTTPHeaderValue = 36; */
+        if (message.type.oneofKind === "requestHTTPHeaderValue")
+            Condition_Expression_RequestHTTPHeaderValue.internalBinaryWrite(message.type.requestHTTPHeaderValue, writer.tag(36, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -15875,6 +15954,155 @@ class Condition_Expression_RequestHTTPPathExact$Type extends MessageType<Conditi
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPathExact
  */
 export const Condition_Expression_RequestHTTPPathExact = new Condition_Expression_RequestHTTPPathExact$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestHTTPMethod$Type extends MessageType<Condition_Expression_RequestHTTPMethod> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod", [
+            { no: 1, name: "value", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestHTTPMethod>): Condition_Expression_RequestHTTPMethod {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.value = "";
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestHTTPMethod>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestHTTPMethod): Condition_Expression_RequestHTTPMethod {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string value */ 1:
+                    message.value = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestHTTPMethod, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string value = 1; */
+        if (message.value !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.value);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod
+ */
+export const Condition_Expression_RequestHTTPMethod = new Condition_Expression_RequestHTTPMethod$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestHTTPHasHeader$Type extends MessageType<Condition_Expression_RequestHTTPHasHeader> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader", [
+            { no: 1, name: "value", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestHTTPHasHeader>): Condition_Expression_RequestHTTPHasHeader {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.value = "";
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestHTTPHasHeader>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestHTTPHasHeader): Condition_Expression_RequestHTTPHasHeader {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string value */ 1:
+                    message.value = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestHTTPHasHeader, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string value = 1; */
+        if (message.value !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.value);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader
+ */
+export const Condition_Expression_RequestHTTPHasHeader = new Condition_Expression_RequestHTTPHasHeader$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestHTTPHeaderValue$Type extends MessageType<Condition_Expression_RequestHTTPHeaderValue> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue", [
+            { no: 1, name: "header", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "value", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestHTTPHeaderValue>): Condition_Expression_RequestHTTPHeaderValue {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.header = "";
+        message.value = "";
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestHTTPHeaderValue>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestHTTPHeaderValue): Condition_Expression_RequestHTTPHeaderValue {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string header */ 1:
+                    message.header = reader.string();
+                    break;
+                case /* string value */ 2:
+                    message.value = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestHTTPHeaderValue, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string header = 1; */
+        if (message.header !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.header);
+        /* string value = 2; */
+        if (message.value !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.value);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue
+ */
+export const Condition_Expression_RequestHTTPHeaderValue = new Condition_Expression_RequestHTTPHeaderValue$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class Condition_Expression_APIServer$Type extends MessageType<Condition_Expression_APIServer> {
     constructor() {
