@@ -7,8 +7,8 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.26.6
 	github.com/aws/aws-sdk-go-v2/credentials v1.16.16 // indirect
 	github.com/hashicorp/vault/api v1.15.0
-	github.com/octelium/octelium/cluster/common v0.0.0-20260411002821-943b8d7fffb1
-	github.com/octelium/octelium/pkg v0.0.0-20260411002821-943b8d7fffb1
+	github.com/octelium/octelium/cluster/common v0.0.0-20260413173134-bf0990642523
+	github.com/octelium/octelium/pkg v0.0.0-20260413173134-bf0990642523
 	github.com/pkg/errors v0.9.1
 	go.uber.org/zap v1.27.1
 	google.golang.org/api v0.180.0
@@ -29,7 +29,7 @@ require (
 	github.com/lib/pq v1.11.2
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260411002821-943b8d7fffb1
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260413173134-bf0990642523
 	github.com/stretchr/testify v1.11.1
 )
 

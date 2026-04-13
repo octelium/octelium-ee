@@ -7,8 +7,8 @@ require (
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20260411002821-943b8d7fffb1
-	github.com/octelium/octelium/pkg v0.0.0-20260411002821-943b8d7fffb1
+	github.com/octelium/octelium/cluster/common v0.0.0-20260413173134-bf0990642523
+	github.com/octelium/octelium/pkg v0.0.0-20260413173134-bf0990642523
 	go.opentelemetry.io/collector/pdata v1.55.0
 	go.uber.org/zap v1.27.1
 	k8s.io/apimachinery v0.35.3

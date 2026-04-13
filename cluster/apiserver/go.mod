@@ -8,8 +8,8 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/microcosm-cc/bluemonday v1.0.27 // indirect
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20260411002821-943b8d7fffb1
-	github.com/octelium/octelium/pkg v0.0.0-20260411002821-943b8d7fffb1
+	github.com/octelium/octelium/cluster/common v0.0.0-20260413173134-bf0990642523
+	github.com/octelium/octelium/pkg v0.0.0-20260413173134-bf0990642523
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/zap v1.27.1
@@ -19,7 +19,7 @@ require (
 
 require (
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/apiserver v0.0.0-20260411002821-943b8d7fffb1
+	github.com/octelium/octelium/cluster/apiserver v0.0.0-20260413173134-bf0990642523
 )
 
 require (
@@ -55,7 +55,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000 // indirect
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260411002821-943b8d7fffb1 // indirect
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260413173134-bf0990642523 // indirect
 	github.com/oschwald/geoip2-golang/v2 v2.1.0 // indirect
 	github.com/oschwald/maxminddb-golang/v2 v2.1.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect

@@ -5,10 +5,10 @@ go 1.25.8
 require (
 	github.com/go-resty/resty/v2 v2.17.2
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
-	github.com/octelium/octelium/apis v0.0.0-20260411002821-943b8d7fffb1
-	github.com/octelium/octelium/client/common v0.0.0-20260411002821-943b8d7fffb1
-	github.com/octelium/octelium/cluster/common v0.0.0-20260411002821-943b8d7fffb1
-	github.com/octelium/octelium/pkg v0.0.0-20260411002821-943b8d7fffb1
+	github.com/octelium/octelium/apis v0.0.0-20260413173134-bf0990642523
+	github.com/octelium/octelium/client/common v0.0.0-20260413173134-bf0990642523
+	github.com/octelium/octelium/cluster/common v0.0.0-20260413173134-bf0990642523
+	github.com/octelium/octelium/pkg v0.0.0-20260413173134-bf0990642523
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/zap v1.27.1
@@ -48,8 +48,8 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260411002821-943b8d7fffb1 // indirect
-	github.com/octelium/octelium/octelium-go v0.0.0-20260411002821-943b8d7fffb1 // indirect
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260413173134-bf0990642523 // indirect
+	github.com/octelium/octelium/octelium-go v0.0.0-20260413173134-bf0990642523 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/spf13/cobra v1.10.2 // indirect
 	github.com/spf13/pflag v1.0.9 // indirect
