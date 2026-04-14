@@ -4,7 +4,6 @@ import { Button, Collapse } from "@mantine/core";
 
 import { ChevronDown, ChevronUp, Plus } from "lucide-react";
 import { twMerge } from "tailwind-merge";
-import Label from "../Label";
 
 interface Props {
   children?: React.ReactNode;
@@ -27,9 +26,9 @@ const ItemMessage = (props: Props) => {
   let [isExpanded, setIsExpanded] = React.useState(arrLen > 0 ? true : false);
 
   return (
-    <div className="mt-6">
+    <div className="mt-6 mb-16">
       <div
-        className="pd-2 font-bold text-sm text-black mb-4 border-b-[1px] border-b-gray-300 cursor-pointer flex items-center"
+        className="pb-2 pd-2 font-bold text-sm text-black mb-8 border-b-[1px] border-b-gray-300 cursor-pointer flex items-center"
         onClick={() => {
           if (isObjNull) {
             if (props.onSet) {
@@ -62,20 +61,8 @@ const ItemMessage = (props: Props) => {
           {props.title}
         </span>{" "}
         {props.isList && (
-          <Label>{`List (${
-            arrLen == 1 ? "1 Item" : `${arrLen} Items`
-          })`}</Label>
-        )}
-        {props.isList && props.onAddListItem && (
-          <button
-            className={twMerge(
-              "inline-flex items-center mx-2",
-              "bg-black text-white font-bold p-1 rounded-full text-xs",
-              "shadow-xl",
-              "transition-all duration-300",
-              "hover:bg-gray-800 cursor-pointer",
-              "mr-2",
-            )}
+          <Button
+            size="xs"
             onClick={(e) => {
               e.stopPropagation();
               if (props.onAddListItem) {
@@ -84,8 +71,13 @@ const ItemMessage = (props: Props) => {
               }
             }}
           >
-            <Plus />
-          </button>
+            <div className="flex items-center">
+              <Plus />{" "}
+              <span className="ml-1">
+                {`Add Item (${arrLen == 1 ? "1 Item" : `${arrLen} Items`})`}
+              </span>
+            </div>
+          </Button>
         )}
       </div>
 
@@ -98,20 +90,25 @@ const ItemMessage = (props: Props) => {
       )}
 
       <div className="my-4 flex items-center justify-center w-full">
-        <Button
-          size="xs"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (props.onAddListItem) {
-              props.onAddListItem();
-              setIsExpanded(true);
-            }
-          }}
-        >
-          <div className="flex items-center">
-            <Plus /> <span className="ml-1">Add Item</span>
-          </div>
-        </Button>
+        {props.isList && (
+          <Button
+            size="xs"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (props.onAddListItem) {
+                props.onAddListItem();
+                setIsExpanded(true);
+              }
+            }}
+          >
+            <div className="flex items-center">
+              <Plus />{" "}
+              <span className="ml-1">
+                {`Add Item (${arrLen == 1 ? "1 Item" : `${arrLen} Items`})`}
+              </span>
+            </div>
+          </Button>
+        )}
       </div>
     </div>
   );
