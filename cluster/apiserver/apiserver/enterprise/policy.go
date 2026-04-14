@@ -317,6 +317,10 @@ func (s *Server) getExpression(in *enterprisev1.Condition_Expression) string {
 			in.GetRequestHTTPHeaderValue().Header, in.GetRequestHTTPHeaderValue().Value)
 	case *enterprisev1.Condition_Expression_RequestHTTPMethod_:
 		return fmt.Sprintf(`ctx.request.http.method == "%s"`, in.GetRequestHTTPMethod().Value)
+	case *enterprisev1.Condition_Expression_RequestIP_:
+		return fmt.Sprintf(`ctx.request.ip == "%s"`, in.GetRequestIP().Value)
+	case *enterprisev1.Condition_Expression_RequestIPInRange_:
+		return fmt.Sprintf(`net.isIPInRange(ctx.request.ip, "%s")`, in.GetRequestIPInRange().Value)
 	default:
 		return ""
 	}

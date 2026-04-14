@@ -1855,6 +1855,112 @@ export const itemList = [
       },
     },
   },
+
+  {
+    type: `requestIP`,
+    title: <>Request IP Address</>,
+    components: {
+      Value: (props: { item: Expression }) => {
+        const { item } = props;
+
+        if (item.type.oneofKind !== `requestIP`) {
+          return <></>;
+        }
+
+        return (
+          <div>
+            <>{item.type.requestIP.value}</>
+          </div>
+        );
+      },
+      Edit: (props: {
+        item?: Expression;
+        onUpdate: (item?: Expression) => void;
+      }) => {
+        const { item } = props;
+
+        return (
+          <div>
+            <TextInput
+              required
+              label="IP Address"
+              placeholder="1.2.3.4"
+              value={
+                props.item?.type.oneofKind === `requestIP`
+                  ? props.item.type.requestIP.value
+                  : undefined
+              }
+              onChange={(v) => {
+                props.onUpdate(
+                  Expression.create({
+                    type: {
+                      oneofKind: `requestIP`,
+                      requestIP: {
+                        value: v.target.value,
+                      },
+                    },
+                  }),
+                );
+              }}
+            />
+          </div>
+        );
+      },
+    },
+  },
+
+  {
+    type: `requestIPInRange`,
+    title: <>Request IP Address Range</>,
+    components: {
+      Value: (props: { item: Expression }) => {
+        const { item } = props;
+
+        if (item.type.oneofKind !== `requestIPInRange`) {
+          return <></>;
+        }
+
+        return (
+          <div>
+            <>{item.type.requestIPInRange.value}</>
+          </div>
+        );
+      },
+      Edit: (props: {
+        item?: Expression;
+        onUpdate: (item?: Expression) => void;
+      }) => {
+        const { item } = props;
+
+        return (
+          <div>
+            <TextInput
+              required
+              label="IP Address"
+              placeholder="1.2.3.0/24"
+              value={
+                props.item?.type.oneofKind === `requestIPInRange`
+                  ? props.item.type.requestIPInRange.value
+                  : undefined
+              }
+              onChange={(v) => {
+                props.onUpdate(
+                  Expression.create({
+                    type: {
+                      oneofKind: `requestIPInRange`,
+                      requestIPInRange: {
+                        value: v.target.value,
+                      },
+                    },
+                  }),
+                );
+              }}
+            />
+          </div>
+        );
+      },
+    },
+  },
 ];
 
 export default itemList;

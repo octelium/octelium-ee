@@ -1,0 +1,1191 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/Condition",
+    "definitions": {
+        "Condition": {
+            "properties": {
+                "all": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.All",
+                    "additionalProperties": false
+                },
+                "any": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Any",
+                    "additionalProperties": false
+                },
+                "none": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.None",
+                    "additionalProperties": false
+                },
+                "not": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Not",
+                    "additionalProperties": false
+                },
+                "matchAny": {
+                    "type": "boolean"
+                },
+                "expression": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "all"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "any"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "none"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "not"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "matchAny"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "expression"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "all"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "any"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "none"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "not"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "matchAny"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "expression"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Condition"
+        },
+        "octelium.api.main.enterprise.v1.Condition.All": {
+            "properties": {
+                "of": {
+                    "items": {
+                        "$ref": "#/definitions/Condition"
+                    },
+                    "additionalProperties": false,
+                    "type": "array"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "All"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Any": {
+            "properties": {
+                "of": {
+                    "items": {
+                        "$ref": "#/definitions/Condition"
+                    },
+                    "additionalProperties": false,
+                    "type": "array"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Any"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression": {
+            "properties": {
+                "user": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.User",
+                    "additionalProperties": false
+                },
+                "device": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.Device",
+                    "additionalProperties": false
+                },
+                "session": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.Session",
+                    "additionalProperties": false
+                },
+                "service": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.Service",
+                    "additionalProperties": false
+                },
+                "namespace": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.Namespace",
+                    "additionalProperties": false
+                },
+                "group": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.Group",
+                    "additionalProperties": false
+                },
+                "sessionType": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.SessionType",
+                    "additionalProperties": false
+                },
+                "userType": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.UserType",
+                    "additionalProperties": false
+                },
+                "deviceOSType": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.DeviceOSType",
+                    "additionalProperties": false
+                },
+                "serviceMode": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.ServiceMode",
+                    "additionalProperties": false
+                },
+                "servicePublic": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.ServicePublic",
+                    "additionalProperties": false
+                },
+                "sessionAuthenticationType": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationType",
+                    "additionalProperties": false
+                },
+                "sessionAuthenticationAAL": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationAAL",
+                    "additionalProperties": false
+                },
+                "sessionAuthenticationIdentityProvider": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationIdentityProvider",
+                    "additionalProperties": false
+                },
+                "sessionAuthenticationCredential": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredential",
+                    "additionalProperties": false
+                },
+                "sessionBrowser": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.SessionBrowser",
+                    "additionalProperties": false
+                },
+                "sessionAuthenticationCredAuthenticatorFIDOPasskey": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOPasskey",
+                    "additionalProperties": false
+                },
+                "sessionAuthenticationCredAuthenticatorAAGUID": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorAAGUID",
+                    "additionalProperties": false
+                },
+                "timeBefore": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.TimeBefore",
+                    "additionalProperties": false
+                },
+                "timeAfter": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.TimeAfter",
+                    "additionalProperties": false
+                },
+                "sessionAuthenticationCredAuthenticatorFIDOHardware": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOHardware",
+                    "additionalProperties": false
+                },
+                "sessionAuthenticationCredAuthenticatorFIDOAttestationVerified": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOAttestationVerified",
+                    "additionalProperties": false
+                },
+                "sessionAuthenticationCredentialType": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredentialType",
+                    "additionalProperties": false
+                },
+                "sessionAuthenticationCredAuthenticatorFIDOUserVerified": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserVerified",
+                    "additionalProperties": false
+                },
+                "sessionAuthenticationCredAuthenticatorFIDOUserPresent": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserPresent",
+                    "additionalProperties": false
+                },
+                "sessionAuthenticationGeoipCountryCode": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipCountryCode",
+                    "additionalProperties": false
+                },
+                "requestHTTPPathExact": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPathExact",
+                    "additionalProperties": false
+                },
+                "requestHTTPPathPrefix": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPathPrefix",
+                    "additionalProperties": false
+                },
+                "apiServer": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.APIServer",
+                    "additionalProperties": false
+                },
+                "apiServerCore": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.APIServerCore",
+                    "additionalProperties": false
+                },
+                "apiServerUser": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.APIServerUser",
+                    "additionalProperties": false
+                },
+                "apiServerEnterprise": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise",
+                    "additionalProperties": false
+                },
+                "apiServerCordium": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium",
+                    "additionalProperties": false
+                },
+                "requestHTTPMethod": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod",
+                    "additionalProperties": false
+                },
+                "requestHTTPHasHeader": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader",
+                    "additionalProperties": false
+                },
+                "requestHTTPHeaderValue": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue",
+                    "additionalProperties": false
+                },
+                "requestIP": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestIP",
+                    "additionalProperties": false
+                },
+                "requestIPInRange": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestIPInRange",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "user"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "device"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "session"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "service"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "namespace"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "group"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "sessionType"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "userType"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "deviceOSType"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "serviceMode"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "servicePublic"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "sessionAuthenticationType"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "sessionAuthenticationAAL"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "sessionAuthenticationIdentityProvider"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "sessionAuthenticationCredential"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "sessionBrowser"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "sessionAuthenticationCredAuthenticatorFIDOPasskey"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "sessionAuthenticationCredAuthenticatorAAGUID"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "timeBefore"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "timeAfter"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "sessionAuthenticationCredAuthenticatorFIDOHardware"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "sessionAuthenticationCredAuthenticatorFIDOAttestationVerified"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "sessionAuthenticationCredentialType"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "sessionAuthenticationCredAuthenticatorFIDOUserVerified"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "sessionAuthenticationCredAuthenticatorFIDOUserPresent"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "sessionAuthenticationGeoipCountryCode"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestHTTPPathExact"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestHTTPPathPrefix"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "apiServer"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "apiServerCore"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "apiServerUser"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "apiServerEnterprise"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "apiServerCordium"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestHTTPMethod"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestHTTPHasHeader"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestHTTPHeaderValue"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestIP"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestIPInRange"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "user"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "device"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "session"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "service"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "namespace"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "group"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "sessionType"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "userType"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "deviceOSType"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "serviceMode"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "servicePublic"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "sessionAuthenticationType"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "sessionAuthenticationAAL"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "sessionAuthenticationIdentityProvider"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "sessionAuthenticationCredential"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "sessionBrowser"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "sessionAuthenticationCredAuthenticatorFIDOPasskey"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "sessionAuthenticationCredAuthenticatorAAGUID"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "timeBefore"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "timeAfter"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "sessionAuthenticationCredAuthenticatorFIDOHardware"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "sessionAuthenticationCredAuthenticatorFIDOAttestationVerified"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "sessionAuthenticationCredentialType"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "sessionAuthenticationCredAuthenticatorFIDOUserVerified"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "sessionAuthenticationCredAuthenticatorFIDOUserPresent"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "sessionAuthenticationGeoipCountryCode"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestHTTPPathExact"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestHTTPPathPrefix"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "apiServer"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "apiServerCore"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "apiServerUser"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "apiServerEnterprise"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "apiServerCordium"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestHTTPMethod"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestHTTPHasHeader"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestHTTPHeaderValue"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestIP"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestIPInRange"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Expression"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.APIServer": {
+            "properties": {
+                "isAPIServer": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "API Server"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium": {
+            "properties": {
+                "isAPIServerCordium": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "API Server Cordium"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.APIServerCore": {
+            "properties": {
+                "isAPIServerCore": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "API Server Core"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise": {
+            "properties": {
+                "isAPIServerEnterprise": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "API Server Enterprise"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.APIServerUser": {
+            "properties": {
+                "isAPIServerUser": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "API Server User"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.Device": {
+            "properties": {
+                "deviceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Device"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.DeviceOSType": {
+            "properties": {
+                "osType": {
+                    "enum": [
+                        "OS_TYPE_UNKNOWN",
+                        "LINUX",
+                        "WINDOWS",
+                        "MAC",
+                        "ANDROID",
+                        "IOS"
+                    ],
+                    "type": "string",
+                    "title": "OS Type"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Device OS Type"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.Group": {
+            "properties": {
+                "groupRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Group"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.Namespace": {
+            "properties": {
+                "namespaceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Namespace"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader": {
+            "properties": {
+                "value": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request HTTP Has Header"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue": {
+            "properties": {
+                "header": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request HTTP Header Value"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod": {
+            "properties": {
+                "value": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request HTTP Method"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPathExact": {
+            "properties": {
+                "value": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request HTTP Path Exact"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPathPrefix": {
+            "properties": {
+                "value": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request HTTP Path Prefix"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestIP": {
+            "properties": {
+                "value": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request IP"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestIPInRange": {
+            "properties": {
+                "value": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request IP In Range"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.Service": {
+            "properties": {
+                "serviceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Service"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.ServiceMode": {
+            "properties": {
+                "mode": {
+                    "enum": [
+                        "MODE_UNSET",
+                        "TCP",
+                        "UDP",
+                        "HTTP",
+                        "SSH",
+                        "KUBERNETES",
+                        "POSTGRES",
+                        "MYSQL",
+                        "GRPC",
+                        "WEB",
+                        "DNS"
+                    ],
+                    "type": "string",
+                    "title": "Mode"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Service Mode"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.ServicePublic": {
+            "properties": {
+                "isPublic": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Service Public"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.Session": {
+            "properties": {
+                "sessionRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Session"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationAAL": {
+            "properties": {
+                "aal": {
+                    "enum": [
+                        "AAL_UNSET",
+                        "AAL1",
+                        "AAL2",
+                        "AAL3"
+                    ],
+                    "type": "string",
+                    "title": "AAL"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Session Authentication AAL"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorAAGUID": {
+            "properties": {
+                "aaguid": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Session Authentication Cred Authenticator AAGUID"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOAttestationVerified": {
+            "properties": {
+                "isAttestationVerified": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Session Authentication Cred Authenticator FIDO Attestation Verified"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOHardware": {
+            "properties": {
+                "isHardware": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Session Authentication Cred Authenticator FIDO Hardware"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOPasskey": {
+            "properties": {
+                "isPasskey": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Session Authentication Cred Authenticator FIDO Passkey"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserPresent": {
+            "properties": {
+                "isUserPresent": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Session Authentication Cred Authenticator FIDO User Present"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserVerified": {
+            "properties": {
+                "isUserVerified": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Session Authentication Cred Authenticator FIDO User Verified"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredential": {
+            "properties": {
+                "credentialRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Session Authentication Credential"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredentialType": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "TYPE_UNKNOWN",
+                        "AUTH_TOKEN",
+                        "OAUTH2",
+                        "ACCESS_TOKEN"
+                    ],
+                    "type": "string",
+                    "title": "Type"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Session Authentication Credential Type"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipCountryCode": {
+            "properties": {
+                "code": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Session Authentication Geoip Country Code"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationIdentityProvider": {
+            "properties": {
+                "identityProviderRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Session Authentication Identity Provider"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationType": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "TYPE_UNSET",
+                        "CREDENTIAL",
+                        "INTERNAL",
+                        "REFRESH_TOKEN",
+                        "EXTERNAL",
+                        "IDENTITY_PROVIDER",
+                        "AUTHENTICATOR"
+                    ],
+                    "type": "string",
+                    "title": "Type"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Session Authentication Type"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.SessionBrowser": {
+            "properties": {
+                "isBrowser": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Session Browser"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.SessionType": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "TYPE_UNKNOWN",
+                        "CLIENT",
+                        "CLIENTLESS"
+                    ],
+                    "type": "string",
+                    "title": "Type"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Session Type"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.TimeAfter": {
+            "properties": {
+                "timestamp": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Time After"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.TimeBefore": {
+            "properties": {
+                "timestamp": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Time Before"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.User": {
+            "properties": {
+                "userRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "User"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.UserType": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "TYPE_UNKNOWN",
+                        "HUMAN",
+                        "WORKLOAD"
+                    ],
+                    "type": "string",
+                    "title": "Type"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "User Type"
+        },
+        "octelium.api.main.enterprise.v1.Condition.None": {
+            "properties": {
+                "of": {
+                    "items": {
+                        "$ref": "#/definitions/Condition"
+                    },
+                    "additionalProperties": false,
+                    "type": "array"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "None"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Not": {
+            "properties": {
+                "condition": {
+                    "$ref": "#/definitions/Condition",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Not"
+        },
+        "octelium.api.main.meta.v1.ObjectReference": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version of the reference resource"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource kind. A kind is unique per an APIVersion."
+                },
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the resource object UID. A UID is unique across the entire Cluster."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the resource object name. A name is unique per a certain kind."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is the resourceVersion of the resource."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Object Reference"
+        }
+    }
+}

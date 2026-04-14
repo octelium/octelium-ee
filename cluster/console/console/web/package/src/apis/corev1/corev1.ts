@@ -2737,6 +2737,25 @@ export interface Service_Spec_Config_Upstream_Container_SecurityContext {
      * @generated from protobuf field: uint32 runAsUser = 2
      */
     runAsUser: number;
+    /**
+     * Capabilities adds/drops Linux capabilities used by the container
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.SecurityContext.Capabilities capabilities = 3
+     */
+    capabilities?: Service_Spec_Config_Upstream_Container_SecurityContext_Capabilities;
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.SecurityContext.Capabilities
+ */
+export interface Service_Spec_Config_Upstream_Container_SecurityContext_Capabilities {
+    /**
+     * @generated from protobuf field: repeated string add = 1
+     */
+    add: string[];
+    /**
+     * @generated from protobuf field: repeated string drop = 2
+     */
+    drop: string[];
 }
 /**
  * @generated from protobuf message octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.Volume
@@ -15673,7 +15692,8 @@ class Service_Spec_Config_Upstream_Container_SecurityContext$Type extends Messag
     constructor() {
         super("octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.SecurityContext", [
             { no: 1, name: "readOnlyRootFilesystem", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
-            { no: 2, name: "runAsUser", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 2, name: "runAsUser", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 3, name: "capabilities", kind: "message", T: () => Service_Spec_Config_Upstream_Container_SecurityContext_Capabilities }
         ]);
     }
     create(value?: PartialMessage<Service_Spec_Config_Upstream_Container_SecurityContext>): Service_Spec_Config_Upstream_Container_SecurityContext {
@@ -15695,6 +15715,9 @@ class Service_Spec_Config_Upstream_Container_SecurityContext$Type extends Messag
                 case /* uint32 runAsUser */ 2:
                     message.runAsUser = reader.uint32();
                     break;
+                case /* octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.SecurityContext.Capabilities capabilities */ 3:
+                    message.capabilities = Service_Spec_Config_Upstream_Container_SecurityContext_Capabilities.internalBinaryRead(reader, reader.uint32(), options, message.capabilities);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -15713,6 +15736,9 @@ class Service_Spec_Config_Upstream_Container_SecurityContext$Type extends Messag
         /* uint32 runAsUser = 2; */
         if (message.runAsUser !== 0)
             writer.tag(2, WireType.Varint).uint32(message.runAsUser);
+        /* octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.SecurityContext.Capabilities capabilities = 3; */
+        if (message.capabilities)
+            Service_Spec_Config_Upstream_Container_SecurityContext_Capabilities.internalBinaryWrite(message.capabilities, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -15723,6 +15749,61 @@ class Service_Spec_Config_Upstream_Container_SecurityContext$Type extends Messag
  * @generated MessageType for protobuf message octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.SecurityContext
  */
 export const Service_Spec_Config_Upstream_Container_SecurityContext = new Service_Spec_Config_Upstream_Container_SecurityContext$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Service_Spec_Config_Upstream_Container_SecurityContext_Capabilities$Type extends MessageType<Service_Spec_Config_Upstream_Container_SecurityContext_Capabilities> {
+    constructor() {
+        super("octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.SecurityContext.Capabilities", [
+            { no: 1, name: "add", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "drop", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Service_Spec_Config_Upstream_Container_SecurityContext_Capabilities>): Service_Spec_Config_Upstream_Container_SecurityContext_Capabilities {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.add = [];
+        message.drop = [];
+        if (value !== undefined)
+            reflectionMergePartial<Service_Spec_Config_Upstream_Container_SecurityContext_Capabilities>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Service_Spec_Config_Upstream_Container_SecurityContext_Capabilities): Service_Spec_Config_Upstream_Container_SecurityContext_Capabilities {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated string add */ 1:
+                    message.add.push(reader.string());
+                    break;
+                case /* repeated string drop */ 2:
+                    message.drop.push(reader.string());
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Service_Spec_Config_Upstream_Container_SecurityContext_Capabilities, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated string add = 1; */
+        for (let i = 0; i < message.add.length; i++)
+            writer.tag(1, WireType.LengthDelimited).string(message.add[i]);
+        /* repeated string drop = 2; */
+        for (let i = 0; i < message.drop.length; i++)
+            writer.tag(2, WireType.LengthDelimited).string(message.drop[i]);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container.SecurityContext.Capabilities
+ */
+export const Service_Spec_Config_Upstream_Container_SecurityContext_Capabilities = new Service_Spec_Config_Upstream_Container_SecurityContext_Capabilities$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class Service_Spec_Config_Upstream_Container_Volume$Type extends MessageType<Service_Spec_Config_Upstream_Container_Volume> {
     constructor() {

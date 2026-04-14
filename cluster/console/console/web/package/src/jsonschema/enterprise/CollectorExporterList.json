@@ -58,8 +58,7 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "message CloudProvider {\nmessage Spec {\nmessage Cloudflare {\n// Email is the Cloudflare's account email\nstring email = 1;\n// APIToken is the Cloudflare's API token.\nmessage APIToken {\noneof type { string fromSecret = 1; }\n}\nAPIToken apiToken = 2;\n// Proxied sets the IP addresses to proxied mode. Not used currently.\nbool proxied = 3;\n}\n\nmessage AWS {\n\n// AccessKeyID is the `AWS_ACCESS_KEY_ID` value of your credentials.\nstring accessKeyID = 1;\n// SecretAccessKey is the `AWS_SECRET_ACCESS_KEY` value for your\n// credentials.\n\nmessage SecretAccessKey {\noneof type { string fromSecret = 1; }\n}\n\nSecretAccessKey secretAccessKey = 2;\n\n// Region is the AWS region code (e.g. `us-east-1`).\nstring region = 3;\n// AssumeRoleARN is the assumed role (e.g.\n// `arn:aws:iam::YYYYYYYYYYYY:role/dns-manager`)\nstring assumeRoleARN = 4;\n}\n\nmessage DigitalOcean {\nmessage APIToken {\noneof type { string fromSecret = 1; }\n}\nAPIToken apiToken = 1;\n}\n\nmessage Google {\n// Project is the GCP project name.\nstring project = 1;\n\nmessage ServiceAccount {\noneof type { string fromSecret = 1; }\n}\n\nServiceAccount serviceAccount = 2;\n}\n\nmessage Azure {\nmessage ClientSecret {\noneof type { string fromSecret = 1; }\n}\n\nstring clientID = 1;\nClientSecret clientSecret = 2;\nstring subscriptionID = 3;\nstring tenantID = 4;\nstring resourceGroupName = 5;\n// Cloud is the Azure cloud environment, valid values are `public`,\n// `china`, `usgovernment` and `german`. Empty value is equivalent to\n// `public`.\nstring cloud = 6;\n}\n\nmessage Linode {\nmessage APIToken {\noneof type { string fromSecret = 1; }\n}\nAPIToken apiToken = 1;\n}\n\nmessage OVH {\nmessage ApplicationSecret {\noneof type { string fromSecret = 1; }\n}\n// Endpoint is the API endpoint (e.g. `ovh-eu`)\nstring endpoint = 1;\nstring applicationKey = 2;\nApplicationSecret applicationSecret = 3;\nstring consumerKey = 4;\n}\n\nmessage Alibaba {\nmessage AccessKeySecret {\noneof type { string fromSecret = 1; }\n}\nstring accessKeyID = 1;\nAccessKeySecret accessKeySecret = 2;\nstring regionID = 3;\n}\n\nmessage Hetzner {\nmessage APIToken {\noneof type { string fromSecret = 1; }\n}\nAPIToken apiToken = 1;\n}\n\nmessage SMTP {\nmessage Password {\noneof type { string fromSecret = 1; }\n}\n\nstring host = 1;\nint32 port = 2;\nstring username = 3;\n\nPassword password = 4;\n\nstring from = 5;\n}\n\nmessage Postgresql {\n\nmessage Password {\noneof type { string fromSecret = 1; }\n}\n\nstring username = 1;\nPassword password = 2;\nstring host = 3;\nint32 port = 4;\nstring database = 5;\nbool noSSL = 6;\n}\n\nmessage Redis {\nmessage Password {\noneof type { string fromSecret = 1; }\n}\n\nstring username = 1;\nPassword password = 2;\nstring host = 3;\nint32 port = 4;\nint32 database = 5;\nbool useTLS = 6;\n}\n\nmessage S3 {\nmessage SecretAccessKey {\noneof type { string fromSecret = 1; }\n}\n\nstring endpoint = 1;\nstring accessKeyID = 2;\nSecretAccessKey secretAccessKey = 3;\nbool noTLS = 4;\nstring bucket = 5;\nstring region = 6;\n}\n\nmessage ContainerRegistry {\nmessage Password {\noneof type { string fromSecret = 1; }\n}\n\nstring server = 1;\nstring username = 2;\nPassword password = 3;\nstring namespace = 4;\n}\n\noneof type {\nPostgresql postgresql = 1;\n// Cloudflare is Cloudflare's specific options.\nCloudflare cloudflare = 2;\n// AWS is AWS's Route53 specific options.\nAWS aws = 3;\n// Digitalocean is DigitalOcean's specific options.\nDigitalOcean digitalocean = 4;\n// Google is GCP's Cloud DNS specific options.\nGoogle google = 5;\n// Azure is Azure DNS specific options.\nAzure azure = 6;\n// Linode is Linode's specific options.\nLinode linode = 7;\n// OVH is OVH specific options.\nOVH ovh = 8;\n// Alibaba is Alibaba's specific options.\nAlibaba alibaba = 9;\n\nHetzner hetzner = 10;\nSMTP smtp = 11;\n\nRedis redis = 12;\nS3 s3 = 13;\n\nContainerRegistry containerRegistry = 14;\n}\n}\n\nmessage Status {}\n\n// APIVersion is the API version of the object.\nstring apiVersion = 1;\n// Kind is the resource name (i.e. `User`).\nstring kind = 2;\n// Metadata is the object's metadata.\noctelium.api.main.meta.v1.Metadata metadata = 3;\n// Spec is the User specification.\nSpec spec = 4;\n// Status is the current status of the User.\nStatus status = 5;\n}\n\n\nmessage CloudProviderList {\n// APIVersion is the API version of the object.\nstring apiVersion = 1;\n// Kind is the resource name (i.e. `CloudProviderList`).\nstring kind = 2;\n// Items is the list of Users.\nrepeated CloudProvider items = 3;\n// ListResponseMeta is common information about the list.\noctelium.api.main.meta.v1.ListResponseMeta listResponseMeta = 4;\n}",
-            "description": "message CloudProvider {message Spec {message Cloudflare {// Email is the Cloudflare's account emailstring email = 1;// APIToken is the Cloudflare's API token.message APIToken {oneof type { string fromSecret = 1; }}APIToken apiToken = 2;// Proxied sets the IP addresses to proxied mode. Not used currently.bool proxied = 3;}message AWS {// AccessKeyID is the `AWS_ACCESS_KEY_ID` value of your credentials.string accessKeyID = 1;// SecretAccessKey is the `AWS_SECRET_ACCESS_KEY` value for your// credentials.message SecretAccessKey {oneof type { string fromSecret = 1; }}SecretAccessKey secretAccessKey = 2;// Region is the AWS region code (e.g. `us-east-1`).string region = 3;// AssumeRoleARN is the assumed role (e.g.// `arn:aws:iam::YYYYYYYYYYYY:role/dns-manager`)string assumeRoleARN = 4;}message DigitalOcean {message APIToken {oneof type { string fromSecret = 1; }}APIToken apiToken = 1;}message Google {// Project is the GCP project name.string project = 1;message ServiceAccount {oneof type { string fromSecret = 1; }}ServiceAccount serviceAccount = 2;}message Azure {message ClientSecret {oneof type { string fromSecret = 1; }}string clientID = 1;ClientSecret clientSecret = 2;string subscriptionID = 3;string tenantID = 4;string resourceGroupName = 5;// Cloud is the Azure cloud environment, valid values are `public`,// `china`, `usgovernment` and `german`. Empty value is equivalent to// `public`.string cloud = 6;}message Linode {message APIToken {oneof type { string fromSecret = 1; }}APIToken apiToken = 1;}message OVH {message ApplicationSecret {oneof type { string fromSecret = 1; }}// Endpoint is the API endpoint (e.g. `ovh-eu`)string endpoint = 1;string applicationKey = 2;ApplicationSecret applicationSecret = 3;string consumerKey = 4;}message Alibaba {message AccessKeySecret {oneof type { string fromSecret = 1; }}string accessKeyID = 1;AccessKeySecret accessKeySecret = 2;string regionID = 3;}message Hetzner {message APIToken {oneof type { string fromSecret = 1; }}APIToken apiToken = 1;}message SMTP {message Password {oneof type { string fromSecret = 1; }}string host = 1;int32 port = 2;string username = 3;Password password = 4;string from = 5;}message Postgresql {message Password {oneof type { string fromSecret = 1; }}string username = 1;Password password = 2;string host = 3;int32 port = 4;string database = 5;bool noSSL = 6;}message Redis {message Password {oneof type { string fromSecret = 1; }}string username = 1;Password password = 2;string host = 3;int32 port = 4;int32 database = 5;bool useTLS = 6;}message S3 {message SecretAccessKey {oneof type { string fromSecret = 1; }}string endpoint = 1;string accessKeyID = 2;SecretAccessKey secretAccessKey = 3;bool noTLS = 4;string bucket = 5;string region = 6;}message ContainerRegistry {message Password {oneof type { string fromSecret = 1; }}string server = 1;string username = 2;Password password = 3;string namespace = 4;}oneof type {Postgresql postgresql = 1;// Cloudflare is Cloudflare's specific options.Cloudflare cloudflare = 2;// AWS is AWS's Route53 specific options.AWS aws = 3;// Digitalocean is DigitalOcean's specific options.DigitalOcean digitalocean = 4;// Google is GCP's Cloud DNS specific options.Google google = 5;// Azure is Azure DNS specific options.Azure azure = 6;// Linode is Linode's specific options.Linode linode = 7;// OVH is OVH specific options.OVH ovh = 8;// Alibaba is Alibaba's specific options.Alibaba alibaba = 9;Hetzner hetzner = 10;SMTP smtp = 11;Redis redis = 12;S3 s3 = 13;ContainerRegistry containerRegistry = 14;}}message Status {}// APIVersion is the API version of the object.string apiVersion = 1;// Kind is the resource name (i.e. `User`).string kind = 2;// Metadata is the object's metadata.octelium.api.main.meta.v1.Metadata metadata = 3;// Spec is the User specification.Spec spec = 4;// Status is the current status of the User.Status status = 5;}message CloudProviderList {// APIVersion is the API version of the object.string apiVersion = 1;// Kind is the resource name (i.e. `CloudProviderList`).string kind = 2;// Items is the list of Users.repeated CloudProvider items = 3;// ListResponseMeta is common information about the list.octelium.api.main.meta.v1.ListResponseMeta listResponseMeta = 4;}"
+            "title": "Collector Exporter"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec": {
             "properties": {
@@ -847,10 +846,11 @@
                     "type": "string"
                 },
                 "headers": {
-                    "additionalProperties": {
-                        "type": "string"
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.KeyValue"
                     },
-                    "type": "object"
+                    "additionalProperties": false,
+                    "type": "array"
                 },
                 "auth": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth",
@@ -1049,16 +1049,30 @@
             ],
             "title": "Value"
         },
+        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.KeyValue": {
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Key Value"
+        },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP": {
             "properties": {
                 "endpoint": {
                     "type": "string"
                 },
                 "headers": {
-                    "additionalProperties": {
-                        "type": "string"
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.KeyValue"
                     },
-                    "type": "object"
+                    "additionalProperties": false,
+                    "type": "array"
                 },
                 "auth": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth",
@@ -1277,6 +1291,19 @@
                 }
             ],
             "title": "Value"
+        },
+        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.KeyValue": {
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Key Value"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite": {
             "properties": {
