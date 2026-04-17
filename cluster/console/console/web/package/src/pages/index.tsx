@@ -1,19 +1,13 @@
 import Footer from "@/components/Footer";
-
-import TopBar from "@/components/TopBar";
-
-import { Navigate, Outlet } from "react-router-dom";
-
-import { useAppDispatch } from "@/utils/hooks";
-
 import SideBar from "@/components/SideBar";
+import RightSidebar from "@/components/SideBar/RightSidebar";
+import TopBar from "@/components/TopBar";
 import { Toaster } from "@/components/ui/sonner";
-
+import { useAppDispatch } from "@/utils/hooks";
 import { AppShell, Burger } from "@mantine/core";
 import { useDisclosure, useHeadroom } from "@mantine/hooks";
-
-import RightSidebar from "@/components/SideBar/RightSidebar";
 import { ScrollRestoration } from "react-router";
+import { Navigate, Outlet } from "react-router-dom";
 
 export default () => {
   const dispatch = useAppDispatch();
@@ -29,10 +23,11 @@ export default () => {
   const pinned = useHeadroom({ fixedAt: 120 });
 
   return (
-    <div className="w-full !bg-slate-100">
+    <div className="w-full min-h-screen flex flex-col bg-slate-100">
       <title>Octelium Console</title>
       <ScrollRestoration />
-      <div className=" bg-slate-100 min-h-screen antialiased">
+
+      <div className="flex-1 flex flex-col bg-slate-100 antialiased">
         <AppShell
           className="!bg-transparent"
           header={{ height: 60, collapsed: !pinned, offset: false }}
@@ -48,8 +43,11 @@ export default () => {
           }}
           padding="md"
         >
-          <AppShell.Header className="!bg-slate-100">
-            <div className="flex flex-row items-center justify-center">
+          <AppShell.Header
+            className="!bg-slate-100 border-b border-slate-200"
+            style={{ zIndex: 200 }}
+          >
+            <div className="flex flex-row items-center h-full">
               <Burger
                 opened={opened}
                 onClick={toggle}
@@ -60,30 +58,36 @@ export default () => {
             </div>
           </AppShell.Header>
 
-          <AppShell.Navbar p="md" className="!bg-transparent mt-[60px]">
+          <AppShell.Navbar
+            p="md"
+            className="!bg-transparent"
+            style={{ zIndex: 100, marginTop: 60 }}
+          >
             <SideBar />
           </AppShell.Navbar>
 
-          <AppShell.Main className="!bg-transparent h-full w-full mt-[60px]">
-            <div className="flex-1 flex flex-col h-full w-full items-center justify-center">
-              <div className="flex-1 w-full h-full">
-                <Outlet />
-              </div>
-            </div>
+          <AppShell.Main className="!bg-transparent" style={{ marginTop: 60 }}>
+            <Outlet />
           </AppShell.Main>
-          <AppShell.Aside p="md" className="!bg-transparent">
+
+          <AppShell.Aside
+            p="md"
+            className="!bg-transparent"
+            style={{ zIndex: 100, marginTop: 60 }}
+          >
             <RightSidebar />
           </AppShell.Aside>
         </AppShell>
-
-        <Toaster
-          position="bottom-center"
-          toastOptions={{
-            className: `bg-zinc-800 font-bold text-white`,
-          }}
-        />
       </div>
+
       <Footer />
+
+      <Toaster
+        position="bottom-center"
+        toastOptions={{
+          className: "bg-zinc-800 font-bold text-white",
+        }}
+      />
     </div>
   );
 };
