@@ -152,12 +152,12 @@ export default () => {
                   <AccessLogC key={x.metadata!.id} accessLog={x as AccessLog} />
                 ))
                 .with(`AuditLog`, () => (
-                  <AuditLogC key={x.metadata!.id} accessLog={x as AuditLog} />
+                  <AuditLogC key={x.metadata!.id} auditLog={x as AuditLog} />
                 ))
                 .with(`AuthenticationLog`, () => (
                   <AuthenticationLogC
                     key={x.metadata!.id}
-                    accessLog={x as AuthenticationLog}
+                    authLog={x as AuthenticationLog}
                   />
                 ))
                 .with(`ComponentLog`, () => (
