@@ -1,5 +1,5 @@
 import { ListResponseMeta } from "@/apis/metav1/metav1";
-import { Pagination } from "@mantine/core";
+import { Button, Pagination } from "@mantine/core";
 import { ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
@@ -31,10 +31,45 @@ const Paginator = (props: {
     navigate(`${loc.pathname}?${next.toString()}`);
   };
 
-  const sortOptions: { label: string; value: string }[] = [
-    { label: "Name", value: "NAME" },
-    { label: "Created", value: "CREATED_AT" },
-  ];
+  const itemCountLabel =
+    meta.totalCount === 1
+      ? "1 item"
+      : `${meta.totalCount.toLocaleString()} items`;
+
+  const btnStyles = (active: boolean) => ({
+    root: {
+      height: "28px",
+      fontSize: "0.72rem",
+      fontWeight: 700,
+      padding: "0 10px",
+      backgroundColor: active ? "#0f172a" : "#ffffff",
+      color: active ? "#ffffff" : "#64748b",
+      border: "none",
+      borderRadius: 0,
+      transition: "background-color 150ms, color 150ms",
+      "&:hover": {
+        backgroundColor: active ? "#1e293b" : "#f8fafc",
+        color: active ? "#ffffff" : "#0f172a",
+      },
+    },
+  });
+
+  const iconBtnStyles = (active: boolean) => ({
+    root: {
+      height: "28px",
+      width: "28px",
+      padding: 0,
+      backgroundColor: active ? "#0f172a" : "#ffffff",
+      color: active ? "#ffffff" : "#64748b",
+      border: "none",
+      borderRadius: 0,
+      transition: "background-color 150ms, color 150ms",
+      "&:hover": {
+        backgroundColor: active ? "#1e293b" : "#f8fafc",
+        color: active ? "#ffffff" : "#0f172a",
+      },
+    },
+  });
 
   return (
     <div className="w-full flex items-center justify-between gap-4 my-5">
@@ -48,8 +83,7 @@ const Paginator = (props: {
           classNames={{
             control: twMerge(
               "!font-bold !text-[0.78rem]",
-              "!border-slate-200 !bg-white",
-              "!text-slate-700",
+              "!border-slate-200 !bg-white !text-slate-700",
               "!shadow-[0_1px_3px_rgba(15,23,42,0.07)]",
               "hover:!bg-slate-50 hover:!border-slate-300",
               "!transition-colors !duration-150",
@@ -66,59 +100,50 @@ const Paginator = (props: {
           className="text-[0.75rem] font-bold text-slate-500 tracking-wide"
           style={{ textShadow: "0 1px 2px rgba(15,23,42,0.08)" }}
         >
-          {meta.totalCount === 1
-            ? "1 item"
-            : `${meta.totalCount.toLocaleString()} items`}
+          {itemCountLabel}
         </span>
       )}
 
-      <div className="flex items-center gap-2">
-        <div className="flex items-center rounded-lg border border-slate-200 bg-white overflow-hidden shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-          {sortOptions.map((opt) => (
-            <button
+      <div className="flex items-center gap-1.5">
+        <Button.Group className="rounded-md overflow-hidden border border-slate-200 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
+          {[
+            { label: "Name", value: "NAME" },
+            { label: "Created", value: "CREATED_AT" },
+          ].map((opt) => (
+            <Button
               key={opt.value}
               onClick={() => setParam("common.orderBy.type", opt.value)}
-              className={twMerge(
-                "cursor-pointer px-3 py-1.5 text-[0.72rem] font-bold transition-colors duration-150",
-                currentOrderBy === opt.value
-                  ? "bg-slate-900 text-white"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50",
-              )}
+              styles={btnStyles(currentOrderBy === opt.value)}
             >
               {opt.label}
-            </button>
+            </Button>
           ))}
-        </div>
+        </Button.Group>
 
-        <div className="flex items-center rounded-lg border border-slate-200 bg-white overflow-hidden shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
+        <Button.Group className="rounded-md overflow-hidden border border-slate-200 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
           {(
             [
               { value: "ASC", Icon: ArrowUpWideNarrow },
               { value: "DESC", Icon: ArrowDownWideNarrow },
             ] as const
           ).map(({ value, Icon }) => (
-            <button
+            <Button
               key={value}
               onClick={() => setParam("common.orderBy.mode", value)}
-              className={twMerge(
-                "cursor-pointer flex items-center justify-center px-2.5 py-1.5 transition-colors duration-150",
-                currentOrderMode === value
-                  ? "bg-slate-900 text-white"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50",
-              )}
+              styles={iconBtnStyles(currentOrderMode === value)}
               title={value === "ASC" ? "Ascending" : "Descending"}
             >
-              <Icon size={14} />
-            </button>
+              <Icon size={13} />
+            </Button>
           ))}
-        </div>
+        </Button.Group>
 
         {hasMultiplePages && (
           <span
-            className="text-[0.75rem] font-bold text-slate-500 tracking-wide whitespace-nowrap"
+            className="text-[0.75rem] font-bold text-slate-500 tracking-wide whitespace-nowrap ml-1"
             style={{ textShadow: "0 1px 2px rgba(15,23,42,0.08)" }}
           >
-            {meta.totalCount.toLocaleString()} items
+            {itemCountLabel}
           </span>
         )}
       </div>
