@@ -118,7 +118,7 @@ const DeleteResource = (props: {
           <Button
             className={twMerge(
               "ml-4  transition-all duration-500",
-              isDeletable ? `shadow-lg` : undefined
+              isDeletable ? `shadow-lg` : undefined,
             )}
             disabled={!isDeletable}
             loading={mutationDelete.isPending}

@@ -2,6 +2,7 @@ import {
   Accordion,
   Button,
   createTheme,
+  Input,
   MultiSelect,
   NumberInput,
   Select,
@@ -12,31 +13,20 @@ import {
   TextInput,
   Tooltip,
 } from "@mantine/core";
-// import { fontFamily } from ".";
+
+const FONT =
+  'Ubuntu, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
 const inputClassName =
-  "!font-bold !focus:shadow-md !transition-all !duration-500 !rounded-md !focus:border-gray-900 !border-[2px]";
+  "!font-bold !transition-all !duration-500 !rounded-md !focus:shadow-md !focus:border-gray-900 !border-[2px]";
 
 const theme = createTheme({
-  // fontFamily: fontFamily,
-  fontFamily: [
-    "-apple-system",
-    "BlinkMacSystemFont",
-    "Ubuntu",
-    '"Segoe UI"',
-    "Roboto",
-    '"Helvetica Neue"',
-    "Arial",
-    "sans-serif",
-    '"Apple Color Emoji"',
-    '"Segoe UI Emoji"',
-    '"Segoe UI Symbol"',
-  ].join(","),
-
+  fontFamily: FONT,
+  fontFamilyMonospace:
+    "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
   primaryColor: "dark",
   autoContrast: true,
   defaultRadius: "md",
-  // focusRing: "never",
 
   components: {
     Button: Button.extend({
@@ -46,51 +36,74 @@ const theme = createTheme({
           "!font-bold !shadow-md !transition-all !duration-500 !rounded-md",
       },
     }),
+
+    Input: Input.extend({
+      styles: {
+        input: {
+          fontFamily: FONT,
+          fontWeight: 600,
+        },
+      },
+    }),
+
+    InputBase: Input.extend({
+      styles: {
+        input: {
+          fontFamily: FONT,
+          fontWeight: 600,
+        },
+      },
+    }),
+
     TextInput: TextInput.extend({
       classNames: {
         label: "!font-bold",
         input: inputClassName,
       },
     }),
+
     Textarea: Textarea.extend({
       classNames: {
         label: "!font-bold",
         input: inputClassName,
       },
     }),
+
     NumberInput: NumberInput.extend({
       classNames: {
         label: "!font-bold",
         input: inputClassName,
       },
     }),
+
     TagsInput: TagsInput.extend({
       classNames: {
         label: "!font-bold",
         input: inputClassName,
       },
     }),
+
     Accordion: Accordion.extend({
       classNames: {
         label: "!font-bold",
         panel: "!font-bold",
       },
     }),
+
     Tabs: Tabs.extend({
       classNames: {
         tab: "!font-bold",
         panel: "!font-bold",
       },
     }),
+
     Switch: Switch.extend({
-      defaultProps: {
-        // size: "md",
-      },
       classNames: {
         label: "!font-bold",
         input: "!transition-all !duration-500",
       },
     }),
+
     Select: Select.extend({
       defaultProps: {
         radius: "md",
@@ -103,9 +116,10 @@ const theme = createTheme({
       classNames: {
         input: inputClassName,
         label: "!font-bold",
-        option: "!transition-all !duration-500 !font-bold !hover:bg-zinc-200",
+        option: "!transition-all !duration-500 !font-bold hover:!bg-zinc-200",
       },
     }),
+
     MultiSelect: MultiSelect.extend({
       defaultProps: {
         radius: "md",
@@ -118,9 +132,10 @@ const theme = createTheme({
       classNames: {
         input: inputClassName,
         label: "!font-bold",
-        option: "!transition-all !duration-500 !font-bold !hover:bg-zinc-200",
+        option: "!transition-all !duration-500 !font-bold hover:!bg-zinc-200",
       },
     }),
+
     Tooltip: Tooltip.extend({
       defaultProps: {
         transitionProps: {
