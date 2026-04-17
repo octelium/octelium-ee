@@ -72,7 +72,7 @@ export const LabelComponent = (props: { item: User }) => {
     queryKey: ["core.listSession", "usr", item.metadata!.name],
     queryFn: async () => {
       return await getClientCore().listSession(
-        ListSessionOptions.create({ userRef: getResourceRef(item) })
+        ListSessionOptions.create({ userRef: getResourceRef(item) }),
       );
     },
   });
@@ -81,7 +81,7 @@ export const LabelComponent = (props: { item: User }) => {
     queryKey: ["core.listDevice", "usr", item.metadata!.name],
     queryFn: async () => {
       return await getClientCore().listDevice(
-        ListDeviceOptions.create({ userRef: getResourceRef(item) })
+        ListDeviceOptions.create({ userRef: getResourceRef(item) }),
       );
     },
   });
@@ -90,7 +90,7 @@ export const LabelComponent = (props: { item: User }) => {
     queryKey: ["core.listCredential", "usr", item.metadata!.name],
     queryFn: async () => {
       return await getClientCore().listCredential(
-        ListCredentialOptions.create({ userRef: getResourceRef(item) })
+        ListCredentialOptions.create({ userRef: getResourceRef(item) }),
       );
     },
   });
@@ -99,7 +99,7 @@ export const LabelComponent = (props: { item: User }) => {
     queryKey: ["core.listAuthenticator", "usr", item.metadata!.name],
     queryFn: async () => {
       return await getClientCore().listAuthenticator(
-        ListAuthenticationLogRequest.create({ userRef: getResourceRef(item) })
+        ListAuthenticationLogRequest.create({ userRef: getResourceRef(item) }),
       );
     },
   });
@@ -209,16 +209,16 @@ export const ListFilter = () => {
 
   React.useEffect(() => {
     invalidateResourceListFromList(
-      UserList.create({ apiVersion: "core/v1", kind: "UserList" })
+      UserList.create({ apiVersion: "core/v1", kind: "UserList" }),
     );
     dispatch(
       setListOptFilter({
         listOptFilter: ListUserOptions.create({}),
-      })
+      }),
     );
 
     invalidateResourceListFromList(
-      UserList.create({ apiVersion: "core/v1", kind: "UserList" })
+      UserList.create({ apiVersion: "core/v1", kind: "UserList" }),
     );
   }, []);
 
