@@ -8,42 +8,38 @@ interface AnimatedConnectorProps {
   className?: string;
 }
 
-export const AnimatedConnector: React.FC<AnimatedConnectorProps> = ({
-  dotSize = 4,
-  dotSpacing = 16,
+const AnimatedConnector: React.FC<AnimatedConnectorProps> = ({
+  dotSize = 3,
+  dotSpacing = 14,
   color = "#94a3b8",
-  speed = 1,
+  speed = 0.8,
   className = "w-full",
 }) => {
-  const uniqueId = useId().replace(/:/g, "");
-  const animationName = `flow-${uniqueId}`;
+  const uid = useId().replace(/:/g, "");
+  const anim = `flow-${uid}`;
 
   return (
     <div className={`flex items-center ${className}`}>
-      <svg width="100%" height={dotSize} xmlns="http://www.w3.org/2000/svg">
-        <style>
-          {`
-            @keyframes ${animationName} {
-              0% { stroke-dashoffset: 0; }
-              /* Negative offset moves the pattern from left to right */
-              100% { stroke-dashoffset: -${dotSpacing}; } 
-            }
-            .animate-connector-${uniqueId} {
-              animation: ${animationName} ${speed}s linear infinite;
-            }
-          `}
-        </style>
-
+      <svg width="100%" height={dotSize * 3} xmlns="http://www.w3.org/2000/svg">
+        <style>{`
+          @keyframes ${anim} {
+            0%   { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: -${dotSpacing}; }
+          }
+          .c-${uid} {
+            animation: ${anim} ${speed}s linear infinite;
+          }
+        `}</style>
         <line
           x1="0"
-          y1={dotSize / 2}
+          y1="50%"
           x2="100%"
-          y2={dotSize / 2}
+          y2="50%"
           stroke={color}
           strokeWidth={dotSize}
           strokeLinecap="round"
-          strokeDasharray={`0 ${dotSpacing}`}
-          className={`animate-connector-${uniqueId}`}
+          strokeDasharray={`1 ${dotSpacing}`}
+          className={`c-${uid}`}
         />
       </svg>
     </div>
