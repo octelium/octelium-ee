@@ -201,7 +201,7 @@ export const ResourceEdit = (props: {
       <div className="flex items-center justify-between pt-4 border-t border-slate-200 mt-2">
         {mutationUpdate.isError && (
           <span className="text-[0.72rem] font-semibold text-red-600">
-            Update failed — check the form and try again.
+            Update failed
           </span>
         )}
         <div className="flex-1" />

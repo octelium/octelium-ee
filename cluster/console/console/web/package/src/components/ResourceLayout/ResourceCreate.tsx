@@ -216,7 +216,7 @@ const ResourceCreatePage = (props: {
       <div className="flex items-center justify-between pt-4 border-t border-slate-200">
         {mutation.isError && (
           <span className="text-[0.72rem] font-semibold text-red-600">
-            Creation failed — check the form and try again.
+            Creation failed
           </span>
         )}
         <div className="flex-1" />
@@ -225,9 +225,8 @@ const ResourceCreatePage = (props: {
           <button
             onClick={() => navigate(-1)}
             disabled={mutation.isPending}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[0.78rem] font-bold text-slate-600 border border-slate-200 bg-white hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 transition-colors duration-150 cursor-pointer disabled:opacity-50"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[0.78rem] font-bold text-slate-600 border border-slate-200 bg-white hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 transition-colors duration-500 cursor-pointer disabled:opacity-50"
           >
-            <X size={13} strokeWidth={2.5} />
             Cancel
           </button>
 
@@ -237,8 +236,8 @@ const ResourceCreatePage = (props: {
             className={twMerge(
               "flex items-center gap-1.5 px-4 py-2 rounded-lg text-[0.78rem] font-bold",
               "bg-slate-900 text-white border border-slate-900",
-              "hover:bg-slate-800 transition-colors duration-150",
-              "disabled:opacity-50 disabled:cursor-not-allowed",
+              "hover:bg-slate-800 transition-colors duration-500",
+              "disabled:opacity-50 disabled:cursor-not-allowed font-extrabold",
               "shadow-[0_2px_8px_rgba(15,23,42,0.18)]",
             )}
           >
