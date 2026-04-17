@@ -4,475 +4,204 @@ import * as React from "react";
 import { match } from "ts-pattern";
 import EditItem from "../EditItem";
 import ItemMessage from "../ItemMessage";
+import ConditionBuilderBtn from "../PolicyBuilder/ConditionBuilderBtn";
 import { CELEditor, OPAEditor } from "./Editor";
 
-import ConditionBuilderBtn from "../PolicyBuilder/ConditionBuilderBtn";
+const CONDITION_TYPES = [
+  { value: "match", label: "Match" },
+  { value: "not", label: "Not" },
+  { value: "all", label: "All (AND)" },
+  { value: "any", label: "Any (OR)" },
+  { value: "none", label: "None (NOR)" },
+  { value: "opa", label: "OPA" },
+  { value: "matchAny", label: "Match All" },
+] as const;
+
+const makeCondition = (kind: string): Condition => {
+  const base = (type: object) => Condition.create({ type: type as any });
+  switch (kind) {
+    case "match":
+      return base({ oneofKind: "match", match: "" });
+    case "not":
+      return base({ oneofKind: "not", not: "" });
+    case "all":
+      return base({ oneofKind: "all", all: { of: [makeCondition("match")] } });
+    case "any":
+      return base({ oneofKind: "any", any: { of: [makeCondition("match")] } });
+    case "none":
+      return base({
+        oneofKind: "none",
+        none: { of: [makeCondition("match")] },
+      });
+    case "opa":
+      return base({
+        oneofKind: "opa",
+        opa: { type: { oneofKind: "inline", inline: "" } },
+      });
+    case "matchAny":
+      return base({ oneofKind: "matchAny", matchAny: true });
+    default:
+      return base({ oneofKind: "match", match: "" });
+  }
+};
 
 const Cond = (props: {
   item?: Condition;
   onChange: (condition: Condition) => void;
 }) => {
   const { item } = props;
-  let [req, setReq] = React.useState(
-    props.item ??
-      Condition.create({
-        type: {
-          oneofKind: "match",
-          match: "",
-        },
-      }),
+
+  const [req, setReq] = React.useState<Condition>(
+    item ?? makeCondition("match"),
   );
+  const [init] = React.useState<Condition>(() => Condition.clone(req));
 
-  let [init, _] = React.useState(Condition.clone(req));
-
-  const updateReq = () => {
-    setReq(Condition.clone(req));
-    props.onChange(req);
+  const updateReq = (next: Condition) => {
+    setReq(Condition.clone(next));
+    props.onChange(next);
   };
 
   React.useEffect(() => {
-    setReq(
-      item ??
-        Condition.create({
-          type: {
-            oneofKind: `match`,
-            match: ``,
-          },
-        }),
-    );
+    setReq(item ?? makeCondition("match"));
   }, [item]);
 
-  return (
-    <div className="ml-3 w-full my-4">
-      <div className="flex flex-col">
-        <SegmentedControl
-          defaultValue={req.type.oneofKind}
-          classNames={{
-            label: "!font-bold !transition-all !duration-500",
+  const handleTypeChange = (v: string) => {
+    const restored = Condition.clone(init);
+    if (restored.type.oneofKind === v) {
+      updateReq(Object.assign(Condition.clone(req), { type: restored.type }));
+    } else {
+      updateReq(makeCondition(v));
+    }
+  };
+
+  const makeListItemMessage = (
+    title: string,
+    of: Condition[],
+    setOf: (items: Condition[]) => void,
+  ) => (
+    <ItemMessage
+      title={title}
+      obj={of}
+      isList
+      onSet={() => setOf([makeCondition("match")])}
+      onAddListItem={() => setOf([...of, makeCondition("match")])}
+    >
+      {of.map((x, idx) => (
+        <EditItem
+          key={idx}
+          obj={of[idx]}
+          onUnset={() => {
+            const next = of.filter((_, i) => i !== idx);
+            setOf(next);
           }}
-          data={[
-            {
-              value: "match",
-              label: "Match",
-            },
-            {
-              value: "not",
-              label: "Match Not",
-            },
-            {
-              value: "all",
-              label: "All of (AND)",
-            },
-            {
-              value: "any",
-              label: "Any of (OR)",
-            },
-            {
-              value: "none",
-              label: "None of (NOR)",
-            },
-            {
-              value: "opa",
-              label: "OPA",
-            },
-            {
-              value: "matchAny",
-              label: "Match Everything",
-            },
-          ]}
-          onChange={(v) => {
-            match(v)
-              .with("match", () => {
-                match(init.type)
-                  .when(
-                    (x) => x.oneofKind === `match`,
-                    (x) => {
-                      req.type = x;
-                    },
-                  )
-                  .otherwise(() => {
-                    req = Condition.create({
-                      type: {
-                        oneofKind: "match",
-                        match: "",
-                      },
-                    });
-                  });
+        >
+          <Cond
+            item={x}
+            onChange={(v) => {
+              const next = [...of];
+              next[idx] = v;
+              setOf(next);
+            }}
+          />
+        </EditItem>
+      ))}
+    </ItemMessage>
+  );
 
-                updateReq();
-              })
-              .with("not", () => {
-                match(init.type)
-                  .when(
-                    (x) => x.oneofKind === `not`,
-                    (x) => {
-                      req.type = x;
-                    },
-                  )
-                  .otherwise(() => {
-                    req = Condition.create({
-                      type: {
-                        oneofKind: "not",
-                        not: "",
-                      },
-                    });
-                  });
-
-                updateReq();
-              })
-              .with("all", () => {
-                match(init.type)
-                  .when(
-                    (x) => x.oneofKind === `all`,
-                    (x) => {
-                      req.type = x;
-                    },
-                  )
-                  .otherwise(() => {
-                    req = Condition.create({
-                      type: {
-                        oneofKind: "all",
-                        all: {
-                          of: [
-                            Condition.create({
-                              type: {
-                                oneofKind: "match",
-                                match: "",
-                              },
-                            }),
-                          ],
-                        },
-                      },
-                    });
-                  });
-
-                updateReq();
-              })
-              .with("any", () => {
-                match(init.type)
-                  .when(
-                    (x) => x.oneofKind === `any`,
-                    (x) => {
-                      req.type = x;
-                    },
-                  )
-                  .otherwise(() => {
-                    req = Condition.create({
-                      type: {
-                        oneofKind: "any",
-                        any: {
-                          of: [
-                            Condition.create({
-                              type: {
-                                oneofKind: "match",
-                                match: "",
-                              },
-                            }),
-                          ],
-                        },
-                      },
-                    });
-                  });
-
-                updateReq();
-              })
-              .with("none", () => {
-                match(init.type)
-                  .when(
-                    (x) => x.oneofKind === `none`,
-                    (x) => {
-                      req.type = x;
-                    },
-                  )
-                  .otherwise(() => {
-                    req = Condition.create({
-                      type: {
-                        oneofKind: "none",
-                        none: {
-                          of: [
-                            Condition.create({
-                              type: {
-                                oneofKind: "match",
-                                match: "",
-                              },
-                            }),
-                          ],
-                        },
-                      },
-                    });
-                  });
-
-                updateReq();
-              })
-              .with("opa", () => {
-                match(init.type)
-                  .when(
-                    (x) => x.oneofKind === `opa`,
-                    (x) => {
-                      req.type = x;
-                    },
-                  )
-                  .otherwise(() => {
-                    req = Condition.create({
-                      type: {
-                        oneofKind: "opa",
-                        opa: {
-                          type: {
-                            oneofKind: "inline",
-                            inline: "",
-                          },
-                        },
-                      },
-                    });
-                  });
-
-                updateReq();
-              })
-              .with("matchAny", () => {
-                match(init.type)
-                  .when(
-                    (x) => x.oneofKind === `matchAny`,
-                    (x) => {
-                      req.type = x;
-                    },
-                  )
-                  .otherwise(() => {
-                    req = Condition.create({
-                      type: {
-                        oneofKind: "matchAny",
-                        matchAny: true,
-                      },
-                    });
-                  });
-
-                updateReq();
-              });
+  return (
+    <div className="w-full my-3">
+      <div className="flex flex-col gap-3">
+        <SegmentedControl
+          value={req.type.oneofKind}
+          data={CONDITION_TYPES as any}
+          onChange={handleTypeChange}
+          size="xs"
+          styles={{
+            root: {
+              flexWrap: "wrap",
+              height: "auto",
+              gap: "2px",
+            },
           }}
         />
 
-        <div className="my-2 flex items-center">
+        <div className="flex items-center">
           <ConditionBuilderBtn
-            onChange={(v) => {
-              req = v ?? Condition.create();
-              updateReq();
-            }}
+            onChange={(v) => updateReq(v ?? Condition.create())}
           />
         </div>
       </div>
-      {match(req.type)
-        .when(
-          (x) => x.oneofKind === `all`,
-          (all) => {
-            return (
-              <ItemMessage
-                title="All Conditions"
-                obj={all.all.of}
-                isList
-                onSet={() => {
-                  all.all.of = [
-                    Condition.create({
-                      type: {
-                        oneofKind: "match",
-                        match: "",
-                      },
-                    }),
-                  ];
-                  updateReq();
-                }}
-                onAddListItem={() => {
-                  all.all.of.push(
-                    Condition.create({
-                      type: {
-                        oneofKind: "match",
-                        match: "",
-                      },
-                    }),
-                  );
 
-                  updateReq();
-                }}
-              >
-                {all.all.of.map((x, idx) => (
-                  <EditItem
-                    obj={all.all.of.at(idx)}
-                    key={`${idx}`}
-                    onUnset={() => {
-                      updateReq();
-                    }}
-                  >
-                    <Cond
-                      item={x}
-                      onChange={(v) => {
-                        all.all.of[idx] = v!;
-                        updateReq();
-                      }}
-                    />
-                  </EditItem>
-                ))}
-              </ItemMessage>
-            );
-          },
-        )
-        .when(
-          (x) => x.oneofKind === `any`,
-          (any) => {
-            return (
-              <ItemMessage
-                title="Any Conditions"
-                obj={any.any.of}
-                isList
-                onSet={() => {
-                  any.any.of = [
-                    Condition.create({
-                      type: {
-                        oneofKind: "match",
-                        match: "",
-                      },
-                    }),
-                  ];
-                  updateReq();
-                }}
-                onAddListItem={() => {
-                  any.any.of.push(
-                    Condition.create({
-                      type: {
-                        oneofKind: "match",
-                        match: "",
-                      },
-                    }),
-                  );
-
-                  updateReq();
-                }}
-              >
-                {any.any.of.map((x, idx) => (
-                  <EditItem
-                    obj={any.any.of.at(idx)}
-                    key={`${idx}`}
-                    onUnset={() => {
-                      updateReq();
-                    }}
-                  >
-                    <Cond
-                      item={x}
-                      onChange={(v) => {
-                        any.any.of[idx] = v!;
-                        updateReq();
-                      }}
-                    />
-                  </EditItem>
-                ))}
-              </ItemMessage>
-            );
-          },
-        )
-        .when(
-          (x) => x.oneofKind === `none`,
-          (none) => {
-            return (
-              <ItemMessage
-                title="None Conditions"
-                obj={none.none.of}
-                isList
-                onSet={() => {
-                  none.none.of = [
-                    Condition.create({
-                      type: {
-                        oneofKind: "match",
-                        match: "",
-                      },
-                    }),
-                  ];
-                  updateReq();
-                }}
-                onAddListItem={() => {
-                  none.none.of.push(
-                    Condition.create({
-                      type: {
-                        oneofKind: "match",
-                        match: "",
-                      },
-                    }),
-                  );
-
-                  updateReq();
-                }}
-              >
-                {none.none.of.map((x, idx) => (
-                  <EditItem
-                    obj={none.none.of.at(idx)}
-                    key={`${idx}`}
-                    onUnset={() => {
-                      updateReq();
-                    }}
-                  >
-                    <Cond
-                      item={x}
-                      onChange={(v) => {
-                        none.none.of[idx] = v!;
-                        updateReq();
-                      }}
-                    />
-                  </EditItem>
-                ))}
-              </ItemMessage>
-            );
-          },
-        )
-        .when(
-          (x) => x.oneofKind === `match`,
-          (match) => {
-            return (
+      <div className="mt-2">
+        {match(req.type)
+          .when(
+            (x) => x.oneofKind === "all",
+            (t) =>
+              makeListItemMessage("All conditions (AND)", t.all.of, (items) => {
+                t.all.of = items;
+                updateReq(Condition.clone(req));
+              }),
+          )
+          .when(
+            (x) => x.oneofKind === "any",
+            (t) =>
+              makeListItemMessage("Any condition (OR)", t.any.of, (items) => {
+                t.any.of = items;
+                updateReq(Condition.clone(req));
+              }),
+          )
+          .when(
+            (x) => x.oneofKind === "none",
+            (t) =>
+              makeListItemMessage("None of (NOR)", t.none.of, (items) => {
+                t.none.of = items;
+                updateReq(Condition.clone(req));
+              }),
+          )
+          .when(
+            (x) => x.oneofKind === "match",
+            (t) => (
               <CELEditor
-                exp={match.match}
+                exp={t.match}
                 onChange={(v) => {
-                  match.match = v;
-                  updateReq();
+                  t.match = v;
+                  updateReq(Condition.clone(req));
                 }}
               />
-            );
-          },
-        )
-        .when(
-          (x) => x.oneofKind === `not`,
-          (not) => {
-            return (
+            ),
+          )
+          .when(
+            (x) => x.oneofKind === "not",
+            (t) => (
               <CELEditor
-                exp={not.not}
+                exp={t.not}
                 onChange={(v) => {
-                  not.not = v;
-
-                  updateReq();
+                  t.not = v;
+                  updateReq(Condition.clone(req));
                 }}
               />
-            );
-          },
-        )
-        .when(
-          (x) => x.oneofKind === `opa`,
-          (opa) => {
-            return match(opa.opa.type)
-              .when(
-                (x) => x.oneofKind === `inline`,
-                (inline) => {
-                  return (
+            ),
+          )
+          .when(
+            (x) => x.oneofKind === "opa",
+            (t) =>
+              match(t.opa.type)
+                .when(
+                  (x) => x.oneofKind === "inline",
+                  (inline) => (
                     <OPAEditor
                       exp={inline.inline}
                       onChange={(v) => {
                         inline.inline = v;
-
-                        updateReq();
+                        updateReq(Condition.clone(req));
                       }}
                     />
-                  );
-                },
-              )
-              .otherwise(() => <></>);
-          },
-        )
-        .otherwise(() => (
-          <></>
-        ))}
+                  ),
+                )
+                .otherwise(() => null),
+          )
+          .otherwise(() => null)}
+      </div>
     </div>
   );
 };

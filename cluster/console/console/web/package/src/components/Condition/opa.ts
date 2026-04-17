@@ -1,4 +1,10 @@
-import { StreamLanguage } from "@codemirror/language";
+import {
+  HighlightStyle,
+  StreamLanguage,
+  syntaxHighlighting,
+} from "@codemirror/language";
+import { EditorView } from "@codemirror/view";
+import { tags as t } from "@lezer/highlight";
 
 const keywords = new Set([
   "package",
@@ -22,54 +28,75 @@ const builtins = new Set([
 export const regoLanguage = StreamLanguage.define({
   token(stream) {
     if (stream.eatSpace()) return null;
-
     if (stream.match(/^#.*/)) return "comment";
-
     if (stream.match(/"(?:[^"\\]|\\.)*"/)) return "string";
-
     if (stream.match(/^-?\d+(\.\d+)?/)) return "number";
-
     if (stream.match(/^[a-zA-Z_][a-zA-Z0-9_]*/)) {
       const word = stream.current();
       if (keywords.has(word)) return "keyword";
       if (builtins.has(word)) return "atom";
       return "variableName";
     }
-
     if (stream.match(/:=|==|!=|<=|>=|=/)) return "operator";
-
     if (stream.match(/[{}()[\].,:]/)) return "punctuation";
-
     stream.next();
     return null;
   },
-
-  indent(state, textAfter) {
-    const s = state as any;
-
-    const base = s.indentation ?? 0;
-
-    if (/^\s*}/.test(textAfter)) return base - 2;
-
-    if (s.current && typeof s.current === "function") {
-      const line = s.current().trimEnd();
-      if (line.endsWith("{")) return base + 2;
-    }
-
-    return base;
-  },
 });
 
-import { EditorView } from "@codemirror/view";
+export const regoHighlight = syntaxHighlighting(
+  HighlightStyle.define([
+    { tag: t.keyword, color: "#ff7b72", fontWeight: "bold" },
+    { tag: t.variableName, color: "#d2a8ff" },
+    { tag: t.atom, color: "#79c0ff" },
+    { tag: t.number, color: "#ffa657" },
+    { tag: t.string, color: "#a5d6ff" },
+    { tag: t.comment, color: "#8b949e", fontStyle: "italic" },
+    { tag: t.operator, color: "#ff7b72" },
+    { tag: t.punctuation, color: "#c9d1d9" },
+  ]),
+);
 
 export const regoTheme = EditorView.theme(
   {
-    ".cm-keyword": { color: "#ff7b72", fontWeight: "bold" },
-    ".cm-variableName": { color: "#d2a8ff" },
-    ".cm-atom": { color: "#79c0ff" },
-    ".cm-number": { color: "#ffa657" },
-    ".cm-string": { color: "#a5d6ff" },
-    ".cm-comment": { color: "#8b949e", fontStyle: "italic" },
+    "&": {
+      backgroundColor: "#0d1117",
+      color: "#c9d1d9",
+    },
+    ".cm-content": {
+      fontFamily:
+        "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+      fontSize: "13px",
+      caretColor: "#c9d1d9",
+      padding: "8px 0",
+    },
+    ".cm-line": { padding: "0 12px" },
+    ".cm-gutters": {
+      backgroundColor: "#0d1117",
+      color: "#484f58",
+      border: "none",
+      paddingRight: "8px",
+    },
+    ".cm-activeLineGutter": { backgroundColor: "#161b22" },
+    ".cm-activeLine": { backgroundColor: "#161b22" },
+    ".cm-selectionBackground": { backgroundColor: "#264f78 !important" },
+    ".cm-tooltip-autocomplete": {
+      backgroundColor: "#161b22",
+      border: "1px solid #30363d",
+      borderRadius: "6px",
+      boxShadow: "0 8px 24px rgba(1,4,9,0.4)",
+    },
+    ".cm-tooltip-autocomplete ul li": {
+      fontFamily:
+        "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+      fontSize: "12px",
+      padding: "3px 10px",
+      color: "#c9d1d9",
+    },
+    ".cm-tooltip-autocomplete ul li[aria-selected]": {
+      backgroundColor: "#1f6feb",
+      color: "#ffffff",
+    },
   },
   { dark: true },
 );

@@ -21,7 +21,6 @@ function mergeSchemas(schemas: any[]): any {
 
 function normalizeSchema(node: any): any {
   if (!node) return {};
-
   if (node.oneOf) return mergeSchemas(node.oneOf.map(normalizeSchema));
   if (node.anyOf) return mergeSchemas(node.anyOf.map(normalizeSchema));
   if (node.allOf) return mergeSchemas(node.allOf.map(normalizeSchema));
@@ -30,18 +29,17 @@ function normalizeSchema(node: any): any {
 
 function completionsFromSchema(schema: any): Completion[] {
   const completions: Completion[] = [];
-
   if (schema.properties) {
     for (const key of Object.keys(schema.properties)) {
-      const prop = schema.properties[key];
+      const prop = normalizeSchema(schema.properties[key]);
       completions.push({
         label: key,
-        type: prop.type || "property",
-        info: prop.description || `Type: ${prop.type || "object"}`,
+        type: prop.type === "object" ? "namespace" : (prop.type ?? "property"),
+        info: prop.description ?? `Type: ${prop.type ?? "object"}`,
+        boost: prop.description ? 1 : 0,
       });
     }
   }
-
   if (schema.enum) {
     for (const val of schema.enum) {
       completions.push({
@@ -51,7 +49,6 @@ function completionsFromSchema(schema: any): Completion[] {
       });
     }
   }
-
   return completions;
 }
 
@@ -70,24 +67,34 @@ export function schemaAutocomplete(schema: any) {
     override: [
       (context) => {
         const before = context.matchBefore(/[A-Za-z0-9_.]*/);
-        if (!before) return null;
+        if (!before || (before.from === before.to && !context.explicit))
+          return null;
 
         const text = before.text;
-        const parts = text.split(".").filter(Boolean);
-        const prefix = parts.pop() || "";
+        const dotIndex = text.lastIndexOf(".");
+        const parts =
+          dotIndex >= 0
+            ? text.slice(0, dotIndex).split(".").filter(Boolean)
+            : [];
+        const prefix = dotIndex >= 0 ? text.slice(dotIndex + 1) : text;
+
         const parentSchema = getSchemaAtPath(schema, parts);
         if (!parentSchema) return null;
 
         const options = completionsFromSchema(parentSchema).filter((opt) =>
-          opt.label.startsWith(prefix),
+          opt.label.toLowerCase().startsWith(prefix.toLowerCase()),
         );
 
+        if (options.length === 0) return null;
+
         return {
-          from: before.from + text.lastIndexOf(prefix),
+          from: before.from + (dotIndex >= 0 ? dotIndex + 1 : 0),
           options,
+          validFor: /^[A-Za-z0-9_]*$/,
         };
       },
     ],
     activateOnTyping: true,
+    defaultKeymap: false,
   });
 }
