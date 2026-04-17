@@ -10,6 +10,7 @@ import AuthenticationLogSummary from "@/components/LogSummary/AuthenticationLogS
 import ComponentLogSummary from "@/components/LogSummary/ComponentLogSummary";
 import TimestampPicker from "@/components/TimestampPicker";
 import { Group } from "@mantine/core";
+import { motion } from "framer-motion";
 import * as React from "react";
 import { Link } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
@@ -27,32 +28,49 @@ import { Summary as ServiceSummary } from "../../core/Service/List";
 import { Summary as SessionSummary } from "../../core/Session/List";
 import { Summary as UserSummary } from "../../core/User/List";
 
-const Item = (props: {
+export const Item = (props: {
   title: string;
   link?: string;
   children?: React.ReactNode;
+  className?: string;
 }) => {
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.22, ease: "easeOut" }}
       className={twMerge(
-        "b-1 border-gray-200 rounded-lg shadow-lg bg-white p-4",
-        "shadow shadow-slate-200 w-full",
-        "border-[1px] border-slate-300",
+        "bg-white border border-slate-200 rounded-xl overflow-hidden",
+        props.className,
       )}
     >
-      <div className="font-bold text-2xl mb-2 flex items-center">
-        <span> {props.title}</span>
+      {/* Header */}
+      <div className="flex items-center justify-between px-[18px] py-[13px] border-b border-slate-100">
+        <span className="text-[0.78rem] font-bold tracking-[0.05em] uppercase text-slate-800">
+          {props.title}
+        </span>
         {props.link && (
           <Link
-            className="ml-3 font-bold text-lg text-shadow-2xs text-gray-500 hover:text-black transition-all duration-500"
             to={props.link}
+            className="flex items-center gap-1 text-[0.72rem] font-semibold text-slate-500 hover:text-slate-900 transition-colors duration-150"
           >
-            More
+            All {props.title.toLowerCase()}
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+              <path
+                d="M2.5 9.5L9.5 2.5M9.5 2.5H4.5M9.5 2.5V7.5"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </Link>
         )}
       </div>
-      {props.children}
-    </div>
+
+      {/* Body */}
+      <div className="px-[18px] py-[14px]">{props.children}</div>
+    </motion.div>
   );
 };
 
