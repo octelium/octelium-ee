@@ -1,4 +1,5 @@
 import { Duration } from "@/apis/metav1/metav1";
+import { toNumOrZero } from "@/utils";
 import {
   Button,
   Group,
@@ -7,21 +8,16 @@ import {
   NumberInput,
   Popover,
   Select,
-  Tabs,
-  Text,
 } from "@mantine/core";
 import { useState } from "react";
-import { LuTimer } from "react-icons/lu";
+import { LuTimer, LuX } from "react-icons/lu";
 import { match } from "ts-pattern";
-
-import { toNumOrZero } from "@/utils";
 import { timeRangePickList } from "../AccessLogViewer/utils";
 
 const parseDuration = (
   duration?: Duration,
 ): { val: number; unit: string } | null => {
   if (!duration?.type) return null;
-
   return match(duration.type.oneofKind)
     .with("milliseconds", () => ({
       val: (duration.type as { milliseconds: number }).milliseconds,
@@ -66,9 +62,36 @@ const createDuration = (val: number, unit: string): Duration => {
     .with("day", () => ({ oneofKind: "days" as const, days: val }))
     .with("week", () => ({ oneofKind: "weeks" as const, weeks: val }))
     .with("month", () => ({ oneofKind: "months" as const, months: val }))
-    .otherwise(() => ({ oneofKind: "seconds" as const, seconds: val })); // Fallback
-
+    .otherwise(() => ({ oneofKind: "seconds" as const, seconds: val }));
   return Duration.create({ type: typePayload as any });
+};
+
+const sharedInputStyles = {
+  input: {
+    fontSize: "0.78rem",
+    fontWeight: 600,
+    fontFamily: "Ubuntu, sans-serif",
+    border: "1px solid #e2e8f0",
+    borderRadius: "6px",
+    color: "#1e293b",
+    height: "32px",
+    minHeight: "32px",
+    boxShadow: "0 1px 3px rgba(15,23,42,0.05)",
+  },
+  label: {
+    fontSize: "0.68rem",
+    fontWeight: 700,
+    fontFamily: "Ubuntu, sans-serif",
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.05em",
+    color: "#64748b",
+    marginBottom: "4px",
+  },
+  option: {
+    fontSize: "0.78rem",
+    fontWeight: 600,
+    fontFamily: "Ubuntu, sans-serif",
+  },
 };
 
 interface DurationPickerProps {
@@ -87,7 +110,7 @@ const DurationPicker = ({
   onChange,
 }: DurationPickerProps) => {
   const [opened, setOpened] = useState(false);
-  const [activeTab, setActiveTab] = useState<string | null>("presets");
+  const [activeTab, setActiveTab] = useState<"presets" | "custom">("presets");
 
   const current = parseDuration(value);
   const [customVal, setCustomVal] = useState<number | "">(current?.val ?? 1);
@@ -105,9 +128,7 @@ const DurationPicker = ({
       return;
     }
     const [numStr, unit] = v.split(" ");
-    const num = parseInt(numStr, 10);
-
-    onChange(createDuration(num, unit));
+    onChange(createDuration(parseInt(numStr, 10), unit));
     setOpened(false);
   };
 
@@ -122,71 +143,155 @@ const DurationPicker = ({
     onChange(undefined);
   };
 
+  const tabBtnStyles = (active: boolean, position: "left" | "right") => ({
+    root: {
+      height: "30px",
+      fontSize: "0.72rem",
+      fontWeight: 700,
+      fontFamily: "Ubuntu, sans-serif",
+      padding: "0 12px",
+      flex: 1,
+      backgroundColor: active ? "#0f172a" : "#f8fafc",
+      color: active ? "#ffffff" : "#64748b",
+      border: "none",
+      borderRadius: 0,
+      borderTopLeftRadius: position === "left" ? "8px" : 0,
+      borderTopRightRadius: position === "right" ? "8px" : 0,
+      transition: "background-color 150ms, color 150ms",
+      "&:hover": {
+        backgroundColor: active ? "#1e293b" : "#f1f5f9",
+        color: active ? "#ffffff" : "#0f172a",
+      },
+    },
+  });
+
   return (
-    <Input.Wrapper label={title} description={description} className="w-full">
+    <Input.Wrapper
+      label={
+        title ? (
+          <span className="text-[0.72rem] font-bold uppercase tracking-[0.05em] text-slate-600 mb-1 block">
+            {title}
+          </span>
+        ) : undefined
+      }
+      description={
+        description ? (
+          <span className="text-[0.7rem] font-semibold text-slate-400">
+            {description}
+          </span>
+        ) : undefined
+      }
+      className="w-full"
+    >
       <Popover
         opened={opened}
         onChange={setOpened}
-        width={320}
+        width="auto"
         position="bottom-start"
         withArrow
         shadow="xl"
-        transitionProps={{ transition: "pop", duration: 200 }}
+        transitionProps={{ transition: "pop", duration: 180 }}
       >
         <Popover.Target>
           <InputBase
             component="button"
             type="button"
             pointer
-            leftSection={<LuTimer size={16} />}
-            onClick={() => setOpened((o) => !o)}
-            className="w-full"
+            leftSection={
+              <LuTimer
+                size={13}
+                className={displayValue ? "text-slate-500" : "text-slate-400"}
+              />
+            }
             rightSection={
               displayValue ? (
-                <Text
-                  size="xs"
-                  c="dimmed"
+                <button
                   onClick={handleClear}
-                  className="hover:text-red-500 mr-2"
+                  className="flex items-center justify-center text-slate-400 hover:text-slate-800 cursor-pointer transition-colors duration-150"
                 >
-                  ✕
-                </Text>
+                  <LuX size={12} />
+                </button>
               ) : null
             }
+            onClick={() => setOpened((o) => !o)}
+            className="w-full"
+            styles={{
+              input: {
+                height: "32px",
+                fontSize: "0.78rem",
+                fontWeight: 600,
+                fontFamily: "Ubuntu, sans-serif",
+                backgroundColor: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: "6px",
+                color: "#1e293b",
+                boxShadow: "0 1px 3px rgba(15,23,42,0.06)",
+                cursor: "pointer",
+                "&:hover": { borderColor: "#cbd5e1" },
+                "&:focus": {
+                  borderColor: "#94a3b8",
+                  boxShadow: "0 0 0 2px rgba(148,163,184,0.2)",
+                },
+              },
+            }}
           >
             {displayValue || (
-              <Text c="dimmed" size="sm">
+              <span className="text-[0.78rem] font-semibold text-slate-400">
                 {placeholder}
-              </Text>
+              </span>
             )}
           </InputBase>
         </Popover.Target>
 
-        <Popover.Dropdown p="md">
-          <Tabs
-            value={activeTab}
-            onChange={setActiveTab}
-            variant="outline"
-            defaultValue="presets"
-          >
-            <Tabs.List grow mb="md">
-              <Tabs.Tab value="presets">Presets</Tabs.Tab>
-              <Tabs.Tab value="custom">Custom</Tabs.Tab>
-            </Tabs.List>
+        <Popover.Dropdown
+          p={0}
+          style={{
+            border: "1px solid #e2e8f0",
+            borderRadius: "10px",
+            boxShadow: "0 8px 32px rgba(15,23,42,0.12)",
+            overflow: "visible",
+            minWidth: "300px",
+          }}
+        >
+          <div className="border-b border-slate-100 bg-slate-50 rounded-t-[10px] overflow-hidden">
+            <Button.Group style={{ display: "flex" }}>
+              {(
+                [
+                  { value: "presets" as const, label: "Presets" },
+                  { value: "custom" as const, label: "Custom" },
+                ] as const
+              ).map(({ value, label }, i) => (
+                <Button
+                  key={value}
+                  onClick={() => setActiveTab(value)}
+                  styles={tabBtnStyles(
+                    activeTab === value,
+                    i === 0 ? "left" : "right",
+                  )}
+                  leftSection={<LuTimer size={12} />}
+                  style={{ flex: 1 }}
+                >
+                  {label}
+                </Button>
+              ))}
+            </Button.Group>
+          </div>
 
-            <Tabs.Panel value="presets">
+          <div className="p-3 bg-white rounded-b-[10px]">
+            {activeTab === "presets" && (
               <Select
                 data={timeRangePickList}
-                placeholder="Quick select duration..."
+                placeholder="Quick select duration"
                 searchable
                 value={null}
                 onChange={handlePresetChange}
-                comboboxProps={{ withinPortal: false }}
+                comboboxProps={{ withinPortal: true }}
+                styles={sharedInputStyles}
               />
-            </Tabs.Panel>
+            )}
 
-            <Tabs.Panel value="custom">
-              <div className="flex flex-col gap-4 pt-2">
+            {activeTab === "custom" && (
+              <div className="flex flex-col gap-3">
                 <Group align="flex-end" grow gap="sm">
                   <NumberInput
                     label="Value"
@@ -195,12 +300,11 @@ const DurationPicker = ({
                     max={100000}
                     allowNegative={false}
                     allowDecimal={false}
-                    onChange={(v) => {
-                      setCustomVal(toNumOrZero(`${v}`));
-                    }}
+                    onChange={(v) => setCustomVal(toNumOrZero(`${v}`))}
+                    styles={sharedInputStyles}
                   />
                   <Select
-                    label="Time Unit"
+                    label="Unit"
                     data={[
                       { value: "millisecond", label: "Milliseconds" },
                       { value: "second", label: "Seconds" },
@@ -212,7 +316,8 @@ const DurationPicker = ({
                     ]}
                     value={customUnit}
                     onChange={(v) => setCustomUnit(v || "minute")}
-                    comboboxProps={{ withinPortal: false }}
+                    comboboxProps={{ withinPortal: true }}
+                    styles={sharedInputStyles}
                   />
                 </Group>
 
@@ -220,12 +325,27 @@ const DurationPicker = ({
                   fullWidth
                   onClick={applyCustomChange}
                   disabled={customVal === "" || customVal <= 0}
+                  styles={{
+                    root: {
+                      height: "32px",
+                      fontSize: "0.75rem",
+                      fontWeight: 700,
+                      fontFamily: "Ubuntu, sans-serif",
+                      backgroundColor: "#0f172a",
+                      borderRadius: "6px",
+                      "&:hover": { backgroundColor: "#1e293b" },
+                      "&:disabled": {
+                        backgroundColor: "#f1f5f9",
+                        color: "#94a3b8",
+                      },
+                    },
+                  }}
                 >
-                  Apply Duration
+                  Apply
                 </Button>
               </div>
-            </Tabs.Panel>
-          </Tabs>
+            )}
+          </div>
         </Popover.Dropdown>
       </Popover>
     </Input.Wrapper>
