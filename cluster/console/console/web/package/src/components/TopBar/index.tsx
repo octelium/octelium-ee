@@ -5,68 +5,94 @@ import { setUseListSearch } from "@/features/settings/slice";
 import { useAppDispatch, useAppSelector } from "@/utils/hooks";
 import * as React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { twMerge } from "tailwind-merge";
 import SearchList from "../SearchList";
 
 const TopBar = () => {
   const navigate = useNavigate();
   const settings = useAppSelector((state) => state.settings);
+  const location = useLocation();
+  const dispatch = useAppDispatch();
+
   const picURL =
     settings.status?.session?.metadata?.picURL ??
     settings.status?.user?.metadata?.picURL;
 
-  const location = useLocation();
-  const dispatch = useAppDispatch();
+  const displayName =
+    settings.status?.user?.metadata?.displayName ??
+    settings.status?.user?.metadata?.name;
 
   React.useEffect(() => {
     dispatch(
       setUseListSearch({
         useListSearch:
-          location.pathname.startsWith(`/core/`) &&
+          location.pathname.startsWith("/core/") &&
           /^\/core\/[^\/]+$/.test(location.pathname),
       }),
     );
   }, [location.pathname, dispatch]);
 
   return (
-    <>
-      <nav className="w-full h-[60px] border-b-[0px] border-slate-300 flex px-4">
-        <button
-          className="flex-none flex items-center justify-center"
-          onClick={() => {
-            navigate("/");
-          }}
+    <nav className="w-full h-[60px] flex items-center px-4 gap-4">
+      <Link
+        to="/"
+        className="flex-none flex items-center"
+        aria-label="Go to home"
+      >
+        <Logo className="w-[120px] md:w-[160px] h-auto" />
+      </Link>
+
+      <div className="flex-1 flex items-center">
+        {settings.useListSearch && (
+          <div className="max-w-sm w-full">
+            <SearchList />
+          </div>
+        )}
+      </div>
+
+      <button
+        onClick={() => navigate("/settings")}
+        className="flex-none flex items-center gap-2 group cursor-pointer"
+        title={displayName ? `Settings — ${displayName}` : "Settings"}
+      >
+        {displayName && (
+          <span className="text-[0.72rem] font-semibold text-slate-500 group-hover:text-slate-800 transition-colors duration-150 hidden md:block">
+            {displayName}
+          </span>
+        )}
+
+        <div
+          className={twMerge(
+            "w-8 h-8 rounded-full shrink-0 overflow-hidden",
+            "ring-2 ring-white ring-offset-1 ring-offset-slate-100",
+            "transition-[ring] duration-150",
+            "group-hover:ring-slate-300",
+          )}
         >
-          <Link to={`/`}>
-            <Logo className="w-[100px] md:w-[200px] h-auto" />
-          </Link>
-        </button>
-        <div className="flex-grow">
-          <div className="ml-[100px]">
-            {settings.useListSearch && <SearchList />}
-          </div>
-        </div>
-        <div className="flex-none flex items-center">
-          <div className="flex items-center justify-center align-middle">
-            <button
-              className="w-10 h-10 rounded-full border-white border-2 text-gray-600 hover:text-gray-900 font-bold transition-all duration-300"
-              onClick={() => {
-                navigate(`/settings`);
-              }}
-            >
-              {picURL ? (
-                <img
-                  className="rounded-full w-full h-full"
-                  src={picURL}
-                  alt="User pic"
-                />
+          {picURL ? (
+            <img
+              src={picURL}
+              alt={displayName ?? "User"}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-slate-700 flex items-center justify-center">
+              {displayName ? (
+                <span className="text-[0.6rem] font-bold text-white uppercase">
+                  {displayName
+                    .split(" ")
+                    .slice(0, 2)
+                    .map((w) => w.at(0))
+                    .join("")}
+                </span>
               ) : (
-                <div className="rounded-full bg-sky-600 hover:bg-indigo-800 transition-all duration-300 w-full h-full"></div>
+                <div className="w-full h-full bg-sky-700" />
               )}
-            </button>
-          </div>
+            </div>
+          )}
         </div>
-      </nav>
-    </>
+      </button>
+    </nav>
   );
 };
 

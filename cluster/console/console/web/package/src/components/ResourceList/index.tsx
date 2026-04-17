@@ -17,15 +17,15 @@ import ResourceInfo from "../ResourceLayout/ResourceInfo";
 import { useResourceFromRef } from "../ResourceLayout/utils";
 import TimeAgo from "../TimeAgo";
 
-export const ResourceListWrapper = (props: { children?: React.ReactNode }) => {
-  return <div className="flex flex-col w-full gap-3">{props.children}</div>;
-};
+export const ResourceListWrapper = (props: { children?: React.ReactNode }) => (
+  <div className="flex flex-col w-full gap-3">{props.children}</div>
+);
 
 export const ResourceListItem = (props: {
   children?: React.ReactNode;
   path?: string;
 }) => {
-  const hasPath = props.path !== undefined && props.path.length > 0;
+  const hasPath = !!props.path?.length;
   const navigate = useNavigate();
 
   return (
@@ -81,86 +81,85 @@ export const ResourceListInfo = (props: {
   itemList: ResourceList;
   info: ResourceComponentInfo;
 }) => {
-  const { itemList } = props;
-  if (!itemList.listResponseMeta || itemList.listResponseMeta.totalCount === 0)
-    return null;
+  const count = props.itemList.listResponseMeta?.totalCount;
+  if (!count) return null;
   return (
     <div className="w-full flex justify-end mb-1">
       <span className="text-[0.72rem] font-semibold text-slate-400 tracking-wide">
-        {itemList.listResponseMeta.totalCount.toLocaleString()} items
+        {count.toLocaleString()} items
       </span>
     </div>
   );
 };
+
+const LabelContent = ({
+  label,
+  children,
+}: {
+  label?: string;
+  children: React.ReactNode;
+}) => (
+  <Label isLink>
+    {label && <span className="text-blue-500 font-bold mr-0.5">{label}</span>}
+    <span className="flex items-center">{children}</span>
+  </Label>
+);
+
+const ResourceHoverCardWrapper = (props: {
+  children: React.ReactNode;
+  data: Resource;
+}) => (
+  <HoverCard
+    width={460}
+    shadow="md"
+    withArrow
+    openDelay={200}
+    closeDelay={400}
+    transitionProps={{ transition: "pop" }}
+    zIndex={30}
+  >
+    <HoverCard.Target>
+      <span>{props.children}</span>
+    </HoverCard.Target>
+    <HoverCard.Dropdown>
+      <ResourceInfo resource={props.data} />
+    </HoverCard.Dropdown>
+  </HoverCard>
+);
 
 const ResourceListLabelContent = (props: {
   children?: React.ReactNode;
   label?: string;
   to?: string;
 }) => {
-  return props.to ? (
-    <Link to={props.to}>
-      <Label isLink={!!props.to}>
-        {props.label && (
-          <span className="text-blue-400 mr-1">{props.label}</span>
-        )}
-        <span className="flex items-center">{props.children}</span>
-      </Label>
-    </Link>
-  ) : (
-    <Label isLink={!!props.to}>
-      {props.label && <span className="text-blue-400 mr-1">{props.label}</span>}
-      <span className="flex items-center">{props.children}</span>
-    </Label>
+  const content = (
+    <LabelContent label={props.label}>{props.children}</LabelContent>
   );
+
+  return props.to ? <Link to={props.to}>{content}</Link> : content;
 };
 
 const ResourceListLabelWithItemRef = (props: {
   children?: React.ReactNode;
   label?: string;
   itemRef: ObjectReference;
-  to?: string;
 }) => {
   const r = useResourceFromRef(props.itemRef);
-  if (!r || !r.isSuccess || !r.data) return null;
+  if (!r?.isSuccess || !r.data) return null;
+
+  const displayName =
+    r.data.apiVersion === "core/v1" && r.data.kind === "User"
+      ? printUserWithEmail(r.data as User)
+      : printResourceNameWithDisplay(r.data);
 
   return (
-    <HoverCard
-      width={460}
-      shadow="md"
-      withArrow
-      openDelay={200}
-      closeDelay={400}
-      transitionProps={{ transition: "pop" }}
-      zIndex={30}
-    >
-      <HoverCard.Target>
-        <span>
-          {props.children ? (
-            <ResourceListLabelContent
-              label={props.label ?? r.data.kind}
-              to={getResourcePath(r.data)}
-            >
-              {props.children}
-            </ResourceListLabelContent>
-          ) : (
-            <ResourceListLabelContent
-              label={props.label ?? r.data.kind}
-              to={getResourcePath(r.data)}
-            >
-              {r.data.apiVersion === "core/v1" && r.data.kind === "User"
-                ? printUserWithEmail(r.data as User)
-                : printResourceNameWithDisplay(r.data)}
-            </ResourceListLabelContent>
-          )}
-        </span>
-      </HoverCard.Target>
-      <HoverCard.Dropdown className="shadow-md">
-        <div className="w-full">
-          <ResourceInfo resource={r.data} />
-        </div>
-      </HoverCard.Dropdown>
-    </HoverCard>
+    <ResourceHoverCardWrapper data={r.data}>
+      <Link to={getResourcePath(r.data)}>
+        <LabelContent label={props.label ?? r.data.kind}>
+          {props.children ?? displayName}
+        </LabelContent>
+      </Link>
+    </ResourceHoverCardWrapper>
   );
 };
 
@@ -169,25 +168,12 @@ export const ResourceHoverCard = (props: {
   itemRef: ObjectReference;
 }) => {
   const r = useResourceFromRef(props.itemRef);
-  if (!r || !r.isSuccess || !r.data) return null;
+  if (!r?.isSuccess || !r.data) return null;
 
   return (
-    <HoverCard
-      width={460}
-      shadow="md"
-      withArrow
-      openDelay={200}
-      closeDelay={400}
-      transitionProps={{ transition: "pop" }}
-      zIndex={30}
-    >
-      <HoverCard.Target>{props.children}</HoverCard.Target>
-      <HoverCard.Dropdown className="shadow-md">
-        <div className="w-full">
-          <ResourceInfo resource={r.data} />
-        </div>
-      </HoverCard.Dropdown>
-    </HoverCard>
+    <ResourceHoverCardWrapper data={r.data}>
+      {props.children}
+    </ResourceHoverCardWrapper>
   );
 };
 
@@ -196,8 +182,8 @@ export const ResourceListLabel = (props: {
   label?: string;
   itemRef?: ObjectReference;
   to?: string;
-}) => {
-  return props.itemRef ? (
+}) =>
+  props.itemRef ? (
     <ResourceListLabelWithItemRef label={props.label} itemRef={props.itemRef}>
       {props.children}
     </ResourceListLabelWithItemRef>
@@ -206,14 +192,11 @@ export const ResourceListLabel = (props: {
       {props.children}
     </ResourceListLabelContent>
   );
-};
 
 export const ResourceListLabelWrap = (props: {
   children?: React.ReactNode;
-}) => {
-  return (
-    <div className="w-full mt-1.5 flex flex-row flex-wrap gap-1">
-      {props.children}
-    </div>
-  );
-};
+}) => (
+  <div className="w-full mt-1.5 flex flex-row flex-wrap gap-1">
+    {props.children}
+  </div>
+);

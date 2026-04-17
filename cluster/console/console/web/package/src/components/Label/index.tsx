@@ -13,7 +13,7 @@ export default (props: {
         props.outlined
           ? `text-gray-800 border-[1px] border-gray-400 shadow-sm`
           : `bg-gray-800 text-white`,
-        props.isLink ? `hover:bg-black shadow-xl` : `shadow-xs`
+        props.isLink ? `hover:bg-black shadow-xl` : `shadow-xs`,
       )}
     >
       {props.children}

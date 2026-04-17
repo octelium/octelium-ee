@@ -1,4 +1,5 @@
 import { FileInput, Textarea } from "@mantine/core";
+import { Paperclip } from "lucide-react";
 
 const TextAreaCustom = (props: {
   value?: string;
@@ -7,52 +8,62 @@ const TextAreaCustom = (props: {
   rows?: number;
   label?: string;
   placeholder?: string;
+  description?: string;
 }) => {
+  const handleFile = (file: File | null) => {
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = (e: ProgressEvent<FileReader>) => {
+      const result = e.target?.result;
+      if (!(result instanceof ArrayBuffer)) return;
+
+      try {
+        const value = new TextDecoder("utf-8", { fatal: true }).decode(result);
+        props.onChange(value);
+      } catch {
+        // non-UTF-8 file — silently ignore
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
+  };
+
   return (
-    <div className="w-full">
-      <div>
-        <Textarea
-          rows={props.rows ? props.rows : 5}
-          label={props.label}
-          placeholder={props.placeholder}
-          required={props.required}
-          value={props.value}
-          onChange={(v) => {
-            props.onChange(v.target.value);
+    <div className="w-full flex flex-col gap-2">
+      <Textarea
+        rows={props.rows ?? 5}
+        label={props.label}
+        placeholder={props.placeholder}
+        description={props.description}
+        required={props.required}
+        value={props.value}
+        onChange={(e) => props.onChange(e.target.value)}
+        autosize
+        minRows={props.rows ?? 5}
+      />
+
+      <div className="flex justify-end">
+        <FileInput
+          accept="text/*"
+          placeholder="Load from file"
+          leftSection={<Paperclip size={12} strokeWidth={2.5} />}
+          onChange={handleFile}
+          clearable
+          styles={{
+            root: { width: "auto" },
+            input: {
+              fontSize: "0.72rem",
+              fontWeight: 600,
+              height: "28px",
+              minHeight: "28px",
+              paddingTop: 0,
+              paddingBottom: 0,
+              cursor: "pointer",
+            },
           }}
         />
-        <div className="flex items-end justify-end my-4">
-          <FileInput
-            label="Set from a file"
-            placeholder="Click to select a file"
-            accept="text/*"
-            onChange={(file) => {
-              if (!file) {
-                return;
-              }
-
-              const reader = new FileReader();
-
-              reader.onload = (e: ProgressEvent<FileReader>) => {
-                const result = e.target?.result;
-
-                if (!(result instanceof ArrayBuffer)) {
-                  return;
-                }
-
-                const decoder = new TextDecoder("utf-8", { fatal: true });
-                try {
-                  const value = decoder.decode(result);
-                  props.onChange(value);
-                } catch {}
-              };
-
-              reader.onerror = () => {};
-
-              reader.readAsArrayBuffer(file);
-            }}
-          />
-        </div>
       </div>
     </div>
   );
