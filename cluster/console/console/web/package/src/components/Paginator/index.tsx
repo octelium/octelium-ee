@@ -38,18 +38,6 @@ const Paginator = (props: {
             let page = v;
             searchParams.set("common.page", `${page}`);
             navigate(`${loc.pathname}?${searchParams.toString()}`);
-            /*
-            const i = v;
-            if (props.onPageChange) {
-              props.onPageChange(i);
-            } else if (props.path) {
-              navigate(
-                `${props.path}${props.path.includes("?") ? "&" : "?"}page=${
-                  i - 1
-                }`
-              );
-            }
-            */
           }}
         />
 

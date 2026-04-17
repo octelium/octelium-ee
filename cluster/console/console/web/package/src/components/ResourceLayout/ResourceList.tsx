@@ -5,13 +5,13 @@ import {
   getClientResourceListP,
   getListKeyFromPath,
   getPBResourceListFromAPI,
-  getRefNameQueryArgStr,
   getResourcePath,
   Resource,
   ResourceList,
 } from "@/utils/pb";
-import { Badge, Collapse, Text, TextInput, Tooltip } from "@mantine/core";
+import { Tooltip } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
+import { AnimatePresence, motion } from "framer-motion";
 import React from "react";
 import {
   Link,
@@ -19,7 +19,6 @@ import {
   useNavigate,
   useSearchParams,
 } from "react-router-dom";
-import { twMerge } from "tailwind-merge";
 import CopyText from "../CopyText";
 import Paginator from "../Paginator";
 import { ResourceListItem, ResourceListWrapper } from "../ResourceList";
@@ -31,252 +30,208 @@ import { Button } from "@mantine/core";
 import { Service, Service_Spec_Mode } from "@/apis/corev1/corev1";
 import { CommonListOptions } from "@/apis/metav1/metav1";
 import { getServicePublicURL } from "@/utils/octelium";
-import { Plus } from "lucide-react";
-import { FaExternalLinkAlt } from "react-icons/fa";
-import { MdModeEdit } from "react-icons/md";
+import { ChevronDown, ExternalLink, Pencil, Plus } from "lucide-react";
 import DeleteResource from "../DeleteResource";
 import TimeAgo from "../TimeAgo";
 import ResourceInfo, { ResourceVisibilityButtons } from "./ResourceInfo";
 import { parseQueryString } from "./queryParse";
 
 const ItemExtra = (props: { item: Resource; info: ResourceComponentInfo }) => {
-  const { item } = props;
-
-  /*
-  const _hasAccessLog = hasAccessLog(item);
-  const _hasAuthenticationLog = hasAuthenticationLog(item);
-  const _hasAuditLog = hasAuditLog(item);
-  let [tab, setTab] = React.useState<string | undefined>(undefined);
-  */
-
   return (
     <div className="w-full">
-      <ResourceInfo resource={item} />
-
-      {props.info.Item.itemInfo && props.info.Item.itemInfo({ item })}
+      <ResourceInfo resource={props.item} />
+      {props.info.Item.itemInfo &&
+        props.info.Item.itemInfo({ item: props.item })}
     </div>
   );
-
-  {
-    /**
-  return (
-    <div className="w-full">
-      <Tabs
-        value={tab}
-        defaultValue="main"
-        onChange={(v) => {
-          setTab(v ?? undefined);
-        }}
-      >
-        <Tabs.List className="mb-6">
-          <Tabs.Tab value="main">Main</Tabs.Tab>
-          {_hasAccessLog && <Tabs.Tab value="accesslogs">Access Logs</Tabs.Tab>}
-          {_hasAuthenticationLog && (
-            <Tabs.Tab value="authenticationlogs">Authentication Logs</Tabs.Tab>
-          )}
-          {_hasAuditLog && <Tabs.Tab value="auditlogs">Audit Logs</Tabs.Tab>}
-          <Tabs.Tab value="actions">Actions</Tabs.Tab>
-        </Tabs.List>
-        <Tabs.Panel value="main">
-          <ResourceInfo resource={item} />
-
-          {props.info.Item.itemInfo && props.info.Item.itemInfo({ item })}
-        </Tabs.Panel>
-        {_hasAccessLog && (
-          <Tabs.Panel value="accesslogs">
-            {tab === `accesslogs` && (
-              <ResourceAccessLogs resource={item} itemsPerPage={20} />
-            )}
-          </Tabs.Panel>
-        )}
-
-        {_hasAuthenticationLog && (
-          <Tabs.Panel value="authenticationlogs">
-            {tab === `authenticationlogs` && (
-              <ResourceAuthenticationLogs resource={item} />
-            )}
-          </Tabs.Panel>
-        )}
-
-        {_hasAuditLog && (
-          <Tabs.Panel value="auditlogs">
-            {tab === `auditlogs` && <ResourceAuditLogs resource={item} />}
-          </Tabs.Panel>
-        )}
-
-        <Tabs.Panel value="actions">
-          {!props.info.unDeletable && (
-            <div className="w-full flex items-center justify-end">
-              <DeleteResource
-                btnSize={`compact-xs`}
-                btnVariant={`outline`}
-                item={item}
-                doNotNavigateAfter
-              />
-            </div>
-          )}
-        </Tabs.Panel>
-      </Tabs>
-    </div>
-  );  
-  **/
-  }
 };
 
 const Item = (props: { item: Resource; info: ResourceComponentInfo }) => {
   const { item } = props;
-
   const md = item.metadata!;
 
-  let [showDetails, setShowDetails] = React.useState(false);
+  const [showDetails, setShowDetails] = React.useState(false);
+  const hoverTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
-  const qryNameArg = getRefNameQueryArgStr(item);
+  const handleMouseEnter = () => {
+    hoverTimerRef.current = setTimeout(() => setShowDetails(true), 120);
+  };
+
+  const handleMouseLeave = () => {
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+    setShowDetails(false);
+  };
 
   return (
     <div
-      className="font-semibold w-full"
-      onMouseEnter={() => {
-        setShowDetails(true);
-      }}
-      onMouseLeave={() => {
-        setShowDetails(false);
-      }}
+      className="w-full font-semibold"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
-      <div className="flex">
-        <div className="flex flex-col flex-1">
-          <div className="flex items-center font-bold">
-            {item.metadata?.picURL && (
-              <div className="flex flex-col items-center justify-center mr-2">
-                <img
-                  src={item.metadata.picURL}
-                  className="w-10 h-10 rounded-full"
-                />
-              </div>
-            )}
-            <div className="font-bold">
-              <Link to={getResourcePath(item)}>
-                <Text
-                  component="span"
-                  className="mr-2 flex flex-row"
-                  size="sm"
-                  fw={"bold"}
+      <div className="flex gap-3">
+        {md.picURL && (
+          <div className="shrink-0 mt-0.5">
+            <img
+              src={md.picURL}
+              className="w-9 h-9 rounded-full border border-slate-200"
+            />
+          </div>
+        )}
+
+        <div className="flex flex-col flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex flex-col gap-0.5 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Link
+                  to={getResourcePath(item)}
+                  className="text-[0.92rem] font-bold text-slate-800 hover:text-slate-900 transition-colors duration-150"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <CopyText value={item.metadata!.name} />
+                  <CopyText value={md.name} />
+                </Link>
 
-                  {md.displayName && (
-                    <Text component="span" className="ml-3" c="gray.7" inherit>
-                      {md.displayName}
-                    </Text>
-                  )}
-                </Text>
-              </Link>
+                {md.displayName && (
+                  <span className="text-[0.85rem] font-semibold text-slate-400">
+                    {md.displayName}
+                  </span>
+                )}
 
-              <div className="flex items-center">
-                {item.metadata?.isSystem && (
+                {md.isSystem && (
                   <Tooltip
-                    className="mr-2"
-                    label={
-                      <>This is a system Resource created by the Cluster</>
-                    }
+                    label="This is a system resource created by the cluster"
+                    withArrow
                   >
-                    <Badge size="xs" variant="outline" color="blue">
+                    <span className="inline-flex items-center px-1.5 py-px text-[0.65rem] font-bold uppercase tracking-wider rounded border border-blue-200 text-blue-600 bg-blue-50 leading-none">
                       System
-                    </Badge>
+                    </span>
                   </Tooltip>
                 )}
-                <Text size="xs" fw={"bold"} c="dimmed">
-                  Created <TimeAgo rfc3339={item.metadata!.createdAt} />{" "}
-                  {item.metadata!.updatedAt && (
-                    <>
-                      (Updated <TimeAgo rfc3339={item.metadata!.updatedAt} />)
-                    </>
-                  )}
-                </Text>
               </div>
 
               {md.description && (
-                <Text size="sm" fw={"bold"} c="gray.7" lineClamp={1}>
+                <p className="text-[0.8rem] font-semibold text-slate-500 truncate max-w-xl">
                   {md.description}
-                </Text>
+                </p>
               )}
+
+              <div className="text-[0.72rem] font-semibold text-slate-500 mt-0.5">
+                Created <TimeAgo rfc3339={md.createdAt} />
+                {md.updatedAt && (
+                  <span className="ml-2 text-slate-400">
+                    · Updated <TimeAgo rfc3339={md.updatedAt} />
+                  </span>
+                )}
+              </div>
             </div>
           </div>
-          <div className="w-full flex items-center mt-1 mb-3">
+
+          <div className="flex items-center flex-wrap gap-1 mt-2.5">
             <ResourceYAML item={item} size="xs" />
 
-            {!props.info.unEditable && !item.metadata?.isSystem && (
+            {!props.info.unEditable && !md.isSystem && (
               <Button
-                size={"compact-xs"}
+                size="compact-xs"
                 variant="outline"
+                color="gray"
                 component={Link}
-                className="mx-1"
-                rightSection={<MdModeEdit />}
                 to={`${getResourcePath(item)}/edit`}
+                leftSection={<Pencil size={11} />}
+                onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                styles={{
+                  root: {
+                    fontWeight: 600,
+                    fontSize: "0.72rem",
+                    color: "#475569",
+                    borderColor: "#cbd5e1",
+                  },
+                }}
               >
                 Edit
               </Button>
             )}
 
-            {item.apiVersion === `core/v1` &&
-              item.kind === `Service` &&
-              (item as Service).spec!.isPublic &&
-              (item as Service).spec!.mode === Service_Spec_Mode.WEB && (
+            {item.apiVersion === "core/v1" &&
+              item.kind === "Service" &&
+              (item as Service).spec?.isPublic &&
+              (item as Service).spec?.mode === Service_Spec_Mode.WEB && (
                 <Button
-                  size={"compact-xs"}
-                  className="mx-1"
-                  // variant="outline"
+                  size="compact-xs"
+                  variant="outline"
+                  color="blue"
                   component={Link}
                   to={getServicePublicURL(item as Service, getDomain())}
                   target="_blank"
-                  rightSection={<FaExternalLinkAlt />}
+                  leftSection={<ExternalLink size={11} />}
+                  onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                  styles={{
+                    root: { fontWeight: 600, fontSize: "0.72rem" },
+                  }}
                 >
-                  <span>Visit</span>
+                  Visit
                 </Button>
               )}
 
             <ResourceVisibilityButtons item={item} />
 
-            {/**
-            {!props.info.unCreatable && (
-              <Button
-                size={"compact-xs"}
-                variant="outline"
-                component={Link}
-                className="mx-2"
-                rightSection={<MdModeEdit />}
-                to={`${getResourcePathFromResource(item)}/create?cloneRef.uid=${
-                  item.metadata?.uid
-                }`}
-              >
-                Clone
-              </Button>
-            )} 
-             **/}
+            <div className="flex-1" />
 
-            <div className="flex-1"></div>
-            {!props.info.unDeletable && (
-              <DeleteResource
-                btnColor={`gray.7`}
-                btnSize={`compact-xs`}
-                btnVariant={`outline`}
-                item={item}
-                doNotNavigateAfter
-              />
-            )}
+            <div className="flex flex-col items-center gap-1">
+              <button
+                className="flex items-center justify-center w-6 h-6 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors duration-150"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowDetails((v) => !v);
+                }}
+                title={showDetails ? "Collapse" : "Expand"}
+              >
+                <motion.span
+                  animate={{ rotate: showDetails ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex items-center"
+                >
+                  <ChevronDown size={14} />
+                </motion.span>
+              </button>
+
+              {!props.info.unDeletable && (
+                <DeleteResource
+                  btnColor="gray.6"
+                  btnSize="compact-xs"
+                  btnVariant="outline"
+                  item={item}
+                  doNotNavigateAfter
+                />
+              )}
+            </div>
           </div>
+
           {props.info.List.labelComponent && (
-            <div className="w-full">
+            <div className="w-full mt-1">
               {props.info.List.labelComponent({ item })}
             </div>
           )}
 
-          {
-            <Collapse in={showDetails} transitionDuration={500}>
-              <div className="mt-6 pt-3 border-t-zinc-300 border-t-[1px]">
-                <ItemExtra item={item} info={props.info} />
-              </div>
-            </Collapse>
-          }
+          <AnimatePresence initial={false}>
+            {showDetails && (
+              <motion.div
+                key="details"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.22, ease: "easeInOut" }}
+                className="overflow-hidden"
+              >
+                <div className="mt-4 pt-3 border-t border-slate-100">
+                  <ItemExtra item={item} info={props.info} />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </div>
@@ -288,166 +243,127 @@ const ResourceListC = (props: {
   info: ResourceComponentInfo;
 }) => {
   const navigate = useNavigate();
-
-  return (
-    <div>
-      {!props.info.unCreatable && props.itemsList.items.length > 0 && (
-        <div className="flex justify-end mb-6">
-          <Button
-            size={`lg`}
-            className="font-bold text-white transition-all duration-500 rounded-full shadow-lg"
-            onClick={() => {
-              navigate("create");
-            }}
-          >
-            <Plus />
-            Create
-          </Button>
-        </div>
-      )}
-      {props.info.List.SummaryComponent !== undefined && (
-        <props.info.List.SummaryComponent />
-      )}
-      {/*
-      <ResourceListInfo info={props.info} itemList={props.itemsList} />
-      */}
-      <ResourceListWrapper>
-        {props.itemsList.items.length === 0 && (
-          <div className="flex flex-col items-center justify-center">
-            <div
-              className={twMerge(
-                "flex text-center items-center justify-center",
-                "font-bold text-4xl text-gray-600",
-                "my-16",
-              )}
-            >
-              No {props.itemsList.kind.replace(/List$/, "")} Found
-            </div>
-            {!props.info.unCreatable && (
-              <div className="flex items-center justify-center">
-                <Button
-                  size={`lg`}
-                  className="font-bold shadow-md transition-all duration-500 rounded-full py-7 px-14"
-                  onClick={() => {
-                    navigate("create");
-                  }}
-                >
-                  <Plus />
-                  Create
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-
-        <Paginator
-          meta={props.itemsList.listResponseMeta}
-          // path={getResourceListPath(props.itemsList)}
-        />
-
-        {props.itemsList.items.map((item) => (
-          <ResourceListItem key={item.metadata!.uid}>
-            <Item item={item} info={props.info} />
-          </ResourceListItem>
-        ))}
-      </ResourceListWrapper>
-      <Paginator
-        meta={props.itemsList.listResponseMeta}
-        // path={getResourceListPath(props.itemsList)}
-      />
-    </div>
-  );
-};
-
-const SearchInput = (props: {}) => {
-  let [searchParams, _] = useSearchParams();
-  let [qry, setQry] = React.useState(searchParams.get("common.query") ?? "");
-  const navigate = useNavigate();
-  const loc = useLocation();
+  const kindName = props.itemsList.kind.replace(/List$/, "");
+  const totalCount = props.itemsList.listResponseMeta?.totalCount ?? 0;
 
   return (
     <div className="w-full">
-      <TextInput
-        value={qry}
-        onChange={(v) => {
-          setQry(v.target.value);
-          if (v.target.value.length < 3) {
-            return;
-          }
-          searchParams.set("common.query", v.target.value);
-          navigate(`${loc.pathname}?${searchParams.toString()}`);
-        }}
-      />
+      <div className="flex items-center justify-between mb-4">
+        {totalCount > 0 ? (
+          <span className="text-[0.72rem] font-semibold text-slate-400 tracking-wide">
+            {totalCount.toLocaleString()} {kindName.toLowerCase()}s
+          </span>
+        ) : (
+          <span />
+        )}
+
+        {!props.info.unCreatable && props.itemsList.items.length > 0 && (
+          <Button
+            size="sm"
+            variant="filled"
+            color="dark"
+            leftSection={<Plus size={14} />}
+            onClick={() => navigate("create")}
+            styles={{
+              root: {
+                fontWeight: 700,
+                fontSize: "0.78rem",
+                borderRadius: "8px",
+              },
+            }}
+          >
+            Create {kindName}
+          </Button>
+        )}
+      </div>
+
+      {props.info.List.SummaryComponent !== undefined && (
+        <div className="mb-6">
+          <props.info.List.SummaryComponent />
+        </div>
+      )}
+
+      {props.itemsList.items.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-20 gap-5">
+          <div className="text-[0.78rem] font-bold uppercase tracking-[0.08em] text-slate-400">
+            No {kindName}s found
+          </div>
+          {!props.info.unCreatable && (
+            <Button
+              size="sm"
+              variant="filled"
+              color="dark"
+              leftSection={<Plus size={14} />}
+              onClick={() => navigate("create")}
+              styles={{
+                root: {
+                  fontWeight: 700,
+                  fontSize: "0.78rem",
+                  borderRadius: "8px",
+                },
+              }}
+            >
+              Create {kindName}
+            </Button>
+          )}
+        </div>
+      )}
+
+      <Paginator meta={props.itemsList.listResponseMeta} />
+
+      <ResourceListWrapper>
+        {props.itemsList.items.map((item, i) => (
+          <motion.div
+            key={item.metadata!.uid}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.18, delay: i * 0.03, ease: "easeOut" }}
+          >
+            <ResourceListItem>
+              <Item item={item} info={props.info} />
+            </ResourceListItem>
+          </motion.div>
+        ))}
+      </ResourceListWrapper>
+
+      <Paginator meta={props.itemsList.listResponseMeta} />
     </div>
   );
 };
 
 const useListReq = () => {
-  // const settings = useAppSelector((state) => state.settings);
-
-  let [searchParams, _] = useSearchParams();
-
+  const [searchParams] = useSearchParams();
   const searchParamsStr = searchParams.toString();
-
   const loc = useLocation();
 
   const apiKind = getAPIKindFromPath(loc.pathname);
-  if (!apiKind) {
-    return undefined;
-  }
+  if (!apiKind) return undefined;
 
   // @ts-ignore
   let req = getPBResourceListFromAPI(apiKind.api)![
-    // @ts-ignore
     `List${apiKind.kind}Options`
   ]["create"]({
     common: CommonListOptions.create({}),
   });
 
-  /*
-  if (!!settings.listOptFilter) {
-    // @ts-ignore
-    getClientResourceListP(apiKind.api)![`List${apiKind.kind}Options`][
-      "mergePartial"
-    ](req, settings.listOptFilter);
-  }
-  */
-
   if (searchParamsStr.length > 0) {
     let parsedQry = parseQueryString<{
       type?: string;
       mode: string;
-      common?: {
-        page?: number;
-        itemsPerPage?: number;
-      };
-      namespaceRef?: {
-        uid?: string;
-        name?: string;
-      };
-      userRef?: {
-        uid?: string;
-        name?: string;
-      };
-      deviceRef?: {
-        uid?: string;
-        name?: string;
-      };
+      common?: { page?: number; itemsPerPage?: number };
+      namespaceRef?: { uid?: string; name?: string };
+      userRef?: { uid?: string; name?: string };
+      deviceRef?: { uid?: string; name?: string };
     }>(searchParams.toString());
 
-    if (
-      parsedQry.common &&
-      parsedQry.common.page &&
-      parsedQry.common.page > 0
-    ) {
+    if (parsedQry.common?.page && parsedQry.common.page > 0) {
       parsedQry.common.page = parsedQry.common.page - 1;
     }
 
     // @ts-ignore
     const req2 = getClientResourceListP(apiKind.api)![
-      // @ts-ignore
       `List${apiKind.kind}Options`
-    ][`fromJsonString`](JSON.stringify(parsedQry));
+    ]["fromJsonString"](JSON.stringify(parsedQry));
     // @ts-ignore
     getClientResourceListP(apiKind.api)![`List${apiKind.kind}Options`][
       "mergePartial"
@@ -458,22 +374,13 @@ const useListReq = () => {
 };
 
 const ResourceListPage = (props: { info: ResourceComponentInfo }) => {
-  // const settings = useAppSelector((state) => state.settings);
-
-  // let [searchParams, _] = useSearchParams();
-
-  // searchParams.delete("page");
-
   const loc = useLocation();
-
   const apiKind = getAPIKindFromPath(loc.pathname);
-  if (!apiKind) {
-    return <></>;
-  }
+  if (!apiKind) return null;
 
   const req = useListReq();
 
-  const { isLoading, isSuccess, data } = useQuery({
+  const { isLoading, data } = useQuery({
     queryKey: [
       getListKeyFromPath(loc.pathname),
       // @ts-ignore
@@ -489,17 +396,9 @@ const ResourceListPage = (props: { info: ResourceComponentInfo }) => {
     },
   });
 
-  if (!data || isLoading) {
-    return <></>;
-  }
+  if (!data || isLoading) return null;
 
   const itemList = data["response"] as ResourceList | undefined;
-
-  /*
-  if (!itemList) {
-    return <></>;
-  }
-  */
 
   return (
     <div className="w-full">
