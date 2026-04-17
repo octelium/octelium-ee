@@ -23,7 +23,7 @@ const TopBar = () => {
         useListSearch:
           location.pathname.startsWith(`/core/`) &&
           /^\/core\/[^\/]+$/.test(location.pathname),
-      })
+      }),
     );
   }, [location.pathname, dispatch]);
 
