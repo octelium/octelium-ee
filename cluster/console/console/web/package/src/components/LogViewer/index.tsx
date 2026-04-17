@@ -161,10 +161,7 @@ export default () => {
                   />
                 ))
                 .with(`ComponentLog`, () => (
-                  <ComponentLogC
-                    key={x.metadata!.id}
-                    accessLog={x as ComponentLog}
-                  />
+                  <ComponentLogC key={x.metadata!.id} log={x as ComponentLog} />
                 ))
                 .otherwise(() => <></>),
             )}
