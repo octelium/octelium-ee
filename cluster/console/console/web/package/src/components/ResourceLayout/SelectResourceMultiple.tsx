@@ -11,6 +11,7 @@ import {
 } from "@/utils/pb";
 import { MultiSelect } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
+import * as React from "react";
 
 const SelectResourceMultiple = (props: {
   api: string;
@@ -21,23 +22,24 @@ const SelectResourceMultiple = (props: {
   label?: string;
   labelDefault?: boolean;
   clearable?: boolean;
-
   onChange: (itemList?: Resource[]) => void;
 }) => {
   const { api, kind } = props;
 
-  //@ts-ignore
-  let req = getPBResourceListFromAPI(api)![`List${kind}Options`]["create"]({
-    common: CommonListOptions.create({
-      itemsPerPage: 1000,
-      orderBy: {
-        type: CommonListOptions_OrderBy_Type.NAME,
-      },
-    }),
-  });
+  const req = React.useMemo(
+    () =>
+      // @ts-ignore
+      getPBResourceListFromAPI(api)![`List${kind}Options`]["create"]({
+        common: CommonListOptions.create({
+          itemsPerPage: 1000,
+          orderBy: { type: CommonListOptions_OrderBy_Type.NAME },
+        }),
+      }),
+    [api, kind],
+  );
 
-  const { isLoading, isSuccess, data, error } = useQuery({
-    queryKey: [`listSelectComponent`, api, kind],
+  const { isLoading, data } = useQuery({
+    queryKey: ["listSelectComponent", api, kind],
     queryFn: async () => {
       // @ts-ignore
       const d = await getClientResourceList(api)?.[`list${kind}`](req);
@@ -45,69 +47,81 @@ const SelectResourceMultiple = (props: {
     },
   });
 
-  if (!data || isLoading) {
-    return <></>;
+  const label = props.labelDefault ? `Select ${kind}` : props.label;
+
+  if (isLoading) {
+    return (
+      <MultiSelect
+        label={label}
+        required={props.required}
+        description={props.description}
+        data={[]}
+        disabled
+        placeholder="Loading…"
+      />
+    );
   }
 
-  const itemList = data["response"] as ResourceList | undefined;
+  const itemList = data?.["response"] as ResourceList | undefined;
 
-  if (!itemList) {
-    return <></>;
-  }
+  if (!itemList) return null;
 
-  const rscList = itemList?.items.map((x) => ({
+  const rscList = itemList.items.map((x) => ({
     value: x.metadata!.name,
     label: printResourceNameWithDisplay(x),
   }));
 
   return (
-    <div className="w-full">
-      <MultiSelect
-        label={props.labelDefault ? `Select ${props.kind}` : props.label}
-        required={props.required}
-        description={props.description}
-        clearable={props.clearable}
-        searchable
-        data={rscList}
-        disabled={rscList.length === 0}
-        defaultValue={props.defaultValue}
-        renderOption={({ option }) => {
-          const item = itemList.items.find(
-            (x) => x.metadata!.name === option.value,
-          );
-          if (!item) {
-            return <></>;
-          }
+    <MultiSelect
+      label={label}
+      required={props.required}
+      description={props.description}
+      clearable={props.clearable}
+      searchable
+      data={rscList}
+      disabled={rscList.length === 0}
+      defaultValue={props.defaultValue}
+      placeholder={
+        rscList.length === 0 ? `No ${kind}s found` : `Select ${kind}s…`
+      }
+      nothingFoundMessage={`No ${kind}s match your search`}
+      renderOption={({ option }) => {
+        const item = itemList.items.find(
+          (x) => x.metadata!.name === option.value,
+        );
+        if (!item) return null;
 
-          return (
-            <div>
-              <div className="flex flex-col font-bold">
-                <div className="text-black">{item.metadata!.name}</div>
-                {item.metadata!.displayName && (
-                  <div className="text-gray-600 text-xs">
-                    {item.metadata!.displayName}
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        }}
-        onChange={(v) => {
-          if (!v) {
-            props.onChange();
-            return;
-          }
-          let items: Resource[] = [];
-          v.map((val) => {
-            const itm = itemList.items.find((x) => x.metadata?.name === val);
-            if (itm) {
-              items.push(itm);
-            }
-          });
-          props.onChange(items);
-        }}
-      />
-    </div>
+        return (
+          <div className="flex flex-col gap-0.5 py-0.5">
+            <span className="text-[0.78rem] font-bold text-slate-800">
+              {item.metadata!.name}
+            </span>
+            {item.metadata!.displayName && (
+              <span className="text-[0.7rem] font-semibold text-slate-500">
+                {item.metadata!.displayName}
+              </span>
+            )}
+            {item.metadata!.description && (
+              <span className="text-[0.68rem] font-semibold text-slate-400 truncate">
+                {item.metadata!.description}
+              </span>
+            )}
+          </div>
+        );
+      }}
+      onChange={(v) => {
+        if (!v || v.length === 0) {
+          props.onChange(undefined);
+          return;
+        }
+        const items = v
+          .map((val) => itemList.items.find((x) => x.metadata?.name === val))
+          // @ts-ignore
+          .filter((x): x is Resource => x !== undefined);
+        // @ts-ignore
+        props.onChange(items);
+      }}
+    />
   );
 };
 
