@@ -506,6 +506,10 @@ func (s *Server) listSSHSessionRecording(ctx context.Context, req *visibilityv1.
 		}
 	*/
 
+	if req.From != nil {
+		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Gte(req.From.AsTime().UTC().Format(time.RFC3339Nano)))
+	}
+
 	{
 		filters = append(filters, goqu.L(`rsc->>'$.entry.common.sessionID'`).Eq(req.SessionID),
 			goqu.L(`rsc->>'$.entry.info.ssh.type'`).Eq(`SESSION_RECORDING`))

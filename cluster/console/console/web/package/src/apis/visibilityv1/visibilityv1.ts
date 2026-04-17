@@ -4,8 +4,8 @@
 //
 // Copyright (c) 2025-present Octelium Labs, LLC. All rights reserved.
 //
-// This software is licensed under the Octelium Enterprise Source-Available License.
-// Commercial and production use is strictly prohibited without a valid
+// This software is licensed under the Octelium Enterprise Source-Available
+// License. Commercial and production use is strictly prohibited without a valid
 // Commercial Agreement from Octelium Labs, LLC.
 //
 // See the LICENSE file in the repository root for full license text.
@@ -240,6 +240,10 @@ export interface ListSSHSessionRecordingRequest {
      * @generated from protobuf field: uint32 page = 2
      */
     page: number;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp from = 3
+     */
+    from?: Timestamp;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.ListSSHSessionRecordingResponse
@@ -1929,7 +1933,8 @@ class ListSSHSessionRecordingRequest$Type extends MessageType<ListSSHSessionReco
     constructor() {
         super("octelium.api.main.visibility.v1.ListSSHSessionRecordingRequest", [
             { no: 1, name: "sessionID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "page", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 2, name: "page", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 3, name: "from", kind: "message", T: () => Timestamp }
         ]);
     }
     create(value?: PartialMessage<ListSSHSessionRecordingRequest>): ListSSHSessionRecordingRequest {
@@ -1951,6 +1956,9 @@ class ListSSHSessionRecordingRequest$Type extends MessageType<ListSSHSessionReco
                 case /* uint32 page */ 2:
                     message.page = reader.uint32();
                     break;
+                case /* google.protobuf.Timestamp from */ 3:
+                    message.from = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.from);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -1969,6 +1977,9 @@ class ListSSHSessionRecordingRequest$Type extends MessageType<ListSSHSessionReco
         /* uint32 page = 2; */
         if (message.page !== 0)
             writer.tag(2, WireType.Varint).uint32(message.page);
+        /* google.protobuf.Timestamp from = 3; */
+        if (message.from)
+            Timestamp.internalBinaryWrite(message.from, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

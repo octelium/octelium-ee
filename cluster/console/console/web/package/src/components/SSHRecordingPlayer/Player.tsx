@@ -4,11 +4,11 @@ import { isDev } from "@/utils";
 import { getClientVisibilityAccessLog } from "@/utils/client";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
-import React, { useEffect, useRef, useState } from "react";
+import { Play, RotateCcw, Square } from "lucide-react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { twMerge } from "tailwind-merge";
 
-import { ActionIcon } from "@mantine/core";
-import { FaPlay, FaStop } from "react-icons/fa";
-import { RiResetLeftFill } from "react-icons/ri";
+const MAX_FRAME_DELAY_MS = 2000;
 
 interface SSHFrame {
   content: Uint8Array<ArrayBufferLike>;
@@ -23,116 +23,105 @@ interface APIResponse {
 
 interface XTermSSHReplayProps {
   sshSession: SSHSession;
-
   initialPage?: number;
-  useMockData?: boolean;
 }
 
-const generateMockPage = (page: number): APIResponse => {
+const generateMockPage = (page: number, fromMs?: number): APIResponse => {
   const encoder = new TextEncoder();
   const baseTime = 1000000000000;
 
-  const mockSessions = [
-    [
-      { text: "\x1b[32muser@server:~$\x1b[0m ", delay: 0 },
-      { text: "l", delay: 150 },
-      { text: "s", delay: 100 },
-      { text: " ", delay: 80 },
-      { text: "-", delay: 120 },
-      { text: "l", delay: 90 },
-      { text: "a\r\n", delay: 200 },
-      { text: "total 48\r\n", delay: 50 },
-      {
-        text: "drwxr-xr-x  5 user user 4096 Dec 17 10:30 \x1b[34m.\x1b[0m\r\n",
-        delay: 20,
-      },
-      {
-        text: "drwxr-xr-x  3 root root 4096 Dec 10 08:15 \x1b[34m..\x1b[0m\r\n",
-        delay: 20,
-      },
-    ],
-    [
-      {
-        text: "-rw-r--r--  1 user user  220 Dec 10 08:15 .bash_logout\r\n",
-        delay: 20,
-      },
-      {
-        text: "-rw-r--r--  1 user user 3526 Dec 10 08:15 .bashrc\r\n",
-        delay: 20,
-      },
-      {
-        text: "drwxr-xr-x  3 user user 4096 Dec 15 14:20 \x1b[34mDocuments\x1b[0m\r\n",
-        delay: 20,
-      },
-      {
-        text: "drwxr-xr-x  2 user user 4096 Dec 16 09:45 \x1b[34mDownloads\x1b[0m\r\n",
-        delay: 20,
-      },
-      { text: "\x1b[32muser@server:~$\x1b[0m ", delay: 100 },
-    ],
-    [
-      { text: "c", delay: 200 },
-      { text: "d", delay: 120 },
-      { text: " ", delay: 100 },
-      { text: "D", delay: 150 },
-      { text: "o", delay: 90 },
-      { text: "c", delay: 110 },
-      { text: "u", delay: 95 },
-      { text: "m", delay: 100 },
-      { text: "e", delay: 85 },
-      { text: "n", delay: 90 },
-      { text: "t", delay: 95 },
-      { text: "s", delay: 100 },
-      { text: "\r\n", delay: 200 },
-      { text: "\x1b[32muser@server:~/Documents$\x1b[0m ", delay: 50 },
-      { text: "c", delay: 180 },
-      { text: "a", delay: 110 },
-      { text: "t", delay: 100 },
-      { text: " ", delay: 120 },
-      { text: "r", delay: 90 },
-      { text: "e", delay: 95 },
-      { text: "a", delay: 100 },
-      { text: "d", delay: 85 },
-      { text: "m", delay: 90 },
-      { text: "e", delay: 95 },
-      { text: ".", delay: 100 },
-      { text: "t", delay: 80 },
-      { text: "x", delay: 85 },
-      { text: "t", delay: 90 },
-      { text: "\r\n", delay: 150 },
-      { text: "=================================\r\n", delay: 30 },
-      { text: "Welcome to the SSH Replay Demo!\r\n", delay: 30 },
-      { text: "=================================\r\n", delay: 30 },
-      { text: "\r\n", delay: 50 },
-      { text: "This is a demonstration of real-time\r\n", delay: 30 },
-      { text: "SSH session replay with xterm.js.\r\n", delay: 30 },
-      { text: "\x1b[32muser@server:~/Documents$\x1b[0m ", delay: 200 },
-      { text: "exit\r\n", delay: 500 },
-      { text: "logout\r\n", delay: 100 },
-      { text: "\x1b[33mConnection to server closed.\x1b[0m\r\n", delay: 50 },
-    ],
+  const allFrames: { text: string; delay: number }[] = [
+    { text: "\x1b[32muser@server:~$\x1b[0m ", delay: 0 },
+    { text: "l", delay: 150 },
+    { text: "s -la\r\n", delay: 200 },
+    { text: "total 48\r\n", delay: 50 },
+    {
+      text: "drwxr-xr-x  5 user user 4096 Dec 17 10:30 \x1b[34m.\x1b[0m\r\n",
+      delay: 20,
+    },
+    {
+      text: "drwxr-xr-x  3 root root 4096 Dec 10 08:15 \x1b[34m..\x1b[0m\r\n",
+      delay: 20,
+    },
+    {
+      text: "-rw-r--r--  1 user user 3526 Dec 10 08:15 .bashrc\r\n",
+      delay: 20,
+    },
+    {
+      text: "drwxr-xr-x  3 user user 4096 Dec 15 14:20 \x1b[34mDocuments\x1b[0m\r\n",
+      delay: 20,
+    },
+    { text: "\x1b[32muser@server:~$\x1b[0m ", delay: 100 },
+    { text: "cd Documents\r\n", delay: 2000 },
+    { text: "\x1b[32muser@server:~/Documents$\x1b[0m ", delay: 50 },
+    { text: "cat readme.txt\r\n", delay: 1500 },
+    { text: "=================================\r\n", delay: 30 },
+    { text: "Welcome to the SSH Replay Demo!\r\n", delay: 30 },
+    { text: "=================================\r\n", delay: 30 },
+    { text: "\x1b[32muser@server:~/Documents$\x1b[0m ", delay: 200 },
+    { text: "exit\r\n", delay: 500 },
+    { text: "\x1b[33mConnection to server closed.\x1b[0m\r\n", delay: 50 },
   ];
 
-  if (page < 1 || page > mockSessions.length) {
-    return { frames: [], hasMore: false };
-  }
-
-  const session = mockSessions[page - 1];
-  let currentTime = baseTime + (page - 1) * 10000;
-
-  const frames: SSHFrame[] = session.map((item) => {
+  let currentTime = baseTime;
+  const timestampedFrames: SSHFrame[] = allFrames.map((item) => {
     currentTime += item.delay;
-    return {
-      content: encoder.encode(item.text),
-      timestamp: currentTime,
-    };
+    return { content: encoder.encode(item.text), timestamp: currentTime };
   });
 
+  const PAGE_SIZE = 6;
+  const filtered =
+    fromMs != null
+      ? timestampedFrames.filter((f) => f.timestamp >= fromMs)
+      : timestampedFrames;
+
+  const start = (page - 1) * PAGE_SIZE;
+  const end = start + PAGE_SIZE;
+  const pageFrames = filtered.slice(start, end);
+  const hasMore = end < filtered.length;
+
   return {
-    frames,
-    hasMore: page < mockSessions.length,
-    nextPage: page < mockSessions.length ? page + 1 : undefined,
+    frames: pageFrames,
+    hasMore,
+    nextPage: hasMore ? page + 1 : undefined,
   };
+};
+
+type PlaybackStatus =
+  | { type: "idle" }
+  | { type: "loading"; page: number }
+  | { type: "playing"; current: number; total: number }
+  | { type: "done" }
+  | { type: "stopped" }
+  | { type: "error"; message: string };
+
+const statusLabel = (s: PlaybackStatus): string =>
+  s.type === "idle"
+    ? "Ready"
+    : s.type === "loading"
+      ? `Loading page ${s.page}…`
+      : s.type === "playing"
+        ? `Frame ${s.current} / ${s.total}`
+        : s.type === "done"
+          ? "Playback complete"
+          : s.type === "stopped"
+            ? "Stopped"
+            : `Error: ${s.message}`;
+
+const statusColor = (s: PlaybackStatus): string =>
+  s.type === "error"
+    ? "text-red-400"
+    : s.type === "done"
+      ? "text-emerald-400"
+      : s.type === "stopped"
+        ? "text-amber-400"
+        : "text-slate-400";
+
+const formatTime = (ms: number): string => {
+  const totalSec = Math.floor(ms / 1000);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
 };
 
 export const XTermSSHReplay: React.FC<XTermSSHReplayProps> = ({
@@ -142,32 +131,62 @@ export const XTermSSHReplay: React.FC<XTermSSHReplayProps> = ({
   const terminalRef = useRef<HTMLDivElement>(null);
   const terminal = useRef<Terminal | null>(null);
   const fitAddon = useRef<FitAddon | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [status, setStatus] = useState("Ready to play");
   const abortController = useRef<AbortController | null>(null);
+
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackStatus, setPlaybackStatus] = useState<PlaybackStatus>({
+    type: "idle",
+  });
+
+  // Progress scrubbing state — all in milliseconds relative to session start
+  const [durationMs, setDurationMs] = useState(0);
+  const [positionMs, setPositionMs] = useState(0);
+  const [isScrubbing, setIsScrubbing] = useState(false);
+  const sessionStartMs = useRef<number>(0);
 
   useEffect(() => {
     if (!terminalRef.current) return;
 
     terminal.current = new Terminal({
       convertEol: true,
-      fontFamily: "Ubuntu Mono",
-      fontWeight: 600,
+      fontFamily:
+        "ui-monospace, SFMono-Regular, Menlo, Monaco, 'Ubuntu Mono', Consolas, monospace",
+      fontWeight: 400,
       fontWeightBold: 700,
-      cursorBlink: true,
-      scrollback: 1000,
-      fontSize: 18,
+      cursorBlink: false,
+      scrollback: 5000,
+      fontSize: 13,
+      lineHeight: 1.4,
+      theme: {
+        background: "#0d1117",
+        foreground: "#c9d1d9",
+        cursor: "#c9d1d9",
+        selectionBackground: "#264f78",
+        black: "#484f58",
+        red: "#ff7b72",
+        green: "#3fb950",
+        yellow: "#d29922",
+        blue: "#58a6ff",
+        magenta: "#bc8cff",
+        cyan: "#39c5cf",
+        white: "#b1bac4",
+        brightBlack: "#6e7681",
+        brightRed: "#ffa198",
+        brightGreen: "#56d364",
+        brightYellow: "#e3b341",
+        brightBlue: "#79c0ff",
+        brightMagenta: "#d2a8ff",
+        brightCyan: "#56d4dd",
+        brightWhite: "#f0f6fc",
+      },
     });
 
     fitAddon.current = new FitAddon();
     terminal.current.loadAddon(fitAddon.current);
     terminal.current.open(terminalRef.current);
-
     fitAddon.current.fit();
 
-    const handleResize = () => {
-      fitAddon.current?.fit();
-    };
+    const handleResize = () => fitAddon.current?.fit();
     window.addEventListener("resize", handleResize);
 
     return () => {
@@ -176,190 +195,276 @@ export const XTermSSHReplay: React.FC<XTermSSHReplayProps> = ({
     };
   }, []);
 
-  const fetchPage = async (
-    page: number,
-    signal: AbortSignal,
-  ): Promise<APIResponse> => {
-    if (isDev()) {
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      if (signal.aborted) throw new Error("Aborted");
-      return generateMockPage(page);
-    }
+  const fetchPage = useCallback(
+    async (
+      page: number,
+      signal: AbortSignal,
+      fromMs?: number,
+    ): Promise<APIResponse> => {
+      if (isDev()) {
+        await new Promise((resolve) => setTimeout(resolve, 150));
+        if (signal.aborted) throw new DOMException("Aborted", "AbortError");
+        return generateMockPage(page, fromMs);
+      }
 
-    {
       const { response } =
         await getClientVisibilityAccessLog().listSSHSessionRecording({
           sessionID: sshSession.id,
           page: page - 1,
+          from:
+            fromMs != null ? Timestamp.fromDate(new Date(fromMs)) : undefined,
         });
+
       return {
         frames: response.items.map((x) => ({
           content: x.data,
           timestamp: Timestamp.toDate(x.timestamp!).getTime(),
         })),
         hasMore: response.listResponseMeta?.hasMore ?? false,
-        nextPage: page,
+        nextPage: response.listResponseMeta?.hasMore ? page + 1 : undefined,
       };
-    }
-  };
+    },
+    [sshSession.id],
+  );
 
-  const sleep = (ms: number) =>
-    new Promise((resolve) => setTimeout(resolve, ms));
+  const runPlayback = useCallback(
+    async (fromMs?: number) => {
+      if (!terminal.current) return;
 
-  const playSession = async () => {
-    if (!terminal.current || isPlaying) return;
+      abortController.current?.abort();
+      abortController.current = new AbortController();
+      const signal = abortController.current.signal;
 
-    setIsPlaying(true);
-    setStatus("Loading...");
-    terminal.current.clear();
-
-    abortController.current = new AbortController();
-    const signal = abortController.current.signal;
-
-    try {
-      let currentPage = initialPage;
-      let allFrames: SSHFrame[] = [];
-      let hasMore = true;
-
-      while (hasMore) {
-        if (signal.aborted) break;
-
-        setStatus(`Fetching page ${currentPage}...`);
-        const response = await fetchPage(currentPage, signal);
-
-        allFrames = [...allFrames, ...response.frames];
-        hasMore = response.hasMore;
-
-        if (hasMore && response.nextPage) {
-          currentPage = response.nextPage;
-        } else if (hasMore) {
-          currentPage++;
-        }
-      }
-
-      if (signal.aborted) {
-        setStatus("Playback stopped");
-        setIsPlaying(false);
-        return;
-      }
-
-      allFrames.sort((a, b) => a.timestamp - b.timestamp);
-
-      setStatus(`Playing ${allFrames.length} frames...`);
-
-      let prevTimestamp = allFrames[0]?.timestamp || 0;
-
-      for (let i = 0; i < allFrames.length; i++) {
-        if (signal.aborted) break;
-
-        const frame = allFrames[i];
-        const delay = frame.timestamp - prevTimestamp;
-
-        if (delay > 0 && i > 0) {
-          await sleep(delay);
-        }
-
-        terminal.current.write(frame.content);
-        prevTimestamp = frame.timestamp;
-
-        setStatus(``);
-      }
-
-      if (!signal.aborted) {
-        setStatus("Playback complete");
-      }
-    } catch (error: any) {
-      if (error.name === "AbortError" || error.message === "Aborted") {
-        setStatus("Playback stopped");
-      } else {
-        setStatus(`Error: ${error.message}`);
-        console.error("Playback error:", error);
-      }
-    } finally {
-      setIsPlaying(false);
-      abortController.current = null;
-    }
-  };
-
-  const stopPlayback = () => {
-    if (abortController.current) {
-      abortController.current.abort();
-    }
-  };
-
-  const resetTerminal = () => {
-    if (terminal.current) {
+      setIsPlaying(true);
       terminal.current.clear();
 
-      /*
-      terminal.current.write(
-        "SSH Session Replay - Press Play to start\r\n\r\n"
-      );
-      */
-      setStatus("Ready to play");
+      try {
+        let currentPage = initialPage;
+        const allFrames: SSHFrame[] = [];
+
+        while (true) {
+          if (signal.aborted) break;
+          setPlaybackStatus({ type: "loading", page: currentPage });
+
+          const response = await fetchPage(currentPage, signal, fromMs);
+          allFrames.push(...response.frames);
+
+          if (!response.hasMore || !response.nextPage) break;
+          currentPage = response.nextPage;
+        }
+
+        if (signal.aborted) {
+          setPlaybackStatus({ type: "stopped" });
+          return;
+        }
+
+        if (allFrames.length === 0) {
+          setPlaybackStatus({ type: "done" });
+          return;
+        }
+
+        allFrames.sort((a, b) => a.timestamp - b.timestamp);
+
+        const firstTs = allFrames[0].timestamp;
+        const lastTs = allFrames[allFrames.length - 1].timestamp;
+
+        // On first play (no seek) establish the session start and total duration
+        if (fromMs == null) {
+          sessionStartMs.current = firstTs;
+          setDurationMs(lastTs - firstTs);
+        }
+
+        let prevTimestamp = firstTs;
+
+        for (let i = 0; i < allFrames.length; i++) {
+          if (signal.aborted) break;
+
+          const frame = allFrames[i];
+          const rawDelay = frame.timestamp - prevTimestamp;
+          const delay = Math.min(rawDelay, MAX_FRAME_DELAY_MS);
+
+          if (delay > 0 && i > 0) {
+            await new Promise<void>((resolve, reject) => {
+              const id = setTimeout(resolve, delay);
+              signal.addEventListener(
+                "abort",
+                () => {
+                  clearTimeout(id);
+                  reject(new DOMException("Aborted", "AbortError"));
+                },
+                { once: true },
+              );
+            });
+          }
+
+          terminal.current!.write(frame.content);
+          prevTimestamp = frame.timestamp;
+
+          const elapsed = frame.timestamp - sessionStartMs.current;
+          if (!isScrubbing) {
+            setPositionMs(elapsed);
+          }
+
+          setPlaybackStatus({
+            type: "playing",
+            current: i + 1,
+            total: allFrames.length,
+          });
+        }
+
+        setPlaybackStatus(
+          signal.aborted ? { type: "stopped" } : { type: "done" },
+        );
+        if (!signal.aborted) {
+          setPositionMs(durationMs);
+        }
+      } catch (err: unknown) {
+        if (err instanceof DOMException && err.name === "AbortError") {
+          setPlaybackStatus({ type: "stopped" });
+        } else {
+          const message = err instanceof Error ? err.message : "Unknown error";
+          setPlaybackStatus({ type: "error", message });
+          console.error("Playback error:", err);
+        }
+      } finally {
+        setIsPlaying(false);
+        abortController.current = null;
+      }
+    },
+    [initialPage, fetchPage, isScrubbing, durationMs],
+  );
+
+  const handlePlayPause = useCallback(() => {
+    if (isPlaying) {
+      abortController.current?.abort();
+    } else {
+      runPlayback();
     }
-  };
+  }, [isPlaying, runPlayback]);
+
+  const resetTerminal = useCallback(() => {
+    abortController.current?.abort();
+    terminal.current?.clear();
+    setPlaybackStatus({ type: "idle" });
+    setPositionMs(0);
+    setDurationMs(0);
+    sessionStartMs.current = 0;
+  }, []);
+
+  const handleScrubStart = useCallback(() => {
+    setIsScrubbing(true);
+    if (isPlaying) {
+      abortController.current?.abort();
+    }
+  }, [isPlaying]);
+
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleScrubEnd = useCallback(() => {
+    const targetMs = Number(inputRef.current?.value ?? 0);
+    setPositionMs(targetMs);
+    setIsScrubbing(false);
+    const absoluteMs = sessionStartMs.current + targetMs;
+    runPlayback(absoluteMs);
+  }, [runPlayback]);
+
+  const handleScrubMove = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (isScrubbing) {
+        setPositionMs(Number(e.target.value));
+      }
+    },
+    [isScrubbing],
+  );
+
+  const progressPct =
+    durationMs > 0 ? Math.round((positionMs / durationMs) * 100) : 0;
 
   return (
-    <div className="w-full h-full flex flex-col">
+    <div className="w-full flex flex-col rounded-xl overflow-hidden border border-slate-700 shadow-[0_4px_24px_rgba(1,4,9,0.4)]">
       <div
         ref={terminalRef}
-        className="flex-1 border border-gray-700 rounded-lg shadow-2xl"
+        className="flex-1 min-h-[400px]"
+        style={{ background: "#0d1117" }}
       />
 
-      <div className="mt-4 flex items-center w-full bg-gray-900 shadow-lg rounded-lg p-4">
-        <ActionIcon
-          variant="transparent"
-          aria-label="Play"
-          onClick={() => {
-            if (isPlaying) {
-              stopPlayback();
-            } else {
-              playSession();
-            }
-          }}
-        >
-          {isPlaying ? (
-            <FaStop size={28} color="white" />
-          ) : (
-            <FaPlay size={28} color="white" />
-          )}
-        </ActionIcon>
-        <ActionIcon
-          className="ml-3"
-          variant="transparent"
-          aria-label="Play"
-          onClick={() => {
-            resetTerminal();
-          }}
-        >
-          <RiResetLeftFill size={28} color="white" />
-        </ActionIcon>
-        {/*
-        <button
-          onClick={playSession}
-          disabled={isPlaying}
-          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed"
-        >
-          {isPlaying ? "Playing..." : "Play"}
-        </button>
-        <button
-          onClick={stopPlayback}
-          disabled={!isPlaying}
-          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed"
-        >
-          Stop
-        </button>
-        <button
-          onClick={resetTerminal}
-          disabled={isPlaying}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed"
-        >
-          Reset
-        </button>
-       */}
-        <div className="flex-1"></div>
-        <span className="text-gray-300 ml-4 text-sm font-bold">{status}</span>
+      <div className="bg-[#161b22] border-t border-slate-700 px-4 pt-2.5 pb-3 flex flex-col gap-2">
+        {/* Progress bar */}
+        <div className="flex items-center gap-2">
+          <span className="text-[0.65rem] font-semibold font-mono text-slate-500 w-10 shrink-0 text-right tabular-nums">
+            {formatTime(positionMs)}
+          </span>
+
+          <div className="relative flex-1 flex items-center">
+            <div className="absolute w-full h-1 bg-slate-700 rounded-full pointer-events-none">
+              <div
+                className="h-full bg-emerald-500 rounded-full transition-[width] duration-100"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+            <input
+              ref={inputRef}
+              type="range"
+              min={0}
+              max={durationMs || 100}
+              step={100}
+              value={positionMs}
+              disabled={durationMs === 0}
+              onMouseDown={handleScrubStart}
+              onTouchStart={handleScrubStart}
+              onChange={handleScrubMove}
+              onMouseUp={handleScrubEnd}
+              onTouchEnd={handleScrubEnd}
+              className="relative w-full h-1 appearance-none bg-transparent cursor-pointer disabled:cursor-default disabled:opacity-40"
+              style={{
+                WebkitAppearance: "none",
+              }}
+            />
+          </div>
+
+          <span className="text-[0.65rem] font-semibold font-mono text-slate-500 w-10 shrink-0 tabular-nums">
+            {formatTime(durationMs)}
+          </span>
+        </div>
+
+        {/* Controls row */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handlePlayPause}
+            className={twMerge(
+              "flex items-center justify-center w-8 h-8 rounded-md cursor-pointer transition-colors duration-150",
+              isPlaying
+                ? "text-red-400 hover:text-red-300 hover:bg-red-400/10"
+                : "text-emerald-400 hover:text-emerald-300 hover:bg-emerald-400/10",
+            )}
+            title={isPlaying ? "Stop" : "Play"}
+          >
+            {isPlaying ? (
+              <Square size={14} strokeWidth={2.5} />
+            ) : (
+              <Play size={14} strokeWidth={2.5} />
+            )}
+          </button>
+
+          <button
+            onClick={resetTerminal}
+            className="flex items-center justify-center w-8 h-8 rounded-md cursor-pointer text-slate-400 hover:text-slate-200 hover:bg-slate-400/10 transition-colors duration-150"
+            title="Reset"
+          >
+            <RotateCcw size={13} strokeWidth={2.5} />
+          </button>
+
+          <div className="flex-1" />
+
+          <span
+            className={twMerge(
+              "text-[0.72rem] font-semibold font-mono",
+              statusColor(playbackStatus),
+            )}
+          >
+            {statusLabel(playbackStatus)}
+          </span>
+        </div>
       </div>
     </div>
   );

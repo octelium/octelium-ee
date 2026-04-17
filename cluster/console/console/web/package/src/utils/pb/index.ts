@@ -151,6 +151,18 @@ export const getAPI = (arg: Resource): API | undefined =>
 export const getAPIFromResourceList = (arg: ResourceList): API | undefined =>
   getAPIFromAPIVersion(arg.apiVersion);
 
+export const getResourcePathKind = (arg: Resource): string => {
+  return getResourcePathFromResource(arg);
+};
+
+export const getResourcePathFromResource = (arg: Resource): string => {
+  const api = getAPI(arg);
+  return getResourcePathFromAPIKind({
+    api: api as API,
+    kind: arg.kind as ResourceName,
+  });
+};
+
 export const cloneResource = (arg: Resource): Resource => {
   switch (getAPI(arg)) {
     case "core":
