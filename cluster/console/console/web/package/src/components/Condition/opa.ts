@@ -60,28 +60,57 @@ export const regoHighlight = syntaxHighlighting(
 export const regoTheme = EditorView.theme(
   {
     "&": {
-      backgroundColor: "#0d1117",
+      backgroundColor: "#0d1117 !important",
       color: "#c9d1d9",
     },
+    "&.cm-editor": {
+      backgroundColor: "#0d1117 !important",
+    },
+    ".cm-scroller": {
+      backgroundColor: "#0d1117 !important",
+      fontFamily:
+        "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+    },
     ".cm-content": {
+      backgroundColor: "#0d1117 !important",
       fontFamily:
         "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
       fontSize: "13px",
       caretColor: "#c9d1d9",
       padding: "8px 0",
     },
-    ".cm-line": { padding: "0 12px" },
+    ".cm-line": {
+      backgroundColor: "#0d1117 !important",
+      padding: "0 12px",
+      color: "#c9d1d9",
+    },
     ".cm-gutters": {
-      backgroundColor: "#0d1117",
+      backgroundColor: "#0d1117 !important",
       color: "#484f58",
       border: "none",
-      paddingRight: "8px",
+      borderRight: "1px solid #21262d",
     },
-    ".cm-activeLineGutter": { backgroundColor: "#161b22" },
-    ".cm-activeLine": { backgroundColor: "#161b22" },
-    ".cm-selectionBackground": { backgroundColor: "#264f78 !important" },
+    ".cm-gutter": {
+      backgroundColor: "#0d1117 !important",
+    },
+    ".cm-gutterElement": {
+      backgroundColor: "#0d1117 !important",
+    },
+    ".cm-activeLineGutter": {
+      backgroundColor: "#161b22 !important",
+      color: "#8b949e",
+    },
+    ".cm-activeLine": {
+      backgroundColor: "#161b22 !important",
+    },
+    ".cm-selectionBackground, ::selection": {
+      backgroundColor: "#264f78 !important",
+    },
+    ".cm-cursor": {
+      borderLeftColor: "#c9d1d9",
+    },
     ".cm-tooltip-autocomplete": {
-      backgroundColor: "#161b22",
+      backgroundColor: "#161b22 !important",
       border: "1px solid #30363d",
       borderRadius: "6px",
       boxShadow: "0 8px 24px rgba(1,4,9,0.4)",
@@ -94,7 +123,7 @@ export const regoTheme = EditorView.theme(
       color: "#c9d1d9",
     },
     ".cm-tooltip-autocomplete ul li[aria-selected]": {
-      backgroundColor: "#1f6feb",
+      backgroundColor: "#1f6feb !important",
       color: "#ffffff",
     },
   },
