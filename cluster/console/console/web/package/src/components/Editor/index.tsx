@@ -26,6 +26,13 @@ import resourceJSONSchema from "../../jsonschema";
 const darkTheme = EditorView.theme(
   {
     "&": { backgroundColor: "#0d1117", color: "#c9d1d9" },
+    "&.cm-editor": { minHeight: "300px" },
+    ".cm-scroller": {
+      backgroundColor: "#0d1117 !important",
+      minHeight: "300px",
+      fontFamily:
+        "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+    },
     ".cm-content": {
       fontFamily:
         "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
@@ -47,7 +54,6 @@ const darkTheme = EditorView.theme(
       padding: "0 8px 0 4px",
       backgroundColor: "#0d1117 !important",
     },
-    ".cm-scroller": { backgroundColor: "#0d1117 !important" },
     ".cm-activeLineGutter": {
       backgroundColor: "#161b22 !important",
       color: "#8b949e",
@@ -291,8 +297,12 @@ const Editor = (props: {
   item: Resource;
   colorScheme?: "dark" | "light";
   schemaMode?: "full" | "spec" | "status" | "metadata";
+  minHeight?: string;
+  maxHeight?: string;
 }) => {
   const isDark = (props.colorScheme ?? "dark") === "dark";
+  const minHeight = props.minHeight ?? "300px";
+  const maxHeight = props.maxHeight ?? "600px";
   const schema = resourceJSONSchema(props.item) as JSONSchema7;
 
   const getSchemaForMode = (): JSONSchema7 | null => {
@@ -302,11 +312,17 @@ const Editor = (props: {
 
   const activeSchema = getSchemaForMode();
 
+  const fillTheme = EditorView.theme({
+    "&.cm-editor": { minHeight },
+    ".cm-scroller": { minHeight },
+  });
+
   const extensions = [
     EditorView.lineWrapping,
     EditorState.tabSize.of(2),
     isDark ? darkTheme : lightTheme,
     isDark ? darkHighlight : lightHighlight,
+    fillTheme,
     history(),
     drawSelection(),
     closeBrackets(),
@@ -333,8 +349,8 @@ const Editor = (props: {
         autoFocus
         readOnly={props.readOnly}
         className="w-full"
-        maxHeight="600px"
-        minHeight="300px"
+        maxHeight={maxHeight}
+        minHeight={minHeight}
         basicSetup={false}
         extensions={extensions}
         onChange={(val) => {
