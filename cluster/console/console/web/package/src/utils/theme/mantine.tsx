@@ -145,7 +145,6 @@ const theme = createTheme({
           ...inputStyles.input,
           resize: "vertical" as const,
           lineHeight: "1.6",
-          minHeight: "80px",
         },
       },
     }),

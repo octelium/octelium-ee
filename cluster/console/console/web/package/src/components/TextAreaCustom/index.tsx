@@ -33,7 +33,6 @@ const TextAreaCustom = (props: {
   return (
     <div className="w-full flex flex-col gap-2">
       <Textarea
-        rows={props.rows ?? 5}
         label={props.label}
         placeholder={props.placeholder}
         description={props.description}
