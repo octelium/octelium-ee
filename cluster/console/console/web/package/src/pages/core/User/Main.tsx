@@ -54,7 +54,7 @@ export const ResourceItemInfo = (props: { item: CoreC.User }) => {
         <div className="w-full flex items-center">
           <span
             className={twMerge(
-              item.spec!.isDisabled ? `text-red-500` : undefined
+              item.spec!.isDisabled ? `text-red-500` : undefined,
             )}
           >
             {item.spec!.isDisabled ? `No` : `Yes`}

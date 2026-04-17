@@ -22,7 +22,7 @@ import { ArrowRight, Loader2, ShieldCheck, ShieldX } from "lucide-react";
 import * as React from "react";
 import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
-import { getPolicyReason } from "../AccessLogViewer";
+import { getPolicyReason } from "../AccessLogViewer/Old";
 import EditItem from "../EditItem";
 import SelectInlinePolicies from "../ResourceLayout/SelectInlinePolicies";
 import SelectPolicies from "../ResourceLayout/SelectPolicies";

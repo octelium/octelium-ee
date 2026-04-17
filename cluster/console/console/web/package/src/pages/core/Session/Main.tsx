@@ -101,9 +101,9 @@ export const ItemInfo = (props: { item: CoreC.Session }) => {
                   .with(CoreP.Session_Spec_State.REJECTED, () => "text-red-600")
                   .with(
                     CoreP.Session_Spec_State.PENDING,
-                    () => "text-yellow-600"
+                    () => "text-yellow-600",
                   )
-                  .otherwise(() => undefined)
+                  .otherwise(() => undefined),
               )}
             >
               {match(item.spec!.state)

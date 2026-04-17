@@ -1,16 +1,8 @@
-import * as React from "react";
-
-import { getResourceRef, printServiceMode } from "@/utils/pb";
-import { Button } from "@mantine/core";
-import { useQuery } from "@tanstack/react-query";
-
 import {
   AccessLog,
   AccessLog_Entry_Common_Reason_Type,
   AccessLog_Entry_Common_Status,
   AccessLog_Entry_Info_DNS_Type,
-  AccessLog_Entry_Info_HTTP,
-  AccessLog_Entry_Info_HTTP_Request,
   AccessLog_Entry_Info_MySQL_Type,
   AccessLog_Entry_Info_Postgres_Type,
   Service_Spec_Mode,
@@ -24,17 +16,19 @@ import {
 import Paginator from "@/components/Paginator";
 import { isDev } from "@/utils";
 import { getClientCore, getClientVisibilityAccessLog } from "@/utils/client";
+import { getResourceRef } from "@/utils/pb";
+import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
-import { MdRefresh } from "react-icons/md";
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronDown, RefreshCw, ShieldCheck, ShieldX } from "lucide-react";
+import * as React from "react";
 import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
 import CardService from "../Card/CardService";
 import CardSession from "../Card/CardSession";
 import CopyText from "../CopyText";
-import InfoItem from "../InfoItem";
-import Label from "../Label";
 import AccessLogSummary from "../LogSummary/AccessLogSummary";
-import { ResourceListLabel, ResourceListLabelWrap } from "../ResourceList";
+import { ResourceListLabel } from "../ResourceList";
 import TimeAgo from "../TimeAgo";
 import Editor from "./Editor";
 import { SelectFromTimestamp } from "./utils";
@@ -44,430 +38,504 @@ export function convertBytes(
   options: { useBinaryUnits?: boolean; decimals?: number } = {},
 ): string {
   const { useBinaryUnits = false, decimals = 2 } = options;
-
-  if (decimals < 0) {
-    throw new Error(`Invalid decimals ${decimals}`);
-  }
-
   const base = useBinaryUnits ? 1024 : 1000;
   const units = useBinaryUnits
     ? ["Bytes", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"]
     : ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
-
   const i = Math.floor(Math.log(bytes) / Math.log(base));
-
   return `${(bytes / Math.pow(base, i)).toFixed(decimals)} ${units[i]}`;
 }
 
-const InfoDetailHTTP = (props: { item: AccessLog_Entry_Info_HTTP }) => {
-  const { item } = props;
-  const x = item;
-
-  return (
-    <>
-      {x.request && (
-        <>
-          {x.request.path && (
-            <InfoDetail label="Request Path">{x.request.path}</InfoDetail>
-          )}
-
-          {x.request.method && (
-            <InfoDetail label="Method">{x.request.method}</InfoDetail>
-          )}
-
-          {x.request.userAgent && (
-            <InfoDetail label="User Agent">{x.request.userAgent}</InfoDetail>
-          )}
-
-          {x.request.referer && (
-            <InfoDetail label="Referer">{x.request.referer}</InfoDetail>
-          )}
-
-          {x.request.bodyBytes > 0 && (
-            <InfoDetail label="Body Size">
-              {convertBytes(x.request.bodyBytes)}
-            </InfoDetail>
-          )}
-        </>
-      )}
-      {x.response && (
-        <>
-          {x.response.code > 0 && (
-            <InfoDetail label="Response Code">{x.response.code}</InfoDetail>
-          )}
-
-          {x.response.bodyBytes > 0 && (
-            <InfoDetail label="Response Body Size">
-              {convertBytes(x.response.bodyBytes)}
-            </InfoDetail>
-          )}
-        </>
-      )}
-    </>
-  );
-};
-
-export const InfoDetail = (props: {
-  label: string;
-  children?: React.ReactNode;
-}) => {
-  return (
-    <div className="w-full flex items-center justify-center text-sm mb-1">
-      <div className="font-bold text-black mr-2 min-w-[80px]">
-        {props.label}
-      </div>
-      <div className="flex-1 w-full text-gray-700 font-bold">
-        {props.children}
-      </div>
-    </div>
-  );
-};
-
-const AccessLogInfo = (props: { accessLog: AccessLog }) => {
-  const x = props.accessLog;
-  if (!x.entry?.info) {
-    return <></>;
-  }
-
-  return (
-    <div className="w-full">
-      {x.entry.info.type.oneofKind === `kubernetes` && (
-        <>
-          {x.entry.info.type.kubernetes.apiGroup && (
-            <InfoDetail label="API Group">
-              {x.entry.info.type.kubernetes.apiGroup}
-            </InfoDetail>
-          )}
-          {x.entry.info.type.kubernetes.apiPrefix && (
-            <InfoDetail label="API Prefix">
-              {x.entry.info.type.kubernetes.apiPrefix}
-            </InfoDetail>
-          )}
-          {x.entry.info.type.kubernetes.apiVersion && (
-            <InfoDetail label="API Version">
-              {x.entry.info.type.kubernetes.apiVersion}
-            </InfoDetail>
-          )}
-          {x.entry.info.type.kubernetes.name && (
-            <InfoDetail label="Name">
-              {x.entry.info.type.kubernetes.name}
-            </InfoDetail>
-          )}
-          {x.entry.info.type.kubernetes.namespace && (
-            <InfoDetail label="Namespace">
-              {x.entry.info.type.kubernetes.namespace}
-            </InfoDetail>
-          )}
-          {x.entry.info.type.kubernetes.resource && (
-            <InfoDetail label="Resource">
-              {x.entry.info.type.kubernetes.resource}
-            </InfoDetail>
-          )}
-          {x.entry.info.type.kubernetes.subresource && (
-            <InfoDetail label="Sub-resource">
-              {x.entry.info.type.kubernetes.subresource}
-            </InfoDetail>
-          )}
-          {x.entry.info.type.kubernetes.verb && (
-            <InfoDetail label="Verb">
-              {x.entry.info.type.kubernetes.verb}
-            </InfoDetail>
-          )}
-
-          {x.entry.info.type.kubernetes.http && (
-            <InfoDetailHTTP item={x.entry.info.type.kubernetes.http} />
-          )}
-        </>
-      )}
-
-      {x.entry.info.type.oneofKind === `http` && (
-        <InfoDetailHTTP item={x.entry!.info!.type.http} />
-      )}
-
-      {x.entry.info.type.oneofKind === `dns` && (
-        <>
-          {x.entry.info.type.dns && (
-            <>
-              {x.entry.info.type.dns.type && (
-                <InfoDetail label="Type">
-                  {AccessLog_Entry_Info_DNS_Type[x.entry.info.type.dns.type]}
-                </InfoDetail>
-              )}
-
-              {x.entry.info.type.dns.name && (
-                <InfoDetail label="Name">
-                  {x.entry.info.type.dns.name}
-                </InfoDetail>
-              )}
-
-              {x.entry.info.type.dns.answer && (
-                <InfoDetail label="Answer">
-                  {x.entry.info.type.dns.answer}
-                </InfoDetail>
-              )}
-
-              {x.entry.info.type.dns.typeID && (
-                <InfoDetail label="Type ID">
-                  {x.entry.info.type.dns.typeID}
-                </InfoDetail>
-              )}
-            </>
-          )}
-        </>
-      )}
-
-      {x.entry.info.type.oneofKind === `postgres` && (
-        <>
-          {x.entry.info.type.postgres && (
-            <>
-              {x.entry.info.type.postgres.type && (
-                <InfoDetail label="Type">
-                  {
-                    AccessLog_Entry_Info_Postgres_Type[
-                      x.entry.info.type.postgres.type
-                    ]
-                  }
-                </InfoDetail>
-              )}
-
-              {x.entry.info.type.postgres.details.oneofKind === `query` && (
-                <>
-                  {x.entry.info.type.postgres.details.query &&
-                    x.entry.info.type.postgres.details.query.query && (
-                      <InfoDetail label="Query">
-                        {x.entry.info.type.postgres.details.query.query}
-                      </InfoDetail>
-                    )}
-                </>
-              )}
-            </>
-          )}
-        </>
-      )}
-
-      {x.entry.info.type.oneofKind === `mysql` && (
-        <>
-          {x.entry.info.type.mysql && (
-            <>
-              {x.entry.info.type.mysql.type && (
-                <InfoDetail label="Type">
-                  {
-                    AccessLog_Entry_Info_MySQL_Type[
-                      x.entry.info.type.mysql.type
-                    ]
-                  }
-                </InfoDetail>
-              )}
-
-              {x.entry.info.type.mysql.details.oneofKind === `query` && (
-                <>
-                  {x.entry.info.type.mysql.details.query &&
-                    x.entry.info.type.mysql.details.query.query && (
-                      <InfoDetail label="Query">
-                        {x.entry.info.type.mysql.details.query.query}
-                      </InfoDetail>
-                    )}
-                </>
-              )}
-            </>
-          )}
-        </>
-      )}
-
-      {x.entry.info.type.oneofKind === `grpc` && (
-        <>
-          {x.entry.info.type.grpc && (
-            <>
-              {x.entry.info.type.grpc.serviceFullName && (
-                <InfoDetail label="Service Full Name">
-                  {x.entry.info.type.grpc.serviceFullName}
-                </InfoDetail>
-              )}
-
-              {x.entry.info.type.grpc.service && (
-                <InfoDetail label="Service">
-                  {x.entry.info.type.grpc.service}
-                </InfoDetail>
-              )}
-              {x.entry.info.type.grpc.package && (
-                <InfoDetail label="Package">
-                  {x.entry.info.type.grpc.package}
-                </InfoDetail>
-              )}
-              {x.entry.info.type.grpc.method && (
-                <InfoDetail label="Method">
-                  {x.entry.info.type.grpc.method}
-                </InfoDetail>
-              )}
-
-              {x.entry.info.type.grpc.http && (
-                <InfoDetailHTTP item={x.entry.info.type.grpc.http} />
-              )}
-            </>
-          )}
-        </>
-      )}
-    </div>
-  );
-};
-
-export const getPolicyReason = (arg?: AccessLog_Entry_Common_Reason_Type) => {
-  return match(arg)
-    .with(AccessLog_Entry_Common_Reason_Type.POLICY_MATCH, () => "Policy Match")
+export const getPolicyReason = (arg?: AccessLog_Entry_Common_Reason_Type) =>
+  match(arg)
+    .with(AccessLog_Entry_Common_Reason_Type.POLICY_MATCH, () => "Policy match")
     .with(
       AccessLog_Entry_Common_Reason_Type.NO_POLICY_MATCH,
-      () => "No Policy Match",
+      () => "No policy match",
     )
     .with(
       AccessLog_Entry_Common_Reason_Type.USER_DEACTIVATED,
-      () => "User Deactivated",
+      () => "User deactivated",
     )
     .with(
       AccessLog_Entry_Common_Reason_Type.SESSION_NOT_ACTIVE,
-      () => "Session Not Active",
+      () => "Session not active",
     )
     .with(
       AccessLog_Entry_Common_Reason_Type.SESSION_EXPIRED,
-      () => "Session Expired",
+      () => "Session expired",
     )
     .with(
       AccessLog_Entry_Common_Reason_Type.ACCESS_TOKEN_EXPIRED,
-      () => "Access Token Expired",
+      () => "Access token expired",
     )
     .with(
       AccessLog_Entry_Common_Reason_Type.AUTHENTICATOR_AUTHENTICATION_REQUIRED,
-      () => "Authenticator Authentication Required",
+      () => "Authenticator required",
     )
     .with(
       AccessLog_Entry_Common_Reason_Type.AUTHENTICATOR_REGISTRATION_REQUIRED,
-      () => "Authenticator Registration Required",
+      () => "Authenticator registration required",
     )
     .with(
       AccessLog_Entry_Common_Reason_Type.SCOPE_UNAUTHORIZED,
-      () => "Unauthorized Scope",
+      () => "Unauthorized scope",
     )
     .with(
       AccessLog_Entry_Common_Reason_Type.DEVICE_NOT_ACTIVE,
-      () => "Device not Active",
+      () => "Device not active",
     )
     .with(
       AccessLog_Entry_Common_Reason_Type.SESSION_CLIENT_TYPE_INVALID,
-      () => "Invalid Session type",
+      () => "Invalid session type",
     )
     .with(
       AccessLog_Entry_Common_Reason_Type.DEVICE_LOCKED,
-      () => "Locked Device",
+      () => "Device locked",
     )
     .with(
       AccessLog_Entry_Common_Reason_Type.SESSION_LOCKED,
-      () => "Locked Session",
+      () => "Session locked",
     )
-    .with(AccessLog_Entry_Common_Reason_Type.USER_LOCKED, () => "Locked User")
-    .otherwise((typ) => (typ ? AccessLog_Entry_Common_Reason_Type[typ] : ""));
+    .with(AccessLog_Entry_Common_Reason_Type.USER_LOCKED, () => "User locked")
+    .otherwise((t) => (t ? AccessLog_Entry_Common_Reason_Type[t] : ""));
+
+const getProtoLabel = (mode?: Service_Spec_Mode): string =>
+  match(mode)
+    .with(Service_Spec_Mode.HTTP, () => "HTTP")
+    .with(Service_Spec_Mode.TCP, () => "TCP")
+    .with(Service_Spec_Mode.SSH, () => "SSH")
+    .with(Service_Spec_Mode.WEB, () => "WEB")
+    .with(Service_Spec_Mode.KUBERNETES, () => "K8S")
+    .with(Service_Spec_Mode.POSTGRES, () => "PG")
+    .with(Service_Spec_Mode.MYSQL, () => "MySQL")
+    .with(Service_Spec_Mode.UDP, () => "UDP")
+    .with(Service_Spec_Mode.GRPC, () => "gRPC")
+    .with(Service_Spec_Mode.DNS, () => "DNS")
+    .otherwise(() => "");
+
+const DetailField = ({
+  label,
+  children,
+  mono = true,
+}: {
+  label: string;
+  children: React.ReactNode;
+  mono?: boolean;
+}) => (
+  <div className="flex flex-col gap-0.5">
+    <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+      {label}
+    </span>
+    <span
+      className={twMerge(
+        "text-[0.75rem] font-semibold text-slate-700 break-all",
+        mono && "font-mono",
+      )}
+    >
+      {children}
+    </span>
+  </div>
+);
+
+const HttpMethodBadge = ({ method }: { method: string }) => {
+  const colors: Record<string, string> = {
+    GET: "bg-blue-50 text-blue-700 border-blue-200",
+    POST: "bg-green-50 text-green-700 border-green-200",
+    PUT: "bg-amber-50 text-amber-700 border-amber-200",
+    PATCH: "bg-amber-50 text-amber-700 border-amber-200",
+    DELETE: "bg-red-50 text-red-700 border-red-200",
+  };
+  return (
+    <span
+      className={twMerge(
+        "text-[0.62rem] font-bold px-1.5 py-px rounded border font-mono",
+        colors[method.toUpperCase()] ??
+          "bg-slate-50 text-slate-600 border-slate-200",
+      )}
+    >
+      {method.toUpperCase()}
+    </span>
+  );
 };
 
-export const AccessLogC = (props: { accessLog: AccessLog }) => {
-  const x = props.accessLog;
+const HttpStatusBadge = ({ code }: { code: number }) => {
+  const color =
+    code >= 500
+      ? "text-red-600"
+      : code >= 400
+        ? "text-amber-600"
+        : code >= 300
+          ? "text-blue-600"
+          : "text-emerald-600";
+  return (
+    <span className={twMerge("font-mono font-bold text-[0.75rem]", color)}>
+      {code}
+    </span>
+  );
+};
 
-  let [showDetails, setShowDetails] = React.useState(false);
-  if (!x.entry || !x.entry.common) {
-    return <></>;
-  }
+const AccessLogDetails = ({ accessLog }: { accessLog: AccessLog }) => {
+  const x = accessLog;
+  const common = x.entry?.common;
+  const info = x.entry?.info;
+
+  return (
+    <div className="px-4 py-3 border-t border-slate-100 bg-slate-50/40">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-3">
+        <DetailField label="Log ID" mono>
+          <CopyText value={x.metadata!.id} />
+        </DetailField>
+
+        {common?.connectionID && (
+          <DetailField label="Connection ID">{common.connectionID}</DetailField>
+        )}
+
+        {common?.sessionRef && (
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+              Session
+            </span>
+            <CardSession itemRef={common.sessionRef} />
+          </div>
+        )}
+
+        {common?.serviceRef && (
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+              Service
+            </span>
+            <CardService itemRef={common.serviceRef} />
+          </div>
+        )}
+
+        {common?.reason?.details?.type.oneofKind === "policyMatch" && (
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+              Policy
+            </span>
+            {common.reason.details.type.policyMatch.type.oneofKind ===
+              "policy" && (
+              <ResourceListLabel
+                label="Policy"
+                itemRef={
+                  common.reason.details.type.policyMatch.type.policy.policyRef
+                }
+              />
+            )}
+            {common.reason.details.type.policyMatch.type.oneofKind ===
+              "inlinePolicy" && (
+              <ResourceListLabel
+                label="Inline policy"
+                itemRef={
+                  common.reason.details.type.policyMatch.type.inlinePolicy
+                    .resourceRef
+                }
+              />
+            )}
+          </div>
+        )}
+
+        {info?.type.oneofKind === "http" && (
+          <>
+            {info.type.http.request?.path && (
+              <DetailField label="Path">
+                {info.type.http.request.path}
+              </DetailField>
+            )}
+            {info.type.http.request?.method && (
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+                  Method
+                </span>
+                <HttpMethodBadge method={info.type.http.request.method} />
+              </div>
+            )}
+            {info.type.http.response?.code &&
+              info.type.http.response.code > 0 && (
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+                    Status
+                  </span>
+                  <HttpStatusBadge code={info.type.http.response.code} />
+                </div>
+              )}
+            {info.type.http.request?.userAgent && (
+              <DetailField label="User agent" mono={false}>
+                {info.type.http.request.userAgent}
+              </DetailField>
+            )}
+            {info.type.http.request?.bodyBytes != null &&
+              info.type.http.request.bodyBytes > 0 && (
+                <DetailField label="Req body">
+                  {convertBytes(info.type.http.request.bodyBytes)}
+                </DetailField>
+              )}
+
+            {info.type.http.response?.bodyBytes != null &&
+              info.type.http.response.bodyBytes > 0 && (
+                <DetailField label="Resp body">
+                  {convertBytes(info.type.http.response.bodyBytes)}
+                </DetailField>
+              )}
+          </>
+        )}
+
+        {info?.type.oneofKind === "kubernetes" && (
+          <>
+            {info.type.kubernetes.verb && (
+              <DetailField label="Verb">
+                {info.type.kubernetes.verb}
+              </DetailField>
+            )}
+            {info.type.kubernetes.resource && (
+              <DetailField label="Resource">
+                {info.type.kubernetes.resource}
+              </DetailField>
+            )}
+            {info.type.kubernetes.subresource && (
+              <DetailField label="Sub-resource">
+                {info.type.kubernetes.subresource}
+              </DetailField>
+            )}
+            {info.type.kubernetes.namespace && (
+              <DetailField label="Namespace">
+                {info.type.kubernetes.namespace}
+              </DetailField>
+            )}
+            {info.type.kubernetes.name && (
+              <DetailField label="Name">
+                {info.type.kubernetes.name}
+              </DetailField>
+            )}
+            {info.type.kubernetes.apiGroup && (
+              <DetailField label="API group">
+                {info.type.kubernetes.apiGroup}
+              </DetailField>
+            )}
+            {info.type.kubernetes.apiVersion && (
+              <DetailField label="API version">
+                {info.type.kubernetes.apiVersion}
+              </DetailField>
+            )}
+            {info.type.kubernetes.http?.request?.method && (
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+                  Method
+                </span>
+                <HttpMethodBadge
+                  method={info.type.kubernetes.http.request.method}
+                />
+              </div>
+            )}
+          </>
+        )}
+
+        {info?.type.oneofKind === "grpc" && (
+          <>
+            {info.type.grpc.method && (
+              <DetailField label="Method">{info.type.grpc.method}</DetailField>
+            )}
+            {info.type.grpc.service && (
+              <DetailField label="Service">
+                {info.type.grpc.service}
+              </DetailField>
+            )}
+            {info.type.grpc.package && (
+              <DetailField label="Package">
+                {info.type.grpc.package}
+              </DetailField>
+            )}
+            {info.type.grpc.serviceFullName && (
+              <DetailField label="Full name">
+                {info.type.grpc.serviceFullName}
+              </DetailField>
+            )}
+            {info.type.grpc.status !== 0 && (
+              <DetailField label="gRPC status">
+                {info.type.grpc.status}
+              </DetailField>
+            )}
+          </>
+        )}
+
+        {info?.type.oneofKind === "postgres" && (
+          <>
+            {info.type.postgres.type && (
+              <DetailField label="Type">
+                {AccessLog_Entry_Info_Postgres_Type[info.type.postgres.type]}
+              </DetailField>
+            )}
+            {info.type.postgres.details.oneofKind === "query" &&
+              info.type.postgres.details.query?.query && (
+                <div className="col-span-full">
+                  <DetailField label="Query">
+                    {info.type.postgres.details.query.query}
+                  </DetailField>
+                </div>
+              )}
+          </>
+        )}
+
+        {info?.type.oneofKind === "mysql" && (
+          <>
+            {info.type.mysql.type && (
+              <DetailField label="Type">
+                {AccessLog_Entry_Info_MySQL_Type[info.type.mysql.type]}
+              </DetailField>
+            )}
+            {info.type.mysql.details.oneofKind === "query" &&
+              info.type.mysql.details.query?.query && (
+                <div className="col-span-full">
+                  <DetailField label="Query">
+                    {info.type.mysql.details.query.query}
+                  </DetailField>
+                </div>
+              )}
+          </>
+        )}
+
+        {info?.type.oneofKind === "dns" && (
+          <>
+            {info.type.dns.type && (
+              <DetailField label="Type">
+                {AccessLog_Entry_Info_DNS_Type[info.type.dns.type]}
+              </DetailField>
+            )}
+            {info.type.dns.name && (
+              <DetailField label="Name">{info.type.dns.name}</DetailField>
+            )}
+            {info.type.dns.answer && (
+              <DetailField label="Answer">{info.type.dns.answer}</DetailField>
+            )}
+          </>
+        )}
+
+        {info?.type.oneofKind === "ssh" && info.type.ssh.type && (
+          <DetailField label="SSH type">{info.type.ssh.type}</DetailField>
+        )}
+
+        <div className="col-span-full flex justify-end pt-1">
+          <Editor item={x} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const AccessLogC = ({ accessLog }: { accessLog: AccessLog }) => {
+  const x = accessLog;
+  const [expanded, setExpanded] = React.useState(false);
+
+  if (!x.entry?.common) return null;
+
+  const common = x.entry.common;
+  const isAllowed = common.status === AccessLog_Entry_Common_Status.ALLOWED;
+  const protoLabel = getProtoLabel(common.mode);
+  const reason = getPolicyReason(common.reason?.type);
+  const hasReason =
+    common.reason?.type != null &&
+    (common.reason.type as number) !==
+      (AccessLog_Entry_Common_Reason_Type.TYPE_UNKNOWN_REASON as number);
 
   return (
     <div
-      onMouseEnter={() => {
-        setShowDetails(true);
-      }}
-      onMouseLeave={() => {
-        setShowDetails(false);
-      }}
-      className="w-full mt-2 mb-2 border-b-[1px] border-b-slate-300"
+      className={twMerge(
+        "bg-white border rounded-lg overflow-hidden mb-1.5",
+        "transition-[border-color,box-shadow] duration-150",
+        "hover:border-slate-300 hover:shadow-[0_2px_8px_rgba(15,23,42,0.06)]",
+        isAllowed
+          ? "border-l-[3px] border-l-emerald-500 border-slate-200"
+          : "border-l-[3px] border-l-red-500 border-slate-200",
+      )}
     >
-      <div className="w-full flex items-center">
-        <div>
-          <Editor item={props.accessLog} />
-        </div>
-        <span className="font-bold text-slate-500 text-xs mx-2">
-          <TimeAgo rfc3339={x.metadata!.createdAt} />
-        </span>
+      <button
+        className="w-full flex items-center gap-2 px-3.5 py-2 text-left cursor-pointer"
+        onClick={() => setExpanded((v) => !v)}
+      >
+        {isAllowed ? (
+          <ShieldCheck
+            size={13}
+            className="text-emerald-500 shrink-0"
+            strokeWidth={2.5}
+          />
+        ) : (
+          <ShieldX
+            size={13}
+            className="text-red-500 shrink-0"
+            strokeWidth={2.5}
+          />
+        )}
 
         <span
           className={twMerge(
-            `text-xs p-1 mx-1 text-white font-bold rounded-md shadow-xl`,
-            x.entry?.common?.status === AccessLog_Entry_Common_Status.ALLOWED
-              ? `bg-green-700`
-              : `bg-red-600`,
+            "text-[0.65rem] font-bold px-1.5 py-px rounded border shrink-0",
+            isAllowed
+              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+              : "bg-red-50 text-red-700 border-red-200",
           )}
         >
-          {x.entry.common.status === AccessLog_Entry_Common_Status.ALLOWED
-            ? `Allowed`
-            : `Denied`}
+          {isAllowed ? "Allowed" : "Denied"}
         </span>
 
-        {x.entry.common.reason &&
-          x.entry.common.reason.type !==
-            AccessLog_Entry_Common_Reason_Type.TYPE_UNKNOWN_REASON && (
-            <Label>{getPolicyReason(x.entry.common.reason.type)}</Label>
-          )}
-        {x.entry.common.reason &&
-          x.entry.common.reason?.details &&
-          x.entry.common.reason.details.type.oneofKind === `policyMatch` &&
-          x.entry.common.reason.details.type.policyMatch.type.oneofKind ===
-            `policy` && (
-            <ResourceListLabel
-              label="Policy"
-              itemRef={
-                x.entry.common.reason.details.type.policyMatch.type.policy
-                  .policyRef
-              }
-            ></ResourceListLabel>
-          )}
+        <span className="text-[0.68rem] font-semibold text-slate-400 font-mono shrink-0">
+          <TimeAgo rfc3339={x.metadata!.createdAt} />
+        </span>
 
-        {x.entry?.common?.reason?.details?.type.oneofKind === `policyMatch` &&
-          x.entry.common.reason.details.type.policyMatch.type.oneofKind ===
-            `inlinePolicy` && (
-            <ResourceListLabel
-              label={`${x.entry.common.reason.details.type.policyMatch.type.inlinePolicy.resourceRef?.kind} InlinePolicy`}
-              itemRef={
-                x.entry.common.reason.details.type.policyMatch.type.inlinePolicy
-                  .resourceRef
-              }
-            ></ResourceListLabel>
+        <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-hidden">
+          {common.sessionRef && (
+            <span className="text-[0.72rem] font-semibold text-slate-600 bg-slate-100 border border-slate-200 rounded px-1.5 py-px truncate max-w-[160px]">
+              {common.sessionRef.name ?? common.sessionRef.uid}
+            </span>
           )}
-        {x.entry?.common?.mode && (
-          <Label>{printServiceMode(x.entry.common.mode)}</Label>
-        )}
-      </div>
+          <span className="text-slate-300 text-[0.7rem] shrink-0">→</span>
+          {common.serviceRef && (
+            <span className="text-[0.72rem] font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded px-1.5 py-px truncate max-w-[160px]">
+              {common.serviceRef.name ?? common.serviceRef.uid}
+            </span>
+          )}
+          {common.namespaceRef && (
+            <span className="text-[0.68rem] font-semibold text-slate-400 truncate hidden sm:block">
+              · {common.namespaceRef.name}
+            </span>
+          )}
+        </div>
 
-      <div className="w-full my-2">
-        <InfoItem title="ID">
-          <CopyText value={x.metadata!.id} />
-        </InfoItem>
-        {x.entry?.common?.sessionRef && (
-          <InfoItem title="Session">
-            <ResourceListLabelWrap>
-              <CardSession itemRef={x.entry.common.sessionRef} />
-            </ResourceListLabelWrap>
-          </InfoItem>
-        )}
-        {x.entry?.common?.serviceRef && (
-          <InfoItem title="Service">
-            <ResourceListLabelWrap>
-              <CardService itemRef={x.entry.common.serviceRef} />
-            </ResourceListLabelWrap>
-          </InfoItem>
+        {protoLabel && (
+          <span className="text-[0.62rem] font-bold px-1.5 py-px rounded bg-slate-800 text-slate-200 font-mono shrink-0">
+            {protoLabel}
+          </span>
         )}
 
-        <AccessLogInfo accessLog={x} />
-      </div>
-      {/**
-       <div className="w-full">
-        <Collapse in={showDetails} transitionDuration={500}>
-          <AccessLogInfo accessLog={x} />
-        </Collapse>
-      </div>
-       **/}
+        {hasReason && (
+          <span className="text-[0.68rem] font-semibold text-slate-500 shrink-0 hidden md:block">
+            {reason}
+          </span>
+        )}
+
+        <motion.span
+          animate={{ rotate: expanded ? 180 : 0 }}
+          transition={{ duration: 0.18 }}
+          className="flex items-center shrink-0 text-slate-400"
+        >
+          <ChevronDown size={13} strokeWidth={2.5} />
+        </motion.span>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            key="details"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.18, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <AccessLogDetails accessLog={x} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -491,25 +559,11 @@ export const getListAccessLogResponseTest = async () => {
             sessionRef: getResourceRef(sess!),
             userRef: sess?.status?.userRef,
             deviceRef: sess?.status?.deviceRef,
-
             mode: Service_Spec_Mode.HTTP,
             serviceRef: getResourceRef(svc!),
             namespaceRef: svc?.status?.namespaceRef,
-
             status: AccessLog_Entry_Common_Status.ALLOWED,
-            reason: {
-              type: AccessLog_Entry_Common_Reason_Type.POLICY_MATCH,
-            },
-          },
-          info: {
-            type: {
-              oneofKind: "http",
-              http: {
-                request: {
-                  path: "/path/v1",
-                } as AccessLog_Entry_Info_HTTP_Request,
-              } as AccessLog_Entry_Info_HTTP,
-            },
+            reason: { type: AccessLog_Entry_Common_Reason_Type.POLICY_MATCH },
           },
         },
       }),
@@ -528,16 +582,12 @@ const DoAccessLogViewer = (props: {
   itemsPerPage?: number;
   from?: Timestamp;
 }) => {
-  let [page, setPage] = React.useState(0);
+  const [page, setPage] = React.useState(0);
 
   const qry = useQuery({
     queryKey: ["visibility", "listAccessLog", { ...props }],
-
     queryFn: async () => {
-      if (isDev()) {
-        return getListAccessLogResponseTest();
-      }
-
+      if (isDev()) return getListAccessLogResponseTest();
       const req = ListAccessLogRequest.create({
         userRef: props.userRef,
         sessionRef: props.sessionRef,
@@ -546,13 +596,9 @@ const DoAccessLogViewer = (props: {
         regionRef: props.regionRef,
         policyRef: props.policyRef,
         deviceRef: props.deviceRef,
-        common: {
-          page,
-          itemsPerPage: props.itemsPerPage ? props.itemsPerPage : 100,
-        },
+        common: { page, itemsPerPage: props.itemsPerPage ?? 100 },
         from: props.from,
       });
-
       const { response } =
         await getClientVisibilityAccessLog().listAccessLog(req);
       return response;
@@ -560,41 +606,46 @@ const DoAccessLogViewer = (props: {
     refetchInterval: 60000,
   });
 
-  /*
-  React.useEffect(() => {
-    qry.refetch();
-  }, []);
-  */
-
   return (
-    <div>
-      <div className="flex items-center mb-6">
-        <Button
-          size="compact-sm"
-          variant="outline"
-          className="ml-2 shadow-md"
-          loading={qry.isLoading}
+    <div className="w-full">
+      <div className="flex items-center justify-between mb-4">
+        <span className="text-[0.68rem] font-semibold text-slate-400 tabular-nums">
+          {qry.data?.items.length
+            ? `${qry.data.items.length.toLocaleString()} entries`
+            : ""}
+        </span>
+        <button
           onClick={() => {
             setPage(0);
-
             qry.refetch();
           }}
+          disabled={qry.isLoading}
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[0.7rem] font-bold text-slate-500 border border-slate-200 bg-white hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 transition-colors duration-150 cursor-pointer shadow-[0_1px_2px_rgba(15,23,42,0.05)] disabled:opacity-50"
         >
-          <MdRefresh />
-        </Button>
+          <RefreshCw
+            size={11}
+            strokeWidth={2.5}
+            className={qry.isLoading ? "animate-spin" : ""}
+          />
+          Refresh
+        </button>
       </div>
-      <div className="ml-4 mt-4">
-        {qry.data && qry.data.items.length > 0 && (
-          <div>
-            {qry.data.items.map((x) => (
-              <AccessLogC key={x.metadata!.id} accessLog={x} />
-            ))}
+
+      <div className="w-full">
+        {qry.data?.items.map((x) => (
+          <AccessLogC key={x.metadata!.id} accessLog={x} />
+        ))}
+        {qry.data?.items.length === 0 && (
+          <div className="flex items-center justify-center py-16">
+            <span className="text-[0.78rem] font-bold uppercase tracking-[0.08em] text-slate-400">
+              No log entries found
+            </span>
           </div>
         )}
       </div>
 
-      {qry.data && qry.data.listResponseMeta && (
-        <div className="mt-4 flex items-center justify-center">
+      {qry.data?.listResponseMeta && (
+        <div className="mt-4">
           <Paginator meta={qry.data.listResponseMeta} />
         </div>
       )}
@@ -613,33 +664,30 @@ const AccessLogViewer = (props: {
   itemsPerPage?: number;
   page?: number;
 }) => {
-  let [from, setFrom] = React.useState<Timestamp>(
+  const [from, setFrom] = React.useState<Timestamp>(
     Timestamp.fromDate(dayjs().subtract(6, "hour").toDate()),
   );
 
   return (
-    <div className="w-full">
-      <div className="flex items-center mb-4">
-        <div className="font-bold text-gray-800 mr-2">Filter Since</div>
-        <SelectFromTimestamp
-          onUpdate={(v) => {
-            setFrom(v);
-          }}
-        />
+    <div className="w-full flex flex-col gap-6">
+      <div className="flex items-center gap-3">
+        <span className="text-[0.72rem] font-bold uppercase tracking-[0.05em] text-slate-500 shrink-0">
+          Since
+        </span>
+        <SelectFromTimestamp onUpdate={setFrom} />
       </div>
 
-      <div className="w-full my-8">
-        <AccessLogSummary
-          userRef={props.userRef}
-          sessionRef={props.sessionRef}
-          serviceRef={props.serviceRef}
-          namespaceRef={props.namespaceRef}
-          regionRef={props.regionRef}
-          policyRef={props.policyRef}
-          deviceRef={props.deviceRef}
-          from={from}
-        />
-      </div>
+      <AccessLogSummary
+        userRef={props.userRef}
+        sessionRef={props.sessionRef}
+        serviceRef={props.serviceRef}
+        namespaceRef={props.namespaceRef}
+        regionRef={props.regionRef}
+        policyRef={props.policyRef}
+        deviceRef={props.deviceRef}
+        from={from}
+      />
+
       <DoAccessLogViewer
         userRef={props.userRef}
         sessionRef={props.sessionRef}

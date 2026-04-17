@@ -15,8 +15,8 @@ import { AuditLog } from "@/apis/enterprisev1/enterprisev1";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import Paginator from "@/components/Paginator";
 import dayjs from "dayjs";
-import { InfoDetail } from "../AccessLogViewer";
 import Editor from "../AccessLogViewer/Editor";
+import { InfoDetail } from "../AccessLogViewer/Old";
 import { SelectFromTimestamp } from "../AccessLogViewer/utils";
 import CardSession from "../Card/CardSession";
 import CopyText from "../CopyText";
@@ -113,7 +113,7 @@ const AuditLogViewer = (props: {
   page?: number;
 }) => {
   const [from, setFrom] = React.useState<Timestamp>(
-    Timestamp.fromDate(dayjs().subtract(6, "hour").toDate())
+    Timestamp.fromDate(dayjs().subtract(6, "hour").toDate()),
   );
 
   const qry = useQuery({
@@ -169,7 +169,7 @@ const AuditLogViewer = (props: {
           resourceRef: props.resourceRef,
 
           from,
-        })
+        }),
       );
       return response;
     },

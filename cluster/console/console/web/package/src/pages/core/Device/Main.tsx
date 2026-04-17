@@ -66,9 +66,9 @@ export const ItemInfo = (props: { item: CoreP.Device }) => {
                   .with(CoreP.Device_Spec_State.REJECTED, () => "text-red-600")
                   .with(
                     CoreP.Device_Spec_State.PENDING,
-                    () => "text-yellow-600"
+                    () => "text-yellow-600",
                   )
-                  .otherwise(() => undefined)
+                  .otherwise(() => undefined),
               )}
             >
               {match(item.spec!.state)
