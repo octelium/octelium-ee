@@ -6,12 +6,11 @@ import {
   printResourceNameWithDisplay,
   printServiceMode,
 } from "@/utils/pb";
-import { Group, Select, Switch, TextInput } from "@mantine/core";
+import { Select, Switch, TextInput, Group } from "@mantine/core";
 import { match } from "ts-pattern";
 import SelectResource from "../ResourceLayout/SelectResource";
 import TimeAgo from "../TimeAgo";
 import TimestampPicker from "../TimestampPicker";
-
 import { ObjectReference } from "@/apis/metav1/metav1";
 import { useEffect, useState } from "react";
 import { useResourceFromRef } from "../ResourceLayout/utils";
@@ -19,1944 +18,531 @@ import SelectCountry from "../SelectCountry";
 
 const ResourceValue = (props: { itemRef: ObjectReference }) => {
   const { data } = useResourceFromRef(props.itemRef);
-  return <div>{data && `${printResourceNameWithDisplay(data)}`}</div>;
+  return <>{data ? printResourceNameWithDisplay(data) : null}</>;
 };
 
-export const itemList = [
-  {
-    type: `user`,
-    title: <>User</>,
-    components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
+type EditProps = { item?: Expression; onUpdate: (item?: Expression) => void };
+type ValueProps = { item: Expression };
 
-        return (
-          <div>
-            {item.type.oneofKind === `user` && item.type.user.userRef && (
-              <ResourceValue itemRef={item.type.user.userRef} />
-            )}
-          </div>
-        );
-      },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        return (
-          <div>
-            <SelectResource
-              api="core"
-              kind="User"
-              onChange={(v) => {
-                if (!v) {
-                  props.onUpdate();
-                  return;
-                }
+export type ItemDef = {
+  type: string;
+  title: string;
+  tags: string[];
+  components: {
+    Value: (props: ValueProps) => React.ReactNode;
+    Edit: (props: EditProps) => React.ReactNode;
+  };
+};
 
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: "user",
-                      user: {
-                        userRef: getResourceRef(v),
-                      },
-                    },
-                  }),
-                );
-              }}
-            />
-          </div>
-        );
-      },
+const makeResourceItem = (
+  type: string,
+  title: string,
+  tags: string[],
+  api: "core" | "enterprise",
+  kind: string,
+  refKey: string,
+): ItemDef => ({
+  type,
+  title,
+  tags,
+  components: {
+    Value: ({ item }) => {
+      if (item.type.oneofKind !== type) return null;
+      const ref = (item.type as any)[type][refKey] as ObjectReference | undefined;
+      return ref ? <ResourceValue itemRef={ref} /> : null;
     },
+    Edit: ({ onUpdate }) => (
+      <SelectResource
+        api={api}
+        kind={kind}
+        onChange={(v) => {
+          if (!v) { onUpdate(); return; }
+          onUpdate(Expression.create({
+            type: { oneofKind: type, [type]: { [refKey]: getResourceRef(v) } } as any,
+          }));
+        }}
+      />
+    ),
   },
+});
 
-  {
-    type: `session`,
-    title: <>Session</>,
-    components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            {item.type.oneofKind === `session` &&
-              item.type.session.sessionRef && (
-                <ResourceValue itemRef={item.type.session.sessionRef} />
-              )}
-          </div>
-        );
-      },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        return (
-          <div>
-            <SelectResource
-              api="core"
-              kind="Session"
-              onChange={(v) => {
-                if (!v) {
-                  props.onUpdate();
-                  return;
-                }
-
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: "session",
-                      session: {
-                        sessionRef: getResourceRef(v),
-                      },
-                    },
-                  }),
-                );
-              }}
-            />
-          </div>
-        );
-      },
+const makeEnumItem = <T extends string>(
+  type: string,
+  title: string,
+  tags: string[],
+  enumKey: string,
+  data: { label: string; value: string }[],
+  valueLabel: (val: number) => string,
+): ItemDef => ({
+  type,
+  title,
+  tags,
+  components: {
+    Value: ({ item }) => {
+      if (item.type.oneofKind !== type) return null;
+      return <>{valueLabel((item.type as any)[type][enumKey])}</>;
     },
+    Edit: ({ onUpdate }) => (
+      <Select
+        data={data}
+        onChange={(v) => {
+          if (!v) return;
+          onUpdate(Expression.create({
+            type: { oneofKind: type, [type]: { [enumKey]: (data.find(d => d.value === v) ? v : v) } } as any,
+          }));
+        }}
+      />
+    ),
   },
+});
 
-  {
-    type: `device`,
-    title: <>Device</>,
-    components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            {item.type.oneofKind === `device` && item.type.device.deviceRef && (
-              <ResourceValue itemRef={item.type.device.deviceRef} />
-            )}
-          </div>
-        );
-      },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        return (
-          <div>
-            <SelectResource
-              api="core"
-              kind="Device"
-              onChange={(v) => {
-                if (!v) {
-                  props.onUpdate();
-                  return;
-                }
-
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: "device",
-                      device: {
-                        deviceRef: getResourceRef(v),
-                      },
-                    },
-                  }),
-                );
-              }}
-            />
-          </div>
-        );
-      },
+const makeBoolItem = (
+  type: string,
+  title: string,
+  tags: string[],
+  boolKey: string,
+): ItemDef => ({
+  type,
+  title,
+  tags,
+  components: {
+    Value: ({ item }) => {
+      if (item.type.oneofKind !== type) return null;
+      return <>{(item.type as any)[type][boolKey] ? "Enabled" : "Disabled"}</>;
     },
-  },
-
-  {
-    type: `service`,
-    title: <>Service</>,
-    components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            {item.type.oneofKind === `service` &&
-              item.type.service.serviceRef && (
-                <ResourceValue itemRef={item.type.service.serviceRef} />
-              )}
-          </div>
-        );
-      },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        return (
-          <div>
-            <SelectResource
-              api="core"
-              kind="Service"
-              onChange={(v) => {
-                if (!v) {
-                  props.onUpdate();
-                  return;
-                }
-
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: "service",
-                      service: {
-                        serviceRef: getResourceRef(v),
-                      },
-                    },
-                  }),
-                );
-              }}
-            />
-          </div>
-        );
-      },
-    },
-  },
-
-  {
-    type: `group`,
-    title: <>User belongs to Group</>,
-    components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            {item.type.oneofKind === `group` && item.type.group.groupRef && (
-              <ResourceValue itemRef={item.type.group.groupRef} />
-            )}
-          </div>
-        );
-      },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        return (
-          <div>
-            <SelectResource
-              api="core"
-              kind="Group"
-              onChange={(v) => {
-                if (!v) {
-                  props.onUpdate();
-                  return;
-                }
-
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: "group",
-                      group: {
-                        groupRef: getResourceRef(v),
-                      },
-                    },
-                  }),
-                );
-              }}
-            />
-          </div>
-        );
-      },
-    },
-  },
-
-  {
-    type: `namespace`,
-    title: <>Namespace</>,
-    components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            {item.type.oneofKind === `namespace` &&
-              item.type.namespace.namespaceRef && (
-                <ResourceValue itemRef={item.type.namespace.namespaceRef} />
-              )}
-          </div>
-        );
-      },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        return (
-          <div>
-            <SelectResource
-              api="core"
-              kind="Namespace"
-              onChange={(v) => {
-                if (!v) {
-                  props.onUpdate();
-                  return;
-                }
-
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: "namespace",
-                      namespace: {
-                        namespaceRef: getResourceRef(v),
-                      },
-                    },
-                  }),
-                );
-              }}
-            />
-          </div>
-        );
-      },
-    },
-  },
-
-  {
-    type: `sessionAuthenticationCredential`,
-    title: <>Session's Authentication Credential</>,
-    components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            {item.type.oneofKind === `sessionAuthenticationCredential` &&
-              item.type.sessionAuthenticationCredential.credentialRef && (
-                <ResourceValue
-                  itemRef={
-                    item.type.sessionAuthenticationCredential.credentialRef
-                  }
-                />
-              )}
-          </div>
-        );
-      },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        return (
-          <div>
-            <SelectResource
-              api="core"
-              kind="Credential"
-              onChange={(v) => {
-                if (!v) {
-                  props.onUpdate();
-                  return;
-                }
-
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: "sessionAuthenticationCredential",
-                      sessionAuthenticationCredential: {
-                        credentialRef: getResourceRef(v),
-                      },
-                    },
-                  }),
-                );
-              }}
-            />
-          </div>
-        );
-      },
-    },
-  },
-
-  {
-    type: `sessionAuthenticationIdentityProvider`,
-    title: <>Session's Authentication IdentityProvider</>,
-    components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            {item.type.oneofKind === `sessionAuthenticationIdentityProvider` &&
-              item.type.sessionAuthenticationIdentityProvider
-                .identityProviderRef && (
-                <ResourceValue
-                  itemRef={
-                    item.type.sessionAuthenticationIdentityProvider
-                      .identityProviderRef
-                  }
-                />
-              )}
-          </div>
-        );
-      },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        return (
-          <div>
-            <SelectResource
-              api="core"
-              kind="IdentityProvider"
-              onChange={(v) => {
-                if (!v) {
-                  props.onUpdate();
-                  return;
-                }
-
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: "sessionAuthenticationIdentityProvider",
-                      sessionAuthenticationIdentityProvider: {
-                        identityProviderRef: getResourceRef(v),
-                      },
-                    },
-                  }),
-                );
-              }}
-            />
-          </div>
-        );
-      },
-    },
-  },
-
-  {
-    type: `userType`,
-    title: <>User Type</>,
-    components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        if (item.type.oneofKind !== `userType`) {
-          return <></>;
+    Edit: ({ item, onUpdate }) => (
+      <Switch
+        size="md"
+        checked={
+          item?.type.oneofKind === type
+            ? (item.type as any)[type][boolKey]
+            : false
         }
+        onChange={(e) =>
+          onUpdate(Expression.create({
+            type: { oneofKind: type, [type]: { [boolKey]: e.currentTarget.checked } } as any,
+          }))
+        }
+      />
+    ),
+  },
+});
 
-        return (
-          <div>
-            {match(item.type.userType.type)
-              .with(CoreP.User_Spec_Type.HUMAN, () => "Human")
-              .with(CoreP.User_Spec_Type.WORKLOAD, () => "Workload")
-              .otherwise(() => "")}
-          </div>
-        );
+const makeTextItem = (
+  type: string,
+  title: string,
+  tags: string[],
+  valueKey: string,
+  label: string,
+  placeholder: string,
+): ItemDef => ({
+  type,
+  title,
+  tags,
+  components: {
+    Value: ({ item }) => {
+      if (item.type.oneofKind !== type) return null;
+      return <>{(item.type as any)[type][valueKey]}</>;
+    },
+    Edit: ({ item, onUpdate }) => (
+      <TextInput
+        label={label}
+        placeholder={placeholder}
+        value={
+          item?.type.oneofKind === type
+            ? (item.type as any)[type][valueKey]
+            : ""
+        }
+        onChange={(e) =>
+          onUpdate(Expression.create({
+            type: { oneofKind: type, [type]: { [valueKey]: e.target.value } } as any,
+          }))
+        }
+      />
+    ),
+  },
+});
+
+export const itemList: ItemDef[] = [
+  makeResourceItem("user", "User", ["identity", "user"], "core", "User", "userRef"),
+  makeResourceItem("session", "Session", ["session", "access"], "core", "Session", "sessionRef"),
+  makeResourceItem("device", "Device", ["device", "endpoint"], "core", "Device", "deviceRef"),
+  makeResourceItem("service", "Service", ["service", "resource"], "core", "Service", "serviceRef"),
+  makeResourceItem("group", "User belongs to group", ["identity", "group", "user"], "core", "Group", "groupRef"),
+  makeResourceItem("namespace", "Namespace", ["resource", "namespace"], "core", "Namespace", "namespaceRef"),
+  makeResourceItem(
+    "sessionAuthenticationCredential",
+    "Session credential",
+    ["session", "authentication", "credential"],
+    "core", "Credential", "credentialRef",
+  ),
+  makeResourceItem(
+    "sessionAuthenticationIdentityProvider",
+    "Session identity provider",
+    ["session", "authentication", "identity provider", "sso"],
+    "core", "IdentityProvider", "identityProviderRef",
+  ),
+
+  {
+    type: "userType",
+    title: "User type",
+    tags: ["identity", "user", "type"],
+    components: {
+      Value: ({ item }) => {
+        if (item.type.oneofKind !== "userType") return null;
+        return <>{match(item.type.userType.type)
+          .with(CoreP.User_Spec_Type.HUMAN, () => "Human")
+          .with(CoreP.User_Spec_Type.WORKLOAD, () => "Workload")
+          .otherwise(() => "")}</>;
       },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            <Select
-              data={[
-                {
-                  label: "Human",
-                  value: CoreP.User_Spec_Type[CoreP.User_Spec_Type.HUMAN],
-                },
-                {
-                  label: "Workload",
-                  value: CoreP.User_Spec_Type[CoreP.User_Spec_Type.WORKLOAD],
-                },
-              ]}
-              onChange={(v) => {
-                if (!v) {
-                  return;
-                }
-
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: `userType`,
-                      userType: {
-                        type: CoreP.User_Spec_Type[v as "HUMAN"],
-                      },
-                    },
-                  }),
-                );
-              }}
-            />
-          </div>
-        );
-      },
+      Edit: ({ onUpdate }) => (
+        <Select
+          data={[
+            { label: "Human", value: CoreP.User_Spec_Type[CoreP.User_Spec_Type.HUMAN] },
+            { label: "Workload", value: CoreP.User_Spec_Type[CoreP.User_Spec_Type.WORKLOAD] },
+          ]}
+          onChange={(v) => {
+            if (!v) return;
+            onUpdate(Expression.create({
+              type: { oneofKind: "userType", userType: { type: CoreP.User_Spec_Type[v as "HUMAN"] } },
+            }));
+          }}
+        />
+      ),
     },
   },
 
   {
-    type: `deviceOSType`,
-    title: <>Device OS Type</>,
+    type: "deviceOSType",
+    title: "Device OS type",
+    tags: ["device", "os", "platform", "endpoint"],
     components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        if (item.type.oneofKind !== `deviceOSType`) {
-          return <></>;
-        }
-
-        return <div>{getOSTypeStr(item.type.deviceOSType.osType)}</div>;
+      Value: ({ item }) => {
+        if (item.type.oneofKind !== "deviceOSType") return null;
+        return <>{getOSTypeStr(item.type.deviceOSType.osType)}</>;
       },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            <Select
-              data={[
-                {
-                  label: getOSTypeStr(CoreP.Device_Status_OSType.LINUX),
-                  value:
-                    CoreP.Device_Status_OSType[
-                      CoreP.Device_Status_OSType.LINUX
-                    ],
-                },
-                {
-                  label: getOSTypeStr(CoreP.Device_Status_OSType.WINDOWS),
-                  value:
-                    CoreP.Device_Status_OSType[
-                      CoreP.Device_Status_OSType.WINDOWS
-                    ],
-                },
-                {
-                  label: getOSTypeStr(CoreP.Device_Status_OSType.MAC),
-                  value:
-                    CoreP.Device_Status_OSType[CoreP.Device_Status_OSType.MAC],
-                },
-                {
-                  label: getOSTypeStr(CoreP.Device_Status_OSType.ANDROID),
-                  value:
-                    CoreP.Device_Status_OSType[
-                      CoreP.Device_Status_OSType.ANDROID
-                    ],
-                },
-              ]}
-              onChange={(v) => {
-                if (!v) {
-                  return;
-                }
-
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: `deviceOSType`,
-                      deviceOSType: {
-                        osType: CoreP.Device_Status_OSType[v as "LINUX"],
-                      },
-                    },
-                  }),
-                );
-              }}
-            />
-          </div>
-        );
-      },
+      Edit: ({ onUpdate }) => (
+        <Select
+          data={[
+            CoreP.Device_Status_OSType.LINUX,
+            CoreP.Device_Status_OSType.WINDOWS,
+            CoreP.Device_Status_OSType.MAC,
+            CoreP.Device_Status_OSType.ANDROID,
+          ].map((v) => ({
+            label: getOSTypeStr(v),
+            value: CoreP.Device_Status_OSType[v],
+          }))}
+          onChange={(v) => {
+            if (!v) return;
+            onUpdate(Expression.create({
+              type: { oneofKind: "deviceOSType", deviceOSType: { osType: CoreP.Device_Status_OSType[v as "LINUX"] } },
+            }));
+          }}
+        />
+      ),
     },
   },
 
   {
-    type: `serviceMode`,
-    title: <>Service Mode</>,
+    type: "serviceMode",
+    title: "Service mode",
+    tags: ["service", "protocol", "mode", "http", "tcp", "ssh"],
     components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        if (item.type.oneofKind !== `serviceMode`) {
-          return <></>;
-        }
-
-        return <div>{printServiceMode(item.type.serviceMode.mode)}</div>;
+      Value: ({ item }) => {
+        if (item.type.oneofKind !== "serviceMode") return null;
+        return <>{printServiceMode(item.type.serviceMode.mode)}</>;
       },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            <Select
-              required
-              data={[
-                {
-                  label: "HTTP",
-                  value: CoreP.Service_Spec_Mode[CoreP.Service_Spec_Mode.HTTP],
-                },
-                {
-                  label: "TCP",
-                  value: CoreP.Service_Spec_Mode[CoreP.Service_Spec_Mode.TCP],
-                },
-                {
-                  label: "SSH",
-                  value: CoreP.Service_Spec_Mode[CoreP.Service_Spec_Mode.SSH],
-                },
-                {
-                  label: "Web App",
-                  value: CoreP.Service_Spec_Mode[CoreP.Service_Spec_Mode.WEB],
-                },
-                {
-                  label: "Kubernetes",
-                  value:
-                    CoreP.Service_Spec_Mode[CoreP.Service_Spec_Mode.KUBERNETES],
-                },
-                {
-                  label: "PostgreSQL",
-                  value:
-                    CoreP.Service_Spec_Mode[CoreP.Service_Spec_Mode.POSTGRES],
-                },
-                {
-                  label: "MySQL",
-                  value: CoreP.Service_Spec_Mode[CoreP.Service_Spec_Mode.MYSQL],
-                },
-                {
-                  label: "UDP",
-                  value: CoreP.Service_Spec_Mode[CoreP.Service_Spec_Mode.UDP],
-                },
-                {
-                  label: "gRPC",
-                  value: CoreP.Service_Spec_Mode[CoreP.Service_Spec_Mode.GRPC],
-                },
-                {
-                  label: "DNS",
-                  value: CoreP.Service_Spec_Mode[CoreP.Service_Spec_Mode.DNS],
-                },
-              ]}
-              // value={CoreP.Service_Spec_Mode[req.spec!.mode]}
-              onChange={(v) => {
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: `serviceMode`,
-                      serviceMode: {
-                        mode: CoreP.Service_Spec_Mode[v as "HTTP"],
-                      },
-                    },
-                  }),
-                );
-              }}
-            />
-          </div>
-        );
-      },
+      Edit: ({ onUpdate }) => (
+        <Select
+          data={[
+            CoreP.Service_Spec_Mode.HTTP,
+            CoreP.Service_Spec_Mode.TCP,
+            CoreP.Service_Spec_Mode.SSH,
+            CoreP.Service_Spec_Mode.WEB,
+            CoreP.Service_Spec_Mode.KUBERNETES,
+            CoreP.Service_Spec_Mode.POSTGRES,
+            CoreP.Service_Spec_Mode.MYSQL,
+            CoreP.Service_Spec_Mode.UDP,
+            CoreP.Service_Spec_Mode.GRPC,
+            CoreP.Service_Spec_Mode.DNS,
+          ].map((v) => ({
+            label: printServiceMode(v),
+            value: CoreP.Service_Spec_Mode[v],
+          }))}
+          onChange={(v) => {
+            if (!v) return;
+            onUpdate(Expression.create({
+              type: { oneofKind: "serviceMode", serviceMode: { mode: CoreP.Service_Spec_Mode[v as "HTTP"] } },
+            }));
+          }}
+        />
+      ),
     },
   },
 
   {
-    type: `sessionType`,
-    title: <>Session Type</>,
+    type: "sessionType",
+    title: "Session type",
+    tags: ["session", "type", "client", "clientless"],
     components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        if (item.type.oneofKind !== `sessionType`) {
-          return <></>;
-        }
-
-        return (
-          <div>
-            {match(item.type.sessionType.type)
-              .with(CoreP.Session_Status_Type.CLIENT, () => "Client")
-              .with(CoreP.Session_Status_Type.CLIENTLESS, () => "Clientless")
-              .otherwise(() => "")}
-          </div>
-        );
+      Value: ({ item }) => {
+        if (item.type.oneofKind !== "sessionType") return null;
+        return <>{match(item.type.sessionType.type)
+          .with(CoreP.Session_Status_Type.CLIENT, () => "Client")
+          .with(CoreP.Session_Status_Type.CLIENTLESS, () => "Clientless")
+          .otherwise(() => "")}</>;
       },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            <Select
-              required
-              data={[
-                {
-                  label: "Client",
-                  value:
-                    CoreP.Session_Status_Type[CoreP.Session_Status_Type.CLIENT],
-                },
-                {
-                  label: "Clientless",
-                  value:
-                    CoreP.Session_Status_Type[
-                      CoreP.Session_Status_Type.CLIENTLESS
-                    ],
-                },
-              ]}
-              // value={CoreP.Service_Spec_Mode[req.spec!.mode]}
-              onChange={(v) => {
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: `sessionType`,
-                      sessionType: {
-                        type: CoreP.Session_Status_Type[v as "CLIENT"],
-                      },
-                    },
-                  }),
-                );
-              }}
-            />
-          </div>
-        );
-      },
+      Edit: ({ onUpdate }) => (
+        <Select
+          data={[
+            { label: "Client", value: CoreP.Session_Status_Type[CoreP.Session_Status_Type.CLIENT] },
+            { label: "Clientless", value: CoreP.Session_Status_Type[CoreP.Session_Status_Type.CLIENTLESS] },
+          ]}
+          onChange={(v) => {
+            if (!v) return;
+            onUpdate(Expression.create({
+              type: { oneofKind: "sessionType", sessionType: { type: CoreP.Session_Status_Type[v as "CLIENT"] } },
+            }));
+          }}
+        />
+      ),
     },
   },
 
   {
-    type: `sessionAuthenticationAAL`,
-    title: <>Session Authentication Assurance Level (AAL)</>,
+    type: "sessionAuthenticationAAL",
+    title: "Session authentication assurance level (AAL)",
+    tags: ["session", "authentication", "aal", "assurance", "mfa"],
     components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        if (item.type.oneofKind !== `sessionAuthenticationAAL`) {
-          return <></>;
-        }
-
-        return (
-          <div>
-            {match(item.type.sessionAuthenticationAAL.aal)
-              .with(
-                CoreP.Session_Status_Authentication_Info_AAL.AAL1,
-                () => "AAL1",
-              )
-              .with(
-                CoreP.Session_Status_Authentication_Info_AAL.AAL2,
-                () => "AAL2",
-              )
-              .with(
-                CoreP.Session_Status_Authentication_Info_AAL.AAL3,
-                () => "AAL3",
-              )
-              .otherwise(() => "")}
-          </div>
-        );
+      Value: ({ item }) => {
+        if (item.type.oneofKind !== "sessionAuthenticationAAL") return null;
+        return <>{match(item.type.sessionAuthenticationAAL.aal)
+          .with(CoreP.Session_Status_Authentication_Info_AAL.AAL1, () => "AAL1")
+          .with(CoreP.Session_Status_Authentication_Info_AAL.AAL2, () => "AAL2")
+          .with(CoreP.Session_Status_Authentication_Info_AAL.AAL3, () => "AAL3")
+          .otherwise(() => "")}</>;
       },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            <Select
-              required
-              data={[
-                {
-                  label: "AAL1",
-                  value:
-                    CoreP.Session_Status_Authentication_Info_AAL[
-                      CoreP.Session_Status_Authentication_Info_AAL.AAL1
-                    ],
-                },
-                {
-                  label: "AAL2",
-                  value:
-                    CoreP.Session_Status_Authentication_Info_AAL[
-                      CoreP.Session_Status_Authentication_Info_AAL.AAL2
-                    ],
-                },
-                {
-                  label: "AAL3",
-                  value:
-                    CoreP.Session_Status_Authentication_Info_AAL[
-                      CoreP.Session_Status_Authentication_Info_AAL.AAL3
-                    ],
-                },
-              ]}
-              // value={CoreP.Service_Spec_Mode[req.spec!.mode]}
-              onChange={(v) => {
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: `sessionAuthenticationAAL`,
-                      sessionAuthenticationAAL: {
-                        aal: CoreP.Session_Status_Authentication_Info_AAL[
-                          v as "AAL1"
-                        ],
-                      },
-                    },
-                  }),
-                );
-              }}
-            />
-          </div>
-        );
-      },
-    },
-  },
-
-  {
-    type: `sessionAuthenticationType`,
-    title: <>Session Authentication Type</>,
-    components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        if (item.type.oneofKind !== `sessionAuthenticationType`) {
-          return <></>;
-        }
-
-        return (
-          <div>
-            {match(item.type.sessionAuthenticationType.type)
-              .with(
-                CoreP.Session_Status_Authentication_Info_Type.AUTHENTICATOR,
-                () => "Authenticator",
-              )
-              .with(
-                CoreP.Session_Status_Authentication_Info_Type.CREDENTIAL,
-                () => "Credential",
-              )
-              .with(
-                CoreP.Session_Status_Authentication_Info_Type.IDENTITY_PROVIDER,
-                () => "IdentityProvider",
-              )
-              .with(
-                CoreP.Session_Status_Authentication_Info_Type.REFRESH_TOKEN,
-                () => "Refresh Token",
-              )
-              .with(
-                CoreP.Session_Status_Authentication_Info_Type.INTERNAL,
-                () => "Internal",
-              )
-              .otherwise(() => "")}
-          </div>
-        );
-      },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            <Select
-              required
-              data={[
-                {
-                  label: "Authenticator",
-                  value:
-                    CoreP.Session_Status_Authentication_Info_Type[
-                      CoreP.Session_Status_Authentication_Info_Type
-                        .AUTHENTICATOR
-                    ],
-                },
-                {
-                  label: "Credential",
-                  value:
-                    CoreP.Session_Status_Authentication_Info_Type[
-                      CoreP.Session_Status_Authentication_Info_Type.CREDENTIAL
-                    ],
-                },
-                {
-                  label: "IdentityProvider",
-                  value:
-                    CoreP.Session_Status_Authentication_Info_Type[
-                      CoreP.Session_Status_Authentication_Info_Type
-                        .IDENTITY_PROVIDER
-                    ],
-                },
-                {
-                  label: "Internal",
-                  value:
-                    CoreP.Session_Status_Authentication_Info_Type[
-                      CoreP.Session_Status_Authentication_Info_Type.INTERNAL
-                    ],
-                },
-                {
-                  label: "Refresh Token",
-                  value:
-                    CoreP.Session_Status_Authentication_Info_Type[
-                      CoreP.Session_Status_Authentication_Info_Type
-                        .REFRESH_TOKEN
-                    ],
-                },
-              ]}
-              // value={CoreP.Service_Spec_Mode[req.spec!.mode]}
-              onChange={(v) => {
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: `sessionAuthenticationType`,
-                      sessionAuthenticationType: {
-                        type: CoreP.Session_Status_Authentication_Info_Type[
-                          v as "CREDENTIAL"
-                        ],
-                      },
-                    },
-                  }),
-                );
-              }}
-            />
-          </div>
-        );
-      },
-    },
-  },
-
-  {
-    type: `sessionAuthenticationCredentialType`,
-    title: <>Session's Parent Credential Type</>,
-    components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        if (item.type.oneofKind !== `sessionAuthenticationCredentialType`) {
-          return <></>;
-        }
-
-        return (
-          <div>
-            {match(item.type.sessionAuthenticationCredentialType.type)
-              .with(
-                CoreP.Credential_Spec_Type.ACCESS_TOKEN,
-                () => "Access Token",
-              )
-              .with(
-                CoreP.Credential_Spec_Type.AUTH_TOKEN,
-                () => "Authentication Token",
-              )
-              .with(
-                CoreP.Credential_Spec_Type.OAUTH2,
-                () => "OAuth2 Client Credentials",
-              )
-
-              .otherwise(() => "")}
-          </div>
-        );
-      },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            <Select
-              required
-              data={[
-                {
-                  label: "Access Token",
-                  value:
-                    CoreP.Credential_Spec_Type[
-                      CoreP.Credential_Spec_Type.ACCESS_TOKEN
-                    ],
-                },
-                {
-                  label: "Authentication Token",
-                  value:
-                    CoreP.Credential_Spec_Type[
-                      CoreP.Credential_Spec_Type.AUTH_TOKEN
-                    ],
-                },
-                {
-                  label: "OAuth2 Client Credentials",
-                  value:
-                    CoreP.Credential_Spec_Type[
-                      CoreP.Credential_Spec_Type.OAUTH2
-                    ],
-                },
-              ]}
-              // value={CoreP.Service_Spec_Mode[req.spec!.mode]}
-              onChange={(v) => {
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: `sessionAuthenticationCredentialType`,
-                      sessionAuthenticationCredentialType: {
-                        type: CoreP.Credential_Spec_Type[v as "OAUTH2"],
-                      },
-                    },
-                  }),
-                );
-              }}
-            />
-          </div>
-        );
-      },
-    },
-  },
-
-  {
-    type: `sessionAuthenticationGeoipCountryCode`,
-    title: <>Session Country</>,
-    components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        if (item.type.oneofKind !== `sessionAuthenticationGeoipCountryCode`) {
-          return <></>;
-        }
-
-        return (
-          <div>{item.type.sessionAuthenticationGeoipCountryCode.code}</div>
-        );
-      },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            <SelectCountry
-              val={
-                item?.type.oneofKind === `sessionAuthenticationGeoipCountryCode`
-                  ? item.type.sessionAuthenticationGeoipCountryCode.code
-                  : undefined
-              }
-              onUpdate={(v) => {
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: `sessionAuthenticationGeoipCountryCode`,
-                      sessionAuthenticationGeoipCountryCode: {
-                        code: v ?? "",
-                      },
-                    },
-                  }),
-                );
-              }}
-            />
-          </div>
-        );
-      },
-    },
-  },
-
-  {
-    type: `timeBefore`,
-    title: <>Time Before</>,
-    components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        if (item.type.oneofKind !== `timeBefore`) {
-          return <></>;
-        }
-
-        return (
-          <div>
-            <TimeAgo rfc3339={item.type.timeBefore.timestamp} />
-          </div>
-        );
-      },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            <TimestampPicker
-              value={
-                item?.type.oneofKind === `timeBefore`
-                  ? item.type.timeBefore.timestamp
-                  : undefined
-              }
-              onChange={(v) => {
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: `timeBefore`,
-                      timeBefore: {
-                        timestamp: v,
-                      },
-                    },
-                  }),
-                );
-              }}
-            />
-          </div>
-        );
-      },
-    },
-  },
-
-  {
-    type: `timeAfter`,
-    title: <>Time After</>,
-    components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        if (item.type.oneofKind !== `timeAfter`) {
-          return <></>;
-        }
-
-        return (
-          <div>
-            <TimeAgo rfc3339={item.type.timeAfter.timestamp} />
-          </div>
-        );
-      },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            <TimestampPicker
-              isFuture
-              value={
-                item?.type.oneofKind === `timeAfter`
-                  ? item.type.timeAfter.timestamp
-                  : undefined
-              }
-              onChange={(v) => {
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: `timeAfter`,
-                      timeAfter: {
-                        timestamp: v,
-                      },
-                    },
-                  }),
-                );
-              }}
-            />
-          </div>
-        );
-      },
-    },
-  },
-
-  {
-    type: `sessionAuthenticationCredAuthenticatorFIDOHardware`,
-    title: <>Hardware-based FIDO</>,
-    components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        if (
-          item.type.oneofKind !==
-          `sessionAuthenticationCredAuthenticatorFIDOHardware`
-        ) {
-          return <></>;
-        }
-
-        return (
-          <div>
-            <>Enabled</>
-          </div>
-        );
-      },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            <Switch
-              checked={
-                props.item?.type.oneofKind ===
-                `sessionAuthenticationCredAuthenticatorFIDOHardware`
-                  ? props.item.type
-                      .sessionAuthenticationCredAuthenticatorFIDOHardware
-                      .isHardware
-                  : undefined
-              }
-              onChange={(event) => {
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: `sessionAuthenticationCredAuthenticatorFIDOHardware`,
-                      sessionAuthenticationCredAuthenticatorFIDOHardware: {
-                        isHardware: event.currentTarget.checked,
-                      },
-                    },
-                  }),
-                );
-              }}
-              size="lg"
-            />
-          </div>
-        );
-      },
-    },
-  },
-
-  {
-    type: `sessionAuthenticationCredAuthenticatorFIDOAttestationVerified`,
-    title: <>FIDO Verified Attestation</>,
-    components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        if (
-          item.type.oneofKind !==
-          `sessionAuthenticationCredAuthenticatorFIDOAttestationVerified`
-        ) {
-          return <></>;
-        }
-
-        return (
-          <div>
-            <>Enabled</>
-          </div>
-        );
-      },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            <Switch
-              checked={
-                props.item?.type.oneofKind ===
-                `sessionAuthenticationCredAuthenticatorFIDOAttestationVerified`
-                  ? props.item.type
-                      .sessionAuthenticationCredAuthenticatorFIDOAttestationVerified
-                      .isAttestationVerified
-                  : undefined
-              }
-              onChange={(event) => {
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: `sessionAuthenticationCredAuthenticatorFIDOAttestationVerified`,
-                      sessionAuthenticationCredAuthenticatorFIDOAttestationVerified:
-                        {
-                          isAttestationVerified: event.currentTarget.checked,
-                        },
-                    },
-                  }),
-                );
-              }}
-              size="lg"
-            />
-          </div>
-        );
-      },
-    },
-  },
-
-  {
-    type: `sessionAuthenticationCredAuthenticatorFIDOUserVerified`,
-    title: <>FIDO User Verified</>,
-    components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        if (
-          item.type.oneofKind !==
-          `sessionAuthenticationCredAuthenticatorFIDOUserVerified`
-        ) {
-          return <></>;
-        }
-
-        return (
-          <div>
-            <>Enabled</>
-          </div>
-        );
-      },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            <Switch
-              checked={
-                props.item?.type.oneofKind ===
-                `sessionAuthenticationCredAuthenticatorFIDOUserVerified`
-                  ? props.item.type
-                      .sessionAuthenticationCredAuthenticatorFIDOUserVerified
-                      .isUserVerified
-                  : undefined
-              }
-              onChange={(event) => {
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: `sessionAuthenticationCredAuthenticatorFIDOUserVerified`,
-                      sessionAuthenticationCredAuthenticatorFIDOUserVerified: {
-                        isUserVerified: event.currentTarget.checked,
-                      },
-                    },
-                  }),
-                );
-              }}
-              size="lg"
-            />
-          </div>
-        );
-      },
-    },
-  },
-
-  {
-    type: `sessionAuthenticationCredAuthenticatorFIDOUserPresent`,
-    title: <>FIDO User Present</>,
-    components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        if (
-          item.type.oneofKind !==
-          `sessionAuthenticationCredAuthenticatorFIDOUserPresent`
-        ) {
-          return <></>;
-        }
-
-        return (
-          <div>
-            <>Enabled</>
-          </div>
-        );
-      },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            <Switch
-              checked={
-                props.item?.type.oneofKind ===
-                `sessionAuthenticationCredAuthenticatorFIDOUserPresent`
-                  ? props.item.type
-                      .sessionAuthenticationCredAuthenticatorFIDOUserPresent
-                      .isUserPresent
-                  : undefined
-              }
-              onChange={(event) => {
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: `sessionAuthenticationCredAuthenticatorFIDOUserPresent`,
-                      sessionAuthenticationCredAuthenticatorFIDOUserPresent: {
-                        isUserPresent: event.currentTarget.checked,
-                      },
-                    },
-                  }),
-                );
-              }}
-              size="lg"
-            />
-          </div>
-        );
-      },
-    },
-  },
-
-  {
-    type: `requestHTTPPathExact`,
-    title: <>Request HTTP Exact Path</>,
-    components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        if (item.type.oneofKind !== `requestHTTPPathExact`) {
-          return <></>;
-        }
-
-        return (
-          <div>
-            <>{item.type.requestHTTPPathExact.value}</>
-          </div>
-        );
-      },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            <TextInput
-              required
-              label="Exact path"
-              placeholder="/api/v1"
-              value={
-                props.item?.type.oneofKind === `requestHTTPPathExact`
-                  ? props.item.type.requestHTTPPathExact.value
-                  : undefined
-              }
-              onChange={(v) => {
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: `requestHTTPPathExact`,
-                      requestHTTPPathExact: {
-                        value: v.target.value,
-                      },
-                    },
-                  }),
-                );
-              }}
-            />
-          </div>
-        );
-      },
-    },
-  },
-
-  {
-    type: `requestHTTPPathPrefix`,
-    title: <>Request HTTP Path Prefix</>,
-    components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        if (item.type.oneofKind !== `requestHTTPPathPrefix`) {
-          return <></>;
-        }
-
-        return (
-          <div>
-            <>{item.type.requestHTTPPathPrefix.value}</>
-          </div>
-        );
-      },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            <TextInput
-              required
-              label="Path Prefix"
-              placeholder="/api/v1"
-              value={
-                props.item?.type.oneofKind === `requestHTTPPathPrefix`
-                  ? props.item.type.requestHTTPPathPrefix.value
-                  : undefined
-              }
-              onChange={(v) => {
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: `requestHTTPPathPrefix`,
-                      requestHTTPPathPrefix: {
-                        value: v.target.value,
-                      },
-                    },
-                  }),
-                );
-              }}
-            />
-          </div>
-        );
-      },
-    },
-  },
-
-  {
-    type: `apiServer`,
-    title: <>Request to API Server</>,
-    components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        if (item.type.oneofKind !== `apiServer`) {
-          return <></>;
-        }
-
-        return (
-          <div>
-            <>Enabled</>
-          </div>
-        );
-      },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            <Switch
-              checked={
-                props.item?.type.oneofKind === `apiServer`
-                  ? props.item.type.apiServer.isAPIServer
-                  : undefined
-              }
-              onChange={(event) => {
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: `apiServer`,
-                      apiServer: {
-                        isAPIServer: event.currentTarget.checked,
-                      },
-                    },
-                  }),
-                );
-              }}
-              size="lg"
-            />
-          </div>
-        );
-      },
-    },
-  },
-
-  {
-    type: `apiServerCore`,
-    title: <>Request to API Server Core API</>,
-    components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        if (item.type.oneofKind !== `apiServerCore`) {
-          return <></>;
-        }
-
-        return (
-          <div>
-            <>Enabled</>
-          </div>
-        );
-      },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            <Switch
-              checked={
-                props.item?.type.oneofKind === `apiServerCore`
-                  ? props.item.type.apiServerCore.isAPIServerCore
-                  : undefined
-              }
-              onChange={(event) => {
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: `apiServerCore`,
-                      apiServerCore: {
-                        isAPIServerCore: event.currentTarget.checked,
-                      },
-                    },
-                  }),
-                );
-              }}
-              size="lg"
-            />
-          </div>
-        );
-      },
-    },
-  },
-
-  {
-    type: `apiServerUser`,
-    title: <>Request to API Server User API</>,
-    components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        if (item.type.oneofKind !== `apiServerUser`) {
-          return <></>;
-        }
-
-        return (
-          <div>
-            <>Enabled</>
-          </div>
-        );
-      },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            <Switch
-              checked={
-                props.item?.type.oneofKind === `apiServerUser`
-                  ? props.item.type.apiServerUser.isAPIServerUser
-                  : undefined
-              }
-              onChange={(event) => {
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: `apiServerUser`,
-                      apiServerUser: {
-                        isAPIServerUser: event.currentTarget.checked,
-                      },
-                    },
-                  }),
-                );
-              }}
-              size="lg"
-            />
-          </div>
-        );
-      },
-    },
-  },
-
-  {
-    type: `apiServerEnterprise`,
-    title: <>Request to API Server Enterprise API</>,
-    components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        if (item.type.oneofKind !== `apiServerEnterprise`) {
-          return <></>;
-        }
-
-        return (
-          <div>
-            <>Enabled</>
-          </div>
-        );
-      },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            <Switch
-              checked={
-                props.item?.type.oneofKind === `apiServerEnterprise`
-                  ? props.item.type.apiServerEnterprise.isAPIServerEnterprise
-                  : undefined
-              }
-              onChange={(event) => {
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: `apiServerEnterprise`,
-                      apiServerEnterprise: {
-                        isAPIServerEnterprise: event.currentTarget.checked,
-                      },
-                    },
-                  }),
-                );
-              }}
-              size="lg"
-            />
-          </div>
-        );
-      },
-    },
-  },
-
-  {
-    type: `apiServerCordium`,
-    title: <>Request to API Server Coredium API</>,
-    components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        if (item.type.oneofKind !== `apiServerCordium`) {
-          return <></>;
-        }
-
-        return (
-          <div>
-            <>Enabled</>
-          </div>
-        );
-      },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            <Switch
-              checked={
-                props.item?.type.oneofKind === `apiServerCordium`
-                  ? props.item.type.apiServerCordium.isAPIServerCordium
-                  : undefined
-              }
-              onChange={(event) => {
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: `apiServerCordium`,
-                      apiServerCordium: {
-                        isAPIServerCordium: event.currentTarget.checked,
-                      },
-                    },
-                  }),
-                );
-              }}
-              size="lg"
-            />
-          </div>
-        );
-      },
-    },
-  },
-
-  {
-    type: `requestHTTPHasHeader`,
-    title: <>Request HTTP Header Exists</>,
-    components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        if (item.type.oneofKind !== `requestHTTPHasHeader`) {
-          return <></>;
-        }
-
-        return (
-          <div>
-            <>{item.type.requestHTTPHasHeader.value}</>
-          </div>
-        );
-      },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            <TextInput
-              required
-              label="Header"
-              placeholder="User-Agent"
-              value={
-                props.item?.type.oneofKind === `requestHTTPHasHeader`
-                  ? props.item.type.requestHTTPHasHeader.value
-                  : undefined
-              }
-              onChange={(v) => {
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: `requestHTTPHasHeader`,
-                      requestHTTPHasHeader: {
-                        value: v.target.value,
-                      },
-                    },
-                  }),
-                );
-              }}
-            />
-          </div>
-        );
-      },
-    },
-  },
-
-  {
-    type: `requestHTTPHeaderValue`,
-    title: <>Request HTTP Header Value</>,
-    components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        if (item.type.oneofKind !== `requestHTTPHeaderValue`) {
-          return <></>;
-        }
-
-        return (
-          <div>
-            <>{`${item.type.requestHTTPHeaderValue.header} = ${item.type.requestHTTPHeaderValue.value}`}</>
-          </div>
-        );
-      },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        const { item } = props;
-
-        let [header, setHeader] = useState("");
-        let [val, setVal] = useState("");
-
-        useEffect(() => {
-          props.onUpdate(
-            Expression.create({
+      Edit: ({ onUpdate }) => (
+        <Select
+          data={["AAL1", "AAL2", "AAL3"].map((v) => ({ label: v, value: v }))}
+          onChange={(v) => {
+            if (!v) return;
+            onUpdate(Expression.create({
               type: {
-                oneofKind: `requestHTTPHeaderValue`,
-                requestHTTPHeaderValue: {
-                  header,
-                  value: val,
+                oneofKind: "sessionAuthenticationAAL",
+                sessionAuthenticationAAL: {
+                  aal: CoreP.Session_Status_Authentication_Info_AAL[v as "AAL1"],
                 },
               },
-            }),
-          );
+            }));
+          }}
+        />
+      ),
+    },
+  },
+
+  {
+    type: "sessionAuthenticationType",
+    title: "Session authentication type",
+    tags: ["session", "authentication", "type", "credential", "oauth", "idp"],
+    components: {
+      Value: ({ item }) => {
+        if (item.type.oneofKind !== "sessionAuthenticationType") return null;
+        return <>{match(item.type.sessionAuthenticationType.type)
+          .with(CoreP.Session_Status_Authentication_Info_Type.AUTHENTICATOR, () => "Authenticator")
+          .with(CoreP.Session_Status_Authentication_Info_Type.CREDENTIAL, () => "Credential")
+          .with(CoreP.Session_Status_Authentication_Info_Type.IDENTITY_PROVIDER, () => "Identity Provider")
+          .with(CoreP.Session_Status_Authentication_Info_Type.REFRESH_TOKEN, () => "Refresh Token")
+          .with(CoreP.Session_Status_Authentication_Info_Type.INTERNAL, () => "Internal")
+          .otherwise(() => "")}</>;
+      },
+      Edit: ({ onUpdate }) => (
+        <Select
+          data={[
+            { label: "Authenticator", value: CoreP.Session_Status_Authentication_Info_Type[CoreP.Session_Status_Authentication_Info_Type.AUTHENTICATOR] },
+            { label: "Credential", value: CoreP.Session_Status_Authentication_Info_Type[CoreP.Session_Status_Authentication_Info_Type.CREDENTIAL] },
+            { label: "Identity Provider", value: CoreP.Session_Status_Authentication_Info_Type[CoreP.Session_Status_Authentication_Info_Type.IDENTITY_PROVIDER] },
+            { label: "Internal", value: CoreP.Session_Status_Authentication_Info_Type[CoreP.Session_Status_Authentication_Info_Type.INTERNAL] },
+            { label: "Refresh Token", value: CoreP.Session_Status_Authentication_Info_Type[CoreP.Session_Status_Authentication_Info_Type.REFRESH_TOKEN] },
+          ]}
+          onChange={(v) => {
+            if (!v) return;
+            onUpdate(Expression.create({
+              type: {
+                oneofKind: "sessionAuthenticationType",
+                sessionAuthenticationType: {
+                  type: CoreP.Session_Status_Authentication_Info_Type[v as "CREDENTIAL"],
+                },
+              },
+            }));
+          }}
+        />
+      ),
+    },
+  },
+
+  {
+    type: "sessionAuthenticationCredentialType",
+    title: "Session credential type",
+    tags: ["session", "authentication", "credential", "oauth2", "token"],
+    components: {
+      Value: ({ item }) => {
+        if (item.type.oneofKind !== "sessionAuthenticationCredentialType") return null;
+        return <>{match(item.type.sessionAuthenticationCredentialType.type)
+          .with(CoreP.Credential_Spec_Type.ACCESS_TOKEN, () => "Access Token")
+          .with(CoreP.Credential_Spec_Type.AUTH_TOKEN, () => "Authentication Token")
+          .with(CoreP.Credential_Spec_Type.OAUTH2, () => "OAuth2 Client Credentials")
+          .otherwise(() => "")}</>;
+      },
+      Edit: ({ onUpdate }) => (
+        <Select
+          data={[
+            { label: "Access Token", value: CoreP.Credential_Spec_Type[CoreP.Credential_Spec_Type.ACCESS_TOKEN] },
+            { label: "Authentication Token", value: CoreP.Credential_Spec_Type[CoreP.Credential_Spec_Type.AUTH_TOKEN] },
+            { label: "OAuth2 Client Credentials", value: CoreP.Credential_Spec_Type[CoreP.Credential_Spec_Type.OAUTH2] },
+          ]}
+          onChange={(v) => {
+            if (!v) return;
+            onUpdate(Expression.create({
+              type: {
+                oneofKind: "sessionAuthenticationCredentialType",
+                sessionAuthenticationCredentialType: {
+                  type: CoreP.Credential_Spec_Type[v as "OAUTH2"],
+                },
+              },
+            }));
+          }}
+        />
+      ),
+    },
+  },
+
+  {
+    type: "sessionAuthenticationGeoipCountryCode",
+    title: "Session country",
+    tags: ["session", "geo", "country", "location", "ip"],
+    components: {
+      Value: ({ item }) => {
+        if (item.type.oneofKind !== "sessionAuthenticationGeoipCountryCode") return null;
+        return <>{item.type.sessionAuthenticationGeoipCountryCode.code}</>;
+      },
+      Edit: ({ item, onUpdate }) => (
+        <SelectCountry
+          val={
+            item?.type.oneofKind === "sessionAuthenticationGeoipCountryCode"
+              ? item.type.sessionAuthenticationGeoipCountryCode.code
+              : undefined
+          }
+          onUpdate={(v) =>
+            onUpdate(Expression.create({
+              type: {
+                oneofKind: "sessionAuthenticationGeoipCountryCode",
+                sessionAuthenticationGeoipCountryCode: { code: v ?? "" },
+              },
+            }))
+          }
+        />
+      ),
+    },
+  },
+
+  {
+    type: "timeBefore",
+    title: "Time before",
+    tags: ["time", "schedule", "temporal"],
+    components: {
+      Value: ({ item }) => {
+        if (item.type.oneofKind !== "timeBefore") return null;
+        return <TimeAgo rfc3339={item.type.timeBefore.timestamp} />;
+      },
+      Edit: ({ item, onUpdate }) => (
+        <TimestampPicker
+          value={item?.type.oneofKind === "timeBefore" ? item.type.timeBefore.timestamp : undefined}
+          onChange={(v) =>
+            onUpdate(Expression.create({
+              type: { oneofKind: "timeBefore", timeBefore: { timestamp: v } },
+            }))
+          }
+        />
+      ),
+    },
+  },
+
+  {
+    type: "timeAfter",
+    title: "Time after",
+    tags: ["time", "schedule", "temporal"],
+    components: {
+      Value: ({ item }) => {
+        if (item.type.oneofKind !== "timeAfter") return null;
+        return <TimeAgo rfc3339={item.type.timeAfter.timestamp} />;
+      },
+      Edit: ({ item, onUpdate }) => (
+        <TimestampPicker
+          isFuture
+          value={item?.type.oneofKind === "timeAfter" ? item.type.timeAfter.timestamp : undefined}
+          onChange={(v) =>
+            onUpdate(Expression.create({
+              type: { oneofKind: "timeAfter", timeAfter: { timestamp: v } },
+            }))
+          }
+        />
+      ),
+    },
+  },
+
+  makeBoolItem("sessionAuthenticationCredAuthenticatorFIDOHardware", "Hardware-based FIDO", ["fido", "hardware", "authenticator", "webauthn"], "isHardware"),
+  makeBoolItem("sessionAuthenticationCredAuthenticatorFIDOAttestationVerified", "FIDO verified attestation", ["fido", "attestation", "webauthn", "security"], "isAttestationVerified"),
+  makeBoolItem("sessionAuthenticationCredAuthenticatorFIDOUserVerified", "FIDO user verified", ["fido", "user", "verification", "webauthn"], "isUserVerified"),
+  makeBoolItem("sessionAuthenticationCredAuthenticatorFIDOUserPresent", "FIDO user present", ["fido", "user", "presence", "webauthn"], "isUserPresent"),
+  makeBoolItem("apiServer", "Request to API server", ["api", "server", "request"], "isAPIServer"),
+  makeBoolItem("apiServerCore", "Request to core API", ["api", "server", "core"], "isAPIServerCore"),
+  makeBoolItem("apiServerUser", "Request to user API", ["api", "server", "user"], "isAPIServerUser"),
+  makeBoolItem("apiServerEnterprise", "Request to enterprise API", ["api", "server", "enterprise"], "isAPIServerEnterprise"),
+  makeBoolItem("apiServerCordium", "Request to Coredium API", ["api", "server", "coredium"], "isAPIServerCordium"),
+
+  makeTextItem("requestHTTPPathExact", "Request HTTP exact path", ["http", "request", "path", "url"], "value", "Exact path", "/api/v1"),
+  makeTextItem("requestHTTPPathPrefix", "Request HTTP path prefix", ["http", "request", "path", "prefix", "url"], "value", "Path prefix", "/api/v1"),
+  makeTextItem("requestHTTPHasHeader", "Request HTTP header exists", ["http", "request", "header"], "value", "Header name", "User-Agent"),
+  makeTextItem("requestIP", "Request IP address", ["network", "ip", "request"], "value", "IP address", "1.2.3.4"),
+  makeTextItem("requestIPInRange", "Request IP address range", ["network", "ip", "cidr", "range"], "value", "CIDR range", "1.2.3.0/24"),
+
+  {
+    type: "requestHTTPHeaderValue",
+    title: "Request HTTP header value",
+    tags: ["http", "request", "header", "value"],
+    components: {
+      Value: ({ item }) => {
+        if (item.type.oneofKind !== "requestHTTPHeaderValue") return null;
+        const { header, value } = item.type.requestHTTPHeaderValue;
+        return <>{`${header} = ${value}`}</>;
+      },
+      Edit: ({ item, onUpdate }) => {
+        const [header, setHeader] = useState(
+          item?.type.oneofKind === "requestHTTPHeaderValue"
+            ? item.type.requestHTTPHeaderValue.header
+            : "",
+        );
+        const [val, setVal] = useState(
+          item?.type.oneofKind === "requestHTTPHeaderValue"
+            ? item.type.requestHTTPHeaderValue.value
+            : "",
+        );
+
+        useEffect(() => {
+          onUpdate(Expression.create({
+            type: {
+              oneofKind: "requestHTTPHeaderValue",
+              requestHTTPHeaderValue: { header, value: val },
+            },
+          }));
         }, [header, val]);
 
         return (
-          <div>
-            <Group grow>
-              <TextInput
-                required
-                label="Header"
-                placeholder="User-Agent"
-                value={
-                  props.item?.type.oneofKind === `requestHTTPHeaderValue`
-                    ? props.item.type.requestHTTPHeaderValue.header
-                    : undefined
-                }
-                onChange={(v) => {
-                  setHeader(v.target.value);
-                }}
-              />
-
-              <TextInput
-                required
-                label="Value"
-                placeholder="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-                value={
-                  props.item?.type.oneofKind === `requestHTTPHeaderValue`
-                    ? props.item.type.requestHTTPHeaderValue.value
-                    : undefined
-                }
-                onChange={(v) => {
-                  setVal(v.target.value);
-                }}
-              />
-            </Group>
-          </div>
-        );
-      },
-    },
-  },
-
-  {
-    type: `requestIP`,
-    title: <>Request IP Address</>,
-    components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        if (item.type.oneofKind !== `requestIP`) {
-          return <></>;
-        }
-
-        return (
-          <div>
-            <>{item.type.requestIP.value}</>
-          </div>
-        );
-      },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            <TextInput
-              required
-              label="IP Address"
-              placeholder="1.2.3.4"
-              value={
-                props.item?.type.oneofKind === `requestIP`
-                  ? props.item.type.requestIP.value
-                  : undefined
-              }
-              onChange={(v) => {
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: `requestIP`,
-                      requestIP: {
-                        value: v.target.value,
-                      },
-                    },
-                  }),
-                );
-              }}
-            />
-          </div>
-        );
-      },
-    },
-  },
-
-  {
-    type: `requestIPInRange`,
-    title: <>Request IP Address Range</>,
-    components: {
-      Value: (props: { item: Expression }) => {
-        const { item } = props;
-
-        if (item.type.oneofKind !== `requestIPInRange`) {
-          return <></>;
-        }
-
-        return (
-          <div>
-            <>{item.type.requestIPInRange.value}</>
-          </div>
-        );
-      },
-      Edit: (props: {
-        item?: Expression;
-        onUpdate: (item?: Expression) => void;
-      }) => {
-        const { item } = props;
-
-        return (
-          <div>
-            <TextInput
-              required
-              label="IP Address"
-              placeholder="1.2.3.0/24"
-              value={
-                props.item?.type.oneofKind === `requestIPInRange`
-                  ? props.item.type.requestIPInRange.value
-                  : undefined
-              }
-              onChange={(v) => {
-                props.onUpdate(
-                  Expression.create({
-                    type: {
-                      oneofKind: `requestIPInRange`,
-                      requestIPInRange: {
-                        value: v.target.value,
-                      },
-                    },
-                  }),
-                );
-              }}
-            />
-          </div>
+          <Group grow>
+            <TextInput label="Header" placeholder="User-Agent" value={header} onChange={(e) => setHeader(e.target.value)} />
+            <TextInput label="Value" placeholder="Mozilla/5.0" value={val} onChange={(e) => setVal(e.target.value)} />
+          </Group>
         );
       },
     },

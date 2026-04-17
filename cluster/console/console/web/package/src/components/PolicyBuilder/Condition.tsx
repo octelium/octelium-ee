@@ -329,29 +329,6 @@ const ExpressionC = (props: {
   );
 };
 
-const ExpressionEditC = (props: {
-  item?: Expression;
-  onUpdate: (item?: Expression) => void;
-}) => {
-  return (
-    <div className="w-full">
-      <p className="text-[0.68rem] font-bold uppercase tracking-[0.08em] text-slate-400 mb-4">
-        Choose a rule type
-      </p>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-        {itemList.map((x) => (
-          <ExpressionItemC
-            key={x.type}
-            item={props.item}
-            itemI={x}
-            onUpdate={props.onUpdate}
-          />
-        ))}
-      </div>
-    </div>
-  );
-};
-
 const ExpressionItemC = (props: {
   item?: Expression;
   itemI: itemT;
@@ -390,3 +367,93 @@ const ExpressionItemC = (props: {
 };
 
 export default Cond;
+
+import { Search } from "lucide-react";
+import { useMemo, useState } from "react";
+
+const ALL_TAGS = Array.from(new Set(itemList.flatMap((x) => x.tags))).sort();
+
+const ExpressionEditC = (props: {
+  item?: Expression;
+  onUpdate: (item?: Expression) => void;
+}) => {
+  const [query, setQuery] = useState("");
+  const [activeTag, setActiveTag] = useState<string | null>(null);
+
+  const filtered = useMemo(() => {
+    const q = query.toLowerCase().trim();
+    return itemList.filter((x) => {
+      const matchesTag = !activeTag || x.tags.includes(activeTag);
+      const matchesQuery =
+        !q ||
+        x.title.toLowerCase().includes(q) ||
+        x.tags.some((t) => t.includes(q));
+      return matchesTag && matchesQuery;
+    });
+  }, [query, activeTag]);
+
+  return (
+    <div className="w-full flex flex-col gap-4">
+      <div className="flex flex-col gap-2.5">
+        <div className="relative">
+          <Search
+            size={13}
+            strokeWidth={2.5}
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+          />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search rule types…"
+            className="w-full pl-8 pr-3 h-8 text-[0.78rem] font-semibold text-slate-700 bg-white border border-slate-200 rounded-md shadow-[0_1px_3px_rgba(15,23,42,0.05)] outline-none focus:border-slate-400 focus:shadow-[0_0_0_2px_rgba(148,163,184,0.2)] transition-all duration-150 placeholder:text-slate-400 placeholder:font-semibold"
+          />
+        </div>
+
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            onClick={() => setActiveTag(null)}
+            className={twMerge(
+              "px-2 py-0.5 rounded-md text-[0.65rem] font-bold uppercase tracking-[0.05em] border transition-colors duration-150 cursor-pointer",
+              activeTag === null
+                ? "bg-slate-900 text-white border-slate-900"
+                : "bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-800",
+            )}
+          >
+            All
+          </button>
+          {ALL_TAGS.map((tag) => (
+            <button
+              key={tag}
+              onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+              className={twMerge(
+                "px-2 py-0.5 rounded-md text-[0.65rem] font-bold uppercase tracking-[0.05em] border transition-colors duration-150 cursor-pointer",
+                activeTag === tag
+                  ? "bg-slate-900 text-white border-slate-900"
+                  : "bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-800",
+              )}
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {filtered.length === 0 ? (
+        <p className="text-[0.75rem] font-semibold text-slate-400 py-6 text-center">
+          No rule types match your search.
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {filtered.map((x) => (
+            <ExpressionItemC
+              key={x.type}
+              item={props.item}
+              itemI={x}
+              onUpdate={props.onUpdate}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
