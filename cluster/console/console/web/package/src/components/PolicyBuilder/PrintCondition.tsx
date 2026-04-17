@@ -2,34 +2,68 @@ import {
   Condition,
   Condition_Expression,
 } from "@/apis/enterprisev1/enterprisev1";
-import clsx from "clsx";
+import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
 import itemList from "./ItemList";
 
+const kindMeta = {
+  and: {
+    label: "All of",
+    sub: "All must match",
+    badge: "bg-blue-50 text-blue-800 border-blue-200",
+    border: "border-blue-200",
+    sep: "AND",
+    sepColor: "text-blue-600 bg-blue-50 border-blue-100",
+  },
+  or: {
+    label: "Any of",
+    sub: "At least one must match",
+    badge: "bg-green-50 text-green-800 border-green-200",
+    border: "border-green-200",
+    sep: "OR",
+    sepColor: "text-green-700 bg-green-50 border-green-100",
+  },
+  none: {
+    label: "None of",
+    sub: "No conditions may match",
+    badge: "bg-orange-50 text-orange-800 border-orange-200",
+    border: "border-orange-200",
+    sep: "NOR",
+    sepColor: "text-orange-700 bg-orange-50 border-orange-100",
+  },
+};
+
 const OpBadge = ({ kind }: { kind: "and" | "or" | "none" }) => {
-  const labels = { and: "All of", or: "Any of", none: "None of" };
-  const sublabels = {
-    and: "All conditions must match",
-    or: "At least one must match",
-    none: "No conditions may match",
-  };
+  const m = kindMeta[kind];
   return (
-    <div className="flex items-center gap-2 py-1.5 font-bold">
+    <div className="flex items-center gap-2 py-1">
       <span
-        className={clsx(
-          "pcb-op text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded",
-          {
-            "bg-blue-50 text-blue-900 border border-blue-200 ": kind === "and",
-            "bg-green-50 text-green-900 border border-green-200 ":
-              kind === "or",
-            "bg-orange-50 text-orange-900 border border-orange-200 ":
-              kind === "none",
-          },
+        className={twMerge(
+          "text-[0.65rem] font-bold uppercase tracking-[0.08em] px-2 py-0.5 rounded border",
+          m.badge,
         )}
       >
-        {labels[kind]}
+        {m.label}
       </span>
-      <span className="text-xs text-gray-400">{sublabels[kind]}</span>
+      <span className="text-[0.7rem] font-semibold text-slate-400">
+        {m.sub}
+      </span>
+    </div>
+  );
+};
+
+const Separator = ({ kind }: { kind: "and" | "or" | "none" }) => {
+  const m = kindMeta[kind];
+  return (
+    <div className="flex items-center gap-1.5 py-0.5 pl-1">
+      <span
+        className={twMerge(
+          "text-[0.6rem] font-bold uppercase tracking-widest px-1.5 py-px rounded border",
+          m.sepColor,
+        )}
+      >
+        {m.sep}
+      </span>
     </div>
   );
 };
@@ -37,34 +71,13 @@ const OpBadge = ({ kind }: { kind: "and" | "or" | "none" }) => {
 export const ExprChip = ({ item }: { item: Condition_Expression }) => {
   const meta = itemList.find((x) => x.type === item.type.oneofKind);
   return (
-    <div className="font-bold flex items-center gap-1.5 flex-wrap bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm hover:border-gray-300 transition-colors">
-      <span className="text-[14px] font-bold text-gray-800 bg-gray-100 rounded px-1.5 py-0.5 whitespace-nowrap">
+    <div className="inline-flex items-center gap-1.5 flex-wrap">
+      <span className="text-[0.72rem] font-bold text-slate-700 bg-slate-100 rounded px-1.5 py-0.5 border border-slate-200 whitespace-nowrap">
         {meta?.title}
       </span>
-      <span className="text-[12px] text-gray-700">is</span>
-      <span className="text-[14px] bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5 font-bold">
+      <span className="text-[0.68rem] font-semibold text-slate-400">is</span>
+      <span className="text-[0.72rem] font-bold bg-white border border-slate-200 rounded px-1.5 py-0.5 text-slate-700">
         {meta?.components.Value({ item })}
-      </span>
-    </div>
-  );
-};
-
-const Separator = ({ kind }: { kind: "and" | "or" | "none" }) => {
-  const labels = { and: "AND", or: "OR", none: "NOR" };
-  return (
-    <div className="flex items-center gap-2 py-0.5 relative">
-      <span
-        className={clsx(
-          "text-[11px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded",
-          {
-            "text-blue-600 bg-blue-50 border border-blue-100": kind === "and",
-            "text-green-700 bg-green-50 border border-green-100": kind === "or",
-            "text-orange-700 bg-orange-50 border border-orange-100":
-              kind === "none",
-          },
-        )}
-      >
-        {labels[kind]}
       </span>
     </div>
   );
@@ -84,60 +97,75 @@ const PrintCond = ({
     )
     .when(
       (x) => x.oneofKind === "all",
-      (c) => (
-        <div className="flex flex-col">
-          <OpBadge kind="and" />
-          <div className="ml-3.5 pl-4 border-l border-blue-200 flex flex-col gap-0.5">
-            {c.all.of.map((x, idx) => (
-              <div
-                key={idx}
-                className="relative flex flex-col before:absolute before:left-[-16px] before:top-5 before:w-3 before:h-px before:bg-gray-200"
-              >
-                <PrintCond item={x} depth={depth + 1} />
-                {idx < c.all.of.length - 1 && <Separator kind="and" />}
-              </div>
-            ))}
+      (c) => {
+        const m = kindMeta["and"];
+        return (
+          <div className="flex flex-col gap-0.5">
+            <OpBadge kind="and" />
+            <div
+              className={twMerge(
+                "ml-3 pl-3 border-l-2 flex flex-col gap-0.5",
+                m.border,
+              )}
+            >
+              {c.all.of.map((x, idx) => (
+                <div key={idx} className="flex flex-col">
+                  <PrintCond item={x} depth={depth + 1} />
+                  {idx < c.all.of.length - 1 && <Separator kind="and" />}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      ),
+        );
+      },
     )
     .when(
       (x) => x.oneofKind === "any",
-      (c) => (
-        <div className="flex flex-col">
-          <OpBadge kind="or" />
-          <div className="ml-3.5 pl-4 border-l border-green-200 flex flex-col gap-0.5">
-            {c.any.of.map((x, idx) => (
-              <div
-                key={idx}
-                className="relative flex flex-col before:absolute before:left-[-16px] before:top-5 before:w-3 before:h-px before:bg-gray-200"
-              >
-                <PrintCond item={x} depth={depth + 1} />
-                {idx < c.any.of.length - 1 && <Separator kind="or" />}
-              </div>
-            ))}
+      (c) => {
+        const m = kindMeta["or"];
+        return (
+          <div className="flex flex-col gap-0.5">
+            <OpBadge kind="or" />
+            <div
+              className={twMerge(
+                "ml-3 pl-3 border-l-2 flex flex-col gap-0.5",
+                m.border,
+              )}
+            >
+              {c.any.of.map((x, idx) => (
+                <div key={idx} className="flex flex-col">
+                  <PrintCond item={x} depth={depth + 1} />
+                  {idx < c.any.of.length - 1 && <Separator kind="or" />}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      ),
+        );
+      },
     )
     .when(
       (x) => x.oneofKind === "none",
-      (c) => (
-        <div className="flex flex-col">
-          <OpBadge kind="none" />
-          <div className="ml-3.5 pl-4 border-l border-orange-200 flex flex-col gap-0.5">
-            {c.none.of.map((x, idx) => (
-              <div
-                key={idx}
-                className="relative flex flex-col before:absolute before:left-[-16px] before:top-5 before:w-3 before:h-px before:bg-gray-200"
-              >
-                <PrintCond item={x} depth={depth + 1} />
-                {idx < c.none.of.length - 1 && <Separator kind="none" />}
-              </div>
-            ))}
+      (c) => {
+        const m = kindMeta["none"];
+        return (
+          <div className="flex flex-col gap-0.5">
+            <OpBadge kind="none" />
+            <div
+              className={twMerge(
+                "ml-3 pl-3 border-l-2 flex flex-col gap-0.5",
+                m.border,
+              )}
+            >
+              {c.none.of.map((x, idx) => (
+                <div key={idx} className="flex flex-col">
+                  <PrintCond item={x} depth={depth + 1} />
+                  {idx < c.none.of.length - 1 && <Separator kind="none" />}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      ),
+        );
+      },
     )
     .otherwise(() => null);
 };
