@@ -55,7 +55,6 @@ const TopList = (props: {
       textStyle: {
         color: "#f8fafc",
         fontSize: 12,
-        fontFamily: "Ubuntu, sans-serif",
       },
       formatter: (params: any) => {
         const pct = Math.round((params[0].value / topCount) * 100);
@@ -106,7 +105,6 @@ const TopList = (props: {
           color: "#475569",
           fontSize: 11,
           fontWeight: "bold",
-          fontFamily: "Ubuntu, sans-serif",
         },
         animationDuration: 600,
         animationEasing: "cubicOut" as const,

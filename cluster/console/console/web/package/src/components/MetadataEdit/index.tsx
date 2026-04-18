@@ -7,7 +7,6 @@ const sharedInputStyles = {
   label: {
     fontSize: "0.72rem",
     fontWeight: 700,
-    fontFamily: "Ubuntu, sans-serif",
     textTransform: "uppercase" as const,
     letterSpacing: "0.05em",
     color: "#475569",
@@ -16,14 +15,12 @@ const sharedInputStyles = {
   description: {
     fontSize: "0.7rem",
     fontWeight: 600,
-    fontFamily: "Ubuntu, sans-serif",
     color: "#94a3b8",
     marginBottom: "4px",
   },
   input: {
     fontSize: "0.82rem",
     fontWeight: 600,
-    fontFamily: "Ubuntu, sans-serif",
     backgroundColor: "#ffffff",
     border: "1px solid #e2e8f0",
     borderRadius: "6px",
@@ -105,7 +102,6 @@ const MetadataEdit = (props: {
           pill: {
             fontSize: "0.7rem",
             fontWeight: 700,
-            fontFamily: "Ubuntu, sans-serif",
             backgroundColor: "#f1f5f9",
             color: "#334155",
             border: "1px solid #e2e8f0",

@@ -70,7 +70,7 @@ const sharedInputStyles = {
   input: {
     fontSize: "0.78rem",
     fontWeight: 600,
-    fontFamily: "Ubuntu, sans-serif",
+
     border: "1px solid #e2e8f0",
     borderRadius: "6px",
     color: "#1e293b",
@@ -81,7 +81,6 @@ const sharedInputStyles = {
   label: {
     fontSize: "0.68rem",
     fontWeight: 700,
-    fontFamily: "Ubuntu, sans-serif",
     textTransform: "uppercase" as const,
     letterSpacing: "0.05em",
     color: "#64748b",
@@ -90,7 +89,6 @@ const sharedInputStyles = {
   option: {
     fontSize: "0.78rem",
     fontWeight: 600,
-    fontFamily: "Ubuntu, sans-serif",
   },
 };
 
@@ -148,7 +146,6 @@ const DurationPicker = ({
       height: "30px",
       fontSize: "0.72rem",
       fontWeight: 700,
-      fontFamily: "Ubuntu, sans-serif",
       padding: "0 12px",
       flex: 1,
       backgroundColor: active ? "#0f172a" : "#f8fafc",
@@ -220,7 +217,6 @@ const DurationPicker = ({
                 height: "32px",
                 fontSize: "0.78rem",
                 fontWeight: 600,
-                fontFamily: "Ubuntu, sans-serif",
                 backgroundColor: "#ffffff",
                 border: "1px solid #e2e8f0",
                 borderRadius: "6px",
@@ -330,7 +326,6 @@ const DurationPicker = ({
                       height: "32px",
                       fontSize: "0.75rem",
                       fontWeight: 700,
-                      fontFamily: "Ubuntu, sans-serif",
                       backgroundColor: "#0f172a",
                       borderRadius: "6px",
                       "&:hover": { backgroundColor: "#1e293b" },

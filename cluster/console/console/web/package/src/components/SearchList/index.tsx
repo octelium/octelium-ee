@@ -87,7 +87,6 @@ const SearchList = (props: { btnSize?: "xs" | "small" }) => {
                   minHeight: "28px",
                   fontSize: "0.78rem",
                   fontWeight: 600,
-                  fontFamily: "Ubuntu, sans-serif",
                   backgroundColor: "#ffffff",
                   border: "1px solid #e2e8f0",
                   borderRadius: "6px",

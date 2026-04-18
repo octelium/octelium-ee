@@ -139,7 +139,6 @@ const PackageRow = ({
               styles={{
                 input: {
                   fontSize: "0.78rem",
-                  fontFamily: "ui-monospace, monospace",
                 },
               }}
             />

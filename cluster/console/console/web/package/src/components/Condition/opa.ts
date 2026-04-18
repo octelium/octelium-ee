@@ -68,13 +68,10 @@ export const regoTheme = EditorView.theme(
     },
     ".cm-scroller": {
       backgroundColor: "#0d1117 !important",
-      fontFamily:
-        "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
     },
     ".cm-content": {
       backgroundColor: "#0d1117 !important",
-      fontFamily:
-        "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+
       fontSize: "13px",
       caretColor: "#c9d1d9",
       padding: "8px 0",
@@ -116,8 +113,6 @@ export const regoTheme = EditorView.theme(
       boxShadow: "0 8px 24px rgba(1,4,9,0.4)",
     },
     ".cm-tooltip-autocomplete ul li": {
-      fontFamily:
-        "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
       fontSize: "12px",
       padding: "3px 10px",
       color: "#c9d1d9",

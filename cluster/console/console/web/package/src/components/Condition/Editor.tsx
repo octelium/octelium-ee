@@ -90,8 +90,6 @@ const celBaseTheme = EditorView.theme({
     boxShadow: "0 0 0 2px rgba(148,163,184,0.2)",
   },
   ".cm-content": {
-    fontFamily:
-      "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
     fontSize: "13px",
     padding: "8px 10px",
     caretColor: "#0f172a",
@@ -114,8 +112,6 @@ const celBaseTheme = EditorView.theme({
     padding: "4px",
   },
   ".cm-tooltip.cm-tooltip-autocomplete > ul": {
-    fontFamily:
-      "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important",
     fontSize: "13px !important",
     maxHeight: "280px !important",
     overflowY: "auto",
@@ -153,8 +149,6 @@ const celBaseTheme = EditorView.theme({
     fontSize: "11px",
     marginLeft: "10px",
     fontStyle: "normal",
-    fontFamily:
-      "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
     whiteSpace: "nowrap",
   },
   ".cm-completionMatchedText": {

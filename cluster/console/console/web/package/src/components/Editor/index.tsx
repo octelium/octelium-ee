@@ -30,12 +30,8 @@ const darkTheme = EditorView.theme(
     ".cm-scroller": {
       backgroundColor: "#0d1117 !important",
       minHeight: "300px",
-      fontFamily:
-        "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
     },
     ".cm-content": {
-      fontFamily:
-        "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
       fontSize: "13px",
       padding: "12px 0",
       caretColor: "#c9d1d9",
@@ -46,8 +42,7 @@ const darkTheme = EditorView.theme(
       color: "#484f58",
       border: "none",
       borderRight: "1px solid #21262d",
-      fontFamily:
-        "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+
       fontSize: "12px",
     },
     ".cm-gutterElement": {

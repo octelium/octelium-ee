@@ -13,7 +13,7 @@ import {
   resourceToJSON,
   resourceToYAML,
 } from "@/utils/pb";
-import { CopyButton, Drawer, Tooltip } from "@mantine/core";
+import { Button, CopyButton, Drawer, Tooltip } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useMutation } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
@@ -23,8 +23,9 @@ import {
   FileText,
   Loader2,
   Moon,
-  RefreshCw,
+  Save,
   Sun,
+  X,
 } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
@@ -113,6 +114,7 @@ const ResourceYAML = (props: {
   const activeSchemaMode = VIEW_MODES.find(
     (m) => m.value === viewMode,
   )!.schemaMode;
+  const isReadOnly = props.readOnly || item.metadata?.isSystem;
 
   return (
     <>
@@ -121,13 +123,15 @@ const ResourceYAML = (props: {
           {props.triggerComponent}
         </span>
       ) : (
-        <button
+        <Button
+          size={`compact-xs`}
+          variant={`outline`}
           onClick={open}
           className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[0.7rem] font-bold text-slate-500 border border-slate-200 bg-white hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 transition-colors duration-150 cursor-pointer shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
         >
           <FileText size={11} strokeWidth={2.5} />
           YAML
-        </button>
+        </Button>
       )}
 
       <Drawer
@@ -147,69 +151,88 @@ const ResourceYAML = (props: {
         }}
       >
         <div className="flex flex-col h-full bg-white">
-          <div className="flex items-center justify-between px-5 py-3.5 shrink-0 border-b border-slate-200 bg-slate-50/60">
-            <div className="flex items-center gap-2">
-              <FileText size={14} className="text-slate-500" />
-              <span className="text-[0.78rem] font-bold uppercase tracking-[0.05em] text-slate-700">
+          <div className="flex items-center justify-between px-5 py-3 shrink-0 border-b border-slate-200 bg-white">
+            <div className="flex items-center gap-2 min-w-0">
+              <FileText
+                size={13}
+                className="text-slate-400 shrink-0"
+                strokeWidth={2}
+              />
+              <span className="text-[0.78rem] font-bold text-slate-700 truncate">
                 {item.metadata?.name}
+              </span>
+              <span className="text-[0.68rem] font-semibold text-slate-400 shrink-0">
+                {item.kind}
               </span>
               {item.metadata?.isSystem && (
                 <Tooltip
                   label="System resource created by the cluster"
                   withArrow
                 >
-                  <span className="inline-flex items-center px-1.5 py-px text-[0.62rem] font-bold uppercase tracking-wider rounded border border-blue-200 text-blue-600 bg-blue-50 leading-none">
+                  <span className="inline-flex items-center px-1.5 py-px text-[0.6rem] font-bold uppercase tracking-wider rounded border border-blue-200 text-blue-600 bg-blue-50 leading-none shrink-0">
                     System
                   </span>
                 </Tooltip>
               )}
             </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() =>
-                  setColorScheme((s) => (s === "dark" ? "light" : "dark"))
-                }
-                className="flex items-center justify-center w-6 h-6 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors duration-150 cursor-pointer"
-                title={
-                  colorScheme === "dark"
-                    ? "Switch to light editor"
-                    : "Switch to dark editor"
-                }
+            <div className="flex items-center gap-1 shrink-0">
+              <Tooltip
+                label={colorScheme === "dark" ? "Light editor" : "Dark editor"}
+                withArrow
               >
-                {colorScheme === "dark" ? (
-                  <Sun size={13} />
-                ) : (
-                  <Moon size={13} />
-                )}
-              </button>
-
+                <button
+                  onClick={() =>
+                    setColorScheme((s) => (s === "dark" ? "light" : "dark"))
+                  }
+                  className="flex items-center justify-center w-7 h-7 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors duration-150 cursor-pointer"
+                >
+                  {colorScheme === "dark" ? (
+                    <Sun size={13} strokeWidth={2} />
+                  ) : (
+                    <Moon size={13} strokeWidth={2} />
+                  )}
+                </button>
+              </Tooltip>
               <button
                 onClick={close}
-                className="flex items-center justify-center w-6 h-6 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors duration-150 cursor-pointer text-[0.9rem] leading-none"
+                className="flex items-center justify-center w-7 h-7 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors duration-150 cursor-pointer"
               >
-                ✕
+                <X size={13} strokeWidth={2} />
               </button>
             </div>
           </div>
 
-          <div className="flex items-center justify-between px-5 py-2.5 shrink-0 border-b border-slate-100">
-            <div className="flex items-center gap-1">
+          <div className="flex items-center justify-between px-4 py-2 shrink-0 border-b border-slate-100 bg-slate-50/60">
+            <Button.Group>
               {VIEW_MODES.map((m) => (
-                <button
+                <Button
                   key={m.value}
                   onClick={() => setViewMode(m.value)}
-                  className={twMerge(
-                    "px-2.5 py-1 rounded-md text-[0.7rem] font-bold transition-colors duration-150 cursor-pointer",
-                    viewMode === m.value
-                      ? "bg-slate-900 text-white"
-                      : "text-slate-500 hover:text-slate-800 hover:bg-slate-100",
-                  )}
+                  styles={{
+                    root: {
+                      height: "26px",
+                      fontSize: "0.7rem",
+                      fontWeight: 700,
+                      padding: "0 10px",
+                      backgroundColor:
+                        viewMode === m.value ? "#0f172a" : "#ffffff",
+                      color: viewMode === m.value ? "#ffffff" : "#64748b",
+                      border: "none",
+                      borderRadius: 0,
+                      transition: "background-color 150ms, color 150ms",
+                      "&:hover": {
+                        backgroundColor:
+                          viewMode === m.value ? "#1e293b" : "#f8fafc",
+                        color: viewMode === m.value ? "#ffffff" : "#0f172a",
+                      },
+                    },
+                  }}
                 >
                   {m.label}
-                </button>
+                </Button>
               ))}
-            </div>
+            </Button.Group>
 
             <CopyButton value={value}>
               {({ copied, copy }) => (
@@ -225,10 +248,10 @@ const ResourceYAML = (props: {
                   <AnimatePresence initial={false} mode="popLayout">
                     <motion.span
                       key={copied ? "copied" : "copy"}
-                      initial={{ y: 8, opacity: 0 }}
+                      initial={{ y: 6, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
-                      exit={{ y: -8, opacity: 0 }}
-                      transition={{ duration: 0.15 }}
+                      exit={{ y: -6, opacity: 0 }}
+                      transition={{ duration: 0.12 }}
                       className="flex items-center gap-1.5"
                     >
                       {copied ? (
@@ -248,30 +271,38 @@ const ResourceYAML = (props: {
           </div>
 
           <AnimatePresence>
-            {isChanged && !item.metadata?.isSystem && (
+            {isChanged && !isReadOnly && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.18 }}
+                transition={{ duration: 0.15 }}
                 className="overflow-hidden shrink-0"
               >
-                <div className="flex items-center justify-between px-5 py-2.5 bg-amber-50 border-b border-amber-200">
-                  <span className="text-[0.72rem] font-semibold text-amber-700">
-                    Unsaved changes detected
-                  </span>
+                <div className="flex items-center justify-between px-4 py-2 bg-amber-50 border-b border-amber-200">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                    <span className="text-[0.72rem] font-semibold text-amber-700">
+                      Unsaved changes
+                    </span>
+                  </div>
                   <button
                     onClick={() => mutationUpdate.mutate(cur)}
                     disabled={mutationUpdate.isPending}
-                    className="flex items-center gap-1.5 px-3 py-1 rounded-md text-[0.72rem] font-bold bg-amber-600 text-white hover:bg-amber-500 transition-colors duration-150 cursor-pointer disabled:opacity-60"
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[0.7rem] font-bold bg-amber-600 text-white hover:bg-amber-500 transition-colors duration-150 cursor-pointer disabled:opacity-60"
                   >
                     {mutationUpdate.isPending ? (
                       <>
-                        <Loader2 size={11} className="animate-spin" /> Saving…
+                        <Loader2
+                          size={11}
+                          className="animate-spin"
+                          strokeWidth={2.5}
+                        />{" "}
+                        Saving…
                       </>
                     ) : (
                       <>
-                        <RefreshCw size={11} /> Save changes
+                        <Save size={11} strokeWidth={2.5} /> Save
                       </>
                     )}
                   </button>
@@ -280,17 +311,27 @@ const ResourceYAML = (props: {
             )}
           </AnimatePresence>
 
-          <div className="flex-1 overflow-hidden p-4">
+          <div className="flex-1 overflow-hidden p-3">
             <Editor
               item={props.item}
               mode={props.mode === "json" ? "json" : "yaml"}
               onResourceChange={(n) => setCur(n)}
               value={value}
-              readOnly={props.readOnly || item.metadata?.isSystem}
+              readOnly={isReadOnly}
               colorScheme={colorScheme}
               schemaMode={activeSchemaMode}
             />
           </div>
+
+          {isReadOnly && (
+            <div className="shrink-0 px-4 py-2.5 border-t border-slate-100 bg-slate-50/60 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0" />
+              <span className="text-[0.68rem] font-semibold text-slate-400">
+                Read-only
+                {item.metadata?.isSystem ? " · System resource" : ""}
+              </span>
+            </div>
+          )}
         </div>
       </Drawer>
     </>

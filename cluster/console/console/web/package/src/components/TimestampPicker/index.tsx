@@ -84,7 +84,6 @@ const TimestampPicker = ({
       height: "30px",
       fontSize: "0.72rem",
       fontWeight: 700,
-      fontFamily: "Ubuntu, sans-serif",
       padding: "0 12px",
       flex: 1,
       backgroundColor: active ? "#0f172a" : "#f8fafc",
@@ -145,7 +144,6 @@ const TimestampPicker = ({
                 height: "32px",
                 fontSize: "0.78rem",
                 fontWeight: 600,
-                fontFamily: "Ubuntu, sans-serif",
                 backgroundColor: "#ffffff",
                 border: "1px solid #e2e8f0",
                 borderRadius: "6px",
@@ -220,7 +218,6 @@ const TimestampPicker = ({
                     input: {
                       fontSize: "0.78rem",
                       fontWeight: 600,
-                      fontFamily: "Ubuntu, sans-serif",
                       border: "1px solid #e2e8f0",
                       borderRadius: "6px",
                       color: "#1e293b",
@@ -229,7 +226,6 @@ const TimestampPicker = ({
                     option: {
                       fontSize: "0.78rem",
                       fontWeight: 600,
-                      fontFamily: "Ubuntu, sans-serif",
                     },
                   }}
                 />
@@ -246,18 +242,15 @@ const TimestampPicker = ({
                         calendarHeader: {
                           fontSize: "0.78rem",
                           fontWeight: 700,
-                          fontFamily: "Ubuntu, sans-serif",
                         },
                         weekday: {
                           fontSize: "0.68rem",
                           fontWeight: 700,
                           color: "#94a3b8",
-                          fontFamily: "Ubuntu, sans-serif",
                         },
                         day: {
                           fontSize: "0.75rem",
                           fontWeight: 600,
-                          fontFamily: "Ubuntu, sans-serif",
                           borderRadius: "6px",
                         },
                       }}
@@ -282,7 +275,6 @@ const TimestampPicker = ({
                         input: {
                           fontSize: "0.78rem",
                           fontWeight: 600,
-                          fontFamily: "Ubuntu, sans-serif",
                           border: "1px solid #e2e8f0",
                           borderRadius: "6px",
                           color: "#1e293b",
@@ -301,7 +293,6 @@ const TimestampPicker = ({
                           height: "32px",
                           fontSize: "0.75rem",
                           fontWeight: 700,
-                          fontFamily: "Ubuntu, sans-serif",
                           backgroundColor: "#0f172a",
                           borderRadius: "6px",
                           "&:hover": { backgroundColor: "#1e293b" },
