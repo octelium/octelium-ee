@@ -15,13 +15,7 @@ import { match } from "ts-pattern";
 const Editor = (props: {
   item: AccessLog | AuditLog | AuthenticationLog | ComponentLog;
 }) => {
-  let extensions = [
-    // EditorView.lineWrapping,
-    // EditorState.tabSize.of(2),
-    // EditorState.transactionFilter.of((tr) => (tr.newDoc.lines > 1 ? [] : tr)),
-
-    json(),
-  ];
+  let extensions = [json()];
 
   const [opened, { open, close }] = useDisclosure(false);
   const val = JSON.stringify(
@@ -45,12 +39,7 @@ const Editor = (props: {
 
   return (
     <>
-      <Button
-        size={"compact-xs"}
-        variant="outline"
-        onClick={open}
-        // className="border-none font-bold transition-all duration-500 hover:text-black"
-      >
+      <Button size={"compact-xs"} variant="outline" onClick={open}>
         JSON
       </Button>
 
