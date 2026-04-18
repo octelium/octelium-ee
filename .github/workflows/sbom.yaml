@@ -1,0 +1,38 @@
+name: Attach SBOM to Release
+
+on:
+  release:
+    types: [ published ]
+
+jobs:
+  upload-sbom:
+    name: Extract and Upload SBOM
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate and Download SBOM from GitHub
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Fetching SBOM from GitHub Dependency Graph API..."
+
+          gh api \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /repos/${{ github.repository }}/dependency-graph/sbom | jq -r '.sbom' > sbom.json
+            
+          echo "SBOM successfully extracted to sbom.json"
+
+      - name: Upload SBOM to GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Uploading sbom.json to release ${{ github.event.release.tag_name }}..."
+
+          gh release upload ${{ github.event.release.tag_name }} sbom.json --clobber
