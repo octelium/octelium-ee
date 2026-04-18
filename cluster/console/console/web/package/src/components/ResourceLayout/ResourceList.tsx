@@ -261,16 +261,8 @@ const ResourceListC = (props: {
           <Button
             size="sm"
             variant="filled"
-            color="dark"
             leftSection={<Plus size={14} />}
             onClick={() => navigate("create")}
-            styles={{
-              root: {
-                fontWeight: 700,
-                fontSize: "0.78rem",
-                borderRadius: "8px",
-              },
-            }}
           >
             Create {kindName}
           </Button>
@@ -341,6 +333,7 @@ const useListReq = () => {
 
   // @ts-ignore
   let req = getPBResourceListFromAPI(apiKind.api)![
+    // @ts-ignore
     `List${apiKind.kind}Options`
   ]["create"]({
     common: CommonListOptions.create({}),
