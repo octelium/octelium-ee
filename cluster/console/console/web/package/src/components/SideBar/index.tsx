@@ -2,9 +2,12 @@ import {
   BadgeCheck,
   BookKey,
   Boxes,
+  Building2,
   ChevronDown,
+  Cpu,
   Crown,
   DoorClosed,
+  Eye,
   Fingerprint,
   Folder,
   Globe,
@@ -95,18 +98,26 @@ export const IconAuthenticationLog = ShieldUser;
 export const IconAccessLog = ShieldEllipsis;
 
 const sections = [
-  { label: "Core", value: 0, prefix: "/core", items: itemsCore },
+  { label: "Core", value: 0, prefix: "/core", icon: Cpu, items: itemsCore },
   {
     label: "Enterprise",
     value: 1,
     prefix: "/enterprise",
+    icon: Building2,
     items: itemsEnterprise,
   },
-  { label: "Cluster Management", value: 2, prefix: "/clusterman", items: [] },
+  {
+    label: "Cluster Management",
+    value: 2,
+    prefix: "/clusterman",
+    icon: Settings2,
+    items: [],
+  },
   {
     label: "Visibility",
     value: 3,
     prefix: "/visibility",
+    icon: Eye,
     items: itemsVisibility,
   },
 ];
@@ -156,33 +167,42 @@ export default function Sidebar() {
   }, []);
 
   const activeSection = sections[barIdx];
+  const ActiveIcon = activeSection.icon;
   const items = activeSection?.items ?? [];
 
   return (
     <div className="min-h-full w-full flex flex-col">
-      <div ref={dropdownRef} className="relative mb-8">
+      <div ref={dropdownRef} className="relative mb-7">
         <button
           onClick={() => setDropdownOpen((v) => !v)}
           className={twMerge(
-            "w-full flex items-center justify-between gap-2",
-            "px-3 h-9 rounded-lg cursor-pointer",
+            "w-full flex items-center gap-2.5 px-3 h-10 rounded-lg cursor-pointer",
             "bg-white border border-slate-200",
             "shadow-[0_1px_3px_rgba(15,23,42,0.06)]",
             "transition-[border-color,box-shadow] duration-150",
-            "hover:border-slate-300",
+            "hover:border-slate-300 hover:shadow-[0_2px_6px_rgba(15,23,42,0.09)]",
             dropdownOpen &&
               "border-slate-300 shadow-[0_2px_8px_rgba(15,23,42,0.09)]",
           )}
         >
-          <span className="text-[0.78rem] font-bold text-slate-800 truncate">
+          <ActiveIcon
+            size={14}
+            className="text-slate-500 shrink-0"
+            strokeWidth={2.5}
+          />
+          <span className="text-[0.78rem] font-bold text-slate-800 flex-1 text-left truncate">
             {activeSection.label}
           </span>
           <motion.span
             animate={{ rotate: dropdownOpen ? 180 : 0 }}
-            transition={{ duration: 0.2, ease: "easeInOut" }}
+            transition={{ duration: 0.18, ease: "easeInOut" }}
             className="flex items-center shrink-0"
           >
-            <ChevronDown size={13} className="text-slate-400" />
+            <ChevronDown
+              size={13}
+              className="text-slate-400"
+              strokeWidth={2.5}
+            />
           </motion.span>
         </button>
 
@@ -190,37 +210,50 @@ export default function Sidebar() {
           {dropdownOpen && (
             <motion.div
               key="dropdown"
-              initial={{ opacity: 0, y: -6, scaleY: 0.95 }}
+              initial={{ opacity: 0, y: -4, scaleY: 0.96 }}
               animate={{ opacity: 1, y: 0, scaleY: 1 }}
-              exit={{ opacity: 0, y: -6, scaleY: 0.95 }}
-              transition={{ duration: 0.15, ease: "easeOut" }}
+              exit={{ opacity: 0, y: -4, scaleY: 0.96 }}
+              transition={{ duration: 0.14, ease: "easeOut" }}
               style={{ transformOrigin: "top" }}
-              className="absolute top-[calc(100%+4px)] left-0 right-0 z-50 bg-white border border-slate-200 rounded-lg shadow-[0_8px_24px_rgba(15,23,42,0.10)] overflow-hidden"
+              className="absolute top-[calc(100%+5px)] left-0 right-0 z-50 bg-white border border-slate-200 rounded-lg shadow-[0_8px_24px_rgba(15,23,42,0.12)] overflow-hidden"
             >
-              {sections.map((s) => (
-                <button
-                  key={s.value}
-                  onClick={() => {
-                    setBarIdx(s.value);
-                    setDropdownOpen(false);
-                    match(s.value)
-                      .with(0, () => navigate("/core"))
-                      .with(1, () => navigate("/enterprise/certificates"))
-                      .with(2, () => navigate("/clusterman"))
-                      .with(3, () => navigate("/visibility"))
-                      .otherwise(() => navigate("/core"));
-                  }}
-                  className={twMerge(
-                    "w-full flex items-center px-3 h-8 cursor-pointer text-left",
-                    "text-[0.78rem] font-bold transition-colors duration-100",
-                    s.value === barIdx
-                      ? "bg-slate-900 text-white"
-                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
-                  )}
-                >
-                  {s.label}
-                </button>
-              ))}
+              <div className="p-1">
+                {sections.map((s) => {
+                  const Icon = s.icon;
+                  const isActive = s.value === barIdx;
+                  return (
+                    <button
+                      key={s.value}
+                      onClick={() => {
+                        setBarIdx(s.value);
+                        setDropdownOpen(false);
+                        match(s.value)
+                          .with(0, () => navigate("/core"))
+                          .with(1, () => navigate("/enterprise/certificates"))
+                          .with(2, () => navigate("/clusterman"))
+                          .with(3, () => navigate("/visibility"))
+                          .otherwise(() => navigate("/core"));
+                      }}
+                      className={twMerge(
+                        "w-full flex items-center gap-2.5 px-3 h-9 rounded-md cursor-pointer",
+                        "text-[0.78rem] font-bold transition-colors duration-100",
+                        isActive
+                          ? "bg-slate-900 text-white"
+                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+                      )}
+                    >
+                      <Icon
+                        size={13}
+                        strokeWidth={2.5}
+                        className={
+                          isActive ? "text-slate-300" : "text-slate-400"
+                        }
+                      />
+                      {s.label}
+                    </button>
+                  );
+                })}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -246,7 +279,11 @@ export default function Sidebar() {
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/70",
               )}
             >
-              <item.icon size={15} className="shrink-0" />
+              <item.icon
+                size={15}
+                className="shrink-0"
+                strokeWidth={isActive ? 2.5 : 2}
+              />
               <span>{item.title}</span>
             </Link>
           );
