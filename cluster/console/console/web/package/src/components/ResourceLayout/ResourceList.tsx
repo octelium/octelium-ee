@@ -137,19 +137,10 @@ const Item = (props: { item: Resource; info: ResourceComponentInfo }) => {
               <Button
                 size="compact-xs"
                 variant="outline"
-                color="gray"
                 component={Link}
                 to={`${getResourcePath(item)}/edit`}
                 leftSection={<Pencil size={11} />}
                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                styles={{
-                  root: {
-                    fontWeight: 600,
-                    fontSize: "0.72rem",
-                    color: "#475569",
-                    borderColor: "#cbd5e1",
-                  },
-                }}
               >
                 Edit
               </Button>
@@ -355,6 +346,7 @@ const useListReq = () => {
 
     // @ts-ignore
     const req2 = getClientResourceListP(apiKind.api)![
+      // @ts-ignore
       `List${apiKind.kind}Options`
     ]["fromJsonString"](JSON.stringify(parsedQry));
     // @ts-ignore
