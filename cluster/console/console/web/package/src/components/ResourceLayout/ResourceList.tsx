@@ -250,7 +250,6 @@ const ResourceListC = (props: {
 
         {!props.info.unCreatable && props.itemsList.items.length > 0 && (
           <Button
-            size="sm"
             variant="filled"
             leftSection={<Plus size={14} />}
             onClick={() => navigate("create")}
@@ -273,18 +272,9 @@ const ResourceListC = (props: {
           </div>
           {!props.info.unCreatable && (
             <Button
-              size="sm"
               variant="filled"
-              color="dark"
               leftSection={<Plus size={14} />}
               onClick={() => navigate("create")}
-              styles={{
-                root: {
-                  fontWeight: 700,
-                  fontSize: "0.78rem",
-                  borderRadius: "8px",
-                },
-              }}
             >
               Create {kindName}
             </Button>

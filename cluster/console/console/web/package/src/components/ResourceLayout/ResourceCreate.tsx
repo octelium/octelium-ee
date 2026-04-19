@@ -11,14 +11,13 @@ import {
   resourceFromYAML,
   resourceToYAML,
 } from "@/utils/pb";
-import { Tabs } from "@mantine/core";
+import { Button, Tabs } from "@mantine/core";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { FileCode, Loader2, Plus, Settings, X } from "lucide-react";
+import { FileCode, Plus, Settings, X } from "lucide-react";
 import * as React from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { twMerge } from "tailwind-merge";
 import ContainerGen from "../ContainerGen";
 import MetadataEdit from "../MetadataEdit";
 import ResourceEditor from "../ResourceEditor";
@@ -216,43 +215,31 @@ const ResourceCreatePage = (props: {
       <div className="flex items-center justify-between pt-4 border-t border-slate-200">
         {mutation.isError && (
           <span className="text-[0.72rem] font-semibold text-red-600">
-            Creation failed
+            Creation failed — check the form and try again.
           </span>
         )}
         <div className="flex-1" />
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => navigate(-1)}
+          <Button
+            variant="default"
+            leftSection={<X size={13} strokeWidth={2.5} />}
             disabled={mutation.isPending}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[0.78rem] font-bold text-slate-600 border border-slate-200 bg-white hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 transition-colors duration-500 cursor-pointer disabled:opacity-50"
+            onClick={() => navigate(-1)}
           >
             Cancel
-          </button>
+          </Button>
 
-          <button
-            onClick={() => mutation.mutate()}
+          <Button
+            variant="filled"
+            color="dark"
+            leftSection={<Plus size={13} strokeWidth={2.5} />}
             disabled={mutation.isPending || !canSubmit}
-            className={twMerge(
-              "flex items-center gap-1.5 px-4 py-2 rounded-lg text-[0.78rem] font-bold",
-              "bg-slate-900 text-white border border-slate-900",
-              "hover:bg-slate-800 transition-colors duration-500",
-              "disabled:opacity-50 disabled:cursor-not-allowed font-extrabold",
-              "shadow-[0_2px_8px_rgba(15,23,42,0.18)]",
-            )}
+            loading={mutation.isPending}
+            onClick={() => mutation.mutate()}
           >
-            {mutation.isPending ? (
-              <>
-                <Loader2 size={13} className="animate-spin" strokeWidth={2.5} />
-                Creating…
-              </>
-            ) : (
-              <>
-                <Plus size={13} strokeWidth={2.5} />
-                Create {apiKind.kind}
-              </>
-            )}
-          </button>
+            {mutation.isPending ? "Creating…" : `Create ${apiKind.kind}`}
+          </Button>
         </div>
       </div>
     </div>

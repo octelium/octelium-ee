@@ -11,14 +11,13 @@ import {
   resourceFromYAML,
   resourceToYAML,
 } from "@/utils/pb";
-import { Tabs } from "@mantine/core";
+import { Button, Tabs } from "@mantine/core";
 import { useMutation } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { FileCode, Loader2, Save, Settings, X } from "lucide-react";
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { twMerge } from "tailwind-merge";
 import ContainerGen from "../ContainerGen";
 import MetadataEdit from "../MetadataEdit";
 import ResourceEditor from "../ResourceEditor";
@@ -149,18 +148,22 @@ export const ResourceEdit = (props: {
               </ContainerGen>
             )}
 
-            {props.specComponent({
-              item: data,
-              onUpdate: (item) => {
-                const next = cloneResource(req);
-                next.spec = item.spec;
-                if (item.kind.endsWith("Secret")) {
-                  // @ts-ignore
-                  next["data"] = item["data"];
-                }
-                setReq(next);
-              },
-            })}
+            {props.specComponent && (
+              <ContainerGen title="Spec">
+                {props.specComponent({
+                  item: data,
+                  onUpdate: (item) => {
+                    const next = cloneResource(req);
+                    next.spec = item.spec;
+                    if (item.kind.endsWith("Secret")) {
+                      // @ts-ignore
+                      next["data"] = item["data"];
+                    }
+                    setReq(next);
+                  },
+                })}
+              </ContainerGen>
+            )}
           </div>
         </Tabs.Panel>
 
@@ -201,44 +204,37 @@ export const ResourceEdit = (props: {
       <div className="flex items-center justify-between pt-4 border-t border-slate-200 mt-2">
         {mutationUpdate.isError && (
           <span className="text-[0.72rem] font-semibold text-red-600">
-            Update failed
+            Update failed — check the form and try again.
           </span>
         )}
         <div className="flex-1" />
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => navigate(-1)}
+          <Button
+            variant="default"
+            leftSection={<X size={13} strokeWidth={2.5} />}
             disabled={mutationUpdate.isPending}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[0.78rem] font-bold text-slate-600 border border-slate-200 bg-white hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 transition-colors duration-150 cursor-pointer disabled:opacity-50"
+            onClick={() => navigate(-1)}
           >
-            <X size={13} strokeWidth={2.5} />
             Cancel
-          </button>
+          </Button>
 
-          <button
-            onClick={() => mutationUpdate.mutate(req)}
-            disabled={mutationUpdate.isPending || !canSubmit}
-            className={twMerge(
-              "flex items-center gap-1.5 px-4 py-2 rounded-lg text-[0.78rem] font-bold",
-              "bg-slate-900 text-white border border-slate-900",
-              "hover:bg-slate-800 transition-colors duration-150",
-              "disabled:opacity-50 disabled:cursor-not-allowed",
-              "shadow-[0_2px_8px_rgba(15,23,42,0.18)]",
-            )}
-          >
-            {mutationUpdate.isPending ? (
-              <>
+          <Button
+            variant="filled"
+            color="dark"
+            leftSection={
+              mutationUpdate.isPending ? (
                 <Loader2 size={13} className="animate-spin" strokeWidth={2.5} />
-                Saving…
-              </>
-            ) : (
-              <>
+              ) : (
                 <Save size={13} strokeWidth={2.5} />
-                Save changes
-              </>
-            )}
-          </button>
+              )
+            }
+            disabled={mutationUpdate.isPending || !canSubmit}
+            loading={mutationUpdate.isPending}
+            onClick={() => mutationUpdate.mutate(req)}
+          >
+            {mutationUpdate.isPending ? "Saving…" : "Save changes"}
+          </Button>
         </div>
       </div>
     </div>
