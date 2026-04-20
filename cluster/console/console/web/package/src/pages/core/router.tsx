@@ -78,7 +78,10 @@ const getResourceChildrenRouter = (arg: ResourceComponentInfo): RouteObject => {
     {
       path: "",
       element: arg.Item.Main ? (
-        <ResourceItemMainPage mainComponent={arg.Item.Main} />
+        <ResourceItemMainPage
+          mainComponent={arg.Item.Main}
+          mainItemsGetter={arg.infoItemsGetter}
+        />
       ) : null,
     },
     {
@@ -103,7 +106,7 @@ const getResourceChildrenRouter = (arg: ResourceComponentInfo): RouteObject => {
         "Namespace",
         "Region",
         "Policy",
-        () => true
+        () => true,
       )
       .otherwise(() => false)
   ) {

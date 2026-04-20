@@ -1,12 +1,15 @@
 import { Navigate } from "react-router-dom";
 import PageWrap from "../PageWrap";
 
+import { ResourceMainInfo } from "@/pages/utils/types";
 import { Resource } from "@/utils/pb";
+import InfoItem from "../InfoItem";
 import ResourceInfo from "./ResourceInfo";
 import { useContextResource } from "./utils";
 
 const ResourceItemMainPage = (props: {
   mainComponent?: (props: { item: Resource }) => React.ReactNode;
+  mainItemsGetter?: (props: { item: Resource }) => ResourceMainInfo;
 }) => {
   const ctx = useContextResource();
 
@@ -26,7 +29,15 @@ const ResourceItemMainPage = (props: {
             <ResourceInfo resource={ctx.data} />
           </div>
 
-          {props.mainComponent && props.mainComponent({ item: ctx.data })}
+          {props.mainItemsGetter
+            ? props.mainItemsGetter({ item: ctx.data }).items?.map((x) => {
+                return (
+                  <div>
+                    <InfoItem title={x.label}>{x.value}</InfoItem>
+                  </div>
+                );
+              })
+            : props.mainComponent && props.mainComponent({ item: ctx.data })}
         </div>
       )}
     </PageWrap>

@@ -7,6 +7,7 @@ import { match } from "ts-pattern";
 import AccessLogViewer from "@/components/AccessLogViewer";
 import Label from "@/components/Label";
 import EditItemWrap from "@/components/ResourceLayout/EditItemWrap";
+import { ResourceMainInfo } from "@/pages/utils/types";
 import { getResourceRef } from "@/utils/pb";
 import { FaAndroid, FaApple, FaLinux, FaWindows } from "react-icons/fa";
 import { twMerge } from "tailwind-merge";
@@ -134,4 +135,146 @@ export default (props: { item: CoreP.Device }) => {
       </div>
     </div>
   );
+};
+
+export const MainInfo = (props: { item: CoreP.Device }): ResourceMainInfo => {
+  const { item } = props;
+  const mutationUpdate = useUpdateResource();
+
+  return {
+    items: [
+      {
+        label: "OS",
+        value: (
+          <Label>
+            <span className="flex items-center gap-1">
+              {getOSIcon(item)}
+              <span>{getOSStr(item)}</span>
+            </span>
+          </Label>
+        ),
+      },
+
+      {
+        label: "State",
+        value: (
+          <EditItemWrap
+            label="state"
+            showComponent={
+              <span
+                className={twMerge(
+                  "text-sm font-semibold",
+                  match(item.spec!.state)
+                    .with(
+                      CoreP.Device_Spec_State.ACTIVE,
+                      () => "text-emerald-600",
+                    )
+                    .with(
+                      CoreP.Device_Spec_State.REJECTED,
+                      () => "text-red-500",
+                    )
+                    .with(
+                      CoreP.Device_Spec_State.PENDING,
+                      () => "text-amber-500",
+                    )
+                    .otherwise(() => "text-slate-600"),
+                )}
+              >
+                {match(item.spec!.state)
+                  .with(CoreP.Device_Spec_State.ACTIVE, () => "Active")
+                  .with(CoreP.Device_Spec_State.REJECTED, () => "Rejected")
+                  .with(CoreP.Device_Spec_State.PENDING, () => "Pending")
+                  .otherwise(() => "")}
+              </span>
+            }
+            editComponent={
+              <Select
+                size="sm"
+                data={[
+                  {
+                    label: "Active",
+                    value:
+                      CoreP.Device_Spec_State[CoreP.Device_Spec_State.ACTIVE],
+                  },
+                  {
+                    label: "Pending",
+                    value:
+                      CoreP.Device_Spec_State[CoreP.Device_Spec_State.PENDING],
+                  },
+                  {
+                    label: "Rejected",
+                    value:
+                      CoreP.Device_Spec_State[CoreP.Device_Spec_State.REJECTED],
+                  },
+                ]}
+                value={CoreP.Device_Spec_State[item.spec!.state]}
+                onChange={(v) => {
+                  if (!v) return;
+                  item.spec!.state = CoreP.Device_Spec_State[v as "ACTIVE"];
+                  mutationUpdate.mutate(item);
+                }}
+              />
+            }
+          />
+        ),
+      },
+
+      ...(item.status!.hostname
+        ? [
+            {
+              label: "Hostname",
+              value: (
+                <span className="text-sm font-mono text-slate-700">
+                  {item.status!.hostname}
+                </span>
+              ),
+            },
+          ]
+        : []),
+
+      ...(item.status!.id
+        ? [
+            {
+              label: "Device ID",
+              value: (
+                <span className="text-sm font-mono text-slate-700">
+                  {item.status!.id}
+                </span>
+              ),
+            },
+          ]
+        : []),
+
+      ...(item.status!.serialNumber
+        ? [
+            {
+              label: "Serial number",
+              value: (
+                <span className="text-sm font-mono text-slate-700">
+                  {item.status!.serialNumber}
+                </span>
+              ),
+            },
+          ]
+        : []),
+
+      ...(item.status!.macAddresses?.length > 0
+        ? [
+            {
+              label: "MAC addresses",
+              value: (
+                <div className="flex flex-wrap gap-1">
+                  {item.status!.macAddresses.map((x) => (
+                    <Label key={x}>
+                      <span className="font-mono">{x}</span>
+                    </Label>
+                  ))}
+                </div>
+              ),
+              span: "full" as const,
+            },
+          ]
+        : []),
+    ],
+  };
 };

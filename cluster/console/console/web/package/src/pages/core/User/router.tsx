@@ -2,7 +2,7 @@ import { ResourceComponentInfo } from "@/pages/utils/types";
 
 import Edit from "./Edit";
 import { ExtraComponent, LabelComponent, ListFilter, Summary } from "./List";
-import Main, { ResourceItemInfo } from "./Main";
+import Main, { MainInfo, ResourceItemInfo } from "./Main";
 
 const resourceComponentInfo: ResourceComponentInfo = {
   API: "core",
@@ -25,6 +25,9 @@ const resourceComponentInfo: ResourceComponentInfo = {
     // @ts-ignore
     itemInfo: ResourceItemInfo,
   },
+
+  // @ts-ignore
+  infoItemsGetter: MainInfo,
 };
 
 export default resourceComponentInfo;

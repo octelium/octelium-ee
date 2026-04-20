@@ -2,7 +2,9 @@ import * as CoreC from "@/apis/corev1/corev1";
 import AccessLogViewer from "@/components/AccessLogViewer";
 import InfoItem from "@/components/InfoItem";
 import Label from "@/components/Label";
+import EditItemWrap from "@/components/ResourceLayout/EditItemWrap";
 import { useUpdateResource } from "@/pages/utils/resource";
+import { ResourceMainInfo } from "@/pages/utils/types";
 import { getResourceRef } from "@/utils/pb";
 import { Switch } from "@mantine/core";
 import { twMerge } from "tailwind-merge";
@@ -83,4 +85,100 @@ export default (props: { item: CoreC.User }) => {
       </div>
     </div>
   );
+};
+
+export const MainInfo = (props: { item: CoreC.User }): ResourceMainInfo => {
+  const { item } = props;
+  const mutationUpdate = useUpdateResource();
+
+  return {
+    items: [
+      {
+        label: "Type",
+        value: (
+          <Label>
+            {match(item.spec!.type)
+              .with(CoreC.User_Spec_Type.HUMAN, () => "Human")
+              .with(CoreC.User_Spec_Type.WORKLOAD, () => "Workload")
+              .otherwise(() => "")}
+          </Label>
+        ),
+      },
+
+      ...(item.spec?.email
+        ? [
+            {
+              label: "Email",
+              value: (
+                <span className="font-mono text-[0.75rem]">
+                  {item.spec.email}
+                </span>
+              ),
+            },
+          ]
+        : []),
+
+      ...(item.spec!.groups.length > 0
+        ? [
+            {
+              label: "Groups",
+              value: (
+                <div className="flex flex-wrap gap-1">
+                  {item.spec!.groups.map((x) => (
+                    <Label key={x}>{x}</Label>
+                  ))}
+                </div>
+              ),
+              span: "full" as const,
+            },
+          ]
+        : []),
+
+      ...(item.spec!.authorization &&
+      item.spec!.authorization?.policies.length > 0
+        ? [
+            {
+              label: "Policies",
+              value: (
+                <div className="flex flex-wrap gap-1">
+                  {item.spec!.authorization!.policies.map((x) => (
+                    <Label key={x}>{x}</Label>
+                  ))}
+                </div>
+              ),
+              span: "full" as const,
+            },
+          ]
+        : []),
+
+      {
+        label: "Active",
+        value: (
+          <EditItemWrap
+            label="active"
+            showComponent={
+              <span
+                className={twMerge(
+                  "text-[0.75rem] font-semibold",
+                  item.spec!.isDisabled ? "text-red-500" : "text-emerald-600",
+                )}
+              >
+                {item.spec!.isDisabled ? "Disabled" : "Active"}
+              </span>
+            }
+            editComponent={
+              <Switch
+                size="sm"
+                checked={!item.spec!.isDisabled}
+                onChange={(v) => {
+                  item.spec!.isDisabled = !v.currentTarget.checked;
+                  mutationUpdate.mutate(item);
+                }}
+              />
+            }
+          />
+        ),
+      },
+    ],
+  };
 };

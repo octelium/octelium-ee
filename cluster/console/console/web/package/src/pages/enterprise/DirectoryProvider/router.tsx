@@ -3,7 +3,7 @@ import { ResourceComponentInfo } from "@/pages/utils/types";
 import { DirectoryProvider } from "@/apis/enterprisev1/enterprisev1";
 import Edit from "./Edit";
 import { ExtraComponent, LabelComponent } from "./List";
-import Main from "./Main";
+import Main, { MainInfo } from "./Main";
 
 const resourceComponentInfo: ResourceComponentInfo = {
   API: "enterprise",
@@ -35,6 +35,9 @@ const resourceComponentInfo: ResourceComponentInfo = {
       });
     },
   },
+
+  // @ts-ignore
+  infoItemsGetter: MainInfo,
 };
 
 export default resourceComponentInfo;

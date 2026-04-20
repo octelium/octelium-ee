@@ -6,7 +6,7 @@ import {
 } from "@/apis/corev1/corev1";
 import Edit from "./Edit";
 import { ExtraComponent, LabelComponent, Summary } from "./List";
-import Main, { ItemInfo } from "./Main";
+import Main, { ItemInfo, MainInfo } from "./Main";
 
 const resourceComponentInfo: ResourceComponentInfo = {
   API: "core",
@@ -49,6 +49,9 @@ const resourceComponentInfo: ResourceComponentInfo = {
       });
     },
   },
+
+  // @ts-ignore
+  infoItemsGetter: MainInfo,
 };
 
 export default resourceComponentInfo;

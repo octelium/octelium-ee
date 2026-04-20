@@ -15,8 +15,9 @@ import InfoItem from "@/components/InfoItem";
 import EditItemWrap from "@/components/ResourceLayout/EditItemWrap";
 import TimeAgo from "@/components/TimeAgo";
 import { useUpdateResource } from "@/pages/utils/resource";
+import { ResourceMainInfo } from "@/pages/utils/types";
 import { useDisclosure } from "@mantine/hooks";
-import { RefreshCcw } from "lucide-react";
+import { RefreshCcw, RefreshCw } from "lucide-react";
 import * as React from "react";
 import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
@@ -24,7 +25,7 @@ import { match } from "ts-pattern";
 const GenerateC = (props: { item: CoreC.Credential }) => {
   const { item } = props;
   let [tkn, setTkn] = React.useState<CoreC.CredentialToken | undefined>(
-    undefined
+    undefined,
   );
 
   let [enabled, setEnabled] = React.useState(false);
@@ -34,7 +35,7 @@ const GenerateC = (props: { item: CoreC.Credential }) => {
       const { response } = await getClientCore().generateCredentialToken(
         CoreC.GenerateCredentialTokenRequest.create({
           credentialRef: getResourceRef(item),
-        })
+        }),
       );
       return response;
     },
@@ -133,11 +134,11 @@ export const ItemInfo = (props: { item: CoreC.Credential }) => {
               {match(item.spec!.type)
                 .with(
                   CoreP.Credential_Spec_Type.AUTH_TOKEN,
-                  () => "Authentication Token"
+                  () => "Authentication Token",
                 )
                 .with(
                   CoreP.Credential_Spec_Type.OAUTH2,
-                  () => "OAuth2 Client Credential"
+                  () => "OAuth2 Client Credential",
                 )
                 .otherwise(() => "")}
             </span>
@@ -214,7 +215,7 @@ export const ItemInfo = (props: { item: CoreC.Credential }) => {
         <div className="w-full flex items-center">
           <span
             className={twMerge(
-              item.spec!.isDisabled ? `text-red-500` : undefined
+              item.spec!.isDisabled ? `text-red-500` : undefined,
             )}
           >
             {item.spec!.isDisabled ? `No` : `Yes`}
@@ -250,4 +251,195 @@ export default (props: { item: CoreC.Credential }) => {
       <ItemInfo item={item} />
     </div>
   );
+};
+
+export const MainInfo = (props: {
+  item: CoreC.Credential;
+}): ResourceMainInfo => {
+  const { item } = props;
+  const mutationUpdate = useUpdateResource();
+  const [opened, { open, close }] = useDisclosure(false);
+
+  return {
+    items: [
+      {
+        label: "Type",
+        value: (
+          <EditItemWrap
+            label="type"
+            showComponent={
+              <span className="text-[0.75rem] font-semibold text-slate-700">
+                {match(item.spec!.type)
+                  .with(
+                    CoreP.Credential_Spec_Type.AUTH_TOKEN,
+                    () => "Authentication Token",
+                  )
+                  .with(
+                    CoreP.Credential_Spec_Type.OAUTH2,
+                    () => "OAuth2 Client Credential",
+                  )
+                  .with(
+                    CoreP.Credential_Spec_Type.ACCESS_TOKEN,
+                    () => "Access Token",
+                  )
+                  .otherwise(() => "")}
+              </span>
+            }
+            editComponent={
+              <Select
+                size="xs"
+                data={[
+                  {
+                    label: "Authentication Token",
+                    value:
+                      CoreP.Credential_Spec_Type[
+                        CoreP.Credential_Spec_Type.AUTH_TOKEN
+                      ],
+                  },
+                  {
+                    label: "OAuth2 Client Credential",
+                    value:
+                      CoreP.Credential_Spec_Type[
+                        CoreP.Credential_Spec_Type.OAUTH2
+                      ],
+                  },
+                  {
+                    label: "Access Token",
+                    value:
+                      CoreP.Credential_Spec_Type[
+                        CoreP.Credential_Spec_Type.ACCESS_TOKEN
+                      ],
+                  },
+                ]}
+                defaultValue={CoreP.Credential_Spec_Type[item.spec!.type]}
+                onChange={(v) => {
+                  if (!v) return;
+                  item.spec!.type = CoreP.Credential_Spec_Type[v as "OAUTH2"];
+                  mutationUpdate.mutate(item);
+                }}
+              />
+            }
+          />
+        ),
+      },
+
+      ...(item.spec!.expiresAt
+        ? [
+            {
+              label: "Expires",
+              value: (
+                <span className="text-[0.75rem] font-semibold text-slate-600">
+                  <TimeAgo rfc3339={item.spec!.expiresAt} />
+                </span>
+              ),
+            },
+          ]
+        : []),
+
+      ...(item.status!.lastRotationAt
+        ? [
+            {
+              label: "Last rotation",
+              value: (
+                <span className="text-[0.75rem] font-semibold text-slate-600">
+                  <TimeAgo rfc3339={item.status!.lastRotationAt} />
+                </span>
+              ),
+            },
+          ]
+        : []),
+
+      ...(item.status!.totalRotations > 0
+        ? [
+            {
+              label: "Total rotations",
+              value: (
+                <span className="text-[0.75rem] font-semibold text-slate-700 tabular-nums">
+                  {item.status!.totalRotations}
+                </span>
+              ),
+            },
+          ]
+        : []),
+
+      ...(item.status!.totalAuthentications > 0
+        ? [
+            {
+              label: "Total authentications",
+              value: (
+                <span className="text-[0.75rem] font-semibold text-slate-700 tabular-nums">
+                  {item.status!.totalAuthentications}
+                  {item.spec!.maxAuthentications > 0 && (
+                    <span className="text-slate-400 font-medium ml-1">
+                      / {item.spec!.maxAuthentications} max
+                    </span>
+                  )}
+                </span>
+              ),
+            },
+          ]
+        : []),
+
+      ...(item.spec!.maxAuthentications > 0
+        ? [
+            {
+              label: "Max authentications",
+              value: (
+                <span className="text-[0.75rem] font-semibold text-slate-700 tabular-nums">
+                  {item.spec!.maxAuthentications}
+                </span>
+              ),
+            },
+          ]
+        : []),
+
+      {
+        label: "Active",
+        value: (
+          <EditItemWrap
+            label="active"
+            showComponent={
+              <span
+                className={twMerge(
+                  "text-[0.75rem] font-semibold",
+                  item.spec!.isDisabled ? "text-red-500" : "text-emerald-600",
+                )}
+              >
+                {item.spec!.isDisabled ? "Disabled" : "Active"}
+              </span>
+            }
+            editComponent={
+              <Switch
+                size="sm"
+                checked={!item.spec!.isDisabled}
+                onChange={(v) => {
+                  item.spec!.isDisabled = !v.currentTarget.checked;
+                  mutationUpdate.mutate(item);
+                }}
+              />
+            }
+          />
+        ),
+      },
+
+      {
+        label: "Token",
+        value: (
+          <>
+            <button
+              onClick={open}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[0.72rem] font-bold text-slate-600 border border-slate-200 bg-white hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 transition-colors duration-150 cursor-pointer shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
+            >
+              <RefreshCw size={11} strokeWidth={2.5} />
+              Generate / Rotate
+            </button>
+            <Modal opened={opened} onClose={close} size="xl" centered>
+              <GenerateC item={item} />
+            </Modal>
+          </>
+        ),
+        span: "full" as const,
+      },
+    ],
+  };
 };

@@ -5,6 +5,7 @@ import {
 } from "@/apis/enterprisev1/enterprisev1";
 import InfoItem from "@/components/InfoItem";
 import TimeAgo from "@/components/TimeAgo";
+import { ResourceMainInfo } from "@/pages/utils/types";
 import { onError } from "@/utils";
 import { getClientEnterprise } from "@/utils/client";
 import {
@@ -15,8 +16,10 @@ import {
 import { Button, Modal } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useMutation } from "@tanstack/react-query";
-import { RefreshCcw } from "lucide-react";
+import { Loader2, RefreshCcw } from "lucide-react";
 import ClipLoader from "react-spinners/ClipLoader";
+import { twMerge } from "tailwind-merge";
+import { match } from "ts-pattern";
 import { getIssuanceState } from "./List";
 
 export const IssueC = (props: { item: Certificate }) => {
@@ -121,4 +124,103 @@ export default (props: { item: Certificate }) => {
       </div>
     </div>
   );
+};
+
+export const MainInfo = (props: { item: Certificate }): ResourceMainInfo => {
+  const { item } = props;
+  const issuance = item.status?.issuance;
+  const lastSuccess = item.status?.lastIssuances
+    .filter((x) => x.state === Certificate_Status_Issuance_State.SUCCESS)
+    .at(0);
+
+  const isInProgress =
+    issuance?.state === Certificate_Status_Issuance_State.ISSUING ||
+    issuance?.state === Certificate_Status_Issuance_State.ISSUANCE_REQUESTED;
+
+  const isSettled =
+    issuance?.state === Certificate_Status_Issuance_State.FAILED ||
+    issuance?.state === Certificate_Status_Issuance_State.SUCCESS;
+
+  return {
+    items: [
+      ...(issuance
+        ? [
+            {
+              label: "Issuance state",
+              value: (
+                <span className="flex items-center gap-1.5">
+                  {isInProgress && (
+                    <Loader2
+                      size={13}
+                      strokeWidth={2.5}
+                      className="animate-spin text-blue-500 shrink-0"
+                    />
+                  )}
+                  <span
+                    className={twMerge(
+                      "text-sm font-semibold",
+                      match(issuance.state)
+                        .with(
+                          Certificate_Status_Issuance_State.SUCCESS,
+                          () => "text-emerald-600",
+                        )
+                        .with(
+                          Certificate_Status_Issuance_State.FAILED,
+                          () => "text-red-500",
+                        )
+                        .with(
+                          Certificate_Status_Issuance_State.ISSUING,
+                          () => "text-blue-500",
+                        )
+                        .with(
+                          Certificate_Status_Issuance_State.ISSUANCE_REQUESTED,
+                          () => "text-amber-500",
+                        )
+                        .otherwise(() => "text-slate-600"),
+                    )}
+                  >
+                    {getIssuanceState(issuance.state)}
+                  </span>
+                </span>
+              ),
+            },
+          ]
+        : []),
+
+      ...(lastSuccess?.createdAt
+        ? [
+            {
+              label: "Last issuance",
+              value: (
+                <span className="text-sm font-semibold text-slate-700">
+                  <TimeAgo rfc3339={lastSuccess.createdAt} />
+                </span>
+              ),
+            },
+          ]
+        : []),
+
+      ...(lastSuccess?.expiresAt
+        ? [
+            {
+              label: "Expiration",
+              value: (
+                <span className="text-sm font-semibold text-slate-700">
+                  <TimeAgo rfc3339={lastSuccess.expiresAt} />
+                </span>
+              ),
+            },
+          ]
+        : []),
+
+      ...(isSettled && item.spec?.mode === Certificate_Spec_Mode.MANAGED
+        ? [
+            {
+              label: "Actions",
+              value: <IssueC item={item} />,
+            },
+          ]
+        : []),
+    ],
+  };
 };

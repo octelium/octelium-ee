@@ -2,7 +2,9 @@ import * as EnterpriseC from "@/apis/enterprisev1/enterprisev1";
 import CopyText from "@/components/CopyText";
 import InfoItem from "@/components/InfoItem";
 import Label from "@/components/Label";
+import EditItemWrap from "@/components/ResourceLayout/EditItemWrap";
 import { useUpdateResource } from "@/pages/utils/resource";
+import { ResourceMainInfo } from "@/pages/utils/types";
 import { getDomain, onError } from "@/utils";
 import { getClientEnterprise } from "@/utils/client";
 import {
@@ -13,7 +15,7 @@ import {
 import { Button, Modal, Switch } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useMutation } from "@tanstack/react-query";
-import { RefreshCcw } from "lucide-react";
+import { RefreshCcw, RefreshCw } from "lucide-react";
 import * as React from "react";
 import { twMerge } from "tailwind-merge";
 import { getType } from "./List";
@@ -149,4 +151,92 @@ export default (props: { item: EnterpriseC.DirectoryProvider }) => {
       <ItemInfo item={item} />
     </>
   );
+};
+
+export const MainInfo = (props: {
+  item: EnterpriseC.DirectoryProvider;
+}): ResourceMainInfo => {
+  const { item } = props;
+  const mutationUpdate = useUpdateResource();
+  const [opened, { open, close }] = useDisclosure(false);
+
+  return {
+    items: [
+      {
+        label: "Type",
+        value: <Label>{getType(item)}</Label>,
+      },
+
+      {
+        label: "Active",
+        value: (
+          <EditItemWrap
+            label="active"
+            showComponent={
+              <span
+                className={twMerge(
+                  "text-sm font-semibold",
+                  item.spec!.isDisabled ? "text-red-500" : "text-emerald-600",
+                )}
+              >
+                {item.spec!.isDisabled ? "Disabled" : "Active"}
+              </span>
+            }
+            editComponent={
+              <Switch
+                size="sm"
+                checked={!item.spec!.isDisabled}
+                onChange={(v) => {
+                  item.spec!.isDisabled = !v.currentTarget.checked;
+                  mutationUpdate.mutate(item);
+                }}
+              />
+            }
+          />
+        ),
+      },
+
+      ...(item.status?.id
+        ? [
+            {
+              label: "Short ID",
+              value: <CopyText value={item.status.id} />,
+            },
+          ]
+        : []),
+
+      ...(item.spec?.type.oneofKind === "scim" && item.status?.id
+        ? [
+            {
+              label: "SCIM endpoint",
+              value: (
+                <CopyText
+                  value={`https://dirsync.octelium.${getDomain()}/scim/${item.status.id}`}
+                />
+              ),
+              span: "full" as const,
+            },
+          ]
+        : []),
+
+      {
+        label: "Access token",
+        value: (
+          <>
+            <Button
+              variant="default"
+              size="sm"
+              leftSection={<RefreshCw size={13} strokeWidth={2.5} />}
+              onClick={open}
+            >
+              Generate access token
+            </Button>
+            <Modal opened={opened} onClose={close} size="xl" centered>
+              <GenerateC item={item} />
+            </Modal>
+          </>
+        ),
+      },
+    ],
+  };
 };
