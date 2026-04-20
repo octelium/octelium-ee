@@ -361,7 +361,7 @@ const Config = (props: {
                                         />
                                         <TextInput
                                           label="Server"
-                                          description="Set the authentication username"
+                                          description="Set the registry server"
                                           placeholder="ghcr.io"
                                           value={
                                             usernamePassword.usernamePassword
