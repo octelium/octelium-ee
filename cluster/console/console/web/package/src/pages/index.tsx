@@ -8,6 +8,10 @@ import { useDisclosure, useHeadroom } from "@mantine/hooks";
 import { ScrollRestoration } from "react-router";
 import { Navigate, Outlet } from "react-router-dom";
 
+import "@fontsource/ubuntu/400.css";
+import "@fontsource/ubuntu/500.css";
+import "@fontsource/ubuntu/700.css";
+
 export default () => {
   const urlSearchParams = new URLSearchParams(window.location.search);
   if (urlSearchParams.get("redirect")) {

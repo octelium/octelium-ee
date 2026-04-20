@@ -28,6 +28,7 @@
   "dependencies": {
     "@apidevtools/json-schema-ref-parser": "^15.2.1",
     "@codemirror/lang-json": "^6.0.2",
+    "@fontsource/ubuntu": "^5.2.8",
     "@lezer/highlight": "^1.2.3",
     "@mantine/charts": "^8.3.13",
     "@mantine/core": "^8.3.13",
