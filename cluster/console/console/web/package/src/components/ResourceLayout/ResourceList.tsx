@@ -33,8 +33,9 @@ import { getServicePublicURL } from "@/utils/octelium";
 import { ChevronDown, ExternalLink, Pencil, Plus } from "lucide-react";
 import DeleteResource from "../DeleteResource";
 import TimeAgo from "../TimeAgo";
-import ResourceInfo, { ResourceVisibilityButtons } from "./ResourceInfo";
 import { parseQueryString } from "./queryParse";
+import ResourceInfo, { ResourceVisibilityButtons } from "./ResourceInfo";
+import ResourceListItemDetails from "./ResourceListItemDetails";
 
 const ItemExtra = (props: { item: Resource; info: ResourceComponentInfo }) => {
   return (
@@ -218,7 +219,13 @@ const Item = (props: { item: Resource; info: ResourceComponentInfo }) => {
                 className="overflow-hidden"
               >
                 <div className="mt-4 pt-3 border-t border-slate-100">
-                  <ItemExtra item={item} info={props.info} />
+                  {props.info.infoItemsGetter && (
+                    <ResourceListItemDetails
+                      expanded
+                      item={item}
+                      mainItemsGetter={props.info.infoItemsGetter}
+                    />
+                  )}
                 </div>
               </motion.div>
             )}
