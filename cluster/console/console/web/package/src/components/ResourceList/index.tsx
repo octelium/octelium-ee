@@ -100,7 +100,7 @@ const LabelContent = ({
   children: React.ReactNode;
 }) => (
   <Label isLink>
-    {label && <span className="text-blue-500 font-bold mr-0.5">{label}</span>}
+    {label && <span className="text-blue-300 font-bold mr-0.5">{label}</span>}
     <span className="flex items-center">{children}</span>
   </Label>
 );

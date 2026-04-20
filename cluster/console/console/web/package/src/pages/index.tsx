@@ -3,15 +3,12 @@ import SideBar from "@/components/SideBar";
 import RightSidebar from "@/components/SideBar/RightSidebar";
 import TopBar from "@/components/TopBar";
 import { Toaster } from "@/components/ui/sonner";
-import { useAppDispatch } from "@/utils/hooks";
 import { AppShell, Burger } from "@mantine/core";
 import { useDisclosure, useHeadroom } from "@mantine/hooks";
 import { ScrollRestoration } from "react-router";
 import { Navigate, Outlet } from "react-router-dom";
 
 export default () => {
-  const dispatch = useAppDispatch();
-
   const urlSearchParams = new URLSearchParams(window.location.search);
   if (urlSearchParams.get("redirect")) {
     const val = urlSearchParams.get("redirect")!;

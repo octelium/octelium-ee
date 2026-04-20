@@ -8,6 +8,7 @@ export type ResourceComponentInfo = {
   unCreatable?: boolean;
   unDeletable?: boolean;
   unEditable?: boolean;
+  infoItemsGetter?: (item: Resource) => ResourceMainInfo;
 };
 
 export type ResourceComponentInfoList = {
@@ -28,3 +29,12 @@ export type ResourceComponentInfoItem = {
 
   createResource?: () => Resource;
 };
+
+export interface ResourceMainInfo {
+  items?: ResourceInfoMainItem[];
+}
+
+export interface ResourceInfoMainItem {
+  label: string;
+  item: React.ReactNode;
+}

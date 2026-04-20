@@ -249,7 +249,6 @@ const UpgradeCluster = () => {
                 strokeWidth={2.5}
               />
               <p className="text-[0.72rem] font-semibold text-amber-700">
-                Upgrading the cluster will cause a brief service interruption.
                 Select the components you want to upgrade and confirm below.
               </p>
             </div>
@@ -352,8 +351,7 @@ const UpgradeCluster = () => {
               size="sm"
               label={
                 <span className="text-[0.78rem] font-semibold text-slate-600">
-                  I understand this will cause a service interruption and want
-                  to proceed
+                  Yes, upgrade the Cluster.
                 </span>
               }
             />
