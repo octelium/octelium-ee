@@ -1,5 +1,5 @@
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
-import { Duration } from "@/apis/metav1/metav1";
+import { Duration, ObjectReference } from "@/apis/metav1/metav1";
 import {
   GetAccessLogDataPointRequest,
   GetAccessLogSummaryRequest,
@@ -228,106 +228,133 @@ const PeriodSelector = ({
     : undefined;
 
   return (
-    <div className="flex items-center gap-0">
-      <Button.Group className="rounded-md overflow-hidden border border-slate-200 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-        {PRIMARY_PERIODS.map((opt) => {
-          const active = opt.minutes === value;
-          return (
-            <Button
-              key={opt.minutes}
-              onClick={() => onChange(opt.minutes)}
-              styles={{
-                root: {
-                  height: "26px",
-                  fontSize: "0.7rem",
-                  fontWeight: 700,
-                  fontFamily: "Ubuntu, sans-serif",
-                  padding: "0 10px",
-                  backgroundColor: active ? "#0f172a" : "#ffffff",
-                  color: active ? "#ffffff" : "#64748b",
-                  border: "none",
-                  borderRadius: 0,
-                  transition: "background-color 150ms, color 150ms",
-                  "&:hover": {
-                    backgroundColor: active ? "#1e293b" : "#f8fafc",
-                    color: active ? "#ffffff" : "#0f172a",
-                  },
+    <Button.Group className="rounded-md overflow-hidden border border-slate-200 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
+      {PRIMARY_PERIODS.map((opt) => {
+        const active = opt.minutes === value;
+        return (
+          <Button
+            key={opt.minutes}
+            onClick={() => onChange(opt.minutes)}
+            styles={{
+              root: {
+                height: "26px",
+                fontSize: "0.7rem",
+                fontWeight: 700,
+                fontFamily: "Ubuntu, sans-serif",
+                padding: "0 10px",
+                backgroundColor: active ? "#0f172a" : "#ffffff",
+                color: active ? "#ffffff" : "#64748b",
+                border: "none",
+                borderRadius: 0,
+                transition: "background-color 150ms, color 150ms",
+                "&:hover": {
+                  backgroundColor: active ? "#1e293b" : "#f8fafc",
+                  color: active ? "#ffffff" : "#0f172a",
                 },
-              }}
-            >
-              {opt.label}
-            </Button>
-          );
-        })}
+              },
+            }}
+          >
+            {opt.label}
+          </Button>
+        );
+      })}
 
-        <Menu position="bottom-end" offset={4} withArrow={false}>
-          <Menu.Target>
-            <Button
-              styles={{
-                root: {
-                  height: "26px",
-                  fontSize: "0.7rem",
-                  fontWeight: 700,
-                  fontFamily: "Ubuntu, sans-serif",
-                  padding: "0 8px",
-                  backgroundColor: isExtended ? "#0f172a" : "#ffffff",
-                  color: isExtended ? "#ffffff" : "#64748b",
-                  border: "none",
-                  borderLeft: "1px solid #e2e8f0",
-                  borderRadius: 0,
-                  transition: "background-color 150ms, color 150ms",
-                  "&:hover": {
-                    backgroundColor: isExtended ? "#1e293b" : "#f8fafc",
-                    color: isExtended ? "#ffffff" : "#0f172a",
-                  },
+      <Menu position="bottom-end" offset={4} withArrow={false}>
+        <Menu.Target>
+          <Button
+            styles={{
+              root: {
+                height: "26px",
+                fontSize: "0.7rem",
+                fontWeight: 700,
+                fontFamily: "Ubuntu, sans-serif",
+                padding: "0 8px",
+                backgroundColor: isExtended ? "#0f172a" : "#ffffff",
+                color: isExtended ? "#ffffff" : "#64748b",
+                border: "none",
+                borderLeft: "1px solid #e2e8f0",
+                borderRadius: 0,
+                transition: "background-color 150ms, color 150ms",
+                "&:hover": {
+                  backgroundColor: isExtended ? "#1e293b" : "#f8fafc",
+                  color: isExtended ? "#ffffff" : "#0f172a",
                 },
-              }}
-            >
-              <span className="flex items-center gap-1">
-                {extendedLabel ?? "More"}
-                <ChevronDown size={10} strokeWidth={2.5} />
-              </span>
-            </Button>
-          </Menu.Target>
-          <Menu.Dropdown>
-            <div className="flex flex-col py-1 min-w-[100px]">
-              {EXTENDED_PERIODS.map((opt) => (
-                <button
-                  key={opt.minutes}
-                  onClick={() => onChange(opt.minutes)}
-                  className={twMerge(
-                    "flex items-center px-3 h-8 text-[0.75rem] font-bold cursor-pointer transition-colors duration-100 text-left",
-                    opt.minutes === value
-                      ? "bg-slate-900 text-white"
-                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
-                  )}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </Menu.Dropdown>
-        </Menu>
-      </Button.Group>
-    </div>
+              },
+            }}
+          >
+            <span className="flex items-center gap-1">
+              {extendedLabel ?? "More"}
+              <ChevronDown size={10} strokeWidth={2.5} />
+            </span>
+          </Button>
+        </Menu.Target>
+        <Menu.Dropdown>
+          <div className="flex flex-col py-1 min-w-[100px]">
+            {EXTENDED_PERIODS.map((opt) => (
+              <button
+                key={opt.minutes}
+                onClick={() => onChange(opt.minutes)}
+                className={twMerge(
+                  "flex items-center px-3 h-8 text-[0.75rem] font-bold cursor-pointer transition-colors duration-100 text-left",
+                  opt.minutes === value
+                    ? "bg-slate-900 text-white"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </Menu.Dropdown>
+      </Menu>
+    </Button.Group>
   );
 };
 
-const AccessLogHealthWidget = () => {
+interface AccessLogHealthWidgetProps {
+  userRef?: ObjectReference;
+  sessionRef?: ObjectReference;
+  serviceRef?: ObjectReference;
+  namespaceRef?: ObjectReference;
+  regionRef?: ObjectReference;
+  deviceRef?: ObjectReference;
+  policyRef?: ObjectReference;
+}
+
+const refKey = (ref?: ObjectReference) => ref?.uid ?? ref?.name ?? null;
+
+const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
   const [periodMinutes, setPeriodMinutes] = useState(60);
   const { curFrom, curTo, prevFrom, prevTo } = buildTimestamps(periodMinutes);
   const autoInterval = getAutoInterval(periodMinutes);
   const periodLabel =
     ALL_PERIODS.find((o) => o.minutes === periodMinutes)?.label ?? "";
 
+  const refKeys = {
+    userRef: refKey(props.userRef),
+    sessionRef: refKey(props.sessionRef),
+    serviceRef: refKey(props.serviceRef),
+    namespaceRef: refKey(props.namespaceRef),
+    regionRef: refKey(props.regionRef),
+    deviceRef: refKey(props.deviceRef),
+    policyRef: refKey(props.policyRef),
+  };
+
   const curSummary = useQuery({
-    queryKey: ["accessLogSummary", "current", periodMinutes],
+    queryKey: ["accessLogSummary", "current", periodMinutes, refKeys],
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAccessLog().getAccessLogSummary(
           GetAccessLogSummaryRequest.create({
             from: toTs(curFrom),
             to: toTs(curTo),
+            userRef: props.userRef,
+            sessionRef: props.sessionRef,
+            serviceRef: props.serviceRef,
+            namespaceRef: props.namespaceRef,
+            regionRef: props.regionRef,
+            deviceRef: props.deviceRef,
+            policyRef: props.policyRef,
           }),
         );
       return response;
@@ -336,13 +363,20 @@ const AccessLogHealthWidget = () => {
   });
 
   const prevSummary = useQuery({
-    queryKey: ["accessLogSummary", "previous", periodMinutes],
+    queryKey: ["accessLogSummary", "previous", periodMinutes, refKeys],
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAccessLog().getAccessLogSummary(
           GetAccessLogSummaryRequest.create({
             from: toTs(prevFrom),
             to: toTs(prevTo),
+            userRef: props.userRef,
+            sessionRef: props.sessionRef,
+            serviceRef: props.serviceRef,
+            namespaceRef: props.namespaceRef,
+            regionRef: props.regionRef,
+            deviceRef: props.deviceRef,
+            policyRef: props.policyRef,
           }),
         );
       return response;
@@ -351,7 +385,7 @@ const AccessLogHealthWidget = () => {
   });
 
   const dataPoint = useQuery({
-    queryKey: ["accessLogDataPoint", periodMinutes],
+    queryKey: ["accessLogDataPoint", periodMinutes, refKeys],
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAccessLog().getAccessLogDataPoint(
@@ -359,6 +393,13 @@ const AccessLogHealthWidget = () => {
             from: toTs(curFrom),
             to: toTs(curTo),
             interval: autoInterval,
+            userRef: props.userRef,
+            sessionRef: props.sessionRef,
+            serviceRef: props.serviceRef,
+            namespaceRef: props.namespaceRef,
+            regionRef: props.regionRef,
+            deviceRef: props.deviceRef,
+            policyRef: props.policyRef,
           }),
         );
       return response;
@@ -367,13 +408,18 @@ const AccessLogHealthWidget = () => {
   });
 
   const topUsers = useQuery({
-    queryKey: ["accessLogTopUser", periodMinutes],
+    queryKey: ["accessLogTopUser", periodMinutes, refKeys],
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAccessLog().listAccessLogTopUser(
           ListAccessLogTopUserRequest.create({
             from: toTs(curFrom),
             to: toTs(curTo),
+
+            serviceRef: props.serviceRef,
+            namespaceRef: props.namespaceRef,
+            regionRef: props.regionRef,
+            policyRef: props.policyRef,
           }),
         );
       return response;
@@ -382,13 +428,19 @@ const AccessLogHealthWidget = () => {
   });
 
   const topServices = useQuery({
-    queryKey: ["accessLogTopService", periodMinutes],
+    queryKey: ["accessLogTopService", periodMinutes, refKeys],
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAccessLog().listAccessLogTopService(
           ListAccessLogTopServiceRequest.create({
             from: toTs(curFrom),
             to: toTs(curTo),
+            userRef: props.userRef,
+            sessionRef: props.sessionRef,
+
+            regionRef: props.regionRef,
+            deviceRef: props.deviceRef,
+            policyRef: props.policyRef,
           }),
         );
       return response;
@@ -397,13 +449,18 @@ const AccessLogHealthWidget = () => {
   });
 
   const topPolicies = useQuery({
-    queryKey: ["accessLogTopPolicy", periodMinutes],
+    queryKey: ["accessLogTopPolicy", periodMinutes, refKeys],
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAccessLog().listAccessLogTopPolicy(
           ListAccessLogTopServiceRequest.create({
             from: toTs(curFrom),
             to: toTs(curTo),
+            userRef: props.userRef,
+            sessionRef: props.sessionRef,
+            regionRef: props.regionRef,
+            deviceRef: props.deviceRef,
+            policyRef: props.policyRef,
           }),
         );
       return response;
@@ -412,13 +469,17 @@ const AccessLogHealthWidget = () => {
   });
 
   const topSessions = useQuery({
-    queryKey: ["accessLogTopSession", periodMinutes],
+    queryKey: ["accessLogTopSession", periodMinutes, refKeys],
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAccessLog().listAccessLogTopSession(
           ListAccessLogTopSessionRequest.create({
             from: toTs(curFrom),
             to: toTs(curTo),
+            userRef: props.userRef,
+            regionRef: props.regionRef,
+            deviceRef: props.deviceRef,
+            policyRef: props.policyRef,
           }),
         );
       return response;
@@ -430,6 +491,12 @@ const AccessLogHealthWidget = () => {
   const curData = curSummary.data;
   const prevData = prevSummary.data;
 
+  const isAnyLoading =
+    isSummaryLoading ||
+    dataPoint.isLoading ||
+    topUsers.isLoading ||
+    topServices.isLoading;
+
   const refetchAll = () => {
     curSummary.refetch();
     prevSummary.refetch();
@@ -439,12 +506,6 @@ const AccessLogHealthWidget = () => {
     topPolicies.refetch();
     topSessions.refetch();
   };
-
-  const isAnyLoading =
-    isSummaryLoading ||
-    dataPoint.isLoading ||
-    topUsers.isLoading ||
-    topServices.isLoading;
 
   return (
     <div className="w-full flex flex-col gap-5">

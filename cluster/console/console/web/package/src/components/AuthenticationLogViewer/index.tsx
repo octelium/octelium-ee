@@ -473,6 +473,8 @@ const DoAuthenticationLogViewer = (props: {
         });
       }
 
+      
+
       const { response } =
         await getClientVisibilityAuthenticationLog().listAuthenticationLog(
           ListAuthenticationLogRequest.create({

@@ -1,5 +1,5 @@
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
-import { Duration } from "@/apis/metav1/metav1";
+import { Duration, ObjectReference } from "@/apis/metav1/metav1";
 import {
   GetAuthenticationLogDataPointRequest,
   GetAuthenticationLogSummaryRequest,
@@ -103,6 +103,8 @@ const deltaPct = (cur: number, prev: number) =>
 
 const pct = (value: number, total: number) =>
   total === 0 ? 0 : Math.round((value / total) * 100);
+
+const refKey = (ref?: ObjectReference) => ref?.uid ?? ref?.name ?? null;
 
 const TrendBadge = ({ cur, prev }: { cur: number; prev: number }) => {
   const d = deltaPct(cur, prev);
@@ -336,21 +338,41 @@ const PeriodSelector = ({
   );
 };
 
-const AuthenticationLogHealthWidget = () => {
+interface AuthenticationLogHealthWidgetProps {
+  userRef?: ObjectReference;
+  sessionRef?: ObjectReference;
+  deviceRef?: ObjectReference;
+  identityProviderRef?: ObjectReference;
+}
+
+const AuthenticationLogHealthWidget = (
+  props: AuthenticationLogHealthWidgetProps,
+) => {
   const [periodMinutes, setPeriodMinutes] = useState(60);
   const { curFrom, curTo, prevFrom, prevTo } = buildTimestamps(periodMinutes);
   const autoInterval = getAutoInterval(periodMinutes);
   const periodLabel =
     ALL_PERIODS.find((o) => o.minutes === periodMinutes)?.label ?? "";
 
+  const refKeys = {
+    userRef: refKey(props.userRef),
+    sessionRef: refKey(props.sessionRef),
+    deviceRef: refKey(props.deviceRef),
+    identityProviderRef: refKey(props.identityProviderRef),
+  };
+
   const curSummary = useQuery({
-    queryKey: ["authLogSummary", "current", periodMinutes],
+    queryKey: ["authLogSummary", "current", periodMinutes, refKeys],
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAuthenticationLog().getAuthenticationLogSummary(
           GetAuthenticationLogSummaryRequest.create({
             from: toTs(curFrom),
             to: toTs(curTo),
+            userRef: props.userRef,
+            sessionRef: props.sessionRef,
+            deviceRef: props.deviceRef,
+            identityProviderRef: props.identityProviderRef,
           }),
         );
       return response;
@@ -359,13 +381,17 @@ const AuthenticationLogHealthWidget = () => {
   });
 
   const prevSummary = useQuery({
-    queryKey: ["authLogSummary", "previous", periodMinutes],
+    queryKey: ["authLogSummary", "previous", periodMinutes, refKeys],
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAuthenticationLog().getAuthenticationLogSummary(
           GetAuthenticationLogSummaryRequest.create({
             from: toTs(prevFrom),
             to: toTs(prevTo),
+            userRef: props.userRef,
+            sessionRef: props.sessionRef,
+            deviceRef: props.deviceRef,
+            identityProviderRef: props.identityProviderRef,
           }),
         );
       return response;
@@ -374,7 +400,7 @@ const AuthenticationLogHealthWidget = () => {
   });
 
   const dataPoint = useQuery({
-    queryKey: ["authLogDataPoint", periodMinutes],
+    queryKey: ["authLogDataPoint", periodMinutes, refKeys],
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAuthenticationLog().getAuthenticationLogDataPoint(
@@ -382,6 +408,10 @@ const AuthenticationLogHealthWidget = () => {
             from: toTs(curFrom),
             to: toTs(curTo),
             interval: autoInterval,
+            userRef: props.userRef,
+            sessionRef: props.sessionRef,
+            deviceRef: props.deviceRef,
+            identityProviderRef: props.identityProviderRef,
           }),
         );
       return response;
@@ -390,13 +420,15 @@ const AuthenticationLogHealthWidget = () => {
   });
 
   const topUsers = useQuery({
-    queryKey: ["authLogTopUser", periodMinutes],
+    queryKey: ["authLogTopUser", periodMinutes, refKeys],
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAuthenticationLog().listAuthenticationLogTopUser(
           ListAuthenticationLogTopUserRequest.create({
             from: toTs(curFrom),
             to: toTs(curTo),
+
+            identityProviderRef: props.identityProviderRef,
           }),
         );
       return response;
@@ -405,13 +437,16 @@ const AuthenticationLogHealthWidget = () => {
   });
 
   const topIdentityProviders = useQuery({
-    queryKey: ["authLogTopIdentityProvider", periodMinutes],
+    queryKey: ["authLogTopIdentityProvider", periodMinutes, refKeys],
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAuthenticationLog().listAuthenticationLogTopIdentityProvider(
           ListAuthenticationLogTopIdentityProviderRequest.create({
             from: toTs(curFrom),
             to: toTs(curTo),
+            userRef: props.userRef,
+            sessionRef: props.sessionRef,
+            deviceRef: props.deviceRef,
           }),
         );
       return response;
@@ -420,13 +455,17 @@ const AuthenticationLogHealthWidget = () => {
   });
 
   const topCredentials = useQuery({
-    queryKey: ["authLogTopCredential", periodMinutes],
+    queryKey: ["authLogTopCredential", periodMinutes, refKeys],
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAuthenticationLog().listAuthenticationLogTopCredential(
           ListAuthenticationLogTopIdentityProviderRequest.create({
             from: toTs(curFrom),
             to: toTs(curTo),
+            userRef: props.userRef,
+            sessionRef: props.sessionRef,
+            deviceRef: props.deviceRef,
+            identityProviderRef: props.identityProviderRef,
           }),
         );
       return response;
