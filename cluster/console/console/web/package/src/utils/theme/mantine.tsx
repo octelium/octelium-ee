@@ -261,9 +261,9 @@ const theme = createTheme({
         root: {
           backgroundColor: "#f1f5f9",
           border: "1px solid #e2e8f0",
-          borderRadius: "10px",
-          padding: "3px",
-          height: "44px",
+          // borderRadius: "10px",
+          // padding: "3px",
+          // height: "44px",
         },
         label: {
           fontSize: "0.82rem",

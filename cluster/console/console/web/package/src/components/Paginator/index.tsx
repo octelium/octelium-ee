@@ -1,5 +1,5 @@
 import { ListResponseMeta } from "@/apis/metav1/metav1";
-import { Button, Pagination } from "@mantine/core";
+import { Pagination, SegmentedControl } from "@mantine/core";
 import { ArrowDownWideNarrow, ArrowUpWideNarrow, X } from "lucide-react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
@@ -34,6 +34,15 @@ const TYPE_LABEL_MAP: Record<string, string> = {
   DNS: "DNS",
 };
 
+const BOOLEAN_PARAM_LABELS: Record<string, string> = {
+  isDisabled: "Disabled",
+  isPublic: "Public",
+  isTLS: "TLS",
+  isAnonymous: "Anonymous",
+  isSystem: "System",
+  isUserHidden: "Hidden",
+};
+
 interface FilterChip {
   key: string;
   label: string;
@@ -47,11 +56,7 @@ const buildFilterChips = (searchParams: URLSearchParams): FilterChip[] => {
     if (key.startsWith("common.") || !value) continue;
 
     if (key in REF_PARAM_LABELS) {
-      chips.push({
-        key,
-        label: REF_PARAM_LABELS[key],
-        value,
-      });
+      chips.push({ key, label: REF_PARAM_LABELS[key], value });
       continue;
     }
 
@@ -64,13 +69,12 @@ const buildFilterChips = (searchParams: URLSearchParams): FilterChip[] => {
       continue;
     }
 
-    if (key === "isDisabled") {
-      chips.push({ key, label: "Disabled", value: "Yes" });
-      continue;
-    }
-
-    if (key === "isPublic") {
-      chips.push({ key, label: "Public", value: "Yes" });
+    if (value === "true") {
+      chips.push({
+        key,
+        label: BOOLEAN_PARAM_LABELS[key] ?? key,
+        value: "Yes",
+      });
       continue;
     }
   }
@@ -153,41 +157,6 @@ const Paginator = (props: {
 
   const filterChips = buildFilterChips(searchParams);
 
-  const btnStyles = (active: boolean) => ({
-    root: {
-      height: "28px",
-      fontSize: "0.72rem",
-      fontWeight: 700,
-      padding: "0 10px",
-      backgroundColor: active ? "#0f172a" : "#ffffff",
-      color: active ? "#ffffff" : "#64748b",
-      border: "none",
-      borderRadius: 0,
-      transition: "background-color 150ms, color 150ms",
-      "&:hover": {
-        backgroundColor: active ? "#1e293b" : "#f8fafc",
-        color: active ? "#ffffff" : "#0f172a",
-      },
-    },
-  });
-
-  const iconBtnStyles = (active: boolean) => ({
-    root: {
-      height: "28px",
-      width: "28px",
-      padding: 0,
-      backgroundColor: active ? "#0f172a" : "#ffffff",
-      color: active ? "#ffffff" : "#64748b",
-      border: "none",
-      borderRadius: 0,
-      transition: "background-color 150ms, color 150ms",
-      "&:hover": {
-        backgroundColor: active ? "#1e293b" : "#f8fafc",
-        color: active ? "#ffffff" : "#0f172a",
-      },
-    },
-  });
-
   return (
     <div className="w-full flex flex-col gap-3 my-5">
       {filterChips.length > 0 && (
@@ -226,39 +195,38 @@ const Paginator = (props: {
           </span>
         )}
 
-        <div className="flex items-center gap-1.5">
-          <Button.Group className="rounded-md overflow-hidden border border-slate-200 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-            {[
+        <div className="flex items-center gap-2">
+          <SegmentedControl
+            value={currentOrderBy}
+            onChange={(v) => setParam("common.orderBy.type", v)}
+            data={[
               { label: "Name", value: "NAME" },
               { label: "Created", value: "CREATED_AT" },
-            ].map((opt) => (
-              <Button
-                key={opt.value}
-                onClick={() => setParam("common.orderBy.type", opt.value)}
-                styles={btnStyles(currentOrderBy === opt.value)}
-              >
-                {opt.label}
-              </Button>
-            ))}
-          </Button.Group>
+            ]}
+          />
 
-          <Button.Group className="rounded-md overflow-hidden border border-slate-200 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-            {(
-              [
-                { value: "ASC", Icon: ArrowUpWideNarrow },
-                { value: "DESC", Icon: ArrowDownWideNarrow },
-              ] as const
-            ).map(({ value, Icon }) => (
-              <Button
-                key={value}
-                onClick={() => setParam("common.orderBy.mode", value)}
-                styles={iconBtnStyles(currentOrderMode === value)}
-                title={value === "ASC" ? "Ascending" : "Descending"}
-              >
-                <Icon size={13} />
-              </Button>
-            ))}
-          </Button.Group>
+          <SegmentedControl
+            value={currentOrderMode}
+            onChange={(v) => setParam("common.orderBy.mode", v)}
+            data={[
+              {
+                label: (
+                  <span className="flex items-center">
+                    <ArrowUpWideNarrow size={13} strokeWidth={2.5} />
+                  </span>
+                ),
+                value: "ASC",
+              },
+              {
+                label: (
+                  <span className="flex items-center">
+                    <ArrowDownWideNarrow size={13} strokeWidth={2.5} />
+                  </span>
+                ),
+                value: "DESC",
+              },
+            ]}
+          />
 
           {hasMultiplePages && (
             <span
