@@ -19,6 +19,7 @@ import {
 import { Link, Navigate } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 import CopyText from "../CopyText";
+import DeleteResource from "../DeleteResource";
 import PageWrap from "../PageWrap";
 import ResourceYAML from "../ResourceYAML";
 import TimeAgo from "../TimeAgo";
@@ -223,7 +224,16 @@ const ResourceMainContent = (props: {
               </div>
             )}
           </div>
-          <ResourceYAML item={item} size="xs" />
+          <div className="flex items-center">
+            <ResourceYAML item={item} size="xs" />
+            <div className="ml-2">
+              <DeleteResource
+                item={item}
+                btnSize={`compact-xs`}
+                btnVariant="outline"
+              />
+            </div>
+          </div>
         </div>
 
         {/* Shared metadata grid */}
