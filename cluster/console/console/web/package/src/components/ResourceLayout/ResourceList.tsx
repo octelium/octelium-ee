@@ -218,14 +218,12 @@ const Item = (props: { item: Resource; info: ResourceComponentInfo }) => {
                 transition={{ duration: 0.22, ease: "easeInOut" }}
                 className="overflow-hidden"
               >
-                <div className="mt-4 pt-3 border-t border-slate-100">
-                  {props.info.infoItemsGetter && (
-                    <ResourceListItemDetails
-                      expanded
-                      item={item}
-                      mainItemsGetter={props.info.infoItemsGetter}
-                    />
-                  )}
+                <div className="mt-4">
+                  <ResourceListItemDetails
+                    expanded
+                    item={item}
+                    mainItemsGetter={props.info.infoItemsGetter}
+                  />
                 </div>
               </motion.div>
             )}
