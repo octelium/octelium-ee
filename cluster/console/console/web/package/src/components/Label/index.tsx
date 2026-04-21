@@ -8,7 +8,7 @@ const Label = (props: {
   return (
     <span
       className={twMerge(
-        "inline-flex items-center gap-1",
+        "inline-flex items-center gap-1 mx-1",
         "px-2 h-[22px]",
         "rounded-full text-[0.7rem] font-bold leading-none whitespace-nowrap",
         "transition-colors duration-500 cursor-default",
