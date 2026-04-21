@@ -1,6 +1,6 @@
 import { twMerge } from "tailwind-merge";
 
-export default (props: {
+const Label = (props: {
   children?: React.ReactNode;
   outlined?: boolean;
   isLink?: boolean;
@@ -8,15 +8,21 @@ export default (props: {
   return (
     <span
       className={twMerge(
-        "px-2 py-1 rounded-full font-bold text-xs mx-1 my-1 transition-all duration-500",
-        "flex flex-row items-center",
+        "inline-flex items-center gap-1",
+        "px-2 h-[22px]",
+        "rounded-full text-[0.7rem] font-bold leading-none whitespace-nowrap",
+        "transition-colors duration-500 cursor-none",
         props.outlined
-          ? `text-gray-800 border-[1px] border-gray-400 shadow-sm`
-          : `bg-gray-800 text-white`,
-        props.isLink ? `hover:bg-black shadow-xl` : `shadow-xs`,
+          ? "text-slate-700 border border-slate-300 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.06)]"
+          : "bg-slate-800 text-slate-100 border border-slate-700",
+        props.isLink
+          ? "shadow-[0_1px_4px_rgba(15,23,42,0.15)] hover:bg-slate-700 hover:border-slate-600 cursor-pointer"
+          : "shadow-[0_1px_2px_rgba(15,23,42,0.08)]",
       )}
     >
       {props.children}
     </span>
   );
 };
+
+export default Label;
