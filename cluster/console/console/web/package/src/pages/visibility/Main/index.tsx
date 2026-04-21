@@ -170,8 +170,8 @@ const LogsTab = () => (
     transition={{ duration: 0.2, ease: "easeOut" }}
     className="flex flex-col gap-4"
   >
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <Item title="Access health">
+    <div className="grid grid-cols-1">
+      <Item title="Access health" className="mb-8">
         <AccessLogHealthWidget />
       </Item>
       <Item title="Authentication health">
