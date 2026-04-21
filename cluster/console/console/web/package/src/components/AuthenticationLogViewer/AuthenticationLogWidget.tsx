@@ -1,11 +1,21 @@
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
-import { GetAuthenticationLogSummaryRequest } from "@/apis/visibilityv1/visibilityv1";
-import { getClientVisibilityAuthenticationLog } from "@/utils/client";
-import { Button } from "@mantine/core";
+import { Duration } from "@/apis/metav1/metav1";
+import {
+  GetAuthenticationLogDataPointRequest,
+  GetAuthenticationLogSummaryRequest,
+  ListAuthenticationLogTopIdentityProviderRequest,
+  ListAuthenticationLogTopUserRequest,
+} from "@/apis/visibilityv1/visibilityv1";
+import {
+  getClientVisibilityAuthenticationLog,
+  refetchIntervalChart,
+} from "@/utils/client";
+import { Button, Menu } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import {
   Activity,
+  ChevronDown,
   Fingerprint,
   KeyRound,
   Minus,
@@ -17,13 +27,16 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { twMerge } from "tailwind-merge";
+import { match } from "ts-pattern";
+import LineChart from "../Charts/LineChart";
+import TopList from "../TopList";
 
 interface PeriodOption {
   label: string;
   minutes: number;
 }
 
-const PERIOD_OPTIONS: PeriodOption[] = [
+const PRIMARY_PERIODS: PeriodOption[] = [
   { label: "30m", minutes: 30 },
   { label: "1h", minutes: 60 },
   { label: "3h", minutes: 180 },
@@ -32,49 +45,60 @@ const PERIOD_OPTIONS: PeriodOption[] = [
   { label: "24h", minutes: 1440 },
 ];
 
-const buildRequest = (fromMs: number, toMs: number) =>
-  GetAuthenticationLogSummaryRequest.create({
-    from: Timestamp.fromDate(new Date(fromMs)),
-    to: Timestamp.fromDate(new Date(toMs)),
-  });
+const EXTENDED_PERIODS: PeriodOption[] = [
+  { label: "5m", minutes: 5 },
+  { label: "10m", minutes: 10 },
+  { label: "15m", minutes: 15 },
+  { label: "2d", minutes: 2880 },
+  { label: "3d", minutes: 4320 },
+  { label: "7d", minutes: 10080 },
+  { label: "14d", minutes: 20160 },
+];
 
-const useSummaryPair = (periodMinutes: number) => {
+const ALL_PERIODS = [...PRIMARY_PERIODS, ...EXTENDED_PERIODS];
+
+const createDuration = (val: number, unit: string): Duration => {
+  const typePayload = match(unit)
+    .with("millisecond", () => ({
+      oneofKind: "milliseconds" as const,
+      milliseconds: val,
+    }))
+    .with("second", () => ({ oneofKind: "seconds" as const, seconds: val }))
+    .with("minute", () => ({ oneofKind: "minutes" as const, minutes: val }))
+    .with("hour", () => ({ oneofKind: "hours" as const, hours: val }))
+    .with("day", () => ({ oneofKind: "days" as const, days: val }))
+    .with("week", () => ({ oneofKind: "weeks" as const, weeks: val }))
+    .with("month", () => ({ oneofKind: "months" as const, months: val }))
+    .otherwise(() => ({ oneofKind: "seconds" as const, seconds: val }));
+  return Duration.create({ type: typePayload as any });
+};
+
+const getAutoInterval = (periodMinutes: number): Duration => {
+  if (periodMinutes <= 15) return createDuration(30, "second");
+  if (periodMinutes <= 60) return createDuration(1, "minute");
+  if (periodMinutes <= 180) return createDuration(5, "minute");
+  if (periodMinutes <= 360) return createDuration(10, "minute");
+  if (periodMinutes <= 720) return createDuration(15, "minute");
+  if (periodMinutes <= 1440) return createDuration(30, "minute");
+  if (periodMinutes <= 4320) return createDuration(1, "hour");
+  if (periodMinutes <= 10080) return createDuration(3, "hour");
+  return createDuration(6, "hour");
+};
+
+const buildTimestamps = (periodMinutes: number) => {
   const now = dayjs();
   const curFrom = now.subtract(periodMinutes, "minute").valueOf();
   const curTo = now.valueOf();
   const prevFrom = now.subtract(periodMinutes * 2, "minute").valueOf();
   const prevTo = curFrom;
-
-  const current = useQuery({
-    queryKey: ["authLogSummary", "current", periodMinutes],
-    queryFn: async () => {
-      const { response } =
-        await getClientVisibilityAuthenticationLog().getAuthenticationLogSummary(
-          buildRequest(curFrom, curTo),
-        );
-      return response;
-    },
-    refetchInterval: 60_000,
-  });
-
-  const previous = useQuery({
-    queryKey: ["authLogSummary", "previous", periodMinutes],
-    queryFn: async () => {
-      const { response } =
-        await getClientVisibilityAuthenticationLog().getAuthenticationLogSummary(
-          buildRequest(prevFrom, prevTo),
-        );
-      return response;
-    },
-    refetchInterval: 60_000,
-  });
-
-  return { current, previous };
+  return { curFrom, curTo, prevFrom, prevTo };
 };
+
+const toTs = (ms: number) => Timestamp.fromDate(new Date(ms));
 
 const n = (v: unknown) => Number(v ?? 0);
 
-const deltaPct = (cur: number, prev: number): number =>
+const deltaPct = (cur: number, prev: number) =>
   prev === 0 ? 0 : Math.round(((cur - prev) / prev) * 100);
 
 const pct = (value: number, total: number) =>
@@ -82,13 +106,12 @@ const pct = (value: number, total: number) =>
 
 const TrendBadge = ({ cur, prev }: { cur: number; prev: number }) => {
   const d = deltaPct(cur, prev);
-  if (d === 0 || prev === 0) {
+  if (d === 0 || prev === 0)
     return (
       <span className="inline-flex items-center gap-0.5 text-[0.65rem] font-bold text-slate-400">
         <Minus size={10} strokeWidth={3} /> —
       </span>
     );
-  }
   const up = d > 0;
   return (
     <span
@@ -223,58 +246,215 @@ const PeriodSelector = ({
 }: {
   value: number;
   onChange: (v: number) => void;
-}) => (
-  <Button.Group className="rounded-md overflow-hidden border border-slate-200 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-    {PERIOD_OPTIONS.map((opt) => {
-      const active = opt.minutes === value;
-      return (
-        <Button
-          key={opt.minutes}
-          onClick={() => onChange(opt.minutes)}
-          styles={{
-            root: {
-              height: "26px",
-              fontSize: "0.7rem",
-              fontWeight: 700,
-              fontFamily: "Ubuntu, sans-serif",
-              padding: "0 10px",
-              backgroundColor: active ? "#0f172a" : "#ffffff",
-              color: active ? "#ffffff" : "#64748b",
-              border: "none",
-              borderRadius: 0,
-              transition: "background-color 150ms, color 150ms",
-              "&:hover": {
-                backgroundColor: active ? "#1e293b" : "#f8fafc",
-                color: active ? "#ffffff" : "#0f172a",
+}) => {
+  const isExtended = EXTENDED_PERIODS.some((p) => p.minutes === value);
+  const extendedLabel = isExtended
+    ? ALL_PERIODS.find((p) => p.minutes === value)?.label
+    : undefined;
+
+  return (
+    <Button.Group className="rounded-md overflow-hidden border border-slate-200 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
+      {PRIMARY_PERIODS.map((opt) => {
+        const active = opt.minutes === value;
+        return (
+          <Button
+            key={opt.minutes}
+            onClick={() => onChange(opt.minutes)}
+            styles={{
+              root: {
+                height: "26px",
+                fontSize: "0.7rem",
+                fontWeight: 700,
+                fontFamily: "Ubuntu, sans-serif",
+                padding: "0 10px",
+                backgroundColor: active ? "#0f172a" : "#ffffff",
+                color: active ? "#ffffff" : "#64748b",
+                border: "none",
+                borderRadius: 0,
+                transition: "background-color 150ms, color 150ms",
+                "&:hover": {
+                  backgroundColor: active ? "#1e293b" : "#f8fafc",
+                  color: active ? "#ffffff" : "#0f172a",
+                },
               },
-            },
-          }}
-        >
-          {opt.label}
-        </Button>
-      );
-    })}
-  </Button.Group>
-);
+            }}
+          >
+            {opt.label}
+          </Button>
+        );
+      })}
+
+      <Menu position="bottom-end" offset={4} withArrow={false}>
+        <Menu.Target>
+          <Button
+            styles={{
+              root: {
+                height: "26px",
+                fontSize: "0.7rem",
+                fontWeight: 700,
+                fontFamily: "Ubuntu, sans-serif",
+                padding: "0 8px",
+                backgroundColor: isExtended ? "#0f172a" : "#ffffff",
+                color: isExtended ? "#ffffff" : "#64748b",
+                border: "none",
+                borderLeft: "1px solid #e2e8f0",
+                borderRadius: 0,
+                transition: "background-color 150ms, color 150ms",
+                "&:hover": {
+                  backgroundColor: isExtended ? "#1e293b" : "#f8fafc",
+                  color: isExtended ? "#ffffff" : "#0f172a",
+                },
+              },
+            }}
+          >
+            <span className="flex items-center gap-1">
+              {extendedLabel ?? "More"}
+              <ChevronDown size={10} strokeWidth={2.5} />
+            </span>
+          </Button>
+        </Menu.Target>
+        <Menu.Dropdown>
+          <div className="flex flex-col py-1 min-w-[100px]">
+            {EXTENDED_PERIODS.map((opt) => (
+              <button
+                key={opt.minutes}
+                onClick={() => onChange(opt.minutes)}
+                className={twMerge(
+                  "flex items-center px-3 h-8 text-[0.75rem] font-bold cursor-pointer transition-colors duration-100 text-left",
+                  opt.minutes === value
+                    ? "bg-slate-900 text-white"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </Menu.Dropdown>
+      </Menu>
+    </Button.Group>
+  );
+};
 
 const AuthenticationLogHealthWidget = () => {
   const [periodMinutes, setPeriodMinutes] = useState(60);
-  const { current, previous } = useSummaryPair(periodMinutes);
+  const { curFrom, curTo, prevFrom, prevTo } = buildTimestamps(periodMinutes);
+  const autoInterval = getAutoInterval(periodMinutes);
+  const periodLabel =
+    ALL_PERIODS.find((o) => o.minutes === periodMinutes)?.label ?? "";
 
-  const isLoading = current.isLoading || previous.isLoading;
-  const cur = current.data;
-  const prev = previous.data;
+  const curSummary = useQuery({
+    queryKey: ["authLogSummary", "current", periodMinutes],
+    queryFn: async () => {
+      const { response } =
+        await getClientVisibilityAuthenticationLog().getAuthenticationLogSummary(
+          GetAuthenticationLogSummaryRequest.create({
+            from: toTs(curFrom),
+            to: toTs(curTo),
+          }),
+        );
+      return response;
+    },
+    refetchInterval: 60_000,
+  });
 
-  const refetch = () => {
-    current.refetch();
-    previous.refetch();
+  const prevSummary = useQuery({
+    queryKey: ["authLogSummary", "previous", periodMinutes],
+    queryFn: async () => {
+      const { response } =
+        await getClientVisibilityAuthenticationLog().getAuthenticationLogSummary(
+          GetAuthenticationLogSummaryRequest.create({
+            from: toTs(prevFrom),
+            to: toTs(prevTo),
+          }),
+        );
+      return response;
+    },
+    refetchInterval: 60_000,
+  });
+
+  const dataPoint = useQuery({
+    queryKey: ["authLogDataPoint", periodMinutes],
+    queryFn: async () => {
+      const { response } =
+        await getClientVisibilityAuthenticationLog().getAuthenticationLogDataPoint(
+          GetAuthenticationLogDataPointRequest.create({
+            from: toTs(curFrom),
+            to: toTs(curTo),
+            interval: autoInterval,
+          }),
+        );
+      return response;
+    },
+    refetchInterval: refetchIntervalChart,
+  });
+
+  const topUsers = useQuery({
+    queryKey: ["authLogTopUser", periodMinutes],
+    queryFn: async () => {
+      const { response } =
+        await getClientVisibilityAuthenticationLog().listAuthenticationLogTopUser(
+          ListAuthenticationLogTopUserRequest.create({
+            from: toTs(curFrom),
+            to: toTs(curTo),
+          }),
+        );
+      return response;
+    },
+    refetchInterval: refetchIntervalChart,
+  });
+
+  const topIdentityProviders = useQuery({
+    queryKey: ["authLogTopIdentityProvider", periodMinutes],
+    queryFn: async () => {
+      const { response } =
+        await getClientVisibilityAuthenticationLog().listAuthenticationLogTopIdentityProvider(
+          ListAuthenticationLogTopIdentityProviderRequest.create({
+            from: toTs(curFrom),
+            to: toTs(curTo),
+          }),
+        );
+      return response;
+    },
+    refetchInterval: refetchIntervalChart,
+  });
+
+  const topCredentials = useQuery({
+    queryKey: ["authLogTopCredential", periodMinutes],
+    queryFn: async () => {
+      const { response } =
+        await getClientVisibilityAuthenticationLog().listAuthenticationLogTopCredential(
+          ListAuthenticationLogTopIdentityProviderRequest.create({
+            from: toTs(curFrom),
+            to: toTs(curTo),
+          }),
+        );
+      return response;
+    },
+    refetchInterval: refetchIntervalChart,
+  });
+
+  const isSummaryLoading = curSummary.isLoading || prevSummary.isLoading;
+  const cur = curSummary.data;
+  const prev = prevSummary.data;
+
+  const isAnyLoading =
+    isSummaryLoading ||
+    dataPoint.isLoading ||
+    topUsers.isLoading ||
+    topIdentityProviders.isLoading;
+
+  const refetchAll = () => {
+    curSummary.refetch();
+    prevSummary.refetch();
+    dataPoint.refetch();
+    topUsers.refetch();
+    topIdentityProviders.refetch();
+    topCredentials.refetch();
   };
 
-  const periodLabel =
-    PERIOD_OPTIONS.find((o) => o.minutes === periodMinutes)?.label ?? "";
-
   return (
-    <div className="w-full flex flex-col gap-4">
+    <div className="w-full flex flex-col gap-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <PeriodSelector value={periodMinutes} onChange={setPeriodMinutes} />
@@ -283,20 +463,19 @@ const AuthenticationLogHealthWidget = () => {
           </span>
         </div>
         <button
-          onClick={refetch}
-          disabled={isLoading}
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[0.7rem] font-bold text-slate-500 border border-slate-200 bg-white hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 transition-colors duration-150 cursor-pointer shadow-[0_1px_2px_rgba(15,23,42,0.05)] disabled:opacity-50"
+          onClick={refetchAll}
+          disabled={isAnyLoading}
+          className="flex items-center justify-center w-7 h-7 rounded-md text-slate-400 border border-slate-200 bg-white hover:text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition-colors duration-150 cursor-pointer shadow-[0_1px_2px_rgba(15,23,42,0.05)] disabled:opacity-50"
         >
           <RefreshCw
-            size={11}
+            size={12}
             strokeWidth={2.5}
-            className={isLoading ? "animate-spin" : ""}
+            className={isAnyLoading ? "animate-spin" : ""}
           />
-          Refresh
         </button>
       </div>
 
-      {isLoading ? (
+      {isSummaryLoading ? (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[0, 1, 2, 3].map((i) => (
             <div
@@ -479,6 +658,59 @@ const AuthenticationLogHealthWidget = () => {
           <span className="text-[0.75rem] font-semibold text-slate-400">
             No data available
           </span>
+        </div>
+      )}
+
+      {dataPoint.data?.datapoints && dataPoint.data.datapoints.length > 0 && (
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <span className="text-[0.62rem] font-bold uppercase tracking-[0.07em] text-slate-400 block mb-3">
+            Activity — last {periodLabel}
+          </span>
+          <LineChart
+            points={dataPoint.data.datapoints.map((x) => ({
+              ts: x.timestamp!,
+              value: x.count,
+            }))}
+          />
+        </div>
+      )}
+
+      {((topUsers.data && topUsers.data?.items.length > 0) ||
+        (topIdentityProviders.data &&
+          topIdentityProviders.data?.items.length > 0) ||
+        (topCredentials.data && topCredentials.data?.items.length > 0)) && (
+        <div className="grid grid-cols-2 gap-4">
+          {topUsers.data && topUsers.data?.items.length > 0 && (
+            <TopList
+              title="Top Users"
+              to="/visibility/authenticationlogs"
+              items={topUsers.data.items.map((x) => ({
+                resource: x.user!,
+                count: x.count,
+              }))}
+            />
+          )}
+          {topIdentityProviders.data &&
+            topIdentityProviders.data?.items.length > 0 && (
+              <TopList
+                title="Top Identity Providers"
+                to="/visibility/authenticationlogs"
+                items={topIdentityProviders.data.items.map((x) => ({
+                  resource: x.identityProvider!,
+                  count: x.count,
+                }))}
+              />
+            )}
+          {topCredentials.data && topCredentials.data?.items.length > 0 && (
+            <TopList
+              title="Top Credentials"
+              to="/visibility/authenticationlogs"
+              items={topCredentials.data.items.map((x) => ({
+                resource: x.credential!,
+                count: x.count,
+              }))}
+            />
+          )}
         </div>
       )}
     </div>

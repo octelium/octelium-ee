@@ -171,17 +171,15 @@ const LogsTab = () => (
     className="flex flex-col gap-4"
   >
     <div className="grid grid-cols-1">
-      <Item title="Access health" className="mb-8">
+      <Item title="Access Logs" className="mb-8">
         <AccessLogHealthWidget />
       </Item>
-      <Item title="Authentication health">
+      <Item title="Authentication Logs">
         <AuthenticationLogHealthWidget />
       </Item>
     </div>
 
     <div className="flex flex-col gap-4">
-      <AccessLog />
-      <AuthenticationLog />
       <AuditLog />
       <ComponentLog />
     </div>
