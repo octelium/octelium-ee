@@ -1,44 +1,74 @@
-import { Resource } from "@/utils/pb";
+import { hasAccessLog, hasAuthenticationLog, Resource } from "@/utils/pb";
 import { SegmentedControl } from "@mantine/core";
-import { LayoutDashboard, Settings } from "lucide-react";
+import {
+  LayoutDashboard,
+  Settings,
+  ShieldEllipsis,
+  ShieldUser,
+} from "lucide-react";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { match } from "ts-pattern";
 import PageWrap from "../PageWrap";
 import { useContextResource } from "./utils";
 
-const TABS = [
+interface Tab {
+  value: string;
+  label: string;
+  icon: React.FC<any>;
+  path: string;
+}
+
+const BASE_TABS: Tab[] = [
   { value: "main", label: "Overview", icon: LayoutDashboard, path: "" },
   { value: "edit", label: "Configure", icon: Settings, path: "edit" },
-  // { value: "actions", label: "Actions", icon: Zap, path: "actions" },
-] as const;
+];
 
-type TabValue = (typeof TABS)[number]["value"];
+const ACCESS_LOG_TAB: Tab = {
+  value: "accesslogs",
+  label: "Access Logs",
+  icon: ShieldEllipsis,
+  path: "accesslogs",
+};
 
-const getActiveTab = (pathname: string): TabValue => {
+const AUTH_LOG_TAB: Tab = {
+  value: "authenticationlogs",
+  label: "Auth Logs",
+  icon: ShieldUser,
+  path: "authenticationlogs",
+};
+
+const getActiveTab = (pathname: string): string => {
   const segments = pathname.split("/").filter(Boolean);
   const last = segments.at(-1) ?? "";
-  return (
-    match(last)
-      .with("edit", () => "edit" as const)
-      // .with("actions", () => "actions" as const)
-      .otherwise(() => "main" as const)
-  );
+  return match(last)
+    .with("edit", () => "edit")
+    .with("accesslogs", () => "accesslogs")
+    .with("authenticationlogs", () => "authenticationlogs")
+    .otherwise(() => "main");
+};
+
+const buildTabs = (resource: Resource): Tab[] => {
+  const tabs = [...BASE_TABS];
+  if (hasAccessLog(resource)) tabs.push(ACCESS_LOG_TAB);
+  if (hasAuthenticationLog(resource)) tabs.push(AUTH_LOG_TAB);
+  return tabs;
 };
 
 const ResourceMainBar = (props: { resource: Resource }) => {
   const navigate = useNavigate();
   const loc = useLocation();
   const activeTab = getActiveTab(loc.pathname);
+  const tabs = buildTabs(props.resource);
 
   return (
     <div className="flex items-center justify-between gap-4">
       <SegmentedControl
         value={activeTab}
         onChange={(v) => {
-          const tab = TABS.find((t) => t.value === v);
+          const tab = tabs.find((t) => t.value === v);
           if (tab) navigate(tab.path);
         }}
-        data={TABS.map(({ value, label, icon: Icon }) => ({
+        data={tabs.map(({ value, label, icon: Icon }) => ({
           value,
           label: (
             <span className="flex items-center gap-1.5 px-1">

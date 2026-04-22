@@ -3,7 +3,7 @@ import { ObjectReference } from "@/apis/metav1/metav1";
 import PageWrap from "@/components/PageWrap";
 import { getResourceRef, Resource } from "@/utils/pb";
 import { match } from "ts-pattern";
-import AccessLogViewer from "../AccessLogViewer";
+import AccessLogHealthWidget from "../AccessLogViewer/AccessLogWidget";
 import { useContextResource } from "./utils";
 
 export const ResourceAccessLogs = (props: {
@@ -58,14 +58,13 @@ export const ResourceAccessLogs = (props: {
       <div className="w-full">
         <div className="w-full">
           <div>
-            <AccessLogViewer
+            <AccessLogHealthWidget
               userRef={userRef}
               serviceRef={serviceRef}
               namespaceRef={namespaceRef}
               deviceRef={deviceRef}
               sessionRef={sessionRef}
               policyRef={policyRef}
-              itemsPerPage={props.itemsPerPage}
             />
           </div>
         </div>

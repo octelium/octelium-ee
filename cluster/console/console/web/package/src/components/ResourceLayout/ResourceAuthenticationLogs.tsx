@@ -3,7 +3,7 @@ import { ObjectReference } from "@/apis/metav1/metav1";
 import PageWrap from "@/components/PageWrap";
 import { getResourceRef, Resource } from "@/utils/pb";
 import { match } from "ts-pattern";
-import AuthenticationLogViewer from "../AuthenticationLogViewer";
+import AuthenticationLogHealthWidget from "../AuthenticationLogViewer/AuthenticationLogWidget";
 import { useContextResource } from "./utils";
 
 export const ResourceAuthenticationLogs = (props: { resource: Resource }) => {
@@ -15,6 +15,7 @@ export const ResourceAuthenticationLogs = (props: { resource: Resource }) => {
   let userRef: ObjectReference | undefined;
   let sessionRef: ObjectReference | undefined;
   let identityProviderRef: ObjectReference | undefined;
+  let deviceRef: ObjectReference | undefined;
 
   if (
     !match(resource.kind)
@@ -30,6 +31,10 @@ export const ResourceAuthenticationLogs = (props: { resource: Resource }) => {
         identityProviderRef = getResourceRef(resource);
         return true;
       })
+      .with("Device", () => {
+        deviceRef = getResourceRef(resource);
+        return true;
+      })
       .otherwise(() => false)
   ) {
     return <></>;
@@ -40,9 +45,10 @@ export const ResourceAuthenticationLogs = (props: { resource: Resource }) => {
       <div className="w-full">
         <div className="w-full">
           <div>
-            <AuthenticationLogViewer
+            <AuthenticationLogHealthWidget
               userRef={userRef}
               sessionRef={sessionRef}
+              deviceRef={deviceRef}
               identityProviderRef={identityProviderRef}
             />
           </div>

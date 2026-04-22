@@ -257,6 +257,7 @@ const PolicyTester = () => {
 
       <EditItem
         title="Request context"
+        description="Add L7-specific request context"
         obj={req.request}
         onSet={() => {
           req.request = RequestContext_Request.create({
