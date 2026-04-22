@@ -1,13 +1,10 @@
-import { User_Spec_Type } from "@/apis/corev1/corev1";
-
-import { ResourceListLabel } from "@/components/ResourceList";
 import { CertificateIssuer } from "@/apis/enterprisev1/enterprisev1";
+import { ResourceListLabel } from "@/components/ResourceList";
 
-import { getDomain, toNumOrZero } from "@/utils";
-import Label from "@/components/Label";
+import { getDomain } from "@/utils";
 import { match } from "ts-pattern";
 
-const getType = (svc: CertificateIssuer): string => {
+export const getType = (svc: CertificateIssuer): string => {
   return match(svc.spec?.type.oneofKind)
     .with("acme", () => "ACME")
     .otherwise(() => "");

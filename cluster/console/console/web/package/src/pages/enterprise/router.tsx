@@ -58,7 +58,10 @@ const getResourceChildrenRouter = (arg: ResourceComponentInfo): RouteObject => {
     {
       path: "",
       element: arg.Item.Main ? (
-        <ResourceItemMainPage mainComponent={arg.Item.Main} />
+        <ResourceItemMainPage
+          mainComponent={arg.Item.Main}
+          mainItemsGetter={arg.infoItemsGetter}
+        />
       ) : null,
     },
     {

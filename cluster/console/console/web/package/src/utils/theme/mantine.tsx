@@ -115,7 +115,8 @@ const theme = createTheme({
           fontWeight: 700,
           fontSize: "0.78rem",
           borderRadius: "6px",
-          transition: "background-color 150ms, box-shadow 150ms",
+          transition: "background-color 500ms, box-shadow 500ms",
+          boxShadow: "0 2px 4px rgba(0,0,0,0.08)",
         },
         label: {
           fontFamily: FONT,
