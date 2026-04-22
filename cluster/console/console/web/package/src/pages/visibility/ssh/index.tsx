@@ -1,6 +1,5 @@
 import { ListSSHSessionRequest } from "@/apis/visibilityv1/visibilityv1";
 import { useLogListReq } from "@/components/AccessLogViewer/listReq";
-import { NoLogFound } from "@/components/AccessLogViewer/utils";
 import Paginator from "@/components/Paginator";
 import {
   ResourceListItem,
@@ -23,7 +22,6 @@ export default () => {
       "listSSHSession",
       ListSSHSessionRequest.toJsonString(req),
     ],
-
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAccessLog().listSSHSession(req);
@@ -33,26 +31,26 @@ export default () => {
   });
 
   return (
-    <div className="w-full">
-      {qry.data && qry.data.items.length === 0 && <NoLogFound />}
-      {qry.data && qry.data.items.length > 0 && (
-        <div>
-          <div className="w-full my-4">
-            <Paginator meta={qry.data?.listResponseMeta} />
-          </div>
+    <div className="w-full flex flex-col gap-6">
+      {qry.data?.items.length === 0 && (
+        <div className="flex items-center justify-center py-16">
+          <span className="text-[0.78rem] font-bold uppercase tracking-[0.08em] text-slate-400">
+            No SSH sessions found
+          </span>
+        </div>
+      )}
 
+      {qry.data && qry.data.items.length > 0 && (
+        <>
           <ResourceListWrapper>
             {qry.data.items.map((x) => (
               <ResourceListItem key={x.id} path={`/visibility/ssh/${x.id}`}>
-                <SSHSessionC key={x.id} item={x} />
+                <SSHSessionC item={x} />
               </ResourceListItem>
             ))}
           </ResourceListWrapper>
-
-          <div className="w-full my-4">
-            <Paginator meta={qry.data?.listResponseMeta} />
-          </div>
-        </div>
+          <Paginator meta={qry.data.listResponseMeta} />
+        </>
       )}
     </div>
   );

@@ -45,9 +45,8 @@ export default () => {
   return (
     <div className="w-full">
       <SSHSessionC item={qry.data} />
-      {/**
-      <TerminalAppWrapper sshSession={qry.data} />
-      **/}
+
+      <div className="my-8"></div>
 
       <XTermSSHReplay sshSession={qry.data} />
     </div>
