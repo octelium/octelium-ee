@@ -5,10 +5,18 @@ import Label from "@/components/Label";
 import EditItemWrap from "@/components/ResourceLayout/EditItemWrap";
 import { useUpdateResource } from "@/pages/utils/resource";
 import { ResourceMainInfo } from "@/pages/utils/types";
-import { getResourceRef } from "@/utils/pb";
-import { Switch } from "@mantine/core";
+import { randomStringLowerCase, slugify } from "@/utils";
+import { getClientCore } from "@/utils/client";
+import { getResourcePath, getResourceRef } from "@/utils/pb";
+import { Button, Modal, Switch } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
+import { useMutation } from "@tanstack/react-query";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
+import Edit from "../Credential/Edit";
 
 export const AccessLog = (props: { item: CoreC.User }) => {
   return <AccessLogViewer userRef={getResourceRef(props.item)} />;
@@ -90,6 +98,32 @@ export default (props: { item: CoreC.User }) => {
 export const MainInfo = (props: { item: CoreC.User }): ResourceMainInfo => {
   const { item } = props;
   const mutationUpdate = useUpdateResource();
+  const [opened, { open, close }] = useDisclosure(false);
+  const navigate = useNavigate();
+  const [credential, setCredential] = useState(
+    CoreC.Credential.create({
+      kind: "Credential",
+      apiVersion: "core/v1",
+      metadata: {},
+      spec: {
+        user: item.metadata?.name,
+      },
+    }),
+  );
+
+  const mutationCredential = useMutation({
+    mutationFn: async () => {
+      return await getClientCore().createCredential(credential).response;
+    },
+    onSuccess: (response) => {
+      navigate(getResourcePath(response));
+    },
+    onError: (err: unknown) => {
+      if (err instanceof Error) {
+        toast.error(err.message);
+      }
+    },
+  });
 
   return {
     items: [
@@ -177,6 +211,35 @@ export const MainInfo = (props: { item: CoreC.User }): ResourceMainInfo => {
               />
             }
           />
+        ),
+      },
+      {
+        label: "Credential",
+        value: (
+          <div>
+            <Button onClick={open}>Create Credential</Button>
+            <Modal opened={opened} onClose={close} size={"xl"} centered>
+              <div>
+                <Edit
+                  onUpdate={(v) => {
+                    v.metadata!.name = `${v.spec!.user}-${slugify(CoreC.Credential_Spec_Type[v.spec!.type]).toLowerCase()}-${randomStringLowerCase(4)}`;
+                    setCredential(CoreC.Credential.clone(v));
+                  }}
+                  item={credential}
+                />
+
+                <div className="mt-4 flex items-end justify-end">
+                  <Button
+                    onClick={() => {
+                      mutationCredential.mutate();
+                    }}
+                  >
+                    Create
+                  </Button>
+                </div>
+              </div>
+            </Modal>
+          </div>
         ),
       },
     ],

@@ -80,6 +80,7 @@ const SelectResource = (props: {
       searchable
       data={rscList}
       defaultValue={props.defaultValue}
+      value={props.defaultValue}
       disabled={rscList.length === 0}
       placeholder={
         rscList.length === 0 ? `No ${kind}s found` : `Select ${kind}…`

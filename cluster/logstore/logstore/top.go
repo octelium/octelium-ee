@@ -11,6 +11,7 @@ package logstore
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
@@ -45,6 +46,14 @@ func (s *Server) listAccessLogTopUser(ctx context.Context, req *visibilityv1.Lis
 	}, "entry.common.reason.details.policyMatch.policy.policyRef")
 	if err != nil {
 		return nil, err
+	}
+
+	if req.From != nil {
+		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Gte(req.From.AsTime().UTC().Format(time.RFC3339Nano)))
+	}
+
+	if req.To != nil {
+		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
 	}
 
 	res, err := s.getTop(ctx, "access_logs", 10, "entry.common.userRef", filters)
@@ -98,6 +107,14 @@ func (s *Server) listAccessLogTopService(ctx context.Context, req *visibilityv1.
 	}, "entry.common.reason.details.policyMatch.policy.policyRef")
 	if err != nil {
 		return nil, err
+	}
+
+	if req.From != nil {
+		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Gte(req.From.AsTime().UTC().Format(time.RFC3339Nano)))
+	}
+
+	if req.To != nil {
+		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
 	}
 
 	res, err := s.getTop(ctx, "access_logs", 10, "entry.common.serviceRef", filters)
@@ -154,6 +171,14 @@ func (s *Server) listAccessLogTopPolicy(ctx context.Context, req *visibilityv1.L
 	filters, err = appendRefFilter(filters, req.RegionRef, nil, "entry.common.regionRef")
 	if err != nil {
 		return nil, err
+	}
+
+	if req.From != nil {
+		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Gte(req.From.AsTime().UTC().Format(time.RFC3339Nano)))
+	}
+
+	if req.To != nil {
+		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
 	}
 
 	res, err := s.getTop(ctx, "access_logs", 10, "entry.common.reason.details.policyMatch.policy.policyRef", filters)
@@ -215,6 +240,14 @@ func (s *Server) listAccessLogTopSession(ctx context.Context, req *visibilityv1.
 		return nil, err
 	}
 
+	if req.From != nil {
+		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Gte(req.From.AsTime().UTC().Format(time.RFC3339Nano)))
+	}
+
+	if req.To != nil {
+		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
+	}
+
 	res, err := s.getTop(ctx, "access_logs", 10, "entry.common.sessionRef", filters)
 	if err != nil {
 		return nil, err
@@ -255,6 +288,14 @@ func (s *Server) listAuthenticationLogTopUser(ctx context.Context, req *visibili
 	filters, err = appendRefFilter(filters, req.CredentialRef, nil, "entry.authentication.info.credential.credentialRef")
 	if err != nil {
 		return nil, err
+	}
+
+	if req.From != nil {
+		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Gte(req.From.AsTime().UTC().Format(time.RFC3339Nano)))
+	}
+
+	if req.To != nil {
+		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
 	}
 
 	res, err := s.getTop(ctx, "authentication_logs", 10, "entry.userRef", filters)
@@ -305,6 +346,14 @@ func (s *Server) listAuthenticationLogTopCredential(ctx context.Context, req *vi
 	filters, err = appendRefFilter(filters, req.AuthenticatorRef, nil, "entry.authentication.info.authenticator.authenticatorRef")
 	if err != nil {
 		return nil, err
+	}
+
+	if req.From != nil {
+		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Gte(req.From.AsTime().UTC().Format(time.RFC3339Nano)))
+	}
+
+	if req.To != nil {
+		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
 	}
 
 	res, err := s.getTop(ctx, "authentication_logs", 10, "entry.credentialRef", filters)
@@ -361,6 +410,14 @@ func (s *Server) listAuthenticationLogTopIdentityProvider(ctx context.Context, r
 		return nil, err
 	}
 
+	if req.From != nil {
+		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Gte(req.From.AsTime().UTC().Format(time.RFC3339Nano)))
+	}
+
+	if req.To != nil {
+		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
+	}
+
 	res, err := s.getTop(ctx, "authentication_logs", 10, "entry.identityProviderRef", filters)
 	if err != nil {
 		return nil, err
@@ -411,7 +468,7 @@ func (s *Server) getTop(ctx context.Context, table string, n int, field string, 
 		return nil, err
 	}
 
-	rows, err := s.db.Query(query, args...)
+	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}

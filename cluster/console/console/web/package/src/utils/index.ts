@@ -97,7 +97,7 @@ export function formatNumber(num: number): string {
 
 export function formatBytes(
   bytes: number,
-  options: { useBinaryUnits?: boolean; decimals?: number } = {}
+  options: { useBinaryUnits?: boolean; decimals?: number } = {},
 ): string {
   const { useBinaryUnits = false, decimals = 2 } = options;
 
@@ -113,4 +113,15 @@ export function formatBytes(
   const i = Math.floor(Math.log(bytes) / Math.log(base));
 
   return `${(bytes / Math.pow(base, i)).toFixed(decimals)} ${units[i]}`;
+}
+
+export function slugify(input: string): string {
+  return input
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/-{2,}/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
