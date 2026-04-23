@@ -6,6 +6,7 @@ import { match } from "ts-pattern";
 
 import Label from "@/components/Label";
 import EditItemWrap from "@/components/ResourceLayout/EditItemWrap";
+import { ResourceListLabel } from "@/components/ResourceList";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { twMerge } from "tailwind-merge";
 
@@ -161,6 +162,10 @@ export const MainInfo = (props: {
 
   return {
     items: [
+      {
+        label: "User",
+        value: <ResourceListLabel itemRef={item.status!.userRef} />,
+      },
       {
         label: "Type",
         value: (

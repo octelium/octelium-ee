@@ -222,7 +222,7 @@ export const MainInfo = (props: { item: CoreC.User }): ResourceMainInfo => {
               <div>
                 <Edit
                   onUpdate={(v) => {
-                    v.metadata!.name = `${v.spec!.user}-${slugify(CoreC.Credential_Spec_Type[v.spec!.type]).toLowerCase()}-${randomStringLowerCase(4)}`;
+                    v.metadata!.name = `${v.spec!.user}-${slugify(CoreC.Credential_Spec_Type[v.spec!.type]).toLowerCase()}-${randomStringLowerCase(6)}`;
                     setCredential(CoreC.Credential.clone(v));
                   }}
                   item={credential}

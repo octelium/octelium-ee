@@ -295,9 +295,7 @@ export default () => {
         />
 
         <span className="text-[0.68rem] font-semibold text-slate-400">
-          {tab === "logs"
-            ? "Activity trends and security health"
-            : "Resource inventory and status"}
+          {tab === "logs" ? "Activity trends" : "Cluster resources"}
         </span>
       </div>
 

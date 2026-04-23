@@ -4,6 +4,7 @@ import AccessLogViewer from "@/components/AccessLogViewer";
 import InfoItem from "@/components/InfoItem";
 import Label from "@/components/Label";
 import EditItemWrap from "@/components/ResourceLayout/EditItemWrap";
+import { ResourceListLabel } from "@/components/ResourceList";
 import TimeAgo from "@/components/TimeAgo";
 import TimestampPicker from "@/components/TimestampPicker";
 import { useUpdateResource } from "@/pages/utils/resource";
@@ -171,6 +172,18 @@ export const MainInfo = (props: { item: CoreC.Session }): ResourceMainInfo => {
 
   return {
     items: [
+      {
+        label: "User",
+        value: <ResourceListLabel itemRef={item.status!.userRef} />,
+      },
+      ...(!!item.status?.deviceRef
+        ? [
+            {
+              label: "Device",
+              value: <ResourceListLabel itemRef={item.status!.deviceRef} />,
+            },
+          ]
+        : []),
       {
         label: "Type",
         value: <Label>{getType(item)}</Label>,

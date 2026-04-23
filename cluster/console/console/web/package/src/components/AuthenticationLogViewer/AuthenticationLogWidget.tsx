@@ -231,7 +231,9 @@ const MiniStat = ({
         </span>
       )}
     </div>
-    {total > 0 && (
+    {/**
+    
+     {total > 0 && (
       <div className="h-0.5 w-full bg-slate-100 rounded-full overflow-hidden mt-0.5">
         <div
           className="h-full bg-slate-400 rounded-full transition-[width] duration-500"
@@ -239,6 +241,7 @@ const MiniStat = ({
         />
       </div>
     )}
+    **/}
   </div>
 );
 

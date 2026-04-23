@@ -62,7 +62,7 @@ export default () => {
           <AppShell.Navbar
             p="md"
             className="!bg-transparent"
-            style={{ zIndex: 100, marginTop: 60 }}
+            style={{ zIndex: 10, marginTop: 60 }}
           >
             <SideBar />
           </AppShell.Navbar>
@@ -74,7 +74,7 @@ export default () => {
           <AppShell.Aside
             p="md"
             className="!bg-transparent"
-            style={{ zIndex: 100, marginTop: 60 }}
+            style={{ zIndex: 10, marginTop: 60 }}
           >
             <RightSidebar />
           </AppShell.Aside>

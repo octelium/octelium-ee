@@ -7,6 +7,7 @@ import { match } from "ts-pattern";
 import AccessLogViewer from "@/components/AccessLogViewer";
 import Label from "@/components/Label";
 import EditItemWrap from "@/components/ResourceLayout/EditItemWrap";
+import { ResourceListLabel } from "@/components/ResourceList";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { getResourceRef } from "@/utils/pb";
 import { FaAndroid, FaApple, FaLinux, FaWindows } from "react-icons/fa";
@@ -143,6 +144,10 @@ export const MainInfo = (props: { item: CoreP.Device }): ResourceMainInfo => {
 
   return {
     items: [
+      {
+        label: "User",
+        value: <ResourceListLabel itemRef={item.status!.userRef} />,
+      },
       {
         label: "OS",
         value: (

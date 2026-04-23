@@ -109,6 +109,11 @@ func (s *Server) processAuditLog(ctx context.Context, rsc umetav1.ResourceObject
 		},
 	}
 
+	switch {
+	case strings.HasPrefix(lg.Entry.Package, "octelium.api.main.user"):
+		return nil
+	}
+
 	lgs := plog.NewLogs()
 	lgs.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty()
 	logRecords := lgs.ResourceLogs().At(0).ScopeLogs().At(0).LogRecords()

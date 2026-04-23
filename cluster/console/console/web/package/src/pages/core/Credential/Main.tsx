@@ -13,6 +13,7 @@ import * as CoreP from "@/apis/corev1/corev1";
 import CopyText from "@/components/CopyText";
 import InfoItem from "@/components/InfoItem";
 import EditItemWrap from "@/components/ResourceLayout/EditItemWrap";
+import { ResourceListLabel } from "@/components/ResourceList";
 import TimeAgo from "@/components/TimeAgo";
 import { useUpdateResource } from "@/pages/utils/resource";
 import { ResourceMainInfo } from "@/pages/utils/types";
@@ -262,6 +263,12 @@ export const MainInfo = (props: {
 
   return {
     items: [
+      {
+        label: "User",
+        value: (
+          <ResourceListLabel itemRef={item.status!.userRef}></ResourceListLabel>
+        ),
+      },
       {
         label: "Type",
         value: (
