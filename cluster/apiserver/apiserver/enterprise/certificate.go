@@ -20,6 +20,7 @@ import (
 	"github.com/octelium/octelium/cluster/common/apivalidation"
 	"github.com/octelium/octelium/cluster/common/grpcutils"
 	"github.com/octelium/octelium/cluster/common/urscsrv"
+	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/grpcerr"
 )
 
@@ -128,6 +129,19 @@ func (s *Server) UpdateCertificate(ctx context.Context, req *enterprisev1.Certif
 
 	apisrvcommon.MetadataUpdate(item.Metadata, req.Metadata)
 	item.Spec = req.Spec
+
+	switch item.Spec.Mode {
+	case enterprisev1.Certificate_Spec_MANAGED:
+		iss, err := s.octeliumC.EnterpriseC().GetCertificateIssuer(ctx, &rmetav1.GetOptions{
+			Name: "default",
+		})
+		if err != nil {
+			return nil, err
+		}
+		item.Status.CertificateIssuerRef = umetav1.GetObjectReference(iss)
+	case enterprisev1.Certificate_Spec_MANUAL:
+		item.Status.CertificateIssuerRef = nil
+	}
 
 	item, err = s.octeliumC.EnterpriseC().UpdateCertificate(ctx, item)
 	if err != nil {
