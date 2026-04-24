@@ -104,13 +104,11 @@ export const ItemInfo = (props: { item: Certificate }) => {
         </>
       )}
 
-      {(issuance?.state === Certificate_Status_Issuance_State.FAILED ||
-        issuance?.state === Certificate_Status_Issuance_State.SUCCESS) &&
-        item.spec?.mode === Certificate_Spec_Mode.MANAGED && (
-          <InfoItem title="Issue">
-            <IssueC item={item} />
-          </InfoItem>
-        )}
+      {item.spec?.mode === Certificate_Spec_Mode.MANAGED && (
+        <InfoItem title="Issue">
+          <IssueC item={item} />
+        </InfoItem>
+      )}
     </>
   );
 };
@@ -213,10 +211,10 @@ export const MainInfo = (props: { item: Certificate }): ResourceMainInfo => {
           ]
         : []),
 
-      ...(isSettled && item.spec?.mode === Certificate_Spec_Mode.MANAGED
+      ...(item.spec?.mode === Certificate_Spec_Mode.MANAGED
         ? [
             {
-              label: "Actions",
+              label: "Issue",
               value: <IssueC item={item} />,
             },
           ]
