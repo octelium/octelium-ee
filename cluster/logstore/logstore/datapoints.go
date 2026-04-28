@@ -15,6 +15,7 @@ import (
 
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
+	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/main/visibilityv1"
 	"github.com/octelium/octelium/cluster/common/apivalidation"
@@ -125,6 +126,10 @@ func (s *Server) getAccessLogDataPoint(ctx context.Context, req *visibilityv1.Ge
 	}, "entry.common.reason.details.policyMatch.policy.policyRef")
 	if err != nil {
 		return nil, err
+	}
+
+	if req.Status != corev1.AccessLog_Entry_Common_STATUS_UNSET {
+		filters = append(filters, goqu.L(`rsc->>'$.entry.common.status'`).Eq(req.Status.String()))
 	}
 
 	dps, err := s.getDataPoints(ctx, "access_logs", from, to, s.getDataPointInterval(req.Interval), filters)
@@ -294,6 +299,10 @@ func (s *Server) getComponentLogDataPoint(ctx context.Context, req *visibilityv1
 
 	var filters []exp.Expression
 	var err error
+
+	if req.Level != corev1.ComponentLog_Entry_LEVEL_UNSET {
+		filters = append(filters, goqu.L(`rsc->>'$.entry.level'`).Eq(req.Level.String()))
+	}
 
 	dps, err := s.getDataPoints(ctx, "component_logs", from, to, s.getDataPointInterval(req.Interval), filters)
 	if err != nil {
