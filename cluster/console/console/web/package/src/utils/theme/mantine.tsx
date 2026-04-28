@@ -27,7 +27,7 @@ const FONT =
 
 const labelStyles = {
   label: {
-    fontSize: "0.72rem",
+    fontSize: "0.78rem",
     fontWeight: 700,
     fontFamily: FONT,
     textTransform: "uppercase" as const,
@@ -36,14 +36,14 @@ const labelStyles = {
     marginBottom: "4px",
   },
   description: {
-    fontSize: "0.7rem",
+    fontSize: "0.75rem",
     fontWeight: 600,
     fontFamily: FONT,
     color: "#94a3b8",
     marginBottom: "4px",
   },
   error: {
-    fontSize: "0.7rem",
+    fontSize: "0.75rem",
     fontWeight: 600,
     fontFamily: FONT,
   },
@@ -59,10 +59,11 @@ const inputStyles = {
     borderRadius: "6px",
     color: "#1e293b",
     boxShadow: "0 1px 3px rgba(15,23,42,0.05)",
-    transition: "border-color 150ms, box-shadow 150ms",
-    "&:focus": {
-      borderColor: "#94a3b8",
-      boxShadow: "0 0 0 2px rgba(148,163,184,0.2)",
+    transition: "border-color 500ms, box-shadow 500ms",
+    "&:focus, &[data-focus]": {
+      borderColor: "#0f172a",
+      boxShadow: "0 0 0 2px rgba(15,23,42,0.12)",
+      outline: "none",
     },
     "&:disabled": {
       backgroundColor: "#f8fafc",

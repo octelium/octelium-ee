@@ -124,3 +124,18 @@ input[type="range"]::-moz-range-thumb {
 button {
   cursor: pointer;
 }
+
+.mantine-Input-input:focus,
+.mantine-Input-input[data-focus] {
+  border-color: #0f172a !important;
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.12) !important;
+  outline: none !important;
+  transition:
+    border-color 500ms,
+    box-shadow 500ms !important;
+}
+
+:root {
+  --mantine-focus-ring: none;
+  --mantine-focus-shadow: none;
+}
