@@ -116,12 +116,33 @@ const Config = (props: {
                       });
 
                     updateReq();
+                  })
+                  .with("loadbalance", () => {
+                    match(init.upstream?.type.oneofKind)
+                      .with("loadbalance", () => {
+                        req.upstream!.type = init!.upstream!.type;
+                      })
+                      .otherwise(() => {
+                        req.upstream!.type = {
+                          oneofKind: "loadbalance",
+                          loadbalance:
+                            CoreP.Service_Spec_Config_Upstream_Loadbalance.create(
+                              {
+                                endpoints: [
+                                  CoreP.Service_Spec_Config_Upstream_Loadbalance_Endpoint.create(),
+                                ],
+                              },
+                            ),
+                        };
+                      });
+                    updateReq();
                   });
               }}
             >
               <Tabs.List>
                 <Tabs.Tab value="url">URL</Tabs.Tab>
                 <Tabs.Tab value="container">Managed Container</Tabs.Tab>
+                <Tabs.Tab value="loadbalance">Load Balance</Tabs.Tab>
               </Tabs.List>
 
               <Tabs.Panel value="url">
@@ -242,12 +263,7 @@ const Config = (props: {
                                     description="Set the environment variable key"
                                     placeholder="MY_KEY"
                                     className="flex-1"
-                                    value={
-                                      container.container.env[idx].type
-                                        .oneofKind === `value`
-                                        ? container.container.env[idx].name
-                                        : undefined
-                                    }
+                                    value={container.container.env[idx].name}
                                     onChange={(v) => {
                                       container.container.env[idx].name =
                                         v.target.value;
@@ -571,6 +587,77 @@ const Config = (props: {
                         </div>
                       );
                     },
+                  )
+                  .otherwise(() => (
+                    <></>
+                  ))}
+              </Tabs.Panel>
+
+              <Tabs.Panel value="loadbalance">
+                {match(req.upstream.type)
+                  .when(
+                    (x) => x.oneofKind === "loadbalance",
+                    (loadbalance) => (
+                      <ItemMessage
+                        title="Endpoints"
+                        obj={loadbalance.loadbalance.endpoints}
+                        isList
+                        onSet={() => {
+                          loadbalance.loadbalance.endpoints = [
+                            CoreP.Service_Spec_Config_Upstream_Loadbalance_Endpoint.create(),
+                          ];
+                          updateReq();
+                        }}
+                        onAddListItem={() => {
+                          loadbalance.loadbalance.endpoints.push(
+                            CoreP.Service_Spec_Config_Upstream_Loadbalance_Endpoint.create(),
+                          );
+                          updateReq();
+                        }}
+                      >
+                        {loadbalance.loadbalance.endpoints.map(
+                          (endpoint, idx) => (
+                            <EditItem
+                              key={idx}
+                              obj={endpoint}
+                              onUnset={() => {
+                                loadbalance.loadbalance.endpoints.splice(
+                                  idx,
+                                  1,
+                                );
+                                updateReq();
+                              }}
+                            >
+                              <Group grow>
+                                <TextInput
+                                  required
+                                  label="URL"
+                                  description="The upstream canonical URL"
+                                  placeholder="https://example.com"
+                                  value={endpoint.url}
+                                  onChange={(v) => {
+                                    endpoint.url = v.target.value;
+                                    updateReq();
+                                  }}
+                                />
+                                <SelectResource
+                                  api="core"
+                                  kind="User"
+                                  defaultValue={endpoint.user}
+                                  label="Serve by User"
+                                  clearable
+                                  description="Serve from a connected client by a User"
+                                  onChange={(v) => {
+                                    endpoint.user = v?.metadata?.name ?? "";
+                                    updateReq();
+                                  }}
+                                />
+                              </Group>
+                            </EditItem>
+                          ),
+                        )}
+                      </ItemMessage>
+                    ),
                   )
                   .otherwise(() => (
                     <></>
