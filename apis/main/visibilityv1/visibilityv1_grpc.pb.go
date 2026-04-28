@@ -1018,8 +1018,9 @@ var AuditLogService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	ComponentLogService_ListComponentLog_FullMethodName       = "/octelium.api.main.visibility.v1.ComponentLogService/ListComponentLog"
-	ComponentLogService_GetComponentLogSummary_FullMethodName = "/octelium.api.main.visibility.v1.ComponentLogService/GetComponentLogSummary"
+	ComponentLogService_ListComponentLog_FullMethodName         = "/octelium.api.main.visibility.v1.ComponentLogService/ListComponentLog"
+	ComponentLogService_GetComponentLogSummary_FullMethodName   = "/octelium.api.main.visibility.v1.ComponentLogService/GetComponentLogSummary"
+	ComponentLogService_GetComponentLogDataPoint_FullMethodName = "/octelium.api.main.visibility.v1.ComponentLogService/GetComponentLogDataPoint"
 )
 
 // ComponentLogServiceClient is the client API for ComponentLogService service.
@@ -1028,6 +1029,7 @@ const (
 type ComponentLogServiceClient interface {
 	ListComponentLog(ctx context.Context, in *ListComponentLogRequest, opts ...grpc.CallOption) (*ListComponentLogResponse, error)
 	GetComponentLogSummary(ctx context.Context, in *GetComponentLogSummaryRequest, opts ...grpc.CallOption) (*GetComponentLogSummaryResponse, error)
+	GetComponentLogDataPoint(ctx context.Context, in *GetComponentLogDataPointRequest, opts ...grpc.CallOption) (*GetComponentLogDataPointResponse, error)
 }
 
 type componentLogServiceClient struct {
@@ -1058,12 +1060,23 @@ func (c *componentLogServiceClient) GetComponentLogSummary(ctx context.Context, 
 	return out, nil
 }
 
+func (c *componentLogServiceClient) GetComponentLogDataPoint(ctx context.Context, in *GetComponentLogDataPointRequest, opts ...grpc.CallOption) (*GetComponentLogDataPointResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetComponentLogDataPointResponse)
+	err := c.cc.Invoke(ctx, ComponentLogService_GetComponentLogDataPoint_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ComponentLogServiceServer is the server API for ComponentLogService service.
 // All implementations must embed UnimplementedComponentLogServiceServer
 // for forward compatibility.
 type ComponentLogServiceServer interface {
 	ListComponentLog(context.Context, *ListComponentLogRequest) (*ListComponentLogResponse, error)
 	GetComponentLogSummary(context.Context, *GetComponentLogSummaryRequest) (*GetComponentLogSummaryResponse, error)
+	GetComponentLogDataPoint(context.Context, *GetComponentLogDataPointRequest) (*GetComponentLogDataPointResponse, error)
 	mustEmbedUnimplementedComponentLogServiceServer()
 }
 
@@ -1079,6 +1092,9 @@ func (UnimplementedComponentLogServiceServer) ListComponentLog(context.Context, 
 }
 func (UnimplementedComponentLogServiceServer) GetComponentLogSummary(context.Context, *GetComponentLogSummaryRequest) (*GetComponentLogSummaryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetComponentLogSummary not implemented")
+}
+func (UnimplementedComponentLogServiceServer) GetComponentLogDataPoint(context.Context, *GetComponentLogDataPointRequest) (*GetComponentLogDataPointResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetComponentLogDataPoint not implemented")
 }
 func (UnimplementedComponentLogServiceServer) mustEmbedUnimplementedComponentLogServiceServer() {}
 func (UnimplementedComponentLogServiceServer) testEmbeddedByValue()                             {}
@@ -1137,6 +1153,24 @@ func _ComponentLogService_GetComponentLogSummary_Handler(srv interface{}, ctx co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ComponentLogService_GetComponentLogDataPoint_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetComponentLogDataPointRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ComponentLogServiceServer).GetComponentLogDataPoint(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ComponentLogService_GetComponentLogDataPoint_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ComponentLogServiceServer).GetComponentLogDataPoint(ctx, req.(*GetComponentLogDataPointRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ComponentLogService_ServiceDesc is the grpc.ServiceDesc for ComponentLogService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1151,6 +1185,10 @@ var ComponentLogService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetComponentLogSummary",
 			Handler:    _ComponentLogService_GetComponentLogSummary_Handler,
+		},
+		{
+			MethodName: "GetComponentLogDataPoint",
+			Handler:    _ComponentLogService_GetComponentLogDataPoint_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

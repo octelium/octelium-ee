@@ -6,6 +6,7 @@ import AuditLogHealthWidget from "@/components/AuditLogViewer/AuditLogWidget";
 import AuthenticationLogDataPoint from "@/components/AuthenticationLogViewer/AuthenticationLogDataPoint";
 import AuthenticationLogHealthWidget from "@/components/AuthenticationLogViewer/AuthenticationLogWidget";
 import AuthenticationLogTopList from "@/components/AuthenticationLogViewer/TopList";
+import ComponentLogHealthWidget from "@/components/ComponentLogViewer/ComponentLogWidget";
 import AccessLogSummary from "@/components/LogSummary/AccessLogSummary";
 import AuditLogSummary from "@/components/LogSummary/AuditLogSummary";
 import AuthenticationLogSummary from "@/components/LogSummary/AuthenticationLogSummary";
@@ -182,10 +183,10 @@ const LogsTab = () => (
       <Item title="Audit Logs">
         <AuditLogHealthWidget />
       </Item>
-    </div>
 
-    <div className="flex flex-col gap-4">
-      <ComponentLog />
+      <Item title="Component Logs">
+        <ComponentLogHealthWidget />
+      </Item>
     </div>
   </motion.div>
 );

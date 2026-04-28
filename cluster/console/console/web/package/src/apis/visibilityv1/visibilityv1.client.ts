@@ -18,6 +18,8 @@ import type { GetGaugeRequest } from "./visibilityv1";
 import type { GetCounterResponse } from "./visibilityv1";
 import type { GetCounterRequest } from "./visibilityv1";
 import { ComponentLogService } from "./visibilityv1";
+import type { GetComponentLogDataPointResponse } from "./visibilityv1";
+import type { GetComponentLogDataPointRequest } from "./visibilityv1";
 import type { GetComponentLogSummaryResponse } from "./visibilityv1";
 import type { GetComponentLogSummaryRequest } from "./visibilityv1";
 import type { ListComponentLogResponse } from "./visibilityv1";
@@ -360,6 +362,10 @@ export interface IComponentLogServiceClient {
      * @generated from protobuf rpc: GetComponentLogSummary
      */
     getComponentLogSummary(input: GetComponentLogSummaryRequest, options?: RpcOptions): UnaryCall<GetComponentLogSummaryRequest, GetComponentLogSummaryResponse>;
+    /**
+     * @generated from protobuf rpc: GetComponentLogDataPoint
+     */
+    getComponentLogDataPoint(input: GetComponentLogDataPointRequest, options?: RpcOptions): UnaryCall<GetComponentLogDataPointRequest, GetComponentLogDataPointResponse>;
 }
 /**
  * @generated from protobuf service octelium.api.main.visibility.v1.ComponentLogService
@@ -383,6 +389,13 @@ export class ComponentLogServiceClient implements IComponentLogServiceClient, Se
     getComponentLogSummary(input: GetComponentLogSummaryRequest, options?: RpcOptions): UnaryCall<GetComponentLogSummaryRequest, GetComponentLogSummaryResponse> {
         const method = this.methods[1], opt = this._transport.mergeOptions(options);
         return stackIntercept<GetComponentLogSummaryRequest, GetComponentLogSummaryResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * @generated from protobuf rpc: GetComponentLogDataPoint
+     */
+    getComponentLogDataPoint(input: GetComponentLogDataPointRequest, options?: RpcOptions): UnaryCall<GetComponentLogDataPointRequest, GetComponentLogDataPointResponse> {
+        const method = this.methods[2], opt = this._transport.mergeOptions(options);
+        return stackIntercept<GetComponentLogDataPointRequest, GetComponentLogDataPointResponse>("unary", this._transport, method, opt, input);
     }
 }
 /**

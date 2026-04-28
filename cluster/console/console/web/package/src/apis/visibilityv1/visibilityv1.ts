@@ -1566,6 +1566,49 @@ export interface ListAuditLogTopSessionResponse_Item {
      */
     count: number;
 }
+/**
+ * @generated from protobuf message octelium.api.main.visibility.v1.GetComponentLogDataPointRequest
+ */
+export interface GetComponentLogDataPointRequest {
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp from = 4
+     */
+    from?: Timestamp;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp to = 5
+     */
+    to?: Timestamp;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration interval = 13
+     */
+    interval?: Duration;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.ComponentLog.Entry.Level level = 2
+     */
+    level: ComponentLog_Entry_Level;
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.v1.GetComponentLogDataPointResponse
+ */
+export interface GetComponentLogDataPointResponse {
+    /**
+     * @generated from protobuf field: repeated octelium.api.main.visibility.v1.GetComponentLogDataPointResponse.DataPoint datapoints = 1
+     */
+    datapoints: GetComponentLogDataPointResponse_DataPoint[];
+}
+/**
+ * @generated from protobuf message octelium.api.main.visibility.v1.GetComponentLogDataPointResponse.DataPoint
+ */
+export interface GetComponentLogDataPointResponse_DataPoint {
+    /**
+     * @generated from protobuf field: int64 count = 1
+     */
+    count: number;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp timestamp = 2
+     */
+    timestamp?: Timestamp;
+}
 // @generated message type with reflection information, may provide speed optimized methods
 class ListAccessLogRequest$Type extends MessageType<ListAccessLogRequest> {
     constructor() {
@@ -6455,6 +6498,175 @@ class ListAuditLogTopSessionResponse_Item$Type extends MessageType<ListAuditLogT
  * @generated MessageType for protobuf message octelium.api.main.visibility.v1.ListAuditLogTopSessionResponse.Item
  */
 export const ListAuditLogTopSessionResponse_Item = new ListAuditLogTopSessionResponse_Item$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetComponentLogDataPointRequest$Type extends MessageType<GetComponentLogDataPointRequest> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.GetComponentLogDataPointRequest", [
+            { no: 4, name: "from", kind: "message", T: () => Timestamp },
+            { no: 5, name: "to", kind: "message", T: () => Timestamp },
+            { no: 13, name: "interval", kind: "message", T: () => Duration },
+            { no: 2, name: "level", kind: "enum", T: () => ["octelium.api.main.core.v1.ComponentLog.Entry.Level", ComponentLog_Entry_Level] }
+        ]);
+    }
+    create(value?: PartialMessage<GetComponentLogDataPointRequest>): GetComponentLogDataPointRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.level = 0;
+        if (value !== undefined)
+            reflectionMergePartial<GetComponentLogDataPointRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetComponentLogDataPointRequest): GetComponentLogDataPointRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* google.protobuf.Timestamp from */ 4:
+                    message.from = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.from);
+                    break;
+                case /* google.protobuf.Timestamp to */ 5:
+                    message.to = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.to);
+                    break;
+                case /* octelium.api.main.meta.v1.Duration interval */ 13:
+                    message.interval = Duration.internalBinaryRead(reader, reader.uint32(), options, message.interval);
+                    break;
+                case /* octelium.api.main.core.v1.ComponentLog.Entry.Level level */ 2:
+                    message.level = reader.int32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetComponentLogDataPointRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.core.v1.ComponentLog.Entry.Level level = 2; */
+        if (message.level !== 0)
+            writer.tag(2, WireType.Varint).int32(message.level);
+        /* google.protobuf.Timestamp from = 4; */
+        if (message.from)
+            Timestamp.internalBinaryWrite(message.from, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp to = 5; */
+        if (message.to)
+            Timestamp.internalBinaryWrite(message.to, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.Duration interval = 13; */
+        if (message.interval)
+            Duration.internalBinaryWrite(message.interval, writer.tag(13, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.GetComponentLogDataPointRequest
+ */
+export const GetComponentLogDataPointRequest = new GetComponentLogDataPointRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetComponentLogDataPointResponse$Type extends MessageType<GetComponentLogDataPointResponse> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.GetComponentLogDataPointResponse", [
+            { no: 1, name: "datapoints", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => GetComponentLogDataPointResponse_DataPoint }
+        ]);
+    }
+    create(value?: PartialMessage<GetComponentLogDataPointResponse>): GetComponentLogDataPointResponse {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.datapoints = [];
+        if (value !== undefined)
+            reflectionMergePartial<GetComponentLogDataPointResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetComponentLogDataPointResponse): GetComponentLogDataPointResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated octelium.api.main.visibility.v1.GetComponentLogDataPointResponse.DataPoint datapoints */ 1:
+                    message.datapoints.push(GetComponentLogDataPointResponse_DataPoint.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetComponentLogDataPointResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated octelium.api.main.visibility.v1.GetComponentLogDataPointResponse.DataPoint datapoints = 1; */
+        for (let i = 0; i < message.datapoints.length; i++)
+            GetComponentLogDataPointResponse_DataPoint.internalBinaryWrite(message.datapoints[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.GetComponentLogDataPointResponse
+ */
+export const GetComponentLogDataPointResponse = new GetComponentLogDataPointResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetComponentLogDataPointResponse_DataPoint$Type extends MessageType<GetComponentLogDataPointResponse_DataPoint> {
+    constructor() {
+        super("octelium.api.main.visibility.v1.GetComponentLogDataPointResponse.DataPoint", [
+            { no: 1, name: "count", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 2, name: "timestamp", kind: "message", T: () => Timestamp }
+        ]);
+    }
+    create(value?: PartialMessage<GetComponentLogDataPointResponse_DataPoint>): GetComponentLogDataPointResponse_DataPoint {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.count = 0;
+        if (value !== undefined)
+            reflectionMergePartial<GetComponentLogDataPointResponse_DataPoint>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetComponentLogDataPointResponse_DataPoint): GetComponentLogDataPointResponse_DataPoint {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* int64 count */ 1:
+                    message.count = reader.int64().toNumber();
+                    break;
+                case /* google.protobuf.Timestamp timestamp */ 2:
+                    message.timestamp = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.timestamp);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetComponentLogDataPointResponse_DataPoint, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* int64 count = 1; */
+        if (message.count !== 0)
+            writer.tag(1, WireType.Varint).int64(message.count);
+        /* google.protobuf.Timestamp timestamp = 2; */
+        if (message.timestamp)
+            Timestamp.internalBinaryWrite(message.timestamp, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.v1.GetComponentLogDataPointResponse.DataPoint
+ */
+export const GetComponentLogDataPointResponse_DataPoint = new GetComponentLogDataPointResponse_DataPoint$Type();
 /**
  * @generated ServiceType for protobuf service octelium.api.main.visibility.v1.AccessLogService
  */
@@ -6496,7 +6708,8 @@ export const AuditLogService = new ServiceType("octelium.api.main.visibility.v1.
  */
 export const ComponentLogService = new ServiceType("octelium.api.main.visibility.v1.ComponentLogService", [
     { name: "ListComponentLog", options: {}, I: ListComponentLogRequest, O: ListComponentLogResponse },
-    { name: "GetComponentLogSummary", options: {}, I: GetComponentLogSummaryRequest, O: GetComponentLogSummaryResponse }
+    { name: "GetComponentLogSummary", options: {}, I: GetComponentLogSummaryRequest, O: GetComponentLogSummaryResponse },
+    { name: "GetComponentLogDataPoint", options: {}, I: GetComponentLogDataPointRequest, O: GetComponentLogDataPointResponse }
 ]);
 /**
  * @generated ServiceType for protobuf service octelium.api.main.visibility.v1.MetricsService
