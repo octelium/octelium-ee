@@ -764,8 +764,11 @@ var AuthenticationLogService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	AuditLogService_ListAuditLog_FullMethodName       = "/octelium.api.main.visibility.v1.AuditLogService/ListAuditLog"
-	AuditLogService_GetAuditLogSummary_FullMethodName = "/octelium.api.main.visibility.v1.AuditLogService/GetAuditLogSummary"
+	AuditLogService_ListAuditLog_FullMethodName           = "/octelium.api.main.visibility.v1.AuditLogService/ListAuditLog"
+	AuditLogService_GetAuditLogSummary_FullMethodName     = "/octelium.api.main.visibility.v1.AuditLogService/GetAuditLogSummary"
+	AuditLogService_GetAuditLogDataPoint_FullMethodName   = "/octelium.api.main.visibility.v1.AuditLogService/GetAuditLogDataPoint"
+	AuditLogService_ListAuditLogTopUser_FullMethodName    = "/octelium.api.main.visibility.v1.AuditLogService/ListAuditLogTopUser"
+	AuditLogService_ListAuditLogTopSession_FullMethodName = "/octelium.api.main.visibility.v1.AuditLogService/ListAuditLogTopSession"
 )
 
 // AuditLogServiceClient is the client API for AuditLogService service.
@@ -774,6 +777,9 @@ const (
 type AuditLogServiceClient interface {
 	ListAuditLog(ctx context.Context, in *ListAuditLogRequest, opts ...grpc.CallOption) (*ListAuditLogResponse, error)
 	GetAuditLogSummary(ctx context.Context, in *GetAuditLogSummaryRequest, opts ...grpc.CallOption) (*GetAuditLogSummaryResponse, error)
+	GetAuditLogDataPoint(ctx context.Context, in *GetAuditLogDataPointRequest, opts ...grpc.CallOption) (*GetAuditLogDataPointResponse, error)
+	ListAuditLogTopUser(ctx context.Context, in *ListAuditLogTopUserRequest, opts ...grpc.CallOption) (*ListAuditLogTopUserResponse, error)
+	ListAuditLogTopSession(ctx context.Context, in *ListAuditLogTopSessionRequest, opts ...grpc.CallOption) (*ListAuditLogTopSessionResponse, error)
 }
 
 type auditLogServiceClient struct {
@@ -804,12 +810,45 @@ func (c *auditLogServiceClient) GetAuditLogSummary(ctx context.Context, in *GetA
 	return out, nil
 }
 
+func (c *auditLogServiceClient) GetAuditLogDataPoint(ctx context.Context, in *GetAuditLogDataPointRequest, opts ...grpc.CallOption) (*GetAuditLogDataPointResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetAuditLogDataPointResponse)
+	err := c.cc.Invoke(ctx, AuditLogService_GetAuditLogDataPoint_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *auditLogServiceClient) ListAuditLogTopUser(ctx context.Context, in *ListAuditLogTopUserRequest, opts ...grpc.CallOption) (*ListAuditLogTopUserResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListAuditLogTopUserResponse)
+	err := c.cc.Invoke(ctx, AuditLogService_ListAuditLogTopUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *auditLogServiceClient) ListAuditLogTopSession(ctx context.Context, in *ListAuditLogTopSessionRequest, opts ...grpc.CallOption) (*ListAuditLogTopSessionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListAuditLogTopSessionResponse)
+	err := c.cc.Invoke(ctx, AuditLogService_ListAuditLogTopSession_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuditLogServiceServer is the server API for AuditLogService service.
 // All implementations must embed UnimplementedAuditLogServiceServer
 // for forward compatibility.
 type AuditLogServiceServer interface {
 	ListAuditLog(context.Context, *ListAuditLogRequest) (*ListAuditLogResponse, error)
 	GetAuditLogSummary(context.Context, *GetAuditLogSummaryRequest) (*GetAuditLogSummaryResponse, error)
+	GetAuditLogDataPoint(context.Context, *GetAuditLogDataPointRequest) (*GetAuditLogDataPointResponse, error)
+	ListAuditLogTopUser(context.Context, *ListAuditLogTopUserRequest) (*ListAuditLogTopUserResponse, error)
+	ListAuditLogTopSession(context.Context, *ListAuditLogTopSessionRequest) (*ListAuditLogTopSessionResponse, error)
 	mustEmbedUnimplementedAuditLogServiceServer()
 }
 
@@ -825,6 +864,15 @@ func (UnimplementedAuditLogServiceServer) ListAuditLog(context.Context, *ListAud
 }
 func (UnimplementedAuditLogServiceServer) GetAuditLogSummary(context.Context, *GetAuditLogSummaryRequest) (*GetAuditLogSummaryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAuditLogSummary not implemented")
+}
+func (UnimplementedAuditLogServiceServer) GetAuditLogDataPoint(context.Context, *GetAuditLogDataPointRequest) (*GetAuditLogDataPointResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAuditLogDataPoint not implemented")
+}
+func (UnimplementedAuditLogServiceServer) ListAuditLogTopUser(context.Context, *ListAuditLogTopUserRequest) (*ListAuditLogTopUserResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAuditLogTopUser not implemented")
+}
+func (UnimplementedAuditLogServiceServer) ListAuditLogTopSession(context.Context, *ListAuditLogTopSessionRequest) (*ListAuditLogTopSessionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAuditLogTopSession not implemented")
 }
 func (UnimplementedAuditLogServiceServer) mustEmbedUnimplementedAuditLogServiceServer() {}
 func (UnimplementedAuditLogServiceServer) testEmbeddedByValue()                         {}
@@ -883,6 +931,60 @@ func _AuditLogService_GetAuditLogSummary_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuditLogService_GetAuditLogDataPoint_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAuditLogDataPointRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuditLogServiceServer).GetAuditLogDataPoint(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuditLogService_GetAuditLogDataPoint_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuditLogServiceServer).GetAuditLogDataPoint(ctx, req.(*GetAuditLogDataPointRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuditLogService_ListAuditLogTopUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAuditLogTopUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuditLogServiceServer).ListAuditLogTopUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuditLogService_ListAuditLogTopUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuditLogServiceServer).ListAuditLogTopUser(ctx, req.(*ListAuditLogTopUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuditLogService_ListAuditLogTopSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAuditLogTopSessionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuditLogServiceServer).ListAuditLogTopSession(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuditLogService_ListAuditLogTopSession_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuditLogServiceServer).ListAuditLogTopSession(ctx, req.(*ListAuditLogTopSessionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuditLogService_ServiceDesc is the grpc.ServiceDesc for AuditLogService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -897,6 +999,18 @@ var AuditLogService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetAuditLogSummary",
 			Handler:    _AuditLogService_GetAuditLogSummary_Handler,
+		},
+		{
+			MethodName: "GetAuditLogDataPoint",
+			Handler:    _AuditLogService_GetAuditLogDataPoint_Handler,
+		},
+		{
+			MethodName: "ListAuditLogTopUser",
+			Handler:    _AuditLogService_ListAuditLogTopUser_Handler,
+		},
+		{
+			MethodName: "ListAuditLogTopSession",
+			Handler:    _AuditLogService_ListAuditLogTopSession_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

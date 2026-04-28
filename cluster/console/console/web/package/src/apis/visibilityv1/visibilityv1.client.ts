@@ -23,6 +23,12 @@ import type { GetComponentLogSummaryRequest } from "./visibilityv1";
 import type { ListComponentLogResponse } from "./visibilityv1";
 import type { ListComponentLogRequest } from "./visibilityv1";
 import { AuditLogService } from "./visibilityv1";
+import type { ListAuditLogTopSessionResponse } from "./visibilityv1";
+import type { ListAuditLogTopSessionRequest } from "./visibilityv1";
+import type { ListAuditLogTopUserResponse } from "./visibilityv1";
+import type { ListAuditLogTopUserRequest } from "./visibilityv1";
+import type { GetAuditLogDataPointResponse } from "./visibilityv1";
+import type { GetAuditLogDataPointRequest } from "./visibilityv1";
 import type { GetAuditLogSummaryResponse } from "./visibilityv1";
 import type { GetAuditLogSummaryRequest } from "./visibilityv1";
 import type { ListAuditLogResponse } from "./visibilityv1";
@@ -284,6 +290,18 @@ export interface IAuditLogServiceClient {
      * @generated from protobuf rpc: GetAuditLogSummary
      */
     getAuditLogSummary(input: GetAuditLogSummaryRequest, options?: RpcOptions): UnaryCall<GetAuditLogSummaryRequest, GetAuditLogSummaryResponse>;
+    /**
+     * @generated from protobuf rpc: GetAuditLogDataPoint
+     */
+    getAuditLogDataPoint(input: GetAuditLogDataPointRequest, options?: RpcOptions): UnaryCall<GetAuditLogDataPointRequest, GetAuditLogDataPointResponse>;
+    /**
+     * @generated from protobuf rpc: ListAuditLogTopUser
+     */
+    listAuditLogTopUser(input: ListAuditLogTopUserRequest, options?: RpcOptions): UnaryCall<ListAuditLogTopUserRequest, ListAuditLogTopUserResponse>;
+    /**
+     * @generated from protobuf rpc: ListAuditLogTopSession
+     */
+    listAuditLogTopSession(input: ListAuditLogTopSessionRequest, options?: RpcOptions): UnaryCall<ListAuditLogTopSessionRequest, ListAuditLogTopSessionResponse>;
 }
 /**
  * @generated from protobuf service octelium.api.main.visibility.v1.AuditLogService
@@ -307,6 +325,27 @@ export class AuditLogServiceClient implements IAuditLogServiceClient, ServiceInf
     getAuditLogSummary(input: GetAuditLogSummaryRequest, options?: RpcOptions): UnaryCall<GetAuditLogSummaryRequest, GetAuditLogSummaryResponse> {
         const method = this.methods[1], opt = this._transport.mergeOptions(options);
         return stackIntercept<GetAuditLogSummaryRequest, GetAuditLogSummaryResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * @generated from protobuf rpc: GetAuditLogDataPoint
+     */
+    getAuditLogDataPoint(input: GetAuditLogDataPointRequest, options?: RpcOptions): UnaryCall<GetAuditLogDataPointRequest, GetAuditLogDataPointResponse> {
+        const method = this.methods[2], opt = this._transport.mergeOptions(options);
+        return stackIntercept<GetAuditLogDataPointRequest, GetAuditLogDataPointResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * @generated from protobuf rpc: ListAuditLogTopUser
+     */
+    listAuditLogTopUser(input: ListAuditLogTopUserRequest, options?: RpcOptions): UnaryCall<ListAuditLogTopUserRequest, ListAuditLogTopUserResponse> {
+        const method = this.methods[3], opt = this._transport.mergeOptions(options);
+        return stackIntercept<ListAuditLogTopUserRequest, ListAuditLogTopUserResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * @generated from protobuf rpc: ListAuditLogTopSession
+     */
+    listAuditLogTopSession(input: ListAuditLogTopSessionRequest, options?: RpcOptions): UnaryCall<ListAuditLogTopSessionRequest, ListAuditLogTopSessionResponse> {
+        const method = this.methods[4], opt = this._transport.mergeOptions(options);
+        return stackIntercept<ListAuditLogTopSessionRequest, ListAuditLogTopSessionResponse>("unary", this._transport, method, opt, input);
     }
 }
 /**

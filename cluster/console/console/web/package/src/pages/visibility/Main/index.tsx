@@ -2,6 +2,7 @@ import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import AccessLogDataPoint from "@/components/AccessLogViewer/AccessLogDataPoint";
 import AccessLogHealthWidget from "@/components/AccessLogViewer/AccessLogWidget";
 import AccessLogTopList from "@/components/AccessLogViewer/TopList";
+import AuditLogHealthWidget from "@/components/AuditLogViewer/AuditLogWidget";
 import AuthenticationLogDataPoint from "@/components/AuthenticationLogViewer/AuthenticationLogDataPoint";
 import AuthenticationLogHealthWidget from "@/components/AuthenticationLogViewer/AuthenticationLogWidget";
 import AuthenticationLogTopList from "@/components/AuthenticationLogViewer/TopList";
@@ -177,10 +178,13 @@ const LogsTab = () => (
       <Item title="Authentication Logs">
         <AuthenticationLogHealthWidget />
       </Item>
+
+      <Item title="Audit Logs">
+        <AuditLogHealthWidget />
+      </Item>
     </div>
 
     <div className="flex flex-col gap-4">
-      <AuditLog />
       <ComponentLog />
     </div>
   </motion.div>
