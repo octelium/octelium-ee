@@ -340,6 +340,11 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
     policyRef: refKey(props.policyRef),
   };
 
+  const showTopUsers = !props.userRef && !props.deviceRef && !props.sessionRef;
+  const showTopServices = !props.serviceRef;
+  const showTopSessions = !props.sessionRef;
+  const showTopPolicies = !props.policyRef;
+
   const curSummary = useQuery({
     queryKey: ["accessLogSummary", "current", periodMinutes, refKeys],
     queryFn: async () => {
@@ -409,13 +414,13 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
 
   const topUsers = useQuery({
     queryKey: ["accessLogTopUser", periodMinutes, refKeys],
+    enabled: showTopUsers,
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAccessLog().listAccessLogTopUser(
           ListAccessLogTopUserRequest.create({
             from: toTs(curFrom),
             to: toTs(curTo),
-
             serviceRef: props.serviceRef,
             namespaceRef: props.namespaceRef,
             regionRef: props.regionRef,
@@ -429,6 +434,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
 
   const topServices = useQuery({
     queryKey: ["accessLogTopService", periodMinutes, refKeys],
+    enabled: showTopServices,
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAccessLog().listAccessLogTopService(
@@ -437,7 +443,6 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
             to: toTs(curTo),
             userRef: props.userRef,
             sessionRef: props.sessionRef,
-
             regionRef: props.regionRef,
             deviceRef: props.deviceRef,
             policyRef: props.policyRef,
@@ -450,6 +455,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
 
   const topPolicies = useQuery({
     queryKey: ["accessLogTopPolicy", periodMinutes, refKeys],
+    enabled: showTopPolicies,
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAccessLog().listAccessLogTopPolicy(
@@ -470,6 +476,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
 
   const topSessions = useQuery({
     queryKey: ["accessLogTopSession", periodMinutes, refKeys],
+    enabled: showTopSessions,
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAccessLog().listAccessLogTopSession(
@@ -501,10 +508,10 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
     curSummary.refetch();
     prevSummary.refetch();
     dataPoint.refetch();
-    topUsers.refetch();
-    topServices.refetch();
-    topPolicies.refetch();
-    topSessions.refetch();
+    if (showTopUsers) topUsers.refetch();
+    if (showTopServices) topServices.refetch();
+    if (showTopPolicies) topPolicies.refetch();
+    if (showTopSessions) topSessions.refetch();
   };
 
   return (
@@ -633,12 +640,18 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
         </div>
       )}
 
-      {((topUsers.data && topUsers.data?.items.length > 0) ||
-        (topServices.data && topServices.data?.items.length > 0) ||
-        (topPolicies.data && topPolicies.data?.items.length > 0) ||
-        (topSessions.data && topSessions.data?.items.length > 0)) && (
+      {((showTopUsers && topUsers.data && topUsers.data?.items.length > 0) ||
+        (showTopServices &&
+          topServices.data &&
+          topServices.data?.items.length > 0) ||
+        (showTopPolicies &&
+          topPolicies.data &&
+          topPolicies.data?.items.length > 0) ||
+        (showTopSessions &&
+          topSessions.data &&
+          topSessions.data?.items.length > 0)) && (
         <div className="grid grid-cols-2 gap-4">
-          {topUsers.data && topUsers.data?.items.length > 0 && (
+          {showTopUsers && topUsers.data && topUsers.data?.items.length > 0 && (
             <TopList
               title="Top Users"
               to="/visibility/accesslogs"
@@ -648,36 +661,42 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
               }))}
             />
           )}
-          {topServices.data && topServices.data?.items.length > 0 && (
-            <TopList
-              title="Top Services"
-              to="/visibility/accesslogs"
-              items={topServices.data.items.map((x) => ({
-                resource: x.service!,
-                count: x.count,
-              }))}
-            />
-          )}
-          {topPolicies.data && topPolicies.data?.items.length > 0 && (
-            <TopList
-              title="Top Policies"
-              to="/visibility/accesslogs"
-              items={topPolicies.data.items.map((x) => ({
-                resource: x.policy!,
-                count: x.count,
-              }))}
-            />
-          )}
-          {topSessions.data && topSessions.data?.items.length > 0 && (
-            <TopList
-              title="Top Sessions"
-              to="/visibility/accesslogs"
-              items={topSessions.data.items.map((x) => ({
-                resource: x.session!,
-                count: x.count,
-              }))}
-            />
-          )}
+          {showTopServices &&
+            topServices.data &&
+            topServices.data?.items.length > 0 && (
+              <TopList
+                title="Top Services"
+                to="/visibility/accesslogs"
+                items={topServices.data.items.map((x) => ({
+                  resource: x.service!,
+                  count: x.count,
+                }))}
+              />
+            )}
+          {showTopPolicies &&
+            topPolicies.data &&
+            topPolicies.data?.items.length > 0 && (
+              <TopList
+                title="Top Policies"
+                to="/visibility/accesslogs"
+                items={topPolicies.data.items.map((x) => ({
+                  resource: x.policy!,
+                  count: x.count,
+                }))}
+              />
+            )}
+          {showTopSessions &&
+            topSessions.data &&
+            topSessions.data?.items.length > 0 && (
+              <TopList
+                title="Top Sessions"
+                to="/visibility/accesslogs"
+                items={topSessions.data.items.map((x) => ({
+                  resource: x.session!,
+                  count: x.count,
+                }))}
+              />
+            )}
         </div>
       )}
     </div>
