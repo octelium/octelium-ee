@@ -101,6 +101,18 @@ func (s *srvAuditLog) GetAuditLogSummary(ctx context.Context, req *visibilityv1.
 	return s.s.getSummaryAuditLog(ctx, req)
 }
 
+func (s *srvAuditLog) ListAuditLogTopUser(ctx context.Context, req *visibilityv1.ListAuditLogTopUserRequest) (*visibilityv1.ListAuditLogTopUserResponse, error) {
+	return s.s.listAuditLogTopUser(ctx, req)
+}
+
+func (s *srvAuditLog) ListAuditLogTopSession(ctx context.Context, req *visibilityv1.ListAuditLogTopSessionRequest) (*visibilityv1.ListAuditLogTopSessionResponse, error) {
+	return s.s.listAuditLogTopSession(ctx, req)
+}
+
+func (s *srvAuditLog) GetAuditLogDataPoint(ctx context.Context, req *visibilityv1.GetAuditLogDataPointRequest) (*visibilityv1.GetAuditLogDataPointResponse, error) {
+	return s.s.getAuditLogDataPoint(ctx, req)
+}
+
 type srvComponentLog struct {
 	s *Server
 	visibilityv1.UnimplementedComponentLogServiceServer

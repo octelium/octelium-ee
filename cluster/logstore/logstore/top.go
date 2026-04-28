@@ -440,6 +440,90 @@ func (s *Server) listAuthenticationLogTopIdentityProvider(ctx context.Context, r
 	return ret, nil
 }
 
+func (s *Server) listAuditLogTopUser(ctx context.Context, req *visibilityv1.ListAuditLogTopUserRequest) (*visibilityv1.ListAuditLogTopUserResponse, error) {
+
+	ret := &visibilityv1.ListAuditLogTopUserResponse{}
+
+	var filters []exp.Expression
+	var err error
+
+	filters, err = appendRefFilter(filters, req.ResourceRef, nil, "entry.resourceRef")
+	if err != nil {
+		return nil, err
+	}
+
+	if req.From != nil {
+		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Gte(req.From.AsTime().UTC().Format(time.RFC3339Nano)))
+	}
+
+	if req.To != nil {
+		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
+	}
+
+	res, err := s.getTop(ctx, "audit_logs", 10, "entry.userRef", filters)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, item := range res.items {
+		itm, err := s.octeliumC.CoreC().GetUser(ctx, &rmetav1.GetOptions{
+			Uid: item.UID,
+		})
+		if err != nil {
+			continue
+		}
+
+		ret.Items = append(ret.Items, &visibilityv1.ListAuditLogTopUserResponse_Item{
+			User:  itm,
+			Count: int32(item.Count),
+		})
+	}
+
+	return ret, nil
+}
+
+func (s *Server) listAuditLogTopSession(ctx context.Context, req *visibilityv1.ListAuditLogTopSessionRequest) (*visibilityv1.ListAuditLogTopSessionResponse, error) {
+
+	ret := &visibilityv1.ListAuditLogTopSessionResponse{}
+
+	var filters []exp.Expression
+	var err error
+
+	filters, err = appendRefFilter(filters, req.ResourceRef, nil, "entry.resourceRef")
+	if err != nil {
+		return nil, err
+	}
+
+	if req.From != nil {
+		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Gte(req.From.AsTime().UTC().Format(time.RFC3339Nano)))
+	}
+
+	if req.To != nil {
+		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
+	}
+
+	res, err := s.getTop(ctx, "audit_logs", 10, "entry.userRef", filters)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, item := range res.items {
+		itm, err := s.octeliumC.CoreC().GetSession(ctx, &rmetav1.GetOptions{
+			Uid: item.UID,
+		})
+		if err != nil {
+			continue
+		}
+
+		ret.Items = append(ret.Items, &visibilityv1.ListAuditLogTopSessionResponse_Item{
+			Session: itm,
+			Count:   int32(item.Count),
+		})
+	}
+
+	return ret, nil
+}
+
 type getTopResult struct {
 	items []*getTopResultItem
 }
