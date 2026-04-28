@@ -231,17 +231,6 @@ const MiniStat = ({
         </span>
       )}
     </div>
-    {/**
-    
-     {total > 0 && (
-      <div className="h-0.5 w-full bg-slate-100 rounded-full overflow-hidden mt-0.5">
-        <div
-          className="h-full bg-slate-400 rounded-full transition-[width] duration-500"
-          style={{ width: `${pct(value, total)}%` }}
-        />
-      </div>
-    )}
-    **/}
   </div>
 );
 
@@ -364,6 +353,10 @@ const AuthenticationLogHealthWidget = (
     identityProviderRef: refKey(props.identityProviderRef),
   };
 
+  const showTopUsers = !props.userRef && !props.sessionRef && !props.deviceRef;
+  const showTopIdentityProviders = !props.identityProviderRef;
+  const showTopCredentials = true;
+
   const curSummary = useQuery({
     queryKey: ["authLogSummary", "current", periodMinutes, refKeys],
     queryFn: async () => {
@@ -424,13 +417,13 @@ const AuthenticationLogHealthWidget = (
 
   const topUsers = useQuery({
     queryKey: ["authLogTopUser", periodMinutes, refKeys],
+    enabled: showTopUsers,
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAuthenticationLog().listAuthenticationLogTopUser(
           ListAuthenticationLogTopUserRequest.create({
             from: toTs(curFrom),
             to: toTs(curTo),
-
             identityProviderRef: props.identityProviderRef,
           }),
         );
@@ -441,6 +434,7 @@ const AuthenticationLogHealthWidget = (
 
   const topIdentityProviders = useQuery({
     queryKey: ["authLogTopIdentityProvider", periodMinutes, refKeys],
+    enabled: showTopIdentityProviders,
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAuthenticationLog().listAuthenticationLogTopIdentityProvider(
@@ -459,6 +453,7 @@ const AuthenticationLogHealthWidget = (
 
   const topCredentials = useQuery({
     queryKey: ["authLogTopCredential", periodMinutes, refKeys],
+    enabled: showTopCredentials,
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAuthenticationLog().listAuthenticationLogTopCredential(
@@ -490,9 +485,9 @@ const AuthenticationLogHealthWidget = (
     curSummary.refetch();
     prevSummary.refetch();
     dataPoint.refetch();
-    topUsers.refetch();
-    topIdentityProviders.refetch();
-    topCredentials.refetch();
+    if (showTopUsers) topUsers.refetch();
+    if (showTopIdentityProviders) topIdentityProviders.refetch();
+    if (showTopCredentials) topCredentials.refetch();
   };
 
   return (
@@ -717,12 +712,15 @@ const AuthenticationLogHealthWidget = (
         </div>
       )}
 
-      {((topUsers.data && topUsers.data?.items.length > 0) ||
-        (topIdentityProviders.data &&
+      {((showTopUsers && topUsers.data && topUsers.data?.items.length > 0) ||
+        (showTopIdentityProviders &&
+          topIdentityProviders.data &&
           topIdentityProviders.data?.items.length > 0) ||
-        (topCredentials.data && topCredentials.data?.items.length > 0)) && (
+        (showTopCredentials &&
+          topCredentials.data &&
+          topCredentials.data?.items.length > 0)) && (
         <div className="grid grid-cols-2 gap-4">
-          {topUsers.data && topUsers.data?.items.length > 0 && (
+          {showTopUsers && topUsers.data && topUsers.data?.items.length > 0 && (
             <TopList
               title="Top Users"
               to="/visibility/authenticationlogs"
@@ -732,7 +730,8 @@ const AuthenticationLogHealthWidget = (
               }))}
             />
           )}
-          {topIdentityProviders.data &&
+          {showTopIdentityProviders &&
+            topIdentityProviders.data &&
             topIdentityProviders.data?.items.length > 0 && (
               <TopList
                 title="Top Identity Providers"
@@ -743,16 +742,18 @@ const AuthenticationLogHealthWidget = (
                 }))}
               />
             )}
-          {topCredentials.data && topCredentials.data?.items.length > 0 && (
-            <TopList
-              title="Top Credentials"
-              to="/visibility/authenticationlogs"
-              items={topCredentials.data.items.map((x) => ({
-                resource: x.credential!,
-                count: x.count,
-              }))}
-            />
-          )}
+          {showTopCredentials &&
+            topCredentials.data &&
+            topCredentials.data?.items.length > 0 && (
+              <TopList
+                title="Top Credentials"
+                to="/visibility/authenticationlogs"
+                items={topCredentials.data.items.map((x) => ({
+                  resource: x.credential!,
+                  count: x.count,
+                }))}
+              />
+            )}
         </div>
       )}
     </div>
