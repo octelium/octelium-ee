@@ -125,3 +125,7 @@ func (s *srvComponentLog) ListComponentLog(ctx context.Context, req *visibilityv
 func (s *srvComponentLog) GetComponentLogSummary(ctx context.Context, req *visibilityv1.GetComponentLogSummaryRequest) (*visibilityv1.GetComponentLogSummaryResponse, error) {
 	return s.s.getSummaryComponentLog(ctx, req)
 }
+
+func (s *srvComponentLog) GetComponentLogDataPoint(ctx context.Context, req *visibilityv1.GetComponentLogDataPointRequest) (*visibilityv1.GetComponentLogDataPointResponse, error) {
+	return s.s.getComponentLogDataPoint(ctx, req)
+}

@@ -270,6 +270,48 @@ func (s *Server) getAuditLogDataPoint(ctx context.Context, req *visibilityv1.Get
 	return ret, nil
 }
 
+func (s *Server) getComponentLogDataPoint(ctx context.Context, req *visibilityv1.GetComponentLogDataPointRequest) (*visibilityv1.GetComponentLogDataPointResponse, error) {
+
+	var from, to time.Time
+
+	if req.From == nil && req.To == nil {
+		from = time.Now().Add(-1 * time.Hour)
+		to = from.Add(1 * time.Hour)
+	}
+
+	if req.From != nil {
+		from = req.From.AsTime()
+		if req.To == nil {
+			to = time.Now()
+		}
+	}
+	if req.To != nil {
+		to = req.To.AsTime()
+		if req.From == nil {
+			from = to.Add(-1 * time.Hour)
+		}
+	}
+
+	var filters []exp.Expression
+	var err error
+
+	dps, err := s.getDataPoints(ctx, "component_logs", from, to, s.getDataPointInterval(req.Interval), filters)
+	if err != nil {
+		return nil, grpcutils.InternalWithErr(err)
+	}
+
+	ret := &visibilityv1.GetComponentLogDataPointResponse{}
+
+	for _, dp := range dps {
+		ret.Datapoints = append(ret.Datapoints, &visibilityv1.GetComponentLogDataPointResponse_DataPoint{
+			Timestamp: pbutils.Timestamp(utils.MustParseTime(dp.Timestamp)),
+			Count:     dp.Count,
+		})
+	}
+
+	return ret, nil
+}
+
 type DataPoint struct {
 	Timestamp string `db:"timestamp" goqu:"skipinsert,skipupdate"`
 	Count     int64  `db:"count" goqu:"skipinsert,skipupdate"`
