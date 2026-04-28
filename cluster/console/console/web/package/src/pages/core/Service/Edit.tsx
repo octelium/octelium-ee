@@ -445,6 +445,129 @@ const Config = (props: {
                               </div>
                             )}
                           </EditItem>
+
+                          <ItemMessage
+                            title="Command"
+                            obj={container.container.command}
+                            isList
+                            onSet={() => {
+                              container.container.command = [""];
+                              updateReq();
+                            }}
+                            onAddListItem={() => {
+                              container.container.command.push("");
+                              updateReq();
+                            }}
+                          >
+                            {container.container.command.map((x, idx) => (
+                              <div className="w-full flex mb-3" key={idx}>
+                                <CloseButton
+                                  size="sm"
+                                  variant="subtle"
+                                  onClick={() => {
+                                    container.container.command.splice(idx, 1);
+                                    updateReq();
+                                  }}
+                                />
+                                <TextInput
+                                  required
+                                  label="Command"
+                                  placeholder="/bin/sh"
+                                  className="flex-1"
+                                  value={container.container.command[idx]}
+                                  onChange={(v) => {
+                                    container.container.command[idx] =
+                                      v.target.value;
+                                    updateReq();
+                                  }}
+                                />
+                              </div>
+                            ))}
+                          </ItemMessage>
+
+                          <ItemMessage
+                            title="Args"
+                            obj={container.container.args}
+                            isList
+                            onSet={() => {
+                              container.container.args = [""];
+                              updateReq();
+                            }}
+                            onAddListItem={() => {
+                              container.container.args.push("");
+                              updateReq();
+                            }}
+                          >
+                            {container.container.args.map((x, idx) => (
+                              <div className="w-full flex mb-3" key={idx}>
+                                <CloseButton
+                                  size="sm"
+                                  variant="subtle"
+                                  onClick={() => {
+                                    container.container.args.splice(idx, 1);
+                                    updateReq();
+                                  }}
+                                />
+                                <TextInput
+                                  required
+                                  label="Arg"
+                                  placeholder="-c"
+                                  className="flex-1"
+                                  value={container.container.args[idx]}
+                                  onChange={(v) => {
+                                    container.container.args[idx] =
+                                      v.target.value;
+                                    updateReq();
+                                  }}
+                                />
+                              </div>
+                            ))}
+                          </ItemMessage>
+
+                          <EditItem
+                            title="Security Context"
+                            description="Set Kubernetes security context"
+                            onUnset={() => {
+                              container.container.securityContext = undefined;
+                              updateReq();
+                            }}
+                            obj={container.container.securityContext}
+                            onSet={() => {
+                              container.container.securityContext =
+                                CoreP.Service_Spec_Config_Upstream_Container_SecurityContext.create();
+                              updateReq();
+                            }}
+                          >
+                            {container.container.securityContext && (
+                              <Group grow>
+                                <Switch
+                                  label="Read-only root filesystem"
+                                  checked={
+                                    container.container.securityContext
+                                      .readOnlyRootFilesystem
+                                  }
+                                  onChange={(v) => {
+                                    container.container.securityContext!.readOnlyRootFilesystem =
+                                      v.target.checked;
+                                    updateReq();
+                                  }}
+                                />
+                                <NumberInput
+                                  label="Run as user (UID)"
+                                  min={0}
+                                  value={
+                                    container.container.securityContext
+                                      .runAsUser
+                                  }
+                                  onChange={(v) => {
+                                    container.container.securityContext!.runAsUser =
+                                      v as number;
+                                    updateReq();
+                                  }}
+                                />
+                              </Group>
+                            )}
+                          </EditItem>
                         </div>
                       );
                     },
@@ -1985,7 +2108,133 @@ const Config = (props: {
                           }}
                         />
                       </Group>
-                      <Group grow></Group>
+                      <div>
+                        <ItemMessage
+                          title="Include request headers"
+                          obj={http.http.visibility!.includeRequestHeaders}
+                          isList
+                          onSet={() => {
+                            http.http.visibility!.includeRequestHeaders = [""];
+                            updateReq();
+                          }}
+                          onAddListItem={() => {
+                            http.http.visibility!.includeRequestHeaders.push(
+                              "",
+                            );
+                            updateReq();
+                          }}
+                        >
+                          {http.http.visibility!.includeRequestHeaders.map(
+                            (x, idx) => (
+                              <div className="w-full flex mb-3" key={idx}>
+                                <CloseButton
+                                  size="sm"
+                                  variant="subtle"
+                                  onClick={() => {
+                                    http.http.visibility!.includeRequestHeaders.splice(
+                                      idx,
+                                      1,
+                                    );
+                                    updateReq();
+                                  }}
+                                />
+                                <TextInput
+                                  required
+                                  label="Header"
+                                  placeholder="X-Custom-Header"
+                                  className="flex-1"
+                                  value={
+                                    http.http.visibility!.includeRequestHeaders[
+                                      idx
+                                    ]
+                                  }
+                                  onChange={(v) => {
+                                    http.http.visibility!.includeRequestHeaders[
+                                      idx
+                                    ] = v.target.value;
+                                    updateReq();
+                                  }}
+                                />
+                              </div>
+                            ),
+                          )}
+                        </ItemMessage>
+
+                        <ItemMessage
+                          title="Include response headers"
+                          obj={http.http.visibility!.includeResponseHeaders}
+                          isList
+                          onSet={() => {
+                            http.http.visibility!.includeResponseHeaders = [""];
+                            updateReq();
+                          }}
+                          onAddListItem={() => {
+                            http.http.visibility!.includeResponseHeaders.push(
+                              "",
+                            );
+                            updateReq();
+                          }}
+                        >
+                          {http.http.visibility!.includeResponseHeaders.map(
+                            (x, idx) => (
+                              <div className="w-full flex mb-3" key={idx}>
+                                <CloseButton
+                                  size="sm"
+                                  variant="subtle"
+                                  onClick={() => {
+                                    http.http.visibility!.includeResponseHeaders.splice(
+                                      idx,
+                                      1,
+                                    );
+                                    updateReq();
+                                  }}
+                                />
+                                <TextInput
+                                  required
+                                  label="Header"
+                                  placeholder="X-Custom-Header"
+                                  className="flex-1"
+                                  value={
+                                    http.http.visibility!
+                                      .includeResponseHeaders[idx]
+                                  }
+                                  onChange={(v) => {
+                                    http.http.visibility!.includeResponseHeaders[
+                                      idx
+                                    ] = v.target.value;
+                                    updateReq();
+                                  }}
+                                />
+                              </div>
+                            ),
+                          )}
+                        </ItemMessage>
+
+                        <Group grow>
+                          <Switch
+                            label="Include all request headers"
+                            checked={
+                              http.http.visibility!.includeAllRequestHeaders
+                            }
+                            onChange={(v) => {
+                              http.http.visibility!.includeAllRequestHeaders =
+                                v.target.checked;
+                              updateReq();
+                            }}
+                          />
+                          <Switch
+                            label="Include all response headers"
+                            checked={
+                              http.http.visibility!.includeAllResponseHeaders
+                            }
+                            onChange={(v) => {
+                              http.http.visibility!.includeAllResponseHeaders =
+                                v.target.checked;
+                              updateReq();
+                            }}
+                          />
+                        </Group>
+                      </div>
                     </div>
                   )}
                 </EditItem>
@@ -2092,18 +2341,233 @@ const Config = (props: {
                       <Tabs
                         className="mb-8"
                         defaultValue={plugin.type.oneofKind}
+                        onChange={(v) => {
+                          match(v)
+                            .with("direct", () => {
+                              plugin.type = {
+                                oneofKind: "direct",
+                                direct:
+                                  CoreP.Service_Spec_Config_HTTP_Plugin_Direct.create(),
+                              };
+                            })
+                            .with("rateLimit", () => {
+                              plugin.type = {
+                                oneofKind: "rateLimit",
+                                rateLimit:
+                                  CoreP.Service_Spec_Config_HTTP_Plugin_RateLimit.create(),
+                              };
+                            })
+                            .with("cache", () => {
+                              plugin.type = {
+                                oneofKind: "cache",
+                                cache:
+                                  CoreP.Service_Spec_Config_HTTP_Plugin_Cache.create(),
+                              };
+                            })
+                            .with("lua", () => {
+                              plugin.type = {
+                                oneofKind: "lua",
+                                lua: CoreP.Service_Spec_Config_HTTP_Plugin_Lua.create(
+                                  {
+                                    type: { oneofKind: "inline", inline: "" },
+                                  },
+                                ),
+                              };
+                            })
+                            .with("path", () => {
+                              plugin.type = {
+                                oneofKind: "path",
+                                path: CoreP.Service_Spec_Config_HTTP_Plugin_Path.create(),
+                              };
+                            })
+                            .otherwise(() => {});
+                          updateReq();
+                        }}
                       >
                         <Tabs.List>
                           <Tabs.Tab value="direct">Direct Response</Tabs.Tab>
                           <Tabs.Tab value="rateLimit">Rate Limit</Tabs.Tab>
                           <Tabs.Tab value="cache">Cache</Tabs.Tab>
+                          <Tabs.Tab value="lua">Lua</Tabs.Tab>
+                          <Tabs.Tab value="path">Path</Tabs.Tab>
                         </Tabs.List>
 
                         <Tabs.Panel value="direct">
                           {match(plugin.type)
                             .when(
-                              (x) => x.oneofKind === `direct`,
-                              (direct) => <div></div>,
+                              (x) => x.oneofKind === "direct",
+                              (direct) => (
+                                <Group grow>
+                                  <NumberInput
+                                    label="Status Code"
+                                    description="HTTP status code to return"
+                                    min={100}
+                                    max={599}
+                                    value={direct.direct.statusCode}
+                                    onChange={(v) => {
+                                      direct.direct.statusCode = v as number;
+                                      updateReq();
+                                    }}
+                                  />
+                                </Group>
+                              ),
+                            )
+                            .otherwise(() => (
+                              <></>
+                            ))}
+                        </Tabs.Panel>
+
+                        <Tabs.Panel value="rateLimit">
+                          {match(plugin.type)
+                            .when(
+                              (x) => x.oneofKind === "rateLimit",
+                              (rateLimit) => (
+                                <div>
+                                  <Group grow>
+                                    <NumberInput
+                                      label="Limit"
+                                      description="Maximum number of requests per window"
+                                      min={0}
+                                      value={Number(rateLimit.rateLimit.limit)}
+                                      onChange={(v) => {
+                                        rateLimit.rateLimit.limit = v as number;
+
+                                        updateReq();
+                                      }}
+                                    />
+                                    <NumberInput
+                                      label="Status Code"
+                                      description="HTTP status code when rate limited"
+                                      min={100}
+                                      max={599}
+                                      value={rateLimit.rateLimit.statusCode}
+                                      onChange={(v) => {
+                                        rateLimit.rateLimit.statusCode =
+                                          v as number;
+                                        updateReq();
+                                      }}
+                                    />
+                                    <DurationPicker
+                                      value={rateLimit.rateLimit.window}
+                                      title="Window"
+                                      onChange={(v) => {
+                                        rateLimit.rateLimit.window = v;
+                                        updateReq();
+                                      }}
+                                    />
+                                  </Group>
+                                </div>
+                              ),
+                            )
+                            .otherwise(() => (
+                              <></>
+                            ))}
+                        </Tabs.Panel>
+
+                        <Tabs.Panel value="cache">
+                          {match(plugin.type)
+                            .when(
+                              (x) => x.oneofKind === "cache",
+                              (cache) => (
+                                <Group grow>
+                                  <NumberInput
+                                    label="Max size"
+                                    description="Maximum number of cached entries"
+                                    min={0}
+                                    value={Number(cache.cache.maxSize)}
+                                    onChange={(v) => {
+                                      cache.cache.maxSize = v as number;
+                                      updateReq();
+                                    }}
+                                  />
+                                  <DurationPicker
+                                    value={cache.cache.ttl}
+                                    title="TTL"
+                                    onChange={(v) => {
+                                      cache.cache.ttl = v;
+                                      updateReq();
+                                    }}
+                                  />
+                                  <Switch
+                                    label="Use X-Cache header"
+                                    checked={cache.cache.useXCacheHeader}
+                                    onChange={(v) => {
+                                      cache.cache.useXCacheHeader =
+                                        v.target.checked;
+                                      updateReq();
+                                    }}
+                                  />
+                                  <Switch
+                                    label="Allow unsafe methods"
+                                    checked={cache.cache.allowUnsafeMethods}
+                                    onChange={(v) => {
+                                      cache.cache.allowUnsafeMethods =
+                                        v.target.checked;
+                                      updateReq();
+                                    }}
+                                  />
+                                </Group>
+                              ),
+                            )
+                            .otherwise(() => (
+                              <></>
+                            ))}
+                        </Tabs.Panel>
+
+                        <Tabs.Panel value="lua">
+                          {match(plugin.type)
+                            .when(
+                              (x) => x.oneofKind === "lua",
+                              (lua) => (
+                                <TextAreaCustom
+                                  label="Lua script"
+                                  placeholder="-- lua script"
+                                  value={
+                                    lua.lua.type.oneofKind === "inline"
+                                      ? lua.lua.type.inline
+                                      : ""
+                                  }
+                                  onChange={(v) => {
+                                    lua.lua.type = {
+                                      oneofKind: "inline",
+                                      inline: v ?? "",
+                                    };
+                                    updateReq();
+                                  }}
+                                />
+                              ),
+                            )
+                            .otherwise(() => (
+                              <></>
+                            ))}
+                        </Tabs.Panel>
+
+                        <Tabs.Panel value="path">
+                          {match(plugin.type)
+                            .when(
+                              (x) => x.oneofKind === "path",
+                              (path) => (
+                                <Group grow>
+                                  <TextInput
+                                    label="Add prefix"
+                                    placeholder="/api/v1"
+                                    value={path.path.addPrefix}
+                                    onChange={(v) => {
+                                      path.path.addPrefix = v.target.value;
+                                      updateReq();
+                                    }}
+                                  />
+                                  <TextInput
+                                    label="Remove prefix"
+                                    placeholder="/api/v2"
+                                    value={path.path.removePrefix}
+                                    onChange={(v) => {
+                                      path.path.removePrefix = v.target.value;
+                                      updateReq();
+                                    }}
+                                  />
+                                </Group>
+                              ),
                             )
                             .otherwise(() => (
                               <></>
@@ -2417,6 +2881,45 @@ const Config = (props: {
                     </Tabs>
                   )}
                 </EditItem>
+
+                <EditItem
+                  title="Visibility"
+                  description="Set SSH session recording options"
+                  onUnset={() => {
+                    ssh.ssh.visibility = undefined;
+                    updateReq();
+                  }}
+                  obj={ssh.ssh.visibility}
+                  onSet={() => {
+                    ssh.ssh.visibility =
+                      CoreP.Service_Spec_Config_SSH_Visibility.create();
+                    updateReq();
+                  }}
+                >
+                  {ssh.ssh.visibility && (
+                    <Group grow>
+                      <Switch
+                        label="Disable session recording"
+                        checked={ssh.ssh.visibility.disableSessionRecording}
+                        onChange={(v) => {
+                          ssh.ssh.visibility!.disableSessionRecording =
+                            v.target.checked;
+                          updateReq();
+                        }}
+                      />
+                      <Switch
+                        label="Enable stdin recording"
+                        description="Also record stdin input in session recordings"
+                        checked={ssh.ssh.visibility.enableSessionStdinRecording}
+                        onChange={(v) => {
+                          ssh.ssh.visibility!.enableSessionStdinRecording =
+                            v.target.checked;
+                          updateReq();
+                        }}
+                      />
+                    </Group>
+                  )}
+                </EditItem>
               </div>
             );
           },
@@ -2521,6 +3024,62 @@ const Config = (props: {
                       <></>
                     ))}
                 </Group>
+
+                <EditItem
+                  title="Authorization"
+                  description="Set PostgreSQL-specific authorization configuration"
+                  onUnset={() => {
+                    postgres.postgres.authorization = undefined;
+                    updateReq();
+                  }}
+                  obj={postgres.postgres.authorization}
+                  onSet={() => {
+                    postgres.postgres.authorization =
+                      CoreP.Service_Spec_Config_Postgres_Authorization.create();
+                    updateReq();
+                  }}
+                >
+                  {postgres.postgres.authorization && (
+                    <Select
+                      label="Authorization Mode"
+                      description="Set when authorization is enforced"
+                      data={[
+                        {
+                          label: "None (connection only)",
+                          value:
+                            CoreP
+                              .Service_Spec_Config_Postgres_Authorization_Mode[
+                              CoreP
+                                .Service_Spec_Config_Postgres_Authorization_Mode
+                                .NONE
+                            ],
+                        },
+                        {
+                          label: "All (every command)",
+                          value:
+                            CoreP
+                              .Service_Spec_Config_Postgres_Authorization_Mode[
+                              CoreP
+                                .Service_Spec_Config_Postgres_Authorization_Mode
+                                .ALL
+                            ],
+                        },
+                      ]}
+                      value={
+                        CoreP.Service_Spec_Config_Postgres_Authorization_Mode[
+                          postgres.postgres.authorization.mode
+                        ]
+                      }
+                      onChange={(v) => {
+                        postgres.postgres.authorization!.mode =
+                          CoreP.Service_Spec_Config_Postgres_Authorization_Mode[
+                            v as "ALL"
+                          ];
+                        updateReq();
+                      }}
+                    />
+                  )}
+                </EditItem>
               </div>
             );
           },
