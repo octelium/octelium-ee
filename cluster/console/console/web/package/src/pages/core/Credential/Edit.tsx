@@ -10,7 +10,8 @@ import SelectPolicies from "@/components/ResourceLayout/SelectPolicies";
 import SelectResource from "@/components/ResourceLayout/SelectResource";
 import TimestampPicker from "@/components/TimestampPicker";
 import { randomStringLowerCase } from "@/utils";
-import { Group, Select, Switch } from "@mantine/core";
+import { strToNum } from "@/utils/convert";
+import { Group, NumberInput, Select, Switch } from "@mantine/core";
 import { match } from "ts-pattern";
 
 const Edit = (props: {
@@ -104,6 +105,30 @@ const Edit = (props: {
             updateReq();
           }}
         />
+
+        <Select
+          label="Session Type"
+          description="The Credential must be either an Authentication Token or a OAuth2 Client Credential"
+          required
+          data={[
+            {
+              label: "Client",
+              value:
+                CoreP.Session_Status_Type[CoreP.Session_Status_Type.CLIENT],
+            },
+            {
+              label: "Clientless",
+              value:
+                CoreP.Session_Status_Type[CoreP.Session_Status_Type.CLIENTLESS],
+            },
+          ]}
+          defaultValue={CoreP.Session_Status_Type[req.spec!.sessionType]}
+          onChange={(v) => {
+            req.spec!.sessionType = CoreP.Session_Status_Type[v as "CLIENT"];
+            setName();
+            updateReq();
+          }}
+        />
       </Group>
 
       <Group grow>
@@ -125,6 +150,17 @@ const Edit = (props: {
           onChange={(v) => {
             req.spec!.isDisabled = v.target.checked;
             updateReq();
+          }}
+        />
+
+        <NumberInput
+          label="Max Authentication"
+          description="Set the max number of Authentications used by this Credential before expiration"
+          defaultValue={req.spec!.maxAuthentications}
+          min={0}
+          max={100000}
+          onChange={(v) => {
+            req.spec!.maxAuthentications = strToNum(v);
           }}
         />
       </Group>
