@@ -4352,6 +4352,10 @@ export interface GetClusterInfoResponse_Core {
      * @generated from protobuf field: bool canUpgrade = 3
      */
     canUpgrade: boolean;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp setAt = 4
+     */
+    setAt?: Timestamp;
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageEnterprise
@@ -4369,6 +4373,10 @@ export interface GetClusterInfoResponse_PackageEnterprise {
      * @generated from protobuf field: bool canUpgrade = 3
      */
     canUpgrade: boolean;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp setAt = 4
+     */
+    setAt?: Timestamp;
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageCordium
@@ -4386,6 +4394,10 @@ export interface GetClusterInfoResponse_PackageCordium {
      * @generated from protobuf field: bool canUpgrade = 3
      */
     canUpgrade: boolean;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp setAt = 4
+     */
+    setAt?: Timestamp;
 }
 // @generated message type with reflection information, may provide speed optimized methods
 class GetClusterConfigRequest$Type extends MessageType<GetClusterConfigRequest> {
@@ -17256,7 +17268,8 @@ class GetClusterInfoResponse_Core$Type extends MessageType<GetClusterInfoRespons
         super("octelium.api.main.enterprise.v1.GetClusterInfoResponse.Core", [
             { no: 1, name: "currentVersion", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "latestVersion", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 3, name: "canUpgrade", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 3, name: "canUpgrade", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 4, name: "setAt", kind: "message", T: () => Timestamp }
         ]);
     }
     create(value?: PartialMessage<GetClusterInfoResponse_Core>): GetClusterInfoResponse_Core {
@@ -17282,6 +17295,9 @@ class GetClusterInfoResponse_Core$Type extends MessageType<GetClusterInfoRespons
                 case /* bool canUpgrade */ 3:
                     message.canUpgrade = reader.bool();
                     break;
+                case /* google.protobuf.Timestamp setAt */ 4:
+                    message.setAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.setAt);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -17303,6 +17319,9 @@ class GetClusterInfoResponse_Core$Type extends MessageType<GetClusterInfoRespons
         /* bool canUpgrade = 3; */
         if (message.canUpgrade !== false)
             writer.tag(3, WireType.Varint).bool(message.canUpgrade);
+        /* google.protobuf.Timestamp setAt = 4; */
+        if (message.setAt)
+            Timestamp.internalBinaryWrite(message.setAt, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -17319,7 +17338,8 @@ class GetClusterInfoResponse_PackageEnterprise$Type extends MessageType<GetClust
         super("octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageEnterprise", [
             { no: 1, name: "currentVersion", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "latestVersion", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 3, name: "canUpgrade", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 3, name: "canUpgrade", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 4, name: "setAt", kind: "message", T: () => Timestamp }
         ]);
     }
     create(value?: PartialMessage<GetClusterInfoResponse_PackageEnterprise>): GetClusterInfoResponse_PackageEnterprise {
@@ -17345,6 +17365,9 @@ class GetClusterInfoResponse_PackageEnterprise$Type extends MessageType<GetClust
                 case /* bool canUpgrade */ 3:
                     message.canUpgrade = reader.bool();
                     break;
+                case /* google.protobuf.Timestamp setAt */ 4:
+                    message.setAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.setAt);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -17366,6 +17389,9 @@ class GetClusterInfoResponse_PackageEnterprise$Type extends MessageType<GetClust
         /* bool canUpgrade = 3; */
         if (message.canUpgrade !== false)
             writer.tag(3, WireType.Varint).bool(message.canUpgrade);
+        /* google.protobuf.Timestamp setAt = 4; */
+        if (message.setAt)
+            Timestamp.internalBinaryWrite(message.setAt, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -17382,7 +17408,8 @@ class GetClusterInfoResponse_PackageCordium$Type extends MessageType<GetClusterI
         super("octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageCordium", [
             { no: 1, name: "currentVersion", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "latestVersion", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 3, name: "canUpgrade", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 3, name: "canUpgrade", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 4, name: "setAt", kind: "message", T: () => Timestamp }
         ]);
     }
     create(value?: PartialMessage<GetClusterInfoResponse_PackageCordium>): GetClusterInfoResponse_PackageCordium {
@@ -17408,6 +17435,9 @@ class GetClusterInfoResponse_PackageCordium$Type extends MessageType<GetClusterI
                 case /* bool canUpgrade */ 3:
                     message.canUpgrade = reader.bool();
                     break;
+                case /* google.protobuf.Timestamp setAt */ 4:
+                    message.setAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.setAt);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -17429,6 +17459,9 @@ class GetClusterInfoResponse_PackageCordium$Type extends MessageType<GetClusterI
         /* bool canUpgrade = 3; */
         if (message.canUpgrade !== false)
             writer.tag(3, WireType.Varint).bool(message.canUpgrade);
+        /* google.protobuf.Timestamp setAt = 4; */
+        if (message.setAt)
+            Timestamp.internalBinaryWrite(message.setAt, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

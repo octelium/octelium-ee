@@ -31,6 +31,10 @@
                 },
                 "canUpgrade": {
                     "type": "boolean"
+                },
+                "setAt": {
+                    "type": "string",
+                    "format": "date-time"
                 }
             },
             "additionalProperties": false,
@@ -47,6 +51,10 @@
                 },
                 "canUpgrade": {
                     "type": "boolean"
+                },
+                "setAt": {
+                    "type": "string",
+                    "format": "date-time"
                 }
             },
             "additionalProperties": false,
@@ -63,6 +71,10 @@
                 },
                 "canUpgrade": {
                     "type": "boolean"
+                },
+                "setAt": {
+                    "type": "string",
+                    "format": "date-time"
                 }
             },
             "additionalProperties": false,
