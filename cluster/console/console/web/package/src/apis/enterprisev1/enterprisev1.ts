@@ -4314,6 +4314,79 @@ export interface SynchronizeSecretStoreRequest {
  */
 export interface SynchronizeSecretStoreResponse {
 }
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.GetClusterInfoRequest
+ */
+export interface GetClusterInfoRequest {
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.GetClusterInfoResponse
+ */
+export interface GetClusterInfoResponse {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.GetClusterInfoResponse.Core core = 1
+     */
+    core?: GetClusterInfoResponse_Core;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageEnterprise packageEnterprise = 2
+     */
+    packageEnterprise?: GetClusterInfoResponse_PackageEnterprise;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageCordium packageCordium = 3
+     */
+    packageCordium?: GetClusterInfoResponse_PackageCordium;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.GetClusterInfoResponse.Core
+ */
+export interface GetClusterInfoResponse_Core {
+    /**
+     * @generated from protobuf field: string currentVersion = 1
+     */
+    currentVersion: string;
+    /**
+     * @generated from protobuf field: string latestVersion = 2
+     */
+    latestVersion: string;
+    /**
+     * @generated from protobuf field: bool canUpgrade = 3
+     */
+    canUpgrade: boolean;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageEnterprise
+ */
+export interface GetClusterInfoResponse_PackageEnterprise {
+    /**
+     * @generated from protobuf field: string currentVersion = 1
+     */
+    currentVersion: string;
+    /**
+     * @generated from protobuf field: string latestVersion = 2
+     */
+    latestVersion: string;
+    /**
+     * @generated from protobuf field: bool canUpgrade = 3
+     */
+    canUpgrade: boolean;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageCordium
+ */
+export interface GetClusterInfoResponse_PackageCordium {
+    /**
+     * @generated from protobuf field: string currentVersion = 1
+     */
+    currentVersion: string;
+    /**
+     * @generated from protobuf field: string latestVersion = 2
+     */
+    latestVersion: string;
+    /**
+     * @generated from protobuf field: bool canUpgrade = 3
+     */
+    canUpgrade: boolean;
+}
 // @generated message type with reflection information, may provide speed optimized methods
 class GetClusterConfigRequest$Type extends MessageType<GetClusterConfigRequest> {
     constructor() {
@@ -17079,6 +17152,293 @@ class SynchronizeSecretStoreResponse$Type extends MessageType<SynchronizeSecretS
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.SynchronizeSecretStoreResponse
  */
 export const SynchronizeSecretStoreResponse = new SynchronizeSecretStoreResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetClusterInfoRequest$Type extends MessageType<GetClusterInfoRequest> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.GetClusterInfoRequest", []);
+    }
+    create(value?: PartialMessage<GetClusterInfoRequest>): GetClusterInfoRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<GetClusterInfoRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetClusterInfoRequest): GetClusterInfoRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetClusterInfoRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.GetClusterInfoRequest
+ */
+export const GetClusterInfoRequest = new GetClusterInfoRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetClusterInfoResponse$Type extends MessageType<GetClusterInfoResponse> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.GetClusterInfoResponse", [
+            { no: 1, name: "core", kind: "message", T: () => GetClusterInfoResponse_Core },
+            { no: 2, name: "packageEnterprise", kind: "message", T: () => GetClusterInfoResponse_PackageEnterprise },
+            { no: 3, name: "packageCordium", kind: "message", T: () => GetClusterInfoResponse_PackageCordium }
+        ]);
+    }
+    create(value?: PartialMessage<GetClusterInfoResponse>): GetClusterInfoResponse {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<GetClusterInfoResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetClusterInfoResponse): GetClusterInfoResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.GetClusterInfoResponse.Core core */ 1:
+                    message.core = GetClusterInfoResponse_Core.internalBinaryRead(reader, reader.uint32(), options, message.core);
+                    break;
+                case /* octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageEnterprise packageEnterprise */ 2:
+                    message.packageEnterprise = GetClusterInfoResponse_PackageEnterprise.internalBinaryRead(reader, reader.uint32(), options, message.packageEnterprise);
+                    break;
+                case /* octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageCordium packageCordium */ 3:
+                    message.packageCordium = GetClusterInfoResponse_PackageCordium.internalBinaryRead(reader, reader.uint32(), options, message.packageCordium);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetClusterInfoResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.GetClusterInfoResponse.Core core = 1; */
+        if (message.core)
+            GetClusterInfoResponse_Core.internalBinaryWrite(message.core, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageEnterprise packageEnterprise = 2; */
+        if (message.packageEnterprise)
+            GetClusterInfoResponse_PackageEnterprise.internalBinaryWrite(message.packageEnterprise, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageCordium packageCordium = 3; */
+        if (message.packageCordium)
+            GetClusterInfoResponse_PackageCordium.internalBinaryWrite(message.packageCordium, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.GetClusterInfoResponse
+ */
+export const GetClusterInfoResponse = new GetClusterInfoResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetClusterInfoResponse_Core$Type extends MessageType<GetClusterInfoResponse_Core> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.GetClusterInfoResponse.Core", [
+            { no: 1, name: "currentVersion", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "latestVersion", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "canUpgrade", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<GetClusterInfoResponse_Core>): GetClusterInfoResponse_Core {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.currentVersion = "";
+        message.latestVersion = "";
+        message.canUpgrade = false;
+        if (value !== undefined)
+            reflectionMergePartial<GetClusterInfoResponse_Core>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetClusterInfoResponse_Core): GetClusterInfoResponse_Core {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string currentVersion */ 1:
+                    message.currentVersion = reader.string();
+                    break;
+                case /* string latestVersion */ 2:
+                    message.latestVersion = reader.string();
+                    break;
+                case /* bool canUpgrade */ 3:
+                    message.canUpgrade = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetClusterInfoResponse_Core, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string currentVersion = 1; */
+        if (message.currentVersion !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.currentVersion);
+        /* string latestVersion = 2; */
+        if (message.latestVersion !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.latestVersion);
+        /* bool canUpgrade = 3; */
+        if (message.canUpgrade !== false)
+            writer.tag(3, WireType.Varint).bool(message.canUpgrade);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.GetClusterInfoResponse.Core
+ */
+export const GetClusterInfoResponse_Core = new GetClusterInfoResponse_Core$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetClusterInfoResponse_PackageEnterprise$Type extends MessageType<GetClusterInfoResponse_PackageEnterprise> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageEnterprise", [
+            { no: 1, name: "currentVersion", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "latestVersion", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "canUpgrade", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<GetClusterInfoResponse_PackageEnterprise>): GetClusterInfoResponse_PackageEnterprise {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.currentVersion = "";
+        message.latestVersion = "";
+        message.canUpgrade = false;
+        if (value !== undefined)
+            reflectionMergePartial<GetClusterInfoResponse_PackageEnterprise>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetClusterInfoResponse_PackageEnterprise): GetClusterInfoResponse_PackageEnterprise {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string currentVersion */ 1:
+                    message.currentVersion = reader.string();
+                    break;
+                case /* string latestVersion */ 2:
+                    message.latestVersion = reader.string();
+                    break;
+                case /* bool canUpgrade */ 3:
+                    message.canUpgrade = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetClusterInfoResponse_PackageEnterprise, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string currentVersion = 1; */
+        if (message.currentVersion !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.currentVersion);
+        /* string latestVersion = 2; */
+        if (message.latestVersion !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.latestVersion);
+        /* bool canUpgrade = 3; */
+        if (message.canUpgrade !== false)
+            writer.tag(3, WireType.Varint).bool(message.canUpgrade);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageEnterprise
+ */
+export const GetClusterInfoResponse_PackageEnterprise = new GetClusterInfoResponse_PackageEnterprise$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetClusterInfoResponse_PackageCordium$Type extends MessageType<GetClusterInfoResponse_PackageCordium> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageCordium", [
+            { no: 1, name: "currentVersion", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "latestVersion", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "canUpgrade", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<GetClusterInfoResponse_PackageCordium>): GetClusterInfoResponse_PackageCordium {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.currentVersion = "";
+        message.latestVersion = "";
+        message.canUpgrade = false;
+        if (value !== undefined)
+            reflectionMergePartial<GetClusterInfoResponse_PackageCordium>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetClusterInfoResponse_PackageCordium): GetClusterInfoResponse_PackageCordium {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string currentVersion */ 1:
+                    message.currentVersion = reader.string();
+                    break;
+                case /* string latestVersion */ 2:
+                    message.latestVersion = reader.string();
+                    break;
+                case /* bool canUpgrade */ 3:
+                    message.canUpgrade = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetClusterInfoResponse_PackageCordium, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string currentVersion = 1; */
+        if (message.currentVersion !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.currentVersion);
+        /* string latestVersion = 2; */
+        if (message.latestVersion !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.latestVersion);
+        /* bool canUpgrade = 3; */
+        if (message.canUpgrade !== false)
+            writer.tag(3, WireType.Varint).bool(message.canUpgrade);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageCordium
+ */
+export const GetClusterInfoResponse_PackageCordium = new GetClusterInfoResponse_PackageCordium$Type();
 /**
  * @generated ServiceType for protobuf service octelium.api.main.enterprise.v1.MainService
  */
@@ -17135,5 +17495,6 @@ export const PolicyPortalService = new ServiceType("octelium.api.main.enterprise
  * @generated ServiceType for protobuf service octelium.api.main.enterprise.v1.ClusterService
  */
 export const ClusterService = new ServiceType("octelium.api.main.enterprise.v1.ClusterService", [
-    { name: "UpgradeCluster", options: {}, I: UpgradeClusterRequest, O: UpgradeClusterResponse }
+    { name: "UpgradeCluster", options: {}, I: UpgradeClusterRequest, O: UpgradeClusterResponse },
+    { name: "GetClusterInfo", options: {}, I: GetClusterInfoRequest, O: GetClusterInfoResponse }
 ]);

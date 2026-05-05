@@ -11,6 +11,8 @@
 // See the LICENSE file in the repository root for full license text.
 //
 import { ClusterService } from "./enterprisev1";
+import type { GetClusterInfoResponse } from "./enterprisev1";
+import type { GetClusterInfoRequest } from "./enterprisev1";
 import type { UpgradeClusterResponse } from "./enterprisev1";
 import type { UpgradeClusterRequest } from "./enterprisev1";
 import { PolicyPortalService } from "./enterprisev1";
@@ -585,6 +587,10 @@ export interface IClusterServiceClient {
      * @generated from protobuf rpc: UpgradeCluster
      */
     upgradeCluster(input: UpgradeClusterRequest, options?: RpcOptions): UnaryCall<UpgradeClusterRequest, UpgradeClusterResponse>;
+    /**
+     * @generated from protobuf rpc: GetClusterInfo
+     */
+    getClusterInfo(input: GetClusterInfoRequest, options?: RpcOptions): UnaryCall<GetClusterInfoRequest, GetClusterInfoResponse>;
 }
 /**
  * @generated from protobuf service octelium.api.main.enterprise.v1.ClusterService
@@ -601,5 +607,12 @@ export class ClusterServiceClient implements IClusterServiceClient, ServiceInfo 
     upgradeCluster(input: UpgradeClusterRequest, options?: RpcOptions): UnaryCall<UpgradeClusterRequest, UpgradeClusterResponse> {
         const method = this.methods[0], opt = this._transport.mergeOptions(options);
         return stackIntercept<UpgradeClusterRequest, UpgradeClusterResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * @generated from protobuf rpc: GetClusterInfo
+     */
+    getClusterInfo(input: GetClusterInfoRequest, options?: RpcOptions): UnaryCall<GetClusterInfoRequest, GetClusterInfoResponse> {
+        const method = this.methods[1], opt = this._transport.mergeOptions(options);
+        return stackIntercept<GetClusterInfoRequest, GetClusterInfoResponse>("unary", this._transport, method, opt, input);
     }
 }

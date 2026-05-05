@@ -1,0 +1,11 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/GetClusterInfoRequest",
+    "definitions": {
+        "GetClusterInfoRequest": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Get Cluster Info Request"
+        }
+    }
+}

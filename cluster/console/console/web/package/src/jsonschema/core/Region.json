@@ -56,11 +56,45 @@
                 },
                 "version": {
                     "type": "string"
+                },
+                "versionInfoMap": {
+                    "additionalProperties": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Region.Status.VersionInfo",
+                        "additionalProperties": false
+                    },
+                    "type": "object"
                 }
             },
             "additionalProperties": false,
             "type": "object",
             "title": "Status"
+        },
+        "octelium.api.main.core.v1.Region.Status.VersionInfo": {
+            "properties": {
+                "version": {
+                    "type": "string"
+                },
+                "package": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "setAt": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "ext": {
+                    "additionalProperties": {
+                        "additionalProperties": true,
+                        "type": "object"
+                    },
+                    "type": "object"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Version Info"
         },
         "octelium.api.main.meta.v1.Metadata": {
             "properties": {
