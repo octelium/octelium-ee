@@ -27,6 +27,7 @@ import * as React from "react";
 import { toast } from "sonner";
 import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
+import ClusterVersionInfo from "./ClusterVersionInfo";
 
 const StatCard = ({
   label,
@@ -297,7 +298,7 @@ const UpgradeCluster = () => {
 
             <PackageRow
               label="Cordium package"
-              description="Cordium networking and proxy layer"
+              description="Cordium: the sandbox platform package"
               enabled={!!req.request?.packageCordium}
               version={req.request?.packageCordium?.version ?? ""}
               onToggle={(checked) =>
@@ -543,6 +544,10 @@ export default () => {
           </span>
         </div>
       )}
+
+      <div className="my-8">
+        <ClusterVersionInfo />
+      </div>
 
       <div className="flex justify-end">
         <UpgradeCluster />
