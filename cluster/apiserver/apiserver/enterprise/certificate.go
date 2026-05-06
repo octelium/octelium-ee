@@ -10,8 +10,11 @@ package enterprise
 
 import (
 	"context"
+	"crypto/tls"
 
 	"github.com/octelium/octelium-ee/cluster/common/certutils"
+	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
+	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
@@ -20,6 +23,7 @@ import (
 	"github.com/octelium/octelium/cluster/common/apivalidation"
 	"github.com/octelium/octelium/cluster/common/grpcutils"
 	"github.com/octelium/octelium/cluster/common/urscsrv"
+	"github.com/octelium/octelium/pkg/apiutils/ucorev1"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/grpcerr"
 )
@@ -186,4 +190,65 @@ func (s *Server) IssueCertificate(ctx context.Context, req *enterprisev1.IssueCe
 	}
 
 	return &enterprisev1.IssueCertificateResponse{}, nil
+}
+
+func (s *Server) SetCertificate(ctx context.Context, req *enterprisev1.SetCertificateRequest) (*enterprisev1.SetCertificateResponse, error) {
+	if err := apivalidation.CheckObjectRef(req.CertificateRef, &apivalidation.CheckGetOptionsOpts{}); err != nil {
+		return nil, err
+	}
+
+	crt, err := s.octeliumC.EnterpriseC().GetCertificate(ctx,
+		apivalidation.ObjectReferenceToRGetOptions(req.CertificateRef))
+	if err != nil {
+		return nil, serr.K8sNotFoundOrInternalWithErr(err)
+	}
+
+	if _, err := tls.X509KeyPair([]byte(req.Certificate), []byte(req.PrivateKey)); err != nil {
+		return nil, serr.InvalidArg("Could not parse TLS key pair")
+	}
+
+	var sec *corev1.Secret
+	sec, err = s.octeliumC.CoreC().GetSecret(ctx, &rmetav1.GetOptions{
+		Name: uenterprisev1.ToCertificate(crt).GetSecretName(),
+	})
+	if err != nil {
+		if !grpcerr.IsNotFound(err) {
+			return nil, err
+		}
+
+		sec = &corev1.Secret{
+			Metadata: &metav1.Metadata{
+				Name:           uenterprisev1.ToCertificate(crt).GetSecretName(),
+				IsSystem:       true,
+				IsUserHidden:   true,
+				IsSystemHidden: true,
+				SystemLabels: map[string]string{
+					"octelium-cert": "true",
+				},
+			},
+			Spec:   &corev1.Secret_Spec{},
+			Status: &corev1.Secret_Status{},
+		}
+
+		ucorev1.ToSecret(sec).SetCertificate(req.Certificate, req.PrivateKey)
+		sec, err = s.octeliumC.CoreC().CreateSecret(ctx, sec)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		ucorev1.ToSecret(sec).SetCertificate(req.Certificate, req.PrivateKey)
+		sec.Metadata.IsSystem = true
+		sec, err = s.octeliumC.CoreC().UpdateSecret(ctx, sec)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	crt.Status.SecretRef = umetav1.GetObjectReference(sec)
+	if _, err := s.octeliumC.EnterpriseC().UpdateCertificate(ctx, crt); err != nil {
+		return nil, serr.InternalWithErr(err)
+	}
+
+	return &enterprisev1.SetCertificateResponse{}, nil
+
 }

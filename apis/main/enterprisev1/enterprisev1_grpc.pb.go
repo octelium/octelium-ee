@@ -43,6 +43,7 @@ const (
 	MainService_UpdateCertificate_FullMethodName                   = "/octelium.api.main.enterprise.v1.MainService/UpdateCertificate"
 	MainService_ListCertificate_FullMethodName                     = "/octelium.api.main.enterprise.v1.MainService/ListCertificate"
 	MainService_IssueCertificate_FullMethodName                    = "/octelium.api.main.enterprise.v1.MainService/IssueCertificate"
+	MainService_SetCertificate_FullMethodName                      = "/octelium.api.main.enterprise.v1.MainService/SetCertificate"
 	MainService_GetCertificateIssuer_FullMethodName                = "/octelium.api.main.enterprise.v1.MainService/GetCertificateIssuer"
 	MainService_ListCertificateIssuer_FullMethodName               = "/octelium.api.main.enterprise.v1.MainService/ListCertificateIssuer"
 	MainService_UpdateCertificateIssuer_FullMethodName             = "/octelium.api.main.enterprise.v1.MainService/UpdateCertificateIssuer"
@@ -90,6 +91,7 @@ type MainServiceClient interface {
 	UpdateCertificate(ctx context.Context, in *Certificate, opts ...grpc.CallOption) (*Certificate, error)
 	ListCertificate(ctx context.Context, in *ListCertificateOptions, opts ...grpc.CallOption) (*CertificateList, error)
 	IssueCertificate(ctx context.Context, in *IssueCertificateRequest, opts ...grpc.CallOption) (*IssueCertificateResponse, error)
+	SetCertificate(ctx context.Context, in *SetCertificateRequest, opts ...grpc.CallOption) (*SetCertificateResponse, error)
 	GetCertificateIssuer(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*CertificateIssuer, error)
 	ListCertificateIssuer(ctx context.Context, in *ListCertificateIssuerOptions, opts ...grpc.CallOption) (*CertificateIssuerList, error)
 	UpdateCertificateIssuer(ctx context.Context, in *CertificateIssuer, opts ...grpc.CallOption) (*CertificateIssuer, error)
@@ -266,6 +268,16 @@ func (c *mainServiceClient) IssueCertificate(ctx context.Context, in *IssueCerti
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(IssueCertificateResponse)
 	err := c.cc.Invoke(ctx, MainService_IssueCertificate_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mainServiceClient) SetCertificate(ctx context.Context, in *SetCertificateRequest, opts ...grpc.CallOption) (*SetCertificateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SetCertificateResponse)
+	err := c.cc.Invoke(ctx, MainService_SetCertificate_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -560,6 +572,7 @@ type MainServiceServer interface {
 	UpdateCertificate(context.Context, *Certificate) (*Certificate, error)
 	ListCertificate(context.Context, *ListCertificateOptions) (*CertificateList, error)
 	IssueCertificate(context.Context, *IssueCertificateRequest) (*IssueCertificateResponse, error)
+	SetCertificate(context.Context, *SetCertificateRequest) (*SetCertificateResponse, error)
 	GetCertificateIssuer(context.Context, *metav1.GetOptions) (*CertificateIssuer, error)
 	ListCertificateIssuer(context.Context, *ListCertificateIssuerOptions) (*CertificateIssuerList, error)
 	UpdateCertificateIssuer(context.Context, *CertificateIssuer) (*CertificateIssuer, error)
@@ -643,6 +656,9 @@ func (UnimplementedMainServiceServer) ListCertificate(context.Context, *ListCert
 }
 func (UnimplementedMainServiceServer) IssueCertificate(context.Context, *IssueCertificateRequest) (*IssueCertificateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IssueCertificate not implemented")
+}
+func (UnimplementedMainServiceServer) SetCertificate(context.Context, *SetCertificateRequest) (*SetCertificateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetCertificate not implemented")
 }
 func (UnimplementedMainServiceServer) GetCertificateIssuer(context.Context, *metav1.GetOptions) (*CertificateIssuer, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCertificateIssuer not implemented")
@@ -994,6 +1010,24 @@ func _MainService_IssueCertificate_Handler(srv interface{}, ctx context.Context,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MainServiceServer).IssueCertificate(ctx, req.(*IssueCertificateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MainService_SetCertificate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetCertificateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MainServiceServer).SetCertificate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MainService_SetCertificate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MainServiceServer).SetCertificate(ctx, req.(*SetCertificateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1546,6 +1580,10 @@ var MainService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "IssueCertificate",
 			Handler:    _MainService_IssueCertificate_Handler,
+		},
+		{
+			MethodName: "SetCertificate",
+			Handler:    _MainService_SetCertificate_Handler,
 		},
 		{
 			MethodName: "GetCertificateIssuer",

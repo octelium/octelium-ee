@@ -500,6 +500,7 @@ func (c *ACMEClient) postIssueCrt(ctx context.Context, cert, privateKey []byte) 
 	if err != nil {
 		return errors.Errorf("Could not parse PEM of issued crt: %+v", err)
 	}
+	
 
 	var sec *corev1.Secret
 	sec, err = c.octeliumC.CoreC().GetSecret(ctx, &rmetav1.GetOptions{

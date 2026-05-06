@@ -48,6 +48,8 @@ import type { DirectoryProvider } from "./enterprisev1";
 import type { CertificateIssuerList } from "./enterprisev1";
 import type { ListCertificateIssuerOptions } from "./enterprisev1";
 import type { CertificateIssuer } from "./enterprisev1";
+import type { SetCertificateResponse } from "./enterprisev1";
+import type { SetCertificateRequest } from "./enterprisev1";
 import type { IssueCertificateResponse } from "./enterprisev1";
 import type { IssueCertificateRequest } from "./enterprisev1";
 import type { CertificateList } from "./enterprisev1";
@@ -127,6 +129,10 @@ export interface IMainServiceClient {
      * @generated from protobuf rpc: IssueCertificate
      */
     issueCertificate(input: IssueCertificateRequest, options?: RpcOptions): UnaryCall<IssueCertificateRequest, IssueCertificateResponse>;
+    /**
+     * @generated from protobuf rpc: SetCertificate
+     */
+    setCertificate(input: SetCertificateRequest, options?: RpcOptions): UnaryCall<SetCertificateRequest, SetCertificateResponse>;
     /**
      * @generated from protobuf rpc: GetCertificateIssuer
      */
@@ -354,87 +360,94 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<IssueCertificateRequest, IssueCertificateResponse>("unary", this._transport, method, opt, input);
     }
     /**
+     * @generated from protobuf rpc: SetCertificate
+     */
+    setCertificate(input: SetCertificateRequest, options?: RpcOptions): UnaryCall<SetCertificateRequest, SetCertificateResponse> {
+        const method = this.methods[14], opt = this._transport.mergeOptions(options);
+        return stackIntercept<SetCertificateRequest, SetCertificateResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
      * @generated from protobuf rpc: GetCertificateIssuer
      */
     getCertificateIssuer(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, CertificateIssuer> {
-        const method = this.methods[14], opt = this._transport.mergeOptions(options);
+        const method = this.methods[15], opt = this._transport.mergeOptions(options);
         return stackIntercept<GetOptions, CertificateIssuer>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: ListCertificateIssuer
      */
     listCertificateIssuer(input: ListCertificateIssuerOptions, options?: RpcOptions): UnaryCall<ListCertificateIssuerOptions, CertificateIssuerList> {
-        const method = this.methods[15], opt = this._transport.mergeOptions(options);
+        const method = this.methods[16], opt = this._transport.mergeOptions(options);
         return stackIntercept<ListCertificateIssuerOptions, CertificateIssuerList>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: UpdateCertificateIssuer
      */
     updateCertificateIssuer(input: CertificateIssuer, options?: RpcOptions): UnaryCall<CertificateIssuer, CertificateIssuer> {
-        const method = this.methods[16], opt = this._transport.mergeOptions(options);
+        const method = this.methods[17], opt = this._transport.mergeOptions(options);
         return stackIntercept<CertificateIssuer, CertificateIssuer>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: CreateDirectoryProvider
      */
     createDirectoryProvider(input: DirectoryProvider, options?: RpcOptions): UnaryCall<DirectoryProvider, DirectoryProvider> {
-        const method = this.methods[17], opt = this._transport.mergeOptions(options);
+        const method = this.methods[18], opt = this._transport.mergeOptions(options);
         return stackIntercept<DirectoryProvider, DirectoryProvider>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: GetDirectoryProvider
      */
     getDirectoryProvider(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, DirectoryProvider> {
-        const method = this.methods[18], opt = this._transport.mergeOptions(options);
+        const method = this.methods[19], opt = this._transport.mergeOptions(options);
         return stackIntercept<GetOptions, DirectoryProvider>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: ListDirectoryProvider
      */
     listDirectoryProvider(input: ListDirectoryProviderOptions, options?: RpcOptions): UnaryCall<ListDirectoryProviderOptions, DirectoryProviderList> {
-        const method = this.methods[19], opt = this._transport.mergeOptions(options);
+        const method = this.methods[20], opt = this._transport.mergeOptions(options);
         return stackIntercept<ListDirectoryProviderOptions, DirectoryProviderList>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: UpdateDirectoryProvider
      */
     updateDirectoryProvider(input: DirectoryProvider, options?: RpcOptions): UnaryCall<DirectoryProvider, DirectoryProvider> {
-        const method = this.methods[20], opt = this._transport.mergeOptions(options);
+        const method = this.methods[21], opt = this._transport.mergeOptions(options);
         return stackIntercept<DirectoryProvider, DirectoryProvider>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: DeleteDirectoryProvider
      */
     deleteDirectoryProvider(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult> {
-        const method = this.methods[21], opt = this._transport.mergeOptions(options);
+        const method = this.methods[22], opt = this._transport.mergeOptions(options);
         return stackIntercept<DeleteOptions, OperationResult>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: GenerateDirectoryProviderCredential
      */
     generateDirectoryProviderCredential(input: GenerateDirectoryProviderCredentialRequest, options?: RpcOptions): UnaryCall<GenerateDirectoryProviderCredentialRequest, GenerateDirectoryProviderCredentialResponse> {
-        const method = this.methods[22], opt = this._transport.mergeOptions(options);
+        const method = this.methods[23], opt = this._transport.mergeOptions(options);
         return stackIntercept<GenerateDirectoryProviderCredentialRequest, GenerateDirectoryProviderCredentialResponse>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: ListDirectoryProviderUser
      */
     listDirectoryProviderUser(input: ListDirectoryProviderUserOptions, options?: RpcOptions): UnaryCall<ListDirectoryProviderUserOptions, DirectoryProviderUserList> {
-        const method = this.methods[23], opt = this._transport.mergeOptions(options);
+        const method = this.methods[24], opt = this._transport.mergeOptions(options);
         return stackIntercept<ListDirectoryProviderUserOptions, DirectoryProviderUserList>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: ListDirectoryProviderGroup
      */
     listDirectoryProviderGroup(input: ListDirectoryProviderGroupOptions, options?: RpcOptions): UnaryCall<ListDirectoryProviderGroupOptions, DirectoryProviderGroupList> {
-        const method = this.methods[24], opt = this._transport.mergeOptions(options);
+        const method = this.methods[25], opt = this._transport.mergeOptions(options);
         return stackIntercept<ListDirectoryProviderGroupOptions, DirectoryProviderGroupList>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: SynchronizeDirectoryProvider
      */
     synchronizeDirectoryProvider(input: SynchronizeDirectoryProviderRequest, options?: RpcOptions): UnaryCall<SynchronizeDirectoryProviderRequest, SynchronizeDirectoryProviderResponse> {
-        const method = this.methods[25], opt = this._transport.mergeOptions(options);
+        const method = this.methods[26], opt = this._transport.mergeOptions(options);
         return stackIntercept<SynchronizeDirectoryProviderRequest, SynchronizeDirectoryProviderResponse>("unary", this._transport, method, opt, input);
     }
     /**
@@ -443,7 +456,7 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
      * @generated from protobuf rpc: CreateSecret
      */
     createSecret(input: Secret, options?: RpcOptions): UnaryCall<Secret, Secret> {
-        const method = this.methods[26], opt = this._transport.mergeOptions(options);
+        const method = this.methods[27], opt = this._transport.mergeOptions(options);
         return stackIntercept<Secret, Secret>("unary", this._transport, method, opt, input);
     }
     /**
@@ -452,7 +465,7 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
      * @generated from protobuf rpc: ListSecret
      */
     listSecret(input: ListSecretOptions, options?: RpcOptions): UnaryCall<ListSecretOptions, SecretList> {
-        const method = this.methods[27], opt = this._transport.mergeOptions(options);
+        const method = this.methods[28], opt = this._transport.mergeOptions(options);
         return stackIntercept<ListSecretOptions, SecretList>("unary", this._transport, method, opt, input);
     }
     /**
@@ -461,7 +474,7 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
      * @generated from protobuf rpc: DeleteSecret
      */
     deleteSecret(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult> {
-        const method = this.methods[28], opt = this._transport.mergeOptions(options);
+        const method = this.methods[29], opt = this._transport.mergeOptions(options);
         return stackIntercept<DeleteOptions, OperationResult>("unary", this._transport, method, opt, input);
     }
     /**
@@ -470,7 +483,7 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
      * @generated from protobuf rpc: GetSecret
      */
     getSecret(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, Secret> {
-        const method = this.methods[29], opt = this._transport.mergeOptions(options);
+        const method = this.methods[30], opt = this._transport.mergeOptions(options);
         return stackIntercept<GetOptions, Secret>("unary", this._transport, method, opt, input);
     }
     /**
@@ -479,77 +492,77 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
      * @generated from protobuf rpc: UpdateSecret
      */
     updateSecret(input: Secret, options?: RpcOptions): UnaryCall<Secret, Secret> {
-        const method = this.methods[30], opt = this._transport.mergeOptions(options);
+        const method = this.methods[31], opt = this._transport.mergeOptions(options);
         return stackIntercept<Secret, Secret>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: GetSecretStore
      */
     getSecretStore(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, SecretStore> {
-        const method = this.methods[31], opt = this._transport.mergeOptions(options);
+        const method = this.methods[32], opt = this._transport.mergeOptions(options);
         return stackIntercept<GetOptions, SecretStore>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: ListSecretStore
      */
     listSecretStore(input: ListSecretStoreOptions, options?: RpcOptions): UnaryCall<ListSecretStoreOptions, SecretStoreList> {
-        const method = this.methods[32], opt = this._transport.mergeOptions(options);
+        const method = this.methods[33], opt = this._transport.mergeOptions(options);
         return stackIntercept<ListSecretStoreOptions, SecretStoreList>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: UpdateSecretStore
      */
     updateSecretStore(input: SecretStore, options?: RpcOptions): UnaryCall<SecretStore, SecretStore> {
-        const method = this.methods[33], opt = this._transport.mergeOptions(options);
+        const method = this.methods[34], opt = this._transport.mergeOptions(options);
         return stackIntercept<SecretStore, SecretStore>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: SynchronizeSecretStore
      */
     synchronizeSecretStore(input: SynchronizeSecretStoreRequest, options?: RpcOptions): UnaryCall<SynchronizeSecretStoreRequest, SynchronizeSecretStoreResponse> {
-        const method = this.methods[34], opt = this._transport.mergeOptions(options);
+        const method = this.methods[35], opt = this._transport.mergeOptions(options);
         return stackIntercept<SynchronizeSecretStoreRequest, SynchronizeSecretStoreResponse>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: CreateDeviceManager
      */
     createDeviceManager(input: DeviceManager, options?: RpcOptions): UnaryCall<DeviceManager, DeviceManager> {
-        const method = this.methods[35], opt = this._transport.mergeOptions(options);
+        const method = this.methods[36], opt = this._transport.mergeOptions(options);
         return stackIntercept<DeviceManager, DeviceManager>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: GetDeviceManager
      */
     getDeviceManager(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, DeviceManager> {
-        const method = this.methods[36], opt = this._transport.mergeOptions(options);
+        const method = this.methods[37], opt = this._transport.mergeOptions(options);
         return stackIntercept<GetOptions, DeviceManager>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: ListDeviceManager
      */
     listDeviceManager(input: ListDeviceManagerOptions, options?: RpcOptions): UnaryCall<ListDeviceManagerOptions, DeviceManagerList> {
-        const method = this.methods[37], opt = this._transport.mergeOptions(options);
+        const method = this.methods[38], opt = this._transport.mergeOptions(options);
         return stackIntercept<ListDeviceManagerOptions, DeviceManagerList>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: UpdateDeviceManager
      */
     updateDeviceManager(input: DeviceManager, options?: RpcOptions): UnaryCall<DeviceManager, DeviceManager> {
-        const method = this.methods[38], opt = this._transport.mergeOptions(options);
+        const method = this.methods[39], opt = this._transport.mergeOptions(options);
         return stackIntercept<DeviceManager, DeviceManager>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: DeleteDeviceManager
      */
     deleteDeviceManager(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult> {
-        const method = this.methods[39], opt = this._transport.mergeOptions(options);
+        const method = this.methods[40], opt = this._transport.mergeOptions(options);
         return stackIntercept<DeleteOptions, OperationResult>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: GetCoreCondition
      */
     getCoreCondition(input: Condition, options?: RpcOptions): UnaryCall<Condition, Condition$> {
-        const method = this.methods[40], opt = this._transport.mergeOptions(options);
+        const method = this.methods[41], opt = this._transport.mergeOptions(options);
         return stackIntercept<Condition, Condition$>("unary", this._transport, method, opt, input);
     }
 }

@@ -3061,6 +3061,28 @@ export interface IssueCertificateRequest {
 export interface IssueCertificateResponse {
 }
 /**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.SetCertificateRequest
+ */
+export interface SetCertificateRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference certificateRef = 1
+     */
+    certificateRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: string certificate = 2
+     */
+    certificate: string;
+    /**
+     * @generated from protobuf field: string privateKey = 3
+     */
+    privateKey: string;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.SetCertificateResponse
+ */
+export interface SetCertificateResponse {
+}
+/**
  * @generated from protobuf message octelium.api.main.enterprise.v1.AuditLog
  */
 export interface AuditLog {
@@ -12785,6 +12807,106 @@ class IssueCertificateResponse$Type extends MessageType<IssueCertificateResponse
  */
 export const IssueCertificateResponse = new IssueCertificateResponse$Type();
 // @generated message type with reflection information, may provide speed optimized methods
+class SetCertificateRequest$Type extends MessageType<SetCertificateRequest> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.SetCertificateRequest", [
+            { no: 1, name: "certificateRef", kind: "message", T: () => ObjectReference },
+            { no: 2, name: "certificate", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "privateKey", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<SetCertificateRequest>): SetCertificateRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.certificate = "";
+        message.privateKey = "";
+        if (value !== undefined)
+            reflectionMergePartial<SetCertificateRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: SetCertificateRequest): SetCertificateRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference certificateRef */ 1:
+                    message.certificateRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.certificateRef);
+                    break;
+                case /* string certificate */ 2:
+                    message.certificate = reader.string();
+                    break;
+                case /* string privateKey */ 3:
+                    message.privateKey = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: SetCertificateRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.ObjectReference certificateRef = 1; */
+        if (message.certificateRef)
+            ObjectReference.internalBinaryWrite(message.certificateRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* string certificate = 2; */
+        if (message.certificate !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.certificate);
+        /* string privateKey = 3; */
+        if (message.privateKey !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.privateKey);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.SetCertificateRequest
+ */
+export const SetCertificateRequest = new SetCertificateRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SetCertificateResponse$Type extends MessageType<SetCertificateResponse> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.SetCertificateResponse", []);
+    }
+    create(value?: PartialMessage<SetCertificateResponse>): SetCertificateResponse {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<SetCertificateResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: SetCertificateResponse): SetCertificateResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: SetCertificateResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.SetCertificateResponse
+ */
+export const SetCertificateResponse = new SetCertificateResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
 class AuditLog$Type extends MessageType<AuditLog> {
     constructor() {
         super("octelium.api.main.enterprise.v1.AuditLog", [
@@ -17490,6 +17612,7 @@ export const MainService = new ServiceType("octelium.api.main.enterprise.v1.Main
     { name: "UpdateCertificate", options: {}, I: Certificate, O: Certificate },
     { name: "ListCertificate", options: {}, I: ListCertificateOptions, O: CertificateList },
     { name: "IssueCertificate", options: {}, I: IssueCertificateRequest, O: IssueCertificateResponse },
+    { name: "SetCertificate", options: {}, I: SetCertificateRequest, O: SetCertificateResponse },
     { name: "GetCertificateIssuer", options: {}, I: GetOptions, O: CertificateIssuer },
     { name: "ListCertificateIssuer", options: {}, I: ListCertificateIssuerOptions, O: CertificateIssuerList },
     { name: "UpdateCertificateIssuer", options: {}, I: CertificateIssuer, O: CertificateIssuer },
