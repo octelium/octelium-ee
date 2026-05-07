@@ -21,6 +21,7 @@ import ClipLoader from "react-spinners/ClipLoader";
 import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
 import { getIssuanceState } from "./List";
+import { SetCertificateC } from "./SetCertificateC";
 
 export const IssueC = (props: { item: Certificate }) => {
   const { item } = props;
@@ -219,6 +220,11 @@ export const MainInfo = (props: { item: Certificate }): ResourceMainInfo => {
             },
           ]
         : []),
+
+      {
+        label: "Set",
+        value: <SetCertificateC item={item} />,
+      },
     ],
   };
 };

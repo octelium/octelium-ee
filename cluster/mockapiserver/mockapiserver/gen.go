@@ -18,6 +18,7 @@ import (
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
+	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/cluster/apiserver/apiserver/admin"
 	"github.com/octelium/octelium/cluster/common/sessionc"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
@@ -557,6 +558,28 @@ The initial SecretStore powered by the Kubernetes Cluster of the default Region
 				},
 			},
 			Status: &enterprisev1.CertificateIssuer_Status{},
+		})
+		if err != nil {
+			return err
+		}
+
+		nsDefault, err := octeliumC.CoreC().GetNamespace(ctx, &rmetav1.GetOptions{
+			Name: "default",
+		})
+		if err != nil {
+			return err
+		}
+
+		_, err = octeliumC.EnterpriseC().CreateCertificate(ctx, &enterprisev1.Certificate{
+			Metadata: &metav1.Metadata{
+				Name: "ns-default",
+			},
+			Spec: &enterprisev1.Certificate_Spec{
+				Mode: enterprisev1.Certificate_Spec_MANUAL,
+			},
+			Status: &enterprisev1.Certificate_Status{
+				NamespaceRef: umetav1.GetObjectReference(nsDefault),
+			},
 		})
 		if err != nil {
 			return err
