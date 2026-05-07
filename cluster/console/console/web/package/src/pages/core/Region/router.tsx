@@ -1,8 +1,8 @@
 import { ResourceComponentInfo } from "@/pages/utils/types";
 
-import { ExtraComponent, LabelComponent } from "./List";
 import Edit from "./Edit";
-import Main from "./Main";
+import { ExtraComponent, LabelComponent } from "./List";
+import Main, { MainInfo } from "./Main";
 
 const resourceComponentInfo: ResourceComponentInfo = {
   API: "core",
@@ -23,6 +23,9 @@ const resourceComponentInfo: ResourceComponentInfo = {
   unCreatable: true,
   unDeletable: true,
   unEditable: true,
+
+  // @ts-ignore
+  infoItemsGetter: MainInfo,
 };
 
 export default resourceComponentInfo;
