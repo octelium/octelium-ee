@@ -4,6 +4,7 @@ import {
   Certificate_Status_Issuance_State,
 } from "@/apis/enterprisev1/enterprisev1";
 import InfoItem from "@/components/InfoItem";
+import { ResourceListLabel } from "@/components/ResourceList";
 import TimeAgo from "@/components/TimeAgo";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { onError } from "@/utils";
@@ -142,6 +143,30 @@ export const MainInfo = (props: { item: Certificate }): ResourceMainInfo => {
 
   return {
     items: [
+      ...(!!item.status?.namespaceRef
+        ? [
+            {
+              label: "Namespace",
+              value: (
+                <ResourceListLabel
+                  itemRef={item.status!.namespaceRef}
+                ></ResourceListLabel>
+              ),
+            },
+          ]
+        : []),
+      ...(!!item.status?.serviceRef
+        ? [
+            {
+              label: "Service",
+              value: (
+                <ResourceListLabel
+                  itemRef={item.status!.serviceRef}
+                ></ResourceListLabel>
+              ),
+            },
+          ]
+        : []),
       ...(issuance
         ? [
             {
