@@ -1659,6 +1659,10 @@ export interface Certificate_Status {
      * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference serviceRef = 8
      */
     serviceRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Certificate.Status.Info info = 9
+     */
+    info?: Certificate_Status_Info;
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.Certificate.Status.Issuance
@@ -1709,6 +1713,35 @@ export enum Certificate_Status_Issuance_State {
      * @generated from protobuf enum value: FAILED = 4;
      */
     FAILED = 4
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Certificate.Status.Info
+ */
+export interface Certificate_Status_Info {
+    /**
+     * @generated from protobuf field: string commonName = 1
+     */
+    commonName: string;
+    /**
+     * @generated from protobuf field: string subject = 2
+     */
+    subject: string;
+    /**
+     * @generated from protobuf field: string issuer = 3
+     */
+    issuer: string;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp notBefore = 4
+     */
+    notBefore?: Timestamp;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp notAfter = 5
+     */
+    notAfter?: Timestamp;
+    /**
+     * @generated from protobuf field: repeated string dnsNames = 6
+     */
+    dnsNames: string[];
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.CertificateList
@@ -8992,7 +9025,8 @@ class Certificate_Status$Type extends MessageType<Certificate_Status> {
             { no: 6, name: "failedIssuances", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
             { no: 2, name: "certificateIssuerRef", kind: "message", T: () => ObjectReference },
             { no: 7, name: "namespaceRef", kind: "message", T: () => ObjectReference },
-            { no: 8, name: "serviceRef", kind: "message", T: () => ObjectReference }
+            { no: 8, name: "serviceRef", kind: "message", T: () => ObjectReference },
+            { no: 9, name: "info", kind: "message", T: () => Certificate_Status_Info }
         ]);
     }
     create(value?: PartialMessage<Certificate_Status>): Certificate_Status {
@@ -9033,6 +9067,9 @@ class Certificate_Status$Type extends MessageType<Certificate_Status> {
                 case /* octelium.api.main.meta.v1.ObjectReference serviceRef */ 8:
                     message.serviceRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.serviceRef);
                     break;
+                case /* octelium.api.main.enterprise.v1.Certificate.Status.Info info */ 9:
+                    message.info = Certificate_Status_Info.internalBinaryRead(reader, reader.uint32(), options, message.info);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -9069,6 +9106,9 @@ class Certificate_Status$Type extends MessageType<Certificate_Status> {
         /* octelium.api.main.meta.v1.ObjectReference serviceRef = 8; */
         if (message.serviceRef)
             ObjectReference.internalBinaryWrite(message.serviceRef, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Certificate.Status.Info info = 9; */
+        if (message.info)
+            Certificate_Status_Info.internalBinaryWrite(message.info, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -9154,6 +9194,91 @@ class Certificate_Status_Issuance$Type extends MessageType<Certificate_Status_Is
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Certificate.Status.Issuance
  */
 export const Certificate_Status_Issuance = new Certificate_Status_Issuance$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Certificate_Status_Info$Type extends MessageType<Certificate_Status_Info> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Certificate.Status.Info", [
+            { no: 1, name: "commonName", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "subject", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "issuer", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "notBefore", kind: "message", T: () => Timestamp },
+            { no: 5, name: "notAfter", kind: "message", T: () => Timestamp },
+            { no: 6, name: "dnsNames", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Certificate_Status_Info>): Certificate_Status_Info {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.commonName = "";
+        message.subject = "";
+        message.issuer = "";
+        message.dnsNames = [];
+        if (value !== undefined)
+            reflectionMergePartial<Certificate_Status_Info>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Certificate_Status_Info): Certificate_Status_Info {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string commonName */ 1:
+                    message.commonName = reader.string();
+                    break;
+                case /* string subject */ 2:
+                    message.subject = reader.string();
+                    break;
+                case /* string issuer */ 3:
+                    message.issuer = reader.string();
+                    break;
+                case /* google.protobuf.Timestamp notBefore */ 4:
+                    message.notBefore = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.notBefore);
+                    break;
+                case /* google.protobuf.Timestamp notAfter */ 5:
+                    message.notAfter = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.notAfter);
+                    break;
+                case /* repeated string dnsNames */ 6:
+                    message.dnsNames.push(reader.string());
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Certificate_Status_Info, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string commonName = 1; */
+        if (message.commonName !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.commonName);
+        /* string subject = 2; */
+        if (message.subject !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.subject);
+        /* string issuer = 3; */
+        if (message.issuer !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.issuer);
+        /* google.protobuf.Timestamp notBefore = 4; */
+        if (message.notBefore)
+            Timestamp.internalBinaryWrite(message.notBefore, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp notAfter = 5; */
+        if (message.notAfter)
+            Timestamp.internalBinaryWrite(message.notAfter, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* repeated string dnsNames = 6; */
+        for (let i = 0; i < message.dnsNames.length; i++)
+            writer.tag(6, WireType.LengthDelimited).string(message.dnsNames[i]);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Certificate.Status.Info
+ */
+export const Certificate_Status_Info = new Certificate_Status_Info$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class CertificateList$Type extends MessageType<CertificateList> {
     constructor() {

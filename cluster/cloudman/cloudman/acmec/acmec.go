@@ -35,6 +35,7 @@ import (
 	"github.com/go-acme/lego/v4/providers/dns/route53"
 	"github.com/go-acme/lego/v4/registration"
 	"github.com/octelium/octelium-ee/cluster/cloudman/cloudman/cloudmanutils"
+	"github.com/octelium/octelium-ee/cluster/common/certutils"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
 	"github.com/octelium/octelium/apis/main/corev1"
@@ -500,7 +501,6 @@ func (c *ACMEClient) postIssueCrt(ctx context.Context, cert, privateKey []byte) 
 	if err != nil {
 		return errors.Errorf("Could not parse PEM of issued crt: %+v", err)
 	}
-	
 
 	var sec *corev1.Secret
 	sec, err = c.octeliumC.CoreC().GetSecret(ctx, &rmetav1.GetOptions{
@@ -539,6 +539,12 @@ func (c *ACMEClient) postIssueCrt(ctx context.Context, cert, privateKey []byte) 
 	}
 
 	crt.Status.Issuance.State = enterprisev1.Certificate_Status_Issuance_SUCCESS
+
+	if info, err := certutils.GetInfo(string(cert), string(privateKey)); err == nil {
+		crt.Status.Info = info
+	} else {
+		zap.L().Warn("Could not get cert info", zap.Error(err))
+	}
 
 	crt.Status.Issuance.IssuanceCompletedAt = pbutils.Now()
 	crt.Status.Issuance.ExpiresAt = pbutils.Timestamp(x509Crt.NotAfter)

@@ -10,11 +10,14 @@ package certutils
 
 import (
 	"context"
+	"crypto/x509"
+	"encoding/pem"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/cluster/common/grpcutils"
 	"github.com/octelium/octelium/pkg/common/pbutils"
+	"github.com/pkg/errors"
 )
 
 func DoIssueCertificate(ctx context.Context, octeliumC octeliumc.ClientInterface, crt *enterprisev1.Certificate) (*enterprisev1.Certificate, error) {
@@ -45,4 +48,25 @@ func DoIssueCertificate(ctx context.Context, octeliumC octeliumc.ClientInterface
 	}
 
 	return crt, nil
+}
+
+func GetInfo(certPEM, keyPEM string) (*enterprisev1.Certificate_Status_Info, error) {
+	block, _ := pem.Decode([]byte(certPEM))
+	if block == nil {
+		return nil, errors.Errorf("Could not decode certificate PEM")
+	}
+
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		return nil, errors.Errorf("Could not parseCertificate: %+v", err)
+	}
+
+	return &enterprisev1.Certificate_Status_Info{
+		CommonName: cert.Subject.CommonName,
+		Subject:    cert.Subject.String(),
+		Issuer:     cert.Issuer.String(),
+		NotBefore:  pbutils.Timestamp(cert.NotBefore),
+		NotAfter:   pbutils.Timestamp(cert.NotAfter),
+		DnsNames:   cert.DNSNames,
+	}, nil
 }

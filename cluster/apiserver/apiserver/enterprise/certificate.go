@@ -26,6 +26,7 @@ import (
 	"github.com/octelium/octelium/pkg/apiutils/ucorev1"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/grpcerr"
+	"go.uber.org/zap"
 )
 
 func (s *Server) CreateCertificate(ctx context.Context, req *enterprisev1.Certificate) (*enterprisev1.Certificate, error) {
@@ -245,6 +246,12 @@ func (s *Server) SetCertificate(ctx context.Context, req *enterprisev1.SetCertif
 	}
 
 	crt.Status.SecretRef = umetav1.GetObjectReference(sec)
+	if info, err := certutils.GetInfo(req.Certificate, req.PrivateKey); err == nil {
+		crt.Status.Info = info
+	} else {
+		zap.L().Warn("Could not get cert info", zap.Error(err))
+	}
+
 	if _, err := s.octeliumC.EnterpriseC().UpdateCertificate(ctx, crt); err != nil {
 		return nil, serr.InternalWithErr(err)
 	}

@@ -110,11 +110,45 @@
                 "serviceRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
                     "additionalProperties": false
+                },
+                "info": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Certificate.Status.Info",
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false,
             "type": "object",
             "title": "Status"
+        },
+        "octelium.api.main.enterprise.v1.Certificate.Status.Info": {
+            "properties": {
+                "commonName": {
+                    "type": "string"
+                },
+                "subject": {
+                    "type": "string"
+                },
+                "issuer": {
+                    "type": "string"
+                },
+                "notBefore": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "notAfter": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "dnsNames": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Info"
         },
         "octelium.api.main.enterprise.v1.Certificate.Status.Issuance": {
             "properties": {
