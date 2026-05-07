@@ -212,6 +212,86 @@ export const MainInfo = (props: { item: Certificate }): ResourceMainInfo => {
           ]
         : []),
 
+      ...(item.status?.info
+        ? [
+            {
+              label: "Certificate Info",
+              span: "full" as const,
+              value: (
+                <div className="flex flex-col gap-1.5 w-full">
+                  {item.status.info.commonName && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-[0.68rem] font-bold uppercase tracking-[0.05em] text-slate-400 w-20 shrink-0">
+                        Common Name
+                      </span>
+                      <span className="text-[0.78rem] font-semibold text-slate-700 font-mono">
+                        {item.status.info.commonName}
+                      </span>
+                    </div>
+                  )}
+                  {item.status.info.subject && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-[0.68rem] font-bold uppercase tracking-[0.05em] text-slate-400 w-20 shrink-0">
+                        Subject
+                      </span>
+                      <span className="text-[0.78rem] font-semibold text-slate-700 font-mono truncate">
+                        {item.status.info.subject}
+                      </span>
+                    </div>
+                  )}
+                  {item.status.info.issuer && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-[0.68rem] font-bold uppercase tracking-[0.05em] text-slate-400 w-20 shrink-0">
+                        Issuer
+                      </span>
+                      <span className="text-[0.78rem] font-semibold text-slate-700 font-mono truncate">
+                        {item.status.info.issuer}
+                      </span>
+                    </div>
+                  )}
+                  {item.status.info.notBefore && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-[0.68rem] font-bold uppercase tracking-[0.05em] text-slate-400 w-20 shrink-0">
+                        Not Before
+                      </span>
+                      <span className="text-[0.78rem] font-semibold text-slate-700">
+                        <TimeAgo rfc3339={item.status.info.notBefore} />
+                      </span>
+                    </div>
+                  )}
+                  {item.status.info.notAfter && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-[0.68rem] font-bold uppercase tracking-[0.05em] text-slate-400 w-20 shrink-0">
+                        Not After
+                      </span>
+                      <span className="text-[0.78rem] font-semibold text-slate-700">
+                        <TimeAgo rfc3339={item.status.info.notAfter} />
+                      </span>
+                    </div>
+                  )}
+                  {item.status.info.dnsNames.length > 0 && (
+                    <div className="flex items-start gap-2">
+                      <span className="text-[0.68rem] font-bold uppercase tracking-[0.05em] text-slate-400 w-20 shrink-0 pt-0.5">
+                        DNS Names
+                      </span>
+                      <div className="flex flex-wrap gap-1">
+                        {item.status.info.dnsNames.map((name) => (
+                          <span
+                            key={name}
+                            className="inline-flex items-center px-1.5 py-0.5 rounded text-[0.68rem] font-mono font-semibold bg-slate-100 border border-slate-200 text-slate-600"
+                          >
+                            {name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ),
+            },
+          ]
+        : []),
+
       ...(item.spec?.mode === Certificate_Spec_Mode.MANAGED
         ? [
             {
