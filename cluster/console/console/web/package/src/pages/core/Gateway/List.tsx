@@ -1,13 +1,11 @@
-import { ResourceListLabel } from "@/components/ResourceList";
 import { Gateway } from "@/apis/corev1/corev1";
+import { ResourceListLabel } from "@/components/ResourceList";
 
-import { getDomain, toNumOrZero } from "@/utils";
-import Label from "@/components/Label";
-import { match } from "ts-pattern";
+import { GetGatewaySummaryResponse } from "@/apis/visibilityv1/core/vcorev1";
+import { SummaryItemCount, SummaryItemCountWrap } from "@/components/Summary";
+import { getDomain } from "@/utils";
 import { getClientVisibilityCore } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
-import { SummaryItemCount, SummaryItemCountWrap } from "@/components/Summary";
-import { GetGatewaySummaryResponse } from "@/apis/visibilityv1/core/vcorev1";
 
 const ItemDetails = (props: { item: Gateway; domain: string }) => {
   const { item } = props;
@@ -51,7 +49,7 @@ export const Summary = () => {
     queryKey: ["visibility", "core", "summary", "Gateway"],
     queryFn: async () => {
       const { response } = await getClientVisibilityCore().getGatewaySummary(
-        {}
+        {},
       );
 
       return response;

@@ -1,14 +1,8 @@
 import * as React from "react";
 
-import { getClientCore } from "@/utils/client";
-
 import * as CoreP from "@/apis/corev1/corev1";
 
-import {
-  cloneResource,
-  getGetKeyFromPath,
-  getListKeyFromPath,
-} from "@/utils/pb";
+import { cloneResource } from "@/utils/pb";
 
 const Edit = (props: {
   item: CoreP.Gateway;
