@@ -103,6 +103,10 @@ func (g *Genesis) RunInit(ctx context.Context, o *InitOpts) error {
 		return err
 	}
 
+	if err := g.setRegionVersionMap(ctx, rgn); err != nil {
+		zap.L().Warn("Could not setRegionVersionMap", zap.Error(err))
+	}
+
 	zap.L().Info("Successfully initialized the Cluster")
 
 	return nil

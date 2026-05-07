@@ -17,9 +17,11 @@ import (
 	"github.com/octelium/octelium-ee/cluster/genesis/genesis/components"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
+	"github.com/octelium/octelium/cluster/common/apivalidation"
 	"github.com/octelium/octelium/cluster/common/k8sutils"
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/common/pbutils"
+	"github.com/octelium/octelium/pkg/utils/ldflags"
 	"go.uber.org/zap"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -193,6 +195,31 @@ func (g *Genesis) rolloutRestartRscServers(ctx context.Context) error {
 
 	time.Sleep(5 * time.Second)
 	if err := k8sutils.WaitReadinessDeployment(ctx, g.k8sC, oc.OcteliumEnterpriseComponent(oc.RscServer)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (g *Genesis) setRegionVersionMap(ctx context.Context, rgn *corev1.Region) error {
+	region, err := g.octeliumC.CoreC().GetRegion(ctx, apivalidation.ObjectToRGetOptions(rgn))
+	if err != nil {
+		return err
+	}
+
+	if region.Status.VersionInfoMap == nil {
+		region.Status.VersionInfoMap = make(map[string]*corev1.Region_Status_VersionInfo)
+	}
+
+	region.Status.VersionInfoMap["octeliumee"] = &corev1.Region_Status_VersionInfo{
+		Package: "octeliumee",
+		SetAt:   pbutils.Now(),
+		Version: ldflags.GetVersion(),
+		Id:      os.Getenv("OCTELIUM_INSTALL_ID"),
+	}
+
+	_, err = g.octeliumC.CoreC().UpdateRegion(ctx, region)
+	if err != nil {
 		return err
 	}
 

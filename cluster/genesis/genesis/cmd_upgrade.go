@@ -37,7 +37,7 @@ func (g *Genesis) RunUpgrade(ctx context.Context, o *UpgradeOpts) error {
 	g.octeliumC = octeliumC
 	g.octeliumCInit = octeliumC
 
-	regionV, err := g.octeliumC.CoreC().GetRegion(ctx, &rmetav1.GetOptions{Name: os.Getenv("OCTELIUM_REGION_NAME")})
+	region, err := g.octeliumC.CoreC().GetRegion(ctx, &rmetav1.GetOptions{Name: os.Getenv("OCTELIUM_REGION_NAME")})
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func (g *Genesis) RunUpgrade(ctx context.Context, o *UpgradeOpts) error {
 
 	if err := g.installComponents(ctx, &components.CommonOpts{
 		CommonOpts: gc.CommonOpts{
-			Region:                  regionV,
+			Region:                  region,
 			EnableSPIFFECSI:         o.EnableSPIFFECSI,
 			SPIFFECSIDriver:         o.SPIFFECSIDriver,
 			SPIFFETrustDomain:       o.SPIFFETrustDomain,
@@ -66,8 +66,12 @@ func (g *Genesis) RunUpgrade(ctx context.Context, o *UpgradeOpts) error {
 		return err
 	}
 
-	if err := g.installOcteliumResources(ctx, cc, regionV); err != nil {
+	if err := g.installOcteliumResources(ctx, cc, region); err != nil {
 		zap.L().Warn("Could not installOcteliumResources", zap.Error(err))
+	}
+
+	if err := g.setRegionVersionMap(ctx, region); err != nil {
+		zap.L().Warn("Could not setRegionVersionMap", zap.Error(err))
 	}
 
 	zap.L().Debug("Upgrade is successful")
