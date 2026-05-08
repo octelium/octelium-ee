@@ -13,6 +13,7 @@ import (
 	"fmt"
 
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
+	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
@@ -67,54 +68,57 @@ func (s *Server) CreateDirectoryProvider(ctx context.Context, req *enterprisev1.
 		return nil, serr.InternalWithErr(err)
 	}
 
-	usr, err := s.octeliumC.CoreC().CreateUser(ctx, &corev1.User{
-		Metadata: &metav1.Metadata{
-			Name:           fmt.Sprintf("sys:dp-%s", item.Status.Id),
-			IsSystem:       true,
-			IsUserHidden:   true,
-			IsSystemHidden: true,
-		},
-		Spec: &corev1.User_Spec{
-			Type: corev1.User_Spec_WORKLOAD,
-			Session: &corev1.User_Spec_Session{
-				MaxPerUser:   1,
-				DefaultState: corev1.Session_Spec_ACTIVE,
-				ClientlessDuration: &metav1.Duration{
-					Type: &metav1.Duration_Months{
-						Months: 6,
-					},
-				},
-				AccessTokenDuration: &metav1.Duration{
-					Type: &metav1.Duration_Months{
-						Months: 6,
-					},
-				},
-				RefreshTokenDuration: &metav1.Duration{
-					Type: &metav1.Duration_Months{
-						Months: 6,
-					},
-				},
+	switch item.Spec.Type.(type) {
+	case *enterprisev1.DirectoryProvider_Spec_Scim:
+		usr, err := s.octeliumC.CoreC().CreateUser(ctx, &corev1.User{
+			Metadata: &metav1.Metadata{
+				Name:         uenterprisev1.ToDirectoryProvider(item).GetResourceName(),
+				IsSystem:     true,
+				IsUserHidden: true,
+				Description:  fmt.Sprintf(`Used by DirectoryProvider: "%s"`, item.Metadata.Name),
 			},
-			Authorization: &corev1.User_Spec_Authorization{
-				InlinePolicies: []*corev1.InlinePolicy{
-					{
-						Name: "dirsync-client",
-						Spec: &corev1.Policy_Spec{
-							Rules: []*corev1.Policy_Spec_Rule{
-								{
-									Effect: corev1.Policy_Spec_Rule_ALLOW,
-									Condition: &corev1.Condition{
-										Type: &corev1.Condition_Match{
-											Match: `ctx.service.metadata.name == "dirsync.octelium"`,
+			Spec: &corev1.User_Spec{
+				Type: corev1.User_Spec_WORKLOAD,
+				Session: &corev1.User_Spec_Session{
+					MaxPerUser:   1,
+					DefaultState: corev1.Session_Spec_ACTIVE,
+					ClientlessDuration: &metav1.Duration{
+						Type: &metav1.Duration_Months{
+							Months: 6,
+						},
+					},
+					AccessTokenDuration: &metav1.Duration{
+						Type: &metav1.Duration_Months{
+							Months: 6,
+						},
+					},
+					RefreshTokenDuration: &metav1.Duration{
+						Type: &metav1.Duration_Months{
+							Months: 6,
+						},
+					},
+				},
+				Authorization: &corev1.User_Spec_Authorization{
+					InlinePolicies: []*corev1.InlinePolicy{
+						{
+							Name: "dirsync-client",
+							Spec: &corev1.Policy_Spec{
+								Rules: []*corev1.Policy_Spec_Rule{
+									{
+										Effect: corev1.Policy_Spec_Rule_ALLOW,
+										Condition: &corev1.Condition{
+											Type: &corev1.Condition_Match{
+												Match: `ctx.service.metadata.name == "dirsync.octelium"`,
+											},
 										},
+										Priority: -1,
 									},
-									Priority: -1,
-								},
-								{
-									Effect: corev1.Policy_Spec_Rule_DENY,
-									Condition: &corev1.Condition{
-										Type: &corev1.Condition_MatchAny{
-											MatchAny: true,
+									{
+										Effect: corev1.Policy_Spec_Rule_DENY,
+										Condition: &corev1.Condition{
+											Type: &corev1.Condition_MatchAny{
+												MatchAny: true,
+											},
 										},
 									},
 								},
@@ -123,31 +127,31 @@ func (s *Server) CreateDirectoryProvider(ctx context.Context, req *enterprisev1.
 					},
 				},
 			},
-		},
-		Status: &corev1.User_Status{
-			Ext: map[string]*structpb.Struct{
-				ovutils.ExtInfoKeyEnterprise: pbutils.MessageToStructMust(&enterprisev1.UserExtInfo{
-					DirectoryProviderRef: umetav1.GetObjectReference(item),
-				}),
+			Status: &corev1.User_Status{
+				Ext: map[string]*structpb.Struct{
+					ovutils.ExtInfoKeyEnterprise: pbutils.MessageToStructMust(&enterprisev1.UserExtInfo{
+						DirectoryProviderRef: umetav1.GetObjectReference(item),
+					}),
+				},
 			},
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
+		})
+		if err != nil {
+			return nil, err
+		}
 
-	item, err = s.octeliumC.EnterpriseC().GetDirectoryProvider(ctx, &rmetav1.GetOptions{
-		Uid: item.Metadata.Uid,
-	})
-	if err != nil {
-		return nil, grpcutils.InternalWithErr(err)
-	}
+		item, err = s.octeliumC.EnterpriseC().GetDirectoryProvider(ctx, &rmetav1.GetOptions{
+			Uid: item.Metadata.Uid,
+		})
+		if err != nil {
+			return nil, grpcutils.InternalWithErr(err)
+		}
 
-	item.Status.UserRef = umetav1.GetObjectReference(usr)
+		item.Status.UserRef = umetav1.GetObjectReference(usr)
 
-	item, err = s.octeliumC.EnterpriseC().UpdateDirectoryProvider(ctx, item)
-	if err != nil {
-		return nil, grpcutils.InternalWithErr(err)
+		item, err = s.octeliumC.EnterpriseC().UpdateDirectoryProvider(ctx, item)
+		if err != nil {
+			return nil, grpcutils.InternalWithErr(err)
+		}
 	}
 
 	return item, nil

@@ -67,7 +67,6 @@ func GetBootstrapConfig(ctx context.Context, octeliumC octeliumc.ClientInterface
 }
 
 const ExtInfoKeyEnterprise = "enterpriseV1"
-const DirectoryProviderSessionPrefix = "sys:dp"
 
 func GetOIDCConfigSecretName(regionName string) string {
 	return fmt.Sprintf("sys:oidc-config-%s", regionName)

@@ -10,9 +10,9 @@ package directoryproviders
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
+	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/cluster/common/urscsrv"
@@ -84,7 +84,7 @@ func (c *Controller) OnDelete(ctx context.Context, itm *enterprisev1.DirectoryPr
 
 	{
 		if _, err := c.octeliumC.CoreC().DeleteUser(ctx, &rmetav1.DeleteOptions{
-			Name: fmt.Sprintf("sys:dp-%s", itm.Status.Id),
+			Name: uenterprisev1.ToDirectoryProvider(itm).GetResourceName(),
 		}); err != nil {
 			zap.L().Debug("Could not delete the directoryProvider User", zap.Error(err))
 		}

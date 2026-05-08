@@ -60,6 +60,10 @@ type Certificate struct {
 	*enterprisev1.Certificate
 }
 
+type DirectoryProvider struct {
+	*enterprisev1.DirectoryProvider
+}
+
 func NewObjectList(kind string) (umetav1.ObjectI, error) {
 
 	switch kind {
@@ -152,6 +156,12 @@ func ToSecretList(a *enterprisev1.SecretList) *SecretList {
 	}
 }
 
+func ToDirectoryProvider(a *enterprisev1.DirectoryProvider) *DirectoryProvider {
+	return &DirectoryProvider{
+		DirectoryProvider: a,
+	}
+}
+
 func (s *Secret) GetValueStr() string {
 	if s.Data == nil {
 		return ""
@@ -193,4 +203,12 @@ func (iss *CertificateIssuer) GetDirectoryURL() string {
 	} else {
 		return "https://acme-v02.api.letsencrypt.org/directory"
 	}
+}
+
+func (a *DirectoryProvider) GetResourceName() string {
+	if a == nil || a.Status == nil || a.Status.Id == "" {
+		return ""
+	}
+
+	return fmt.Sprintf("directory-%s", a.Status.Id)
 }
