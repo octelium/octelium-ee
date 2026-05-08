@@ -12,10 +12,11 @@ import (
 	"context"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
-	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
+	"github.com/octelium/octelium/cluster/common/apivalidation"
 	"github.com/octelium/octelium/cluster/common/urscsrv"
+	"github.com/octelium/octelium/pkg/grpcerr"
 	"go.uber.org/zap"
 )
 
@@ -82,11 +83,12 @@ func (c *Controller) OnDelete(ctx context.Context, itm *enterprisev1.DirectoryPr
 		}
 	}
 
-	{
-		if _, err := c.octeliumC.CoreC().DeleteUser(ctx, &rmetav1.DeleteOptions{
-			Name: uenterprisev1.ToDirectoryProvider(itm).GetResourceName(),
-		}); err != nil {
-			zap.L().Debug("Could not delete the directoryProvider User", zap.Error(err))
+	if itm.Status.UserRef != nil {
+		if _, err := c.octeliumC.CoreC().DeleteUser(ctx,
+			apivalidation.ObjectReferenceToRDeleteOptions(itm.Status.UserRef)); err != nil {
+			if !grpcerr.IsNotFound(err) {
+				zap.L().Warn("Could not delete the directoryProvider User", zap.Error(err))
+			}
 		}
 	}
 
