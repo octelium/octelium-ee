@@ -55,7 +55,7 @@ func (s *Server) GetClusterInfo(ctx context.Context, req *enterprisev1.GetCluste
 	}
 
 	if info, ok := rgn.Status.VersionInfoMap["octeliumee"]; ok {
-		ret.Core = &enterprisev1.GetClusterInfoResponse_Core{
+		ret.PackageEnterprise = &enterprisev1.GetClusterInfoResponse_PackageEnterprise{
 			CurrentVersion: info.Version,
 			SetAt:          info.SetAt,
 			LatestVersion:  latestEE,
@@ -64,7 +64,7 @@ func (s *Server) GetClusterInfo(ctx context.Context, req *enterprisev1.GetCluste
 	}
 
 	if info, ok := rgn.Status.VersionInfoMap["cordium"]; ok {
-		ret.Core = &enterprisev1.GetClusterInfoResponse_Core{
+		ret.PackageCordium = &enterprisev1.GetClusterInfoResponse_PackageCordium{
 			CurrentVersion: info.Version,
 			SetAt:          info.SetAt,
 			LatestVersion:  latestCordium,
