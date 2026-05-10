@@ -77,9 +77,15 @@ func (c *controller) run(ctx context.Context) error {
 		return nil
 	}
 
+	var hasRegCred bool
+	if _, err := c.k8sC.CoreV1().Secrets(vutils.K8sNS).Get(ctx,
+		"octelium-regcred", k8smetav1.GetOptions{}); err == nil {
+		hasRegCred = true
+	}
+
 	if c.req.Request.Core != nil {
 
-		job := getGenesisJob(c.domain, vutils.GetMyRegionName(), "octelium", c.req.Request.Core.Version)
+		job := getGenesisJob(c.domain, vutils.GetMyRegionName(), "octelium", c.req.Request.Core.Version, false)
 		if _, err := c.k8sC.BatchV1().Jobs(vutils.K8sNS).Create(ctx,
 			job,
 			k8smetav1.CreateOptions{}); err != nil {
@@ -93,7 +99,8 @@ func (c *controller) run(ctx context.Context) error {
 	}
 
 	if c.req.Request.PackageEnterprise != nil {
-		job := getGenesisJob(c.domain, vutils.GetMyRegionName(), "octeliumee", c.req.Request.PackageEnterprise.Version)
+		job := getGenesisJob(c.domain, vutils.GetMyRegionName(),
+			"octeliumee", c.req.Request.PackageEnterprise.Version, false)
 		if _, err := c.k8sC.BatchV1().Jobs(vutils.K8sNS).Create(ctx,
 			job,
 			k8smetav1.CreateOptions{}); err != nil {
@@ -106,7 +113,8 @@ func (c *controller) run(ctx context.Context) error {
 	}
 
 	if c.req.Request.PackageCordium != nil {
-		job := getGenesisJob(c.domain, vutils.GetMyRegionName(), "cordium", c.req.Request.PackageCordium.Version)
+		job := getGenesisJob(c.domain, vutils.GetMyRegionName(),
+			"cordium", c.req.Request.PackageCordium.Version, hasRegCred)
 		if _, err := c.k8sC.BatchV1().Jobs(vutils.K8sNS).Create(ctx,
 			job,
 			k8smetav1.CreateOptions{}); err != nil {
@@ -162,14 +170,14 @@ func (c *controller) getRegionVersion(ctx context.Context) (string, error) {
 	return rgn.Status.Version, nil
 }
 
-func getGenesisJob(domain string, regionName string, pkg string, version string) *batchv1.Job {
+func getGenesisJob(domain string, regionName string, pkg string, version string, withRegCred bool) *batchv1.Job {
 	labels := map[string]string{
 		"app":                         "octelium",
 		"octelium.com/component":      "genesis",
 		"octelium.com/component-type": "cluster",
 	}
 
-	return &batchv1.Job{
+	ret := &batchv1.Job{
 		ObjectMeta: k8smetav1.ObjectMeta{
 			Name:      fmt.Sprintf("octelium-genesis-upgrade-%s", utilrand.GetRandomStringLowercase(6)),
 			Namespace: vutils.K8sNS,
@@ -184,4 +192,14 @@ func getGenesisJob(domain string, regionName string, pkg string, version string)
 			},
 		},
 	}
+
+	if withRegCred {
+		ret.Spec.Template.Spec.ImagePullSecrets = []k8scorev1.LocalObjectReference{
+			{
+				Name: "octelium-regcred",
+			},
+		}
+	}
+
+	return ret
 }
