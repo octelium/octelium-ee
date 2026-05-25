@@ -594,11 +594,6 @@ func (s *server) getHTTPHandler(ctx context.Context) (http.Handler, error) {
 		return nil, err
 	}
 
-	handler, err = chain.Then(handler)
-	if err != nil {
-		return nil, err
-	}
-
 	handler = http.AllowQuerySemicolons(handler)
 
 	return handler, nil
