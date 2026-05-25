@@ -18,6 +18,7 @@ import (
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
+	"go.uber.org/zap"
 )
 
 func (s *Server) insertResource(ctx context.Context, rsc umetav1.ResourceObjectI) error {
@@ -76,7 +77,12 @@ func (s *Server) setAuditLog(rsc umetav1.ResourceObjectI) {
 	if md.ActorRef == nil {
 		return
 	}
-	s.auditLogItem <- rsc
+
+	select {
+	case s.auditLogItem <- rsc:
+	default:
+		zap.L().Warn("Could not setAuditLog", zap.Any("rsc", rsc))
+	}
 }
 
 func (s *Server) getRSCStr(rscJSON []byte) (string, error) {
