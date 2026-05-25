@@ -136,12 +136,6 @@ func (s *Server) getSessionFromActorRef(ctx context.Context, actorRef *metav1.Ob
 		return nil, grpcutils.InternalWithErr(err)
 	}
 
-	rows, err := s.db.QueryContext(ctx, sqln, sqlargs...)
-	if err != nil {
-		return nil, grpcutils.InternalWithErr(err)
-	}
-	defer rows.Close()
-
 	ret := &corev1.Session{}
 
 	rsc := make(map[string]any)
