@@ -502,7 +502,7 @@ func (s *Server) listAuditLogTopSession(ctx context.Context, req *visibilityv1.L
 		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
 	}
 
-	res, err := s.getTop(ctx, "audit_logs", 10, "entry.userRef", filters)
+	res, err := s.getTop(ctx, "audit_logs", 10, "entry.sessionRef", filters)
 	if err != nil {
 		return nil, err
 	}
