@@ -220,8 +220,8 @@ func (s *Server) getSummaryCorePolicy(ctx context.Context, req *vcorev1.GetPolic
 			goqu.L(`COUNT(len(json_extract(rsc, '$.spec.rules'))) AS count_rules`),
 			// goqu.L("SUM((rule ->> 'effect') = 'ALLOWED')").As("count_allowed"),
 			// goqu.L("SUM((rule ->> 'effect') = 'DENIED')").As("count_denied"),
-			goqu.L(`COUNT(len(json_extract(rsc, '$.spec.rules'))) FILTER (WHERE json_extract_string(json_extract(rsc, '$.spec.rules[0]'), '$.effect') = 'ALLOW') AS count_rules_allowed`),
-			goqu.L(`COUNT(len(json_extract(rsc, '$.spec.rules'))) FILTER (WHERE json_extract_string(json_extract(rsc, '$.spec.rules[0]'), '$.effect') = 'DENY') AS count_rules_denied`),
+			goqu.L(`SUM(len(json_extract(rsc, '$.spec.rules'))) FILTER (WHERE json_extract_string(json_extract(rsc, '$.spec.rules[0]'), '$.effect') = 'ALLOW') AS count_rules_allowed`),
+			goqu.L(`SUM(len(json_extract(rsc, '$.spec.rules'))) FILTER (WHERE json_extract_string(json_extract(rsc, '$.spec.rules[0]'), '$.effect') = 'DENY') AS count_rules_denied`),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()
