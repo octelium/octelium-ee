@@ -89,6 +89,11 @@ func (s *server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	coreSrv := admin.NewServer(&admin.Opts{
+		OcteliumC:  s.octeliumC,
+		IsEmbedded: true,
+	})
+
 	if usr.Spec.Email != "" {
 		usrList, err := s.octeliumC.CoreC().ListUser(ctx, &rmetav1.ListOptions{
 			Filters: []*rmetav1.ListOptions_Filter{
@@ -99,11 +104,6 @@ func (s *server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 			s.setErrorInternal(w, err)
 			return
 		}
-
-		coreSrv := admin.NewServer(&admin.Opts{
-			OcteliumC:  s.octeliumC,
-			IsEmbedded: true,
-		})
 
 		if len(usrList.Items) > 0 {
 			oUsr := usrList.Items[0]
@@ -131,6 +131,17 @@ func (s *server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 				s.setErrorInternal(w, err)
 				return
 			}
+		}
+	} else {
+		if err := coreSrv.CheckAndSetUser(ctx, s.octeliumC, usr, false); err != nil {
+			s.setErrorInternal(w, err)
+			return
+		}
+
+		usr, err = s.octeliumC.CoreC().CreateUser(ctx, usr)
+		if err != nil {
+			s.setErrorInternal(w, err)
+			return
 		}
 	}
 

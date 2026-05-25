@@ -55,6 +55,7 @@ func (s *server) handleCreateGroup(w http.ResponseWriter, r *http.Request) {
 		}
 		if !grpcerr.IsNotFound(err) {
 			s.setErrorInternal(w, err)
+			return
 		}
 	}
 
