@@ -522,12 +522,6 @@ func (s *Server) listSSHSessionRecording(ctx context.Context, req *visibilityv1.
 			goqu.L(`count(*) OVER() AS full_count`),
 		)
 
-	{
-		limit := 1000
-		offset := int(req.Page) * limit
-		ds = ds.Offset(uint(offset)).Limit(uint(limit))
-	}
-
 	listMeta := ret.ListResponseMeta
 	{
 
