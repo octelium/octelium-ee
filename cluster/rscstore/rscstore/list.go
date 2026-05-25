@@ -23,6 +23,7 @@ import (
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
+	"github.com/octelium/octelium/pkg/common/rgx"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -82,6 +83,9 @@ func (s *Server) doList(ctx context.Context, req *doListReq) (proto.Message, err
 
 	filters = append(filters, req.filters...)
 	if req.common != nil && req.common.Tag != "" {
+		if !rgx.NameMain.MatchString(req.common.Tag) {
+			return nil, grpcutils.InvalidArg("Invalid tag: %s", req.common.Tag)
+		}
 		filters = append(filters,
 			goqu.L(fmt.Sprintf(`list_contains(CAST(json_extract(rsc, '$.metadata.tags') AS VARCHAR[]),'%s')`, req.common.Tag)))
 	}

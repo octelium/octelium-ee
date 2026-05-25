@@ -55,7 +55,7 @@ func (s *Server) removeResource(ctx context.Context, rsc umetav1.ResourceObjectI
 
 	if _, err := s.db.ExecContext(ctx,
 		fmt.Sprintf(`DELETE FROM resources WHERE uid = '%s'`,
-			rsc.GetMetadata().Uid)); err != nil {
+			rsc.GetMetadata().GetUid())); err != nil {
 		return err
 	}
 
