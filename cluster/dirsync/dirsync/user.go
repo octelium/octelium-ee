@@ -198,7 +198,7 @@ func (s *server) handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 			OcteliumC:  s.octeliumC,
 			IsEmbedded: true,
 		})
-		if coreSrv.CheckAndSetUser(ctx, s.octeliumC, usr, false); err != nil {
+		if err := coreSrv.CheckAndSetUser(ctx, s.octeliumC, usr, false); err != nil {
 			s.setErrorBadRequestWithErr(w, err)
 			return
 		}

@@ -25,10 +25,10 @@ type resourceMeta struct {
 
 type resourceUser struct {
 	resourceCommon
-	Name        resourceUserName     `json:"name,omitempty"`
-	UserName    string               `json:"userName,omitempty"`
-	Emails      []*resourceUserEmail `json:"emails,omitempty"`
-	Password    string               `json:"password,omitempty"`
+	Name     resourceUserName     `json:"name,omitempty"`
+	UserName string               `json:"userName,omitempty"`
+	Emails   []*resourceUserEmail `json:"emails,omitempty"`
+	// Password    string               `json:"password,omitempty"`
 	Active      bool                 `json:"active,omitempty"`
 	DisplayName string               `json:"displayName,omitempty"`
 	Locale      string               `json:"locale,omitempty"`
