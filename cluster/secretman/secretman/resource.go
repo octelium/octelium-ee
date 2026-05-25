@@ -20,6 +20,7 @@ import (
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/cluster/rscserver/rscserver/rerr"
 	"github.com/octelium/octelium/pkg/common/pbutils"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 
@@ -76,9 +77,21 @@ func (s *server) checkAndUpdateSecretResource(ctx context.Context, resourceJSON 
 		return nil
 	}
 
-	apiVersion := rscMap["apiVersion"].(string)
-	kind := rscMap["kind"].(string)
-	mdMap := rscMap["metadata"].(map[string]any)
+	apiVersion, ok := rscMap["apiVersion"].(string)
+	if !ok {
+		return errors.Errorf("Could not type-assert apiVersion")
+	}
+
+	kind, ok := rscMap["kind"].(string)
+	if !ok {
+		return errors.Errorf("Could not type-assert kind")
+	}
+
+	mdMap, ok := rscMap["metadata"].(map[string]any)
+	if !ok {
+		return errors.Errorf("Could not type-assert metadata")
+	}
+
 	md := &metav1.Metadata{}
 
 	if err := pbutils.UnmarshalFromMap(mdMap, md); err != nil {
