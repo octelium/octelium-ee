@@ -18,6 +18,7 @@ import (
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 
@@ -90,8 +91,14 @@ func (s *Server) getRSCStr(rscJSON []byte) (string, error) {
 	if err := json.Unmarshal(rscJSON, &rscMap); err != nil {
 		return "", err
 	}
-	metadata := rscMap["metadata"].(map[string]any)
-	spec := rscMap["spec"].(map[string]any)
+	metadata, ok := rscMap["metadata"].(map[string]any)
+	if !ok {
+		return "", errors.Errorf("Could not type-assert metadata")
+	}
+	spec, ok := rscMap["spec"].(map[string]any)
+	if !ok {
+		return "", errors.Errorf("Could not type-assert spec")
+	}
 
 	metadataJSON, err := json.Marshal(metadata)
 	if err != nil {
