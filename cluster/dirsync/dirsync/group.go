@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/asaskevich/govalidator"
 	"github.com/octelium/octelium-ee/cluster/dirsync/dirsync/middlewares"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
@@ -586,6 +587,10 @@ func (s *server) addGroupToUser(ctx context.Context, userUID string, grp *corev1
 }
 
 func (s *server) removeGroupFromUser(ctx context.Context, userUID string, grp *corev1.Group) error {
+	if !govalidator.IsUUIDv4(userUID) {
+		return grpcutils.InvalidArg("Invalid UID: %s", userUID)
+	}
+
 	dpUsr, err := s.octeliumC.EnterpriseC().GetDirectoryProviderUser(ctx, &rmetav1.GetOptions{Uid: userUID})
 	if err != nil {
 		return err
