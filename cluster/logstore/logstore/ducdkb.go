@@ -805,7 +805,7 @@ func (s *Server) getSummaryAuthenticationLog(ctx context.Context, req *visibilit
 
 		goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.entry.userRef.uid')) AS count_user`),
 		goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.entry.sessionRef.uid')) AS count_session`),
-		goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.entry.identityProviderRef.uid')) AS count_identity_provider`),
+		// goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.entry.identityProviderRef.uid')) AS count_identity_provider`),
 	)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -829,7 +829,7 @@ func (s *Server) getSummaryAuthenticationLog(ctx context.Context, req *visibilit
 			&ret.TotalAAL1, &ret.TotalAAL2, &ret.TotalAAL3,
 			&ret.TotalAuthenticatorFIDO, &ret.TotalAuthenticatorTOTP, &ret.TotalAuthenticatorTPM,
 			&ret.TotalAuthenticatorPasskey, &ret.TotalAuthenticatorMFA, &ret.TotalReauthentication,
-			&ret.TotalUser, &ret.TotalSession, &ret.TotalIdentityProvider)
+			&ret.TotalUser, &ret.TotalSession)
 		if err != nil {
 			return nil, grpcutils.InternalWithErr(err)
 		}

@@ -34,7 +34,12 @@ func (s *srvLog) Export(ctx context.Context, req plogotlp.ExportRequest) (plogot
 			logRecords := scopeLogs.At(j).LogRecords()
 			for k := range logRecords.Len() {
 				lr := logRecords.At(k)
-				s.itemCh <- lr
+				select {
+				case s.itemCh <- lr:
+				default:
+					zap.L().Warn("Could not add log record", zap.Any("lr", lr))
+				}
+				
 			}
 		}
 	}
