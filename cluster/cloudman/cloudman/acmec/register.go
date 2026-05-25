@@ -86,23 +86,24 @@ func RegisterAccount(ctx context.Context, octeliumC octeliumc.ClientInterface, c
 		return err
 	}
 	crtRsc, err := func() (*registration.Resource, error) {
-		for i := 0; i < 300; i++ {
+		for range 300 {
 			rsc, err := client.Registration.Register(registration.RegisterOptions{TermsOfServiceAgreed: true})
 			if err == nil {
 				zap.L().Debug("Successfully registered ACME account", zap.Any("iss", ci))
 				return rsc, nil
 			}
 
-			zap.S().Warnf("Could not register ACME account: %+v. Trying again...", err)
+			zap.L().Warn("Could not register ACME account. Trying again...", zap.Error(err))
 			time.Sleep(10 * time.Second)
 		}
 		return nil, errors.Errorf("Could not register ACME account")
 	}()
 	if err != nil {
-		ci.Status.State = enterprisev1.CertificateIssuer_Status_NOT_READY
-		_, err = octeliumC.EnterpriseC().UpdateCertificateIssuer(ctx, ci)
-		if err != nil {
-			return err
+		{
+			ci.Status.State = enterprisev1.CertificateIssuer_Status_NOT_READY
+			if _, err := octeliumC.EnterpriseC().UpdateCertificateIssuer(ctx, ci); err != nil {
+				return err
+			}
 		}
 		return err
 	}
@@ -179,7 +180,7 @@ func RegisterAccount(ctx context.Context, octeliumC octeliumc.ClientInterface, c
 		return err
 	}
 
-	zap.S().Info("Successfully registered an ACME account", zap.Any("issuer", ci))
+	zap.L().Info("Successfully registered an ACME account", zap.Any("issuer", ci))
 
 	if err := issueCerts(ctx, octeliumC, ci); err != nil {
 		return err
