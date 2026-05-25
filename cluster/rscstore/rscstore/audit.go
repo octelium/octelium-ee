@@ -58,19 +58,14 @@ func (s *Server) processAuditLog(ctx context.Context, rsc umetav1.ResourceObject
 		}
 	}
 
-	/*
-		if strings.HasPrefix(rsc.GetMetadata().ActorOperation, "octelium.api.main.user") {
-			return nil
-		}
-	*/
-
 	operation := rsc.GetMetadata().ActorOperation
 
 	var pkg string
 	var svc string
 	var method string
 	opArgs := strings.Split(operation, "/")
-	if len(opArgs) > 0 {
+
+	if len(opArgs) >= 2 {
 		method = opArgs[1]
 		fullSvc := opArgs[0]
 
