@@ -389,13 +389,16 @@ func (c *ACMEClient) IssueCertificate(ctx context.Context) error {
 	crtRsc, err := c.doIssueCrt(ctx, domains)
 	if err != nil {
 		zap.L().Warn("Could not doIssueCrt", zap.Error(err))
-		crt.Status.Issuance.IssuanceCompletedAt = pbutils.Now()
-		crt.Status.Issuance.State = enterprisev1.Certificate_Status_Issuance_FAILED
-		crt.Status.FailedIssuances = crt.Status.FailedIssuances + 1
+		{
+			crt.Status.Issuance.IssuanceCompletedAt = pbutils.Now()
+			crt.Status.Issuance.State = enterprisev1.Certificate_Status_Issuance_FAILED
+			crt.Status.FailedIssuances = crt.Status.FailedIssuances + 1
 
-		c.crt, err = c.octeliumC.EnterpriseC().UpdateCertificate(ctx, crt)
-		if err != nil {
-			return err
+			crt, err := c.octeliumC.EnterpriseC().UpdateCertificate(ctx, crt)
+			if err != nil {
+				return err
+			}
+			c.crt = crt
 		}
 
 		return err
