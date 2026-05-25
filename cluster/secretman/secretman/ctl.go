@@ -65,9 +65,13 @@ func (s *server) doSync(ctx context.Context, new *enterprisev1.SecretStore) erro
 
 	if err := func() error {
 		s.deks.RLock()
-		defer s.deks.RUnlock()
-
+		deks := make([]*dek, 0, len(s.deks.dekMap))
 		for _, dek := range s.deks.dekMap {
+			deks = append(deks, dek)
+		}
+		s.deks.RUnlock()
+
+		for _, dek := range deks {
 			enc, err := store.Encrypt(ctx, dek.uid, dek.key)
 			if err != nil {
 				return err
