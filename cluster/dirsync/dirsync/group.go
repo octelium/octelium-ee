@@ -37,7 +37,7 @@ func (s *server) handleCreateGroup(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	reqCtx := middlewares.GetCtxRequestContext(ctx)
 
-	scimGroup, err := s.unmarshalGroupSCIMFromReqBody(r)
+	scimGroup, err := s.unmarshalGroupSCIMFromReqBody(r, w)
 	if err != nil {
 		s.setErrorBadRequestWithErr(w, err)
 		return
@@ -156,7 +156,7 @@ func (s *server) handleUpdateGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	scimGroup, err := s.unmarshalGroupSCIMFromReqBody(r)
+	scimGroup, err := s.unmarshalGroupSCIMFromReqBody(r, w)
 	if err != nil {
 		s.setErrorBadRequestWithErr(w, err)
 		return
@@ -246,8 +246,9 @@ func (s *server) handleDeleteGroup(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (s *server) unmarshalGroupSCIMFromReqBody(r *http.Request) (*resourceGroup, error) {
+func (s *server) unmarshalGroupSCIMFromReqBody(r *http.Request, w http.ResponseWriter) (*resourceGroup, error) {
 	defer r.Body.Close()
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		return nil, errors.Errorf("Cannot read body")

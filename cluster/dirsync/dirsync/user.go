@@ -43,7 +43,7 @@ func (s *server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 	reqCtx := middlewares.GetCtxRequestContext(ctx)
 
-	scimUser, err := s.unmarshalUserSCIMFromReqBody(r)
+	scimUser, err := s.unmarshalUserSCIMFromReqBody(r, w)
 	if err != nil {
 		s.setErrorBadRequestWithErr(w, err)
 		return
@@ -171,7 +171,7 @@ func (s *server) handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	scimUser, err := s.unmarshalUserSCIMFromReqBody(r)
+	scimUser, err := s.unmarshalUserSCIMFromReqBody(r, w)
 	if err != nil {
 		s.setErrorBadRequestWithErr(w, err)
 		return
@@ -265,8 +265,9 @@ func (s *server) handleDeleteUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (s *server) unmarshalUserSCIMFromReqBody(r *http.Request) (*resourceUser, error) {
+func (s *server) unmarshalUserSCIMFromReqBody(r *http.Request, w http.ResponseWriter) (*resourceUser, error) {
 	defer r.Body.Close()
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		return nil, errors.Errorf("Cannot read body")
