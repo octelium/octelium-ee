@@ -57,13 +57,13 @@ func TestData(t *testing.T) {
 		},
 		Data: utilrand.GetRandomBytesMust(32),
 	}
-	err = srv.doCreateDataSecret(ctx, req)
-	assert.Nil(t, err)
+	err = srv.doSetDataSecret(ctx, req)
+	assert.Nil(t, err, "%+v", err)
 
 	resp, err := srv.doGetDataSecret(ctx, &csecretmanv1.GetSecretRequest{
 		SecretRef: req.SecretRef,
 	})
-	assert.Nil(t, err)
+	assert.Nil(t, err, "%+v", err)
 
 	assert.Equal(t, req.Data, resp.Data)
 	assert.Equal(t, dek.uid, resp.KeyUID)
@@ -76,7 +76,7 @@ func TestData(t *testing.T) {
 		Data: utilrand.GetRandomBytesMust(32),
 	}
 
-	err = srv.doUpdateDataSecret(ctx, req2)
+	err = srv.doSetDataSecret(ctx, req2)
 	assert.Nil(t, err)
 
 	{
@@ -127,7 +127,7 @@ func TestData(t *testing.T) {
 		Data: utilrand.GetRandomBytesMust(32),
 	}
 
-	err = srv.doUpdateDataSecret(ctx, req3)
+	err = srv.doSetDataSecret(ctx, req3)
 	assert.Nil(t, err)
 
 	{

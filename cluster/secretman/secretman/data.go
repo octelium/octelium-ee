@@ -11,16 +11,12 @@ package secretman
 import (
 	"context"
 	"database/sql"
-	"encoding/hex"
-	"fmt"
-	"slices"
 
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/octelium/octelium/apis/cluster/csecretmanv1"
 	"github.com/octelium/octelium/cluster/common/grpcutils"
 	"github.com/octelium/octelium/pkg/common/pbutils"
-	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/pkg/errors"
 )
 
@@ -33,13 +29,17 @@ type dataSecret struct {
 }
 
 func (s *server) doGetDataSecret(ctx context.Context, req *csecretmanv1.GetSecretRequest) (*dataSecret, error) {
-
-	filters := []exp.Expression{
-		goqu.C("uid").Eq(req.SecretRef.Uid),
-		goqu.C("resource_version").Eq(req.SecretRef.ResourceVersion),
+	if err := validateGetSecretRequest(req); err != nil {
+		return nil, err
 	}
 
-	ds := goqu.From(dataTable).Where(filters...).Select("ciphertext", "key_uid")
+	ds := goqu.From(dataTable).
+		Where(
+			goqu.C("uid").Eq(req.SecretRef.Uid),
+			goqu.C("resource_version").Eq(req.SecretRef.ResourceVersion),
+		).
+		Select("ciphertext", "key_uid", "info")
+
 	sqln, sqlargs, err := ds.ToSQL()
 	if err != nil {
 		return nil, grpcutils.InternalWithErr(err)
@@ -47,97 +47,64 @@ func (s *server) doGetDataSecret(ctx context.Context, req *csecretmanv1.GetSecre
 
 	var ciphertext []byte
 	var keyUID string
+	var info sql.NullString
 
-	if err := s.db.QueryRowContext(ctx, sqln, sqlargs...).Scan(&ciphertext, &keyUID); err != nil {
-		if err == sql.ErrNoRows {
+	if err := s.db.QueryRowContext(ctx, sqln, sqlargs...).Scan(&ciphertext, &keyUID, &info); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, grpcutils.NotFound("")
 		}
 		return nil, grpcutils.InternalWithErr(err)
 	}
 
-	dek, err := s.getDEKByUID(keyUID)
-	if err != nil {
-		return nil, err
-	}
-	data, err := dek.decrypt(ciphertext)
+	plaintext, err := s.decryptData(ciphertext, keyUID)
 	if err != nil {
 		return nil, err
 	}
 
-	return &dataSecret{
-		Data:   data,
+	ret := &dataSecret{
+		Data:   plaintext,
 		KeyUID: keyUID,
-	}, nil
+	}
+
+	if info.Valid {
+		ret.Info = []byte(info.String)
+	}
+
+	return ret, nil
 }
 
 func (s *server) doSetDataSecret(ctx context.Context, req *csecretmanv1.SetSecretRequest) error {
-
-	_, err := s.doGetDataSecret(ctx, &csecretmanv1.GetSecretRequest{
-		SecretRef: req.SecretRef,
-	})
-	if err != nil {
-		if !grpcerr.IsNotFound(err) {
-			return grpcutils.InternalWithErr(err)
-		}
-
-		return s.doCreateDataSecret(ctx, req)
+	if err := validateSetSecretRequest(req); err != nil {
+		return err
 	}
-
-	return s.doUpdateDataSecret(ctx, req)
-}
-
-func (s *server) doCreateDataSecret(ctx context.Context, req *csecretmanv1.SetSecretRequest) error {
 
 	enc, err := s.encryptData(ctx, req)
 	if err != nil {
 		return grpcutils.InternalWithErr(err)
 	}
 
-	ds := goqu.Insert(dataTable).
-		Cols("uid", "resource_version", "created_at", "key_uid", "ciphertext").
-		Vals(goqu.Vals{
-			req.SecretRef.Uid,
-			req.SecretRef.ResourceVersion,
-			pbutils.Now().AsTime(),
-			enc.KeyUID,
-			fmt.Sprintf("\\x%s", hex.EncodeToString(enc.Ciphertext)),
-		})
+	now := pbutils.Now().AsTime()
 
-	sqln, sqlargs, err := ds.ToSQL()
-	if err != nil {
-		return grpcutils.InternalWithErr(err)
-	}
-
-	_, err = s.db.ExecContext(ctx, sqln, sqlargs...)
-	if err != nil {
-		return grpcutils.InternalWithErr(err)
-	}
-
-	return nil
-}
-
-func (s *server) doUpdateDataSecret(ctx context.Context, req *csecretmanv1.SetSecretRequest) error {
-
-	enc, err := s.encryptData(ctx, req)
-	if err != nil {
-		return grpcutils.InternalWithErr(err)
-	}
-
-	ds := goqu.Update(dataTable).Where(goqu.C("uid").Eq(req.SecretRef.Uid)).Set(
-		goqu.Record{
-			"ciphertext":       fmt.Sprintf("\\x%s", hex.EncodeToString(enc.Ciphertext)),
-			"key_uid":          enc.KeyUID,
-			"resource_version": req.SecretRef.ResourceVersion,
-			"updated_at":       pbutils.Now().AsTime(),
-		},
+	_, err = s.db.ExecContext(ctx, `
+INSERT INTO octelium_encrypted_resources
+    (uid, resource_version, created_at, updated_at, key_uid, ciphertext)
+VALUES
+    ($1, $2, $3, $4, $5, $6)
+ON CONFLICT (uid)
+DO UPDATE SET
+    resource_version = EXCLUDED.resource_version,
+    updated_at = EXCLUDED.updated_at,
+    key_uid = EXCLUDED.key_uid,
+    ciphertext = EXCLUDED.ciphertext
+`,
+		req.SecretRef.Uid,
+		req.SecretRef.ResourceVersion,
+		now,
+		now,
+		enc.KeyUID,
+		enc.Ciphertext,
 	)
-
-	sqln, sqlargs, err := ds.ToSQL()
 	if err != nil {
-		return grpcutils.InternalWithErr(err)
-	}
-
-	if _, err := s.db.ExecContext(ctx, sqln, sqlargs...); err != nil {
 		return grpcutils.InternalWithErr(err)
 	}
 
@@ -152,12 +119,6 @@ func (s *server) chooseDEK(_ context.Context) (*dek, error) {
 		return s.deks.cur, nil
 	}
 
-	/*
-		for _, v := range s.deks.dekMap {
-			return v, nil
-		}
-	*/
-
 	return nil, errors.Errorf("Could not find a DEK")
 }
 
@@ -171,26 +132,22 @@ func (s *server) encryptData(ctx context.Context, req *csecretmanv1.SetSecretReq
 }
 
 func (s *server) doDeleteDataSecret(ctx context.Context, req *csecretmanv1.DeleteSecretRequest) error {
-	_, err := s.doGetDataSecret(ctx, &csecretmanv1.GetSecretRequest{
-		SecretRef: req.SecretRef,
-	})
-	if err != nil {
-		if !grpcerr.IsNotFound(err) {
-			return grpcutils.InternalWithErr(err)
-		}
-
-		return nil
+	if err := validateDeleteSecretRequest(req); err != nil {
+		return err
 	}
 
-	ds := goqu.Delete(dataTable).Where(goqu.C("uid").Eq(req.SecretRef.Uid))
+	ds := goqu.Delete(dataTable).
+		Where(
+			goqu.C("uid").Eq(req.SecretRef.Uid),
+			goqu.C("resource_version").Eq(req.SecretRef.ResourceVersion),
+		)
 
 	sqln, sqlargs, err := ds.ToSQL()
 	if err != nil {
 		return grpcutils.InternalWithErr(err)
 	}
 
-	_, err = s.db.ExecContext(ctx, sqln, sqlargs...)
-	if err != nil {
+	if _, err := s.db.ExecContext(ctx, sqln, sqlargs...); err != nil {
 		return grpcutils.InternalWithErr(err)
 	}
 
@@ -198,7 +155,17 @@ func (s *server) doDeleteDataSecret(ctx context.Context, req *csecretmanv1.Delet
 }
 
 func (s *server) doListDataSecret(ctx context.Context, req *csecretmanv1.ListSecretRequest) (
-	*csecretmanv1.ListSecretResponse, error) {
+	*csecretmanv1.ListSecretResponse, error,
+) {
+	if req == nil {
+		return nil, grpcutils.InvalidArg("Nil request")
+	}
+
+	ret := &csecretmanv1.ListSecretResponse{}
+
+	if len(req.SecretRefs) == 0 {
+		return ret, nil
+	}
 
 	type dbItem struct {
 		uid             string
@@ -208,15 +175,26 @@ func (s *server) doListDataSecret(ctx context.Context, req *csecretmanv1.ListSec
 	}
 
 	var filters []exp.Expression
+	for _, ref := range req.SecretRefs {
+		if ref == nil {
+			continue
+		}
+		if ref.Uid == "" || ref.ResourceVersion == "" {
+			continue
+		}
 
-	for _, itm := range req.SecretRefs {
 		filters = append(filters, goqu.And(
-			goqu.C("uid").Eq(itm.Uid),
-			goqu.C("resource_version").Eq(itm.ResourceVersion),
+			goqu.C("uid").Eq(ref.Uid),
+			goqu.C("resource_version").Eq(ref.ResourceVersion),
 		))
 	}
 
-	ds := goqu.From(dataTable).Where(goqu.Or(filters...)).
+	if len(filters) == 0 {
+		return ret, nil
+	}
+
+	ds := goqu.From(dataTable).
+		Where(goqu.Or(filters...)).
 		Select("uid", "resource_version", "ciphertext", "key_uid")
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -228,35 +206,42 @@ func (s *server) doListDataSecret(ctx context.Context, req *csecretmanv1.ListSec
 	if err != nil {
 		return nil, grpcutils.InternalWithErr(err)
 	}
-
-	dbItems := []*dbItem{}
 	defer rows.Close()
+
+	dbItems := make(map[string]*dbItem)
+
 	for rows.Next() {
 		itm := &dbItem{}
 		if err := rows.Scan(&itm.uid, &itm.resourceVersion, &itm.ciphertext, &itm.keyUID); err != nil {
 			return nil, grpcutils.InternalWithErr(err)
 		}
 
-		dbItems = append(dbItems, itm)
+		dbItems[getSecretRefKey(itm.uid, itm.resourceVersion)] = itm
 	}
 
-	ret := &csecretmanv1.ListSecretResponse{}
+	if err := rows.Err(); err != nil {
+		return nil, grpcutils.InternalWithErr(err)
+	}
 
-	for _, itm := range req.SecretRefs {
-		if idx := slices.IndexFunc(dbItems, func(dbItem *dbItem) bool {
-			return itm.Uid == dbItem.uid && itm.ResourceVersion == dbItem.resourceVersion
-		}); idx >= 0 {
-			dbItem := dbItems[idx]
-			plaintext, err := s.decryptData(dbItem.ciphertext, dbItem.keyUID)
-			if err != nil {
-				return nil, grpcutils.InternalWithErr(err)
-			}
-
-			ret.Items = append(ret.Items, &csecretmanv1.ListSecretResponse_Item{
-				SecretRef: itm,
-				Data:      plaintext,
-			})
+	for _, ref := range req.SecretRefs {
+		if ref == nil {
+			continue
 		}
+
+		dbItem, ok := dbItems[getSecretRefKey(ref.Uid, ref.ResourceVersion)]
+		if !ok {
+			continue
+		}
+
+		plaintext, err := s.decryptData(dbItem.ciphertext, dbItem.keyUID)
+		if err != nil {
+			return nil, grpcutils.InternalWithErr(err)
+		}
+
+		ret.Items = append(ret.Items, &csecretmanv1.ListSecretResponse_Item{
+			SecretRef: ref,
+			Data:      plaintext,
+		})
 	}
 
 	return ret, nil
@@ -274,9 +259,69 @@ func (s *server) decryptData(ciphertext []byte, keyUID string) ([]byte, error) {
 func (s *server) getDEKByUID(uid string) (*dek, error) {
 	s.deks.RLock()
 	defer s.deks.RUnlock()
+
 	dek, ok := s.deks.dekMap[uid]
 	if !ok {
 		return nil, errors.Errorf("Could not find dek for uid: %s", uid)
 	}
+
 	return dek, nil
+}
+
+func validateGetSecretRequest(req *csecretmanv1.GetSecretRequest) error {
+	if req == nil {
+		return grpcutils.InvalidArg("Nil request")
+	}
+	if req.SecretRef == nil {
+		return grpcutils.InvalidArg("Nil SecretRef")
+	}
+	if req.SecretRef.Uid == "" {
+		return grpcutils.InvalidArg("Empty SecretRef uid")
+	}
+	if req.SecretRef.ResourceVersion == "" {
+		return grpcutils.InvalidArg("Empty SecretRef resourceVersion")
+	}
+
+	return nil
+}
+
+func validateSetSecretRequest(req *csecretmanv1.SetSecretRequest) error {
+	if req == nil {
+		return grpcutils.InvalidArg("Nil request")
+	}
+	if req.SecretRef == nil {
+		return grpcutils.InvalidArg("Nil SecretRef")
+	}
+	if req.SecretRef.Uid == "" {
+		return grpcutils.InvalidArg("Empty SecretRef uid")
+	}
+	if req.SecretRef.ResourceVersion == "" {
+		return grpcutils.InvalidArg("Empty SecretRef resourceVersion")
+	}
+	if len(req.Data) == 0 {
+		return grpcutils.InvalidArg("Empty Secret data")
+	}
+
+	return nil
+}
+
+func validateDeleteSecretRequest(req *csecretmanv1.DeleteSecretRequest) error {
+	if req == nil {
+		return grpcutils.InvalidArg("Nil request")
+	}
+	if req.SecretRef == nil {
+		return grpcutils.InvalidArg("Nil SecretRef")
+	}
+	if req.SecretRef.Uid == "" {
+		return grpcutils.InvalidArg("Empty SecretRef uid")
+	}
+	if req.SecretRef.ResourceVersion == "" {
+		return grpcutils.InvalidArg("Empty SecretRef resourceVersion")
+	}
+
+	return nil
+}
+
+func getSecretRefKey(uid, resourceVersion string) string {
+	return uid + "\x00" + resourceVersion
 }
