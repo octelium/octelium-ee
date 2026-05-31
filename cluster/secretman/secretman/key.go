@@ -29,13 +29,11 @@ type dek struct {
 }
 
 func (k *dek) encrypt(plaintext []byte) (*dekEncryptionOutptut, error) {
+	return k.encryptWithAAD(plaintext, nil)
+}
 
+func (k *dek) encryptWithAAD(plaintext, aad []byte) (*dekEncryptionOutptut, error) {
 	block, err := aes.NewCipher(k.key)
-	if err != nil {
-		return nil, err
-	}
-
-	nonce, err := utilrand.GetRandomBytes(12)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +43,12 @@ func (k *dek) encrypt(plaintext []byte) (*dekEncryptionOutptut, error) {
 		return nil, err
 	}
 
-	ciphertext := aesgcm.Seal(nonce, nonce, plaintext, nil)
+	nonce, err := utilrand.GetRandomBytes(aesgcm.NonceSize())
+	if err != nil {
+		return nil, err
+	}
+
+	ciphertext := aesgcm.Seal(nonce, nonce, plaintext, aad)
 
 	return &dekEncryptionOutptut{
 		Ciphertext: ciphertext,
@@ -54,7 +57,10 @@ func (k *dek) encrypt(plaintext []byte) (*dekEncryptionOutptut, error) {
 }
 
 func (k *dek) decrypt(ciphertext []byte) ([]byte, error) {
+	return k.decryptWithAAD(ciphertext, nil)
+}
 
+func (k *dek) decryptWithAAD(ciphertext, aad []byte) ([]byte, error) {
 	block, err := aes.NewCipher(k.key)
 	if err != nil {
 		return nil, err
@@ -72,7 +78,7 @@ func (k *dek) decrypt(ciphertext []byte) ([]byte, error) {
 
 	nonce, ciphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]
 
-	plaintext, err := aesgcm.Open(nil, nonce, ciphertext, nil)
+	plaintext, err := aesgcm.Open(nil, nonce, ciphertext, aad)
 	if err != nil {
 		return nil, err
 	}

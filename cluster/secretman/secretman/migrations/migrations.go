@@ -53,6 +53,9 @@ ADD COLUMN IF NOT EXISTS info JSONB;
 ALTER TABLE octelium_data_encryption_keys
 ADD COLUMN IF NOT EXISTS info JSONB;
 
+ALTER TABLE octelium_encrypted_resources
+ADD COLUMN IF NOT EXISTS aead_version SMALLINT NOT NULL DEFAULT 0;
+
 WITH ranked AS (
     SELECT
         id,

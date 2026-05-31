@@ -11,6 +11,7 @@ package secretman
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
@@ -21,6 +22,11 @@ import (
 )
 
 const dataTable = "octelium_encrypted_resources"
+
+const (
+	dataSecretAEADVersionLegacy int16 = 0
+	dataSecretAEADVersionV1     int16 = 1
+)
 
 type dataSecret struct {
 	Data   []byte
@@ -38,7 +44,7 @@ func (s *server) doGetDataSecret(ctx context.Context, req *csecretmanv1.GetSecre
 			goqu.C("uid").Eq(req.SecretRef.Uid),
 			goqu.C("resource_version").Eq(req.SecretRef.ResourceVersion),
 		).
-		Select("ciphertext", "key_uid", "info")
+		Select("ciphertext", "key_uid", "aead_version")
 
 	sqln, sqlargs, err := ds.ToSQL()
 	if err != nil {
@@ -47,30 +53,30 @@ func (s *server) doGetDataSecret(ctx context.Context, req *csecretmanv1.GetSecre
 
 	var ciphertext []byte
 	var keyUID string
-	var info sql.NullString
+	var aeadVersion int16
 
-	if err := s.db.QueryRowContext(ctx, sqln, sqlargs...).Scan(&ciphertext, &keyUID, &info); err != nil {
+	if err := s.db.QueryRowContext(ctx, sqln, sqlargs...).Scan(&ciphertext, &keyUID, &aeadVersion); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, grpcutils.NotFound("")
 		}
 		return nil, grpcutils.InternalWithErr(err)
 	}
 
-	plaintext, err := s.decryptData(ciphertext, keyUID)
+	plaintext, err := s.decryptData(
+		req.SecretRef.Uid,
+		req.SecretRef.ResourceVersion,
+		keyUID,
+		ciphertext,
+		aeadVersion,
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	ret := &dataSecret{
+	return &dataSecret{
 		Data:   plaintext,
 		KeyUID: keyUID,
-	}
-
-	if info.Valid {
-		ret.Info = []byte(info.String)
-	}
-
-	return ret, nil
+	}, nil
 }
 
 func (s *server) doSetDataSecret(ctx context.Context, req *csecretmanv1.SetSecretRequest) error {
@@ -87,15 +93,16 @@ func (s *server) doSetDataSecret(ctx context.Context, req *csecretmanv1.SetSecre
 
 	_, err = s.db.ExecContext(ctx, `
 INSERT INTO octelium_encrypted_resources
-    (uid, resource_version, created_at, updated_at, key_uid, ciphertext)
+    (uid, resource_version, created_at, updated_at, key_uid, ciphertext, aead_version)
 VALUES
-    ($1, $2, $3, $4, $5, $6)
+    ($1, $2, $3, $4, $5, $6, $7)
 ON CONFLICT (uid)
 DO UPDATE SET
     resource_version = EXCLUDED.resource_version,
     updated_at = EXCLUDED.updated_at,
     key_uid = EXCLUDED.key_uid,
-    ciphertext = EXCLUDED.ciphertext
+    ciphertext = EXCLUDED.ciphertext,
+    aead_version = EXCLUDED.aead_version
 `,
 		req.SecretRef.Uid,
 		req.SecretRef.ResourceVersion,
@@ -103,6 +110,7 @@ DO UPDATE SET
 		now,
 		enc.KeyUID,
 		enc.Ciphertext,
+		dataSecretAEADVersionV1,
 	)
 	if err != nil {
 		return grpcutils.InternalWithErr(err)
@@ -128,7 +136,9 @@ func (s *server) encryptData(ctx context.Context, req *csecretmanv1.SetSecretReq
 		return nil, err
 	}
 
-	return dek.encrypt(req.Data)
+	aad := getDataSecretAAD(req.SecretRef.Uid, req.SecretRef.ResourceVersion, dek.uid)
+
+	return dek.encryptWithAAD(req.Data, aad)
 }
 
 func (s *server) doDeleteDataSecret(ctx context.Context, req *csecretmanv1.DeleteSecretRequest) error {
@@ -172,6 +182,7 @@ func (s *server) doListDataSecret(ctx context.Context, req *csecretmanv1.ListSec
 		resourceVersion string
 		ciphertext      []byte
 		keyUID          string
+		aeadVersion     int16
 	}
 
 	var filters []exp.Expression
@@ -195,7 +206,7 @@ func (s *server) doListDataSecret(ctx context.Context, req *csecretmanv1.ListSec
 
 	ds := goqu.From(dataTable).
 		Where(goqu.Or(filters...)).
-		Select("uid", "resource_version", "ciphertext", "key_uid")
+		Select("uid", "resource_version", "ciphertext", "key_uid", "aead_version")
 
 	sqln, sqlargs, err := ds.ToSQL()
 	if err != nil {
@@ -212,7 +223,13 @@ func (s *server) doListDataSecret(ctx context.Context, req *csecretmanv1.ListSec
 
 	for rows.Next() {
 		itm := &dbItem{}
-		if err := rows.Scan(&itm.uid, &itm.resourceVersion, &itm.ciphertext, &itm.keyUID); err != nil {
+		if err := rows.Scan(
+			&itm.uid,
+			&itm.resourceVersion,
+			&itm.ciphertext,
+			&itm.keyUID,
+			&itm.aeadVersion,
+		); err != nil {
 			return nil, grpcutils.InternalWithErr(err)
 		}
 
@@ -233,7 +250,13 @@ func (s *server) doListDataSecret(ctx context.Context, req *csecretmanv1.ListSec
 			continue
 		}
 
-		plaintext, err := s.decryptData(dbItem.ciphertext, dbItem.keyUID)
+		plaintext, err := s.decryptData(
+			dbItem.uid,
+			dbItem.resourceVersion,
+			dbItem.keyUID,
+			dbItem.ciphertext,
+			dbItem.aeadVersion,
+		)
 		if err != nil {
 			return nil, grpcutils.InternalWithErr(err)
 		}
@@ -247,13 +270,20 @@ func (s *server) doListDataSecret(ctx context.Context, req *csecretmanv1.ListSec
 	return ret, nil
 }
 
-func (s *server) decryptData(ciphertext []byte, keyUID string) ([]byte, error) {
+func (s *server) decryptData(uid, resourceVersion, keyUID string, ciphertext []byte, aeadVersion int16) ([]byte, error) {
 	dek, err := s.getDEKByUID(keyUID)
 	if err != nil {
 		return nil, err
 	}
 
-	return dek.decrypt(ciphertext)
+	switch aeadVersion {
+	case dataSecretAEADVersionLegacy:
+		return dek.decryptWithAAD(ciphertext, nil)
+	case dataSecretAEADVersionV1:
+		return dek.decryptWithAAD(ciphertext, getDataSecretAAD(uid, resourceVersion, keyUID))
+	default:
+		return nil, errors.Errorf("Unsupported data secret AEAD version: %d", aeadVersion)
+	}
 }
 
 func (s *server) getDEKByUID(uid string) (*dek, error) {
@@ -324,4 +354,13 @@ func validateDeleteSecretRequest(req *csecretmanv1.DeleteSecretRequest) error {
 
 func getSecretRefKey(uid, resourceVersion string) string {
 	return uid + "\x00" + resourceVersion
+}
+
+func getDataSecretAAD(uid, resourceVersion, keyUID string) []byte {
+	return []byte(fmt.Sprintf(
+		"octelium.secretman.encrypted_resource.v1\x00uid=%s\x00resource_version=%s\x00key_uid=%s",
+		uid,
+		resourceVersion,
+		keyUID,
+	))
 }
