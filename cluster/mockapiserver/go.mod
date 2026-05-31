@@ -7,12 +7,12 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/apiserver v0.0.0-20260508090848-c7e3a04ded57
-	github.com/octelium/octelium/cluster/authserver v0.0.0-20260508090848-c7e3a04ded57
-	github.com/octelium/octelium/cluster/common v0.0.0-20260508090848-c7e3a04ded57
-	github.com/octelium/octelium/cluster/octovigil v0.0.0-20260508090848-c7e3a04ded57 // indirect
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260508090848-c7e3a04ded57 // indirect
-	github.com/octelium/octelium/pkg v0.0.0-20260508090848-c7e3a04ded57
+	github.com/octelium/octelium/cluster/apiserver v0.0.0-20260531075706-5971faa7d298
+	github.com/octelium/octelium/cluster/authserver v0.0.0-20260531075706-5971faa7d298
+	github.com/octelium/octelium/cluster/common v0.0.0-20260531075706-5971faa7d298
+	github.com/octelium/octelium/cluster/octovigil v0.0.0-20260531075706-5971faa7d298 // indirect
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260531075706-5971faa7d298 // indirect
+	github.com/octelium/octelium/pkg v0.0.0-20260531075706-5971faa7d298
 	go.uber.org/zap v1.27.1
 	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20241231184526-a9ab2273dd10 // indirect
 	google.golang.org/grpc v1.80.0
@@ -75,8 +75,8 @@ require (
 	github.com/google/flatbuffers v25.2.10+incompatible // indirect
 	github.com/google/gnostic-models v0.7.0 // indirect
 	github.com/google/go-attestation v0.6.0 // indirect
-	github.com/google/go-github/v33 v33.0.0 // indirect
-	github.com/google/go-querystring v1.1.0 // indirect
+	github.com/google/go-github/v88 v88.0.0 // indirect
+	github.com/google/go-querystring v1.2.0 // indirect
 	github.com/google/go-tpm v0.9.6 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/gosimple/slug v1.15.0 // indirect
@@ -131,7 +131,6 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/yashtewari/glob-intersection v0.2.0 // indirect
 	github.com/zeebo/xxh3 v1.0.2 // indirect
-	go.etcd.io/bbolt v1.4.3 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/collector/featuregate v1.55.0 // indirect
 	go.opentelemetry.io/collector/pdata v1.55.0 // indirect

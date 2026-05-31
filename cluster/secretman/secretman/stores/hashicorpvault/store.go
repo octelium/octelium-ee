@@ -89,7 +89,10 @@ func (s *store) Encrypt(ctx context.Context, uid string, plaintext []byte) ([]by
 	if err != nil {
 		return nil, err
 	}
-	ciphertext := encryptResp.Data["ciphertext"].(string)
+	ciphertext, ok := encryptResp.Data["ciphertext"].(string)
+	if !ok {
+		return nil, errors.Errorf("Could not safe-type cast ciphertext")
+	}
 
 	return []byte(ciphertext), nil
 }
@@ -104,7 +107,11 @@ func (s *store) Decrypt(ctx context.Context, uid string, ciphertext []byte) ([]b
 	if err != nil {
 		return nil, err
 	}
-	base64Plaintext := decryptResp.Data["plaintext"].(string)
+	base64Plaintext, ok := decryptResp.Data["plaintext"].(string)
+	if !ok {
+		return nil, errors.Errorf("Could not safe-type cast ciphertext")
+	}
+
 	plaintext, err := base64.StdEncoding.DecodeString(base64Plaintext)
 	if err != nil {
 		return nil, err
