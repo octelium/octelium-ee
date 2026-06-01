@@ -93,7 +93,16 @@ func (s *server) run(ctx context.Context) error {
 	}
 
 	go func() {
-		srv.ListenAndServe()
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			zap.L().Error("SCIM server failed", zap.Error(err))
+		}
+	}()
+
+	go func() {
+		<-ctx.Done()
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		srv.Shutdown(shutdownCtx)
 	}()
 
 	return nil
