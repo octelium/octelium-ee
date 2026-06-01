@@ -92,26 +92,26 @@ func (s *srvLog) processLogRecord(lr plog.LogRecord) {
 	case ucorev1.KindAccessLog:
 		// zap.L().Debug("Inserting accessLog", zap.String("log", string(bodyStr)))
 		if err := s.s.insertAccessLog([]byte(bodyStr)); err != nil {
-			zap.L().Warn("Could not insertAccessLog", zap.Error(err), zap.String("rsc", bodyStr))
+			zap.L().Warn("Could not insertAccessLog", zap.Error(err))
 		}
 	case ucorev1.KindComponentLog:
 		// zap.L().Debug("Inserting componentLog", zap.String("log", string(bodyStr)))
 		if err := s.s.insertComponentLog([]byte(bodyStr)); err != nil {
-			zap.L().Warn("Could not insertComponentLog", zap.Error(err), zap.String("rsc", bodyStr))
+			zap.L().Warn("Could not insertComponentLog", zap.Error(err))
 		}
 	case uenterprisev1.KindAuthenticationLog:
 		// zap.L().Debug("Inserting authenticationLog", zap.String("log", string(bodyStr)))
 		if err := s.s.insertAuthenticationLog([]byte(bodyStr)); err != nil {
-			zap.L().Warn("Could not insertAuthenticationLog", zap.Error(err), zap.String("rsc", bodyStr))
+			zap.L().Warn("Could not insertAuthenticationLog", zap.Error(err))
 		}
 	case uenterprisev1.KindAuditLog:
 		// zap.L().Debug("Inserting auditLog", zap.String("log", string(bodyStr)))
 		if err := s.s.insertAuditLog([]byte(bodyStr)); err != nil {
-			zap.L().Warn("Could not insertAuditLog", zap.Error(err), zap.String("rsc", bodyStr))
+			zap.L().Warn("Could not insertAuditLog", zap.Error(err))
 		}
 	default:
 		zap.L().Debug("Unknown log type. Skipping inserting....",
-			zap.String("kind", kind), zap.String("rsc", bodyStr))
+			zap.String("kind", kind))
 	}
 
 }

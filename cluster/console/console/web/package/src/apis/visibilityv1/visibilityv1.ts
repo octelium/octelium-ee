@@ -890,6 +890,10 @@ export interface GetAuthenticationLogDataPointRequest {
      */
     authenticatorRef?: ObjectReference;
     /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration interval = 12
+     */
+    interval?: Duration;
+    /**
      * @generated from protobuf field: google.protobuf.Timestamp from = 4
      */
     from?: Timestamp;
@@ -897,14 +901,6 @@ export interface GetAuthenticationLogDataPointRequest {
      * @generated from protobuf field: google.protobuf.Timestamp to = 5
      */
     to?: Timestamp;
-    /**
-     * @generated from protobuf field: octelium.api.main.meta.v1.Duration interval = 13
-     */
-    interval?: Duration;
-    /**
-     * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Common.Status status = 12
-     */
-    status: AccessLog_Entry_Common_Status;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.v1.GetAuthenticationLogDataPointResponse
@@ -4116,15 +4112,13 @@ class GetAuthenticationLogDataPointRequest$Type extends MessageType<GetAuthentic
             { no: 9, name: "identityProviderRef", kind: "message", T: () => ObjectReference },
             { no: 10, name: "credentialRef", kind: "message", T: () => ObjectReference },
             { no: 11, name: "authenticatorRef", kind: "message", T: () => ObjectReference },
+            { no: 12, name: "interval", kind: "message", T: () => Duration },
             { no: 4, name: "from", kind: "message", T: () => Timestamp },
-            { no: 5, name: "to", kind: "message", T: () => Timestamp },
-            { no: 13, name: "interval", kind: "message", T: () => Duration },
-            { no: 12, name: "status", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Common.Status", AccessLog_Entry_Common_Status] }
+            { no: 5, name: "to", kind: "message", T: () => Timestamp }
         ]);
     }
     create(value?: PartialMessage<GetAuthenticationLogDataPointRequest>): GetAuthenticationLogDataPointRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
-        message.status = 0;
         if (value !== undefined)
             reflectionMergePartial<GetAuthenticationLogDataPointRequest>(this, message, value);
         return message;
@@ -4152,17 +4146,14 @@ class GetAuthenticationLogDataPointRequest$Type extends MessageType<GetAuthentic
                 case /* octelium.api.main.meta.v1.ObjectReference authenticatorRef */ 11:
                     message.authenticatorRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.authenticatorRef);
                     break;
+                case /* octelium.api.main.meta.v1.Duration interval */ 12:
+                    message.interval = Duration.internalBinaryRead(reader, reader.uint32(), options, message.interval);
+                    break;
                 case /* google.protobuf.Timestamp from */ 4:
                     message.from = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.from);
                     break;
                 case /* google.protobuf.Timestamp to */ 5:
                     message.to = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.to);
-                    break;
-                case /* octelium.api.main.meta.v1.Duration interval */ 13:
-                    message.interval = Duration.internalBinaryRead(reader, reader.uint32(), options, message.interval);
-                    break;
-                case /* octelium.api.main.core.v1.AccessLog.Entry.Common.Status status */ 12:
-                    message.status = reader.int32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -4200,12 +4191,9 @@ class GetAuthenticationLogDataPointRequest$Type extends MessageType<GetAuthentic
         /* octelium.api.main.meta.v1.ObjectReference authenticatorRef = 11; */
         if (message.authenticatorRef)
             ObjectReference.internalBinaryWrite(message.authenticatorRef, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
-        /* octelium.api.main.core.v1.AccessLog.Entry.Common.Status status = 12; */
-        if (message.status !== 0)
-            writer.tag(12, WireType.Varint).int32(message.status);
-        /* octelium.api.main.meta.v1.Duration interval = 13; */
+        /* octelium.api.main.meta.v1.Duration interval = 12; */
         if (message.interval)
-            Duration.internalBinaryWrite(message.interval, writer.tag(13, WireType.LengthDelimited).fork(), options).join();
+            Duration.internalBinaryWrite(message.interval, writer.tag(12, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
