@@ -55,12 +55,12 @@ func (s *Server) getDataPointInterval(iv *metav1.Duration) *intervalDataPoint {
 	case *metav1.Duration_Weeks:
 		return &intervalDataPoint{
 			Unit:  "day",
-			Value: int(7 * iv.GetDays()),
+			Value: int(7 * iv.GetWeeks()),
 		}
 	case *metav1.Duration_Months:
 		return &intervalDataPoint{
 			Unit:  "day",
-			Value: int(30 * iv.GetDays()),
+			Value: int(30 * iv.GetMonths()),
 		}
 	}
 

@@ -11,9 +11,11 @@ package logstore
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
 	"github.com/octelium/octelium/pkg/apiutils/ucorev1"
+	"github.com/pkg/errors"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/plog/plogotlp"
@@ -34,12 +36,15 @@ func (s *srvLog) Export(ctx context.Context, req plogotlp.ExportRequest) (plogot
 			logRecords := scopeLogs.At(j).LogRecords()
 			for k := range logRecords.Len() {
 				lr := logRecords.At(k)
+				destLr := plog.NewLogRecord()
+				lr.CopyTo(destLr)
 				select {
-				case s.itemCh <- lr:
-				default:
-					zap.L().Warn("Could not add log record", zap.Any("lr", lr))
+				case s.itemCh <- destLr:
+				case <-ctx.Done():
+					return plogotlp.NewExportResponse(), ctx.Err()
+				case <-time.After(2 * time.Second):
+					return plogotlp.NewExportResponse(), errors.Errorf("Logstore itemCh queue is full")
 				}
-				
 			}
 		}
 	}
@@ -49,21 +54,35 @@ func (s *srvLog) Export(ctx context.Context, req plogotlp.ExportRequest) (plogot
 
 func (s *srvLog) processLogRecord(lr plog.LogRecord) {
 
-	switch lr.Body().Type() {
-	case pcommon.ValueTypeMap:
-		// lrMap := lr.Body().Map().AsRaw()
-		// zap.L().Debug("New LogMap", zap.Any("log", lrMap))
-	case pcommon.ValueTypeStr:
-		// zap.L().Debug("New LogString", zap.Any("log", lr.Body().AsString()))
-	default:
-		zap.L().Debug("Unknown log type skipping", zap.Any("typ", lr.Body().Type()))
-		return
-	}
-
 	bodyJSONMap := make(map[string]any)
-	bodyStr := lr.Body().AsString()
-	if err := json.Unmarshal([]byte(bodyStr), &bodyJSONMap); err != nil {
-		zap.L().Debug("Could not unmarshal JSON log body", zap.Error(err), zap.Any("map", bodyJSONMap))
+	var bodyStr string
+
+	switch lr.Body().Type() {
+	case pcommon.ValueTypeStr:
+		bodyStr = lr.Body().AsString()
+		if err := json.Unmarshal([]byte(bodyStr), &bodyJSONMap); err != nil {
+			zap.L().Debug("Could not unmarshal JSON log body", zap.Error(err), zap.Any("map", bodyJSONMap))
+			return
+		}
+
+	case pcommon.ValueTypeMap:
+		raw := lr.Body().Map().AsRaw()
+		var err error
+		bodyJSON, err := json.Marshal(raw)
+		if err != nil {
+			zap.L().Debug("Could not marshal OTLP map log body", zap.Error(err))
+			return
+		}
+
+		bodyStr = string(bodyJSON)
+
+		if err := json.Unmarshal(bodyJSON, &bodyJSONMap); err != nil {
+			zap.L().Debug("Could not unmarshal JSON log body", zap.Error(err), zap.Any("map", bodyJSONMap))
+			return
+		}
+
+	default:
+		zap.L().Debug("Unknown log body type", zap.Any("type", lr.Body().Type()))
 		return
 	}
 

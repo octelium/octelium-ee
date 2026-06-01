@@ -12,6 +12,7 @@ require (
 	github.com/octelium/octelium/cluster/common v0.0.0-20260531075706-5971faa7d298
 	github.com/octelium/octelium/pkg v0.0.0-20260531075706-5971faa7d298
 	github.com/patrickmn/go-cache v2.1.0+incompatible
+	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/pdata v1.55.0
 	go.uber.org/zap v1.27.1
@@ -86,7 +87,6 @@ require (
 	github.com/oschwald/geoip2-golang/v2 v2.1.0 // indirect
 	github.com/oschwald/maxminddb-golang/v2 v2.1.1 // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20250401214520-65e299d6c5c9 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect

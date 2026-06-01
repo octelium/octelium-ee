@@ -36,7 +36,7 @@ func (s *Server) insertAccessLog(accessLogJSON []byte) error {
 		return nil
 	}
 	if len(accessLogJSON) > 25000 {
-		zap.L().Warn("accessLog is too big. Skipping....", zap.String("accessLog", string(accessLogJSON)))
+		zap.L().Warn("accessLog is too big. Skipping....", zap.Int("len", len(accessLogJSON)))
 		return nil
 	}
 
@@ -1365,7 +1365,7 @@ func (s *Server) getSummaryComponentLog(ctx context.Context, req *visibilityv1.G
 
 		goqu.L(`COUNT(*) FILTER (WHERE json_extract_string(rsc, '$.entry.level') = 'DEBUG') AS count_debug`),
 		goqu.L(`COUNT(*) FILTER (WHERE json_extract_string(rsc, '$.entry.level') = 'INFO') AS count_info`),
-		goqu.L(`COUNT(*) FILTER (WHERE json_extract_string(rsc, '$.entry.level') = 'WARNING') AS count_warning`),
+		goqu.L(`COUNT(*) FILTER (WHERE json_extract_string(rsc, '$.entry.level') = 'WARN') AS count_warning`),
 		goqu.L(`COUNT(*) FILTER (WHERE json_extract_string(rsc, '$.entry.level') = 'ERROR') AS count_error`),
 		goqu.L(`COUNT(*) FILTER (WHERE json_extract_string(rsc, '$.entry.level') = 'PANIC') AS count_panic`),
 		goqu.L(`COUNT(*) FILTER (WHERE json_extract_string(rsc, '$.entry.level') = 'FATAL') AS count_fatal`),
