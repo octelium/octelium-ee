@@ -130,6 +130,7 @@ func (s *server) doGetDEK(ctx context.Context, uid string) (*dek, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer kek.Close()
 
 	plaintext, err := kek.Decrypt(ctx, uid, ciphertext)
 	if err != nil {
@@ -173,6 +174,7 @@ func (s *server) doListDEK(ctx context.Context) ([]*dek, error) {
 		if err != nil {
 			return nil, err
 		}
+		defer kek.Close()
 
 		plaintext, err := kek.Decrypt(ctx, uid, ciphertext)
 		if err != nil {
