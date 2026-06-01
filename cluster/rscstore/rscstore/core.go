@@ -247,7 +247,6 @@ func (s *Server) getSummaryCorePolicy(ctx context.Context, req *vcorev1.GetPolic
 		}
 
 	}
-
 	return ret, nil
 }
 

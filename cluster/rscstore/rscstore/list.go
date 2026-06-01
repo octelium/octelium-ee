@@ -10,6 +10,7 @@ package rscstore
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -41,7 +42,6 @@ const defaultItemsPerPage = 10
 const maxItemsPerPage = 1000
 
 func (s *Server) doList(ctx context.Context, req *doListReq) (proto.Message, error) {
-
 	var filters []exp.Expression
 
 	var items []umetav1.ResourceObjectI
@@ -58,12 +58,10 @@ func (s *Server) doList(ctx context.Context, req *doListReq) (proto.Message, err
 	zap.L().Debug("New list req",
 		zap.String("api", req.api), zap.String("kind", req.kind), zap.Any("req", req.common))
 
-	{
-		filters = append(filters, goqu.L(`api`).Eq(req.api))
-		filters = append(filters, goqu.L(`version`).Eq(req.version))
-		filters = append(filters, goqu.L(`kind`).Eq(req.kind))
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
-	}
+	filters = append(filters, goqu.L(`api`).Eq(req.api))
+	filters = append(filters, goqu.L(`version`).Eq(req.version))
+	filters = append(filters, goqu.L(`kind`).Eq(req.kind))
+	filters = append(filters, goqu.L(`rsc->>'$.metadata.isSystemHidden'`).IsNotTrue())
 
 	if req.common.From != nil {
 		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).
@@ -75,69 +73,76 @@ func (s *Server) doList(ctx context.Context, req *doListReq) (proto.Message, err
 			Lte(req.common.To.AsTime().UTC().Format(time.RFC3339Nano)))
 	}
 
-	if hasQuery {
-		filters = append(filters,
-			goqu.Or(goqu.L(`score IS NOT NULL`),
-				goqu.L(`rsc_str`).ILike("%"+req.common.Query+"%")))
-	}
-
-	filters = append(filters, req.filters...)
-	if req.common != nil && req.common.Tag != "" {
-		if !rgx.NameMain.MatchString(req.common.Tag) {
-			return nil, grpcutils.InvalidArg("Invalid tag: %s", req.common.Tag)
-		}
-		filters = append(filters,
-			goqu.L(fmt.Sprintf(`list_contains(CAST(json_extract(rsc, '$.metadata.tags') AS VARCHAR[]),'%s')`, req.common.Tag)))
-	}
-
 	selects := []any{
 		goqu.L(`COUNT(*) OVER() as count`),
 		goqu.L(`rsc`),
 	}
+
 	if hasQuery {
-		selects = append(selects,
-			goqu.L(fmt.Sprintf(`fts_main_resources.match_bm25(uid, '%s') AS score`, req.common.Query)))
-	}
-	ds := goqu.From("resources").Where(filters...).
-		Select(
-			selects...,
+		queryLike := "%" + req.common.Query + "%"
+		ftsScoreExpr := goqu.L(`fts_main_resources.match_bm25(uid, ?)`, req.common.Query)
+
+		filters = append(filters,
+			goqu.Or(
+				goqu.L(`fts_main_resources.match_bm25(uid, ?) IS NOT NULL`, req.common.Query),
+				goqu.L(`rsc_str ILIKE ?`, queryLike),
+			),
 		)
 
-	{
-		limit := req.common.ItemsPerPage
-		if req.common.Page > 10000 {
-			return nil, grpcutils.InvalidArgWithErr(errors.Errorf("Page number is too high"))
-		}
-
-		if limit == 0 {
-			limit = defaultItemsPerPage
-		} else if limit > maxItemsPerPage {
-			limit = maxItemsPerPage
-		}
-
-		offset := req.common.Page * limit
-
-		ds = ds.Offset(uint(offset)).Limit(uint(limit))
-
-		listMeta.ItemsPerPage = limit
-		listMeta.Page = req.common.Page
+		selects = append(selects, ftsScoreExpr.As("score"))
 	}
+
+	filters = append(filters, req.filters...)
+
+	if req.common.Tag != "" {
+		if !rgx.NameMain.MatchString(req.common.Tag) {
+			return nil, grpcutils.InvalidArg("Invalid tag: %s", req.common.Tag)
+		}
+
+		filters = append(filters,
+			goqu.L(
+				`list_contains(CAST(json_extract(rsc, '$.metadata.tags') AS VARCHAR[]), ?)`,
+				req.common.Tag,
+			),
+		)
+	}
+
+	ds := goqu.From("resources").
+		Prepared(true).
+		Where(filters...).
+		Select(selects...)
+
+	limit := req.common.ItemsPerPage
+	if req.common.Page > 10000 {
+		return nil, grpcutils.InvalidArgWithErr(errors.Errorf("Page number is too high"))
+	}
+
+	if limit == 0 {
+		limit = defaultItemsPerPage
+	} else if limit > maxItemsPerPage {
+		limit = maxItemsPerPage
+	}
+
+	offset := req.common.Page * limit
+
+	ds = ds.Offset(uint(offset)).Limit(uint(limit))
+
+	listMeta.ItemsPerPage = limit
+	listMeta.Page = req.common.Page
 
 	if hasQuery {
 		ds = ds.OrderAppend(goqu.L(`score`).Desc().NullsLast())
 	}
 
-	if req.common != nil && req.common.OrderBy != nil {
+	if req.common.OrderBy != nil {
 		switch req.common.OrderBy.Type {
 		case vmetav1.CommonListOptions_OrderBy_CREATED_AT:
 			if req.common.OrderBy.Mode == vmetav1.CommonListOptions_OrderBy_DESC {
 				ds = ds.OrderAppend(goqu.L(`rsc->'metadata'->>'createdAt'`).Desc())
 			} else {
-
 				ds = ds.OrderAppend(goqu.L(`rsc->'metadata'->>'createdAt'`).Asc())
 			}
 		case vmetav1.CommonListOptions_OrderBy_NAME:
-
 			if req.common.OrderBy.Mode == vmetav1.CommonListOptions_OrderBy_DESC {
 				ds = ds.OrderAppend(goqu.L(`rsc->'metadata'->>'name'`).Desc())
 			} else {
@@ -164,8 +169,9 @@ func (s *Server) doList(ctx context.Context, req *doListReq) (proto.Message, err
 	for rows.Next() {
 		rscMap := make(map[string]any)
 		var count int
-		var score float64
+
 		if hasQuery {
+			var score sql.NullFloat64
 			if err := rows.Scan(&count, &rscMap, &score); err != nil {
 				return nil, err
 			}
