@@ -649,21 +649,54 @@ func getItemsPerPage(r *http.Request) uint32 {
 	return uint32(val)
 }
 
-func getPage(r *http.Request) uint32 {
-	raw := r.URL.Query().Get("startIndex")
+const maxStartIndex = 100000
 
+func getSCIMCount(r *http.Request) uint32 {
+	raw := r.URL.Query().Get("count")
 	if raw == "" {
-		return 0
+		return maxItemsPerPage
 	}
 
 	val, err := strconv.Atoi(raw)
 	if err != nil {
+		return maxItemsPerPage
+	}
+
+	if val < 0 {
+		return maxItemsPerPage
+	}
+
+	if val > maxItemsPerPage {
+		return maxItemsPerPage
+	}
+
+	return uint32(val)
+}
+
+func getSCIMStartIndex(r *http.Request) uint32 {
+	raw := r.URL.Query().Get("startIndex")
+	if raw == "" {
+		return 1
+	}
+
+	val, err := strconv.Atoi(raw)
+	if err != nil {
+		return 1
+	}
+
+	if val < 1 || val > maxStartIndex {
+		return 1
+	}
+
+	return uint32(val)
+}
+
+func getBackendPage(r *http.Request) uint32 {
+	count := getSCIMCount(r)
+	if count == 0 {
 		return 0
 	}
 
-	if val < 1 || val > 100000 {
-		val = 0
-	}
-
-	return uint32(val - 1)
+	startIndex := getSCIMStartIndex(r)
+	return (startIndex - 1) / count
 }

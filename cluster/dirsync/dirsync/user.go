@@ -59,6 +59,7 @@ func (s *server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 		}
 		if !grpcerr.IsNotFound(err) {
 			s.setErrorInternal(w, err)
+			return
 		}
 	}
 
@@ -109,36 +110,21 @@ func (s *server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 			oUsr := usrList.Items[0]
 			oUsr.Spec = usr.Spec
 			apisrvcommon.MetadataUpdate(oUsr.Metadata, usr.Metadata)
-			if err := coreSrv.CheckAndSetUser(ctx, s.octeliumC, oUsr, false); err != nil {
-				s.setErrorInternal(w, err)
-				return
-			}
 
-			usr, err = s.octeliumC.CoreC().UpdateUser(ctx, oUsr)
+			usr, err = coreSrv.UpdateUser(ctx, oUsr)
 			if err != nil {
 				s.setErrorInternal(w, err)
 				return
 			}
 		} else {
-
-			if err := coreSrv.CheckAndSetUser(ctx, s.octeliumC, usr, false); err != nil {
-				s.setErrorInternal(w, err)
-				return
-			}
-
-			usr, err = s.octeliumC.CoreC().CreateUser(ctx, usr)
+			usr, err = coreSrv.CreateUser(ctx, usr)
 			if err != nil {
 				s.setErrorInternal(w, err)
 				return
 			}
 		}
 	} else {
-		if err := coreSrv.CheckAndSetUser(ctx, s.octeliumC, usr, false); err != nil {
-			s.setErrorInternal(w, err)
-			return
-		}
-
-		usr, err = s.octeliumC.CoreC().CreateUser(ctx, usr)
+		usr, err = coreSrv.CreateUser(ctx, usr)
 		if err != nil {
 			s.setErrorInternal(w, err)
 			return
@@ -204,18 +190,12 @@ func (s *server) handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	{
-		coreSrv := admin.NewServer(&admin.Opts{
-			OcteliumC:  s.octeliumC,
-			IsEmbedded: true,
-		})
-		if err := coreSrv.CheckAndSetUser(ctx, s.octeliumC, usr, false); err != nil {
-			s.setErrorBadRequestWithErr(w, err)
-			return
-		}
-	}
+	coreSrv := admin.NewServer(&admin.Opts{
+		OcteliumC:  s.octeliumC,
+		IsEmbedded: true,
+	})
 
-	usr, err = s.octeliumC.CoreC().UpdateUser(ctx, usr)
+	usr, err = coreSrv.UpdateUser(ctx, usr)
 	if err != nil {
 		s.setErrorInternal(w, err)
 		return
@@ -315,7 +295,13 @@ func (s *server) getUserFromSCIM(i *resourceUser, dp *enterprisev1.DirectoryProv
 				FirstName: i.Name.GivenName,
 				LastName:  i.Name.FamilyName,
 			},
-			IsDisabled: !i.Active,
+			IsDisabled: func() bool {
+				ret := false
+				if i.Active != nil {
+					ret = !*i.Active
+				}
+				return ret
+			}(),
 		},
 		Status: &corev1.User_Status{},
 	}
@@ -408,11 +394,13 @@ func (s *server) handleListUser(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	startIndex := getSCIMStartIndex(r)
+
 	dpUsrList, err := s.octeliumC.EnterpriseC().ListDirectoryProviderUser(ctx, &rmetav1.ListOptions{
 		Filters:      filters,
 		ItemsPerPage: getItemsPerPage(r),
 		Paginate:     true,
-		Page:         getPage(r),
+		Page:         getBackendPage(r),
 	})
 	if err != nil {
 		s.setErrorInternal(w, err)
@@ -422,8 +410,8 @@ func (s *server) handleListUser(w http.ResponseWriter, r *http.Request) {
 	res := &responseUserList{
 		Schemas:      []string{"urn:ietf:params:scim:api:messages:2.0:ListResponse"},
 		ItemsPerPage: int(getItemsPerPage(r)),
-		StartIndex:   int(getPage(r)) + 1,
-		TotalResults: len(dpUsrList.Items),
+		StartIndex:   int(startIndex),
+		TotalResults: int(dpUsrList.GetListResponseMeta().GetTotalCount()),
 		Resources:    []resourceUser{},
 	}
 
@@ -477,6 +465,7 @@ func (s *server) handlePatchUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	defer r.Body.Close()
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		return
@@ -531,7 +520,7 @@ func (s *server) handlePatchUser(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 
-				scimUsr.Active = val
+				scimUsr.Active = &val
 			}
 		case "add":
 		case "remove":
@@ -550,12 +539,8 @@ func (s *server) handlePatchUser(w http.ResponseWriter, r *http.Request) {
 		OcteliumC:  s.octeliumC,
 		IsEmbedded: true,
 	})
-	if err := coreSrv.CheckAndSetUser(ctx, s.octeliumC, usr, false); err != nil {
-		s.setErrorInternal(w, err)
-		return
-	}
 
-	usr, err = s.octeliumC.CoreC().UpdateUser(ctx, usr)
+	usr, err = coreSrv.UpdateUser(ctx, usr)
 	if err != nil {
 		s.setErrorInternal(w, err)
 		return

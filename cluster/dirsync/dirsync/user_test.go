@@ -28,6 +28,7 @@ import (
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/pkg/grpcerr"
+	utils_types "github.com/octelium/octelium/pkg/utils/types"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
@@ -109,7 +110,7 @@ func TestUser(t *testing.T) {
 				},
 			},
 			UserName: "usr1@example.com",
-			Active:   true,
+			Active:   utils_types.BoolToPtr(true),
 			Emails: []*resourceUserEmail{
 				{
 					Primary: true,
@@ -365,7 +366,7 @@ func TestUser(t *testing.T) {
 
 		assert.Equal(t, res.ID, dpUsr.Metadata.Uid)
 		assert.Equal(t, "workemail1234@example.com", res.Emails[0].Value)
-		assert.False(t, res.Active)
+		assert.False(t, *res.Active)
 
 		dpUsr, err = srv.octeliumC.EnterpriseC().GetDirectoryProviderUser(ctx, &rmetav1.GetOptions{
 			Uid: res.ID,

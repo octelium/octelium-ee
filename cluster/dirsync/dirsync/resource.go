@@ -29,7 +29,7 @@ type resourceUser struct {
 	UserName string               `json:"userName,omitempty"`
 	Emails   []*resourceUserEmail `json:"emails,omitempty"`
 	// Password    string               `json:"password,omitempty"`
-	Active      bool                 `json:"active,omitempty"`
+	Active      *bool                 `json:"active,omitempty"`
 	DisplayName string               `json:"displayName,omitempty"`
 	Locale      string               `json:"locale,omitempty"`
 	ProfileURL  string               `json:"profileUrl,omitempty"`

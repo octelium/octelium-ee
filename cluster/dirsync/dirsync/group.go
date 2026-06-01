@@ -354,11 +354,13 @@ func (s *server) handleListGroup(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	startIndex := getSCIMStartIndex(r)
+
 	grpList, err := s.octeliumC.EnterpriseC().ListDirectoryProviderGroup(ctx, &rmetav1.ListOptions{
 		Filters:      filters,
 		ItemsPerPage: getItemsPerPage(r),
 		Paginate:     true,
-		Page:         getPage(r),
+		Page:         getBackendPage(r),
 	})
 	if err != nil {
 		s.setErrorInternal(w, err)
@@ -368,8 +370,8 @@ func (s *server) handleListGroup(w http.ResponseWriter, r *http.Request) {
 	res := &responseGroupList{
 		Schemas:      []string{"urn:ietf:params:scim:api:messages:2.0:ListResponse"},
 		ItemsPerPage: int(getItemsPerPage(r)),
-		StartIndex:   int(getPage(r)) + 1,
-		TotalResults: len(grpList.Items),
+		StartIndex:   int(startIndex),
+		TotalResults: int(grpList.GetListResponseMeta().GetTotalCount()),
 		Resources:    []resourceGroup{},
 	}
 
@@ -422,6 +424,7 @@ func (s *server) handlePatchGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	defer r.Body.Close()
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		return
@@ -574,11 +577,7 @@ func (s *server) addGroupToUser(ctx context.Context, userUID string, grp *corev1
 	})
 
 	usr.Spec.Groups = append(usr.Spec.Groups, grp.Metadata.Name)
-	if err := coreSrv.CheckAndSetUser(ctx, s.octeliumC, usr, false); err != nil {
-		return err
-	}
-
-	_, err = s.octeliumC.CoreC().UpdateUser(ctx, usr)
+	usr, err = coreSrv.UpdateUser(ctx, usr)
 	if err != nil {
 		return err
 	}
@@ -616,12 +615,7 @@ func (s *server) removeGroupFromUser(ctx context.Context, userUID string, grp *c
 		IsEmbedded: true,
 	})
 
-	if err := coreSrv.CheckAndSetUser(ctx, s.octeliumC, usr, false); err != nil {
-		return err
-	}
-
-	_, err = s.octeliumC.CoreC().UpdateUser(ctx, usr)
-	if err != nil {
+	if _, err := coreSrv.UpdateUser(ctx, usr); err != nil {
 		return err
 	}
 

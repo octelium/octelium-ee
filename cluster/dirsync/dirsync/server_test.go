@@ -26,6 +26,7 @@ import (
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/cluster/common/tests"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
+	utils_types "github.com/octelium/octelium/pkg/utils/types"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
 )
@@ -99,7 +100,7 @@ func TestServer(t *testing.T) {
 				},
 			},
 			UserName: "usr1@example.com",
-			Active:   true,
+			Active:   utils_types.BoolToPtr(true),
 			Emails: []*resourceUserEmail{
 				{
 					Primary: true,

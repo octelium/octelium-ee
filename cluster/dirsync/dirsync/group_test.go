@@ -29,6 +29,7 @@ import (
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/pkg/apiutils/ucorev1"
 	"github.com/octelium/octelium/pkg/grpcerr"
+	utils_types "github.com/octelium/octelium/pkg/utils/types"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
@@ -287,7 +288,7 @@ func TestGroup(t *testing.T) {
 				},
 			},
 			UserName: "usr1@example.com",
-			Active:   true,
+			Active:   utils_types.BoolToPtr(true),
 			Emails: []*resourceUserEmail{
 				{
 					Primary: true,
