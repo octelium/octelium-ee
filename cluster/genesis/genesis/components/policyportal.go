@@ -86,23 +86,6 @@ func getPolicyPortalDeployment(o *CommonOpts) *appsv1.Deployment {
 							},
 
 							LivenessProbe: getDefaultLivenessProbe(),
-							VolumeMounts: []k8scorev1.VolumeMount{
-								{
-									MountPath: "/tmp",
-									Name:      "tmpfs",
-								},
-							},
-						},
-					},
-
-					Volumes: []k8scorev1.Volume{
-						{
-							Name: "tmpfs",
-							VolumeSource: k8scorev1.VolumeSource{
-								EmptyDir: &k8scorev1.EmptyDirVolumeSource{
-									Medium: k8scorev1.StorageMediumMemory,
-								},
-							},
 						},
 					},
 				},
