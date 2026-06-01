@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	_ "github.com/marcboeker/go-duckdb"
 	"github.com/octelium/octelium/cluster/common/vutils"
@@ -23,7 +24,7 @@ import (
 )
 
 func (s *Server) insertResource(ctx context.Context, rsc umetav1.ResourceObjectI) error {
-	s.setAuditLog(rsc)
+	s.setAuditLog(ctx, rsc)
 
 	rscJSON, err := pbutils.MarshalJSON(rsc, false)
 	if err != nil {
@@ -53,7 +54,7 @@ func (s *Server) insertResource(ctx context.Context, rsc umetav1.ResourceObjectI
 
 func (s *Server) removeResource(ctx context.Context, rsc umetav1.ResourceObjectI) error {
 
-	s.setAuditLog(rsc)
+	s.setAuditLog(ctx, rsc)
 
 	if _, err := s.db.ExecContext(ctx,
 		fmt.Sprintf(`DELETE FROM resources WHERE uid = '%s'`,
@@ -66,7 +67,7 @@ func (s *Server) removeResource(ctx context.Context, rsc umetav1.ResourceObjectI
 	return nil
 }
 
-func (s *Server) setAuditLog(rsc umetav1.ResourceObjectI) {
+func (s *Server) setAuditLog(ctx context.Context, rsc umetav1.ResourceObjectI) {
 	if rsc == nil {
 		return
 	}
@@ -81,8 +82,13 @@ func (s *Server) setAuditLog(rsc umetav1.ResourceObjectI) {
 
 	select {
 	case s.auditLogItem <- rsc:
-	default:
-		zap.L().Warn("Could not setAuditLog", zap.Any("rsc", rsc))
+	case <-ctx.Done():
+		return
+	case <-time.After(3 * time.Second):
+		zap.L().Error("Dropping audit log",
+			zap.String("uid", rsc.GetMetadata().GetUid()),
+			zap.String("kind", rsc.GetKind()),
+		)
 	}
 }
 
