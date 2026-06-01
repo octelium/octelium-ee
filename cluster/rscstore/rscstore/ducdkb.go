@@ -19,7 +19,6 @@ import (
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 
@@ -97,37 +96,42 @@ func (s *Server) getRSCStr(rscJSON []byte) (string, error) {
 	if err := json.Unmarshal(rscJSON, &rscMap); err != nil {
 		return "", err
 	}
-	metadata, ok := rscMap["metadata"].(map[string]any)
-	if !ok {
-		return "", errors.Errorf("Could not type-assert metadata")
-	}
-	spec, ok := rscMap["spec"].(map[string]any)
-	if !ok {
-		return "", errors.Errorf("Could not type-assert spec")
+
+	var parts []string
+
+	var add func(any)
+	add = func(v any) {
+		switch t := v.(type) {
+		case nil:
+			return
+		case string:
+			if t != "" {
+				parts = append(parts, t)
+			}
+		case []any:
+			for _, x := range t {
+				add(x)
+			}
+		case map[string]any:
+			for _, x := range t {
+				add(x)
+			}
+		case bool:
+			if t {
+				parts = append(parts, "true")
+			} else {
+				parts = append(parts, "false")
+			}
+		case float64:
+			parts = append(parts, fmt.Sprintf("%v", t))
+		default:
+			parts = append(parts, fmt.Sprintf("%v", t))
+		}
 	}
 
-	metadataJSON, err := json.Marshal(metadata)
-	if err != nil {
-		return "", err
-	}
-	specJSON, err := json.Marshal(spec)
-	if err != nil {
-		return "", err
-	}
+	add(rscMap["metadata"])
+	add(rscMap["spec"])
+	add(rscMap["status"])
 
-	doTransform := func(arg []byte) string {
-
-		return strings.ToLower(string(arg))
-		/*
-			return strings.Map(func(r rune) rune {
-				if unicode.IsPrint(r) && (unicode.IsLetter(r) || unicode.IsNumber(r) || unicode.IsSpace(r)) {
-					return r
-				}
-
-				return -1
-			}, strings.ToLower(string(arg)))
-		*/
-	}
-
-	return doTransform(metadataJSON) + " " + doTransform(specJSON), nil
+	return strings.ToLower(strings.Join(parts, " ")), nil
 }

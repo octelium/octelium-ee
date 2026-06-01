@@ -13,6 +13,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/doug-martin/goqu/v9"
@@ -50,10 +51,13 @@ func (s *Server) doList(ctx context.Context, req *doListReq) (proto.Message, err
 		req.common = &vmetav1.CommonListOptions{}
 	}
 
-	hasQuery := req.common.Query != ""
-	if len(req.common.Query) > 100 {
+	query := strings.TrimSpace(req.common.Query)
+	hasQuery := query != ""
+	if len(query) > 100 {
 		return nil, grpcutils.InvalidArg("Query is too long")
 	}
+
+	useFTS := hasQuery && isSimpleFTSQuery(query)
 
 	zap.L().Debug("New list req",
 		zap.String("api", req.api), zap.String("kind", req.kind), zap.Any("req", req.common))
@@ -79,17 +83,47 @@ func (s *Server) doList(ctx context.Context, req *doListReq) (proto.Message, err
 	}
 
 	if hasQuery {
-		queryLike := "%" + req.common.Query + "%"
-		ftsScoreExpr := goqu.L(`fts_main_resources.match_bm25(uid, ?)`, req.common.Query)
+		queryLike := "%" + query + "%"
+		queryPrefixStart := query + "%"
+		queryPrefixWord := "% " + query + "%"
 
-		filters = append(filters,
-			goqu.Or(
-				goqu.L(`fts_main_resources.match_bm25(uid, ?) IS NOT NULL`, req.common.Query),
+		if useFTS {
+			filters = append(filters,
+				goqu.Or(
+					goqu.L(`fts_main_resources.match_bm25(uid, ?) IS NOT NULL`, query),
+					goqu.L(`rsc_str ILIKE ?`, queryLike),
+				),
+			)
+
+			selects = append(selects,
+				goqu.L(`fts_main_resources.match_bm25(uid, ?)`, query).As("score"),
+				goqu.L(`
+					CASE
+						WHEN rsc_str ILIKE ? THEN 4
+						WHEN rsc_str ILIKE ? OR rsc_str ILIKE ? THEN 3
+						WHEN rsc_str ILIKE ? THEN 2
+						WHEN fts_main_resources.match_bm25(uid, ?) IS NOT NULL THEN 1
+						ELSE 0
+					END
+				`, query, queryPrefixStart, queryPrefixWord, queryLike, query).As("text_rank"),
+			)
+		} else {
+			filters = append(filters,
 				goqu.L(`rsc_str ILIKE ?`, queryLike),
-			),
-		)
+			)
 
-		selects = append(selects, ftsScoreExpr.As("score"))
+			selects = append(selects,
+				goqu.L(`CAST(NULL AS DOUBLE)`).As("score"),
+				goqu.L(`
+					CASE
+						WHEN rsc_str ILIKE ? THEN 4
+						WHEN rsc_str ILIKE ? OR rsc_str ILIKE ? THEN 3
+						WHEN rsc_str ILIKE ? THEN 2
+						ELSE 0
+					END
+				`, query, queryPrefixStart, queryPrefixWord, queryLike).As("text_rank"),
+			)
+		}
 	}
 
 	filters = append(filters, req.filters...)
@@ -131,7 +165,10 @@ func (s *Server) doList(ctx context.Context, req *doListReq) (proto.Message, err
 	listMeta.Page = req.common.Page
 
 	if hasQuery {
-		ds = ds.OrderAppend(goqu.L(`score`).Desc().NullsLast())
+		ds = ds.OrderAppend(
+			goqu.L(`text_rank`).Desc(),
+			goqu.L(`score`).Desc().NullsLast(),
+		)
 	}
 
 	if req.common.OrderBy != nil {
@@ -172,7 +209,9 @@ func (s *Server) doList(ctx context.Context, req *doListReq) (proto.Message, err
 
 		if hasQuery {
 			var score sql.NullFloat64
-			if err := rows.Scan(&count, &rscMap, &score); err != nil {
+			var textRank int
+
+			if err := rows.Scan(&count, &rscMap, &score, &textRank); err != nil {
 				return nil, err
 			}
 		} else {
@@ -208,6 +247,25 @@ func (s *Server) doList(ctx context.Context, req *doListReq) (proto.Message, err
 	}
 
 	return s.toResourceList(items, listMeta, req.api, req.version, req.kind)
+}
+
+func isSimpleFTSQuery(q string) bool {
+	if q == "" || len(q) > 100 {
+		return false
+	}
+
+	for _, r := range q {
+		switch {
+		case r >= 'a' && r <= 'z':
+		case r >= 'A' && r <= 'Z':
+		case r >= '0' && r <= '9':
+		case r == ' ' || r == '-' || r == '_' || r == '.' || r == '@' || r == ':':
+		default:
+			return false
+		}
+	}
+
+	return true
 }
 
 func (s *Server) toResourceList(lst []umetav1.ResourceObjectI, listMeta *metav1.ListResponseMeta, api, version, kind string) (proto.Message, error) {
