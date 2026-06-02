@@ -217,11 +217,9 @@ func (s *Server) getSummaryCorePolicy(ctx context.Context, req *vcorev1.GetPolic
 		Select(
 			goqu.L(`COUNT(*) AS count_total`),
 			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.isDisabled') = true) AS count_disabled`),
-			goqu.L(`COUNT(len(json_extract(rsc, '$.spec.rules'))) AS count_rules`),
-			// goqu.L("SUM((rule ->> 'effect') = 'ALLOWED')").As("count_allowed"),
-			// goqu.L("SUM((rule ->> 'effect') = 'DENIED')").As("count_denied"),
-			goqu.L(`SUM(len(json_extract(rsc, '$.spec.rules'))) FILTER (WHERE json_extract_string(json_extract(rsc, '$.spec.rules[0]'), '$.effect') = 'ALLOW') AS count_rules_allowed`),
-			goqu.L(`SUM(len(json_extract(rsc, '$.spec.rules'))) FILTER (WHERE json_extract_string(json_extract(rsc, '$.spec.rules[0]'), '$.effect') = 'DENY') AS count_rules_denied`),
+			goqu.L(`COALESCE(SUM(len(json_extract(rsc, '$.spec.rules'))), 0) AS count_rules`),
+			goqu.L(`COALESCE(SUM(len(json_extract(rsc, '$.spec.rules'))) FILTER (WHERE json_extract_string(json_extract(rsc, '$.spec.rules[0]'), '$.effect') = 'ALLOW'), 0) AS count_rules_allowed`),
+			goqu.L(`COALESCE(SUM(len(json_extract(rsc, '$.spec.rules'))) FILTER (WHERE json_extract_string(json_extract(rsc, '$.spec.rules[0]'), '$.effect') = 'DENY'), 0) AS count_rules_denied`),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()
