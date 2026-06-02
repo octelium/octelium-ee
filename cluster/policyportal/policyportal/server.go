@@ -110,10 +110,7 @@ func (s *Server) run(ctx context.Context) error {
 }
 
 func Run(ctx context.Context) error {
-	octeliumC, err := octeliumc.NewClient(ctx, nil)
-	if err != nil {
-		return err
-	}
+	
 
 	if err := commoninit.Run(ctx, nil); err != nil {
 		return err
