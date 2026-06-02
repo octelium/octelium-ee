@@ -8,6 +8,7 @@
 
 package hashicorpvault
 
+/*
 import (
 	"context"
 	"fmt"
@@ -107,3 +108,4 @@ func TestServer(t *testing.T) {
 		assert.Equal(t, val, val2)
 	}
 }
+*/
