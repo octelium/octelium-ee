@@ -164,31 +164,35 @@ func (s *Server) initGRPC(ctx context.Context) error {
 	grpcSrv := grpc.NewServer(
 		cred,
 		grpc.ReadBufferSize(32*1024),
-		grpc.MaxConcurrentStreams(1000000),
+		grpc.MaxConcurrentStreams(10000),
+		grpc.MaxRecvMsgSize(4<<20),
+		grpc.MaxSendMsgSize(32<<20),
 	)
 
 	vcorev1.RegisterResourceServiceServer(grpcSrv, &srvCore{
 		s: s,
 	})
 
-	go func() {
+	lis, err := net.Listen("tcp", func() string {
 
-		lis, err := net.Listen("tcp", func() string {
-
-			if ovutils.IsMockMode() {
-				return "localhost:40001"
-			}
-
-			if ldflags.IsTest() {
-				return tstAddr
-			}
-
-			return ":8080"
-		}())
-		if err != nil {
-			return
+		if ovutils.IsMockMode() {
+			return "localhost:40001"
 		}
-		grpcSrv.Serve(lis)
+
+		if ldflags.IsTest() {
+			return tstAddr
+		}
+
+		return ":8080"
+	}())
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		if err := grpcSrv.Serve(lis); err != nil {
+			zap.L().Error("rscstore gRPC server exited", zap.Error(err))
+		}
 	}()
 
 	return nil
