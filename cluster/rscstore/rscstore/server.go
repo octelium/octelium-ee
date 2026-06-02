@@ -114,8 +114,11 @@ func newServer(ctx context.Context, octeliumC octeliumc.ClientInterface) (*Serve
 }
 
 func (s *Server) Run(ctx context.Context) error {
-
 	if err := s.initDB(ctx); err != nil {
+		return err
+	}
+
+	if err := s.validateCoreReconcileKinds(); err != nil {
 		return err
 	}
 
@@ -128,6 +131,7 @@ func (s *Server) Run(ctx context.Context) error {
 	}
 
 	go s.startProcessAuditLogLoop(ctx)
+	go s.startReconciliationLoop(ctx)
 
 	return nil
 }

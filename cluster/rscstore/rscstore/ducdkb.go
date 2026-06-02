@@ -16,33 +16,14 @@ import (
 	"time"
 
 	_ "github.com/marcboeker/go-duckdb"
-	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
-	"github.com/octelium/octelium/pkg/common/pbutils"
 	"go.uber.org/zap"
 )
 
 func (s *Server) insertResource(ctx context.Context, rsc umetav1.ResourceObjectI) error {
 	s.setAuditLog(ctx, rsc)
 
-	rscJSON, err := pbutils.MarshalJSON(rsc, false)
-	if err != nil {
-		return err
-	}
-
-	api, version := vutils.SplitApiVersion(rsc.GetApiVersion())
-	kind := rsc.GetKind()
-	uid := rsc.GetMetadata().Uid
-	resourceVersion := rsc.GetMetadata().ResourceVersion
-
-	rscStr, err := s.getRSCStr(rscJSON)
-	if err != nil {
-		return err
-	}
-
-	if _, err := s.db.ExecContext(ctx,
-		`INSERT INTO resources VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (uid) DO UPDATE SET resource_version = EXCLUDED.resource_version, rsc = EXCLUDED.rsc, rsc_str = EXCLUDED.rsc_str`,
-		api, version, kind, uid, resourceVersion, string(rscJSON), rscStr); err != nil {
+	if err := s.upsertResource(ctx, rsc); err != nil {
 		return err
 	}
 
@@ -52,8 +33,11 @@ func (s *Server) insertResource(ctx context.Context, rsc umetav1.ResourceObjectI
 }
 
 func (s *Server) removeResource(ctx context.Context, rsc umetav1.ResourceObjectI) error {
-
 	s.setAuditLog(ctx, rsc)
+
+	if rsc == nil || rsc.GetMetadata() == nil || rsc.GetMetadata().GetUid() == "" {
+		return nil
+	}
 
 	if _, err := s.db.ExecContext(ctx,
 		`DELETE FROM resources WHERE uid = ?`,
