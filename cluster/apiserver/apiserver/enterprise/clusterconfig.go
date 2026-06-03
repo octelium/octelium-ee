@@ -10,7 +10,6 @@ package enterprise
 
 import (
 	"context"
-	"slices"
 
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	apisrvcommon "github.com/octelium/octelium/cluster/apiserver/apiserver/common"
@@ -51,7 +50,6 @@ func (s *Server) UpdateClusterConfig(ctx context.Context, req *enterprisev1.Clus
 }
 
 func (s *Server) validateClusterConfig(ctx context.Context, req *enterprisev1.ClusterConfig) error {
-
 	if err := apivalidation.ValidateCommon(req, &apivalidation.ValidateCommonOpts{
 		ValidateMetadataOpts: apivalidation.ValidateMetadataOpts{
 			RequireName: true,
@@ -60,35 +58,87 @@ func (s *Server) validateClusterConfig(ctx context.Context, req *enterprisev1.Cl
 		return err
 	}
 
-	if req.Spec.Collector != nil {
+	if req.Spec == nil {
+		return grpcutils.InvalidArg("Nil spec")
+	}
 
-		exporterList, err := s.ListCollectorExporter(ctx, &enterprisev1.ListCollectorExporterOptions{})
-		if err != nil {
+	if req.Spec.Collector == nil {
+		return nil
+	}
+
+	const (
+		maxPipelines            = 64
+		maxExportersPerPipeline = 64
+		maxPipelineNameLen      = 64
+	)
+
+	if len(req.Spec.Collector.Pipelines) > maxPipelines {
+		return grpcutils.InvalidArg("Too many collector pipelines")
+	}
+
+	exporterList, err := s.ListCollectorExporter(ctx, &enterprisev1.ListCollectorExporterOptions{})
+	if err != nil {
+		return err
+	}
+
+	exporterSet := make(map[string]struct{}, len(exporterList.Items))
+	for _, exporter := range exporterList.Items {
+		exporterSet[exporter.Metadata.Name] = struct{}{}
+	}
+
+	seenPipelines := make(map[string]struct{}, len(req.Spec.Collector.Pipelines))
+
+	for _, pipeline := range req.Spec.Collector.Pipelines {
+		if pipeline == nil {
+			return grpcutils.InvalidArg("Nil collector pipeline")
+		}
+
+		if err := apivalidation.ValidateName(pipeline.Name, 1, maxPipelineNameLen); err != nil {
 			return err
 		}
 
-		for _, pipeline := range req.Spec.Collector.Pipelines {
-			if err := apivalidation.ValidateName(pipeline.Name, 0, 0); err != nil {
+		if _, ok := seenPipelines[pipeline.Name]; ok {
+			return grpcutils.InvalidArg("Duplicate collector pipeline name: %s", pipeline.Name)
+		}
+		seenPipelines[pipeline.Name] = struct{}{}
+
+		switch pipeline.Type {
+		case enterprisev1.ClusterConfig_Spec_Collector_Pipeline_LOGS,
+			enterprisev1.ClusterConfig_Spec_Collector_Pipeline_METRICS:
+		case enterprisev1.ClusterConfig_Spec_Collector_Pipeline_TYPE_UNSET:
+			return grpcutils.InvalidArg("Pipeline type must be set to either LOGS or METRICS")
+		default:
+			return grpcutils.InvalidArg("Invalid collector pipeline type")
+		}
+
+		if len(pipeline.Exporters) == 0 {
+			return grpcutils.InvalidArg("Collector pipeline %s must include at least one exporter", pipeline.Name)
+		}
+
+		if len(pipeline.Exporters) > maxExportersPerPipeline {
+			return grpcutils.InvalidArg("Too many exporters in collector pipeline: %s", pipeline.Name)
+		}
+
+		seenExporters := make(map[string]struct{}, len(pipeline.Exporters))
+		for _, exporterName := range pipeline.Exporters {
+			if err := apivalidation.ValidateName(exporterName, 1, 0); err != nil {
 				return err
 			}
 
-			switch pipeline.Type {
-			case enterprisev1.ClusterConfig_Spec_Collector_Pipeline_TYPE_UNSET:
-				return grpcutils.InvalidArg("Pipeline type must be set to either LOGS or METRICS")
+			if _, ok := seenExporters[exporterName]; ok {
+				return grpcutils.InvalidArg(
+					"Duplicate exporter %s in collector pipeline %s",
+					exporterName,
+					pipeline.Name,
+				)
 			}
+			seenExporters[exporterName] = struct{}{}
 
-			if len(pipeline.Exporters) > 64 {
-				return grpcutils.InvalidArg("Too many exporters")
-			}
-
-			for _, exporter := range pipeline.Exporters {
-				if !slices.ContainsFunc(exporterList.Items, func(exp *enterprisev1.CollectorExporter) bool {
-					return exp.Metadata.Name == exporter
-				}) {
-					return grpcutils.InvalidArg("This CollectorExport does not exist: %s", exporter)
-				}
+			if _, ok := exporterSet[exporterName]; !ok {
+				return grpcutils.InvalidArg("CollectorExporter does not exist: %s", exporterName)
 			}
 		}
 	}
+
 	return nil
 }
