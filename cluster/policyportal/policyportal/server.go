@@ -32,50 +32,29 @@ import (
 	policycontroller "github.com/octelium/octelium/cluster/octovigil/octovigil/controllers/policies"
 	ptctl "github.com/octelium/octelium/cluster/octovigil/octovigil/controllers/policytemplates"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
-	"github.com/patrickmn/go-cache"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
 
+const (
+	maxAdditionalPolicies       = 50
+	maxAdditionalInlinePolicies = 50
+	isAuthorizedTimeout         = 10 * time.Second
+)
+
 type Server struct {
 	octeliumC octeliumc.ClientInterface
+	s         *octovigil.Server
 
-	clusterDomain string
-	genCache      *cache.Cache
-
-	rootURL string
-
-	oidcInfoMap map[string]*oidcInfo
-
-	s *octovigil.Server
 	enterprisev1.UnimplementedPolicyPortalServiceServer
 }
 
-type oidcInfo struct {
-	regionRef *metav1.ObjectReference
-	oidc      []byte
-	jwks      []byte
-}
-
 func NewServer(ctx context.Context, octeliumC octeliumc.ClientInterface) (*Server, error) {
+	ret := &Server{
+		octeliumC: octeliumC,
+	}
 
 	var err error
-	ret := &Server{
-		octeliumC:   octeliumC,
-		oidcInfoMap: make(map[string]*oidcInfo),
-
-		genCache: cache.New(cache.NoExpiration, 1*time.Minute),
-	}
-
-	cc, err := octeliumC.CoreV1Utils().GetClusterConfig(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	ret.clusterDomain = cc.Status.Domain
-
-	ret.rootURL = fmt.Sprintf("https://public.octelium.%s", cc.Status.Domain)
-
 	ret.s, err = octovigil.New(ctx, octeliumC)
 	if err != nil {
 		return nil, err
@@ -84,35 +63,14 @@ func NewServer(ctx context.Context, octeliumC octeliumc.ClientInterface) (*Serve
 	return ret, nil
 }
 
-func (s *Server) run(ctx context.Context) error {
-	cred, err := spiffec.GetGRPCServerCred(ctx, nil)
-	if err != nil {
+func Run(ctx context.Context) error {
+
+	if err := commoninit.Run(ctx, nil); err != nil {
 		return err
 	}
 
-	grpcSrv := grpc.NewServer(
-		cred,
-		grpc.ReadBufferSize(32*1024),
-		grpc.MaxConcurrentStreams(1000000),
-	)
-	enterprisev1.RegisterPolicyPortalServiceServer(grpcSrv, s)
-	go func() {
-
-		lis, err := net.Listen("tcp", func() string {
-			return ":8080"
-		}())
-		if err != nil {
-			return
-		}
-		grpcSrv.Serve(lis)
-	}()
-	return nil
-}
-
-func Run(ctx context.Context) error {
-	
-
-	if err := commoninit.Run(ctx, nil); err != nil {
+	octeliumC, err := octeliumc.NewClient(ctx, nil)
+	if err != nil {
 		return err
 	}
 
@@ -121,22 +79,11 @@ func Run(ctx context.Context) error {
 		return err
 	}
 
+	if err := srv.startWatchers(ctx); err != nil {
+		return err
+	}
+
 	if err := srv.run(ctx); err != nil {
-		return err
-	}
-
-	watcher := watchers.NewCoreV1(octeliumC)
-
-	s := srv.s
-
-	policyCtl := policycontroller.NewController(s.GetCache())
-	ptCtl := ptctl.NewController(s.GetPolicyTriggerCtl())
-
-	if err := watcher.Policy(ctx, nil, policyCtl.OnAdd, policyCtl.OnUpdate, policyCtl.OnDelete); err != nil {
-		return err
-	}
-
-	if err := watcher.PolicyTrigger(ctx, nil, ptCtl.OnAdd, ptCtl.OnUpdate, ptCtl.OnDelete); err != nil {
 		return err
 	}
 
@@ -148,16 +95,74 @@ func Run(ctx context.Context) error {
 	return nil
 }
 
+func (s *Server) run(ctx context.Context) error {
+	cred, err := spiffec.GetGRPCServerCred(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	grpcSrv := grpc.NewServer(
+		cred,
+		grpc.ReadBufferSize(32*1024),
+		grpc.MaxConcurrentStreams(1024),
+		grpc.MaxRecvMsgSize(4<<20),
+		grpc.MaxSendMsgSize(16<<20),
+	)
+
+	enterprisev1.RegisterPolicyPortalServiceServer(grpcSrv, s)
+
+	lis, err := net.Listen("tcp", ":8080")
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		<-ctx.Done()
+		grpcSrv.GracefulStop()
+	}()
+
+	go func() {
+		if err := grpcSrv.Serve(lis); err != nil {
+			zap.L().Error("policyportal gRPC server exited", zap.Error(err))
+		}
+	}()
+
+	return nil
+}
+
+func (s *Server) startWatchers(ctx context.Context) error {
+	watcher := watchers.NewCoreV1(s.octeliumC)
+
+	policyCtl := policycontroller.NewController(s.s.GetCache())
+	ptCtl := ptctl.NewController(s.s.GetPolicyTriggerCtl())
+
+	if err := watcher.Policy(ctx, nil, policyCtl.OnAdd, policyCtl.OnUpdate, policyCtl.OnDelete); err != nil {
+		return err
+	}
+
+	if err := watcher.PolicyTrigger(ctx, nil, ptCtl.OnAdd, ptCtl.OnUpdate, ptCtl.OnDelete); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *Server) IsAuthorized(ctx context.Context,
 	req *enterprisev1.IsAuthorizedRequest) (*enterprisev1.IsAuthorizedResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, isAuthorizedTimeout)
+	defer cancel()
 
 	if req.Downstream == nil {
-		return nil, grpcutils.InvalidArg("")
+		return nil, grpcutils.InvalidArg("Downstream is required")
 	}
+
 	if req.Upstream == nil {
-		return nil, grpcutils.InvalidArg("")
+		return nil, grpcutils.InvalidArg("Upstream is required")
 	}
-	var err error
+
+	if err := validateAdditional(req); err != nil {
+		return nil, err
+	}
 
 	cc, err := s.octeliumC.CoreV1Utils().GetClusterConfig(ctx)
 	if err != nil {
@@ -170,6 +175,10 @@ func (s *Server) IsAuthorized(ctx context.Context,
 
 	switch req.Downstream.(type) {
 	case *enterprisev1.IsAuthorizedRequest_SessionRef:
+		if err := apivalidation.CheckObjectRef(req.GetSessionRef(), &apivalidation.CheckGetOptionsOpts{}); err != nil {
+			return nil, err
+		}
+
 		sess, err := s.octeliumC.CoreC().GetSession(ctx, apivalidation.ObjectReferenceToRGetOptions(req.GetSessionRef()))
 		if err != nil {
 			return nil, err
@@ -192,24 +201,25 @@ func (s *Server) IsAuthorized(ctx context.Context,
 		}
 
 		if sess.Status.DeviceRef != nil {
-			dev, err := s.octeliumC.CoreC().GetDevice(ctx, &rmetav1.GetOptions{
-				Uid: sess.Status.DeviceRef.Uid,
-			})
+			dev, err := s.octeliumC.CoreC().GetDevice(ctx,
+				apivalidation.ObjectReferenceToRGetOptions(sess.Status.DeviceRef))
 			if err == nil {
 				reqCtx.Device = dev
 			}
 		}
 
 	case *enterprisev1.IsAuthorizedRequest_DeviceRef:
+		if err := apivalidation.CheckObjectRef(req.GetDeviceRef(), &apivalidation.CheckGetOptionsOpts{}); err != nil {
+			return nil, err
+		}
+
 		dev, err := s.octeliumC.CoreC().GetDevice(ctx,
 			apivalidation.ObjectReferenceToRGetOptions(req.GetDeviceRef()))
 		if err != nil {
 			return nil, err
 		}
 
-		usr, err := s.octeliumC.CoreC().GetUser(ctx, &rmetav1.GetOptions{
-			Uid: dev.Status.UserRef.Uid,
-		})
+		usr, err := s.octeliumC.CoreC().GetUser(ctx, apivalidation.ObjectReferenceToRGetOptions(dev.Status.UserRef))
 		if err != nil {
 			return nil, err
 		}
@@ -235,7 +245,12 @@ func (s *Server) IsAuthorized(ctx context.Context,
 			return nil, err
 		}
 		reqCtx.Session = sess
+
 	case *enterprisev1.IsAuthorizedRequest_UserRef:
+		if err := apivalidation.CheckObjectRef(req.GetUserRef(), &apivalidation.CheckGetOptionsOpts{}); err != nil {
+			return nil, err
+		}
+
 		usr, err := s.octeliumC.CoreC().GetUser(ctx, apivalidation.ObjectReferenceToRGetOptions(req.GetUserRef()))
 		if err != nil {
 			return nil, err
@@ -259,27 +274,39 @@ func (s *Server) IsAuthorized(ctx context.Context,
 			return nil, err
 		}
 		reqCtx.Session = sess
+
 	default:
-		return nil, grpcutils.InvalidArg("")
+		return nil, grpcutils.InvalidArg("Unsupported downstream")
 	}
 
 	switch req.Upstream.(type) {
 	case *enterprisev1.IsAuthorizedRequest_ServiceRef:
+		if err := apivalidation.CheckObjectRef(req.GetServiceRef(), &apivalidation.CheckGetOptionsOpts{
+			ParentsMax: 2,
+		}); err != nil {
+			return nil, err
+		}
+
 		svc, err := s.octeliumC.CoreC().GetService(ctx,
 			apivalidation.ObjectReferenceToRGetOptions(req.GetServiceRef()))
 		if err != nil {
 			return nil, err
 		}
 
-		ns, err := s.octeliumC.CoreC().GetNamespace(ctx, &rmetav1.GetOptions{
-			Uid: svc.Status.NamespaceRef.Uid,
-		})
+		ns, err := s.octeliumC.CoreC().GetNamespace(ctx,
+			apivalidation.ObjectReferenceToRGetOptions(svc.Status.NamespaceRef))
 		if err != nil {
 			return nil, err
 		}
+
 		reqCtx.Service = svc
 		reqCtx.Namespace = ns
+
 	case *enterprisev1.IsAuthorizedRequest_NamespaceRef:
+		if err := apivalidation.CheckObjectRef(req.GetNamespaceRef(), &apivalidation.CheckGetOptionsOpts{}); err != nil {
+			return nil, err
+		}
+
 		ns, err := s.octeliumC.CoreC().GetNamespace(ctx,
 			apivalidation.ObjectReferenceToRGetOptions(req.GetNamespaceRef()))
 		if err != nil {
@@ -319,8 +346,9 @@ func (s *Server) IsAuthorized(ctx context.Context,
 		}
 
 		reqCtx.Service = svc
+
 	default:
-		return nil, grpcutils.InvalidArg("")
+		return nil, grpcutils.InvalidArg("Unsupported upstream")
 	}
 
 	var additional *coctovigilv1.Authorization
@@ -340,4 +368,26 @@ func (s *Server) IsAuthorized(ctx context.Context,
 		IsAuthorized: res.IsAuthorized,
 		Reason:       res.Reason,
 	}, nil
+}
+
+func validateAdditional(req *enterprisev1.IsAuthorizedRequest) error {
+	if req == nil || req.Additional == nil {
+		return nil
+	}
+
+	if len(req.Additional.Policies) > maxAdditionalPolicies {
+		return grpcutils.InvalidArg("Too many additional policies")
+	}
+
+	for _, pol := range req.Additional.Policies {
+		if err := apivalidation.ValidateName(pol, 0, 7); err != nil {
+			return err
+		}
+	}
+
+	if len(req.Additional.InlinePolicies) > maxAdditionalInlinePolicies {
+		return grpcutils.InvalidArg("Too many additional inline policies")
+	}
+
+	return nil
 }
