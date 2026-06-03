@@ -212,3 +212,7 @@ func (a *DirectoryProvider) GetResourceName() string {
 
 	return fmt.Sprintf("directory-%s", a.Status.Id)
 }
+
+func (s *Secret) GetValueBytes() []byte {
+	return []byte(s.GetValueStr())
+}
