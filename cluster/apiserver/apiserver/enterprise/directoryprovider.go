@@ -246,9 +246,8 @@ func (s *Server) GenerateDirectoryProviderCredential(ctx context.Context,
 		return nil, err
 	}
 
-	usr, err := s.octeliumC.CoreC().GetUser(ctx, &rmetav1.GetOptions{
-		Uid: item.Status.UserRef.Uid,
-	})
+	usr, err := s.octeliumC.CoreC().GetUser(ctx,
+		apivalidation.ObjectReferenceToRGetOptions(item.Status.UserRef))
 	if err != nil {
 		return nil, err
 	}
@@ -265,9 +264,8 @@ func (s *Server) GenerateDirectoryProviderCredential(ctx context.Context,
 			return nil, err
 		}
 	} else {
-		sess, err = s.octeliumC.CoreC().GetSession(ctx, &rmetav1.GetOptions{
-			Uid: item.Status.SessionRef.Uid,
-		})
+		sess, err = s.octeliumC.CoreC().GetSession(ctx,
+			apivalidation.ObjectReferenceToRGetOptions(item.Status.SessionRef))
 		if err != nil {
 			if !grpcerr.IsNotFound(err) {
 				return nil, err
