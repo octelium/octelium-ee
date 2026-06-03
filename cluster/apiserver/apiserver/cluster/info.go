@@ -11,6 +11,7 @@ package cluster
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/go-resty/resty/v2"
@@ -93,5 +94,5 @@ func getLatestVersion(ctx context.Context, pkg string) (string, error) {
 		return "", errors.Errorf("Could not get latest version release for package: %s", pkg)
 	}
 
-	return (string(resp.Body())), nil
+	return (strings.TrimSpace(string(resp.Body()))), nil
 }
