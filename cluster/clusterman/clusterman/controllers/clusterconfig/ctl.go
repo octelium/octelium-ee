@@ -10,7 +10,6 @@ package clusterconfig
 
 import (
 	"context"
-	"slices"
 	"time"
 
 	"github.com/octelium/octelium-ee/cluster/clusterman/clusterman/upgrade"
@@ -55,13 +54,20 @@ func (c *Controller) update(cluster *enterprisev1.ClusterConfig) {
 		defer cancel()
 		if err := c.doUpgrade(ctx, cluster); err != nil {
 			zap.L().Warn("Could not doUpdate", zap.Error(err))
+			cluster, err = c.octeliumC.EnterpriseV1Utils().GetClusterConfig(ctx)
+			if err != nil {
+				zap.L().Warn("Could not get ClusterConfig after update failure", zap.Error(err))
+				return
+			}
+
 			if cluster.Status.UpgradeRequest != nil &&
 				cluster.Status.UpgradeRequest.State == enterprisev1.ClusterConfig_Status_UpgradeRequest_UPGRADING {
 				cluster.Status.UpgradeRequest.State = enterprisev1.ClusterConfig_Status_UpgradeRequest_FAILED
 				cluster.Status.UpgradeRequest.DoneAt = pbutils.Now()
 
-				cluster.Status.LastUpgradeRequests = slices.Insert(
-					cluster.Status.LastUpgradeRequests, 0, cluster.Status.UpgradeRequest)
+				cluster.Status.LastUpgradeRequests = prependUpgradeHistory(
+					cluster.Status.LastUpgradeRequests, cluster.Status.UpgradeRequest)
+
 				cluster.Status.UpgradeRequest = nil
 				cluster.Status.TotalFailedUpgrades += 1
 				_, err := c.octeliumC.EnterpriseC().UpdateClusterConfig(ctx, cluster)
@@ -71,6 +77,24 @@ func (c *Controller) update(cluster *enterprisev1.ClusterConfig) {
 			}
 		}
 	}()
+}
+
+const maxLastUpgradeRequests = 200
+
+func prependUpgradeHistory(
+	history []*enterprisev1.ClusterConfig_Status_UpgradeRequest,
+	req *enterprisev1.ClusterConfig_Status_UpgradeRequest,
+) []*enterprisev1.ClusterConfig_Status_UpgradeRequest {
+	if req == nil {
+		return history
+	}
+
+	history = append([]*enterprisev1.ClusterConfig_Status_UpgradeRequest{req}, history...)
+	if len(history) > maxLastUpgradeRequests {
+		history = history[:maxLastUpgradeRequests]
+	}
+
+	return history
 }
 
 func (c *Controller) doUpgrade(ctx context.Context, cluster *enterprisev1.ClusterConfig) error {
@@ -111,8 +135,8 @@ func (c *Controller) doUpgrade(ctx context.Context, cluster *enterprisev1.Cluste
 			cluster.Status.UpgradeRequest.State = enterprisev1.ClusterConfig_Status_UpgradeRequest_FAILED
 			cluster.Status.UpgradeRequest.DoneAt = pbutils.Now()
 
-			cluster.Status.LastUpgradeRequests = slices.Insert(
-				cluster.Status.LastUpgradeRequests, 0, cluster.Status.UpgradeRequest)
+			cluster.Status.LastUpgradeRequests = prependUpgradeHistory(
+				cluster.Status.LastUpgradeRequests, cluster.Status.UpgradeRequest)
 			cluster.Status.UpgradeRequest = nil
 			cluster.Status.TotalFailedUpgrades += 1
 			_, err = c.octeliumC.EnterpriseC().UpdateClusterConfig(ctx, cluster)
@@ -133,8 +157,8 @@ func (c *Controller) doUpgrade(ctx context.Context, cluster *enterprisev1.Cluste
 	cluster.Status.UpgradeRequest.State = enterprisev1.ClusterConfig_Status_UpgradeRequest_SUCCESS
 	cluster.Status.UpgradeRequest.DoneAt = pbutils.Now()
 	upgradeReq := cluster.Status.UpgradeRequest
-	cluster.Status.LastUpgradeRequests = slices.Insert(
-		cluster.Status.LastUpgradeRequests, 0, cluster.Status.UpgradeRequest)
+	cluster.Status.LastUpgradeRequests = prependUpgradeHistory(
+		cluster.Status.LastUpgradeRequests, cluster.Status.UpgradeRequest)
 	cluster.Status.UpgradeRequest = nil
 
 	cluster.Status.TotalSuccessfulUpgrades += 1
