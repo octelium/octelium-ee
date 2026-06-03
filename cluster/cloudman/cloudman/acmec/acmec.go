@@ -347,29 +347,28 @@ func NewACMEClient(ctx context.Context, octeliumC octeliumc.ClientInterface, crt
 }
 
 func getReadyIssuer(ctx context.Context, octeliumC octeliumc.ClientInterface, issuerRef *metav1.ObjectReference) (*enterprisev1.CertificateIssuer, error) {
-	for range 600 {
-		issuer, err := octeliumC.EnterpriseC().GetCertificateIssuer(ctx, &rmetav1.GetOptions{
-			Uid: issuerRef.Uid,
-		})
+
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Minute)
+	defer cancel()
+
+	for {
+		issuer, err := octeliumC.EnterpriseC().GetCertificateIssuer(ctx, apivalidation.ObjectReferenceToRGetOptions(issuerRef))
 		if err != nil {
 			return nil, err
 		}
-
 		if issuer.Spec.GetAcme() == nil {
-			return nil, errors.Errorf("issuer type is not ACME")
+			return nil, errors.Errorf("Issuer type is not ACME")
+		}
+		if issuer.Status.State == enterprisev1.CertificateIssuer_Status_READY {
+			return issuer, nil
 		}
 
-		switch issuer.Status.State {
-		case enterprisev1.CertificateIssuer_Status_READY:
-			return issuer, nil
-		default:
-			zap.L().Debug("certificateIssuer is preparing. Waiting and trying again...",
-				zap.String("state", issuer.Status.State.String()))
-			time.Sleep(10 * time.Second)
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(10 * time.Second):
 		}
 	}
-
-	return nil, errors.Errorf("Could not get a READY certificateIssuer after 10 tries")
 }
 
 func (c *ACMEClient) IssueCertificate(ctx context.Context) error {
