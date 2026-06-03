@@ -44,7 +44,9 @@ func TestSetCertificate(t *testing.T) {
 			Metadata: &metav1.Metadata{
 				Name: utilrand.GetRandomStringCanonical(8),
 			},
-			Spec:   &enterprisev1.Certificate_Spec{},
+			Spec: &enterprisev1.Certificate_Spec{
+				Mode: enterprisev1.Certificate_Spec_MANUAL,
+			},
 			Status: &enterprisev1.Certificate_Status{},
 		})
 		assert.Nil(t, err)
@@ -80,7 +82,7 @@ func TestSetCertificate(t *testing.T) {
 			Certificate:    string(cert1.MustGetCertPEM()),
 			PrivateKey:     string(cert1.MustGetPrivateKeyPEM()),
 		})
-		assert.Nil(t, err)
+		assert.Nil(t, err, "%+v", err)
 
 		_, err = srv.SetCertificate(ctx, &enterprisev1.SetCertificateRequest{
 			CertificateRef: umetav1.GetObjectReference(crt),
