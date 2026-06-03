@@ -42,6 +42,7 @@ import (
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
+	"github.com/octelium/octelium/cluster/common/apivalidation"
 	"github.com/octelium/octelium/pkg/apiutils/ucorev1"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
@@ -428,21 +429,11 @@ func (c *ACMEClient) preIssueCrt(ctx context.Context) ([]string, error) {
 
 	switch {
 	case crt.Status.ServiceRef != nil:
-		svc, err := c.octeliumC.CoreC().GetService(ctx, &rmetav1.GetOptions{
-			Uid: crt.Status.ServiceRef.Uid,
-		})
+		svc, err := c.octeliumC.CoreC().GetService(ctx,
+			apivalidation.ObjectReferenceToRGetOptions(crt.Status.ServiceRef))
 		if err != nil {
 			return nil, err
 		}
-
-		/*
-			if (ucorev1.ToService(svc).Name() == "default" || svc.Status.NamespaceRef.Name == "default") &&
-				(!ucorev1.ToService(svc).IsManagedService() ||
-					(ucorev1.ToService(svc).IsManagedService() && !svc.Status.ManagedService.HasSubdomain)) {
-						zap.L().Debug("No need to issueCert for this Service")
-				return nil
-			}
-		*/
 
 		domains = []string{
 			fmt.Sprintf("%s.%s", svc.Status.PrimaryHostname, domain),
@@ -454,19 +445,8 @@ func (c *ACMEClient) preIssueCrt(ctx context.Context) ([]string, error) {
 				fmt.Sprintf("*.%s.%s", svc.Status.PrimaryHostname, domain),
 				fmt.Sprintf("*.%s.local.%s", svc.Status.PrimaryHostname, domain),
 			)
-			/*
-				domains = append(domains,
-					fmt.Sprintf("*.%s.%s.%s", ucorev1.ToService(svc).Name(), svc.Status.NamespaceRef.Name, domain),
-					fmt.Sprintf("*.%s.%s.local.%s", ucorev1.ToService(svc).Name(), svc.Status.NamespaceRef.Name, domain))
-			*/
-		}
 
-		/*
-			if svc.Status.NamespaceRef.Name == "default" {
-				domains = append(domains, fmt.Sprintf("%s.%s", ucorev1.ToService(svc).Name(), domain),
-					fmt.Sprintf("%s.local.%s", ucorev1.ToService(svc).Name(), domain))
-			}
-		*/
+		}
 
 	case crt.Status.ServiceRef == nil && crt.Status.NamespaceRef != nil:
 		domains = []string{
@@ -564,28 +544,40 @@ func (c *ACMEClient) postIssueCrt(ctx context.Context, cert, privateKey []byte) 
 
 func (c *ACMEClient) doIssueCrt(ctx context.Context, domains []string) (*certificate.Resource, error) {
 
-	crt := c.crt
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+	defer cancel()
+
 	for {
 		select {
 		case <-ctx.Done():
-			return nil, errors.Errorf("ctx done")
-		case <-time.After(10 * time.Minute):
-			return nil, errors.Errorf("timeout exceeded trying to issueCrt: %+v", crt)
+			return nil, errors.Errorf("timeout or context cancellation while issuing certificate: %+v", ctx.Err())
 		default:
-			zap.L().Debug("Starting issuing certificate",
-				zap.Any("crt", crt), zap.Strings("domains", domains))
-			rsc, err := c.c.Certificate.Obtain(certificate.ObtainRequest{
-				Domains: domains,
-				Bundle:  true,
-			})
-			if err == nil {
-				zap.L().Debug("Successfully obtained crt from the ACME server", zap.Any("crt", crt))
-				return rsc, nil
-			}
+		}
 
-			zap.S().Warnf("Could not obtain cert: %+v. Trying again...", err)
-			time.Sleep(10 * time.Second)
+		zap.L().Debug("Starting issuing certificate",
+			zap.Any("crt", c.crt),
+			zap.Strings("domains", domains),
+		)
 
+		rsc, err := c.c.Certificate.Obtain(certificate.ObtainRequest{
+			Domains: domains,
+			Bundle:  true,
+		})
+		if err == nil {
+			zap.L().Debug("Successfully obtained crt from the ACME server", zap.Any("crt", c.crt))
+			return rsc, nil
+		}
+
+		zap.L().Warn("Could not obtain cert. Trying again...",
+			zap.Error(err),
+			zap.Any("crt", c.crt),
+			zap.Strings("domains", domains),
+		)
+
+		select {
+		case <-ctx.Done():
+			return nil, errors.Errorf("ctx done or timeout n doIssuerCrt: %+v", ctx.Err())
+		case <-time.After(10 * time.Second):
 		}
 	}
 }
