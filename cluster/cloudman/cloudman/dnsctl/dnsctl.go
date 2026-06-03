@@ -91,12 +91,14 @@ func SetAddresses(ctx context.Context, octeliumC octeliumc.ClientInterface, prov
 func doGetIPs(svc *k8scorev1.Service) []string {
 	var ret []string
 
-	if svc.Spec.ExternalIPs != nil {
+	if len(svc.Spec.ExternalIPs) > 0 {
 		return svc.Spec.ExternalIPs
 	}
 
 	for _, ing := range svc.Status.LoadBalancer.Ingress {
-		ret = append(ret, ing.IP)
+		if ing.IP != "" {
+			ret = append(ret, ing.IP)
+		}
 	}
 
 	return ret

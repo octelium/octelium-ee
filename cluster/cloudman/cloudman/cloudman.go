@@ -27,6 +27,7 @@ import (
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/cluster/common/watchers"
 	"github.com/octelium/octelium/pkg/grpcerr"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
@@ -120,5 +121,5 @@ func waitForDefaultCertificateIssuer(ctx context.Context, octeliumC octeliumc.Cl
 		}
 	}
 
-	return nil
+	return errors.Errorf("Could not waitForDefaultCertificateIssuer after try timeout")
 }

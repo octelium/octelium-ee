@@ -17,17 +17,6 @@ import (
 )
 
 func GetDefaultDNSProvider(ctx context.Context, octeliumC octeliumc.ClientInterface) (*enterprisev1.DNSProvider, error) {
-
-	/*
-		cc, err := octeliumC.EnterpriseV1Utils().GetClusterConfig(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if cc.Spec.Dns == nil || cc.Spec.Dns.DefaultDNSProvider == "" {
-			return octeliumC.EnterpriseC().GetDNSProvider(ctx, &rmetav1.GetOptions{Name: "default"})
-		}
-	*/
-
 	return octeliumC.EnterpriseC().GetDNSProvider(ctx, &rmetav1.GetOptions{Name: "default"})
 }
 

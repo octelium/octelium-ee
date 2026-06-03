@@ -82,8 +82,8 @@ func (w *Watcher) doCheckAndIssueCrt(ctx context.Context, crt *enterprisev1.Cert
 		return nil
 	case enterprisev1.Certificate_Status_Issuance_SUCCESS:
 		switch {
-		case time.Now().After(crt.Status.Issuance.ExpiresAt.AsTime()),
-			time.Now().Add(21 * 24 * time.Hour).After(crt.Status.Issuance.ExpiresAt.AsTime()):
+		case time.Now().After(issuance.ExpiresAt.AsTime()),
+			time.Now().Add(21 * 24 * time.Hour).After(issuance.ExpiresAt.AsTime()):
 			return doReissue()
 		default:
 			return nil
