@@ -157,7 +157,11 @@ func (s *Server) doRun(ctx context.Context) error {
 
 				zap.S().Errorf("Could not run collector. Trying again...: %+v", err)
 
-				time.Sleep(1 * time.Second)
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(time.Second):
+				}
 				s.collector, err = otelcol.NewCollector(otelcol.CollectorSettings{
 					Factories: func() (otelcol.Factories, error) {
 						return factories, nil

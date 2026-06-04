@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
@@ -25,11 +26,11 @@ import (
 )
 
 type provider struct {
-	// c          *configProvider
 	schemeName string
 	waitFn     confmap.WatcherFunc
 	octeliumC  octeliumc.ClientInterface
 	port       int
+	mu         sync.RWMutex
 }
 
 type mt = map[string]any
@@ -46,9 +47,7 @@ func (p *provider) Retrieve(ctx context.Context, uri string, waitFn confmap.Watc
 	}
 
 	zap.L().Debug("Retrieving provider config")
-	if p.waitFn == nil {
-		p.waitFn = waitFn
-	}
+	p.setWaitFn(waitFn)
 
 	cfg, err := p.getConfig(ctx)
 	if err != nil {
@@ -351,9 +350,10 @@ func (p *provider) getExporter(ctx context.Context, exp *enterprisev1.CollectorE
 		ret.exp = c
 
 		if spec.Auth != nil {
-			if spec.Headers == nil {
-				spec.Headers = make(map[string]string)
+			if c.Headers == nil {
+				c.Headers = make(map[string]string)
 			}
+
 			switch spec.Auth.Type.(type) {
 			case *enterprisev1.CollectorExporter_Spec_Elasticsearch_Auth_ApiKey:
 				if spec.Auth.GetApiKey().GetFromSecret() != "" {
@@ -609,7 +609,7 @@ func (c *provider) getConfig(ctx context.Context) (map[string]any, error) {
 		pipelineMap := mt{
 			"receivers":  []string{"otlp/octelium"},
 			"exporters":  exporters,
-			"processors": []string{"batch", "memory_limiter"},
+			"processors": []string{"memory_limiter", "batch"},
 		}
 
 		pipelinesMap[fmt.Sprintf("%s/%s", pipelineType, pipeline.Name)] = pipelineMap
@@ -659,12 +659,12 @@ func (c *provider) getInitConfig(ctx context.Context) (map[string]any, error) {
 			"pipelines": mt{
 				"logs": mt{
 					"receivers":  []string{"otlp/octelium"},
-					"processors": []string{"batch", "memory_limiter"},
+					"processors": []string{"memory_limiter", "batch"},
 					"exporters":  []string{"otlp/octelium-logs"},
 				},
 				"metrics": mt{
 					"receivers":  []string{"otlp/octelium"},
-					"processors": []string{"batch", "memory_limiter"},
+					"processors": []string{"memory_limiter", "batch"},
 					"exporters":  []string{"otlp/octelium-metrics"},
 				},
 			},
@@ -681,10 +681,19 @@ type exporterInfo struct {
 	extensionMap map[string]any
 }
 
-func (cm *provider) sendUpdate() {
+func (p *provider) setWaitFn(fn confmap.WatcherFunc) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.waitFn = fn
+}
 
-	if cm.waitFn != nil {
+func (p *provider) sendUpdate() {
+	p.mu.RLock()
+	fn := p.waitFn
+	p.mu.RUnlock()
+
+	if fn != nil {
 		zap.L().Debug("Config provider sending update...")
-		cm.waitFn(&confmap.ChangeEvent{})
+		fn(&confmap.ChangeEvent{})
 	}
 }
