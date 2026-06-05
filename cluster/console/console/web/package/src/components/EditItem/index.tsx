@@ -106,7 +106,7 @@ const EditItem = (props: Props) => {
         )}
       </div>
 
-      <Collapse in={isExpanded} transitionDuration={180}>
+      <Collapse expanded={isExpanded} transitionDuration={180}>
         <div className="mt-3 mb-1">
           <div className="ml-1">{props.children}</div>
 

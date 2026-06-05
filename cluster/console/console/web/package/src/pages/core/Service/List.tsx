@@ -111,7 +111,7 @@ const Item = (props: { item: Service }) => {
             </Link>
           </div>
 
-          <Collapse in={showDetails}>
+          <Collapse expanded={showDetails}>
             <ItemDetails item={item} domain={domain} />
           </Collapse>
         </div>
@@ -357,7 +357,7 @@ export const Summary = (props: {
     queryKey: ["visibility", "core", "summary", "Service"],
     queryFn: async () => {
       const { response } = await getClientVisibilityCore().getServiceSummary(
-        {}
+        {},
       );
 
       return response;

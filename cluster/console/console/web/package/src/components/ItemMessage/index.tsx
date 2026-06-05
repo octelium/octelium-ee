@@ -88,7 +88,7 @@ const ItemMessage = (props: Props) => {
       </button>
 
       {props.obj && (
-        <Collapse in={isExpanded} transitionDuration={180}>
+        <Collapse expanded={isExpanded} transitionDuration={180}>
           <div className="ml-3 mt-4 mb-2">{props.children}</div>
 
           {props.isList && (

@@ -463,7 +463,7 @@ export const AccessLogC = (props: { accessLog: AccessLog }) => {
       </div>
       {/**
        <div className="w-full">
-        <Collapse in={showDetails} transitionDuration={500}>
+        <Collapse expanded={showDetails} transitionDuration={500}>
           <AccessLogInfo accessLog={x} />
         </Collapse>
       </div>
