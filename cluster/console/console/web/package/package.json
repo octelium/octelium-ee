@@ -100,7 +100,6 @@
     "ts-pattern": "^5.9.0",
     "vaul": "^1.1.2",
     "vite-plugin-http2": "^1.0.15",
-    "vite-plugin-http2-proxy": "^0.5.1",
     "vite-plugin-svgr": "^5.2.0",
     "zod": "^4.4.3"
   },
