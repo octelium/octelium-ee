@@ -32,23 +32,39 @@ func createDefaultConfig() component.Config {
 		Endpoint:             ":8080",
 		MaxRecvMsgSizeMiB:    16,
 		MaxConcurrentStreams: 1024,
+		ReadBufferSize:       512 * 1024,
+		WriteBufferSize:      0,
 	}
 }
 
 func createLogs(
-	ctx context.Context,
+	_ context.Context,
 	settings receiver.Settings,
 	cfg component.Config,
 	next consumer.Logs,
 ) (receiver.Logs, error) {
-	return newSignalReceiver(settings, cfg, next, nil)
+	r, err := loadOrCreateReceiver(settings, cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	r.registerLogsConsumer(next)
+
+	return r, nil
 }
 
 func createMetrics(
-	ctx context.Context,
+	_ context.Context,
 	settings receiver.Settings,
 	cfg component.Config,
 	next consumer.Metrics,
 ) (receiver.Metrics, error) {
-	return newSignalReceiver(settings, cfg, nil, next)
+	r, err := loadOrCreateReceiver(settings, cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	r.registerMetricsConsumer(next)
+
+	return r, nil
 }

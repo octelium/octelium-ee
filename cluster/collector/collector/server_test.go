@@ -12,6 +12,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -304,13 +305,17 @@ func newTestCollectorServer(
 ) *Server {
 	t.Helper()
 
+	internalLogstore := newOTLPGRPCSink(t)
+	internalMetricstore := newOTLPGRPCSink(t)
+
 	srv := &Server{
-		octeliumC:    octeliumC,
-		receiverPort: tests.GetPort(),
+		octeliumC:                   octeliumC,
+		receiverPort:                tests.GetPort(),
+		internalLogstoreEndpoint:    internalLogstore.endpoint(),
+		internalMetricstoreEndpoint: internalMetricstore.endpoint(),
 	}
 
-	err := srv.doRun(ctx)
-	require.NoError(t, err)
+	require.NoError(t, srv.doRun(ctx))
 	require.NotNil(t, srv.p)
 	require.NotNil(t, srv.ccController)
 
@@ -434,9 +439,28 @@ func TestServerExportsLogsAndMetricsThroughSameReceiver(t *testing.T) {
 	octeliumC := tst.C.OcteliumC
 
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
-	srv := newTestCollectorServer(ctx, t, octeliumC)
+	internalLogstore := newOTLPGRPCSink(t)
+	t.Cleanup(func() {
+		internalLogstore.close()
+	})
+
+	internalMetricstore := newOTLPGRPCSink(t)
+	t.Cleanup(func() {
+		internalMetricstore.close()
+	})
+
+	srv := &Server{
+		octeliumC:                   octeliumC,
+		receiverPort:                tests.GetPort(),
+		internalLogstoreEndpoint:    internalLogstore.endpoint(),
+		internalMetricstoreEndpoint: internalMetricstore.endpoint(),
+	}
+
+	require.NoError(t, srv.doRun(ctx))
+	require.NotNil(t, srv.p)
+	require.NotNil(t, srv.ccController)
+
 	t.Cleanup(func() {
 		cancel()
 		shutdownCollector(t, srv)
@@ -449,10 +473,17 @@ func TestServerExportsLogsAndMetricsThroughSameReceiver(t *testing.T) {
 
 	username := "123456"
 	password := "octelium"
+
 	sec := createSecret(ctx, t, octeliumC, password)
 
-	exp := createOTLPHTTPExporter(ctx, t, octeliumC, sink.endpoint(),
-		otlpHTTPBasicAuth(username, sec.Metadata.Name), false)
+	exp := createOTLPHTTPExporter(
+		ctx,
+		t,
+		octeliumC,
+		sink.endpoint(),
+		otlpHTTPBasicAuth(username, sec.Metadata.Name),
+		false,
+	)
 
 	setCollectorPipelines(ctx, t, octeliumC, []*enterprisev1.ClusterConfig_Spec_Collector_Pipeline{
 		{
@@ -482,6 +513,14 @@ func TestServerExportsLogsAndMetricsThroughSameReceiver(t *testing.T) {
 
 	assert.Equal(t, basicAuthHeader(username, password), sink.logAuthHeader())
 	assert.Equal(t, basicAuthHeader(username, password), sink.metricAuthHeader())
+
+	require.Eventually(t, func() bool {
+		return internalLogstore.logRecordCount() >= 1
+	}, 15*time.Second, 200*time.Millisecond)
+
+	require.Eventually(t, func() bool {
+		return internalMetricstore.metricPointCount() >= 1
+	}, 15*time.Second, 200*time.Millisecond)
 }
 
 func TestServerReloadRoutesToUpdatedExporter(t *testing.T) {
@@ -770,4 +809,109 @@ func readOTLPBody(r *http.Request) ([]byte, error) {
 	}
 
 	return io.ReadAll(r.Body)
+}
+
+type otlpGRPCSink struct {
+	port int
+	lis  net.Listener
+	srv  *grpc.Server
+
+	mu sync.Mutex
+
+	logReqs int
+	logRecs int
+
+	metricReqs int
+	metricPts  int
+}
+
+func newOTLPGRPCSink(t *testing.T) *otlpGRPCSink {
+	t.Helper()
+
+	s := &otlpGRPCSink{
+		port: tests.GetPort(),
+	}
+
+	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", s.port))
+	require.NoError(t, err)
+
+	s.lis = lis
+	s.srv = grpc.NewServer(
+		grpc.MaxRecvMsgSize(16<<20),
+		grpc.MaxSendMsgSize(16<<20),
+	)
+
+	plogotlp.RegisterGRPCServer(s.srv, &otlpGRPCLogsSink{sink: s})
+	pmetricotlp.RegisterGRPCServer(s.srv, &otlpGRPCMetricsSink{sink: s})
+
+	go func() {
+		err := s.srv.Serve(lis)
+		if err != nil &&
+			!errors.Is(err, grpc.ErrServerStopped) &&
+			!errors.Is(err, net.ErrClosed) {
+			zap.L().Warn("OTLP gRPC test sink exited", zap.Error(err))
+		}
+	}()
+
+	return s
+}
+
+func (s *otlpGRPCSink) endpoint() string {
+	return fmt.Sprintf("localhost:%d", s.port)
+}
+
+func (s *otlpGRPCSink) logRecordCount() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return s.logRecs
+}
+
+func (s *otlpGRPCSink) metricPointCount() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return s.metricPts
+}
+
+func (s *otlpGRPCSink) close() {
+	if s.srv != nil {
+		s.srv.Stop()
+	}
+
+	if s.lis != nil {
+		_ = s.lis.Close()
+	}
+}
+
+type otlpGRPCLogsSink struct {
+	plogotlp.UnimplementedGRPCServer
+	sink *otlpGRPCSink
+}
+
+func (s *otlpGRPCLogsSink) Export(ctx context.Context, req plogotlp.ExportRequest) (plogotlp.ExportResponse, error) {
+	logs := req.Logs()
+
+	s.sink.mu.Lock()
+	s.sink.logReqs++
+	s.sink.logRecs += logs.LogRecordCount()
+	s.sink.mu.Unlock()
+
+	return plogotlp.NewExportResponse(), nil
+}
+
+type otlpGRPCMetricsSink struct {
+	pmetricotlp.UnimplementedGRPCServer
+	sink *otlpGRPCSink
+}
+
+func (s *otlpGRPCMetricsSink) Export(ctx context.Context, req pmetricotlp.ExportRequest) (pmetricotlp.ExportResponse, error) {
+	metrics := req.Metrics()
+
+	s.sink.mu.Lock()
+	s.sink.metricReqs++
+	s.sink.metricPts += metrics.DataPointCount()
+	s.sink.mu.Unlock()
+
+	return pmetricotlp.NewExportResponse(), nil
 }

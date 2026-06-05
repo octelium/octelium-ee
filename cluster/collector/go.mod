@@ -57,8 +57,10 @@ require (
 
 require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.153.0
+	go.opentelemetry.io/collector/component/componentstatus v0.153.0
 	go.opentelemetry.io/collector/config/configoptional v1.59.0
 	go.opentelemetry.io/collector/exporter/exporterhelper v0.153.0
+	go.opentelemetry.io/collector/receiver/receiverhelper v0.153.0
 	go.opentelemetry.io/otel v1.43.0
 )
 
@@ -270,7 +272,6 @@ require (
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/collector v0.153.0 // indirect
 	go.opentelemetry.io/collector/client v1.59.0 // indirect
-	go.opentelemetry.io/collector/component/componentstatus v0.153.0 // indirect
 	go.opentelemetry.io/collector/component/componenttest v0.153.0 // indirect
 	go.opentelemetry.io/collector/config/configauth v1.59.0 // indirect
 	go.opentelemetry.io/collector/config/confighttp v0.153.0 // indirect

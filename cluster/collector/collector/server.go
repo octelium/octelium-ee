@@ -55,6 +55,9 @@ type Server struct {
 	p            *provider
 	ccController *ccController
 	receiverPort int
+
+	internalLogstoreEndpoint    string
+	internalMetricstoreEndpoint string
 }
 
 func NewServer(ctx context.Context, octeliumC octeliumc.ClientInterface) (*Server, error) {
@@ -124,9 +127,11 @@ func (s *Server) doRun(ctx context.Context) error {
 	factories.Telemetry = otelconftelemetry.NewFactory()
 
 	s.p = &provider{
-		octeliumC:  s.octeliumC,
-		schemeName: "octelium-api",
-		port:       s.receiverPort,
+		octeliumC:                   s.octeliumC,
+		schemeName:                  "octelium-api",
+		port:                        s.receiverPort,
+		internalLogstoreEndpoint:    s.getInternalLogstoreEndpoint(),
+		internalMetricstoreEndpoint: s.getInternalMetricstoreEndpoint(),
 	}
 
 	s.ccController = &ccController{
@@ -260,4 +265,23 @@ func Run(ctx context.Context) error {
 	<-ctx.Done()
 
 	return nil
+}
+
+const (
+	defaultInternalLogstoreEndpoint    = "octeliumee-logstore.octelium.svc:8080"
+	defaultInternalMetricstoreEndpoint = "octeliumee-metricstore.octelium.svc:8080"
+)
+
+func (s *Server) getInternalLogstoreEndpoint() string {
+	if s.internalLogstoreEndpoint != "" {
+		return s.internalLogstoreEndpoint
+	}
+	return defaultInternalLogstoreEndpoint
+}
+
+func (s *Server) getInternalMetricstoreEndpoint() string {
+	if s.internalMetricstoreEndpoint != "" {
+		return s.internalMetricstoreEndpoint
+	}
+	return defaultInternalMetricstoreEndpoint
 }

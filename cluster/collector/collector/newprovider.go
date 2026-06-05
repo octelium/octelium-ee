@@ -31,6 +31,9 @@ type provider struct {
 	octeliumC  octeliumc.ClientInterface
 	port       int
 	mu         sync.RWMutex
+
+	internalLogstoreEndpoint    string
+	internalMetricstoreEndpoint string
 }
 
 type mt = map[string]any
@@ -625,14 +628,14 @@ func (c *provider) getInitConfig(ctx context.Context) (map[string]any, error) {
 	return mt{
 		"exporters": mt{
 			"octelium_otlp/logstore": mt{
-				"endpoint":                   "octeliumee-logstore.octelium.svc:8080",
+				"endpoint":                   c.getInternalLogstoreEndpoint(),
 				"compression":                "gzip",
 				"wait_for_ready":             true,
 				"max_call_recv_msg_size_mib": 16,
 				"max_call_send_msg_size_mib": 16,
 			},
 			"octelium_otlp/metricstore": mt{
-				"endpoint":                   "octeliumee-metricstore.octelium.svc:8080",
+				"endpoint":                   c.getInternalMetricstoreEndpoint(),
 				"compression":                "gzip",
 				"wait_for_ready":             true,
 				"max_call_recv_msg_size_mib": 16,
@@ -644,7 +647,8 @@ func (c *provider) getInitConfig(ctx context.Context) (map[string]any, error) {
 			"octelium_otlp": mt{
 				"endpoint":               fmt.Sprintf(":%d", c.port),
 				"max_recv_msg_size_mib":  16,
-				"max_concurrent_streams": 10000,
+				"max_concurrent_streams": 1024,
+				"read_buffer_size":       512 * 1024,
 			},
 		},
 		"processors": mt{
@@ -696,4 +700,18 @@ func (p *provider) sendUpdate() {
 		zap.L().Debug("Config provider sending update...")
 		fn(&confmap.ChangeEvent{})
 	}
+}
+
+func (p *provider) getInternalLogstoreEndpoint() string {
+	if p.internalLogstoreEndpoint != "" {
+		return p.internalLogstoreEndpoint
+	}
+	return defaultInternalLogstoreEndpoint
+}
+
+func (p *provider) getInternalMetricstoreEndpoint() string {
+	if p.internalMetricstoreEndpoint != "" {
+		return p.internalMetricstoreEndpoint
+	}
+	return defaultInternalMetricstoreEndpoint
 }
