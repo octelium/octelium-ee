@@ -6,7 +6,7 @@ import {
   printResourceNameWithDisplay,
   Resource,
 } from "@/utils/pb";
-import ReactEChartsCore from "echarts-for-react/lib/core";
+import ReactEChartsCore from "echarts-for-react";
 import { BarChart } from "echarts/charts";
 import { GridComponent, TooltipComponent } from "echarts/components";
 import * as echarts from "echarts/core";

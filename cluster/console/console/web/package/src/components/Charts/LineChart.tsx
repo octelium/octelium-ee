@@ -1,4 +1,4 @@
-import ReactEChartsCore from "echarts-for-react/lib/core";
+import ReactEChartsCore from "echarts-for-react";
 import * as echarts from "echarts/core";
 
 import { Timestamp } from "@/apis/google/protobuf/timestamp";

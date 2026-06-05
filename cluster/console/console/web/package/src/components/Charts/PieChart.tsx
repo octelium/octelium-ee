@@ -1,4 +1,4 @@
-import ReactEChartsCore from "echarts-for-react/lib/core";
+import ReactEChartsCore from "echarts-for-react";
 import { PieChart as PieChartC } from "echarts/charts";
 import { LegendComponent, TooltipComponent } from "echarts/components";
 import * as echarts from "echarts/core";

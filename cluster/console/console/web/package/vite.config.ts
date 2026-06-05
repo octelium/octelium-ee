@@ -9,37 +9,27 @@ import { createRequire } from "module";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 
 const require = createRequire(import.meta.url);
-
 const __dirname = path.resolve();
 
 export default defineConfig({
   plugins: [
-    // tailwindcss(),
     react(),
     svgr(),
     nodePolyfills({
-      // Other module polyfills are enabled by default
-      // Explicitly configure globals
       globals: {
-        Buffer: true, // This ensures the global Buffer is polyfilled
+        Buffer: true,
         global: true,
         process: true,
       },
-      // You can also include 'buffer' in the 'include' array if you are using that option
-      // include: ['buffer'],
     }),
-    /*
-    visualizer({
-      emitFile: true,
-      filename: "tmp/stats.html",
-    }),
-    */
   ],
+
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
     },
   },
+
   build: {
     manifest: true,
     commonjsOptions: {
@@ -50,7 +40,7 @@ export default defineConfig({
             return false;
           }
           return "auto";
-        } catch (error) {
+        } catch {
           return "auto";
         }
       },
@@ -59,15 +49,45 @@ export default defineConfig({
   },
 
   server: {
+    host: "0.0.0.0",
+
     proxy: {
       "/octelium.api": {
         target: "http://127.0.0.1:10003",
-        // changeOrigin: true,
-        // secure: false,
-        // proxyTimeout: 5000,
+        changeOrigin: true,
+        secure: false,
+        ws: false,
+
         headers: {
           "x-octelium": "octelium",
           "content-type": "application/grpc-web-text+proto",
+        },
+
+        configure(proxy) {
+          proxy.on("error", (err, req) => {
+            console.error("[vite grpc-web proxy error]", {
+              url: req.url,
+              message: err.message,
+              stack: err.stack,
+            });
+          });
+
+          proxy.on("proxyReq", (proxyReq, req) => {
+            console.log("[vite grpc-web proxy request]", {
+              method: req.method,
+              url: req.url,
+              upstreamPath: proxyReq.path,
+            });
+          });
+
+          proxy.on("proxyRes", (proxyRes, req) => {
+            console.log("[vite grpc-web proxy response]", {
+              url: req.url,
+              statusCode: proxyRes.statusCode,
+              contentType: proxyRes.headers["content-type"],
+              grpcStatus: proxyRes.headers["grpc-status"],
+            });
+          });
         },
       },
     },

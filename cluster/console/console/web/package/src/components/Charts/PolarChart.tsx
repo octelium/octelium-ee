@@ -1,4 +1,4 @@
-import ReactEChartsCore from "echarts-for-react/lib/core";
+import ReactEChartsCore from "echarts-for-react";
 import { BarChart as BarChartC } from "echarts/charts";
 import {
   LegendComponent,
