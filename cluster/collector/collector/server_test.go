@@ -9,18 +9,19 @@
 package collector
 
 import (
+	"compress/gzip"
 	"context"
-	"crypto/tls"
-	"crypto/x509"
-	"encoding/json"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	otests "github.com/octelium/octelium-ee/cluster/common/tests"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
@@ -28,228 +29,186 @@ import (
 	"github.com/octelium/octelium/cluster/common/tests"
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/plog/plogotlp"
+	"go.opentelemetry.io/collector/pdata/pmetric"
+	"go.opentelemetry.io/collector/pdata/pmetric/pmetricotlp"
 	"go.uber.org/zap"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-type tstSrvHTTP struct {
-	port        int
-	srv         *http.Server
-	isHTTP2     bool
-	crt         *tls.Certificate
-	isWS        bool
-	bearerToken string
-	caPool      *x509.CertPool
-	lis         net.Listener
+type otlpSink struct {
+	port int
+	srv  *http.Server
+	lis  net.Listener
 
-	wait      time.Duration
-	startedAt time.Time
+	mu sync.Mutex
+
+	logReqs int
+	logRecs int
+	logAuth string
+
+	metricReqs int
+	metricPts  int
+	metricAuth string
 }
 
-type tstResp struct {
-	Hello string `json:"hello"`
+func newOTLPSink(t *testing.T) *otlpSink {
+	t.Helper()
+
+	s := &otlpSink{
+		port: tests.GetPort(),
+	}
+
+	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", s.port))
+	require.NoError(t, err)
+	s.lis = lis
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/v1/logs", s.handleLogs)
+	mux.HandleFunc("/v1/metrics", s.handleMetrics)
+
+	s.srv = &http.Server{
+		Handler: mux,
+	}
+
+	go func() {
+		err := s.srv.Serve(lis)
+		if err != nil && err != http.ErrServerClosed && !strings.Contains(err.Error(), "use of closed network connection") {
+			zap.L().Warn("OTLP test sink exited", zap.Error(err))
+		}
+	}()
+
+	return s
 }
 
-func (s *tstSrvHTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (s *otlpSink) endpoint() string {
+	return fmt.Sprintf("http://localhost:%d", s.port)
+}
 
-	zap.L().Debug("__________COLL REQ_______",
-		zap.Any("req", r.Header), zap.Any("path", r.URL.Path), zap.String("a", r.Header.Get("Authorization")))
+func (s *otlpSink) handleLogs(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	defer r.Body.Close()
 
-	if s.wait > 0 && time.Since(s.startedAt) < s.wait {
-		w.WriteHeader(http.StatusServiceUnavailable)
+	body, err := readOTLPBody(r)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	if r.Method == http.MethodPost {
-		body, err := io.ReadAll(r.Body)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		defer r.Body.Close()
-
-		var req tstResp
-		if err := json.Unmarshal(body, &req); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		resp, err := json.Marshal(&tstResp{
-			Hello: req.Hello,
-		})
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		w.Write(resp)
+	req := plogotlp.NewExportRequest()
+	if err := req.UnmarshalProto(body); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	if s.bearerToken != "" {
-		bearer := r.Header.Get("Authorization")
-		tkn := strings.TrimPrefix(bearer, "Bearer ")
-		if s.bearerToken != tkn {
-			w.WriteHeader(http.StatusForbidden)
-			return
-		}
-	}
+	s.mu.Lock()
+	s.logReqs++
+	s.logRecs += req.Logs().LogRecordCount()
+	s.logAuth = r.Header.Get("Authorization")
+	s.mu.Unlock()
 
-	w.Header().Set("Content-Type", "application/json")
-	resp, err := json.Marshal(&tstResp{
-		Hello: "world",
-	})
+	resp, err := plogotlp.NewExportResponse().MarshalProto()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	w.Write(resp)
-	return
 
+	w.Header().Set("Content-Type", "application/x-protobuf")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(resp)
 }
 
-func newSrvHTTP(t *testing.T, port int, isHTTP2 bool, crt *tls.Certificate) *tstSrvHTTP {
-	return &tstSrvHTTP{
-		port:    port,
-		isHTTP2: isHTTP2,
-		crt:     crt,
+func (s *otlpSink) handleMetrics(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
 	}
+	defer r.Body.Close()
+
+	body, err := readOTLPBody(r)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	req := pmetricotlp.NewExportRequest()
+	if err := req.UnmarshalProto(body); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	s.mu.Lock()
+	s.metricReqs++
+	s.metricPts += req.Metrics().DataPointCount()
+	s.metricAuth = r.Header.Get("Authorization")
+	s.mu.Unlock()
+
+	resp, err := pmetricotlp.NewExportResponse().MarshalProto()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/x-protobuf")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(resp)
 }
 
-func (s *tstSrvHTTP) run(t *testing.T) {
-	addr := fmt.Sprintf("localhost:%d", s.port)
-	var err error
-
-	handler := http.AllowQuerySemicolons(s)
-	if s.isHTTP2 {
-		handler = h2c.NewHandler(handler, &http2.Server{})
-	}
-	s.srv = &http.Server{
-		Addr:    addr,
-		Handler: handler,
-	}
-
-	if s.crt != nil {
-		zap.L().Debug("upstream listening over TLS")
-		s.lis, err = func() (net.Listener, error) {
-			for range 100 {
-				ret, err := tls.Listen("tcp", addr, s.getTLSConfig())
-				if err == nil {
-					return ret, nil
-				}
-				time.Sleep(1 * time.Second)
-			}
-			return nil, errors.Errorf("Could not listen tstSrvHTTP")
-		}()
-		assert.Nil(t, err)
-	} else {
-		s.lis, err = func() (net.Listener, error) {
-			for range 100 {
-				ret, err := net.Listen("tcp", addr)
-				if err == nil {
-					return ret, nil
-				}
-				time.Sleep(1 * time.Second)
-			}
-			return nil, errors.Errorf("Could not listen tstSrvHTTP")
-		}()
-		assert.Nil(t, err)
-	}
-
-	s.startedAt = time.Now()
-	go s.srv.Serve(s.lis)
+func (s *otlpSink) logRecordCount() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.logRecs
 }
 
-func (s *tstSrvHTTP) getTLSConfig() *tls.Config {
-	if s.crt == nil {
-		return nil
-	}
-
-	return &tls.Config{
-		Certificates: []tls.Certificate{*s.crt},
-		NextProtos: func() []string {
-			if s.isHTTP2 {
-				return []string{"h2", "http/1.1"}
-			} else {
-				return []string{"http/1.1"}
-			}
-		}(),
-		RootCAs: s.caPool,
-	}
-
+func (s *otlpSink) metricPointCount() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.metricPts
 }
 
-func (s *tstSrvHTTP) close() {
+func (s *otlpSink) logAuthHeader() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.logAuth
+}
+
+func (s *otlpSink) metricAuthHeader() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.metricAuth
+}
+
+func (s *otlpSink) close() {
 	if s.srv != nil {
-		s.srv.Close()
+		_ = s.srv.Close()
 	}
 	if s.lis != nil {
-		s.lis.Close()
+		_ = s.lis.Close()
 	}
-
-	time.Sleep(1 * time.Second)
 }
 
-func TestServer(t *testing.T) {
-	ctx := context.Background()
-	logger, err := zap.NewDevelopment()
-	assert.Nil(t, err)
+func basicAuthHeader(username, password string) string {
+	return "Basic " + base64.StdEncoding.EncodeToString([]byte(username+":"+password))
+}
 
-	zap.ReplaceGlobals(logger)
+func createSecret(
+	ctx context.Context,
+	t *testing.T,
+	octeliumC octeliumc.ClientInterface,
+	value string,
+) *enterprisev1.Secret {
+	t.Helper()
 
-	tst, err := otests.Initialize(nil)
-	assert.Nil(t, err, "%+v", err)
-	t.Cleanup(func() {
-		tst.Destroy()
-	})
-	fakeC := tst.C
-
-	srv := &Server{
-		octeliumC:    fakeC.OcteliumC,
-		receiverPort: tests.GetPort(),
-	}
-	zap.S().Debugf("Running srv")
-
-	ctx, cancelFn := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancelFn()
-
-	/*
-		err = srv.initCollectorExporters(ctx)
-		assert.Nil(t, err)
-	*/
-	err = srv.doRun(ctx)
-	assert.Nil(t, err)
-	zap.S().Debugf("Starting watch loop")
-
-	srv.p.sendUpdate()
-	time.Sleep(1 * time.Second)
-
-	upstreamPort := tests.GetPort()
-	upstreamSrv := newSrvHTTP(t, upstreamPort, false, nil)
-
-	upstreamSrv.run(t)
-
-	{
-		cc, err := fakeC.OcteliumC.CoreV1Utils().GetClusterConfig(ctx)
-		assert.Nil(t, err)
-
-		_, err = fakeC.OcteliumC.CoreC().UpdateClusterConfig(ctx, cc)
-		assert.Nil(t, err)
-
-		srv.p.sendUpdate()
-		time.Sleep(1 * time.Second)
-	}
-
-	dummySecret, err := fakeC.OcteliumC.EnterpriseC().CreateSecret(ctx, &enterprisev1.Secret{
+	sec, err := octeliumC.EnterpriseC().CreateSecret(ctx, &enterprisev1.Secret{
 		Metadata: &metav1.Metadata{
 			Name: utilrand.GetRandomStringCanonical(8),
 		},
@@ -257,27 +216,385 @@ func TestServer(t *testing.T) {
 		Status: &enterprisev1.Secret_Status{},
 		Data: &enterprisev1.Secret_Data{
 			Type: &enterprisev1.Secret_Data_Value{
-				Value: "octelium",
+				Value: value,
 			},
 		},
 	})
-	assert.Nil(t, err)
+	require.NoError(t, err)
+	require.NotNil(t, sec)
+	require.NotNil(t, sec.Metadata)
+	require.NotEmpty(t, sec.Metadata.Name)
 
-	otlpExporter, err := fakeC.OcteliumC.EnterpriseC().CreateCollectorExporter(ctx, &enterprisev1.CollectorExporter{
+	return sec
+}
+
+func otlpHTTPBasicAuth(username, secretName string) *enterprisev1.CollectorExporter_Spec_OTLPHTTP_Auth {
+	return &enterprisev1.CollectorExporter_Spec_OTLPHTTP_Auth{
+		Type: &enterprisev1.CollectorExporter_Spec_OTLPHTTP_Auth_Basic_{
+			Basic: &enterprisev1.CollectorExporter_Spec_OTLPHTTP_Auth_Basic{
+				Username: username,
+				Password: &enterprisev1.CollectorExporter_Spec_OTLPHTTP_Auth_Basic_Password{
+					Type: &enterprisev1.CollectorExporter_Spec_OTLPHTTP_Auth_Basic_Password_FromSecret{
+						FromSecret: secretName,
+					},
+				},
+			},
+		},
+	}
+}
+
+func createOTLPHTTPExporter(
+	ctx context.Context,
+	t *testing.T,
+	octeliumC octeliumc.ClientInterface,
+	endpoint string,
+	auth *enterprisev1.CollectorExporter_Spec_OTLPHTTP_Auth,
+	disabled bool,
+) *enterprisev1.CollectorExporter {
+	t.Helper()
+
+	exp, err := octeliumC.EnterpriseC().CreateCollectorExporter(ctx, &enterprisev1.CollectorExporter{
 		Metadata: &metav1.Metadata{
 			Name: utilrand.GetRandomStringCanonical(8),
 		},
 		Spec: &enterprisev1.CollectorExporter_Spec{
+			IsDisabled: disabled,
 			Type: &enterprisev1.CollectorExporter_Spec_OtlpHTTP{
 				OtlpHTTP: &enterprisev1.CollectorExporter_Spec_OTLPHTTP{
-					Endpoint: fmt.Sprintf("http://localhost:%d", upstreamPort),
-					Auth: &enterprisev1.CollectorExporter_Spec_OTLPHTTP_Auth{
-						Type: &enterprisev1.CollectorExporter_Spec_OTLPHTTP_Auth_Basic_{
-							Basic: &enterprisev1.CollectorExporter_Spec_OTLPHTTP_Auth_Basic{
-								Username: "123456",
-								Password: &enterprisev1.CollectorExporter_Spec_OTLPHTTP_Auth_Basic_Password{
-									Type: &enterprisev1.CollectorExporter_Spec_OTLPHTTP_Auth_Basic_Password_FromSecret{
-										FromSecret: dummySecret.Metadata.Name,
+					Endpoint: endpoint,
+					Auth:     auth,
+				},
+			},
+		},
+		Status: &enterprisev1.CollectorExporter_Status{},
+	})
+	require.NoError(t, err)
+	require.NotNil(t, exp)
+	require.NotNil(t, exp.Metadata)
+	require.NotEmpty(t, exp.Metadata.Name)
+
+	return exp
+}
+
+func setCollectorPipelines(
+	ctx context.Context,
+	t *testing.T,
+	octeliumC octeliumc.ClientInterface,
+	pipelines []*enterprisev1.ClusterConfig_Spec_Collector_Pipeline,
+) {
+	t.Helper()
+
+	cc, err := octeliumC.EnterpriseV1Utils().GetClusterConfig(ctx)
+	require.NoError(t, err)
+	require.NotNil(t, cc)
+	require.NotNil(t, cc.Spec)
+
+	cc.Spec.Collector = &enterprisev1.ClusterConfig_Spec_Collector{
+		Pipelines: pipelines,
+	}
+
+	_, err = octeliumC.EnterpriseC().UpdateClusterConfig(ctx, cc)
+	require.NoError(t, err)
+}
+
+func newTestCollectorServer(
+	ctx context.Context,
+	t *testing.T,
+	octeliumC octeliumc.ClientInterface,
+) *Server {
+	t.Helper()
+
+	srv := &Server{
+		octeliumC:    octeliumC,
+		receiverPort: tests.GetPort(),
+	}
+
+	err := srv.doRun(ctx)
+	require.NoError(t, err)
+	require.NotNil(t, srv.p)
+	require.NotNil(t, srv.ccController)
+
+	return srv
+}
+
+func newOTLPGRPCConn(ctx context.Context, port int) (*grpc.ClientConn, error) {
+	return grpc.NewClient(
+		fmt.Sprintf("localhost:%d", port),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithConnectParams(grpc.ConnectParams{Backoff: backoff.DefaultConfig}),
+	)
+}
+
+func exportTestLog(ctx context.Context, port int) error {
+	conn, err := newOTLPGRPCConn(ctx, port)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	client := plogotlp.NewGRPCClient(conn)
+
+	curLogs := plog.NewLogs()
+	curLogs.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty()
+	lr := curLogs.ResourceLogs().At(0).ScopeLogs().At(0).LogRecords().AppendEmpty()
+
+	convertLogRecord(&corev1.AccessLog{
+		Metadata: &metav1.LogMetadata{
+			Id:        utilrand.GetRandomStringCanonical(18),
+			CreatedAt: pbutils.Now(),
+		},
+	}, lr)
+
+	_, err = client.Export(ctx, plogotlp.NewExportRequestFromLogs(curLogs))
+	return err
+}
+
+func exportTestMetric(ctx context.Context, port int) error {
+	conn, err := newOTLPGRPCConn(ctx, port)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	client := pmetricotlp.NewGRPCClient(conn)
+
+	md := pmetric.NewMetrics()
+	rm := md.ResourceMetrics().AppendEmpty()
+	sm := rm.ScopeMetrics().AppendEmpty()
+
+	metric := sm.Metrics().AppendEmpty()
+	metric.SetName("octelium.collector.test.metric")
+
+	gauge := metric.SetEmptyGauge()
+	dp := gauge.DataPoints().AppendEmpty()
+	dp.SetTimestamp(pcommon.NewTimestampFromTime(time.Now().UTC()))
+	dp.SetIntValue(1)
+
+	_, err = client.Export(ctx, pmetricotlp.NewExportRequestFromMetrics(md))
+	return err
+}
+
+func requireEventuallyExportLog(ctx context.Context, t *testing.T, port int) {
+	t.Helper()
+
+	require.Eventually(t, func() bool {
+		err := exportTestLog(ctx, port)
+		if err != nil {
+			zap.L().Debug("Could not export test log yet", zap.Error(err))
+			return false
+		}
+		return true
+	}, 15*time.Second, 200*time.Millisecond)
+}
+
+func requireEventuallyExportMetric(ctx context.Context, t *testing.T, port int) {
+	t.Helper()
+
+	require.Eventually(t, func() bool {
+		err := exportTestMetric(ctx, port)
+		if err != nil {
+			zap.L().Debug("Could not export test metric yet", zap.Error(err))
+			return false
+		}
+		return true
+	}, 15*time.Second, 200*time.Millisecond)
+}
+
+func shutdownCollector(t *testing.T, srv *Server) {
+	t.Helper()
+
+	if srv == nil || srv.collector == nil {
+		return
+	}
+
+	done := make(chan struct{})
+	go func() {
+		srv.collector.Shutdown()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(15 * time.Second):
+		t.Fatal("could not shutdown collector")
+	}
+}
+
+func TestServerExportsLogsAndMetricsThroughSameReceiver(t *testing.T) {
+	logger, err := zap.NewDevelopment()
+	require.NoError(t, err)
+	zap.ReplaceGlobals(logger)
+
+	tst, err := otests.Initialize(nil)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		tst.Destroy()
+	})
+
+	octeliumC := tst.C.OcteliumC
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	srv := newTestCollectorServer(ctx, t, octeliumC)
+	t.Cleanup(func() {
+		cancel()
+		shutdownCollector(t, srv)
+	})
+
+	sink := newOTLPSink(t)
+	t.Cleanup(func() {
+		sink.close()
+	})
+
+	username := "123456"
+	password := "octelium"
+	sec := createSecret(ctx, t, octeliumC, password)
+
+	exp := createOTLPHTTPExporter(ctx, t, octeliumC, sink.endpoint(),
+		otlpHTTPBasicAuth(username, sec.Metadata.Name), false)
+
+	setCollectorPipelines(ctx, t, octeliumC, []*enterprisev1.ClusterConfig_Spec_Collector_Pipeline{
+		{
+			Name:      "pipeline-logs",
+			Type:      enterprisev1.ClusterConfig_Spec_Collector_Pipeline_LOGS,
+			Exporters: []string{exp.Metadata.Name},
+		},
+		{
+			Name:      "pipeline-metrics",
+			Type:      enterprisev1.ClusterConfig_Spec_Collector_Pipeline_METRICS,
+			Exporters: []string{exp.Metadata.Name},
+		},
+	})
+
+	srv.p.sendUpdate()
+
+	requireEventuallyExportLog(ctx, t, srv.p.port)
+	requireEventuallyExportMetric(ctx, t, srv.p.port)
+
+	require.Eventually(t, func() bool {
+		return sink.logRecordCount() >= 1
+	}, 15*time.Second, 200*time.Millisecond)
+
+	require.Eventually(t, func() bool {
+		return sink.metricPointCount() >= 1
+	}, 15*time.Second, 200*time.Millisecond)
+
+	assert.Equal(t, basicAuthHeader(username, password), sink.logAuthHeader())
+	assert.Equal(t, basicAuthHeader(username, password), sink.metricAuthHeader())
+}
+
+func TestServerReloadRoutesToUpdatedExporter(t *testing.T) {
+	logger, err := zap.NewDevelopment()
+	require.NoError(t, err)
+	zap.ReplaceGlobals(logger)
+
+	tst, err := otests.Initialize(nil)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		tst.Destroy()
+	})
+
+	octeliumC := tst.C.OcteliumC
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	srv := newTestCollectorServer(ctx, t, octeliumC)
+	t.Cleanup(func() {
+		cancel()
+		shutdownCollector(t, srv)
+	})
+
+	sinkA := newOTLPSink(t)
+	t.Cleanup(func() {
+		sinkA.close()
+	})
+
+	sinkB := newOTLPSink(t)
+	t.Cleanup(func() {
+		sinkB.close()
+	})
+
+	expA := createOTLPHTTPExporter(ctx, t, octeliumC, sinkA.endpoint(), nil, false)
+	expB := createOTLPHTTPExporter(ctx, t, octeliumC, sinkB.endpoint(), nil, false)
+
+	setCollectorPipelines(ctx, t, octeliumC, []*enterprisev1.ClusterConfig_Spec_Collector_Pipeline{
+		{
+			Name:      "reload-logs",
+			Type:      enterprisev1.ClusterConfig_Spec_Collector_Pipeline_LOGS,
+			Exporters: []string{expA.Metadata.Name},
+		},
+	})
+
+	srv.p.sendUpdate()
+
+	requireEventuallyExportLog(ctx, t, srv.p.port)
+	require.Eventually(t, func() bool {
+		return sinkA.logRecordCount() >= 1
+	}, 15*time.Second, 200*time.Millisecond)
+
+	sinkABefore := sinkA.logRecordCount()
+
+	setCollectorPipelines(ctx, t, octeliumC, []*enterprisev1.ClusterConfig_Spec_Collector_Pipeline{
+		{
+			Name:      "reload-logs",
+			Type:      enterprisev1.ClusterConfig_Spec_Collector_Pipeline_LOGS,
+			Exporters: []string{expB.Metadata.Name},
+		},
+	})
+
+	srv.p.sendUpdate()
+
+	require.Eventually(t, func() bool {
+		err := exportTestLog(ctx, srv.p.port)
+		if err != nil {
+			zap.L().Debug("Could not export test log after reload yet", zap.Error(err))
+			return false
+		}
+		return sinkB.logRecordCount() >= 1
+	}, 15*time.Second, 200*time.Millisecond)
+
+	assert.GreaterOrEqual(t, sinkA.logRecordCount(), sinkABefore)
+	assert.GreaterOrEqual(t, sinkB.logRecordCount(), 1)
+}
+
+func TestGetExporterElasticsearchBasicAuthDoesNotPanic(t *testing.T) {
+	ctx := context.Background()
+
+	tst, err := otests.Initialize(nil)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		tst.Destroy()
+	})
+
+	octeliumC := tst.C.OcteliumC
+
+	p := &provider{
+		octeliumC:  octeliumC,
+		schemeName: "octelium-api",
+		port:       tests.GetPort(),
+	}
+
+	password := "es-pass-" + utilrand.GetRandomStringCanonical(6)
+	username := "es-user"
+	sec := createSecret(ctx, t, octeliumC, password)
+
+	esExp := &enterprisev1.CollectorExporter{
+		Metadata: &metav1.Metadata{
+			Name: utilrand.GetRandomStringCanonical(8),
+		},
+		Spec: &enterprisev1.CollectorExporter_Spec{
+			Type: &enterprisev1.CollectorExporter_Spec_Elasticsearch_{
+				Elasticsearch: &enterprisev1.CollectorExporter_Spec_Elasticsearch{
+					Endpoints: []string{"http://localhost:9200"},
+					Auth: &enterprisev1.CollectorExporter_Spec_Elasticsearch_Auth{
+						Type: &enterprisev1.CollectorExporter_Spec_Elasticsearch_Auth_Basic_{
+							Basic: &enterprisev1.CollectorExporter_Spec_Elasticsearch_Auth_Basic{
+								User: username,
+								Password: &enterprisev1.CollectorExporter_Spec_Elasticsearch_Auth_Basic_Password{
+									Type: &enterprisev1.CollectorExporter_Spec_Elasticsearch_Auth_Basic_Password_FromSecret{
+										FromSecret: sec.Metadata.Name,
 									},
 								},
 							},
@@ -286,173 +603,149 @@ func TestServer(t *testing.T) {
 				},
 			},
 		},
+		Status: &enterprisev1.CollectorExporter_Status{},
+	}
+
+	var info *exporterInfo
+	require.NotPanics(t, func() {
+		info, err = p.getExporter(ctx, esExp)
 	})
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
-	{
+	require.NotNil(t, info)
+	headers, ok := info.exporterMap["headers"].(map[string]any)
+	require.True(t, ok)
 
-		/*
-			clickhouseCollector, err := fakeC.OcteliumC.EnterpriseC().CreateCollectorExporter(ctx, &enterprisev1.CollectorExporter{
-				Metadata: &metav1.Metadata{
-					Name: utilrand.GetRandomStringCanonical(6),
-				},
-				Spec: &enterprisev1.CollectorExporter_Spec{
-					Type: &enterprisev1.CollectorExporter_Spec_Clickhouse_{
-						Clickhouse: &enterprisev1.CollectorExporter_Spec_Clickhouse{
-							Endpoint: "tcp://127.0.0.1:9000?dial_timeout=10s",
-							Username: "octelium",
-							Password: &enterprisev1.CollectorExporter_Spec_Clickhouse_Password{
-								Type: &enterprisev1.CollectorExporter_Spec_Clickhouse_Password_FromSecret{
-									FromSecret: dummySecret.Metadata.Name,
-								},
-							},
-						},
-					},
-				},
-				Status: &enterprisev1.CollectorExporter_Status{},
-			})
-			assert.Nil(t, err)
-		*/
+	assert.Equal(t, basicAuthHeader(username, password), headers["Authorization"])
+}
 
-		/*
-			logzioCollector, err := fakeC.OcteliumC.EnterpriseC().CreateCollectorExporter(ctx, &enterprisev1.CollectorExporter{
-				Metadata: &metav1.Metadata{
-					Name: utilrand.GetRandomStringCanonical(6),
-				},
-				Spec: &enterprisev1.CollectorExporter_Spec{
-					Type: &enterprisev1.CollectorExporter_Spec_Logzio_{
-						Logzio: &enterprisev1.CollectorExporter_Spec_Logzio{},
-					},
-				},
-				Status: &enterprisev1.CollectorExporter_Status{},
-			})
-			assert.Nil(t, err)
-		*/
+func TestGetConfigSkipsDisabledAndUnresolvableExporters(t *testing.T) {
+	ctx := context.Background()
 
-		/*
-			influxDBCollector, err := fakeC.OcteliumC.EnterpriseC().CreateCollectorExporter(ctx, &enterprisev1.CollectorExporter{
-				Metadata: &metav1.Metadata{
-					Name: utilrand.GetRandomStringCanonical(6),
-				},
-				Spec: &enterprisev1.CollectorExporter_Spec{
-					Type: &enterprisev1.CollectorExporter_Spec_InfluxDB_{
-						InfluxDB: &enterprisev1.CollectorExporter_Spec_InfluxDB{
-							Endpoint:      "https://eu-central-1-1.aws.cloud2.influxdata.com",
-							Bucket:        "bucket-01",
-							Org:           "org-1",
-							MetricsSchema: "telegraf-prometheus-",
+	tst, err := otests.Initialize(nil)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		tst.Destroy()
+	})
 
-							Token: &enterprisev1.CollectorExporter_Spec_InfluxDB_Token{
-								Type: &enterprisev1.CollectorExporter_Spec_InfluxDB_Token_FromSecret{
-									FromSecret: dummySecret.Metadata.Name,
-								},
-							},
-						},
-					},
-				},
-				Status: &enterprisev1.CollectorExporter_Status{},
-			})
-			assert.Nil(t, err)
-		*/
+	octeliumC := tst.C.OcteliumC
 
-		cc, err := fakeC.OcteliumC.EnterpriseV1Utils().GetClusterConfig(ctx)
-		assert.Nil(t, err)
-		cc.Spec.Collector = &enterprisev1.ClusterConfig_Spec_Collector{
+	p := &provider{
+		octeliumC:  octeliumC,
+		schemeName: "octelium-api",
+		port:       tests.GetPort(),
+	}
 
-			Pipelines: []*enterprisev1.ClusterConfig_Spec_Collector_Pipeline{
-				{
-					Name: "pipline1",
-					Type: enterprisev1.ClusterConfig_Spec_Collector_Pipeline_LOGS,
-					Exporters: []string{
-						otlpExporter.Metadata.Name,
-						// clickhouseCollector.Metadata.Name,
-						// logzioCollector.Metadata.Name,
-						// influxDBCollector.Metadata.Name,
-					},
-				},
-				{
-					Name: "pipline2",
-					Type: enterprisev1.ClusterConfig_Spec_Collector_Pipeline_METRICS,
-					Exporters: []string{
-						otlpExporter.Metadata.Name,
-						// clickhouseCollector.Metadata.Name,
-						// logzioCollector.Metadata.Name,
-						// influxDBCollector.Metadata.Name,
-					},
-				},
+	working := createOTLPHTTPExporter(ctx, t, octeliumC, "http://localhost:1", nil, false)
+	disabled := createOTLPHTTPExporter(ctx, t, octeliumC, "http://localhost:1", nil, true)
+	broken := createOTLPHTTPExporter(ctx, t, octeliumC, "http://localhost:1",
+		otlpHTTPBasicAuth("u", "nonexistent-secret-"+utilrand.GetRandomStringCanonical(6)), false)
+
+	setCollectorPipelines(ctx, t, octeliumC, []*enterprisev1.ClusterConfig_Spec_Collector_Pipeline{
+		{
+			Name: "skiptest",
+			Type: enterprisev1.ClusterConfig_Spec_Collector_Pipeline_LOGS,
+			Exporters: []string{
+				working.Metadata.Name,
+				disabled.Metadata.Name,
+				broken.Metadata.Name,
 			},
+		},
+	})
 
-			/*
-							AdditionalInlineConfig: `
-				receivers:
-				  otlp:
-				    protocols:
-				      grpc:
-				      http:
-				exporters:
-				  otlp/gg01:
-				    endpoint: otelcol.observability.svc.cluster.local:443
+	cfg, err := p.getConfig(ctx)
+	require.NoError(t, err)
 
-				service:
-				  extensions: []
-				  pipelines:
-				    logs/a01:
-				      receivers: [otlp]
-				      exporters: [otlp/gg01]
-				`,
+	exporters, ok := cfg["exporters"].(map[string]any)
+	require.True(t, ok)
 
-			*/
-		}
+	assert.Contains(t, exporters, p.getTypeName(working))
+	assert.NotContains(t, exporters, p.getTypeName(disabled))
+	assert.NotContains(t, exporters, p.getTypeName(broken))
 
-		cc, err = fakeC.OcteliumC.EnterpriseC().UpdateClusterConfig(ctx, cc)
-		assert.Nil(t, err)
+	service, ok := cfg["service"].(map[string]any)
+	require.True(t, ok)
 
-		srv.p.sendUpdate()
-		time.Sleep(1 * time.Second)
+	pipelines, ok := service["pipelines"].(map[string]any)
+	require.True(t, ok)
+
+	lp, ok := pipelines["logs/skiptest"].(map[string]any)
+	require.True(t, ok)
+
+	exporterNames, ok := lp["exporters"].([]string)
+	require.True(t, ok)
+
+	assert.Equal(t, []string{p.getTypeName(working)}, exporterNames)
+}
+
+func TestGetConfigExporterInBothPipelines(t *testing.T) {
+	ctx := context.Background()
+
+	tst, err := otests.Initialize(nil)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		tst.Destroy()
+	})
+
+	octeliumC := tst.C.OcteliumC
+
+	p := &provider{
+		octeliumC:  octeliumC,
+		schemeName: "octelium-api",
+		port:       tests.GetPort(),
 	}
 
-	{
-		grpcOpts := []grpc.DialOption{
-			grpc.WithConnectParams(grpc.ConnectParams{
-				Backoff: backoff.DefaultConfig,
-			}),
-			grpc.WithTransportCredentials(insecure.NewCredentials()),
-		}
+	exp := createOTLPHTTPExporter(ctx, t, octeliumC, "http://localhost:1", nil, false)
 
-		conn, err := grpc.NewClient(
-			fmt.Sprintf("localhost:%d", srv.ccController.p.port), grpcOpts...)
-		assert.Nil(t, err)
-		client := plogotlp.NewGRPCClient(conn)
+	setCollectorPipelines(ctx, t, octeliumC, []*enterprisev1.ClusterConfig_Spec_Collector_Pipeline{
+		{
+			Name:      "lp",
+			Type:      enterprisev1.ClusterConfig_Spec_Collector_Pipeline_LOGS,
+			Exporters: []string{exp.Metadata.Name},
+		},
+		{
+			Name:      "mp",
+			Type:      enterprisev1.ClusterConfig_Spec_Collector_Pipeline_METRICS,
+			Exporters: []string{exp.Metadata.Name},
+		},
+	})
 
-		curLogs := plog.NewLogs()
-		curLogs.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty()
+	cfg, err := p.getConfig(ctx)
+	require.NoError(t, err)
 
-		logRecords := curLogs.ResourceLogs().At(0).ScopeLogs().At(0).LogRecords()
-		lr := logRecords.AppendEmpty()
-		convertLogRecord(&corev1.AccessLog{
-			Metadata: &metav1.LogMetadata{
-				Id:        utilrand.GetRandomStringCanonical(18),
-				CreatedAt: pbutils.Now(),
-			},
-		}, lr)
-		_, err = client.Export(ctx, plogotlp.NewExportRequestFromLogs(curLogs))
-		assert.Nil(t, err, "%+v", err)
-	}
+	service, ok := cfg["service"].(map[string]any)
+	require.True(t, ok)
 
-	time.Sleep(3 * time.Second)
-	ctx, cancel := context.WithCancel(ctx)
+	pipelines, ok := service["pipelines"].(map[string]any)
+	require.True(t, ok)
 
-	go func() {
-		srv.collector.Shutdown()
-		cancel()
-	}()
+	assert.Contains(t, pipelines, "logs/lp")
+	assert.Contains(t, pipelines, "metrics/mp")
+	assert.Contains(t, pipelines, "logs")
+	assert.Contains(t, pipelines, "metrics")
 
-	select {
-	case <-ctx.Done():
-	case <-time.After(15 * time.Second):
-		zap.S().Fatal("Could not shutdown server")
-	}
+	lp, ok := pipelines["logs/lp"].(map[string]any)
+	require.True(t, ok)
 
+	lpExporters, ok := lp["exporters"].([]string)
+	require.True(t, ok)
+	assert.Equal(t, []string{p.getTypeName(exp)}, lpExporters)
+
+	mp, ok := pipelines["metrics/mp"].(map[string]any)
+	require.True(t, ok)
+
+	mpExporters, ok := mp["exporters"].([]string)
+	require.True(t, ok)
+	assert.Equal(t, []string{p.getTypeName(exp)}, mpExporters)
+}
+
+func TestReadOTLPBodyRejectsInvalidGzip(t *testing.T) {
+	req, err := http.NewRequest(http.MethodPost, "/v1/logs", strings.NewReader("not-gzip"))
+	require.NoError(t, err)
+	req.Header.Set("Content-Encoding", "gzip")
+
+	_, err = readOTLPBody(req)
+	assert.Error(t, err)
 }
 
 func convertLogRecord(in *corev1.AccessLog, ret plog.LogRecord) {
@@ -463,4 +756,18 @@ func convertLogRecord(in *corev1.AccessLog, ret plog.LogRecord) {
 	ret.SetSeverityNumber(plog.SeverityNumberInfo)
 	ret.SetSeverityText(plog.SeverityNumberInfo.String())
 	ret.Body().SetEmptyMap().FromRaw(inMap)
+}
+
+func readOTLPBody(r *http.Request) ([]byte, error) {
+	if strings.EqualFold(r.Header.Get("Content-Encoding"), "gzip") {
+		gz, err := gzip.NewReader(r.Body)
+		if err != nil {
+			return nil, err
+		}
+		defer gz.Close()
+
+		return io.ReadAll(gz)
+	}
+
+	return io.ReadAll(r.Body)
 }
