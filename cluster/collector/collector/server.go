@@ -12,6 +12,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/octelium/octelium-ee/cluster/collector/collector/octeliumotlpreceiver"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/watchers"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
@@ -43,7 +44,6 @@ import (
 	"go.opentelemetry.io/collector/processor/batchprocessor"
 	"go.opentelemetry.io/collector/processor/memorylimiterprocessor"
 	"go.opentelemetry.io/collector/receiver"
-	"go.opentelemetry.io/collector/receiver/otlpreceiver"
 	"go.opentelemetry.io/collector/service/telemetry/otelconftelemetry"
 	"go.uber.org/zap"
 )
@@ -72,7 +72,8 @@ func (s *Server) doRun(ctx context.Context) error {
 	factories := otelcol.Factories{}
 
 	factories.Receivers, err = otelcol.MakeFactoryMap[receiver.Factory](
-		otlpreceiver.NewFactory(),
+		// otlpreceiver.NewFactory(),
+		octeliumotlpreceiver.NewFactory(),
 	)
 	if err != nil {
 		return err
@@ -155,7 +156,7 @@ func (s *Server) doRun(ctx context.Context) error {
 					return
 				}
 
-				zap.S().Errorf("Could not run collector. Trying again...: %+v", err)
+				zap.L().Error("Could not run collector. Trying again...", zap.Error(err))
 
 				select {
 				case <-ctx.Done():
@@ -191,10 +192,10 @@ type ccController struct {
 func (c *ccController) OnUpdate(ctx context.Context, new, old *enterprisev1.ClusterConfig) error {
 
 	if !pbutils.IsEqual(new.Spec.Collector, old.Spec.Collector) {
-		zap.S().Debugf("Collector spec changed. Instructing a config change...")
+		zap.L().Debug("Collector spec changed. Instructing a config change...")
 		c.p.sendUpdate()
 	} else {
-		zap.S().Debugf("Cluster config changed but not Collector spec. Nothing to be done...")
+		zap.L().Debug("Cluster config changed but not Collector spec. Nothing to be done...")
 	}
 
 	return nil

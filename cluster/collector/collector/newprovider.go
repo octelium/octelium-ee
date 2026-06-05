@@ -607,7 +607,7 @@ func (c *provider) getConfig(ctx context.Context) (map[string]any, error) {
 		}
 
 		pipelineMap := mt{
-			"receivers":  []string{"otlp/octelium"},
+			"receivers":  []string{"octelium_otlp"},
 			"exporters":  exporters,
 			"processors": []string{"memory_limiter", "batch"},
 		}
@@ -639,12 +639,10 @@ func (c *provider) getInitConfig(ctx context.Context) (map[string]any, error) {
 		},
 		"extensions": mt{},
 		"receivers": mt{
-			"otlp/octelium": mt{
-				"protocols": mt{
-					"grpc": mt{
-						"endpoint": fmt.Sprintf(":%d", c.port),
-					},
-				},
+			"octelium_otlp": mt{
+				"endpoint":               fmt.Sprintf(":%d", c.port),
+				"max_recv_msg_size_mib":  16,
+				"max_concurrent_streams": 10000,
 			},
 		},
 		"processors": mt{
@@ -658,12 +656,12 @@ func (c *provider) getInitConfig(ctx context.Context) (map[string]any, error) {
 			"extensions": []string{},
 			"pipelines": mt{
 				"logs": mt{
-					"receivers":  []string{"otlp/octelium"},
+					"receivers":  []string{"octelium_otlp"},
 					"processors": []string{"memory_limiter", "batch"},
 					"exporters":  []string{"otlp/octelium-logs"},
 				},
 				"metrics": mt{
-					"receivers":  []string{"otlp/octelium"},
+					"receivers":  []string{"octelium_otlp"},
 					"processors": []string{"memory_limiter", "batch"},
 					"exporters":  []string{"otlp/octelium-metrics"},
 				},
