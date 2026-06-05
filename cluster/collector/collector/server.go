@@ -12,6 +12,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/octelium/octelium-ee/cluster/collector/collector/octeliumotlpexporter"
 	"github.com/octelium/octelium-ee/cluster/collector/collector/octeliumotlpreceiver"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/watchers"
@@ -98,6 +99,7 @@ func (s *Server) doRun(ctx context.Context) error {
 	}
 
 	factories.Exporters, err = otelcol.MakeFactoryMap[exporter.Factory](
+		octeliumotlpexporter.NewFactory(),
 		otlpexporter.NewFactory(),
 		otlphttpexporter.NewFactory(),
 

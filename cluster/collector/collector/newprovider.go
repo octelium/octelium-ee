@@ -624,17 +624,19 @@ func (c *provider) getInitConfig(ctx context.Context) (map[string]any, error) {
 
 	return mt{
 		"exporters": mt{
-			"otlp/octelium-logs": mt{
-				"endpoint": "octeliumee-logstore.octelium.svc:8080",
-				"tls": mt{
-					"insecure": true,
-				},
+			"octelium_otlp/logstore": mt{
+				"endpoint":                   "octeliumee-logstore.octelium.svc:8080",
+				"compression":                "gzip",
+				"wait_for_ready":             true,
+				"max_call_recv_msg_size_mib": 16,
+				"max_call_send_msg_size_mib": 16,
 			},
-			"otlp/octelium-metrics": mt{
-				"endpoint": "octeliumee-metricstore.octelium.svc:8080",
-				"tls": mt{
-					"insecure": true,
-				},
+			"octelium_otlp/metricstore": mt{
+				"endpoint":                   "octeliumee-metricstore.octelium.svc:8080",
+				"compression":                "gzip",
+				"wait_for_ready":             true,
+				"max_call_recv_msg_size_mib": 16,
+				"max_call_send_msg_size_mib": 16,
 			},
 		},
 		"extensions": mt{},
@@ -658,12 +660,12 @@ func (c *provider) getInitConfig(ctx context.Context) (map[string]any, error) {
 				"logs": mt{
 					"receivers":  []string{"octelium_otlp"},
 					"processors": []string{"memory_limiter", "batch"},
-					"exporters":  []string{"otlp/octelium-logs"},
+					"exporters":  []string{"octelium_otlp/logstore"},
 				},
 				"metrics": mt{
 					"receivers":  []string{"octelium_otlp"},
 					"processors": []string{"memory_limiter", "batch"},
-					"exporters":  []string{"otlp/octelium-metrics"},
+					"exporters":  []string{"octelium_otlp/metricstore"},
 				},
 			},
 		},
