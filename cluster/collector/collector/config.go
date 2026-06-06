@@ -328,3 +328,23 @@ type exporterInfluxDBV1Compatibility struct {
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
 }
+
+type exporterAzureDataExplorer struct {
+	ClusterURI string `json:"cluster_uri,omitempty"`
+
+	ApplicationID  string `json:"application_id,omitempty"`
+	ApplicationKey string `json:"application_key,omitempty"`
+	TenantID       string `json:"tenant_id,omitempty"`
+
+	ManagedIdentityID string `json:"managed_identity_id,omitempty"`
+	UseAzureAuth      bool   `json:"use_azure_auth,omitempty"`
+
+	Database           string `json:"db_name,omitempty"`
+	MetricTable        string `json:"metrics_table_name,omitempty"`
+	LogTable           string `json:"logs_table_name,omitempty"`
+	MetricTableMapping string `json:"metrics_table_json_mapping,omitempty"`
+	LogTableMapping    string `json:"logs_table_json_mapping,omitempty"`
+	IngestionType      string `json:"ingestion_type,omitempty"`
+
+	Timeout string `json:"timeout,omitempty"`
+}

@@ -2003,41 +2003,37 @@ export interface CollectorExporter_Spec_AzureDataExplorer {
      */
     clusterURI: string;
     /**
-     * @generated from protobuf field: string applicationID = 2
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.Auth auth = 2
      */
-    applicationID: string;
+    auth?: CollectorExporter_Spec_AzureDataExplorer_Auth;
     /**
-     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ApplicationKey applicationKey = 3
-     */
-    applicationKey?: CollectorExporter_Spec_AzureDataExplorer_ApplicationKey;
-    /**
-     * @generated from protobuf field: string tenantID = 4
-     */
-    tenantID: string;
-    /**
-     * @generated from protobuf field: string database = 5
+     * @generated from protobuf field: string database = 3
      */
     database: string;
     /**
-     * @generated from protobuf field: string metricTable = 6
+     * @generated from protobuf field: string metricsTable = 4
      */
-    metricTable: string;
+    metricsTable: string;
     /**
-     * @generated from protobuf field: string logTable = 7
+     * @generated from protobuf field: string logsTable = 5
      */
-    logTable: string;
+    logsTable: string;
     /**
-     * @generated from protobuf field: string metricTableMapping = 8
+     * @generated from protobuf field: string metricsTableMapping = 6
      */
-    metricTableMapping: string;
+    metricsTableMapping: string;
     /**
-     * @generated from protobuf field: string logTableMapping = 9
+     * @generated from protobuf field: string logsTableMapping = 7
      */
-    logTableMapping: string;
+    logsTableMapping: string;
     /**
-     * @generated from protobuf field: string ingestionType = 10
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.IngestionType ingestionType = 8
      */
-    ingestionType: string;
+    ingestionType: CollectorExporter_Spec_AzureDataExplorer_IngestionType;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration timeout = 9
+     */
+    timeout?: Duration;
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ApplicationKey
@@ -2055,6 +2051,83 @@ export interface CollectorExporter_Spec_AzureDataExplorer_ApplicationKey {
     } | {
         oneofKind: undefined;
     };
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ServicePrincipal
+ */
+export interface CollectorExporter_Spec_AzureDataExplorer_ServicePrincipal {
+    /**
+     * @generated from protobuf field: string applicationID = 1
+     */
+    applicationID: string;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ApplicationKey applicationKey = 2
+     */
+    applicationKey?: CollectorExporter_Spec_AzureDataExplorer_ApplicationKey;
+    /**
+     * @generated from protobuf field: string tenantID = 3
+     */
+    tenantID: string;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ManagedIdentity
+ */
+export interface CollectorExporter_Spec_AzureDataExplorer_ManagedIdentity {
+    /**
+     * @generated from protobuf field: string id = 1
+     */
+    id: string;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.AzureDefaultAuth
+ */
+export interface CollectorExporter_Spec_AzureDataExplorer_AzureDefaultAuth {
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.Auth
+ */
+export interface CollectorExporter_Spec_AzureDataExplorer_Auth {
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "servicePrincipal";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ServicePrincipal servicePrincipal = 1
+         */
+        servicePrincipal: CollectorExporter_Spec_AzureDataExplorer_ServicePrincipal;
+    } | {
+        oneofKind: "managedIdentity";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ManagedIdentity managedIdentity = 2
+         */
+        managedIdentity: CollectorExporter_Spec_AzureDataExplorer_ManagedIdentity;
+    } | {
+        oneofKind: "azureDefault";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.AzureDefaultAuth azureDefault = 3
+         */
+        azureDefault: CollectorExporter_Spec_AzureDataExplorer_AzureDefaultAuth;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.IngestionType
+ */
+export enum CollectorExporter_Spec_AzureDataExplorer_IngestionType {
+    /**
+     * @generated from protobuf enum value: INGESTION_TYPE_UNSET = 0;
+     */
+    INGESTION_TYPE_UNSET = 0,
+    /**
+     * @generated from protobuf enum value: QUEUED = 1;
+     */
+    QUEUED = 1,
+    /**
+     * @generated from protobuf enum value: MANAGED = 2;
+     */
+    MANAGED = 2
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Status
@@ -10524,28 +10597,25 @@ class CollectorExporter_Spec_AzureDataExplorer$Type extends MessageType<Collecto
     constructor() {
         super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer", [
             { no: 1, name: "clusterURI", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "applicationID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 3, name: "applicationKey", kind: "message", T: () => CollectorExporter_Spec_AzureDataExplorer_ApplicationKey },
-            { no: 4, name: "tenantID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 5, name: "database", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 6, name: "metricTable", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 7, name: "logTable", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 8, name: "metricTableMapping", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 9, name: "logTableMapping", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 10, name: "ingestionType", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 2, name: "auth", kind: "message", T: () => CollectorExporter_Spec_AzureDataExplorer_Auth },
+            { no: 3, name: "database", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "metricsTable", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 5, name: "logsTable", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 6, name: "metricsTableMapping", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 7, name: "logsTableMapping", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 8, name: "ingestionType", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.IngestionType", CollectorExporter_Spec_AzureDataExplorer_IngestionType] },
+            { no: 9, name: "timeout", kind: "message", T: () => Duration }
         ]);
     }
     create(value?: PartialMessage<CollectorExporter_Spec_AzureDataExplorer>): CollectorExporter_Spec_AzureDataExplorer {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.clusterURI = "";
-        message.applicationID = "";
-        message.tenantID = "";
         message.database = "";
-        message.metricTable = "";
-        message.logTable = "";
-        message.metricTableMapping = "";
-        message.logTableMapping = "";
-        message.ingestionType = "";
+        message.metricsTable = "";
+        message.logsTable = "";
+        message.metricsTableMapping = "";
+        message.logsTableMapping = "";
+        message.ingestionType = 0;
         if (value !== undefined)
             reflectionMergePartial<CollectorExporter_Spec_AzureDataExplorer>(this, message, value);
         return message;
@@ -10558,32 +10628,29 @@ class CollectorExporter_Spec_AzureDataExplorer$Type extends MessageType<Collecto
                 case /* string clusterURI */ 1:
                     message.clusterURI = reader.string();
                     break;
-                case /* string applicationID */ 2:
-                    message.applicationID = reader.string();
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.Auth auth */ 2:
+                    message.auth = CollectorExporter_Spec_AzureDataExplorer_Auth.internalBinaryRead(reader, reader.uint32(), options, message.auth);
                     break;
-                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ApplicationKey applicationKey */ 3:
-                    message.applicationKey = CollectorExporter_Spec_AzureDataExplorer_ApplicationKey.internalBinaryRead(reader, reader.uint32(), options, message.applicationKey);
-                    break;
-                case /* string tenantID */ 4:
-                    message.tenantID = reader.string();
-                    break;
-                case /* string database */ 5:
+                case /* string database */ 3:
                     message.database = reader.string();
                     break;
-                case /* string metricTable */ 6:
-                    message.metricTable = reader.string();
+                case /* string metricsTable */ 4:
+                    message.metricsTable = reader.string();
                     break;
-                case /* string logTable */ 7:
-                    message.logTable = reader.string();
+                case /* string logsTable */ 5:
+                    message.logsTable = reader.string();
                     break;
-                case /* string metricTableMapping */ 8:
-                    message.metricTableMapping = reader.string();
+                case /* string metricsTableMapping */ 6:
+                    message.metricsTableMapping = reader.string();
                     break;
-                case /* string logTableMapping */ 9:
-                    message.logTableMapping = reader.string();
+                case /* string logsTableMapping */ 7:
+                    message.logsTableMapping = reader.string();
                     break;
-                case /* string ingestionType */ 10:
-                    message.ingestionType = reader.string();
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.IngestionType ingestionType */ 8:
+                    message.ingestionType = reader.int32();
+                    break;
+                case /* octelium.api.main.meta.v1.Duration timeout */ 9:
+                    message.timeout = Duration.internalBinaryRead(reader, reader.uint32(), options, message.timeout);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -10600,33 +10667,30 @@ class CollectorExporter_Spec_AzureDataExplorer$Type extends MessageType<Collecto
         /* string clusterURI = 1; */
         if (message.clusterURI !== "")
             writer.tag(1, WireType.LengthDelimited).string(message.clusterURI);
-        /* string applicationID = 2; */
-        if (message.applicationID !== "")
-            writer.tag(2, WireType.LengthDelimited).string(message.applicationID);
-        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ApplicationKey applicationKey = 3; */
-        if (message.applicationKey)
-            CollectorExporter_Spec_AzureDataExplorer_ApplicationKey.internalBinaryWrite(message.applicationKey, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
-        /* string tenantID = 4; */
-        if (message.tenantID !== "")
-            writer.tag(4, WireType.LengthDelimited).string(message.tenantID);
-        /* string database = 5; */
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.Auth auth = 2; */
+        if (message.auth)
+            CollectorExporter_Spec_AzureDataExplorer_Auth.internalBinaryWrite(message.auth, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* string database = 3; */
         if (message.database !== "")
-            writer.tag(5, WireType.LengthDelimited).string(message.database);
-        /* string metricTable = 6; */
-        if (message.metricTable !== "")
-            writer.tag(6, WireType.LengthDelimited).string(message.metricTable);
-        /* string logTable = 7; */
-        if (message.logTable !== "")
-            writer.tag(7, WireType.LengthDelimited).string(message.logTable);
-        /* string metricTableMapping = 8; */
-        if (message.metricTableMapping !== "")
-            writer.tag(8, WireType.LengthDelimited).string(message.metricTableMapping);
-        /* string logTableMapping = 9; */
-        if (message.logTableMapping !== "")
-            writer.tag(9, WireType.LengthDelimited).string(message.logTableMapping);
-        /* string ingestionType = 10; */
-        if (message.ingestionType !== "")
-            writer.tag(10, WireType.LengthDelimited).string(message.ingestionType);
+            writer.tag(3, WireType.LengthDelimited).string(message.database);
+        /* string metricsTable = 4; */
+        if (message.metricsTable !== "")
+            writer.tag(4, WireType.LengthDelimited).string(message.metricsTable);
+        /* string logsTable = 5; */
+        if (message.logsTable !== "")
+            writer.tag(5, WireType.LengthDelimited).string(message.logsTable);
+        /* string metricsTableMapping = 6; */
+        if (message.metricsTableMapping !== "")
+            writer.tag(6, WireType.LengthDelimited).string(message.metricsTableMapping);
+        /* string logsTableMapping = 7; */
+        if (message.logsTableMapping !== "")
+            writer.tag(7, WireType.LengthDelimited).string(message.logsTableMapping);
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.IngestionType ingestionType = 8; */
+        if (message.ingestionType !== 0)
+            writer.tag(8, WireType.Varint).int32(message.ingestionType);
+        /* octelium.api.main.meta.v1.Duration timeout = 9; */
+        if (message.timeout)
+            Duration.internalBinaryWrite(message.timeout, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -10687,6 +10751,223 @@ class CollectorExporter_Spec_AzureDataExplorer_ApplicationKey$Type extends Messa
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ApplicationKey
  */
 export const CollectorExporter_Spec_AzureDataExplorer_ApplicationKey = new CollectorExporter_Spec_AzureDataExplorer_ApplicationKey$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_AzureDataExplorer_ServicePrincipal$Type extends MessageType<CollectorExporter_Spec_AzureDataExplorer_ServicePrincipal> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ServicePrincipal", [
+            { no: 1, name: "applicationID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "applicationKey", kind: "message", T: () => CollectorExporter_Spec_AzureDataExplorer_ApplicationKey },
+            { no: 3, name: "tenantID", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_AzureDataExplorer_ServicePrincipal>): CollectorExporter_Spec_AzureDataExplorer_ServicePrincipal {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.applicationID = "";
+        message.tenantID = "";
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_AzureDataExplorer_ServicePrincipal>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_AzureDataExplorer_ServicePrincipal): CollectorExporter_Spec_AzureDataExplorer_ServicePrincipal {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string applicationID */ 1:
+                    message.applicationID = reader.string();
+                    break;
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ApplicationKey applicationKey */ 2:
+                    message.applicationKey = CollectorExporter_Spec_AzureDataExplorer_ApplicationKey.internalBinaryRead(reader, reader.uint32(), options, message.applicationKey);
+                    break;
+                case /* string tenantID */ 3:
+                    message.tenantID = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_AzureDataExplorer_ServicePrincipal, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string applicationID = 1; */
+        if (message.applicationID !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.applicationID);
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ApplicationKey applicationKey = 2; */
+        if (message.applicationKey)
+            CollectorExporter_Spec_AzureDataExplorer_ApplicationKey.internalBinaryWrite(message.applicationKey, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* string tenantID = 3; */
+        if (message.tenantID !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.tenantID);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ServicePrincipal
+ */
+export const CollectorExporter_Spec_AzureDataExplorer_ServicePrincipal = new CollectorExporter_Spec_AzureDataExplorer_ServicePrincipal$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_AzureDataExplorer_ManagedIdentity$Type extends MessageType<CollectorExporter_Spec_AzureDataExplorer_ManagedIdentity> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ManagedIdentity", [
+            { no: 1, name: "id", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_AzureDataExplorer_ManagedIdentity>): CollectorExporter_Spec_AzureDataExplorer_ManagedIdentity {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.id = "";
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_AzureDataExplorer_ManagedIdentity>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_AzureDataExplorer_ManagedIdentity): CollectorExporter_Spec_AzureDataExplorer_ManagedIdentity {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string id */ 1:
+                    message.id = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_AzureDataExplorer_ManagedIdentity, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string id = 1; */
+        if (message.id !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.id);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ManagedIdentity
+ */
+export const CollectorExporter_Spec_AzureDataExplorer_ManagedIdentity = new CollectorExporter_Spec_AzureDataExplorer_ManagedIdentity$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_AzureDataExplorer_AzureDefaultAuth$Type extends MessageType<CollectorExporter_Spec_AzureDataExplorer_AzureDefaultAuth> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.AzureDefaultAuth", []);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_AzureDataExplorer_AzureDefaultAuth>): CollectorExporter_Spec_AzureDataExplorer_AzureDefaultAuth {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_AzureDataExplorer_AzureDefaultAuth>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_AzureDataExplorer_AzureDefaultAuth): CollectorExporter_Spec_AzureDataExplorer_AzureDefaultAuth {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_AzureDataExplorer_AzureDefaultAuth, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.AzureDefaultAuth
+ */
+export const CollectorExporter_Spec_AzureDataExplorer_AzureDefaultAuth = new CollectorExporter_Spec_AzureDataExplorer_AzureDefaultAuth$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_AzureDataExplorer_Auth$Type extends MessageType<CollectorExporter_Spec_AzureDataExplorer_Auth> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.Auth", [
+            { no: 1, name: "servicePrincipal", kind: "message", oneof: "type", T: () => CollectorExporter_Spec_AzureDataExplorer_ServicePrincipal },
+            { no: 2, name: "managedIdentity", kind: "message", oneof: "type", T: () => CollectorExporter_Spec_AzureDataExplorer_ManagedIdentity },
+            { no: 3, name: "azureDefault", kind: "message", oneof: "type", T: () => CollectorExporter_Spec_AzureDataExplorer_AzureDefaultAuth }
+        ]);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_AzureDataExplorer_Auth>): CollectorExporter_Spec_AzureDataExplorer_Auth {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_AzureDataExplorer_Auth>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_AzureDataExplorer_Auth): CollectorExporter_Spec_AzureDataExplorer_Auth {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ServicePrincipal servicePrincipal */ 1:
+                    message.type = {
+                        oneofKind: "servicePrincipal",
+                        servicePrincipal: CollectorExporter_Spec_AzureDataExplorer_ServicePrincipal.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).servicePrincipal)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ManagedIdentity managedIdentity */ 2:
+                    message.type = {
+                        oneofKind: "managedIdentity",
+                        managedIdentity: CollectorExporter_Spec_AzureDataExplorer_ManagedIdentity.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).managedIdentity)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.AzureDefaultAuth azureDefault */ 3:
+                    message.type = {
+                        oneofKind: "azureDefault",
+                        azureDefault: CollectorExporter_Spec_AzureDataExplorer_AzureDefaultAuth.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).azureDefault)
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_AzureDataExplorer_Auth, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ServicePrincipal servicePrincipal = 1; */
+        if (message.type.oneofKind === "servicePrincipal")
+            CollectorExporter_Spec_AzureDataExplorer_ServicePrincipal.internalBinaryWrite(message.type.servicePrincipal, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ManagedIdentity managedIdentity = 2; */
+        if (message.type.oneofKind === "managedIdentity")
+            CollectorExporter_Spec_AzureDataExplorer_ManagedIdentity.internalBinaryWrite(message.type.managedIdentity, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.AzureDefaultAuth azureDefault = 3; */
+        if (message.type.oneofKind === "azureDefault")
+            CollectorExporter_Spec_AzureDataExplorer_AzureDefaultAuth.internalBinaryWrite(message.type.azureDefault, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.Auth
+ */
+export const CollectorExporter_Spec_AzureDataExplorer_Auth = new CollectorExporter_Spec_AzureDataExplorer_Auth$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class CollectorExporter_Status$Type extends MessageType<CollectorExporter_Status> {
     constructor() {

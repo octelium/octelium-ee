@@ -804,6 +804,67 @@ func (p *provider) getExporter(ctx context.Context, exp *enterprisev1.CollectorE
 				c.V1Compatibility.Password = uenterprisev1.ToSecret(sec).GetValueStr()
 			}
 		}
+	case *enterprisev1.CollectorExporter_Spec_AzureDataExplorer_:
+		ret.HasLogs = true
+		ret.HasMetrics = true
+
+		spec := exp.Spec.GetAzureDataExplorer()
+		if spec == nil {
+			return nil, errors.Errorf("nil AzureDataExplorer exporter spec")
+		}
+
+		timeout, err := durationToCollectorString(spec.Timeout)
+		if err != nil {
+			return nil, err
+		}
+
+		ingestionType, err := azureDataExplorerIngestionTypeToCollectorString(spec.IngestionType)
+		if err != nil {
+			return nil, err
+		}
+
+		c := &exporterAzureDataExplorer{
+			ClusterURI:         spec.ClusterURI,
+			Database:           spec.Database,
+			MetricTable:        spec.MetricsTable,
+			LogTable:           spec.LogsTable,
+			MetricTableMapping: spec.MetricsTableMapping,
+			LogTableMapping:    spec.LogsTableMapping,
+			IngestionType:      ingestionType,
+			Timeout:            timeout,
+		}
+		ret.exp = c
+
+		if spec.Auth != nil {
+			switch spec.Auth.Type.(type) {
+			case *enterprisev1.CollectorExporter_Spec_AzureDataExplorer_Auth_ServicePrincipal:
+				sp := spec.Auth.GetServicePrincipal()
+				if sp != nil {
+					c.ApplicationID = sp.ApplicationID
+					c.TenantID = sp.TenantID
+
+					if sp.GetApplicationKey() != nil && sp.GetApplicationKey().GetFromSecret() != "" {
+						sec, err := octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
+							Name: sp.GetApplicationKey().GetFromSecret(),
+						})
+						if err != nil {
+							return nil, err
+						}
+
+						c.ApplicationKey = uenterprisev1.ToSecret(sec).GetValueStr()
+					}
+				}
+
+			case *enterprisev1.CollectorExporter_Spec_AzureDataExplorer_Auth_ManagedIdentity:
+				mi := spec.Auth.GetManagedIdentity()
+				if mi != nil {
+					c.ManagedIdentityID = mi.Id
+				}
+
+			case *enterprisev1.CollectorExporter_Spec_AzureDataExplorer_Auth_AzureDefault:
+				c.UseAzureAuth = true
+			}
+		}
 	default:
 		return nil, errors.Errorf("Unsupported exporter type: %+v", exp)
 	}
@@ -1830,4 +1891,20 @@ func (p *provider) applyPrometheusRemoteWriteAuth(
 	}
 
 	return nil
+}
+
+func azureDataExplorerIngestionTypeToCollectorString(
+	t enterprisev1.CollectorExporter_Spec_AzureDataExplorer_IngestionType,
+) (string, error) {
+	switch t {
+	case enterprisev1.CollectorExporter_Spec_AzureDataExplorer_INGESTION_TYPE_UNSET,
+		enterprisev1.CollectorExporter_Spec_AzureDataExplorer_QUEUED:
+		return "", nil
+
+	case enterprisev1.CollectorExporter_Spec_AzureDataExplorer_MANAGED:
+		return "managed", nil
+
+	default:
+		return "", errors.Errorf("invalid AzureDataExplorer ingestion type")
+	}
 }

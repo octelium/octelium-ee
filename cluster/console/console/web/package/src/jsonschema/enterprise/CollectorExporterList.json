@@ -255,33 +255,37 @@
                 "clusterURI": {
                     "type": "string"
                 },
-                "applicationID": {
-                    "type": "string"
-                },
-                "applicationKey": {
-                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ApplicationKey",
+                "auth": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.Auth",
                     "additionalProperties": false
-                },
-                "tenantID": {
-                    "type": "string"
                 },
                 "database": {
                     "type": "string"
                 },
-                "metricTable": {
+                "metricsTable": {
                     "type": "string"
                 },
-                "logTable": {
+                "logsTable": {
                     "type": "string"
                 },
-                "metricTableMapping": {
+                "metricsTableMapping": {
                     "type": "string"
                 },
-                "logTableMapping": {
+                "logsTableMapping": {
                     "type": "string"
                 },
                 "ingestionType": {
-                    "type": "string"
+                    "enum": [
+                        "INGESTION_TYPE_UNSET",
+                        "QUEUED",
+                        "MANAGED"
+                    ],
+                    "type": "string",
+                    "title": "Ingestion Type"
+                },
+                "timeout": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false,
@@ -319,6 +323,99 @@
                 }
             ],
             "title": "Application Key"
+        },
+        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.Auth": {
+            "properties": {
+                "servicePrincipal": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ServicePrincipal",
+                    "additionalProperties": false
+                },
+                "managedIdentity": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ManagedIdentity",
+                    "additionalProperties": false
+                },
+                "azureDefault": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.AzureDefaultAuth",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "servicePrincipal"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "managedIdentity"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "azureDefault"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "servicePrincipal"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "managedIdentity"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "azureDefault"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Auth"
+        },
+        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.AzureDefaultAuth": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Azure Default Auth"
+        },
+        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ManagedIdentity": {
+            "properties": {
+                "id": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Managed Identity"
+        },
+        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ServicePrincipal": {
+            "properties": {
+                "applicationID": {
+                    "type": "string"
+                },
+                "applicationKey": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ApplicationKey",
+                    "additionalProperties": false
+                },
+                "tenantID": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Service Principal"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor": {
             "properties": {
