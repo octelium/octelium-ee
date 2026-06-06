@@ -64,10 +64,39 @@ type elasticTLS struct {
 
 type exporterDatadog struct {
 	API *exporterDatadogAPI `json:"api,omitempty"`
+
+	Hostname string `json:"hostname,omitempty"`
+
+	Metrics *exporterDatadogMetrics `json:"metrics,omitempty"`
+	Logs    *exporterDatadogLogs    `json:"logs,omitempty"`
+
+	HostMetadata *exporterDatadogHostMetadata `json:"host_metadata,omitempty"`
+
+	HostnameDetectionTimeout string `json:"hostname_detection_timeout,omitempty"`
 }
 
 type exporterDatadogAPI struct {
-	Key string `json:"key,omitempty"`
+	Key              string `json:"key,omitempty"`
+	Site             string `json:"site,omitempty"`
+	FailOnInvalidKey bool   `json:"fail_on_invalid_key,omitempty"`
+}
+
+type exporterDatadogMetrics struct {
+	Endpoint                           string `json:"endpoint,omitempty"`
+	ResourceAttributesAsTags           bool   `json:"resource_attributes_as_tags,omitempty"`
+	InstrumentationScopeMetadataAsTags bool   `json:"instrumentation_scope_metadata_as_tags,omitempty"`
+}
+
+type exporterDatadogLogs struct {
+	Endpoint         string `json:"endpoint,omitempty"`
+	UseCompression   *bool  `json:"use_compression,omitempty"`
+	CompressionLevel int32  `json:"compression_level,omitempty"`
+	BatchWait        string `json:"batch_wait,omitempty"`
+}
+
+type exporterDatadogHostMetadata struct {
+	Enabled        *bool  `json:"enabled,omitempty"`
+	ReporterPeriod string `json:"reporter_period,omitempty"`
 }
 
 type exporterLogzio struct {

@@ -531,22 +531,74 @@ func (p *provider) getExporter(ctx context.Context, exp *enterprisev1.CollectorE
 		ret.HasMetrics = true
 
 		spec := exp.Spec.GetDatadog()
+		if spec == nil {
+			return nil, errors.Errorf("nil Datadog exporter spec")
+		}
 
-		c := &exporterDatadog{}
+		c := &exporterDatadog{
+			API: &exporterDatadogAPI{},
+		}
 		ret.exp = c
 
-		if spec.GetApiKey() != nil && spec.GetApiKey().GetFromSecret() != "" {
-			sec, err := octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
-				Name: spec.GetApiKey().GetFromSecret(),
-			})
+		if spec.Api != nil {
+			c.API.Site = spec.Api.Site
+			c.API.FailOnInvalidKey = spec.Api.FailOnInvalidKey
+
+			if spec.Api.GetKey() != nil && spec.Api.GetKey().GetFromSecret() != "" {
+				sec, err := octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
+					Name: spec.Api.GetKey().GetFromSecret(),
+				})
+				if err != nil {
+					return nil, err
+				}
+
+				c.API.Key = uenterprisev1.ToSecret(sec).GetValueStr()
+			}
+		}
+
+		c.Hostname = spec.Hostname
+
+		if spec.Metrics != nil {
+			c.Metrics = &exporterDatadogMetrics{
+				Endpoint:                           spec.Metrics.Endpoint,
+				ResourceAttributesAsTags:           spec.Metrics.ResourceAttributesAsTags,
+				InstrumentationScopeMetadataAsTags: spec.Metrics.InstrumentationScopeMetadataAsTags,
+			}
+		}
+
+		if spec.Logs != nil {
+			batchWait, err := durationToCollectorString(spec.Logs.BatchWait)
 			if err != nil {
 				return nil, err
 			}
 
-			c.API = &exporterDatadogAPI{
-				Key: uenterprisev1.ToSecret(sec).GetValueStr(),
+			c.Logs = &exporterDatadogLogs{
+				Endpoint:         spec.Logs.Endpoint,
+				CompressionLevel: spec.Logs.CompressionLevel,
+				BatchWait:        batchWait,
 			}
+
+			c.Logs.UseCompression = &spec.Logs.UseCompression
 		}
+
+		if spec.HostMetadata != nil {
+			reporterPeriod, err := durationToCollectorString(spec.HostMetadata.ReporterPeriod)
+			if err != nil {
+				return nil, err
+			}
+
+			c.HostMetadata = &exporterDatadogHostMetadata{
+				ReporterPeriod: reporterPeriod,
+			}
+
+			c.HostMetadata.Enabled = &spec.HostMetadata.Enabled
+		}
+
+		hostnameDetectionTimeout, err := durationToCollectorString(spec.HostnameDetectionTimeout)
+		if err != nil {
+			return nil, err
+		}
+		c.HostnameDetectionTimeout = hostnameDetectionTimeout
 
 	case *enterprisev1.CollectorExporter_Spec_Logzio_:
 		ret.HasLogs = true

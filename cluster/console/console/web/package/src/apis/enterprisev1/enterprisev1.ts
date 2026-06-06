@@ -1281,13 +1281,29 @@ export enum CollectorExporter_Spec_Kafka_ProducerCompression {
  */
 export interface CollectorExporter_Spec_Datadog {
     /**
-     * @generated from protobuf field: string site = 1
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.API api = 1
      */
-    site: string;
+    api?: CollectorExporter_Spec_Datadog_API;
     /**
-     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.APIKey apiKey = 2
+     * @generated from protobuf field: string hostname = 2
      */
-    apiKey?: CollectorExporter_Spec_Datadog_APIKey;
+    hostname: string;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Metrics metrics = 3
+     */
+    metrics?: CollectorExporter_Spec_Datadog_Metrics;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Logs logs = 4
+     */
+    logs?: CollectorExporter_Spec_Datadog_Logs;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.HostMetadata hostMetadata = 5
+     */
+    hostMetadata?: CollectorExporter_Spec_Datadog_HostMetadata;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration hostnameDetectionTimeout = 6
+     */
+    hostnameDetectionTimeout?: Duration;
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.APIKey
@@ -1305,6 +1321,74 @@ export interface CollectorExporter_Spec_Datadog_APIKey {
     } | {
         oneofKind: undefined;
     };
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.API
+ */
+export interface CollectorExporter_Spec_Datadog_API {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.APIKey key = 1
+     */
+    key?: CollectorExporter_Spec_Datadog_APIKey;
+    /**
+     * @generated from protobuf field: string site = 2
+     */
+    site: string;
+    /**
+     * @generated from protobuf field: bool failOnInvalidKey = 3
+     */
+    failOnInvalidKey: boolean;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Metrics
+ */
+export interface CollectorExporter_Spec_Datadog_Metrics {
+    /**
+     * @generated from protobuf field: string endpoint = 1
+     */
+    endpoint: string;
+    /**
+     * @generated from protobuf field: bool resourceAttributesAsTags = 2
+     */
+    resourceAttributesAsTags: boolean;
+    /**
+     * @generated from protobuf field: bool instrumentationScopeMetadataAsTags = 3
+     */
+    instrumentationScopeMetadataAsTags: boolean;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Logs
+ */
+export interface CollectorExporter_Spec_Datadog_Logs {
+    /**
+     * @generated from protobuf field: string endpoint = 1
+     */
+    endpoint: string;
+    /**
+     * @generated from protobuf field: bool useCompression = 2
+     */
+    useCompression: boolean;
+    /**
+     * @generated from protobuf field: int32 compressionLevel = 3
+     */
+    compressionLevel: number;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration batchWait = 4
+     */
+    batchWait?: Duration;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.HostMetadata
+ */
+export interface CollectorExporter_Spec_Datadog_HostMetadata {
+    /**
+     * @generated from protobuf field: bool enabled = 1
+     */
+    enabled: boolean;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration reporterPeriod = 2
+     */
+    reporterPeriod?: Duration;
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk
@@ -8095,13 +8179,17 @@ export const CollectorExporter_Spec_Kafka_Producer = new CollectorExporter_Spec_
 class CollectorExporter_Spec_Datadog$Type extends MessageType<CollectorExporter_Spec_Datadog> {
     constructor() {
         super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog", [
-            { no: 1, name: "site", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "apiKey", kind: "message", T: () => CollectorExporter_Spec_Datadog_APIKey }
+            { no: 1, name: "api", kind: "message", T: () => CollectorExporter_Spec_Datadog_API },
+            { no: 2, name: "hostname", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "metrics", kind: "message", T: () => CollectorExporter_Spec_Datadog_Metrics },
+            { no: 4, name: "logs", kind: "message", T: () => CollectorExporter_Spec_Datadog_Logs },
+            { no: 5, name: "hostMetadata", kind: "message", T: () => CollectorExporter_Spec_Datadog_HostMetadata },
+            { no: 6, name: "hostnameDetectionTimeout", kind: "message", T: () => Duration }
         ]);
     }
     create(value?: PartialMessage<CollectorExporter_Spec_Datadog>): CollectorExporter_Spec_Datadog {
         const message = globalThis.Object.create((this.messagePrototype!));
-        message.site = "";
+        message.hostname = "";
         if (value !== undefined)
             reflectionMergePartial<CollectorExporter_Spec_Datadog>(this, message, value);
         return message;
@@ -8111,11 +8199,23 @@ class CollectorExporter_Spec_Datadog$Type extends MessageType<CollectorExporter_
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* string site */ 1:
-                    message.site = reader.string();
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.API api */ 1:
+                    message.api = CollectorExporter_Spec_Datadog_API.internalBinaryRead(reader, reader.uint32(), options, message.api);
                     break;
-                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.APIKey apiKey */ 2:
-                    message.apiKey = CollectorExporter_Spec_Datadog_APIKey.internalBinaryRead(reader, reader.uint32(), options, message.apiKey);
+                case /* string hostname */ 2:
+                    message.hostname = reader.string();
+                    break;
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Metrics metrics */ 3:
+                    message.metrics = CollectorExporter_Spec_Datadog_Metrics.internalBinaryRead(reader, reader.uint32(), options, message.metrics);
+                    break;
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Logs logs */ 4:
+                    message.logs = CollectorExporter_Spec_Datadog_Logs.internalBinaryRead(reader, reader.uint32(), options, message.logs);
+                    break;
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.HostMetadata hostMetadata */ 5:
+                    message.hostMetadata = CollectorExporter_Spec_Datadog_HostMetadata.internalBinaryRead(reader, reader.uint32(), options, message.hostMetadata);
+                    break;
+                case /* octelium.api.main.meta.v1.Duration hostnameDetectionTimeout */ 6:
+                    message.hostnameDetectionTimeout = Duration.internalBinaryRead(reader, reader.uint32(), options, message.hostnameDetectionTimeout);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -8129,12 +8229,24 @@ class CollectorExporter_Spec_Datadog$Type extends MessageType<CollectorExporter_
         return message;
     }
     internalBinaryWrite(message: CollectorExporter_Spec_Datadog, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* string site = 1; */
-        if (message.site !== "")
-            writer.tag(1, WireType.LengthDelimited).string(message.site);
-        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.APIKey apiKey = 2; */
-        if (message.apiKey)
-            CollectorExporter_Spec_Datadog_APIKey.internalBinaryWrite(message.apiKey, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.API api = 1; */
+        if (message.api)
+            CollectorExporter_Spec_Datadog_API.internalBinaryWrite(message.api, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* string hostname = 2; */
+        if (message.hostname !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.hostname);
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Metrics metrics = 3; */
+        if (message.metrics)
+            CollectorExporter_Spec_Datadog_Metrics.internalBinaryWrite(message.metrics, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Logs logs = 4; */
+        if (message.logs)
+            CollectorExporter_Spec_Datadog_Logs.internalBinaryWrite(message.logs, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.HostMetadata hostMetadata = 5; */
+        if (message.hostMetadata)
+            CollectorExporter_Spec_Datadog_HostMetadata.internalBinaryWrite(message.hostMetadata, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.Duration hostnameDetectionTimeout = 6; */
+        if (message.hostnameDetectionTimeout)
+            Duration.internalBinaryWrite(message.hostnameDetectionTimeout, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -8195,6 +8307,255 @@ class CollectorExporter_Spec_Datadog_APIKey$Type extends MessageType<CollectorEx
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.APIKey
  */
 export const CollectorExporter_Spec_Datadog_APIKey = new CollectorExporter_Spec_Datadog_APIKey$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_Datadog_API$Type extends MessageType<CollectorExporter_Spec_Datadog_API> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.API", [
+            { no: 1, name: "key", kind: "message", T: () => CollectorExporter_Spec_Datadog_APIKey },
+            { no: 2, name: "site", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "failOnInvalidKey", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_Datadog_API>): CollectorExporter_Spec_Datadog_API {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.site = "";
+        message.failOnInvalidKey = false;
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_Datadog_API>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_Datadog_API): CollectorExporter_Spec_Datadog_API {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.APIKey key */ 1:
+                    message.key = CollectorExporter_Spec_Datadog_APIKey.internalBinaryRead(reader, reader.uint32(), options, message.key);
+                    break;
+                case /* string site */ 2:
+                    message.site = reader.string();
+                    break;
+                case /* bool failOnInvalidKey */ 3:
+                    message.failOnInvalidKey = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_Datadog_API, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.APIKey key = 1; */
+        if (message.key)
+            CollectorExporter_Spec_Datadog_APIKey.internalBinaryWrite(message.key, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* string site = 2; */
+        if (message.site !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.site);
+        /* bool failOnInvalidKey = 3; */
+        if (message.failOnInvalidKey !== false)
+            writer.tag(3, WireType.Varint).bool(message.failOnInvalidKey);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.API
+ */
+export const CollectorExporter_Spec_Datadog_API = new CollectorExporter_Spec_Datadog_API$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_Datadog_Metrics$Type extends MessageType<CollectorExporter_Spec_Datadog_Metrics> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Metrics", [
+            { no: 1, name: "endpoint", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "resourceAttributesAsTags", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 3, name: "instrumentationScopeMetadataAsTags", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_Datadog_Metrics>): CollectorExporter_Spec_Datadog_Metrics {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.endpoint = "";
+        message.resourceAttributesAsTags = false;
+        message.instrumentationScopeMetadataAsTags = false;
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_Datadog_Metrics>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_Datadog_Metrics): CollectorExporter_Spec_Datadog_Metrics {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string endpoint */ 1:
+                    message.endpoint = reader.string();
+                    break;
+                case /* bool resourceAttributesAsTags */ 2:
+                    message.resourceAttributesAsTags = reader.bool();
+                    break;
+                case /* bool instrumentationScopeMetadataAsTags */ 3:
+                    message.instrumentationScopeMetadataAsTags = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_Datadog_Metrics, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string endpoint = 1; */
+        if (message.endpoint !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.endpoint);
+        /* bool resourceAttributesAsTags = 2; */
+        if (message.resourceAttributesAsTags !== false)
+            writer.tag(2, WireType.Varint).bool(message.resourceAttributesAsTags);
+        /* bool instrumentationScopeMetadataAsTags = 3; */
+        if (message.instrumentationScopeMetadataAsTags !== false)
+            writer.tag(3, WireType.Varint).bool(message.instrumentationScopeMetadataAsTags);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Metrics
+ */
+export const CollectorExporter_Spec_Datadog_Metrics = new CollectorExporter_Spec_Datadog_Metrics$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_Datadog_Logs$Type extends MessageType<CollectorExporter_Spec_Datadog_Logs> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Logs", [
+            { no: 1, name: "endpoint", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "useCompression", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 3, name: "compressionLevel", kind: "scalar", T: 5 /*ScalarType.INT32*/ },
+            { no: 4, name: "batchWait", kind: "message", T: () => Duration }
+        ]);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_Datadog_Logs>): CollectorExporter_Spec_Datadog_Logs {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.endpoint = "";
+        message.useCompression = false;
+        message.compressionLevel = 0;
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_Datadog_Logs>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_Datadog_Logs): CollectorExporter_Spec_Datadog_Logs {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string endpoint */ 1:
+                    message.endpoint = reader.string();
+                    break;
+                case /* bool useCompression */ 2:
+                    message.useCompression = reader.bool();
+                    break;
+                case /* int32 compressionLevel */ 3:
+                    message.compressionLevel = reader.int32();
+                    break;
+                case /* octelium.api.main.meta.v1.Duration batchWait */ 4:
+                    message.batchWait = Duration.internalBinaryRead(reader, reader.uint32(), options, message.batchWait);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_Datadog_Logs, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string endpoint = 1; */
+        if (message.endpoint !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.endpoint);
+        /* bool useCompression = 2; */
+        if (message.useCompression !== false)
+            writer.tag(2, WireType.Varint).bool(message.useCompression);
+        /* int32 compressionLevel = 3; */
+        if (message.compressionLevel !== 0)
+            writer.tag(3, WireType.Varint).int32(message.compressionLevel);
+        /* octelium.api.main.meta.v1.Duration batchWait = 4; */
+        if (message.batchWait)
+            Duration.internalBinaryWrite(message.batchWait, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Logs
+ */
+export const CollectorExporter_Spec_Datadog_Logs = new CollectorExporter_Spec_Datadog_Logs$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_Datadog_HostMetadata$Type extends MessageType<CollectorExporter_Spec_Datadog_HostMetadata> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.HostMetadata", [
+            { no: 1, name: "enabled", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 2, name: "reporterPeriod", kind: "message", T: () => Duration }
+        ]);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_Datadog_HostMetadata>): CollectorExporter_Spec_Datadog_HostMetadata {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.enabled = false;
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_Datadog_HostMetadata>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_Datadog_HostMetadata): CollectorExporter_Spec_Datadog_HostMetadata {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bool enabled */ 1:
+                    message.enabled = reader.bool();
+                    break;
+                case /* octelium.api.main.meta.v1.Duration reporterPeriod */ 2:
+                    message.reporterPeriod = Duration.internalBinaryRead(reader, reader.uint32(), options, message.reporterPeriod);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_Datadog_HostMetadata, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bool enabled = 1; */
+        if (message.enabled !== false)
+            writer.tag(1, WireType.Varint).bool(message.enabled);
+        /* octelium.api.main.meta.v1.Duration reporterPeriod = 2; */
+        if (message.reporterPeriod)
+            Duration.internalBinaryWrite(message.reporterPeriod, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.HostMetadata
+ */
+export const CollectorExporter_Spec_Datadog_HostMetadata = new CollectorExporter_Spec_Datadog_HostMetadata$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class CollectorExporter_Spec_Splunk$Type extends MessageType<CollectorExporter_Spec_Splunk> {
     constructor() {

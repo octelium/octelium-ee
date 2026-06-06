@@ -445,17 +445,50 @@
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog": {
             "properties": {
-                "site": {
+                "api": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.API",
+                    "additionalProperties": false
+                },
+                "hostname": {
                     "type": "string"
                 },
-                "apiKey": {
-                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.APIKey",
+                "metrics": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Metrics",
+                    "additionalProperties": false
+                },
+                "logs": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Logs",
+                    "additionalProperties": false
+                },
+                "hostMetadata": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.HostMetadata",
+                    "additionalProperties": false
+                },
+                "hostnameDetectionTimeout": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
                     "additionalProperties": false
                 }
             },
             "additionalProperties": false,
             "type": "object",
             "title": "Datadog"
+        },
+        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.API": {
+            "properties": {
+                "key": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.APIKey",
+                    "additionalProperties": false
+                },
+                "site": {
+                    "type": "string"
+                },
+                "failOnInvalidKey": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "API"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.APIKey": {
             "properties": {
@@ -488,6 +521,56 @@
                 }
             ],
             "title": "API Key"
+        },
+        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.HostMetadata": {
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "reporterPeriod": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Host Metadata"
+        },
+        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Logs": {
+            "properties": {
+                "endpoint": {
+                    "type": "string"
+                },
+                "useCompression": {
+                    "type": "boolean"
+                },
+                "compressionLevel": {
+                    "type": "integer"
+                },
+                "batchWait": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Logs"
+        },
+        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Metrics": {
+            "properties": {
+                "endpoint": {
+                    "type": "string"
+                },
+                "resourceAttributesAsTags": {
+                    "type": "boolean"
+                },
+                "instrumentationScopeMetadataAsTags": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Metrics"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch": {
             "properties": {
