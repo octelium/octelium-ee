@@ -15,11 +15,14 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
+	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
+	"github.com/octelium/octelium/cluster/common/grpcutils"
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/collector/confmap"
 	"go.uber.org/zap"
@@ -65,11 +68,6 @@ func (p *provider) Scheme() string {
 }
 
 func (*provider) Shutdown(context.Context) error {
-	return nil
-}
-
-func (p *provider) setConfig(ctx context.Context) error {
-
 	return nil
 }
 
@@ -485,6 +483,81 @@ func (p *provider) getExporter(ctx context.Context, exp *enterprisev1.CollectorE
 
 			c.Token = uenterprisev1.ToSecret(sec).GetValueStr()
 		}
+
+	case *enterprisev1.CollectorExporter_Spec_AzureMonitor_:
+		ret.HasLogs = true
+		ret.HasMetrics = true
+
+		spec := exp.Spec.GetAzureMonitor()
+		if spec == nil {
+			return nil, errors.Errorf("nil AzureMonitor exporter spec")
+		}
+
+		maxBatchInterval, err := durationToCollectorString(spec.MaxBatchInterval)
+		if err != nil {
+			return nil, err
+		}
+
+		shutdownTimeout, err := durationToCollectorString(spec.ShutdownTimeout)
+		if err != nil {
+			return nil, err
+		}
+
+		c := &exporterAzureMonitor{
+			Endpoint:               spec.Endpoint,
+			MaxBatchSize:           spec.MaxBatchSize,
+			MaxBatchInterval:       maxBatchInterval,
+			ShutdownTimeout:        shutdownTimeout,
+			CustomEventsEnabled:    spec.CustomEventsEnabled,
+			ExceptionEventsEnabled: spec.ExceptionEventsEnabled,
+		}
+		ret.exp = c
+
+		if spec.GetConnectionString() != nil && spec.GetConnectionString().GetFromSecret() != "" {
+			sec, err := octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
+				Name: spec.GetConnectionString().GetFromSecret(),
+			})
+			if err != nil {
+				return nil, err
+			}
+
+			c.ConnectionString = uenterprisev1.ToSecret(sec).GetValueStr()
+		}
+
+		if spec.GetInstrumentationKey() != nil && spec.GetInstrumentationKey().GetFromSecret() != "" {
+			sec, err := octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
+				Name: spec.GetInstrumentationKey().GetFromSecret(),
+			})
+			if err != nil {
+				return nil, err
+			}
+
+			c.InstrumentationKey = uenterprisev1.ToSecret(sec).GetValueStr()
+		}
+
+		if spec.MaxBatchInterval != nil {
+			if err := validateCollectorDuration(
+				"AzureMonitor maxBatchInterval",
+				spec.MaxBatchInterval,
+				time.Second,
+				10*time.Minute,
+				true,
+			); err != nil {
+				return nil, err
+			}
+		}
+
+		if spec.ShutdownTimeout != nil {
+			if err := validateCollectorDuration(
+				"AzureMonitor shutdownTimeout",
+				spec.ShutdownTimeout,
+				time.Second,
+				5*time.Minute,
+				true,
+			); err != nil {
+				return nil, err
+			}
+		}
 	default:
 		return nil, errors.Errorf("Unsupported exporter type: %+v", exp)
 	}
@@ -755,4 +828,130 @@ func (p *provider) getInternalMetricstoreEndpoint() string {
 		return p.internalMetricstoreEndpoint
 	}
 	return defaultInternalMetricstoreEndpoint
+}
+
+func durationToCollectorString(d *metav1.Duration) (string, error) {
+	if d == nil {
+		return "", nil
+	}
+
+	switch d.Type.(type) {
+	case *metav1.Duration_Milliseconds:
+		if d.GetMilliseconds() == 0 {
+			return "", errors.Errorf("duration milliseconds cannot be zero")
+		}
+		return fmt.Sprintf("%dms", d.GetMilliseconds()), nil
+
+	case *metav1.Duration_Seconds:
+		if d.GetSeconds() == 0 {
+			return "", errors.Errorf("duration seconds cannot be zero")
+		}
+		return fmt.Sprintf("%ds", d.GetSeconds()), nil
+
+	case *metav1.Duration_Minutes:
+		if d.GetMinutes() == 0 {
+			return "", errors.Errorf("duration minutes cannot be zero")
+		}
+		return fmt.Sprintf("%dm", d.GetMinutes()), nil
+
+	case *metav1.Duration_Hours:
+		if d.GetHours() == 0 {
+			return "", errors.Errorf("duration hours cannot be zero")
+		}
+		return fmt.Sprintf("%dh", d.GetHours()), nil
+
+	case *metav1.Duration_Days:
+		if d.GetDays() == 0 {
+			return "", errors.Errorf("duration days cannot be zero")
+		}
+		return fmt.Sprintf("%dh", d.GetDays()*24), nil
+
+	case *metav1.Duration_Weeks:
+		if d.GetWeeks() == 0 {
+			return "", errors.Errorf("duration weeks cannot be zero")
+		}
+		return fmt.Sprintf("%dh", d.GetWeeks()*7*24), nil
+
+	case *metav1.Duration_Months:
+		return "", errors.Errorf("months are not supported for Collector duration fields")
+
+	default:
+		return "", errors.Errorf("invalid duration")
+	}
+}
+
+func validateCollectorDuration(
+	name string,
+	d *metav1.Duration,
+	min time.Duration,
+	max time.Duration,
+	allowNil bool,
+) error {
+	if d == nil {
+		if allowNil {
+			return nil
+		}
+		return grpcutils.InvalidArg("%s must be set", name)
+	}
+
+	td, err := metav1DurationToTimeDuration(d)
+	if err != nil {
+		return grpcutils.InvalidArg("Invalid %s: %+v", name, err)
+	}
+
+	if td < min || td > max {
+		return grpcutils.InvalidArg("%s must be between %s and %s", name, min, max)
+	}
+
+	return nil
+}
+
+func metav1DurationToTimeDuration(d *metav1.Duration) (time.Duration, error) {
+	if d == nil {
+		return 0, errors.Errorf("nil duration")
+	}
+
+	switch d.Type.(type) {
+	case *metav1.Duration_Milliseconds:
+		if d.GetMilliseconds() == 0 {
+			return 0, errors.Errorf("milliseconds cannot be zero")
+		}
+		return time.Duration(d.GetMilliseconds()) * time.Millisecond, nil
+
+	case *metav1.Duration_Seconds:
+		if d.GetSeconds() == 0 {
+			return 0, errors.Errorf("seconds cannot be zero")
+		}
+		return time.Duration(d.GetSeconds()) * time.Second, nil
+
+	case *metav1.Duration_Minutes:
+		if d.GetMinutes() == 0 {
+			return 0, errors.Errorf("minutes cannot be zero")
+		}
+		return time.Duration(d.GetMinutes()) * time.Minute, nil
+
+	case *metav1.Duration_Hours:
+		if d.GetHours() == 0 {
+			return 0, errors.Errorf("hours cannot be zero")
+		}
+		return time.Duration(d.GetHours()) * time.Hour, nil
+
+	case *metav1.Duration_Days:
+		if d.GetDays() == 0 {
+			return 0, errors.Errorf("days cannot be zero")
+		}
+		return time.Duration(d.GetDays()) * 24 * time.Hour, nil
+
+	case *metav1.Duration_Weeks:
+		if d.GetWeeks() == 0 {
+			return 0, errors.Errorf("weeks cannot be zero")
+		}
+		return time.Duration(d.GetWeeks()) * 7 * 24 * time.Hour, nil
+
+	case *metav1.Duration_Months:
+		return 0, errors.Errorf("months are not supported for fixed-duration collector fields")
+
+	default:
+		return 0, errors.Errorf("invalid duration type")
+	}
 }

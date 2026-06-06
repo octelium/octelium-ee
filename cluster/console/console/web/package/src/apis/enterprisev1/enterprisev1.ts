@@ -40,6 +40,7 @@ import { ObjectReference } from "../metav1/metav1";
 import { Struct } from "../google/protobuf/struct";
 import { Timestamp } from "../google/protobuf/timestamp";
 import { ListResponseMeta } from "../metav1/metav1";
+import { Duration } from "../metav1/metav1";
 import { Metadata } from "../metav1/metav1";
 import { CommonListOptions } from "../metav1/metav1";
 /**
@@ -633,31 +634,6 @@ export interface CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom_Value 
         oneofKind: undefined;
     };
 }
-// 
-// message Loki {
-// message Auth {
-// message Bearer {
-// oneof type { string fromSecret = 1; }
-// }
-// message Custom {
-// message Value {
-// oneof type { string fromSecret = 1; }
-// }
-// 
-// string header = 1;
-// Value value = 2;
-// }
-// 
-// oneof type {
-// Bearer bearer = 1;
-// Custom custom = 2;
-// }
-// }
-// string endpoint = 1;
-// map<string, string> headers = 2;
-// Auth auth = 3;
-// }
-
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse
  */
@@ -1073,17 +1049,67 @@ export interface CollectorExporter_Spec_Splunk_TLS {
  */
 export interface CollectorExporter_Spec_AzureMonitor {
     /**
-     * @generated from protobuf field: string endpoint = 1
+     * Recommended. Prefer this over instrumentationKey.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.ConnectionString connectionString = 1
      */
-    endpoint: string;
+    connectionString?: CollectorExporter_Spec_AzureMonitor_ConnectionString;
     /**
+     * Legacy. Still supported, but not recommended for new configs.
+     *
      * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.InstrumentationKey instrumentationKey = 2
      */
     instrumentationKey?: CollectorExporter_Spec_AzureMonitor_InstrumentationKey;
     /**
-     * @generated from protobuf field: int64 maxBatchSize = 3
+     * Optional direct endpoint override. Usually not needed when using
+     * connectionString.
+     *
+     * @generated from protobuf field: string endpoint = 3
+     */
+    endpoint: string;
+    /**
+     * Upstream default is 1024.
+     *
+     * @generated from protobuf field: int64 maxBatchSize = 4
      */
     maxBatchSize: number;
+    /**
+     * Upstream config key: maxbatchinterval.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration maxBatchInterval = 5
+     */
+    maxBatchInterval?: Duration;
+    /**
+     * Upstream config key: shutdown_timeout.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration shutdownTimeout = 6
+     */
+    shutdownTimeout?: Duration;
+    /**
+     * @generated from protobuf field: bool customEventsEnabled = 7
+     */
+    customEventsEnabled: boolean;
+    /**
+     * @generated from protobuf field: bool exceptionEventsEnabled = 8
+     */
+    exceptionEventsEnabled: boolean;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.ConnectionString
+ */
+export interface CollectorExporter_Spec_AzureMonitor_ConnectionString {
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "fromSecret";
+        /**
+         * @generated from protobuf field: string fromSecret = 1
+         */
+        fromSecret: string;
+    } | {
+        oneofKind: undefined;
+    };
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.InstrumentationKey
@@ -7437,15 +7463,22 @@ export const CollectorExporter_Spec_Splunk_TLS = new CollectorExporter_Spec_Splu
 class CollectorExporter_Spec_AzureMonitor$Type extends MessageType<CollectorExporter_Spec_AzureMonitor> {
     constructor() {
         super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor", [
-            { no: 1, name: "endpoint", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 1, name: "connectionString", kind: "message", T: () => CollectorExporter_Spec_AzureMonitor_ConnectionString },
             { no: 2, name: "instrumentationKey", kind: "message", T: () => CollectorExporter_Spec_AzureMonitor_InstrumentationKey },
-            { no: 3, name: "maxBatchSize", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 2 /*LongType.NUMBER*/ }
+            { no: 3, name: "endpoint", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "maxBatchSize", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 5, name: "maxBatchInterval", kind: "message", T: () => Duration },
+            { no: 6, name: "shutdownTimeout", kind: "message", T: () => Duration },
+            { no: 7, name: "customEventsEnabled", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 8, name: "exceptionEventsEnabled", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<CollectorExporter_Spec_AzureMonitor>): CollectorExporter_Spec_AzureMonitor {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.endpoint = "";
         message.maxBatchSize = 0;
+        message.customEventsEnabled = false;
+        message.exceptionEventsEnabled = false;
         if (value !== undefined)
             reflectionMergePartial<CollectorExporter_Spec_AzureMonitor>(this, message, value);
         return message;
@@ -7455,14 +7488,29 @@ class CollectorExporter_Spec_AzureMonitor$Type extends MessageType<CollectorExpo
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* string endpoint */ 1:
-                    message.endpoint = reader.string();
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.ConnectionString connectionString */ 1:
+                    message.connectionString = CollectorExporter_Spec_AzureMonitor_ConnectionString.internalBinaryRead(reader, reader.uint32(), options, message.connectionString);
                     break;
                 case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.InstrumentationKey instrumentationKey */ 2:
                     message.instrumentationKey = CollectorExporter_Spec_AzureMonitor_InstrumentationKey.internalBinaryRead(reader, reader.uint32(), options, message.instrumentationKey);
                     break;
-                case /* int64 maxBatchSize */ 3:
+                case /* string endpoint */ 3:
+                    message.endpoint = reader.string();
+                    break;
+                case /* int64 maxBatchSize */ 4:
                     message.maxBatchSize = reader.int64().toNumber();
+                    break;
+                case /* octelium.api.main.meta.v1.Duration maxBatchInterval */ 5:
+                    message.maxBatchInterval = Duration.internalBinaryRead(reader, reader.uint32(), options, message.maxBatchInterval);
+                    break;
+                case /* octelium.api.main.meta.v1.Duration shutdownTimeout */ 6:
+                    message.shutdownTimeout = Duration.internalBinaryRead(reader, reader.uint32(), options, message.shutdownTimeout);
+                    break;
+                case /* bool customEventsEnabled */ 7:
+                    message.customEventsEnabled = reader.bool();
+                    break;
+                case /* bool exceptionEventsEnabled */ 8:
+                    message.exceptionEventsEnabled = reader.bool();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -7476,15 +7524,30 @@ class CollectorExporter_Spec_AzureMonitor$Type extends MessageType<CollectorExpo
         return message;
     }
     internalBinaryWrite(message: CollectorExporter_Spec_AzureMonitor, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* string endpoint = 1; */
-        if (message.endpoint !== "")
-            writer.tag(1, WireType.LengthDelimited).string(message.endpoint);
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.ConnectionString connectionString = 1; */
+        if (message.connectionString)
+            CollectorExporter_Spec_AzureMonitor_ConnectionString.internalBinaryWrite(message.connectionString, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.InstrumentationKey instrumentationKey = 2; */
         if (message.instrumentationKey)
             CollectorExporter_Spec_AzureMonitor_InstrumentationKey.internalBinaryWrite(message.instrumentationKey, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
-        /* int64 maxBatchSize = 3; */
+        /* string endpoint = 3; */
+        if (message.endpoint !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.endpoint);
+        /* int64 maxBatchSize = 4; */
         if (message.maxBatchSize !== 0)
-            writer.tag(3, WireType.Varint).int64(message.maxBatchSize);
+            writer.tag(4, WireType.Varint).int64(message.maxBatchSize);
+        /* octelium.api.main.meta.v1.Duration maxBatchInterval = 5; */
+        if (message.maxBatchInterval)
+            Duration.internalBinaryWrite(message.maxBatchInterval, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.Duration shutdownTimeout = 6; */
+        if (message.shutdownTimeout)
+            Duration.internalBinaryWrite(message.shutdownTimeout, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* bool customEventsEnabled = 7; */
+        if (message.customEventsEnabled !== false)
+            writer.tag(7, WireType.Varint).bool(message.customEventsEnabled);
+        /* bool exceptionEventsEnabled = 8; */
+        if (message.exceptionEventsEnabled !== false)
+            writer.tag(8, WireType.Varint).bool(message.exceptionEventsEnabled);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -7495,6 +7558,56 @@ class CollectorExporter_Spec_AzureMonitor$Type extends MessageType<CollectorExpo
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor
  */
 export const CollectorExporter_Spec_AzureMonitor = new CollectorExporter_Spec_AzureMonitor$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_AzureMonitor_ConnectionString$Type extends MessageType<CollectorExporter_Spec_AzureMonitor_ConnectionString> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.ConnectionString", [
+            { no: 1, name: "fromSecret", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_AzureMonitor_ConnectionString>): CollectorExporter_Spec_AzureMonitor_ConnectionString {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_AzureMonitor_ConnectionString>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_AzureMonitor_ConnectionString): CollectorExporter_Spec_AzureMonitor_ConnectionString {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string fromSecret */ 1:
+                    message.type = {
+                        oneofKind: "fromSecret",
+                        fromSecret: reader.string()
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_AzureMonitor_ConnectionString, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string fromSecret = 1; */
+        if (message.type.oneofKind === "fromSecret")
+            writer.tag(1, WireType.LengthDelimited).string(message.type.fromSecret);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.ConnectionString
+ */
+export const CollectorExporter_Spec_AzureMonitor_ConnectionString = new CollectorExporter_Spec_AzureMonitor_ConnectionString$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class CollectorExporter_Spec_AzureMonitor_InstrumentationKey$Type extends MessageType<CollectorExporter_Spec_AzureMonitor_InstrumentationKey> {
     constructor() {

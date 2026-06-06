@@ -294,20 +294,76 @@
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor": {
             "properties": {
-                "endpoint": {
-                    "type": "string"
+                "connectionString": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.ConnectionString",
+                    "additionalProperties": false,
+                    "description": "Recommended. Prefer this over instrumentationKey."
                 },
                 "instrumentationKey": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.InstrumentationKey",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Legacy. Still supported, but not recommended for new configs."
+                },
+                "endpoint": {
+                    "type": "string",
+                    "description": "Optional direct endpoint override. Usually not needed when using connectionString."
                 },
                 "maxBatchSize": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "Upstream default is 1024."
+                },
+                "maxBatchInterval": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false,
+                    "description": "Upstream config key: maxbatchinterval."
+                },
+                "shutdownTimeout": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false,
+                    "description": "Upstream config key: shutdown_timeout."
+                },
+                "customEventsEnabled": {
+                    "type": "boolean"
+                },
+                "exceptionEventsEnabled": {
+                    "type": "boolean"
                 }
             },
             "additionalProperties": false,
             "type": "object",
             "title": "Azure Monitor"
+        },
+        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.ConnectionString": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Connection String"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.InstrumentationKey": {
             "properties": {
@@ -359,8 +415,7 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "message Loki {\nmessage Auth {\nmessage Bearer {\noneof type { string fromSecret = 1; }\n}\nmessage Custom {\nmessage Value {\noneof type { string fromSecret = 1; }\n}\n\nstring header = 1;\nValue value = 2;\n}\n\noneof type {\nBearer bearer = 1;\nCustom custom = 2;\n}\n}\nstring endpoint = 1;\nmap\u003cstring, string\u003e headers = 2;\nAuth auth = 3;\n}",
-            "description": "message Loki {message Auth {message Bearer {oneof type { string fromSecret = 1; }}message Custom {message Value {oneof type { string fromSecret = 1; }}string header = 1;Value value = 2;}oneof type {Bearer bearer = 1;Custom custom = 2;}}string endpoint = 1;map\u003cstring, string\u003e headers = 2;Auth auth = 3;}"
+            "title": "Clickhouse"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.Password": {
             "properties": {
@@ -1582,6 +1637,123 @@
             "additionalProperties": false,
             "type": "object",
             "title": "Status"
+        },
+        "octelium.api.main.meta.v1.Duration": {
+            "properties": {
+                "milliseconds": {
+                    "type": "integer",
+                    "description": "Milliseconds is the duration set in milliseconds"
+                },
+                "seconds": {
+                    "type": "integer",
+                    "description": "Seconds is the duration set in seconds"
+                },
+                "minutes": {
+                    "type": "integer",
+                    "description": "Minutes is the duration set in minutes"
+                },
+                "hours": {
+                    "type": "integer",
+                    "description": "Hours is the duration set in hours"
+                },
+                "days": {
+                    "type": "integer",
+                    "description": "Days is the duration set in days"
+                },
+                "weeks": {
+                    "type": "integer",
+                    "description": "Weeks is the duration set in weeks"
+                },
+                "months": {
+                    "type": "integer",
+                    "description": "Months is the duration set in months"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "milliseconds"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "seconds"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "minutes"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "hours"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "days"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "weeks"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "months"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "milliseconds"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "seconds"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "minutes"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "hours"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "days"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "weeks"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "months"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Duration"
         },
         "octelium.api.main.meta.v1.Metadata": {
             "properties": {

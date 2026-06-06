@@ -105,3 +105,14 @@ type exporterSplunk struct {
 type splunkTLS struct {
 	InsecureSkipVerify bool `json:"insecure_skip_verify,omitempty"`
 }
+
+type exporterAzureMonitor struct {
+	ConnectionString       string `json:"connection_string,omitempty"`
+	InstrumentationKey     string `json:"instrumentation_key,omitempty"`
+	Endpoint               string `json:"endpoint,omitempty"`
+	MaxBatchSize           int64  `json:"maxbatchsize,omitempty"`
+	MaxBatchInterval       string `json:"maxbatchinterval,omitempty"`
+	ShutdownTimeout        string `json:"shutdown_timeout,omitempty"`
+	CustomEventsEnabled    bool   `json:"custom_events_enabled,omitempty"`
+	ExceptionEventsEnabled bool   `json:"exception_events_enabled,omitempty"`
+}
