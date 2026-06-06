@@ -1258,7 +1258,7 @@
                 },
                 "headers": {
                     "items": {
-                        "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.KeyValue"
+                        "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Header"
                     },
                     "additionalProperties": false,
                     "type": "array"
@@ -1267,8 +1267,46 @@
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth",
                     "additionalProperties": false
                 },
-                "noTLS": {
+                "tls": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.TLS",
+                    "additionalProperties": false
+                },
+                "compression": {
+                    "enum": [
+                        "COMPRESSION_UNSET",
+                        "GZIP",
+                        "NONE",
+                        "SNAPPY",
+                        "ZSTD"
+                    ],
+                    "type": "string",
+                    "title": "Compression"
+                },
+                "timeout": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false
+                },
+                "waitForReady": {
                     "type": "boolean"
+                },
+                "authority": {
+                    "type": "string"
+                },
+                "userAgent": {
+                    "type": "string"
+                },
+                "balancerName": {
+                    "type": "string"
+                },
+                "readBufferSize": {
+                    "type": "integer"
+                },
+                "writeBufferSize": {
+                    "type": "integer"
+                },
+                "keepalive": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Keepalive",
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false,
@@ -1460,7 +1498,7 @@
             ],
             "title": "Value"
         },
-        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.KeyValue": {
+        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Header": {
             "properties": {
                 "key": {
                     "type": "string"
@@ -1471,7 +1509,44 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Key Value"
+            "title": "Header"
+        },
+        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Keepalive": {
+            "properties": {
+                "time": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false
+                },
+                "timeout": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false
+                },
+                "permitWithoutStream": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Keepalive"
+        },
+        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.TLS": {
+            "properties": {
+                "insecure": {
+                    "type": "boolean"
+                },
+                "insecureSkipVerify": {
+                    "type": "boolean"
+                },
+                "serverNameOverride": {
+                    "type": "string"
+                },
+                "caPEM": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "TLS"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP": {
             "properties": {

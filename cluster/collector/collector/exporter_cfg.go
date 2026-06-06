@@ -9,11 +9,36 @@
 package collector
 
 type exporterOTLP struct {
-	Endpoint    string            `json:"endpoint,omitempty"`
-	TLS         *otelTLS          `json:"tls,omitempty"`
-	Compression string            `json:"compression,omitempty"`
-	Auth        *otelAuth         `json:"auth,omitempty"`
-	Headers     map[string]string `json:"headers,omitempty"`
+	Endpoint        string             `json:"endpoint,omitempty"`
+	Headers         map[string]string  `json:"headers,omitempty"`
+	Auth            *otelAuth          `json:"auth,omitempty"`
+	TLS             *otelClientTLS     `json:"tls,omitempty"`
+	Compression     string             `json:"compression,omitempty"`
+	Timeout         string             `json:"timeout,omitempty"`
+	WaitForReady    bool               `json:"wait_for_ready,omitempty"`
+	Authority       string             `json:"authority,omitempty"`
+	UserAgent       string             `json:"user_agent,omitempty"`
+	BalancerName    string             `json:"balancer_name,omitempty"`
+	ReadBufferSize  int32              `json:"read_buffer_size,omitempty"`
+	WriteBufferSize int32              `json:"write_buffer_size,omitempty"`
+	Keepalive       *otelGRPCKeepalive `json:"keepalive,omitempty"`
+}
+
+type otelClientTLS struct {
+	Insecure           bool   `json:"insecure,omitempty"`
+	InsecureSkipVerify bool   `json:"insecure_skip_verify,omitempty"`
+	ServerNameOverride string `json:"server_name_override,omitempty"`
+	CAPEM              string `json:"ca_pem,omitempty"`
+}
+
+type otelGRPCKeepalive struct {
+	Time                string `json:"time,omitempty"`
+	Timeout             string `json:"timeout,omitempty"`
+	PermitWithoutStream bool   `json:"permit_without_stream,omitempty"`
+}
+
+type otelAuth struct {
+	Authenticator string `json:"authenticator,omitempty"`
 }
 
 type exporterOTLPHTTP struct {
@@ -164,10 +189,6 @@ type exporterKafkaProducer struct {
 
 type otelTLS struct {
 	Insecure bool `json:"insecure,omitempty"`
-}
-
-type otelAuth struct {
-	Authenticator string `json:"authenticator,omitempty"`
 }
 
 type exporterSplunk struct {

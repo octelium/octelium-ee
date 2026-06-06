@@ -80,83 +80,57 @@ func (p *provider) getExporter(ctx context.Context, exp *enterprisev1.CollectorE
 
 	switch exp.Spec.Type.(type) {
 	case *enterprisev1.CollectorExporter_Spec_Otlp:
-
 		ret.HasLogs = true
 		ret.HasMetrics = true
 
 		spec := exp.Spec.GetOtlp()
+		if spec == nil {
+			return nil, errors.Errorf("nil OTLP exporter spec")
+		}
+
+		timeout, err := durationToCollectorString(spec.Timeout)
+		if err != nil {
+			return nil, err
+		}
+
+		compression, err := otlpCompressionToCollectorString(spec.Compression)
+		if err != nil {
+			return nil, err
+		}
+
+		keepalive, err := otlpKeepaliveToCollector(spec.Keepalive)
+		if err != nil {
+			return nil, err
+		}
 
 		c := &exporterOTLP{
-			Endpoint: spec.Endpoint,
-			TLS: func() *otelTLS {
-				if spec.NoTLS {
-					return &otelTLS{
-						Insecure: true,
-					}
-				}
-				return nil
-			}(),
-			Headers: func() map[string]string {
-				if len(spec.Headers) < 1 {
-					return nil
-				}
-
-				ret := make(map[string]string)
-
-				for _, hdr := range spec.Headers {
-					ret[hdr.Key] = hdr.Value
-				}
-
-				return ret
-			}(),
+			Endpoint:        spec.Endpoint,
+			Headers:         otlpHeadersToMap(spec.Headers),
+			Compression:     compression,
+			Timeout:         timeout,
+			WaitForReady:    spec.WaitForReady,
+			Authority:       spec.Authority,
+			UserAgent:       spec.UserAgent,
+			BalancerName:    spec.BalancerName,
+			ReadBufferSize:  spec.ReadBufferSize,
+			WriteBufferSize: spec.WriteBufferSize,
+			Keepalive:       keepalive,
 		}
 		ret.exp = c
 
-		if spec.Auth != nil {
-			if c.Headers == nil {
-				c.Headers = make(map[string]string)
+		if spec.Tls != nil {
+			c.TLS = &otelClientTLS{
+				Insecure:           spec.Tls.Insecure,
+				InsecureSkipVerify: spec.Tls.InsecureSkipVerify,
+				ServerNameOverride: spec.Tls.ServerNameOverride,
+				CAPEM:              spec.Tls.CaPEM,
 			}
-			switch spec.Auth.Type.(type) {
-			case *enterprisev1.CollectorExporter_Spec_OTLP_Auth_Bearer_:
-				if spec.Auth.GetBearer().GetFromSecret() != "" {
-					sec, err := octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
-						Name: spec.Auth.GetBearer().GetFromSecret(),
-					})
-					if err != nil {
-						return nil, err
-					}
+		}
 
-					c.Headers["Authorization"] = (fmt.Sprintf("Bearer %s", uenterprisev1.ToSecret(sec).GetValueStr()))
-				}
-			case *enterprisev1.CollectorExporter_Spec_OTLP_Auth_Basic_:
-				if spec.Auth.GetBasic().GetPassword() != nil && spec.Auth.GetBasic().GetPassword().GetFromSecret() != "" {
-					sec, err := octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
-						Name: spec.Auth.GetBasic().GetPassword().GetFromSecret(),
-					})
-					if err != nil {
-						return nil, err
-					}
-
-					authVal := base64.StdEncoding.EncodeToString(
-						[]byte(fmt.Sprintf("%s:%s",
-							spec.Auth.GetBasic().Username, uenterprisev1.ToSecret(sec).GetValueStr())))
-
-					c.Headers["Authorization"] = (fmt.Sprintf("Basic %s", authVal))
-				}
-			case *enterprisev1.CollectorExporter_Spec_OTLP_Auth_Custom_:
-				if spec.Auth.GetCustom().GetHeader() != "" &&
-					spec.Auth.GetCustom().GetValue() != nil &&
-					spec.Auth.GetCustom().GetValue().GetFromSecret() != "" {
-					sec, err := octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
-						Name: spec.Auth.GetCustom().GetValue().GetFromSecret(),
-					})
-					if err != nil {
-						return nil, err
-					}
-
-					c.Headers[spec.Auth.GetCustom().GetHeader()] = (uenterprisev1.ToSecret(sec).GetValueStr())
-				}
-			}
+		if err := p.applyOTLPAuth(ctx, c.Headers, func(h map[string]string) {
+			c.Headers = h
+		}, spec.Auth); err != nil {
+			return nil, err
 		}
 
 	case *enterprisev1.CollectorExporter_Spec_OtlpHTTP:
@@ -1370,4 +1344,136 @@ func influxPrecisionToCollectorString(
 	default:
 		return "", errors.Errorf("invalid InfluxDB precision")
 	}
+}
+
+func otlpHeadersToMap(headers []*enterprisev1.CollectorExporter_Spec_OTLP_Header) map[string]string {
+	if len(headers) == 0 {
+		return nil
+	}
+
+	ret := make(map[string]string, len(headers))
+	for _, h := range headers {
+		if h == nil || h.Key == "" {
+			continue
+		}
+		ret[h.Key] = h.Value
+	}
+
+	if len(ret) == 0 {
+		return nil
+	}
+
+	return ret
+}
+
+func otlpCompressionToCollectorString(
+	compression enterprisev1.CollectorExporter_Spec_OTLP_Compression,
+) (string, error) {
+	switch compression {
+	case enterprisev1.CollectorExporter_Spec_OTLP_COMPRESSION_UNSET,
+		enterprisev1.CollectorExporter_Spec_OTLP_GZIP:
+		// OTLP exporter default is gzip. Omit it unless explicitly set to something else.
+		return "", nil
+	case enterprisev1.CollectorExporter_Spec_OTLP_NONE:
+		return "none", nil
+	case enterprisev1.CollectorExporter_Spec_OTLP_SNAPPY:
+		return "snappy", nil
+	case enterprisev1.CollectorExporter_Spec_OTLP_ZSTD:
+		return "zstd", nil
+	default:
+		return "", errors.Errorf("invalid OTLP compression")
+	}
+}
+
+func otlpKeepaliveToCollector(
+	ka *enterprisev1.CollectorExporter_Spec_OTLP_Keepalive,
+) (*otelGRPCKeepalive, error) {
+	if ka == nil {
+		return nil, nil
+	}
+
+	timeStr, err := durationToCollectorString(ka.Time)
+	if err != nil {
+		return nil, err
+	}
+
+	timeoutStr, err := durationToCollectorString(ka.Timeout)
+	if err != nil {
+		return nil, err
+	}
+
+	if timeStr == "" && timeoutStr == "" && !ka.PermitWithoutStream {
+		return nil, nil
+	}
+
+	return &otelGRPCKeepalive{
+		Time:                timeStr,
+		Timeout:             timeoutStr,
+		PermitWithoutStream: ka.PermitWithoutStream,
+	}, nil
+}
+
+func (p *provider) applyOTLPAuth(
+	ctx context.Context,
+	headers map[string]string,
+	setHeaders func(map[string]string),
+	auth *enterprisev1.CollectorExporter_Spec_OTLP_Auth,
+) error {
+	if auth == nil {
+		return nil
+	}
+
+	if headers == nil {
+		headers = make(map[string]string)
+		setHeaders(headers)
+	}
+
+	switch auth.Type.(type) {
+	case *enterprisev1.CollectorExporter_Spec_OTLP_Auth_Bearer_:
+		if auth.GetBearer().GetFromSecret() == "" {
+			return nil
+		}
+
+		sec, err := p.octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
+			Name: auth.GetBearer().GetFromSecret(),
+		})
+		if err != nil {
+			return err
+		}
+
+		headers["Authorization"] = fmt.Sprintf("Bearer %s", uenterprisev1.ToSecret(sec).GetValueStr())
+
+	case *enterprisev1.CollectorExporter_Spec_OTLP_Auth_Basic_:
+		basic := auth.GetBasic()
+		if basic == nil || basic.GetPassword() == nil || basic.GetPassword().GetFromSecret() == "" {
+			return nil
+		}
+
+		sec, err := p.octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
+			Name: basic.GetPassword().GetFromSecret(),
+		})
+		if err != nil {
+			return err
+		}
+
+		raw := fmt.Sprintf("%s:%s", basic.Username, uenterprisev1.ToSecret(sec).GetValueStr())
+		headers["Authorization"] = "Basic " + base64.StdEncoding.EncodeToString([]byte(raw))
+
+	case *enterprisev1.CollectorExporter_Spec_OTLP_Auth_Custom_:
+		custom := auth.GetCustom()
+		if custom == nil || custom.Header == "" || custom.GetValue() == nil || custom.GetValue().GetFromSecret() == "" {
+			return nil
+		}
+
+		sec, err := p.octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
+			Name: custom.GetValue().GetFromSecret(),
+		})
+		if err != nil {
+			return err
+		}
+
+		headers[custom.Header] = uenterprisev1.ToSecret(sec).GetValueStr()
+	}
+
+	return nil
 }

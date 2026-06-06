@@ -626,7 +626,7 @@ func TestGetExporterElasticsearchBasicAuthDoesNotPanic(t *testing.T) {
 		Spec: &enterprisev1.CollectorExporter_Spec{
 			Type: &enterprisev1.CollectorExporter_Spec_Elasticsearch_{
 				Elasticsearch: &enterprisev1.CollectorExporter_Spec_Elasticsearch{
-					Endpoints: []string{"http://localhost:9200"},
+					Endpoint: "http://localhost:9200",
 					Auth: &enterprisev1.CollectorExporter_Spec_Elasticsearch_Auth{
 						Type: &enterprisev1.CollectorExporter_Spec_Elasticsearch_Auth_Basic_{
 							Basic: &enterprisev1.CollectorExporter_Spec_Elasticsearch_Auth_Basic{
@@ -645,17 +645,22 @@ func TestGetExporterElasticsearchBasicAuthDoesNotPanic(t *testing.T) {
 		Status: &enterprisev1.CollectorExporter_Status{},
 	}
 
-	var info *exporterInfo
-	require.NotPanics(t, func() {
-		info, err = p.getExporter(ctx, esExp)
-	})
+	expInfo, err := p.getExporter(ctx, esExp)
 	require.NoError(t, err)
+	require.NotNil(t, expInfo)
 
-	require.NotNil(t, info)
-	headers, ok := info.exporterMap["headers"].(map[string]any)
-	require.True(t, ok)
+	require.True(t, expInfo.HasLogs)
+	require.True(t, expInfo.HasMetrics)
 
-	assert.Equal(t, basicAuthHeader(username, password), headers["Authorization"])
+	cfg := expInfo.exporterMap
+	require.NotNil(t, cfg)
+
+	assert.Equal(t, "http://localhost:9200", cfg["endpoint"])
+	assert.Equal(t, username, cfg["user"])
+	assert.Equal(t, password, cfg["password"])
+
+	_, hasHeaders := cfg["headers"]
+	assert.False(t, hasHeaders)
 }
 
 func TestGetConfigSkipsDisabledAndUnresolvableExporters(t *testing.T) {
