@@ -444,6 +444,47 @@ func (p *provider) getExporter(ctx context.Context, exp *enterprisev1.CollectorE
 			c.AccountToken = uenterprisev1.ToSecret(sec).GetValueStr()
 		}
 
+	case *enterprisev1.CollectorExporter_Spec_Splunk_:
+		ret.HasLogs = true
+		ret.HasMetrics = true
+
+		spec := exp.Spec.GetSplunk()
+		if spec == nil {
+			return nil, errors.Errorf("nil Splunk exporter spec")
+		}
+
+		c := &exporterSplunk{
+			Endpoint:                spec.Endpoint,
+			Source:                  spec.Source,
+			SourceType:              spec.SourceType,
+			Index:                   spec.Index,
+			UseMultiMetricFormat:    spec.UseMultiMetricFormat,
+			SplunkAppName:           spec.AppName,
+			SplunkAppVersion:        spec.AppVersion,
+			MaxContentLengthLogs:    spec.MaxContentLengthLogs,
+			MaxContentLengthMetrics: spec.MaxContentLengthMetrics,
+			DisableCompression:      spec.DisableCompression,
+			Timeout:                 spec.Timeout,
+			MaxIdleConns:            spec.MaxIdleConns,
+		}
+		ret.exp = c
+
+		if spec.Tls != nil && spec.Tls.InsecureSkipVerify {
+			c.TLS = &splunkTLS{
+				InsecureSkipVerify: true,
+			}
+		}
+
+		if spec.GetToken() != nil && spec.GetToken().GetFromSecret() != "" {
+			sec, err := octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
+				Name: spec.GetToken().GetFromSecret(),
+			})
+			if err != nil {
+				return nil, err
+			}
+
+			c.Token = uenterprisev1.ToSecret(sec).GetValueStr()
+		}
 	default:
 		return nil, errors.Errorf("Unsupported exporter type: %+v", exp)
 	}

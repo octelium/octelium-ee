@@ -1545,11 +1545,34 @@
                 },
                 "maxContentLengthMetrics": {
                     "type": "integer"
+                },
+                "disableCompression": {
+                    "type": "boolean"
+                },
+                "timeout": {
+                    "type": "string"
+                },
+                "maxIdleConns": {
+                    "type": "integer"
+                },
+                "tls": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.TLS",
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false,
             "type": "object",
             "title": "Splunk"
+        },
+        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.TLS": {
+            "properties": {
+                "insecureSkipVerify": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "TLS"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.Token": {
             "properties": {

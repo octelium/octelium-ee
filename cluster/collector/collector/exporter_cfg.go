@@ -84,3 +84,24 @@ type otelTLS struct {
 type otelAuth struct {
 	Authenticator string `json:"authenticator,omitempty"`
 }
+
+type exporterSplunk struct {
+	Token                   string     `json:"token,omitempty"`
+	Endpoint                string     `json:"endpoint,omitempty"`
+	Source                  string     `json:"source,omitempty"`
+	SourceType              string     `json:"sourcetype,omitempty"`
+	Index                   string     `json:"index,omitempty"`
+	MaxIdleConns            int64      `json:"max_idle_conns,omitempty"`
+	DisableCompression      bool       `json:"disable_compression,omitempty"`
+	Timeout                 string     `json:"timeout,omitempty"`
+	TLS                     *splunkTLS `json:"tls,omitempty"`
+	SplunkAppName           string     `json:"splunk_app_name,omitempty"`
+	SplunkAppVersion        string     `json:"splunk_app_version,omitempty"`
+	UseMultiMetricFormat    bool       `json:"use_multi_metric_format,omitempty"`
+	MaxContentLengthLogs    int64      `json:"max_content_length_logs,omitempty"`
+	MaxContentLengthMetrics int64      `json:"max_content_length_metrics,omitempty"`
+}
+
+type splunkTLS struct {
+	InsecureSkipVerify bool `json:"insecure_skip_verify,omitempty"`
+}
