@@ -324,31 +324,25 @@
             "properties": {
                 "connectionString": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.ConnectionString",
-                    "additionalProperties": false,
-                    "description": "Recommended. Prefer this over instrumentationKey."
+                    "additionalProperties": false
                 },
                 "instrumentationKey": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.InstrumentationKey",
-                    "additionalProperties": false,
-                    "description": "Legacy. Still supported, but not recommended for new configs."
+                    "additionalProperties": false
                 },
                 "endpoint": {
-                    "type": "string",
-                    "description": "Optional direct endpoint override. Usually not needed when using connectionString."
+                    "type": "string"
                 },
                 "maxBatchSize": {
-                    "type": "integer",
-                    "description": "Upstream default is 1024."
+                    "type": "integer"
                 },
                 "maxBatchInterval": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false,
-                    "description": "Upstream config key: maxbatchinterval."
+                    "additionalProperties": false
                 },
                 "shutdownTimeout": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false,
-                    "description": "Upstream config key: shutdown_timeout."
+                    "additionalProperties": false
                 },
                 "customEventsEnabled": {
                     "type": "boolean"
@@ -1605,7 +1599,8 @@
                     "type": "boolean"
                 },
                 "timeout": {
-                    "type": "string"
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false
                 },
                 "maxIdleConns": {
                     "type": "integer"

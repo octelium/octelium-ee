@@ -451,6 +451,11 @@ func (p *provider) getExporter(ctx context.Context, exp *enterprisev1.CollectorE
 			return nil, errors.Errorf("nil Splunk exporter spec")
 		}
 
+		timeout, err := durationToCollectorString(spec.Timeout)
+		if err != nil {
+			return nil, err
+		}
+
 		c := &exporterSplunk{
 			Endpoint:                spec.Endpoint,
 			Source:                  spec.Source,
@@ -462,7 +467,7 @@ func (p *provider) getExporter(ctx context.Context, exp *enterprisev1.CollectorE
 			MaxContentLengthLogs:    spec.MaxContentLengthLogs,
 			MaxContentLengthMetrics: spec.MaxContentLengthMetrics,
 			DisableCompression:      spec.DisableCompression,
-			Timeout:                 spec.Timeout,
+			Timeout:                 timeout,
 			MaxIdleConns:            spec.MaxIdleConns,
 		}
 		ret.exp = c

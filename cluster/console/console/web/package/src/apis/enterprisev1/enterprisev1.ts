@@ -1006,9 +1006,9 @@ export interface CollectorExporter_Spec_Splunk {
      */
     disableCompression: boolean;
     /**
-     * @generated from protobuf field: string timeout = 12
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration timeout = 12
      */
-    timeout: string;
+    timeout?: Duration;
     /**
      * @generated from protobuf field: int64 maxIdleConns = 13
      */
@@ -1049,39 +1049,26 @@ export interface CollectorExporter_Spec_Splunk_TLS {
  */
 export interface CollectorExporter_Spec_AzureMonitor {
     /**
-     * Recommended. Prefer this over instrumentationKey.
-     *
      * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.ConnectionString connectionString = 1
      */
     connectionString?: CollectorExporter_Spec_AzureMonitor_ConnectionString;
     /**
-     * Legacy. Still supported, but not recommended for new configs.
-     *
      * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.InstrumentationKey instrumentationKey = 2
      */
     instrumentationKey?: CollectorExporter_Spec_AzureMonitor_InstrumentationKey;
     /**
-     * Optional direct endpoint override. Usually not needed when using
-     * connectionString.
-     *
      * @generated from protobuf field: string endpoint = 3
      */
     endpoint: string;
     /**
-     * Upstream default is 1024.
-     *
      * @generated from protobuf field: int64 maxBatchSize = 4
      */
     maxBatchSize: number;
     /**
-     * Upstream config key: maxbatchinterval.
-     *
      * @generated from protobuf field: octelium.api.main.meta.v1.Duration maxBatchInterval = 5
      */
     maxBatchInterval?: Duration;
     /**
-     * Upstream config key: shutdown_timeout.
-     *
      * @generated from protobuf field: octelium.api.main.meta.v1.Duration shutdownTimeout = 6
      */
     shutdownTimeout?: Duration;
@@ -7228,7 +7215,7 @@ class CollectorExporter_Spec_Splunk$Type extends MessageType<CollectorExporter_S
             { no: 9, name: "maxContentLengthLogs", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 10, name: "maxContentLengthMetrics", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 11, name: "disableCompression", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
-            { no: 12, name: "timeout", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 12, name: "timeout", kind: "message", T: () => Duration },
             { no: 13, name: "maxIdleConns", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 14, name: "tls", kind: "message", T: () => CollectorExporter_Spec_Splunk_TLS }
         ]);
@@ -7245,7 +7232,6 @@ class CollectorExporter_Spec_Splunk$Type extends MessageType<CollectorExporter_S
         message.maxContentLengthLogs = 0;
         message.maxContentLengthMetrics = 0;
         message.disableCompression = false;
-        message.timeout = "";
         message.maxIdleConns = 0;
         if (value !== undefined)
             reflectionMergePartial<CollectorExporter_Spec_Splunk>(this, message, value);
@@ -7289,8 +7275,8 @@ class CollectorExporter_Spec_Splunk$Type extends MessageType<CollectorExporter_S
                 case /* bool disableCompression */ 11:
                     message.disableCompression = reader.bool();
                     break;
-                case /* string timeout */ 12:
-                    message.timeout = reader.string();
+                case /* octelium.api.main.meta.v1.Duration timeout */ 12:
+                    message.timeout = Duration.internalBinaryRead(reader, reader.uint32(), options, message.timeout);
                     break;
                 case /* int64 maxIdleConns */ 13:
                     message.maxIdleConns = reader.int64().toNumber();
@@ -7343,9 +7329,9 @@ class CollectorExporter_Spec_Splunk$Type extends MessageType<CollectorExporter_S
         /* bool disableCompression = 11; */
         if (message.disableCompression !== false)
             writer.tag(11, WireType.Varint).bool(message.disableCompression);
-        /* string timeout = 12; */
-        if (message.timeout !== "")
-            writer.tag(12, WireType.LengthDelimited).string(message.timeout);
+        /* octelium.api.main.meta.v1.Duration timeout = 12; */
+        if (message.timeout)
+            Duration.internalBinaryWrite(message.timeout, writer.tag(12, WireType.LengthDelimited).fork(), options).join();
         /* int64 maxIdleConns = 13; */
         if (message.maxIdleConns !== 0)
             writer.tag(13, WireType.Varint).int64(message.maxIdleConns);
