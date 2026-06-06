@@ -69,7 +69,6 @@ func (s *Server) validateClusterConfig(ctx context.Context, req *enterprisev1.Cl
 	const (
 		maxPipelines            = 64
 		maxExportersPerPipeline = 64
-		maxPipelineNameLen      = 64
 	)
 
 	if len(req.Spec.Collector.Pipelines) > maxPipelines {
@@ -93,7 +92,7 @@ func (s *Server) validateClusterConfig(ctx context.Context, req *enterprisev1.Cl
 			return grpcutils.InvalidArg("Nil collector pipeline")
 		}
 
-		if err := apivalidation.ValidateName(pipeline.Name, 1, maxPipelineNameLen); err != nil {
+		if err := apivalidation.ValidateName(pipeline.Name, 0, 0); err != nil {
 			return err
 		}
 
@@ -121,7 +120,7 @@ func (s *Server) validateClusterConfig(ctx context.Context, req *enterprisev1.Cl
 
 		seenExporters := make(map[string]struct{}, len(pipeline.Exporters))
 		for _, exporterName := range pipeline.Exporters {
-			if err := apivalidation.ValidateName(exporterName, 1, 0); err != nil {
+			if err := apivalidation.ValidateName(exporterName, 0, 0); err != nil {
 				return err
 			}
 
