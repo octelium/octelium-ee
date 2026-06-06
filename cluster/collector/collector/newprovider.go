@@ -339,22 +339,47 @@ func (p *provider) getExporter(ctx context.Context, exp *enterprisev1.CollectorE
 		}
 
 	case *enterprisev1.CollectorExporter_Spec_Elasticsearch_:
-
 		ret.HasLogs = true
+		ret.HasMetrics = true
 
 		spec := exp.Spec.GetElasticsearch()
+		if spec == nil {
+			return nil, errors.Errorf("nil Elasticsearch exporter spec")
+		}
+
+		timeout, err := durationToCollectorString(spec.Timeout)
+		if err != nil {
+			return nil, err
+		}
+
 		c := &exporterElasticsearch{
-			Endpoints: spec.Endpoints,
-			Headers:   spec.Headers,
-			CloudID:   spec.CloudID,
+			Endpoint:     spec.Endpoint,
+			Endpoints:    append([]string(nil), spec.Endpoints...),
+			CloudID:      spec.CloudID,
+			Pipeline:     spec.Pipeline,
+			LogsIndex:    spec.LogsIndex,
+			MetricsIndex: spec.MetricsIndex,
+			Headers:      elasticHeadersToMap(spec.Headers),
+			Timeout:      timeout,
 		}
 		ret.exp = c
 
-		if spec.Auth != nil {
-			if c.Headers == nil {
-				c.Headers = make(map[string]string)
-			}
+		switch spec.Compression {
+		case enterprisev1.CollectorExporter_Spec_Elasticsearch_GZIP,
+			enterprisev1.CollectorExporter_Spec_Elasticsearch_COMPRESSION_UNSET:
+		case enterprisev1.CollectorExporter_Spec_Elasticsearch_NONE:
+			c.Compression = "none"
+		default:
+			return nil, errors.Errorf("invalid Elasticsearch compression")
+		}
 
+		if spec.Tls != nil && spec.Tls.InsecureSkipVerify {
+			c.TLS = &elasticTLS{
+				InsecureSkipVerify: true,
+			}
+		}
+
+		if spec.Auth != nil {
 			switch spec.Auth.Type.(type) {
 			case *enterprisev1.CollectorExporter_Spec_Elasticsearch_Auth_ApiKey:
 				if spec.Auth.GetApiKey().GetFromSecret() != "" {
@@ -365,27 +390,28 @@ func (p *provider) getExporter(ctx context.Context, exp *enterprisev1.CollectorE
 						return nil, err
 					}
 
-					c.APIKey = (uenterprisev1.ToSecret(sec).GetValueStr())
+					c.APIKey = uenterprisev1.ToSecret(sec).GetValueStr()
 				}
+
 			case *enterprisev1.CollectorExporter_Spec_Elasticsearch_Auth_Basic_:
-				if spec.Auth.GetBasic().GetUser() != "" &&
-					spec.Auth.GetBasic().GetPassword() != nil &&
-					spec.Auth.GetBasic().GetPassword().GetFromSecret() != "" {
-					sec, err := octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
-						Name: spec.Auth.GetBasic().GetPassword().GetFromSecret(),
-					})
-					if err != nil {
-						return nil, err
+				basic := spec.Auth.GetBasic()
+				if basic != nil {
+					c.User = basic.User
+
+					if basic.GetPassword() != nil && basic.GetPassword().GetFromSecret() != "" {
+						sec, err := octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
+							Name: basic.GetPassword().GetFromSecret(),
+						})
+						if err != nil {
+							return nil, err
+						}
+
+						c.Password = uenterprisev1.ToSecret(sec).GetValueStr()
 					}
-
-					authVal := base64.StdEncoding.EncodeToString(
-						[]byte(fmt.Sprintf("%s:%s",
-							spec.Auth.GetBasic().GetUser(), uenterprisev1.ToSecret(sec).GetValueStr())))
-
-					c.Headers["Authorization"] = (fmt.Sprintf("Basic %s", authVal))
 				}
 			}
 		}
+
 	case *enterprisev1.CollectorExporter_Spec_Kafka_:
 
 		ret.HasLogs = true
@@ -959,4 +985,25 @@ func metav1DurationToTimeDuration(d *metav1.Duration) (time.Duration, error) {
 	default:
 		return 0, errors.Errorf("invalid duration type")
 	}
+}
+
+func elasticHeadersToMap(headers []*enterprisev1.CollectorExporter_Spec_Elasticsearch_Header) map[string]string {
+	if len(headers) == 0 {
+		return nil
+	}
+
+	ret := make(map[string]string, len(headers))
+	for _, h := range headers {
+		if h == nil || h.Key == "" {
+			continue
+		}
+
+		ret[h.Key] = h.Value
+	}
+
+	if len(ret) == 0 {
+		return nil
+	}
+
+	return ret
 }

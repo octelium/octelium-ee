@@ -677,31 +677,62 @@ export interface CollectorExporter_Spec_Clickhouse_Password {
  */
 export interface CollectorExporter_Spec_Elasticsearch {
     /**
-     * @generated from protobuf field: repeated string endpoints = 1
+     * @generated from protobuf field: string endpoint = 1
+     */
+    endpoint: string;
+    /**
+     * @generated from protobuf field: repeated string endpoints = 2
      */
     endpoints: string[];
     /**
-     * @generated from protobuf field: string cloudID = 2
+     * @generated from protobuf field: string cloudID = 3
      */
     cloudID: string;
     /**
-     * @generated from protobuf field: string pipeline = 3
+     * @generated from protobuf field: string pipeline = 4
      */
     pipeline: string;
     /**
-     * @generated from protobuf field: string logsIndex = 4
+     * @generated from protobuf field: string logsIndex = 5
      */
     logsIndex: string;
     /**
-     * @generated from protobuf field: map<string, string> headers = 5
+     * @generated from protobuf field: string metricsIndex = 6
      */
-    headers: {
-        [key: string]: string;
-    };
+    metricsIndex: string;
     /**
-     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth auth = 6
+     * @generated from protobuf field: repeated octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Header headers = 7
+     */
+    headers: CollectorExporter_Spec_Elasticsearch_Header[];
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth auth = 8
      */
     auth?: CollectorExporter_Spec_Elasticsearch_Auth;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Compression compression = 9
+     */
+    compression: CollectorExporter_Spec_Elasticsearch_Compression;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration timeout = 10
+     */
+    timeout?: Duration;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.TLS tls = 11
+     */
+    tls?: CollectorExporter_Spec_Elasticsearch_TLS;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Header
+ */
+export interface CollectorExporter_Spec_Elasticsearch_Header {
+    /**
+     * @generated from protobuf field: string key = 1
+     */
+    key: string;
+    /**
+     * @generated from protobuf field: string value = 2
+     */
+    value: string;
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth
@@ -772,6 +803,32 @@ export interface CollectorExporter_Spec_Elasticsearch_Auth_Basic_Password {
     } | {
         oneofKind: undefined;
     };
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.TLS
+ */
+export interface CollectorExporter_Spec_Elasticsearch_TLS {
+    /**
+     * @generated from protobuf field: bool insecureSkipVerify = 1
+     */
+    insecureSkipVerify: boolean;
+}
+/**
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Compression
+ */
+export enum CollectorExporter_Spec_Elasticsearch_Compression {
+    /**
+     * @generated from protobuf enum value: COMPRESSION_UNSET = 0;
+     */
+    COMPRESSION_UNSET = 0,
+    /**
+     * @generated from protobuf enum value: GZIP = 1;
+     */
+    GZIP = 1,
+    /**
+     * @generated from protobuf enum value: NONE = 2;
+     */
+    NONE = 2
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio
@@ -6288,21 +6345,29 @@ export const CollectorExporter_Spec_Clickhouse_Password = new CollectorExporter_
 class CollectorExporter_Spec_Elasticsearch$Type extends MessageType<CollectorExporter_Spec_Elasticsearch> {
     constructor() {
         super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch", [
-            { no: 1, name: "endpoints", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "cloudID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 3, name: "pipeline", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 4, name: "logsIndex", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 5, name: "headers", kind: "map", K: 9 /*ScalarType.STRING*/, V: { kind: "scalar", T: 9 /*ScalarType.STRING*/ } },
-            { no: 6, name: "auth", kind: "message", T: () => CollectorExporter_Spec_Elasticsearch_Auth }
+            { no: 1, name: "endpoint", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "endpoints", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "cloudID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "pipeline", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 5, name: "logsIndex", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 6, name: "metricsIndex", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 7, name: "headers", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => CollectorExporter_Spec_Elasticsearch_Header },
+            { no: 8, name: "auth", kind: "message", T: () => CollectorExporter_Spec_Elasticsearch_Auth },
+            { no: 9, name: "compression", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Compression", CollectorExporter_Spec_Elasticsearch_Compression] },
+            { no: 10, name: "timeout", kind: "message", T: () => Duration },
+            { no: 11, name: "tls", kind: "message", T: () => CollectorExporter_Spec_Elasticsearch_TLS }
         ]);
     }
     create(value?: PartialMessage<CollectorExporter_Spec_Elasticsearch>): CollectorExporter_Spec_Elasticsearch {
         const message = globalThis.Object.create((this.messagePrototype!));
+        message.endpoint = "";
         message.endpoints = [];
         message.cloudID = "";
         message.pipeline = "";
         message.logsIndex = "";
-        message.headers = {};
+        message.metricsIndex = "";
+        message.headers = [];
+        message.compression = 0;
         if (value !== undefined)
             reflectionMergePartial<CollectorExporter_Spec_Elasticsearch>(this, message, value);
         return message;
@@ -6312,23 +6377,38 @@ class CollectorExporter_Spec_Elasticsearch$Type extends MessageType<CollectorExp
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* repeated string endpoints */ 1:
+                case /* string endpoint */ 1:
+                    message.endpoint = reader.string();
+                    break;
+                case /* repeated string endpoints */ 2:
                     message.endpoints.push(reader.string());
                     break;
-                case /* string cloudID */ 2:
+                case /* string cloudID */ 3:
                     message.cloudID = reader.string();
                     break;
-                case /* string pipeline */ 3:
+                case /* string pipeline */ 4:
                     message.pipeline = reader.string();
                     break;
-                case /* string logsIndex */ 4:
+                case /* string logsIndex */ 5:
                     message.logsIndex = reader.string();
                     break;
-                case /* map<string, string> headers */ 5:
-                    this.binaryReadMap5(message.headers, reader, options);
+                case /* string metricsIndex */ 6:
+                    message.metricsIndex = reader.string();
                     break;
-                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth auth */ 6:
+                case /* repeated octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Header headers */ 7:
+                    message.headers.push(CollectorExporter_Spec_Elasticsearch_Header.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth auth */ 8:
                     message.auth = CollectorExporter_Spec_Elasticsearch_Auth.internalBinaryRead(reader, reader.uint32(), options, message.auth);
+                    break;
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Compression compression */ 9:
+                    message.compression = reader.int32();
+                    break;
+                case /* octelium.api.main.meta.v1.Duration timeout */ 10:
+                    message.timeout = Duration.internalBinaryRead(reader, reader.uint32(), options, message.timeout);
+                    break;
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.TLS tls */ 11:
+                    message.tls = CollectorExporter_Spec_Elasticsearch_TLS.internalBinaryRead(reader, reader.uint32(), options, message.tls);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -6341,41 +6421,40 @@ class CollectorExporter_Spec_Elasticsearch$Type extends MessageType<CollectorExp
         }
         return message;
     }
-    private binaryReadMap5(map: CollectorExporter_Spec_Elasticsearch["headers"], reader: IBinaryReader, options: BinaryReadOptions): void {
-        let len = reader.uint32(), end = reader.pos + len, key: keyof CollectorExporter_Spec_Elasticsearch["headers"] | undefined, val: CollectorExporter_Spec_Elasticsearch["headers"][any] | undefined;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case 1:
-                    key = reader.string();
-                    break;
-                case 2:
-                    val = reader.string();
-                    break;
-                default: throw new globalThis.Error("unknown map entry field for octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.headers");
-            }
-        }
-        map[key ?? ""] = val ?? "";
-    }
     internalBinaryWrite(message: CollectorExporter_Spec_Elasticsearch, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* repeated string endpoints = 1; */
+        /* string endpoint = 1; */
+        if (message.endpoint !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.endpoint);
+        /* repeated string endpoints = 2; */
         for (let i = 0; i < message.endpoints.length; i++)
-            writer.tag(1, WireType.LengthDelimited).string(message.endpoints[i]);
-        /* string cloudID = 2; */
+            writer.tag(2, WireType.LengthDelimited).string(message.endpoints[i]);
+        /* string cloudID = 3; */
         if (message.cloudID !== "")
-            writer.tag(2, WireType.LengthDelimited).string(message.cloudID);
-        /* string pipeline = 3; */
+            writer.tag(3, WireType.LengthDelimited).string(message.cloudID);
+        /* string pipeline = 4; */
         if (message.pipeline !== "")
-            writer.tag(3, WireType.LengthDelimited).string(message.pipeline);
-        /* string logsIndex = 4; */
+            writer.tag(4, WireType.LengthDelimited).string(message.pipeline);
+        /* string logsIndex = 5; */
         if (message.logsIndex !== "")
-            writer.tag(4, WireType.LengthDelimited).string(message.logsIndex);
-        /* map<string, string> headers = 5; */
-        for (let k of globalThis.Object.keys(message.headers))
-            writer.tag(5, WireType.LengthDelimited).fork().tag(1, WireType.LengthDelimited).string(k).tag(2, WireType.LengthDelimited).string(message.headers[k]).join();
-        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth auth = 6; */
+            writer.tag(5, WireType.LengthDelimited).string(message.logsIndex);
+        /* string metricsIndex = 6; */
+        if (message.metricsIndex !== "")
+            writer.tag(6, WireType.LengthDelimited).string(message.metricsIndex);
+        /* repeated octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Header headers = 7; */
+        for (let i = 0; i < message.headers.length; i++)
+            CollectorExporter_Spec_Elasticsearch_Header.internalBinaryWrite(message.headers[i], writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth auth = 8; */
         if (message.auth)
-            CollectorExporter_Spec_Elasticsearch_Auth.internalBinaryWrite(message.auth, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+            CollectorExporter_Spec_Elasticsearch_Auth.internalBinaryWrite(message.auth, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Compression compression = 9; */
+        if (message.compression !== 0)
+            writer.tag(9, WireType.Varint).int32(message.compression);
+        /* octelium.api.main.meta.v1.Duration timeout = 10; */
+        if (message.timeout)
+            Duration.internalBinaryWrite(message.timeout, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.TLS tls = 11; */
+        if (message.tls)
+            CollectorExporter_Spec_Elasticsearch_TLS.internalBinaryWrite(message.tls, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -6386,6 +6465,61 @@ class CollectorExporter_Spec_Elasticsearch$Type extends MessageType<CollectorExp
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch
  */
 export const CollectorExporter_Spec_Elasticsearch = new CollectorExporter_Spec_Elasticsearch$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_Elasticsearch_Header$Type extends MessageType<CollectorExporter_Spec_Elasticsearch_Header> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Header", [
+            { no: 1, name: "key", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "value", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_Elasticsearch_Header>): CollectorExporter_Spec_Elasticsearch_Header {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.key = "";
+        message.value = "";
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_Elasticsearch_Header>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_Elasticsearch_Header): CollectorExporter_Spec_Elasticsearch_Header {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string key */ 1:
+                    message.key = reader.string();
+                    break;
+                case /* string value */ 2:
+                    message.value = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_Elasticsearch_Header, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string key = 1; */
+        if (message.key !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.key);
+        /* string value = 2; */
+        if (message.value !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.value);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Header
+ */
+export const CollectorExporter_Spec_Elasticsearch_Header = new CollectorExporter_Spec_Elasticsearch_Header$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class CollectorExporter_Spec_Elasticsearch_Auth$Type extends MessageType<CollectorExporter_Spec_Elasticsearch_Auth> {
     constructor() {
@@ -6600,6 +6734,53 @@ class CollectorExporter_Spec_Elasticsearch_Auth_Basic_Password$Type extends Mess
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.Basic.Password
  */
 export const CollectorExporter_Spec_Elasticsearch_Auth_Basic_Password = new CollectorExporter_Spec_Elasticsearch_Auth_Basic_Password$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_Elasticsearch_TLS$Type extends MessageType<CollectorExporter_Spec_Elasticsearch_TLS> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.TLS", [
+            { no: 1, name: "insecureSkipVerify", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_Elasticsearch_TLS>): CollectorExporter_Spec_Elasticsearch_TLS {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.insecureSkipVerify = false;
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_Elasticsearch_TLS>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_Elasticsearch_TLS): CollectorExporter_Spec_Elasticsearch_TLS {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bool insecureSkipVerify */ 1:
+                    message.insecureSkipVerify = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_Elasticsearch_TLS, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bool insecureSkipVerify = 1; */
+        if (message.insecureSkipVerify !== false)
+            writer.tag(1, WireType.Varint).bool(message.insecureSkipVerify);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.TLS
+ */
+export const CollectorExporter_Spec_Elasticsearch_TLS = new CollectorExporter_Spec_Elasticsearch_TLS$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class CollectorExporter_Spec_Logzio$Type extends MessageType<CollectorExporter_Spec_Logzio> {
     constructor() {

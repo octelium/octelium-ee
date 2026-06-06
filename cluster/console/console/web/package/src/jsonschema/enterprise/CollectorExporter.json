@@ -491,6 +491,9 @@
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch": {
             "properties": {
+                "endpoint": {
+                    "type": "string"
+                },
                 "endpoints": {
                     "items": {
                         "type": "string"
@@ -506,14 +509,35 @@
                 "logsIndex": {
                     "type": "string"
                 },
+                "metricsIndex": {
+                    "type": "string"
+                },
                 "headers": {
-                    "additionalProperties": {
-                        "type": "string"
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Header"
                     },
-                    "type": "object"
+                    "additionalProperties": false,
+                    "type": "array"
                 },
                 "auth": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth",
+                    "additionalProperties": false
+                },
+                "compression": {
+                    "enum": [
+                        "COMPRESSION_UNSET",
+                        "GZIP",
+                        "NONE"
+                    ],
+                    "type": "string",
+                    "title": "Compression"
+                },
+                "timeout": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false
+                },
+                "tls": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.TLS",
                     "additionalProperties": false
                 }
             },
@@ -645,6 +669,29 @@
                 }
             ],
             "title": "Password"
+        },
+        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Header": {
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Header"
+        },
+        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.TLS": {
+            "properties": {
+                "insecureSkipVerify": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "TLS"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB": {
             "properties": {

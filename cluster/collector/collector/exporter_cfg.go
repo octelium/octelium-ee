@@ -43,10 +43,23 @@ type exporterClickhouse struct {
 }
 
 type exporterElasticsearch struct {
-	Endpoints []string          `json:"endpoints,omitempty"`
-	CloudID   string            `json:"cloudid,omitempty"`
-	APIKey    string            `json:"api_key,omitempty"`
-	Headers   map[string]string `json:"headers,omitempty"`
+	Endpoint     string            `json:"endpoint,omitempty"`
+	Endpoints    []string          `json:"endpoints,omitempty"`
+	CloudID      string            `json:"cloudid,omitempty"`
+	Pipeline     string            `json:"pipeline,omitempty"`
+	LogsIndex    string            `json:"logs_index,omitempty"`
+	MetricsIndex string            `json:"metrics_index,omitempty"`
+	Headers      map[string]string `json:"headers,omitempty"`
+	User         string            `json:"user,omitempty"`
+	Password     string            `json:"password,omitempty"`
+	APIKey       string            `json:"api_key,omitempty"`
+	Compression  string            `json:"compression,omitempty"`
+	Timeout      string            `json:"timeout,omitempty"`
+	TLS          *elasticTLS       `json:"tls,omitempty"`
+}
+
+type elasticTLS struct {
+	InsecureSkipVerify bool `json:"insecure_skip_verify,omitempty"`
 }
 
 type exporterDatadog struct {
