@@ -433,11 +433,101 @@
                 },
                 "database": {
                     "type": "string"
+                },
+                "tls": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TLS",
+                    "additionalProperties": false
+                },
+                "connectionParams": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.ConnectionParam"
+                    },
+                    "additionalProperties": false,
+                    "type": "array"
+                },
+                "logsTableName": {
+                    "type": "string"
+                },
+                "metricsTables": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.MetricsTables",
+                    "additionalProperties": false
+                },
+                "ttl": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false
+                },
+                "createSchema": {
+                    "type": "boolean"
+                },
+                "compression": {
+                    "enum": [
+                        "COMPRESSION_UNSET",
+                        "LZ4",
+                        "NONE",
+                        "ZSTD",
+                        "GZIP",
+                        "DEFLATE",
+                        "BR"
+                    ],
+                    "type": "string",
+                    "title": "Compression"
+                },
+                "asyncInsert": {
+                    "type": "boolean"
+                },
+                "json": {
+                    "type": "boolean"
+                },
+                "clusterName": {
+                    "type": "string"
+                },
+                "tableEngine": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TableEngine",
+                    "additionalProperties": false
+                },
+                "timeout": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false,
             "type": "object",
             "title": "Clickhouse"
+        },
+        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.ConnectionParam": {
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Connection Param"
+        },
+        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.MetricsTables": {
+            "properties": {
+                "gauge": {
+                    "type": "string"
+                },
+                "sum": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "histogram": {
+                    "type": "string"
+                },
+                "exponentialHistogram": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Metrics Tables"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.Password": {
             "properties": {
@@ -470,6 +560,38 @@
                 }
             ],
             "title": "Password"
+        },
+        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TLS": {
+            "properties": {
+                "insecure": {
+                    "type": "boolean"
+                },
+                "insecureSkipVerify": {
+                    "type": "boolean"
+                },
+                "serverNameOverride": {
+                    "type": "string"
+                },
+                "caPEM": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "TLS"
+        },
+        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TableEngine": {
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "params": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Table Engine"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog": {
             "properties": {

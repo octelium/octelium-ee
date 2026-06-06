@@ -250,17 +250,55 @@ func (p *provider) getExporter(ctx context.Context, exp *enterprisev1.CollectorE
 		}
 
 	case *enterprisev1.CollectorExporter_Spec_Clickhouse_:
-
 		ret.HasLogs = true
 		ret.HasMetrics = true
 
 		spec := exp.Spec.GetClickhouse()
+		if spec == nil {
+			return nil, errors.Errorf("nil ClickHouse exporter spec")
+		}
+
+		timeout, err := durationToCollectorString(spec.Timeout)
+		if err != nil {
+			return nil, err
+		}
+
+		ttl, err := durationToCollectorString(spec.Ttl)
+		if err != nil {
+			return nil, err
+		}
+
+		compress, err := clickhouseCompressionToCollectorString(spec.Compression)
+		if err != nil {
+			return nil, err
+		}
+
 		c := &exporterClickhouse{
-			Endpoint: spec.Endpoint,
-			Database: spec.Database,
-			Username: spec.Username,
+			Endpoint:         spec.Endpoint,
+			Username:         spec.Username,
+			Database:         spec.Database,
+			ConnectionParams: clickhouseConnectionParamsToMap(spec.ConnectionParams),
+			LogsTableName:    spec.LogsTableName,
+			MetricsTables:    clickhouseMetricsTablesToCollector(spec.MetricsTables),
+			TTL:              ttl,
+			CreateSchema:     &spec.CreateSchema,
+			Compress:         compress,
+			AsyncInsert:      &spec.AsyncInsert,
+			JSON:             spec.Json,
+			ClusterName:      spec.ClusterName,
+			TableEngine:      clickhouseTableEngineToCollector(spec.TableEngine),
+			Timeout:          timeout,
 		}
 		ret.exp = c
+
+		if spec.Tls != nil {
+			c.TLS = &clickhouseTLS{
+				Insecure:           spec.Tls.Insecure,
+				InsecureSkipVerify: spec.Tls.InsecureSkipVerify,
+				ServerNameOverride: spec.Tls.ServerNameOverride,
+				CAPEM:              spec.Tls.CaPEM,
+			}
+		}
 
 		if spec.GetPassword() != nil && spec.GetPassword().GetFromSecret() != "" {
 			sec, err := octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
@@ -270,8 +308,7 @@ func (p *provider) getExporter(ctx context.Context, exp *enterprisev1.CollectorE
 				return nil, err
 			}
 
-			c.Password = (uenterprisev1.ToSecret(sec).GetValueStr())
-
+			c.Password = uenterprisev1.ToSecret(sec).GetValueStr()
 		}
 
 	case *enterprisev1.CollectorExporter_Spec_Elasticsearch_:
@@ -1555,4 +1592,102 @@ func otlpHTTPCompressionToCollectorString(
 	default:
 		return "", errors.Errorf("invalid OTLPHTTP compression")
 	}
+}
+
+func clickhouseCompressionToCollectorString(
+	compression enterprisev1.CollectorExporter_Spec_Clickhouse_Compression,
+) (string, error) {
+	switch compression {
+	case enterprisev1.CollectorExporter_Spec_Clickhouse_COMPRESSION_UNSET:
+		return "", nil
+	case enterprisev1.CollectorExporter_Spec_Clickhouse_LZ4:
+		return "lz4", nil
+	case enterprisev1.CollectorExporter_Spec_Clickhouse_NONE:
+		return "none", nil
+	case enterprisev1.CollectorExporter_Spec_Clickhouse_ZSTD:
+		return "zstd", nil
+	case enterprisev1.CollectorExporter_Spec_Clickhouse_GZIP:
+		return "gzip", nil
+	case enterprisev1.CollectorExporter_Spec_Clickhouse_DEFLATE:
+		return "deflate", nil
+	case enterprisev1.CollectorExporter_Spec_Clickhouse_BR:
+		return "br", nil
+	default:
+		return "", errors.Errorf("invalid ClickHouse compression")
+	}
+}
+
+func clickhouseConnectionParamsToMap(
+	params []*enterprisev1.CollectorExporter_Spec_Clickhouse_ConnectionParam,
+) map[string]string {
+	if len(params) == 0 {
+		return nil
+	}
+
+	ret := make(map[string]string, len(params))
+	for _, p := range params {
+		if p == nil || p.Key == "" {
+			continue
+		}
+		ret[p.Key] = p.Value
+	}
+
+	if len(ret) == 0 {
+		return nil
+	}
+
+	return ret
+}
+
+func clickhouseTableEngineToCollector(
+	in *enterprisev1.CollectorExporter_Spec_Clickhouse_TableEngine,
+) *clickhouseTableEngine {
+	if in == nil {
+		return nil
+	}
+
+	if in.Name == "" && in.Params == "" {
+		return nil
+	}
+
+	return &clickhouseTableEngine{
+		Name:   in.Name,
+		Params: in.Params,
+	}
+}
+
+func clickhouseMetricsTablesToCollector(
+	in *enterprisev1.CollectorExporter_Spec_Clickhouse_MetricsTables,
+) *clickhouseMetricsTables {
+	if in == nil {
+		return nil
+	}
+
+	ret := &clickhouseMetricsTables{}
+
+	if in.Gauge != "" {
+		ret.Gauge = &clickhouseMetricTable{Name: in.Gauge}
+	}
+	if in.Sum != "" {
+		ret.Sum = &clickhouseMetricTable{Name: in.Sum}
+	}
+	if in.Summary != "" {
+		ret.Summary = &clickhouseMetricTable{Name: in.Summary}
+	}
+	if in.Histogram != "" {
+		ret.Histogram = &clickhouseMetricTable{Name: in.Histogram}
+	}
+	if in.ExponentialHistogram != "" {
+		ret.ExponentialHistogram = &clickhouseMetricTable{Name: in.ExponentialHistogram}
+	}
+
+	if ret.Gauge == nil &&
+		ret.Sum == nil &&
+		ret.Summary == nil &&
+		ret.Histogram == nil &&
+		ret.ExponentialHistogram == nil {
+		return nil
+	}
+
+	return ret
 }

@@ -71,10 +71,46 @@ type exporterPrometheusRemoteWriteRead struct {
 }
 
 type exporterClickhouse struct {
-	Endpoint string `json:"endpoint,omitempty"`
-	Database string `json:"database,omitempty"`
-	Username string `json:"username,omitempty"`
-	Password string `json:"password,omitempty"`
+	Endpoint         string                   `json:"endpoint,omitempty"`
+	Username         string                   `json:"username,omitempty"`
+	Password         string                   `json:"password,omitempty"`
+	Database         string                   `json:"database,omitempty"`
+	TLS              *clickhouseTLS           `json:"tls,omitempty"`
+	ConnectionParams map[string]string        `json:"connection_params,omitempty"`
+	LogsTableName    string                   `json:"logs_table_name,omitempty"`
+	MetricsTables    *clickhouseMetricsTables `json:"metrics_tables,omitempty"`
+	TTL              string                   `json:"ttl,omitempty"`
+	CreateSchema     *bool                    `json:"create_schema,omitempty"`
+	Compress         string                   `json:"compress,omitempty"`
+	AsyncInsert      *bool                    `json:"async_insert,omitempty"`
+	JSON             bool                     `json:"json,omitempty"`
+	ClusterName      string                   `json:"cluster_name,omitempty"`
+	TableEngine      *clickhouseTableEngine   `json:"table_engine,omitempty"`
+	Timeout          string                   `json:"timeout,omitempty"`
+}
+
+type clickhouseTLS struct {
+	Insecure           bool   `json:"insecure,omitempty"`
+	InsecureSkipVerify bool   `json:"insecure_skip_verify,omitempty"`
+	ServerNameOverride string `json:"server_name_override,omitempty"`
+	CAPEM              string `json:"ca_pem,omitempty"`
+}
+
+type clickhouseTableEngine struct {
+	Name   string `json:"name,omitempty"`
+	Params string `json:"params,omitempty"`
+}
+
+type clickhouseMetricsTables struct {
+	Gauge                *clickhouseMetricTable `json:"gauge,omitempty"`
+	Sum                  *clickhouseMetricTable `json:"sum,omitempty"`
+	Summary              *clickhouseMetricTable `json:"summary,omitempty"`
+	Histogram            *clickhouseMetricTable `json:"histogram,omitempty"`
+	ExponentialHistogram *clickhouseMetricTable `json:"exponential_histogram,omitempty"`
+}
+
+type clickhouseMetricTable struct {
+	Name string `json:"name,omitempty"`
 }
 
 type exporterElasticsearch struct {

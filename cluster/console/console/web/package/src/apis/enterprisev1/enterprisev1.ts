@@ -790,6 +790,54 @@ export interface CollectorExporter_Spec_Clickhouse {
      * @generated from protobuf field: string database = 4
      */
     database: string;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TLS tls = 5
+     */
+    tls?: CollectorExporter_Spec_Clickhouse_TLS;
+    /**
+     * @generated from protobuf field: repeated octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.ConnectionParam connectionParams = 6
+     */
+    connectionParams: CollectorExporter_Spec_Clickhouse_ConnectionParam[];
+    /**
+     * @generated from protobuf field: string logsTableName = 7
+     */
+    logsTableName: string;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.MetricsTables metricsTables = 8
+     */
+    metricsTables?: CollectorExporter_Spec_Clickhouse_MetricsTables;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration ttl = 9
+     */
+    ttl?: Duration;
+    /**
+     * @generated from protobuf field: bool createSchema = 10
+     */
+    createSchema: boolean;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.Compression compression = 11
+     */
+    compression: CollectorExporter_Spec_Clickhouse_Compression;
+    /**
+     * @generated from protobuf field: bool asyncInsert = 12
+     */
+    asyncInsert: boolean;
+    /**
+     * @generated from protobuf field: bool json = 13
+     */
+    json: boolean;
+    /**
+     * @generated from protobuf field: string clusterName = 14
+     */
+    clusterName: string;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TableEngine tableEngine = 15
+     */
+    tableEngine?: CollectorExporter_Spec_Clickhouse_TableEngine;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration timeout = 16
+     */
+    timeout?: Duration;
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.Password
@@ -807,6 +855,111 @@ export interface CollectorExporter_Spec_Clickhouse_Password {
     } | {
         oneofKind: undefined;
     };
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TLS
+ */
+export interface CollectorExporter_Spec_Clickhouse_TLS {
+    /**
+     * @generated from protobuf field: bool insecure = 1
+     */
+    insecure: boolean;
+    /**
+     * @generated from protobuf field: bool insecureSkipVerify = 2
+     */
+    insecureSkipVerify: boolean;
+    /**
+     * @generated from protobuf field: string serverNameOverride = 3
+     */
+    serverNameOverride: string;
+    /**
+     * @generated from protobuf field: string caPEM = 4
+     */
+    caPEM: string;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.ConnectionParam
+ */
+export interface CollectorExporter_Spec_Clickhouse_ConnectionParam {
+    /**
+     * @generated from protobuf field: string key = 1
+     */
+    key: string;
+    /**
+     * @generated from protobuf field: string value = 2
+     */
+    value: string;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TableEngine
+ */
+export interface CollectorExporter_Spec_Clickhouse_TableEngine {
+    /**
+     * @generated from protobuf field: string name = 1
+     */
+    name: string;
+    /**
+     * @generated from protobuf field: string params = 2
+     */
+    params: string;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.MetricsTables
+ */
+export interface CollectorExporter_Spec_Clickhouse_MetricsTables {
+    /**
+     * @generated from protobuf field: string gauge = 1
+     */
+    gauge: string;
+    /**
+     * @generated from protobuf field: string sum = 2
+     */
+    sum: string;
+    /**
+     * @generated from protobuf field: string summary = 3
+     */
+    summary: string;
+    /**
+     * @generated from protobuf field: string histogram = 4
+     */
+    histogram: string;
+    /**
+     * @generated from protobuf field: string exponentialHistogram = 5
+     */
+    exponentialHistogram: string;
+}
+/**
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.Compression
+ */
+export enum CollectorExporter_Spec_Clickhouse_Compression {
+    /**
+     * @generated from protobuf enum value: COMPRESSION_UNSET = 0;
+     */
+    COMPRESSION_UNSET = 0,
+    /**
+     * @generated from protobuf enum value: LZ4 = 1;
+     */
+    LZ4 = 1,
+    /**
+     * @generated from protobuf enum value: NONE = 2;
+     */
+    NONE = 2,
+    /**
+     * @generated from protobuf enum value: ZSTD = 3;
+     */
+    ZSTD = 3,
+    /**
+     * @generated from protobuf enum value: GZIP = 4;
+     */
+    GZIP = 4,
+    /**
+     * @generated from protobuf enum value: DEFLATE = 5;
+     */
+    DEFLATE = 5,
+    /**
+     * @generated from protobuf enum value: BR = 6;
+     */
+    BR = 6
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch
@@ -7046,7 +7199,19 @@ class CollectorExporter_Spec_Clickhouse$Type extends MessageType<CollectorExport
             { no: 1, name: "endpoint", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "username", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 3, name: "password", kind: "message", T: () => CollectorExporter_Spec_Clickhouse_Password },
-            { no: 4, name: "database", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 4, name: "database", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 5, name: "tls", kind: "message", T: () => CollectorExporter_Spec_Clickhouse_TLS },
+            { no: 6, name: "connectionParams", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => CollectorExporter_Spec_Clickhouse_ConnectionParam },
+            { no: 7, name: "logsTableName", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 8, name: "metricsTables", kind: "message", T: () => CollectorExporter_Spec_Clickhouse_MetricsTables },
+            { no: 9, name: "ttl", kind: "message", T: () => Duration },
+            { no: 10, name: "createSchema", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 11, name: "compression", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.Compression", CollectorExporter_Spec_Clickhouse_Compression] },
+            { no: 12, name: "asyncInsert", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 13, name: "json", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 14, name: "clusterName", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 15, name: "tableEngine", kind: "message", T: () => CollectorExporter_Spec_Clickhouse_TableEngine },
+            { no: 16, name: "timeout", kind: "message", T: () => Duration }
         ]);
     }
     create(value?: PartialMessage<CollectorExporter_Spec_Clickhouse>): CollectorExporter_Spec_Clickhouse {
@@ -7054,6 +7219,13 @@ class CollectorExporter_Spec_Clickhouse$Type extends MessageType<CollectorExport
         message.endpoint = "";
         message.username = "";
         message.database = "";
+        message.connectionParams = [];
+        message.logsTableName = "";
+        message.createSchema = false;
+        message.compression = 0;
+        message.asyncInsert = false;
+        message.json = false;
+        message.clusterName = "";
         if (value !== undefined)
             reflectionMergePartial<CollectorExporter_Spec_Clickhouse>(this, message, value);
         return message;
@@ -7074,6 +7246,42 @@ class CollectorExporter_Spec_Clickhouse$Type extends MessageType<CollectorExport
                     break;
                 case /* string database */ 4:
                     message.database = reader.string();
+                    break;
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TLS tls */ 5:
+                    message.tls = CollectorExporter_Spec_Clickhouse_TLS.internalBinaryRead(reader, reader.uint32(), options, message.tls);
+                    break;
+                case /* repeated octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.ConnectionParam connectionParams */ 6:
+                    message.connectionParams.push(CollectorExporter_Spec_Clickhouse_ConnectionParam.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* string logsTableName */ 7:
+                    message.logsTableName = reader.string();
+                    break;
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.MetricsTables metricsTables */ 8:
+                    message.metricsTables = CollectorExporter_Spec_Clickhouse_MetricsTables.internalBinaryRead(reader, reader.uint32(), options, message.metricsTables);
+                    break;
+                case /* octelium.api.main.meta.v1.Duration ttl */ 9:
+                    message.ttl = Duration.internalBinaryRead(reader, reader.uint32(), options, message.ttl);
+                    break;
+                case /* bool createSchema */ 10:
+                    message.createSchema = reader.bool();
+                    break;
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.Compression compression */ 11:
+                    message.compression = reader.int32();
+                    break;
+                case /* bool asyncInsert */ 12:
+                    message.asyncInsert = reader.bool();
+                    break;
+                case /* bool json */ 13:
+                    message.json = reader.bool();
+                    break;
+                case /* string clusterName */ 14:
+                    message.clusterName = reader.string();
+                    break;
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TableEngine tableEngine */ 15:
+                    message.tableEngine = CollectorExporter_Spec_Clickhouse_TableEngine.internalBinaryRead(reader, reader.uint32(), options, message.tableEngine);
+                    break;
+                case /* octelium.api.main.meta.v1.Duration timeout */ 16:
+                    message.timeout = Duration.internalBinaryRead(reader, reader.uint32(), options, message.timeout);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -7099,6 +7307,42 @@ class CollectorExporter_Spec_Clickhouse$Type extends MessageType<CollectorExport
         /* string database = 4; */
         if (message.database !== "")
             writer.tag(4, WireType.LengthDelimited).string(message.database);
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TLS tls = 5; */
+        if (message.tls)
+            CollectorExporter_Spec_Clickhouse_TLS.internalBinaryWrite(message.tls, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.ConnectionParam connectionParams = 6; */
+        for (let i = 0; i < message.connectionParams.length; i++)
+            CollectorExporter_Spec_Clickhouse_ConnectionParam.internalBinaryWrite(message.connectionParams[i], writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* string logsTableName = 7; */
+        if (message.logsTableName !== "")
+            writer.tag(7, WireType.LengthDelimited).string(message.logsTableName);
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.MetricsTables metricsTables = 8; */
+        if (message.metricsTables)
+            CollectorExporter_Spec_Clickhouse_MetricsTables.internalBinaryWrite(message.metricsTables, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.Duration ttl = 9; */
+        if (message.ttl)
+            Duration.internalBinaryWrite(message.ttl, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
+        /* bool createSchema = 10; */
+        if (message.createSchema !== false)
+            writer.tag(10, WireType.Varint).bool(message.createSchema);
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.Compression compression = 11; */
+        if (message.compression !== 0)
+            writer.tag(11, WireType.Varint).int32(message.compression);
+        /* bool asyncInsert = 12; */
+        if (message.asyncInsert !== false)
+            writer.tag(12, WireType.Varint).bool(message.asyncInsert);
+        /* bool json = 13; */
+        if (message.json !== false)
+            writer.tag(13, WireType.Varint).bool(message.json);
+        /* string clusterName = 14; */
+        if (message.clusterName !== "")
+            writer.tag(14, WireType.LengthDelimited).string(message.clusterName);
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TableEngine tableEngine = 15; */
+        if (message.tableEngine)
+            CollectorExporter_Spec_Clickhouse_TableEngine.internalBinaryWrite(message.tableEngine, writer.tag(15, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.Duration timeout = 16; */
+        if (message.timeout)
+            Duration.internalBinaryWrite(message.timeout, writer.tag(16, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -7159,6 +7403,266 @@ class CollectorExporter_Spec_Clickhouse_Password$Type extends MessageType<Collec
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.Password
  */
 export const CollectorExporter_Spec_Clickhouse_Password = new CollectorExporter_Spec_Clickhouse_Password$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_Clickhouse_TLS$Type extends MessageType<CollectorExporter_Spec_Clickhouse_TLS> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TLS", [
+            { no: 1, name: "insecure", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 2, name: "insecureSkipVerify", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 3, name: "serverNameOverride", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "caPEM", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_Clickhouse_TLS>): CollectorExporter_Spec_Clickhouse_TLS {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.insecure = false;
+        message.insecureSkipVerify = false;
+        message.serverNameOverride = "";
+        message.caPEM = "";
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_Clickhouse_TLS>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_Clickhouse_TLS): CollectorExporter_Spec_Clickhouse_TLS {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bool insecure */ 1:
+                    message.insecure = reader.bool();
+                    break;
+                case /* bool insecureSkipVerify */ 2:
+                    message.insecureSkipVerify = reader.bool();
+                    break;
+                case /* string serverNameOverride */ 3:
+                    message.serverNameOverride = reader.string();
+                    break;
+                case /* string caPEM */ 4:
+                    message.caPEM = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_Clickhouse_TLS, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bool insecure = 1; */
+        if (message.insecure !== false)
+            writer.tag(1, WireType.Varint).bool(message.insecure);
+        /* bool insecureSkipVerify = 2; */
+        if (message.insecureSkipVerify !== false)
+            writer.tag(2, WireType.Varint).bool(message.insecureSkipVerify);
+        /* string serverNameOverride = 3; */
+        if (message.serverNameOverride !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.serverNameOverride);
+        /* string caPEM = 4; */
+        if (message.caPEM !== "")
+            writer.tag(4, WireType.LengthDelimited).string(message.caPEM);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TLS
+ */
+export const CollectorExporter_Spec_Clickhouse_TLS = new CollectorExporter_Spec_Clickhouse_TLS$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_Clickhouse_ConnectionParam$Type extends MessageType<CollectorExporter_Spec_Clickhouse_ConnectionParam> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.ConnectionParam", [
+            { no: 1, name: "key", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "value", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_Clickhouse_ConnectionParam>): CollectorExporter_Spec_Clickhouse_ConnectionParam {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.key = "";
+        message.value = "";
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_Clickhouse_ConnectionParam>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_Clickhouse_ConnectionParam): CollectorExporter_Spec_Clickhouse_ConnectionParam {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string key */ 1:
+                    message.key = reader.string();
+                    break;
+                case /* string value */ 2:
+                    message.value = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_Clickhouse_ConnectionParam, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string key = 1; */
+        if (message.key !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.key);
+        /* string value = 2; */
+        if (message.value !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.value);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.ConnectionParam
+ */
+export const CollectorExporter_Spec_Clickhouse_ConnectionParam = new CollectorExporter_Spec_Clickhouse_ConnectionParam$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_Clickhouse_TableEngine$Type extends MessageType<CollectorExporter_Spec_Clickhouse_TableEngine> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TableEngine", [
+            { no: 1, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "params", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_Clickhouse_TableEngine>): CollectorExporter_Spec_Clickhouse_TableEngine {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.name = "";
+        message.params = "";
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_Clickhouse_TableEngine>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_Clickhouse_TableEngine): CollectorExporter_Spec_Clickhouse_TableEngine {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string name */ 1:
+                    message.name = reader.string();
+                    break;
+                case /* string params */ 2:
+                    message.params = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_Clickhouse_TableEngine, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string name = 1; */
+        if (message.name !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.name);
+        /* string params = 2; */
+        if (message.params !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.params);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TableEngine
+ */
+export const CollectorExporter_Spec_Clickhouse_TableEngine = new CollectorExporter_Spec_Clickhouse_TableEngine$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_Clickhouse_MetricsTables$Type extends MessageType<CollectorExporter_Spec_Clickhouse_MetricsTables> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.MetricsTables", [
+            { no: 1, name: "gauge", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "sum", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "summary", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "histogram", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 5, name: "exponentialHistogram", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_Clickhouse_MetricsTables>): CollectorExporter_Spec_Clickhouse_MetricsTables {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.gauge = "";
+        message.sum = "";
+        message.summary = "";
+        message.histogram = "";
+        message.exponentialHistogram = "";
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_Clickhouse_MetricsTables>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_Clickhouse_MetricsTables): CollectorExporter_Spec_Clickhouse_MetricsTables {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string gauge */ 1:
+                    message.gauge = reader.string();
+                    break;
+                case /* string sum */ 2:
+                    message.sum = reader.string();
+                    break;
+                case /* string summary */ 3:
+                    message.summary = reader.string();
+                    break;
+                case /* string histogram */ 4:
+                    message.histogram = reader.string();
+                    break;
+                case /* string exponentialHistogram */ 5:
+                    message.exponentialHistogram = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_Clickhouse_MetricsTables, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string gauge = 1; */
+        if (message.gauge !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.gauge);
+        /* string sum = 2; */
+        if (message.sum !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.sum);
+        /* string summary = 3; */
+        if (message.summary !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.summary);
+        /* string histogram = 4; */
+        if (message.histogram !== "")
+            writer.tag(4, WireType.LengthDelimited).string(message.histogram);
+        /* string exponentialHistogram = 5; */
+        if (message.exponentialHistogram !== "")
+            writer.tag(5, WireType.LengthDelimited).string(message.exponentialHistogram);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.MetricsTables
+ */
+export const CollectorExporter_Spec_Clickhouse_MetricsTables = new CollectorExporter_Spec_Clickhouse_MetricsTables$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class CollectorExporter_Spec_Elasticsearch$Type extends MessageType<CollectorExporter_Spec_Elasticsearch> {
     constructor() {
