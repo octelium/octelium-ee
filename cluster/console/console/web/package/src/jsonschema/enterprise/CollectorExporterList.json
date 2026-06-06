@@ -1951,18 +1951,69 @@
                 "endpoint": {
                     "type": "string"
                 },
+                "namespace": {
+                    "type": "string"
+                },
                 "headers": {
-                    "additionalProperties": {
-                        "type": "string"
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Header"
                     },
-                    "type": "object"
+                    "additionalProperties": false,
+                    "type": "array"
                 },
                 "auth": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth",
                     "additionalProperties": false
                 },
-                "namespace": {
-                    "type": "string"
+                "tls": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TLS",
+                    "additionalProperties": false
+                },
+                "externalLabels": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ExternalLabel"
+                    },
+                    "additionalProperties": false,
+                    "type": "array"
+                },
+                "timeout": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false
+                },
+                "remoteWriteQueue": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.RemoteWriteQueue",
+                    "additionalProperties": false
+                },
+                "resourceToTelemetryConversion": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ResourceToTelemetryConversion",
+                    "additionalProperties": false
+                },
+                "targetInfo": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TargetInfo",
+                    "additionalProperties": false
+                },
+                "disableScopeInfo": {
+                    "type": "boolean"
+                },
+                "maxBatchSizeBytes": {
+                    "type": "integer"
+                },
+                "maxBatchRequestParallelism": {
+                    "type": "integer"
+                },
+                "translationStrategy": {
+                    "enum": [
+                        "TRANSLATION_STRATEGY_UNSET",
+                        "UNDERSCORE_ESCAPING_WITH_SUFFIXES",
+                        "UNDERSCORE_ESCAPING_WITHOUT_SUFFIXES",
+                        "NO_UTF8_ESCAPING_WITH_SUFFIXES",
+                        "NO_TRANSLATION"
+                    ],
+                    "type": "string",
+                    "title": "Translation Strategy"
+                },
+                "sendMetadata": {
+                    "type": "boolean"
                 }
             },
             "additionalProperties": false,
@@ -2032,7 +2083,7 @@
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Basic": {
             "properties": {
-                "user": {
+                "username": {
                     "type": "string"
                 },
                 "password": {
@@ -2153,6 +2204,90 @@
                 }
             ],
             "title": "Value"
+        },
+        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ExternalLabel": {
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "External Label"
+        },
+        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Header": {
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Header"
+        },
+        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.RemoteWriteQueue": {
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "queueSize": {
+                    "type": "integer"
+                },
+                "numConsumers": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Remote Write Queue"
+        },
+        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ResourceToTelemetryConversion": {
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "excludeServiceAttributes": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Resource To Telemetry Conversion"
+        },
+        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TLS": {
+            "properties": {
+                "insecure": {
+                    "type": "boolean"
+                },
+                "insecureSkipVerify": {
+                    "type": "boolean"
+                },
+                "serverNameOverride": {
+                    "type": "string"
+                },
+                "caPEM": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "TLS"
+        },
+        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TargetInfo": {
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Target Info"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk": {
             "properties": {

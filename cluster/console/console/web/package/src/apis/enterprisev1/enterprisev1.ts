@@ -650,19 +650,87 @@ export interface CollectorExporter_Spec_PrometheusRemoteWrite {
      */
     endpoint: string;
     /**
-     * @generated from protobuf field: map<string, string> headers = 2
+     * @generated from protobuf field: string namespace = 2
      */
-    headers: {
-        [key: string]: string;
-    };
+    namespace: string;
     /**
-     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth auth = 3
+     * @generated from protobuf field: repeated octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Header headers = 3
+     */
+    headers: CollectorExporter_Spec_PrometheusRemoteWrite_Header[];
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth auth = 4
      */
     auth?: CollectorExporter_Spec_PrometheusRemoteWrite_Auth;
     /**
-     * @generated from protobuf field: string namespace = 4
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TLS tls = 5
      */
-    namespace: string;
+    tls?: CollectorExporter_Spec_PrometheusRemoteWrite_TLS;
+    /**
+     * @generated from protobuf field: repeated octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ExternalLabel externalLabels = 6
+     */
+    externalLabels: CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel[];
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration timeout = 7
+     */
+    timeout?: Duration;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.RemoteWriteQueue remoteWriteQueue = 8
+     */
+    remoteWriteQueue?: CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ResourceToTelemetryConversion resourceToTelemetryConversion = 9
+     */
+    resourceToTelemetryConversion?: CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TargetInfo targetInfo = 10
+     */
+    targetInfo?: CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo;
+    /**
+     * @generated from protobuf field: bool disableScopeInfo = 11
+     */
+    disableScopeInfo: boolean;
+    /**
+     * @generated from protobuf field: int64 maxBatchSizeBytes = 12
+     */
+    maxBatchSizeBytes: number;
+    /**
+     * @generated from protobuf field: int32 maxBatchRequestParallelism = 13
+     */
+    maxBatchRequestParallelism: number;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TranslationStrategy translationStrategy = 14
+     */
+    translationStrategy: CollectorExporter_Spec_PrometheusRemoteWrite_TranslationStrategy;
+    /**
+     * @generated from protobuf field: bool sendMetadata = 15
+     */
+    sendMetadata: boolean;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Header
+ */
+export interface CollectorExporter_Spec_PrometheusRemoteWrite_Header {
+    /**
+     * @generated from protobuf field: string key = 1
+     */
+    key: string;
+    /**
+     * @generated from protobuf field: string value = 2
+     */
+    value: string;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ExternalLabel
+ */
+export interface CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel {
+    /**
+     * @generated from protobuf field: string key = 1
+     */
+    key: string;
+    /**
+     * @generated from protobuf field: string value = 2
+     */
+    value: string;
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth
@@ -715,9 +783,9 @@ export interface CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Bearer {
  */
 export interface CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic {
     /**
-     * @generated from protobuf field: string user = 1
+     * @generated from protobuf field: string username = 1
      */
-    user: string;
+    username: string;
     /**
      * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Basic.Password password = 2
      */
@@ -769,6 +837,91 @@ export interface CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom_Value 
     } | {
         oneofKind: undefined;
     };
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TLS
+ */
+export interface CollectorExporter_Spec_PrometheusRemoteWrite_TLS {
+    /**
+     * @generated from protobuf field: bool insecure = 1
+     */
+    insecure: boolean;
+    /**
+     * @generated from protobuf field: bool insecureSkipVerify = 2
+     */
+    insecureSkipVerify: boolean;
+    /**
+     * @generated from protobuf field: string serverNameOverride = 3
+     */
+    serverNameOverride: string;
+    /**
+     * @generated from protobuf field: string caPEM = 4
+     */
+    caPEM: string;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.RemoteWriteQueue
+ */
+export interface CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue {
+    /**
+     * @generated from protobuf field: bool enabled = 1
+     */
+    enabled: boolean;
+    /**
+     * @generated from protobuf field: int64 queueSize = 2
+     */
+    queueSize: number;
+    /**
+     * @generated from protobuf field: int32 numConsumers = 3
+     */
+    numConsumers: number;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ResourceToTelemetryConversion
+ */
+export interface CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion {
+    /**
+     * @generated from protobuf field: bool enabled = 1
+     */
+    enabled: boolean;
+    /**
+     * @generated from protobuf field: bool excludeServiceAttributes = 2
+     */
+    excludeServiceAttributes: boolean;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TargetInfo
+ */
+export interface CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo {
+    /**
+     * @generated from protobuf field: bool enabled = 1
+     */
+    enabled: boolean;
+}
+/**
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TranslationStrategy
+ */
+export enum CollectorExporter_Spec_PrometheusRemoteWrite_TranslationStrategy {
+    /**
+     * @generated from protobuf enum value: TRANSLATION_STRATEGY_UNSET = 0;
+     */
+    TRANSLATION_STRATEGY_UNSET = 0,
+    /**
+     * @generated from protobuf enum value: UNDERSCORE_ESCAPING_WITH_SUFFIXES = 1;
+     */
+    UNDERSCORE_ESCAPING_WITH_SUFFIXES = 1,
+    /**
+     * @generated from protobuf enum value: UNDERSCORE_ESCAPING_WITHOUT_SUFFIXES = 2;
+     */
+    UNDERSCORE_ESCAPING_WITHOUT_SUFFIXES = 2,
+    /**
+     * @generated from protobuf enum value: NO_UTF8_ESCAPING_WITH_SUFFIXES = 3;
+     */
+    NO_UTF8_ESCAPING_WITH_SUFFIXES = 3,
+    /**
+     * @generated from protobuf enum value: NO_TRANSLATION = 4;
+     */
+    NO_TRANSLATION = 4
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse
@@ -6783,16 +6936,33 @@ class CollectorExporter_Spec_PrometheusRemoteWrite$Type extends MessageType<Coll
     constructor() {
         super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite", [
             { no: 1, name: "endpoint", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "headers", kind: "map", K: 9 /*ScalarType.STRING*/, V: { kind: "scalar", T: 9 /*ScalarType.STRING*/ } },
-            { no: 3, name: "auth", kind: "message", T: () => CollectorExporter_Spec_PrometheusRemoteWrite_Auth },
-            { no: 4, name: "namespace", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 2, name: "namespace", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "headers", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => CollectorExporter_Spec_PrometheusRemoteWrite_Header },
+            { no: 4, name: "auth", kind: "message", T: () => CollectorExporter_Spec_PrometheusRemoteWrite_Auth },
+            { no: 5, name: "tls", kind: "message", T: () => CollectorExporter_Spec_PrometheusRemoteWrite_TLS },
+            { no: 6, name: "externalLabels", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel },
+            { no: 7, name: "timeout", kind: "message", T: () => Duration },
+            { no: 8, name: "remoteWriteQueue", kind: "message", T: () => CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue },
+            { no: 9, name: "resourceToTelemetryConversion", kind: "message", T: () => CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion },
+            { no: 10, name: "targetInfo", kind: "message", T: () => CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo },
+            { no: 11, name: "disableScopeInfo", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 12, name: "maxBatchSizeBytes", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 13, name: "maxBatchRequestParallelism", kind: "scalar", T: 5 /*ScalarType.INT32*/ },
+            { no: 14, name: "translationStrategy", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TranslationStrategy", CollectorExporter_Spec_PrometheusRemoteWrite_TranslationStrategy] },
+            { no: 15, name: "sendMetadata", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<CollectorExporter_Spec_PrometheusRemoteWrite>): CollectorExporter_Spec_PrometheusRemoteWrite {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.endpoint = "";
-        message.headers = {};
         message.namespace = "";
+        message.headers = [];
+        message.externalLabels = [];
+        message.disableScopeInfo = false;
+        message.maxBatchSizeBytes = 0;
+        message.maxBatchRequestParallelism = 0;
+        message.translationStrategy = 0;
+        message.sendMetadata = false;
         if (value !== undefined)
             reflectionMergePartial<CollectorExporter_Spec_PrometheusRemoteWrite>(this, message, value);
         return message;
@@ -6805,14 +6975,47 @@ class CollectorExporter_Spec_PrometheusRemoteWrite$Type extends MessageType<Coll
                 case /* string endpoint */ 1:
                     message.endpoint = reader.string();
                     break;
-                case /* map<string, string> headers */ 2:
-                    this.binaryReadMap2(message.headers, reader, options);
+                case /* string namespace */ 2:
+                    message.namespace = reader.string();
                     break;
-                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth auth */ 3:
+                case /* repeated octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Header headers */ 3:
+                    message.headers.push(CollectorExporter_Spec_PrometheusRemoteWrite_Header.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth auth */ 4:
                     message.auth = CollectorExporter_Spec_PrometheusRemoteWrite_Auth.internalBinaryRead(reader, reader.uint32(), options, message.auth);
                     break;
-                case /* string namespace */ 4:
-                    message.namespace = reader.string();
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TLS tls */ 5:
+                    message.tls = CollectorExporter_Spec_PrometheusRemoteWrite_TLS.internalBinaryRead(reader, reader.uint32(), options, message.tls);
+                    break;
+                case /* repeated octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ExternalLabel externalLabels */ 6:
+                    message.externalLabels.push(CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* octelium.api.main.meta.v1.Duration timeout */ 7:
+                    message.timeout = Duration.internalBinaryRead(reader, reader.uint32(), options, message.timeout);
+                    break;
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.RemoteWriteQueue remoteWriteQueue */ 8:
+                    message.remoteWriteQueue = CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue.internalBinaryRead(reader, reader.uint32(), options, message.remoteWriteQueue);
+                    break;
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ResourceToTelemetryConversion resourceToTelemetryConversion */ 9:
+                    message.resourceToTelemetryConversion = CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion.internalBinaryRead(reader, reader.uint32(), options, message.resourceToTelemetryConversion);
+                    break;
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TargetInfo targetInfo */ 10:
+                    message.targetInfo = CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo.internalBinaryRead(reader, reader.uint32(), options, message.targetInfo);
+                    break;
+                case /* bool disableScopeInfo */ 11:
+                    message.disableScopeInfo = reader.bool();
+                    break;
+                case /* int64 maxBatchSizeBytes */ 12:
+                    message.maxBatchSizeBytes = reader.int64().toNumber();
+                    break;
+                case /* int32 maxBatchRequestParallelism */ 13:
+                    message.maxBatchRequestParallelism = reader.int32();
+                    break;
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TranslationStrategy translationStrategy */ 14:
+                    message.translationStrategy = reader.int32();
+                    break;
+                case /* bool sendMetadata */ 15:
+                    message.sendMetadata = reader.bool();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -6825,35 +7028,52 @@ class CollectorExporter_Spec_PrometheusRemoteWrite$Type extends MessageType<Coll
         }
         return message;
     }
-    private binaryReadMap2(map: CollectorExporter_Spec_PrometheusRemoteWrite["headers"], reader: IBinaryReader, options: BinaryReadOptions): void {
-        let len = reader.uint32(), end = reader.pos + len, key: keyof CollectorExporter_Spec_PrometheusRemoteWrite["headers"] | undefined, val: CollectorExporter_Spec_PrometheusRemoteWrite["headers"][any] | undefined;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case 1:
-                    key = reader.string();
-                    break;
-                case 2:
-                    val = reader.string();
-                    break;
-                default: throw new globalThis.Error("unknown map entry field for octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.headers");
-            }
-        }
-        map[key ?? ""] = val ?? "";
-    }
     internalBinaryWrite(message: CollectorExporter_Spec_PrometheusRemoteWrite, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
         /* string endpoint = 1; */
         if (message.endpoint !== "")
             writer.tag(1, WireType.LengthDelimited).string(message.endpoint);
-        /* map<string, string> headers = 2; */
-        for (let k of globalThis.Object.keys(message.headers))
-            writer.tag(2, WireType.LengthDelimited).fork().tag(1, WireType.LengthDelimited).string(k).tag(2, WireType.LengthDelimited).string(message.headers[k]).join();
-        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth auth = 3; */
-        if (message.auth)
-            CollectorExporter_Spec_PrometheusRemoteWrite_Auth.internalBinaryWrite(message.auth, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
-        /* string namespace = 4; */
+        /* string namespace = 2; */
         if (message.namespace !== "")
-            writer.tag(4, WireType.LengthDelimited).string(message.namespace);
+            writer.tag(2, WireType.LengthDelimited).string(message.namespace);
+        /* repeated octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Header headers = 3; */
+        for (let i = 0; i < message.headers.length; i++)
+            CollectorExporter_Spec_PrometheusRemoteWrite_Header.internalBinaryWrite(message.headers[i], writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth auth = 4; */
+        if (message.auth)
+            CollectorExporter_Spec_PrometheusRemoteWrite_Auth.internalBinaryWrite(message.auth, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TLS tls = 5; */
+        if (message.tls)
+            CollectorExporter_Spec_PrometheusRemoteWrite_TLS.internalBinaryWrite(message.tls, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ExternalLabel externalLabels = 6; */
+        for (let i = 0; i < message.externalLabels.length; i++)
+            CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel.internalBinaryWrite(message.externalLabels[i], writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.Duration timeout = 7; */
+        if (message.timeout)
+            Duration.internalBinaryWrite(message.timeout, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.RemoteWriteQueue remoteWriteQueue = 8; */
+        if (message.remoteWriteQueue)
+            CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue.internalBinaryWrite(message.remoteWriteQueue, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ResourceToTelemetryConversion resourceToTelemetryConversion = 9; */
+        if (message.resourceToTelemetryConversion)
+            CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion.internalBinaryWrite(message.resourceToTelemetryConversion, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TargetInfo targetInfo = 10; */
+        if (message.targetInfo)
+            CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo.internalBinaryWrite(message.targetInfo, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        /* bool disableScopeInfo = 11; */
+        if (message.disableScopeInfo !== false)
+            writer.tag(11, WireType.Varint).bool(message.disableScopeInfo);
+        /* int64 maxBatchSizeBytes = 12; */
+        if (message.maxBatchSizeBytes !== 0)
+            writer.tag(12, WireType.Varint).int64(message.maxBatchSizeBytes);
+        /* int32 maxBatchRequestParallelism = 13; */
+        if (message.maxBatchRequestParallelism !== 0)
+            writer.tag(13, WireType.Varint).int32(message.maxBatchRequestParallelism);
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TranslationStrategy translationStrategy = 14; */
+        if (message.translationStrategy !== 0)
+            writer.tag(14, WireType.Varint).int32(message.translationStrategy);
+        /* bool sendMetadata = 15; */
+        if (message.sendMetadata !== false)
+            writer.tag(15, WireType.Varint).bool(message.sendMetadata);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -6864,6 +7084,116 @@ class CollectorExporter_Spec_PrometheusRemoteWrite$Type extends MessageType<Coll
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite
  */
 export const CollectorExporter_Spec_PrometheusRemoteWrite = new CollectorExporter_Spec_PrometheusRemoteWrite$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_PrometheusRemoteWrite_Header$Type extends MessageType<CollectorExporter_Spec_PrometheusRemoteWrite_Header> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Header", [
+            { no: 1, name: "key", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "value", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_PrometheusRemoteWrite_Header>): CollectorExporter_Spec_PrometheusRemoteWrite_Header {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.key = "";
+        message.value = "";
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_PrometheusRemoteWrite_Header>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_PrometheusRemoteWrite_Header): CollectorExporter_Spec_PrometheusRemoteWrite_Header {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string key */ 1:
+                    message.key = reader.string();
+                    break;
+                case /* string value */ 2:
+                    message.value = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_PrometheusRemoteWrite_Header, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string key = 1; */
+        if (message.key !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.key);
+        /* string value = 2; */
+        if (message.value !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.value);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Header
+ */
+export const CollectorExporter_Spec_PrometheusRemoteWrite_Header = new CollectorExporter_Spec_PrometheusRemoteWrite_Header$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel$Type extends MessageType<CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ExternalLabel", [
+            { no: 1, name: "key", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "value", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel>): CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.key = "";
+        message.value = "";
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel): CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string key */ 1:
+                    message.key = reader.string();
+                    break;
+                case /* string value */ 2:
+                    message.value = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string key = 1; */
+        if (message.key !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.key);
+        /* string value = 2; */
+        if (message.value !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.value);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ExternalLabel
+ */
+export const CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel = new CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class CollectorExporter_Spec_PrometheusRemoteWrite_Auth$Type extends MessageType<CollectorExporter_Spec_PrometheusRemoteWrite_Auth> {
     constructor() {
@@ -6988,13 +7318,13 @@ export const CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Bearer = new Coll
 class CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic$Type extends MessageType<CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic> {
     constructor() {
         super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Basic", [
-            { no: 1, name: "user", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 1, name: "username", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "password", kind: "message", T: () => CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic_Password }
         ]);
     }
     create(value?: PartialMessage<CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic>): CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic {
         const message = globalThis.Object.create((this.messagePrototype!));
-        message.user = "";
+        message.username = "";
         if (value !== undefined)
             reflectionMergePartial<CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic>(this, message, value);
         return message;
@@ -7004,8 +7334,8 @@ class CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic$Type extends Messa
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* string user */ 1:
-                    message.user = reader.string();
+                case /* string username */ 1:
+                    message.username = reader.string();
                     break;
                 case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Basic.Password password */ 2:
                     message.password = CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic_Password.internalBinaryRead(reader, reader.uint32(), options, message.password);
@@ -7022,9 +7352,9 @@ class CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic$Type extends Messa
         return message;
     }
     internalBinaryWrite(message: CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* string user = 1; */
-        if (message.user !== "")
-            writer.tag(1, WireType.LengthDelimited).string(message.user);
+        /* string username = 1; */
+        if (message.username !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.username);
         /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Basic.Password password = 2; */
         if (message.password)
             CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic_Password.internalBinaryWrite(message.password, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
@@ -7192,6 +7522,242 @@ class CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom_Value$Type extend
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Custom.Value
  */
 export const CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom_Value = new CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom_Value$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_PrometheusRemoteWrite_TLS$Type extends MessageType<CollectorExporter_Spec_PrometheusRemoteWrite_TLS> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TLS", [
+            { no: 1, name: "insecure", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 2, name: "insecureSkipVerify", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 3, name: "serverNameOverride", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "caPEM", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_PrometheusRemoteWrite_TLS>): CollectorExporter_Spec_PrometheusRemoteWrite_TLS {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.insecure = false;
+        message.insecureSkipVerify = false;
+        message.serverNameOverride = "";
+        message.caPEM = "";
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_PrometheusRemoteWrite_TLS>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_PrometheusRemoteWrite_TLS): CollectorExporter_Spec_PrometheusRemoteWrite_TLS {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bool insecure */ 1:
+                    message.insecure = reader.bool();
+                    break;
+                case /* bool insecureSkipVerify */ 2:
+                    message.insecureSkipVerify = reader.bool();
+                    break;
+                case /* string serverNameOverride */ 3:
+                    message.serverNameOverride = reader.string();
+                    break;
+                case /* string caPEM */ 4:
+                    message.caPEM = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_PrometheusRemoteWrite_TLS, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bool insecure = 1; */
+        if (message.insecure !== false)
+            writer.tag(1, WireType.Varint).bool(message.insecure);
+        /* bool insecureSkipVerify = 2; */
+        if (message.insecureSkipVerify !== false)
+            writer.tag(2, WireType.Varint).bool(message.insecureSkipVerify);
+        /* string serverNameOverride = 3; */
+        if (message.serverNameOverride !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.serverNameOverride);
+        /* string caPEM = 4; */
+        if (message.caPEM !== "")
+            writer.tag(4, WireType.LengthDelimited).string(message.caPEM);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TLS
+ */
+export const CollectorExporter_Spec_PrometheusRemoteWrite_TLS = new CollectorExporter_Spec_PrometheusRemoteWrite_TLS$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue$Type extends MessageType<CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.RemoteWriteQueue", [
+            { no: 1, name: "enabled", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 2, name: "queueSize", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 3, name: "numConsumers", kind: "scalar", T: 5 /*ScalarType.INT32*/ }
+        ]);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue>): CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.enabled = false;
+        message.queueSize = 0;
+        message.numConsumers = 0;
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue): CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bool enabled */ 1:
+                    message.enabled = reader.bool();
+                    break;
+                case /* int64 queueSize */ 2:
+                    message.queueSize = reader.int64().toNumber();
+                    break;
+                case /* int32 numConsumers */ 3:
+                    message.numConsumers = reader.int32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bool enabled = 1; */
+        if (message.enabled !== false)
+            writer.tag(1, WireType.Varint).bool(message.enabled);
+        /* int64 queueSize = 2; */
+        if (message.queueSize !== 0)
+            writer.tag(2, WireType.Varint).int64(message.queueSize);
+        /* int32 numConsumers = 3; */
+        if (message.numConsumers !== 0)
+            writer.tag(3, WireType.Varint).int32(message.numConsumers);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.RemoteWriteQueue
+ */
+export const CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue = new CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion$Type extends MessageType<CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ResourceToTelemetryConversion", [
+            { no: 1, name: "enabled", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 2, name: "excludeServiceAttributes", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion>): CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.enabled = false;
+        message.excludeServiceAttributes = false;
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion): CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bool enabled */ 1:
+                    message.enabled = reader.bool();
+                    break;
+                case /* bool excludeServiceAttributes */ 2:
+                    message.excludeServiceAttributes = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bool enabled = 1; */
+        if (message.enabled !== false)
+            writer.tag(1, WireType.Varint).bool(message.enabled);
+        /* bool excludeServiceAttributes = 2; */
+        if (message.excludeServiceAttributes !== false)
+            writer.tag(2, WireType.Varint).bool(message.excludeServiceAttributes);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ResourceToTelemetryConversion
+ */
+export const CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion = new CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo$Type extends MessageType<CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TargetInfo", [
+            { no: 1, name: "enabled", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo>): CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.enabled = false;
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo): CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bool enabled */ 1:
+                    message.enabled = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bool enabled = 1; */
+        if (message.enabled !== false)
+            writer.tag(1, WireType.Varint).bool(message.enabled);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TargetInfo
+ */
+export const CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo = new CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class CollectorExporter_Spec_Clickhouse$Type extends MessageType<CollectorExporter_Spec_Clickhouse> {
     constructor() {

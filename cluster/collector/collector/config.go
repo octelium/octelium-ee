@@ -62,12 +62,43 @@ type otelHTTPClientTLS struct {
 	CAPEM              string `json:"ca_pem,omitempty"`
 }
 
-type exporterPrometheusRemoteWriteRead struct {
-	Endpoint  string            `json:"endpoint,omitempty"`
-	Namespace string            `json:"namespace,omitempty"`
-	TLS       *otelTLS          `json:"tls,omitempty"`
-	Auth      *otelAuth         `json:"auth,omitempty"`
-	Headers   map[string]string `json:"headers,omitempty"`
+type exporterPrometheusRemoteWrite struct {
+	Endpoint                      string                                   `json:"endpoint,omitempty"`
+	Namespace                     string                                   `json:"namespace,omitempty"`
+	Headers                       map[string]string                        `json:"headers,omitempty"`
+	ExternalLabels                map[string]string                        `json:"external_labels,omitempty"`
+	TLS                           *prometheusRemoteWriteTLS                `json:"tls,omitempty"`
+	Timeout                       string                                   `json:"timeout,omitempty"`
+	RemoteWriteQueue              *prometheusRemoteWriteQueue              `json:"remote_write_queue,omitempty"`
+	ResourceToTelemetryConversion *prometheusResourceToTelemetryConversion `json:"resource_to_telemetry_conversion,omitempty"`
+	TargetInfo                    *prometheusTargetInfo                    `json:"target_info,omitempty"`
+	DisableScopeInfo              bool                                     `json:"disable_scope_info,omitempty"`
+	MaxBatchSizeBytes             int64                                    `json:"max_batch_size_bytes,omitempty"`
+	MaxBatchRequestParallelism    *int32                                   `json:"max_batch_request_parallelism,omitempty"`
+	TranslationStrategy           string                                   `json:"translation_strategy,omitempty"`
+	SendMetadata                  bool                                     `json:"send_metadata,omitempty"`
+}
+
+type prometheusRemoteWriteTLS struct {
+	Insecure           bool   `json:"insecure,omitempty"`
+	InsecureSkipVerify bool   `json:"insecure_skip_verify,omitempty"`
+	ServerNameOverride string `json:"server_name_override,omitempty"`
+	CAPEM              string `json:"ca_pem,omitempty"`
+}
+
+type prometheusRemoteWriteQueue struct {
+	Enabled      bool  `json:"enabled"`
+	QueueSize    int64 `json:"queue_size,omitempty"`
+	NumConsumers int32 `json:"num_consumers,omitempty"`
+}
+
+type prometheusResourceToTelemetryConversion struct {
+	Enabled                  bool `json:"enabled"`
+	ExcludeServiceAttributes bool `json:"exclude_service_attributes,omitempty"`
+}
+
+type prometheusTargetInfo struct {
+	Enabled bool `json:"enabled"`
 }
 
 type exporterClickhouse struct {

@@ -186,67 +186,76 @@ func (p *provider) getExporter(ctx context.Context, exp *enterprisev1.CollectorE
 		}
 
 	case *enterprisev1.CollectorExporter_Spec_PrometheusRemoteWrite_:
-
 		ret.HasLogs = false
 		ret.HasMetrics = true
 
 		spec := exp.Spec.GetPrometheusRemoteWrite()
-		c := &exporterPrometheusRemoteWriteRead{
-			Endpoint: spec.Endpoint,
-			Headers:  spec.Headers,
+		if spec == nil {
+			return nil, errors.Errorf("nil PrometheusRemoteWrite exporter spec")
+		}
+
+		timeout, err := durationToCollectorString(spec.Timeout)
+		if err != nil {
+			return nil, err
+		}
+
+		translationStrategy, err := prometheusTranslationStrategyToCollectorString(spec.TranslationStrategy)
+		if err != nil {
+			return nil, err
+		}
+
+		c := &exporterPrometheusRemoteWrite{
+			Endpoint:            spec.Endpoint,
+			Namespace:           spec.Namespace,
+			Headers:             prometheusHeadersToMap(spec.Headers),
+			ExternalLabels:      prometheusExternalLabelsToMap(spec.ExternalLabels),
+			Timeout:             timeout,
+			DisableScopeInfo:    spec.DisableScopeInfo,
+			MaxBatchSizeBytes:   spec.MaxBatchSizeBytes,
+			TranslationStrategy: translationStrategy,
+			SendMetadata:        spec.SendMetadata,
 		}
 		ret.exp = c
 
-		c.Namespace = spec.Namespace
-
-		if spec.Auth != nil {
-			if c.Headers == nil {
-				c.Headers = make(map[string]string)
+		if spec.Tls != nil {
+			c.TLS = &prometheusRemoteWriteTLS{
+				Insecure:           spec.Tls.Insecure,
+				InsecureSkipVerify: spec.Tls.InsecureSkipVerify,
+				ServerNameOverride: spec.Tls.ServerNameOverride,
+				CAPEM:              spec.Tls.CaPEM,
 			}
-			switch spec.Auth.Type.(type) {
-			case *enterprisev1.CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Bearer_:
-				if spec.Auth.GetBearer().GetFromSecret() != "" {
-					sec, err := octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
-						Name: spec.Auth.GetBearer().GetFromSecret(),
-					})
-					if err != nil {
-						return nil, err
-					}
+		}
 
-					c.Headers["Authorization"] = (fmt.Sprintf("Bearer %s", uenterprisev1.ToSecret(sec).GetValueStr()))
-				}
-
-			case *enterprisev1.CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic_:
-				if spec.Auth.GetBasic().GetUser() != "" &&
-					spec.Auth.GetBasic().GetPassword() != nil &&
-					spec.Auth.GetBasic().GetPassword().GetFromSecret() != "" {
-					sec, err := octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
-						Name: spec.Auth.GetBasic().GetPassword().GetFromSecret(),
-					})
-					if err != nil {
-						return nil, err
-					}
-
-					authVal := base64.StdEncoding.EncodeToString(
-						[]byte(fmt.Sprintf("%s:%s",
-							spec.Auth.GetBasic().GetUser(), uenterprisev1.ToSecret(sec).GetValueStr())))
-
-					c.Headers["Authorization"] = (fmt.Sprintf("Basic %s", authVal))
-				}
-			case *enterprisev1.CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom_:
-				if spec.Auth.GetCustom().GetHeader() != "" &&
-					spec.Auth.GetCustom().GetValue() != nil &&
-					spec.Auth.GetCustom().GetValue().GetFromSecret() != "" {
-					sec, err := octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
-						Name: spec.Auth.GetCustom().GetValue().GetFromSecret(),
-					})
-					if err != nil {
-						return nil, err
-					}
-
-					c.Headers[spec.Auth.GetCustom().GetHeader()] = (uenterprisev1.ToSecret(sec).GetValueStr())
-				}
+		if spec.RemoteWriteQueue != nil {
+			c.RemoteWriteQueue = &prometheusRemoteWriteQueue{
+				Enabled:      spec.RemoteWriteQueue.Enabled,
+				QueueSize:    spec.RemoteWriteQueue.QueueSize,
+				NumConsumers: spec.RemoteWriteQueue.NumConsumers,
 			}
+		}
+
+		if spec.ResourceToTelemetryConversion != nil {
+			c.ResourceToTelemetryConversion = &prometheusResourceToTelemetryConversion{
+				Enabled:                  spec.ResourceToTelemetryConversion.Enabled,
+				ExcludeServiceAttributes: spec.ResourceToTelemetryConversion.ExcludeServiceAttributes,
+			}
+		}
+
+		if spec.TargetInfo != nil {
+			c.TargetInfo = &prometheusTargetInfo{
+				Enabled: spec.TargetInfo.Enabled,
+			}
+		}
+
+		if spec.MaxBatchRequestParallelism > 0 {
+			v := spec.MaxBatchRequestParallelism
+			c.MaxBatchRequestParallelism = &v
+		}
+
+		if err := p.applyPrometheusRemoteWriteAuth(ctx, c.Headers, func(h map[string]string) {
+			c.Headers = h
+		}, spec.Auth); err != nil {
+			return nil, err
 		}
 
 	case *enterprisev1.CollectorExporter_Spec_Clickhouse_:
@@ -1690,4 +1699,135 @@ func clickhouseMetricsTablesToCollector(
 	}
 
 	return ret
+}
+
+func prometheusHeadersToMap(
+	headers []*enterprisev1.CollectorExporter_Spec_PrometheusRemoteWrite_Header,
+) map[string]string {
+	if len(headers) == 0 {
+		return nil
+	}
+
+	ret := make(map[string]string, len(headers))
+	for _, h := range headers {
+		if h == nil || h.Key == "" {
+			continue
+		}
+		ret[h.Key] = h.Value
+	}
+
+	if len(ret) == 0 {
+		return nil
+	}
+
+	return ret
+}
+
+func prometheusExternalLabelsToMap(
+	labels []*enterprisev1.CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel,
+) map[string]string {
+	if len(labels) == 0 {
+		return nil
+	}
+
+	ret := make(map[string]string, len(labels))
+	for _, l := range labels {
+		if l == nil || l.Key == "" {
+			continue
+		}
+		ret[l.Key] = l.Value
+	}
+
+	if len(ret) == 0 {
+		return nil
+	}
+
+	return ret
+}
+
+func prometheusTranslationStrategyToCollectorString(
+	strategy enterprisev1.CollectorExporter_Spec_PrometheusRemoteWrite_TranslationStrategy,
+) (string, error) {
+	switch strategy {
+	case enterprisev1.CollectorExporter_Spec_PrometheusRemoteWrite_TRANSLATION_STRATEGY_UNSET:
+		return "", nil
+	case enterprisev1.CollectorExporter_Spec_PrometheusRemoteWrite_UNDERSCORE_ESCAPING_WITH_SUFFIXES:
+		return "UnderscoreEscapingWithSuffixes", nil
+	case enterprisev1.CollectorExporter_Spec_PrometheusRemoteWrite_UNDERSCORE_ESCAPING_WITHOUT_SUFFIXES:
+		return "UnderscoreEscapingWithoutSuffixes", nil
+	case enterprisev1.CollectorExporter_Spec_PrometheusRemoteWrite_NO_UTF8_ESCAPING_WITH_SUFFIXES:
+		return "NoUTF8EscapingWithSuffixes", nil
+	case enterprisev1.CollectorExporter_Spec_PrometheusRemoteWrite_NO_TRANSLATION:
+		return "NoTranslation", nil
+	default:
+		return "", errors.Errorf("invalid PrometheusRemoteWrite translation strategy")
+	}
+}
+
+func (p *provider) applyPrometheusRemoteWriteAuth(
+	ctx context.Context,
+	headers map[string]string,
+	setHeaders func(map[string]string),
+	auth *enterprisev1.CollectorExporter_Spec_PrometheusRemoteWrite_Auth,
+) error {
+	if auth == nil {
+		return nil
+	}
+
+	if headers == nil {
+		headers = make(map[string]string)
+		setHeaders(headers)
+	}
+
+	switch auth.Type.(type) {
+	case *enterprisev1.CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Bearer_:
+		if auth.GetBearer().GetFromSecret() == "" {
+			return nil
+		}
+
+		sec, err := p.octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
+			Name: auth.GetBearer().GetFromSecret(),
+		})
+		if err != nil {
+			return err
+		}
+
+		headers["Authorization"] = fmt.Sprintf("Bearer %s", uenterprisev1.ToSecret(sec).GetValueStr())
+
+	case *enterprisev1.CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic_:
+		basic := auth.GetBasic()
+		if basic == nil || basic.GetPassword() == nil || basic.GetPassword().GetFromSecret() == "" {
+			return nil
+		}
+
+		sec, err := p.octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
+			Name: basic.GetPassword().GetFromSecret(),
+		})
+		if err != nil {
+			return err
+		}
+
+		raw := fmt.Sprintf("%s:%s", basic.Username, uenterprisev1.ToSecret(sec).GetValueStr())
+		headers["Authorization"] = "Basic " + base64.StdEncoding.EncodeToString([]byte(raw))
+
+	case *enterprisev1.CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom_:
+		custom := auth.GetCustom()
+		if custom == nil ||
+			custom.Header == "" ||
+			custom.GetValue() == nil ||
+			custom.GetValue().GetFromSecret() == "" {
+			return nil
+		}
+
+		sec, err := p.octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
+			Name: custom.GetValue().GetFromSecret(),
+		})
+		if err != nil {
+			return err
+		}
+
+		headers[custom.Header] = uenterprisev1.ToSecret(sec).GetValueStr()
+	}
+
+	return nil
 }
