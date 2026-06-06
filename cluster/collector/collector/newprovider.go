@@ -413,16 +413,118 @@ func (p *provider) getExporter(ctx context.Context, exp *enterprisev1.CollectorE
 		}
 
 	case *enterprisev1.CollectorExporter_Spec_Kafka_:
-
 		ret.HasLogs = true
 		ret.HasMetrics = true
 
 		spec := exp.Spec.GetKafka()
+		if spec == nil {
+			return nil, errors.Errorf("nil Kafka exporter spec")
+		}
+
+		timeout, err := durationToCollectorString(spec.Timeout)
+		if err != nil {
+			return nil, err
+		}
+
+		connIdleTimeout, err := durationToCollectorString(spec.ConnIdleTimeout)
+		if err != nil {
+			return nil, err
+		}
 
 		c := &exporterKafka{
-			Brokers: spec.Brokers,
+			Brokers:                              append([]string(nil), spec.Brokers...),
+			ProtocolVersion:                      spec.ProtocolVersion,
+			ClientID:                             spec.ClientID,
+			RecordHeaders:                        kafkaHeadersToCollector(spec.RecordHeaders),
+			Timeout:                              timeout,
+			ConnIdleTimeout:                      connIdleTimeout,
+			PartitionLogsByResourceAttributes:    spec.PartitionLogsByResourceAttributes,
+			PartitionMetricsByResourceAttributes: spec.PartitionMetricsByResourceAttributes,
 		}
 		ret.exp = c
+
+		if spec.Logs != nil {
+			enc, err := kafkaEncodingToCollectorString(spec.Logs.Encoding, true)
+			if err != nil {
+				return nil, err
+			}
+
+			c.Logs = &exporterKafkaSignal{
+				Topic:    spec.Logs.Topic,
+				Encoding: enc,
+			}
+		}
+
+		if spec.Metrics != nil {
+			enc, err := kafkaEncodingToCollectorString(spec.Metrics.Encoding, false)
+			if err != nil {
+				return nil, err
+			}
+
+			c.Metrics = &exporterKafkaSignal{
+				Topic:    spec.Metrics.Topic,
+				Encoding: enc,
+			}
+		}
+
+		if spec.Tls != nil {
+			c.TLS = &exporterKafkaTLS{
+				Insecure:           spec.Tls.Insecure,
+				InsecureSkipVerify: spec.Tls.InsecureSkipVerify,
+			}
+		}
+
+		if spec.Auth != nil {
+			switch spec.Auth.Type.(type) {
+			case *enterprisev1.CollectorExporter_Spec_Kafka_Auth_Sasl:
+				sasl := spec.Auth.GetSasl()
+				if sasl != nil {
+					mech, err := kafkaSASLMechanismToCollectorString(sasl.Mechanism)
+					if err != nil {
+						return nil, err
+					}
+
+					c.Auth = &exporterKafkaAuth{
+						SASL: &exporterKafkaSASL{
+							Username:  sasl.Username,
+							Mechanism: mech,
+						},
+					}
+
+					if sasl.GetPassword() != nil && sasl.GetPassword().GetFromSecret() != "" {
+						sec, err := octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
+							Name: sasl.GetPassword().GetFromSecret(),
+						})
+						if err != nil {
+							return nil, err
+						}
+
+						c.Auth.SASL.Password = uenterprisev1.ToSecret(sec).GetValueStr()
+					}
+				}
+			}
+		}
+
+		if spec.Producer != nil {
+			compression, err := kafkaProducerCompressionToCollectorString(spec.Producer.Compression)
+			if err != nil {
+				return nil, err
+			}
+
+			linger, err := durationToCollectorString(spec.Producer.Linger)
+			if err != nil {
+				return nil, err
+			}
+
+			c.Producer = &exporterKafkaProducer{
+				MaxMessageBytes:        spec.Producer.MaxMessageBytes,
+				RequiredAcks:           spec.Producer.RequiredAcks,
+				Compression:            compression,
+				FlushMaxMessages:       spec.Producer.FlushMaxMessages,
+				AllowAutoTopicCreation: spec.Producer.AllowAutoTopicCreation,
+				Linger:                 linger,
+			}
+		}
 
 	case *enterprisev1.CollectorExporter_Spec_Datadog_:
 		ret.HasLogs = true
@@ -999,6 +1101,82 @@ func elasticHeadersToMap(headers []*enterprisev1.CollectorExporter_Spec_Elastics
 		}
 
 		ret[h.Key] = h.Value
+	}
+
+	if len(ret) == 0 {
+		return nil
+	}
+
+	return ret
+}
+
+func kafkaEncodingToCollectorString(enc enterprisev1.CollectorExporter_Spec_Kafka_Encoding, allowRaw bool) (string, error) {
+	switch enc {
+	case enterprisev1.CollectorExporter_Spec_Kafka_ENCODING_UNSET:
+		return "", nil
+	case enterprisev1.CollectorExporter_Spec_Kafka_OTLP_PROTO:
+		return "otlp_proto", nil
+	case enterprisev1.CollectorExporter_Spec_Kafka_OTLP_JSON:
+		return "otlp_json", nil
+	case enterprisev1.CollectorExporter_Spec_Kafka_RAW:
+		if !allowRaw {
+			return "", errors.Errorf("raw Kafka encoding is only valid for logs")
+		}
+		return "raw", nil
+	default:
+		return "", errors.Errorf("invalid Kafka encoding")
+	}
+}
+
+func kafkaSASLMechanismToCollectorString(mech enterprisev1.CollectorExporter_Spec_Kafka_Auth_SASL_Mechanism) (string, error) {
+	switch mech {
+	case enterprisev1.CollectorExporter_Spec_Kafka_Auth_SASL_MECHANISM_UNSET,
+		enterprisev1.CollectorExporter_Spec_Kafka_Auth_SASL_PLAIN:
+		return "PLAIN", nil
+	case enterprisev1.CollectorExporter_Spec_Kafka_Auth_SASL_SCRAM_SHA_256:
+		return "SCRAM-SHA-256", nil
+	case enterprisev1.CollectorExporter_Spec_Kafka_Auth_SASL_SCRAM_SHA_512:
+		return "SCRAM-SHA-512", nil
+	default:
+		return "", errors.Errorf("invalid Kafka SASL mechanism")
+	}
+}
+
+func kafkaProducerCompressionToCollectorString(
+	compression enterprisev1.CollectorExporter_Spec_Kafka_ProducerCompression,
+) (string, error) {
+	switch compression {
+	case enterprisev1.CollectorExporter_Spec_Kafka_PRODUCER_COMPRESSION_UNSET:
+		return "", nil
+	case enterprisev1.CollectorExporter_Spec_Kafka_NONE:
+		return "none", nil
+	case enterprisev1.CollectorExporter_Spec_Kafka_GZIP:
+		return "gzip", nil
+	case enterprisev1.CollectorExporter_Spec_Kafka_SNAPPY:
+		return "snappy", nil
+	case enterprisev1.CollectorExporter_Spec_Kafka_LZ4:
+		return "lz4", nil
+	case enterprisev1.CollectorExporter_Spec_Kafka_ZSTD:
+		return "zstd", nil
+	default:
+		return "", errors.Errorf("invalid Kafka producer compression")
+	}
+}
+
+func kafkaHeadersToCollector(headers []*enterprisev1.CollectorExporter_Spec_Kafka_Header) []exporterKafkaHeader {
+	if len(headers) == 0 {
+		return nil
+	}
+
+	ret := make([]exporterKafkaHeader, 0, len(headers))
+	for _, h := range headers {
+		if h == nil || h.Key == "" {
+			continue
+		}
+		ret = append(ret, exporterKafkaHeader{
+			Key:   h.Key,
+			Value: h.Value,
+		})
 	}
 
 	if len(ret) == 0 {

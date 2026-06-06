@@ -925,17 +925,62 @@ export interface CollectorExporter_Spec_Kafka {
      */
     protocolVersion: string;
     /**
-     * @generated from protobuf field: string topic = 3
+     * @generated from protobuf field: string clientID = 3
      */
-    topic: string;
+    clientID: string;
     /**
-     * @generated from protobuf field: string encoding = 4
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Signal logs = 4
      */
-    encoding: string;
+    logs?: CollectorExporter_Spec_Kafka_Signal;
     /**
-     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth auth = 5
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Signal metrics = 5
+     */
+    metrics?: CollectorExporter_Spec_Kafka_Signal;
+    /**
+     * @generated from protobuf field: repeated octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Header recordHeaders = 6
+     */
+    recordHeaders: CollectorExporter_Spec_Kafka_Header[];
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth auth = 7
      */
     auth?: CollectorExporter_Spec_Kafka_Auth;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.TLS tls = 8
+     */
+    tls?: CollectorExporter_Spec_Kafka_TLS;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration timeout = 9
+     */
+    timeout?: Duration;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration connIdleTimeout = 10
+     */
+    connIdleTimeout?: Duration;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Producer producer = 11
+     */
+    producer?: CollectorExporter_Spec_Kafka_Producer;
+    /**
+     * @generated from protobuf field: bool partitionLogsByResourceAttributes = 12
+     */
+    partitionLogsByResourceAttributes: boolean;
+    /**
+     * @generated from protobuf field: bool partitionMetricsByResourceAttributes = 13
+     */
+    partitionMetricsByResourceAttributes: boolean;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Header
+ */
+export interface CollectorExporter_Spec_Kafka_Header {
+    /**
+     * @generated from protobuf field: string key = 1
+     */
+    key: string;
+    /**
+     * @generated from protobuf field: string value = 2
+     */
+    value: string;
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth
@@ -945,32 +990,36 @@ export interface CollectorExporter_Spec_Kafka_Auth {
      * @generated from protobuf oneof: type
      */
     type: {
-        oneofKind: "plain";
+        oneofKind: "sasl";
         /**
-         * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.Plain plain = 1
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL sasl = 1
          */
-        plain: CollectorExporter_Spec_Kafka_Auth_Plain;
+        sasl: CollectorExporter_Spec_Kafka_Auth_SASL;
     } | {
         oneofKind: undefined;
     };
 }
 /**
- * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.Plain
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL
  */
-export interface CollectorExporter_Spec_Kafka_Auth_Plain {
+export interface CollectorExporter_Spec_Kafka_Auth_SASL {
     /**
      * @generated from protobuf field: string username = 1
      */
     username: string;
     /**
-     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.Plain.Password password = 2
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.Password password = 2
      */
-    password?: CollectorExporter_Spec_Kafka_Auth_Plain_Password;
+    password?: CollectorExporter_Spec_Kafka_Auth_SASL_Password;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.Mechanism mechanism = 3
+     */
+    mechanism: CollectorExporter_Spec_Kafka_Auth_SASL_Mechanism;
 }
 /**
- * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.Plain.Password
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.Password
  */
-export interface CollectorExporter_Spec_Kafka_Auth_Plain_Password {
+export interface CollectorExporter_Spec_Kafka_Auth_SASL_Password {
     /**
      * @generated from protobuf oneof: type
      */
@@ -983,6 +1032,134 @@ export interface CollectorExporter_Spec_Kafka_Auth_Plain_Password {
     } | {
         oneofKind: undefined;
     };
+}
+/**
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.Mechanism
+ */
+export enum CollectorExporter_Spec_Kafka_Auth_SASL_Mechanism {
+    /**
+     * @generated from protobuf enum value: MECHANISM_UNSET = 0;
+     */
+    MECHANISM_UNSET = 0,
+    /**
+     * @generated from protobuf enum value: PLAIN = 1;
+     */
+    PLAIN = 1,
+    /**
+     * @generated from protobuf enum value: SCRAM_SHA_256 = 2;
+     */
+    SCRAM_SHA_256 = 2,
+    /**
+     * @generated from protobuf enum value: SCRAM_SHA_512 = 3;
+     */
+    SCRAM_SHA_512 = 3
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.TLS
+ */
+export interface CollectorExporter_Spec_Kafka_TLS {
+    /**
+     * @generated from protobuf field: bool insecure = 1
+     */
+    insecure: boolean;
+    /**
+     * @generated from protobuf field: bool insecureSkipVerify = 2
+     */
+    insecureSkipVerify: boolean;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Signal
+ */
+export interface CollectorExporter_Spec_Kafka_Signal {
+    /**
+     * @generated from protobuf field: string topic = 1
+     */
+    topic: string;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Encoding encoding = 2
+     */
+    encoding: CollectorExporter_Spec_Kafka_Encoding;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Producer
+ */
+export interface CollectorExporter_Spec_Kafka_Producer {
+    /**
+     * @generated from protobuf field: int64 maxMessageBytes = 1
+     */
+    maxMessageBytes: number;
+    /**
+     * @generated from protobuf field: int32 requiredAcks = 2
+     */
+    requiredAcks: number;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.ProducerCompression compression = 3
+     */
+    compression: CollectorExporter_Spec_Kafka_ProducerCompression;
+    /**
+     * @generated from protobuf field: int64 flushMaxMessages = 4
+     */
+    flushMaxMessages: number;
+    /**
+     * @generated from protobuf field: bool allowAutoTopicCreation = 5
+     */
+    allowAutoTopicCreation: boolean;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration linger = 6
+     */
+    linger?: Duration;
+}
+/**
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Encoding
+ */
+export enum CollectorExporter_Spec_Kafka_Encoding {
+    /**
+     * @generated from protobuf enum value: ENCODING_UNSET = 0;
+     */
+    ENCODING_UNSET = 0,
+    /**
+     * @generated from protobuf enum value: OTLP_PROTO = 1;
+     */
+    OTLP_PROTO = 1,
+    /**
+     * @generated from protobuf enum value: OTLP_JSON = 2;
+     */
+    OTLP_JSON = 2,
+    /**
+     * Logs only.
+     *
+     * @generated from protobuf enum value: RAW = 3;
+     */
+    RAW = 3
+}
+/**
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.ProducerCompression
+ */
+export enum CollectorExporter_Spec_Kafka_ProducerCompression {
+    /**
+     * @generated from protobuf enum value: PRODUCER_COMPRESSION_UNSET = 0;
+     */
+    PRODUCER_COMPRESSION_UNSET = 0,
+    /**
+     * @generated from protobuf enum value: NONE = 1;
+     */
+    NONE = 1,
+    /**
+     * @generated from protobuf enum value: GZIP = 2;
+     */
+    GZIP = 2,
+    /**
+     * @generated from protobuf enum value: SNAPPY = 3;
+     */
+    SNAPPY = 3,
+    /**
+     * @generated from protobuf enum value: LZ4 = 4;
+     */
+    LZ4 = 4,
+    /**
+     * @generated from protobuf enum value: ZSTD = 5;
+     */
+    ZSTD = 5
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog
@@ -7051,17 +7228,27 @@ class CollectorExporter_Spec_Kafka$Type extends MessageType<CollectorExporter_Sp
         super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka", [
             { no: 1, name: "brokers", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "protocolVersion", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 3, name: "topic", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 4, name: "encoding", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 5, name: "auth", kind: "message", T: () => CollectorExporter_Spec_Kafka_Auth }
+            { no: 3, name: "clientID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "logs", kind: "message", T: () => CollectorExporter_Spec_Kafka_Signal },
+            { no: 5, name: "metrics", kind: "message", T: () => CollectorExporter_Spec_Kafka_Signal },
+            { no: 6, name: "recordHeaders", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => CollectorExporter_Spec_Kafka_Header },
+            { no: 7, name: "auth", kind: "message", T: () => CollectorExporter_Spec_Kafka_Auth },
+            { no: 8, name: "tls", kind: "message", T: () => CollectorExporter_Spec_Kafka_TLS },
+            { no: 9, name: "timeout", kind: "message", T: () => Duration },
+            { no: 10, name: "connIdleTimeout", kind: "message", T: () => Duration },
+            { no: 11, name: "producer", kind: "message", T: () => CollectorExporter_Spec_Kafka_Producer },
+            { no: 12, name: "partitionLogsByResourceAttributes", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 13, name: "partitionMetricsByResourceAttributes", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<CollectorExporter_Spec_Kafka>): CollectorExporter_Spec_Kafka {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.brokers = [];
         message.protocolVersion = "";
-        message.topic = "";
-        message.encoding = "";
+        message.clientID = "";
+        message.recordHeaders = [];
+        message.partitionLogsByResourceAttributes = false;
+        message.partitionMetricsByResourceAttributes = false;
         if (value !== undefined)
             reflectionMergePartial<CollectorExporter_Spec_Kafka>(this, message, value);
         return message;
@@ -7077,14 +7264,38 @@ class CollectorExporter_Spec_Kafka$Type extends MessageType<CollectorExporter_Sp
                 case /* string protocolVersion */ 2:
                     message.protocolVersion = reader.string();
                     break;
-                case /* string topic */ 3:
-                    message.topic = reader.string();
+                case /* string clientID */ 3:
+                    message.clientID = reader.string();
                     break;
-                case /* string encoding */ 4:
-                    message.encoding = reader.string();
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Signal logs */ 4:
+                    message.logs = CollectorExporter_Spec_Kafka_Signal.internalBinaryRead(reader, reader.uint32(), options, message.logs);
                     break;
-                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth auth */ 5:
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Signal metrics */ 5:
+                    message.metrics = CollectorExporter_Spec_Kafka_Signal.internalBinaryRead(reader, reader.uint32(), options, message.metrics);
+                    break;
+                case /* repeated octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Header recordHeaders */ 6:
+                    message.recordHeaders.push(CollectorExporter_Spec_Kafka_Header.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth auth */ 7:
                     message.auth = CollectorExporter_Spec_Kafka_Auth.internalBinaryRead(reader, reader.uint32(), options, message.auth);
+                    break;
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.TLS tls */ 8:
+                    message.tls = CollectorExporter_Spec_Kafka_TLS.internalBinaryRead(reader, reader.uint32(), options, message.tls);
+                    break;
+                case /* octelium.api.main.meta.v1.Duration timeout */ 9:
+                    message.timeout = Duration.internalBinaryRead(reader, reader.uint32(), options, message.timeout);
+                    break;
+                case /* octelium.api.main.meta.v1.Duration connIdleTimeout */ 10:
+                    message.connIdleTimeout = Duration.internalBinaryRead(reader, reader.uint32(), options, message.connIdleTimeout);
+                    break;
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Producer producer */ 11:
+                    message.producer = CollectorExporter_Spec_Kafka_Producer.internalBinaryRead(reader, reader.uint32(), options, message.producer);
+                    break;
+                case /* bool partitionLogsByResourceAttributes */ 12:
+                    message.partitionLogsByResourceAttributes = reader.bool();
+                    break;
+                case /* bool partitionMetricsByResourceAttributes */ 13:
+                    message.partitionMetricsByResourceAttributes = reader.bool();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -7104,15 +7315,39 @@ class CollectorExporter_Spec_Kafka$Type extends MessageType<CollectorExporter_Sp
         /* string protocolVersion = 2; */
         if (message.protocolVersion !== "")
             writer.tag(2, WireType.LengthDelimited).string(message.protocolVersion);
-        /* string topic = 3; */
-        if (message.topic !== "")
-            writer.tag(3, WireType.LengthDelimited).string(message.topic);
-        /* string encoding = 4; */
-        if (message.encoding !== "")
-            writer.tag(4, WireType.LengthDelimited).string(message.encoding);
-        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth auth = 5; */
+        /* string clientID = 3; */
+        if (message.clientID !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.clientID);
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Signal logs = 4; */
+        if (message.logs)
+            CollectorExporter_Spec_Kafka_Signal.internalBinaryWrite(message.logs, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Signal metrics = 5; */
+        if (message.metrics)
+            CollectorExporter_Spec_Kafka_Signal.internalBinaryWrite(message.metrics, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Header recordHeaders = 6; */
+        for (let i = 0; i < message.recordHeaders.length; i++)
+            CollectorExporter_Spec_Kafka_Header.internalBinaryWrite(message.recordHeaders[i], writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth auth = 7; */
         if (message.auth)
-            CollectorExporter_Spec_Kafka_Auth.internalBinaryWrite(message.auth, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+            CollectorExporter_Spec_Kafka_Auth.internalBinaryWrite(message.auth, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.TLS tls = 8; */
+        if (message.tls)
+            CollectorExporter_Spec_Kafka_TLS.internalBinaryWrite(message.tls, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.Duration timeout = 9; */
+        if (message.timeout)
+            Duration.internalBinaryWrite(message.timeout, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.Duration connIdleTimeout = 10; */
+        if (message.connIdleTimeout)
+            Duration.internalBinaryWrite(message.connIdleTimeout, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Producer producer = 11; */
+        if (message.producer)
+            CollectorExporter_Spec_Kafka_Producer.internalBinaryWrite(message.producer, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        /* bool partitionLogsByResourceAttributes = 12; */
+        if (message.partitionLogsByResourceAttributes !== false)
+            writer.tag(12, WireType.Varint).bool(message.partitionLogsByResourceAttributes);
+        /* bool partitionMetricsByResourceAttributes = 13; */
+        if (message.partitionMetricsByResourceAttributes !== false)
+            writer.tag(13, WireType.Varint).bool(message.partitionMetricsByResourceAttributes);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -7124,10 +7359,65 @@ class CollectorExporter_Spec_Kafka$Type extends MessageType<CollectorExporter_Sp
  */
 export const CollectorExporter_Spec_Kafka = new CollectorExporter_Spec_Kafka$Type();
 // @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_Kafka_Header$Type extends MessageType<CollectorExporter_Spec_Kafka_Header> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Header", [
+            { no: 1, name: "key", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "value", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_Kafka_Header>): CollectorExporter_Spec_Kafka_Header {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.key = "";
+        message.value = "";
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_Kafka_Header>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_Kafka_Header): CollectorExporter_Spec_Kafka_Header {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string key */ 1:
+                    message.key = reader.string();
+                    break;
+                case /* string value */ 2:
+                    message.value = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_Kafka_Header, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string key = 1; */
+        if (message.key !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.key);
+        /* string value = 2; */
+        if (message.value !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.value);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Header
+ */
+export const CollectorExporter_Spec_Kafka_Header = new CollectorExporter_Spec_Kafka_Header$Type();
+// @generated message type with reflection information, may provide speed optimized methods
 class CollectorExporter_Spec_Kafka_Auth$Type extends MessageType<CollectorExporter_Spec_Kafka_Auth> {
     constructor() {
         super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth", [
-            { no: 1, name: "plain", kind: "message", oneof: "type", T: () => CollectorExporter_Spec_Kafka_Auth_Plain }
+            { no: 1, name: "sasl", kind: "message", oneof: "type", T: () => CollectorExporter_Spec_Kafka_Auth_SASL }
         ]);
     }
     create(value?: PartialMessage<CollectorExporter_Spec_Kafka_Auth>): CollectorExporter_Spec_Kafka_Auth {
@@ -7142,10 +7432,10 @@ class CollectorExporter_Spec_Kafka_Auth$Type extends MessageType<CollectorExport
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.Plain plain */ 1:
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL sasl */ 1:
                     message.type = {
-                        oneofKind: "plain",
-                        plain: CollectorExporter_Spec_Kafka_Auth_Plain.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).plain)
+                        oneofKind: "sasl",
+                        sasl: CollectorExporter_Spec_Kafka_Auth_SASL.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).sasl)
                     };
                     break;
                 default:
@@ -7160,9 +7450,9 @@ class CollectorExporter_Spec_Kafka_Auth$Type extends MessageType<CollectorExport
         return message;
     }
     internalBinaryWrite(message: CollectorExporter_Spec_Kafka_Auth, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.Plain plain = 1; */
-        if (message.type.oneofKind === "plain")
-            CollectorExporter_Spec_Kafka_Auth_Plain.internalBinaryWrite(message.type.plain, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL sasl = 1; */
+        if (message.type.oneofKind === "sasl")
+            CollectorExporter_Spec_Kafka_Auth_SASL.internalBinaryWrite(message.type.sasl, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -7174,21 +7464,23 @@ class CollectorExporter_Spec_Kafka_Auth$Type extends MessageType<CollectorExport
  */
 export const CollectorExporter_Spec_Kafka_Auth = new CollectorExporter_Spec_Kafka_Auth$Type();
 // @generated message type with reflection information, may provide speed optimized methods
-class CollectorExporter_Spec_Kafka_Auth_Plain$Type extends MessageType<CollectorExporter_Spec_Kafka_Auth_Plain> {
+class CollectorExporter_Spec_Kafka_Auth_SASL$Type extends MessageType<CollectorExporter_Spec_Kafka_Auth_SASL> {
     constructor() {
-        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.Plain", [
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL", [
             { no: 1, name: "username", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "password", kind: "message", T: () => CollectorExporter_Spec_Kafka_Auth_Plain_Password }
+            { no: 2, name: "password", kind: "message", T: () => CollectorExporter_Spec_Kafka_Auth_SASL_Password },
+            { no: 3, name: "mechanism", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.Mechanism", CollectorExporter_Spec_Kafka_Auth_SASL_Mechanism] }
         ]);
     }
-    create(value?: PartialMessage<CollectorExporter_Spec_Kafka_Auth_Plain>): CollectorExporter_Spec_Kafka_Auth_Plain {
+    create(value?: PartialMessage<CollectorExporter_Spec_Kafka_Auth_SASL>): CollectorExporter_Spec_Kafka_Auth_SASL {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.username = "";
+        message.mechanism = 0;
         if (value !== undefined)
-            reflectionMergePartial<CollectorExporter_Spec_Kafka_Auth_Plain>(this, message, value);
+            reflectionMergePartial<CollectorExporter_Spec_Kafka_Auth_SASL>(this, message, value);
         return message;
     }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_Kafka_Auth_Plain): CollectorExporter_Spec_Kafka_Auth_Plain {
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_Kafka_Auth_SASL): CollectorExporter_Spec_Kafka_Auth_SASL {
         let message = target ?? this.create(), end = reader.pos + length;
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
@@ -7196,8 +7488,11 @@ class CollectorExporter_Spec_Kafka_Auth_Plain$Type extends MessageType<Collector
                 case /* string username */ 1:
                     message.username = reader.string();
                     break;
-                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.Plain.Password password */ 2:
-                    message.password = CollectorExporter_Spec_Kafka_Auth_Plain_Password.internalBinaryRead(reader, reader.uint32(), options, message.password);
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.Password password */ 2:
+                    message.password = CollectorExporter_Spec_Kafka_Auth_SASL_Password.internalBinaryRead(reader, reader.uint32(), options, message.password);
+                    break;
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.Mechanism mechanism */ 3:
+                    message.mechanism = reader.int32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -7210,13 +7505,16 @@ class CollectorExporter_Spec_Kafka_Auth_Plain$Type extends MessageType<Collector
         }
         return message;
     }
-    internalBinaryWrite(message: CollectorExporter_Spec_Kafka_Auth_Plain, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+    internalBinaryWrite(message: CollectorExporter_Spec_Kafka_Auth_SASL, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
         /* string username = 1; */
         if (message.username !== "")
             writer.tag(1, WireType.LengthDelimited).string(message.username);
-        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.Plain.Password password = 2; */
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.Password password = 2; */
         if (message.password)
-            CollectorExporter_Spec_Kafka_Auth_Plain_Password.internalBinaryWrite(message.password, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+            CollectorExporter_Spec_Kafka_Auth_SASL_Password.internalBinaryWrite(message.password, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.Mechanism mechanism = 3; */
+        if (message.mechanism !== 0)
+            writer.tag(3, WireType.Varint).int32(message.mechanism);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -7224,24 +7522,24 @@ class CollectorExporter_Spec_Kafka_Auth_Plain$Type extends MessageType<Collector
     }
 }
 /**
- * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.Plain
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL
  */
-export const CollectorExporter_Spec_Kafka_Auth_Plain = new CollectorExporter_Spec_Kafka_Auth_Plain$Type();
+export const CollectorExporter_Spec_Kafka_Auth_SASL = new CollectorExporter_Spec_Kafka_Auth_SASL$Type();
 // @generated message type with reflection information, may provide speed optimized methods
-class CollectorExporter_Spec_Kafka_Auth_Plain_Password$Type extends MessageType<CollectorExporter_Spec_Kafka_Auth_Plain_Password> {
+class CollectorExporter_Spec_Kafka_Auth_SASL_Password$Type extends MessageType<CollectorExporter_Spec_Kafka_Auth_SASL_Password> {
     constructor() {
-        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.Plain.Password", [
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.Password", [
             { no: 1, name: "fromSecret", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
-    create(value?: PartialMessage<CollectorExporter_Spec_Kafka_Auth_Plain_Password>): CollectorExporter_Spec_Kafka_Auth_Plain_Password {
+    create(value?: PartialMessage<CollectorExporter_Spec_Kafka_Auth_SASL_Password>): CollectorExporter_Spec_Kafka_Auth_SASL_Password {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.type = { oneofKind: undefined };
         if (value !== undefined)
-            reflectionMergePartial<CollectorExporter_Spec_Kafka_Auth_Plain_Password>(this, message, value);
+            reflectionMergePartial<CollectorExporter_Spec_Kafka_Auth_SASL_Password>(this, message, value);
         return message;
     }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_Kafka_Auth_Plain_Password): CollectorExporter_Spec_Kafka_Auth_Plain_Password {
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_Kafka_Auth_SASL_Password): CollectorExporter_Spec_Kafka_Auth_SASL_Password {
         let message = target ?? this.create(), end = reader.pos + length;
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
@@ -7263,7 +7561,7 @@ class CollectorExporter_Spec_Kafka_Auth_Plain_Password$Type extends MessageType<
         }
         return message;
     }
-    internalBinaryWrite(message: CollectorExporter_Spec_Kafka_Auth_Plain_Password, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+    internalBinaryWrite(message: CollectorExporter_Spec_Kafka_Auth_SASL_Password, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
         /* string fromSecret = 1; */
         if (message.type.oneofKind === "fromSecret")
             writer.tag(1, WireType.LengthDelimited).string(message.type.fromSecret);
@@ -7274,9 +7572,205 @@ class CollectorExporter_Spec_Kafka_Auth_Plain_Password$Type extends MessageType<
     }
 }
 /**
- * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.Plain.Password
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.Password
  */
-export const CollectorExporter_Spec_Kafka_Auth_Plain_Password = new CollectorExporter_Spec_Kafka_Auth_Plain_Password$Type();
+export const CollectorExporter_Spec_Kafka_Auth_SASL_Password = new CollectorExporter_Spec_Kafka_Auth_SASL_Password$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_Kafka_TLS$Type extends MessageType<CollectorExporter_Spec_Kafka_TLS> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.TLS", [
+            { no: 1, name: "insecure", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 2, name: "insecureSkipVerify", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_Kafka_TLS>): CollectorExporter_Spec_Kafka_TLS {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.insecure = false;
+        message.insecureSkipVerify = false;
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_Kafka_TLS>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_Kafka_TLS): CollectorExporter_Spec_Kafka_TLS {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bool insecure */ 1:
+                    message.insecure = reader.bool();
+                    break;
+                case /* bool insecureSkipVerify */ 2:
+                    message.insecureSkipVerify = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_Kafka_TLS, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bool insecure = 1; */
+        if (message.insecure !== false)
+            writer.tag(1, WireType.Varint).bool(message.insecure);
+        /* bool insecureSkipVerify = 2; */
+        if (message.insecureSkipVerify !== false)
+            writer.tag(2, WireType.Varint).bool(message.insecureSkipVerify);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.TLS
+ */
+export const CollectorExporter_Spec_Kafka_TLS = new CollectorExporter_Spec_Kafka_TLS$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_Kafka_Signal$Type extends MessageType<CollectorExporter_Spec_Kafka_Signal> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Signal", [
+            { no: 1, name: "topic", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "encoding", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Encoding", CollectorExporter_Spec_Kafka_Encoding] }
+        ]);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_Kafka_Signal>): CollectorExporter_Spec_Kafka_Signal {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.topic = "";
+        message.encoding = 0;
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_Kafka_Signal>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_Kafka_Signal): CollectorExporter_Spec_Kafka_Signal {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string topic */ 1:
+                    message.topic = reader.string();
+                    break;
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Encoding encoding */ 2:
+                    message.encoding = reader.int32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_Kafka_Signal, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string topic = 1; */
+        if (message.topic !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.topic);
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Encoding encoding = 2; */
+        if (message.encoding !== 0)
+            writer.tag(2, WireType.Varint).int32(message.encoding);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Signal
+ */
+export const CollectorExporter_Spec_Kafka_Signal = new CollectorExporter_Spec_Kafka_Signal$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_Kafka_Producer$Type extends MessageType<CollectorExporter_Spec_Kafka_Producer> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Producer", [
+            { no: 1, name: "maxMessageBytes", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 2, name: "requiredAcks", kind: "scalar", T: 5 /*ScalarType.INT32*/ },
+            { no: 3, name: "compression", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.ProducerCompression", CollectorExporter_Spec_Kafka_ProducerCompression] },
+            { no: 4, name: "flushMaxMessages", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 5, name: "allowAutoTopicCreation", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 6, name: "linger", kind: "message", T: () => Duration }
+        ]);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_Kafka_Producer>): CollectorExporter_Spec_Kafka_Producer {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.maxMessageBytes = 0;
+        message.requiredAcks = 0;
+        message.compression = 0;
+        message.flushMaxMessages = 0;
+        message.allowAutoTopicCreation = false;
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_Kafka_Producer>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_Kafka_Producer): CollectorExporter_Spec_Kafka_Producer {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* int64 maxMessageBytes */ 1:
+                    message.maxMessageBytes = reader.int64().toNumber();
+                    break;
+                case /* int32 requiredAcks */ 2:
+                    message.requiredAcks = reader.int32();
+                    break;
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.ProducerCompression compression */ 3:
+                    message.compression = reader.int32();
+                    break;
+                case /* int64 flushMaxMessages */ 4:
+                    message.flushMaxMessages = reader.int64().toNumber();
+                    break;
+                case /* bool allowAutoTopicCreation */ 5:
+                    message.allowAutoTopicCreation = reader.bool();
+                    break;
+                case /* octelium.api.main.meta.v1.Duration linger */ 6:
+                    message.linger = Duration.internalBinaryRead(reader, reader.uint32(), options, message.linger);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_Kafka_Producer, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* int64 maxMessageBytes = 1; */
+        if (message.maxMessageBytes !== 0)
+            writer.tag(1, WireType.Varint).int64(message.maxMessageBytes);
+        /* int32 requiredAcks = 2; */
+        if (message.requiredAcks !== 0)
+            writer.tag(2, WireType.Varint).int32(message.requiredAcks);
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.ProducerCompression compression = 3; */
+        if (message.compression !== 0)
+            writer.tag(3, WireType.Varint).int32(message.compression);
+        /* int64 flushMaxMessages = 4; */
+        if (message.flushMaxMessages !== 0)
+            writer.tag(4, WireType.Varint).int64(message.flushMaxMessages);
+        /* bool allowAutoTopicCreation = 5; */
+        if (message.allowAutoTopicCreation !== false)
+            writer.tag(5, WireType.Varint).bool(message.allowAutoTopicCreation);
+        /* octelium.api.main.meta.v1.Duration linger = 6; */
+        if (message.linger)
+            Duration.internalBinaryWrite(message.linger, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Producer
+ */
+export const CollectorExporter_Spec_Kafka_Producer = new CollectorExporter_Spec_Kafka_Producer$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class CollectorExporter_Spec_Datadog$Type extends MessageType<CollectorExporter_Spec_Datadog> {
     constructor() {

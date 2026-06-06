@@ -77,17 +77,59 @@ type exporterLogzio struct {
 }
 
 type exporterKafka struct {
-	Brokers []string                   `json:"brokers,omitempty"`
-	Logs    *exporterKafkaSignalConfig `json:"logs,omitempty"`
-	Metrics *exporterKafkaSignalConfig `json:"metrics,omitempty"`
+	Brokers         []string `json:"brokers,omitempty"`
+	ProtocolVersion string   `json:"protocol_version,omitempty"`
+	ClientID        string   `json:"client_id,omitempty"`
+
+	Logs    *exporterKafkaSignal `json:"logs,omitempty"`
+	Metrics *exporterKafkaSignal `json:"metrics,omitempty"`
+
+	RecordHeaders []exporterKafkaHeader `json:"record_headers,omitempty"`
+
+	Auth *exporterKafkaAuth `json:"auth,omitempty"`
+	TLS  *exporterKafkaTLS  `json:"tls,omitempty"`
+
+	Timeout         string `json:"timeout,omitempty"`
+	ConnIdleTimeout string `json:"conn_idle_timeout,omitempty"`
+
+	Producer *exporterKafkaProducer `json:"producer,omitempty"`
+
+	PartitionLogsByResourceAttributes    bool `json:"partition_logs_by_resource_attributes,omitempty"`
+	PartitionMetricsByResourceAttributes bool `json:"partition_metrics_by_resource_attributes,omitempty"`
+}
+
+type exporterKafkaSignal struct {
+	Topic    string `json:"topic,omitempty"`
+	Encoding string `json:"encoding,omitempty"`
+}
+
+type exporterKafkaHeader struct {
+	Key   string `json:"key,omitempty"`
+	Value string `json:"value,omitempty"`
 }
 
 type exporterKafkaAuth struct {
+	SASL *exporterKafkaSASL `json:"sasl,omitempty"`
 }
 
-type exporterKafkaSignalConfig struct {
-	Topic    string `json:"topic,omitempty"`
-	Encoding string `json:"encoding,omitempty"`
+type exporterKafkaSASL struct {
+	Username  string `json:"username,omitempty"`
+	Password  string `json:"password,omitempty"`
+	Mechanism string `json:"mechanism,omitempty"`
+}
+
+type exporterKafkaTLS struct {
+	Insecure           bool `json:"insecure,omitempty"`
+	InsecureSkipVerify bool `json:"insecure_skip_verify,omitempty"`
+}
+
+type exporterKafkaProducer struct {
+	MaxMessageBytes        int64  `json:"max_message_bytes,omitempty"`
+	RequiredAcks           int32  `json:"required_acks,omitempty"`
+	Compression            string `json:"compression,omitempty"`
+	FlushMaxMessages       int64  `json:"flush_max_messages,omitempty"`
+	AllowAutoTopicCreation bool   `json:"allow_auto_topic_creation,omitempty"`
+	Linger                 string `json:"linger,omitempty"`
 }
 
 type otelTLS struct {
