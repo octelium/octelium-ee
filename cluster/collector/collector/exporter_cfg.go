@@ -171,3 +171,32 @@ type exporterAzureMonitor struct {
 	CustomEventsEnabled    bool   `json:"custom_events_enabled,omitempty"`
 	ExceptionEventsEnabled bool   `json:"exception_events_enabled,omitempty"`
 }
+
+type exporterInfluxDB struct {
+	Endpoint string `json:"endpoint,omitempty"`
+
+	Org    string `json:"org,omitempty"`
+	Bucket string `json:"bucket,omitempty"`
+	Token  string `json:"token,omitempty"`
+
+	Headers map[string]string `json:"headers,omitempty"`
+
+	MetricsSchema string `json:"metrics_schema,omitempty"`
+	Precision     string `json:"precision,omitempty"`
+
+	PayloadMaxLines int64 `json:"payload_max_lines,omitempty"`
+	PayloadMaxBytes int64 `json:"payload_max_bytes,omitempty"`
+
+	Timeout string `json:"timeout,omitempty"`
+
+	LogRecordDimensions []string `json:"log_record_dimensions,omitempty"`
+
+	V1Compatibility *exporterInfluxDBV1Compatibility `json:"v1_compatibility,omitempty"`
+}
+
+type exporterInfluxDBV1Compatibility struct {
+	Enabled  bool   `json:"enabled,omitempty"`
+	DB       string `json:"db,omitempty"`
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
+}

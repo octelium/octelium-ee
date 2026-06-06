@@ -885,15 +885,50 @@ export interface CollectorExporter_Spec_InfluxDB {
      */
     token?: CollectorExporter_Spec_InfluxDB_Token;
     /**
-     * @generated from protobuf field: map<string, string> headers = 5
+     * @generated from protobuf field: repeated octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Header headers = 5
      */
-    headers: {
-        [key: string]: string;
-    };
+    headers: CollectorExporter_Spec_InfluxDB_Header[];
     /**
-     * @generated from protobuf field: string metricsSchema = 6
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.MetricsSchema metricsSchema = 6
      */
-    metricsSchema: string;
+    metricsSchema: CollectorExporter_Spec_InfluxDB_MetricsSchema;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Precision precision = 7
+     */
+    precision: CollectorExporter_Spec_InfluxDB_Precision;
+    /**
+     * @generated from protobuf field: int64 payloadMaxLines = 8
+     */
+    payloadMaxLines: number;
+    /**
+     * @generated from protobuf field: int64 payloadMaxBytes = 9
+     */
+    payloadMaxBytes: number;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration timeout = 10
+     */
+    timeout?: Duration;
+    /**
+     * @generated from protobuf field: repeated string logRecordDimensions = 11
+     */
+    logRecordDimensions: string[];
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility v1Compatibility = 12
+     */
+    v1Compatibility?: CollectorExporter_Spec_InfluxDB_V1Compatibility;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Header
+ */
+export interface CollectorExporter_Spec_InfluxDB_Header {
+    /**
+     * @generated from protobuf field: string key = 1
+     */
+    key: string;
+    /**
+     * @generated from protobuf field: string value = 2
+     */
+    value: string;
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Token
@@ -911,6 +946,86 @@ export interface CollectorExporter_Spec_InfluxDB_Token {
     } | {
         oneofKind: undefined;
     };
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility
+ */
+export interface CollectorExporter_Spec_InfluxDB_V1Compatibility {
+    /**
+     * @generated from protobuf field: bool enabled = 1
+     */
+    enabled: boolean;
+    /**
+     * @generated from protobuf field: string db = 2
+     */
+    db: string;
+    /**
+     * @generated from protobuf field: string username = 3
+     */
+    username: string;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility.Password password = 4
+     */
+    password?: CollectorExporter_Spec_InfluxDB_V1Compatibility_Password;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility.Password
+ */
+export interface CollectorExporter_Spec_InfluxDB_V1Compatibility_Password {
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "fromSecret";
+        /**
+         * @generated from protobuf field: string fromSecret = 1
+         */
+        fromSecret: string;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.MetricsSchema
+ */
+export enum CollectorExporter_Spec_InfluxDB_MetricsSchema {
+    /**
+     * @generated from protobuf enum value: METRICS_SCHEMA_UNSET = 0;
+     */
+    METRICS_SCHEMA_UNSET = 0,
+    /**
+     * @generated from protobuf enum value: TELEGRAF_PROMETHEUS_V1 = 1;
+     */
+    TELEGRAF_PROMETHEUS_V1 = 1,
+    /**
+     * @generated from protobuf enum value: TELEGRAF_PROMETHEUS_V2 = 2;
+     */
+    TELEGRAF_PROMETHEUS_V2 = 2
+}
+/**
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Precision
+ */
+export enum CollectorExporter_Spec_InfluxDB_Precision {
+    /**
+     * @generated from protobuf enum value: PRECISION_UNSET = 0;
+     */
+    PRECISION_UNSET = 0,
+    /**
+     * @generated from protobuf enum value: NS = 1;
+     */
+    NS = 1,
+    /**
+     * @generated from protobuf enum value: US = 2;
+     */
+    US = 2,
+    /**
+     * @generated from protobuf enum value: MS = 3;
+     */
+    MS = 3,
+    /**
+     * @generated from protobuf enum value: S = 4;
+     */
+    S = 4
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka
@@ -7078,8 +7193,14 @@ class CollectorExporter_Spec_InfluxDB$Type extends MessageType<CollectorExporter
             { no: 2, name: "org", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 3, name: "bucket", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 4, name: "token", kind: "message", T: () => CollectorExporter_Spec_InfluxDB_Token },
-            { no: 5, name: "headers", kind: "map", K: 9 /*ScalarType.STRING*/, V: { kind: "scalar", T: 9 /*ScalarType.STRING*/ } },
-            { no: 6, name: "metricsSchema", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 5, name: "headers", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => CollectorExporter_Spec_InfluxDB_Header },
+            { no: 6, name: "metricsSchema", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.MetricsSchema", CollectorExporter_Spec_InfluxDB_MetricsSchema] },
+            { no: 7, name: "precision", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Precision", CollectorExporter_Spec_InfluxDB_Precision] },
+            { no: 8, name: "payloadMaxLines", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 9, name: "payloadMaxBytes", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 10, name: "timeout", kind: "message", T: () => Duration },
+            { no: 11, name: "logRecordDimensions", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 12, name: "v1Compatibility", kind: "message", T: () => CollectorExporter_Spec_InfluxDB_V1Compatibility }
         ]);
     }
     create(value?: PartialMessage<CollectorExporter_Spec_InfluxDB>): CollectorExporter_Spec_InfluxDB {
@@ -7087,8 +7208,12 @@ class CollectorExporter_Spec_InfluxDB$Type extends MessageType<CollectorExporter
         message.endpoint = "";
         message.org = "";
         message.bucket = "";
-        message.headers = {};
-        message.metricsSchema = "";
+        message.headers = [];
+        message.metricsSchema = 0;
+        message.precision = 0;
+        message.payloadMaxLines = 0;
+        message.payloadMaxBytes = 0;
+        message.logRecordDimensions = [];
         if (value !== undefined)
             reflectionMergePartial<CollectorExporter_Spec_InfluxDB>(this, message, value);
         return message;
@@ -7110,11 +7235,29 @@ class CollectorExporter_Spec_InfluxDB$Type extends MessageType<CollectorExporter
                 case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Token token */ 4:
                     message.token = CollectorExporter_Spec_InfluxDB_Token.internalBinaryRead(reader, reader.uint32(), options, message.token);
                     break;
-                case /* map<string, string> headers */ 5:
-                    this.binaryReadMap5(message.headers, reader, options);
+                case /* repeated octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Header headers */ 5:
+                    message.headers.push(CollectorExporter_Spec_InfluxDB_Header.internalBinaryRead(reader, reader.uint32(), options));
                     break;
-                case /* string metricsSchema */ 6:
-                    message.metricsSchema = reader.string();
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.MetricsSchema metricsSchema */ 6:
+                    message.metricsSchema = reader.int32();
+                    break;
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Precision precision */ 7:
+                    message.precision = reader.int32();
+                    break;
+                case /* int64 payloadMaxLines */ 8:
+                    message.payloadMaxLines = reader.int64().toNumber();
+                    break;
+                case /* int64 payloadMaxBytes */ 9:
+                    message.payloadMaxBytes = reader.int64().toNumber();
+                    break;
+                case /* octelium.api.main.meta.v1.Duration timeout */ 10:
+                    message.timeout = Duration.internalBinaryRead(reader, reader.uint32(), options, message.timeout);
+                    break;
+                case /* repeated string logRecordDimensions */ 11:
+                    message.logRecordDimensions.push(reader.string());
+                    break;
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility v1Compatibility */ 12:
+                    message.v1Compatibility = CollectorExporter_Spec_InfluxDB_V1Compatibility.internalBinaryRead(reader, reader.uint32(), options, message.v1Compatibility);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -7126,22 +7269,6 @@ class CollectorExporter_Spec_InfluxDB$Type extends MessageType<CollectorExporter
             }
         }
         return message;
-    }
-    private binaryReadMap5(map: CollectorExporter_Spec_InfluxDB["headers"], reader: IBinaryReader, options: BinaryReadOptions): void {
-        let len = reader.uint32(), end = reader.pos + len, key: keyof CollectorExporter_Spec_InfluxDB["headers"] | undefined, val: CollectorExporter_Spec_InfluxDB["headers"][any] | undefined;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case 1:
-                    key = reader.string();
-                    break;
-                case 2:
-                    val = reader.string();
-                    break;
-                default: throw new globalThis.Error("unknown map entry field for octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.headers");
-            }
-        }
-        map[key ?? ""] = val ?? "";
     }
     internalBinaryWrite(message: CollectorExporter_Spec_InfluxDB, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
         /* string endpoint = 1; */
@@ -7156,12 +7283,30 @@ class CollectorExporter_Spec_InfluxDB$Type extends MessageType<CollectorExporter
         /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Token token = 4; */
         if (message.token)
             CollectorExporter_Spec_InfluxDB_Token.internalBinaryWrite(message.token, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
-        /* map<string, string> headers = 5; */
-        for (let k of globalThis.Object.keys(message.headers))
-            writer.tag(5, WireType.LengthDelimited).fork().tag(1, WireType.LengthDelimited).string(k).tag(2, WireType.LengthDelimited).string(message.headers[k]).join();
-        /* string metricsSchema = 6; */
-        if (message.metricsSchema !== "")
-            writer.tag(6, WireType.LengthDelimited).string(message.metricsSchema);
+        /* repeated octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Header headers = 5; */
+        for (let i = 0; i < message.headers.length; i++)
+            CollectorExporter_Spec_InfluxDB_Header.internalBinaryWrite(message.headers[i], writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.MetricsSchema metricsSchema = 6; */
+        if (message.metricsSchema !== 0)
+            writer.tag(6, WireType.Varint).int32(message.metricsSchema);
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Precision precision = 7; */
+        if (message.precision !== 0)
+            writer.tag(7, WireType.Varint).int32(message.precision);
+        /* int64 payloadMaxLines = 8; */
+        if (message.payloadMaxLines !== 0)
+            writer.tag(8, WireType.Varint).int64(message.payloadMaxLines);
+        /* int64 payloadMaxBytes = 9; */
+        if (message.payloadMaxBytes !== 0)
+            writer.tag(9, WireType.Varint).int64(message.payloadMaxBytes);
+        /* octelium.api.main.meta.v1.Duration timeout = 10; */
+        if (message.timeout)
+            Duration.internalBinaryWrite(message.timeout, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        /* repeated string logRecordDimensions = 11; */
+        for (let i = 0; i < message.logRecordDimensions.length; i++)
+            writer.tag(11, WireType.LengthDelimited).string(message.logRecordDimensions[i]);
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility v1Compatibility = 12; */
+        if (message.v1Compatibility)
+            CollectorExporter_Spec_InfluxDB_V1Compatibility.internalBinaryWrite(message.v1Compatibility, writer.tag(12, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -7172,6 +7317,61 @@ class CollectorExporter_Spec_InfluxDB$Type extends MessageType<CollectorExporter
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB
  */
 export const CollectorExporter_Spec_InfluxDB = new CollectorExporter_Spec_InfluxDB$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_InfluxDB_Header$Type extends MessageType<CollectorExporter_Spec_InfluxDB_Header> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Header", [
+            { no: 1, name: "key", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "value", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_InfluxDB_Header>): CollectorExporter_Spec_InfluxDB_Header {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.key = "";
+        message.value = "";
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_InfluxDB_Header>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_InfluxDB_Header): CollectorExporter_Spec_InfluxDB_Header {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string key */ 1:
+                    message.key = reader.string();
+                    break;
+                case /* string value */ 2:
+                    message.value = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_InfluxDB_Header, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string key = 1; */
+        if (message.key !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.key);
+        /* string value = 2; */
+        if (message.value !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.value);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Header
+ */
+export const CollectorExporter_Spec_InfluxDB_Header = new CollectorExporter_Spec_InfluxDB_Header$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class CollectorExporter_Spec_InfluxDB_Token$Type extends MessageType<CollectorExporter_Spec_InfluxDB_Token> {
     constructor() {
@@ -7222,6 +7422,126 @@ class CollectorExporter_Spec_InfluxDB_Token$Type extends MessageType<CollectorEx
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Token
  */
 export const CollectorExporter_Spec_InfluxDB_Token = new CollectorExporter_Spec_InfluxDB_Token$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_InfluxDB_V1Compatibility$Type extends MessageType<CollectorExporter_Spec_InfluxDB_V1Compatibility> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility", [
+            { no: 1, name: "enabled", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 2, name: "db", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "username", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "password", kind: "message", T: () => CollectorExporter_Spec_InfluxDB_V1Compatibility_Password }
+        ]);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_InfluxDB_V1Compatibility>): CollectorExporter_Spec_InfluxDB_V1Compatibility {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.enabled = false;
+        message.db = "";
+        message.username = "";
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_InfluxDB_V1Compatibility>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_InfluxDB_V1Compatibility): CollectorExporter_Spec_InfluxDB_V1Compatibility {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bool enabled */ 1:
+                    message.enabled = reader.bool();
+                    break;
+                case /* string db */ 2:
+                    message.db = reader.string();
+                    break;
+                case /* string username */ 3:
+                    message.username = reader.string();
+                    break;
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility.Password password */ 4:
+                    message.password = CollectorExporter_Spec_InfluxDB_V1Compatibility_Password.internalBinaryRead(reader, reader.uint32(), options, message.password);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_InfluxDB_V1Compatibility, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bool enabled = 1; */
+        if (message.enabled !== false)
+            writer.tag(1, WireType.Varint).bool(message.enabled);
+        /* string db = 2; */
+        if (message.db !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.db);
+        /* string username = 3; */
+        if (message.username !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.username);
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility.Password password = 4; */
+        if (message.password)
+            CollectorExporter_Spec_InfluxDB_V1Compatibility_Password.internalBinaryWrite(message.password, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility
+ */
+export const CollectorExporter_Spec_InfluxDB_V1Compatibility = new CollectorExporter_Spec_InfluxDB_V1Compatibility$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_InfluxDB_V1Compatibility_Password$Type extends MessageType<CollectorExporter_Spec_InfluxDB_V1Compatibility_Password> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility.Password", [
+            { no: 1, name: "fromSecret", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_InfluxDB_V1Compatibility_Password>): CollectorExporter_Spec_InfluxDB_V1Compatibility_Password {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_InfluxDB_V1Compatibility_Password>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_InfluxDB_V1Compatibility_Password): CollectorExporter_Spec_InfluxDB_V1Compatibility_Password {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string fromSecret */ 1:
+                    message.type = {
+                        oneofKind: "fromSecret",
+                        fromSecret: reader.string()
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_InfluxDB_V1Compatibility_Password, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string fromSecret = 1; */
+        if (message.type.oneofKind === "fromSecret")
+            writer.tag(1, WireType.LengthDelimited).string(message.type.fromSecret);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility.Password
+ */
+export const CollectorExporter_Spec_InfluxDB_V1Compatibility_Password = new CollectorExporter_Spec_InfluxDB_V1Compatibility_Password$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class CollectorExporter_Spec_Kafka$Type extends MessageType<CollectorExporter_Spec_Kafka> {
     constructor() {

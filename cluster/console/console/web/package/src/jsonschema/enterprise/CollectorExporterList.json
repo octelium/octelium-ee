@@ -737,18 +737,69 @@
                     "additionalProperties": false
                 },
                 "headers": {
-                    "additionalProperties": {
-                        "type": "string"
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Header"
                     },
-                    "type": "object"
+                    "additionalProperties": false,
+                    "type": "array"
                 },
                 "metricsSchema": {
-                    "type": "string"
+                    "enum": [
+                        "METRICS_SCHEMA_UNSET",
+                        "TELEGRAF_PROMETHEUS_V1",
+                        "TELEGRAF_PROMETHEUS_V2"
+                    ],
+                    "type": "string",
+                    "title": "Metrics Schema"
+                },
+                "precision": {
+                    "enum": [
+                        "PRECISION_UNSET",
+                        "NS",
+                        "US",
+                        "MS",
+                        "S"
+                    ],
+                    "type": "string",
+                    "title": "Precision"
+                },
+                "payloadMaxLines": {
+                    "type": "integer"
+                },
+                "payloadMaxBytes": {
+                    "type": "integer"
+                },
+                "timeout": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false
+                },
+                "logRecordDimensions": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "v1Compatibility": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility",
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false,
             "type": "object",
             "title": "Influx DB"
+        },
+        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Header": {
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Header"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Token": {
             "properties": {
@@ -781,6 +832,58 @@
                 }
             ],
             "title": "Token"
+        },
+        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility": {
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "db": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                },
+                "password": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility.Password",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "V 1 Compatibility"
+        },
+        "octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility.Password": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Password"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka": {
             "properties": {

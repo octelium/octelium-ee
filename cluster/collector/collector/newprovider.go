@@ -691,6 +691,75 @@ func (p *provider) getExporter(ctx context.Context, exp *enterprisev1.CollectorE
 				return nil, err
 			}
 		}
+
+	case *enterprisev1.CollectorExporter_Spec_InfluxDB_:
+		ret.HasLogs = true
+		ret.HasMetrics = true
+
+		spec := exp.Spec.GetInfluxDB()
+		if spec == nil {
+			return nil, errors.Errorf("nil InfluxDB exporter spec")
+		}
+
+		timeout, err := durationToCollectorString(spec.Timeout)
+		if err != nil {
+			return nil, err
+		}
+
+		metricsSchema, err := influxMetricsSchemaToCollectorString(spec.MetricsSchema)
+		if err != nil {
+			return nil, err
+		}
+
+		precision, err := influxPrecisionToCollectorString(spec.Precision)
+		if err != nil {
+			return nil, err
+		}
+
+		c := &exporterInfluxDB{
+			Endpoint:            spec.Endpoint,
+			Org:                 spec.Org,
+			Bucket:              spec.Bucket,
+			Headers:             influxHeadersToMap(spec.Headers),
+			MetricsSchema:       metricsSchema,
+			Precision:           precision,
+			PayloadMaxLines:     spec.PayloadMaxLines,
+			PayloadMaxBytes:     spec.PayloadMaxBytes,
+			Timeout:             timeout,
+			LogRecordDimensions: append([]string(nil), spec.LogRecordDimensions...),
+		}
+		ret.exp = c
+
+		if spec.GetToken() != nil && spec.GetToken().GetFromSecret() != "" {
+			sec, err := octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
+				Name: spec.GetToken().GetFromSecret(),
+			})
+			if err != nil {
+				return nil, err
+			}
+
+			c.Token = uenterprisev1.ToSecret(sec).GetValueStr()
+		}
+
+		if spec.V1Compatibility != nil {
+			c.V1Compatibility = &exporterInfluxDBV1Compatibility{
+				Enabled:  spec.V1Compatibility.Enabled,
+				DB:       spec.V1Compatibility.Db,
+				Username: spec.V1Compatibility.Username,
+			}
+
+			if spec.V1Compatibility.GetPassword() != nil &&
+				spec.V1Compatibility.GetPassword().GetFromSecret() != "" {
+				sec, err := octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
+					Name: spec.V1Compatibility.GetPassword().GetFromSecret(),
+				})
+				if err != nil {
+					return nil, err
+				}
+
+				c.V1Compatibility.Password = uenterprisev1.ToSecret(sec).GetValueStr()
+			}
+		}
 	default:
 		return nil, errors.Errorf("Unsupported exporter type: %+v", exp)
 	}
@@ -1184,4 +1253,59 @@ func kafkaHeadersToCollector(headers []*enterprisev1.CollectorExporter_Spec_Kafk
 	}
 
 	return ret
+}
+
+func influxHeadersToMap(headers []*enterprisev1.CollectorExporter_Spec_InfluxDB_Header) map[string]string {
+	if len(headers) == 0 {
+		return nil
+	}
+
+	ret := make(map[string]string, len(headers))
+	for _, h := range headers {
+		if h == nil || h.Key == "" {
+			continue
+		}
+
+		ret[h.Key] = h.Value
+	}
+
+	if len(ret) == 0 {
+		return nil
+	}
+
+	return ret
+}
+
+func influxMetricsSchemaToCollectorString(
+	schema enterprisev1.CollectorExporter_Spec_InfluxDB_MetricsSchema,
+) (string, error) {
+	switch schema {
+	case enterprisev1.CollectorExporter_Spec_InfluxDB_METRICS_SCHEMA_UNSET:
+		return "", nil
+	case enterprisev1.CollectorExporter_Spec_InfluxDB_TELEGRAF_PROMETHEUS_V1:
+		return "telegraf-prometheus-v1", nil
+	case enterprisev1.CollectorExporter_Spec_InfluxDB_TELEGRAF_PROMETHEUS_V2:
+		return "telegraf-prometheus-v2", nil
+	default:
+		return "", errors.Errorf("invalid InfluxDB metrics schema")
+	}
+}
+
+func influxPrecisionToCollectorString(
+	precision enterprisev1.CollectorExporter_Spec_InfluxDB_Precision,
+) (string, error) {
+	switch precision {
+	case enterprisev1.CollectorExporter_Spec_InfluxDB_PRECISION_UNSET:
+		return "", nil
+	case enterprisev1.CollectorExporter_Spec_InfluxDB_NS:
+		return "ns", nil
+	case enterprisev1.CollectorExporter_Spec_InfluxDB_US:
+		return "us", nil
+	case enterprisev1.CollectorExporter_Spec_InfluxDB_MS:
+		return "ms", nil
+	case enterprisev1.CollectorExporter_Spec_InfluxDB_S:
+		return "s", nil
+	default:
+		return "", errors.Errorf("invalid InfluxDB precision")
+	}
 }
