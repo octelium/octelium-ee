@@ -602,12 +602,22 @@ func (p *provider) getExporter(ctx context.Context, exp *enterprisev1.CollectorE
 
 	case *enterprisev1.CollectorExporter_Spec_Logzio_:
 		ret.HasLogs = true
+		ret.HasMetrics = false
 
 		spec := exp.Spec.GetLogzio()
+		if spec == nil {
+			return nil, errors.Errorf("nil Logzio exporter spec")
+		}
+
+		timeout, err := durationToCollectorString(spec.Timeout)
+		if err != nil {
+			return nil, err
+		}
 
 		c := &exporterLogzio{
 			Region:   spec.Region,
 			Endpoint: spec.Endpoint,
+			Timeout:  timeout,
 		}
 		ret.exp = c
 

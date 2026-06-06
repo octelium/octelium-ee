@@ -100,9 +100,10 @@ type exporterDatadogHostMetadata struct {
 }
 
 type exporterLogzio struct {
+	AccountToken string `json:"account_token,omitempty"`
 	Region       string `json:"region,omitempty"`
 	Endpoint     string `json:"endpoint,omitempty"`
-	AccountToken string `json:"account_token,omitempty"`
+	Timeout      string `json:"timeout,omitempty"`
 }
 
 type exporterKafka struct {

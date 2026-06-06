@@ -1181,6 +1181,10 @@
                 },
                 "endpoint": {
                     "type": "string"
+                },
+                "timeout": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false,

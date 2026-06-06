@@ -846,6 +846,10 @@ export interface CollectorExporter_Spec_Logzio {
      * @generated from protobuf field: string endpoint = 3
      */
     endpoint: string;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration timeout = 4
+     */
+    timeout?: Duration;
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio.Token
@@ -7163,7 +7167,8 @@ class CollectorExporter_Spec_Logzio$Type extends MessageType<CollectorExporter_S
         super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio", [
             { no: 1, name: "token", kind: "message", T: () => CollectorExporter_Spec_Logzio_Token },
             { no: 2, name: "region", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 3, name: "endpoint", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 3, name: "endpoint", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "timeout", kind: "message", T: () => Duration }
         ]);
     }
     create(value?: PartialMessage<CollectorExporter_Spec_Logzio>): CollectorExporter_Spec_Logzio {
@@ -7188,6 +7193,9 @@ class CollectorExporter_Spec_Logzio$Type extends MessageType<CollectorExporter_S
                 case /* string endpoint */ 3:
                     message.endpoint = reader.string();
                     break;
+                case /* octelium.api.main.meta.v1.Duration timeout */ 4:
+                    message.timeout = Duration.internalBinaryRead(reader, reader.uint32(), options, message.timeout);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -7209,6 +7217,9 @@ class CollectorExporter_Spec_Logzio$Type extends MessageType<CollectorExporter_S
         /* string endpoint = 3; */
         if (message.endpoint !== "")
             writer.tag(3, WireType.LengthDelimited).string(message.endpoint);
+        /* octelium.api.main.meta.v1.Duration timeout = 4; */
+        if (message.timeout)
+            Duration.internalBinaryWrite(message.timeout, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
