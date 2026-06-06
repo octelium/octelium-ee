@@ -42,14 +42,24 @@ type otelAuth struct {
 }
 
 type exporterOTLPHTTP struct {
-	Endpoint        string            `json:"endpoint,omitempty"`
-	MetricsEndpoint string            `json:"metrics_endpoint,omitempty"`
-	LogsEndpoint    string            `json:"logs_endpoint,omitempty"`
-	TLS             *otelTLS          `json:"tls,omitempty"`
-	Compression     string            `json:"compression,omitempty"`
-	Encoding        string            `json:"encoding,omitempty"`
-	Auth            *otelAuth         `json:"auth,omitempty"`
-	Headers         map[string]string `json:"headers,omitempty"`
+	Endpoint        string             `json:"endpoint,omitempty"`
+	MetricsEndpoint string             `json:"metrics_endpoint,omitempty"`
+	LogsEndpoint    string             `json:"logs_endpoint,omitempty"`
+	Headers         map[string]string  `json:"headers,omitempty"`
+	Auth            *otelAuth          `json:"auth,omitempty"`
+	TLS             *otelHTTPClientTLS `json:"tls,omitempty"`
+	Compression     string             `json:"compression,omitempty"`
+	Encoding        string             `json:"encoding,omitempty"`
+	Timeout         string             `json:"timeout,omitempty"`
+	ReadBufferSize  int32              `json:"read_buffer_size,omitempty"`
+	WriteBufferSize int32              `json:"write_buffer_size,omitempty"`
+}
+
+type otelHTTPClientTLS struct {
+	Insecure           bool   `json:"insecure,omitempty"`
+	InsecureSkipVerify bool   `json:"insecure_skip_verify,omitempty"`
+	ServerNameOverride string `json:"server_name_override,omitempty"`
+	CAPEM              string `json:"ca_pem,omitempty"`
 }
 
 type exporterPrometheusRemoteWriteRead struct {

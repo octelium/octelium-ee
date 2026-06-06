@@ -427,9 +427,9 @@ export interface CollectorExporter_Spec_OTLPHTTP {
      */
     endpoint: string;
     /**
-     * @generated from protobuf field: repeated octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.KeyValue headers = 2
+     * @generated from protobuf field: repeated octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Header headers = 2
      */
-    headers: CollectorExporter_Spec_OTLPHTTP_KeyValue[];
+    headers: CollectorExporter_Spec_OTLPHTTP_Header[];
     /**
      * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth auth = 3
      */
@@ -443,13 +443,42 @@ export interface CollectorExporter_Spec_OTLPHTTP {
      */
     metricsEndpoint: string;
     /**
-     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Mode mode = 6
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Encoding encoding = 6
      */
-    mode: CollectorExporter_Spec_OTLPHTTP_Mode;
+    encoding: CollectorExporter_Spec_OTLPHTTP_Encoding;
     /**
      * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Compression compression = 7
      */
     compression: CollectorExporter_Spec_OTLPHTTP_Compression;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.TLS tls = 8
+     */
+    tls?: CollectorExporter_Spec_OTLPHTTP_TLS;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration timeout = 9
+     */
+    timeout?: Duration;
+    /**
+     * @generated from protobuf field: int32 readBufferSize = 10
+     */
+    readBufferSize: number;
+    /**
+     * @generated from protobuf field: int32 writeBufferSize = 11
+     */
+    writeBufferSize: number;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Header
+ */
+export interface CollectorExporter_Spec_OTLPHTTP_Header {
+    /**
+     * @generated from protobuf field: string key = 1
+     */
+    key: string;
+    /**
+     * @generated from protobuf field: string value = 2
+     */
+    value: string;
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth
@@ -558,26 +587,34 @@ export interface CollectorExporter_Spec_OTLPHTTP_Auth_Custom_Value {
     };
 }
 /**
- * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.KeyValue
+ * @generated from protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.TLS
  */
-export interface CollectorExporter_Spec_OTLPHTTP_KeyValue {
+export interface CollectorExporter_Spec_OTLPHTTP_TLS {
     /**
-     * @generated from protobuf field: string key = 1
+     * @generated from protobuf field: bool insecure = 1
      */
-    key: string;
+    insecure: boolean;
     /**
-     * @generated from protobuf field: string value = 2
+     * @generated from protobuf field: bool insecureSkipVerify = 2
      */
-    value: string;
+    insecureSkipVerify: boolean;
+    /**
+     * @generated from protobuf field: string serverNameOverride = 3
+     */
+    serverNameOverride: string;
+    /**
+     * @generated from protobuf field: string caPEM = 4
+     */
+    caPEM: string;
 }
 /**
- * @generated from protobuf enum octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Mode
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Encoding
  */
-export enum CollectorExporter_Spec_OTLPHTTP_Mode {
+export enum CollectorExporter_Spec_OTLPHTTP_Encoding {
     /**
-     * @generated from protobuf enum value: MODE_UNSET = 0;
+     * @generated from protobuf enum value: ENCODING_UNSET = 0;
      */
-    MODE_UNSET = 0,
+    ENCODING_UNSET = 0,
     /**
      * @generated from protobuf enum value: PROTO = 1;
      */
@@ -6015,12 +6052,16 @@ class CollectorExporter_Spec_OTLPHTTP$Type extends MessageType<CollectorExporter
     constructor() {
         super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP", [
             { no: 1, name: "endpoint", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "headers", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => CollectorExporter_Spec_OTLPHTTP_KeyValue },
+            { no: 2, name: "headers", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => CollectorExporter_Spec_OTLPHTTP_Header },
             { no: 3, name: "auth", kind: "message", T: () => CollectorExporter_Spec_OTLPHTTP_Auth },
             { no: 4, name: "logsEndpoint", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 5, name: "metricsEndpoint", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 6, name: "mode", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Mode", CollectorExporter_Spec_OTLPHTTP_Mode] },
-            { no: 7, name: "compression", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Compression", CollectorExporter_Spec_OTLPHTTP_Compression] }
+            { no: 6, name: "encoding", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Encoding", CollectorExporter_Spec_OTLPHTTP_Encoding] },
+            { no: 7, name: "compression", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Compression", CollectorExporter_Spec_OTLPHTTP_Compression] },
+            { no: 8, name: "tls", kind: "message", T: () => CollectorExporter_Spec_OTLPHTTP_TLS },
+            { no: 9, name: "timeout", kind: "message", T: () => Duration },
+            { no: 10, name: "readBufferSize", kind: "scalar", T: 5 /*ScalarType.INT32*/ },
+            { no: 11, name: "writeBufferSize", kind: "scalar", T: 5 /*ScalarType.INT32*/ }
         ]);
     }
     create(value?: PartialMessage<CollectorExporter_Spec_OTLPHTTP>): CollectorExporter_Spec_OTLPHTTP {
@@ -6029,8 +6070,10 @@ class CollectorExporter_Spec_OTLPHTTP$Type extends MessageType<CollectorExporter
         message.headers = [];
         message.logsEndpoint = "";
         message.metricsEndpoint = "";
-        message.mode = 0;
+        message.encoding = 0;
         message.compression = 0;
+        message.readBufferSize = 0;
+        message.writeBufferSize = 0;
         if (value !== undefined)
             reflectionMergePartial<CollectorExporter_Spec_OTLPHTTP>(this, message, value);
         return message;
@@ -6043,8 +6086,8 @@ class CollectorExporter_Spec_OTLPHTTP$Type extends MessageType<CollectorExporter
                 case /* string endpoint */ 1:
                     message.endpoint = reader.string();
                     break;
-                case /* repeated octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.KeyValue headers */ 2:
-                    message.headers.push(CollectorExporter_Spec_OTLPHTTP_KeyValue.internalBinaryRead(reader, reader.uint32(), options));
+                case /* repeated octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Header headers */ 2:
+                    message.headers.push(CollectorExporter_Spec_OTLPHTTP_Header.internalBinaryRead(reader, reader.uint32(), options));
                     break;
                 case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth auth */ 3:
                     message.auth = CollectorExporter_Spec_OTLPHTTP_Auth.internalBinaryRead(reader, reader.uint32(), options, message.auth);
@@ -6055,11 +6098,23 @@ class CollectorExporter_Spec_OTLPHTTP$Type extends MessageType<CollectorExporter
                 case /* string metricsEndpoint */ 5:
                     message.metricsEndpoint = reader.string();
                     break;
-                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Mode mode */ 6:
-                    message.mode = reader.int32();
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Encoding encoding */ 6:
+                    message.encoding = reader.int32();
                     break;
                 case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Compression compression */ 7:
                     message.compression = reader.int32();
+                    break;
+                case /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.TLS tls */ 8:
+                    message.tls = CollectorExporter_Spec_OTLPHTTP_TLS.internalBinaryRead(reader, reader.uint32(), options, message.tls);
+                    break;
+                case /* octelium.api.main.meta.v1.Duration timeout */ 9:
+                    message.timeout = Duration.internalBinaryRead(reader, reader.uint32(), options, message.timeout);
+                    break;
+                case /* int32 readBufferSize */ 10:
+                    message.readBufferSize = reader.int32();
+                    break;
+                case /* int32 writeBufferSize */ 11:
+                    message.writeBufferSize = reader.int32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -6076,9 +6131,9 @@ class CollectorExporter_Spec_OTLPHTTP$Type extends MessageType<CollectorExporter
         /* string endpoint = 1; */
         if (message.endpoint !== "")
             writer.tag(1, WireType.LengthDelimited).string(message.endpoint);
-        /* repeated octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.KeyValue headers = 2; */
+        /* repeated octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Header headers = 2; */
         for (let i = 0; i < message.headers.length; i++)
-            CollectorExporter_Spec_OTLPHTTP_KeyValue.internalBinaryWrite(message.headers[i], writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+            CollectorExporter_Spec_OTLPHTTP_Header.internalBinaryWrite(message.headers[i], writer.tag(2, WireType.LengthDelimited).fork(), options).join();
         /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth auth = 3; */
         if (message.auth)
             CollectorExporter_Spec_OTLPHTTP_Auth.internalBinaryWrite(message.auth, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
@@ -6088,12 +6143,24 @@ class CollectorExporter_Spec_OTLPHTTP$Type extends MessageType<CollectorExporter
         /* string metricsEndpoint = 5; */
         if (message.metricsEndpoint !== "")
             writer.tag(5, WireType.LengthDelimited).string(message.metricsEndpoint);
-        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Mode mode = 6; */
-        if (message.mode !== 0)
-            writer.tag(6, WireType.Varint).int32(message.mode);
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Encoding encoding = 6; */
+        if (message.encoding !== 0)
+            writer.tag(6, WireType.Varint).int32(message.encoding);
         /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Compression compression = 7; */
         if (message.compression !== 0)
             writer.tag(7, WireType.Varint).int32(message.compression);
+        /* octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.TLS tls = 8; */
+        if (message.tls)
+            CollectorExporter_Spec_OTLPHTTP_TLS.internalBinaryWrite(message.tls, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.Duration timeout = 9; */
+        if (message.timeout)
+            Duration.internalBinaryWrite(message.timeout, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
+        /* int32 readBufferSize = 10; */
+        if (message.readBufferSize !== 0)
+            writer.tag(10, WireType.Varint).int32(message.readBufferSize);
+        /* int32 writeBufferSize = 11; */
+        if (message.writeBufferSize !== 0)
+            writer.tag(11, WireType.Varint).int32(message.writeBufferSize);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -6104,6 +6171,61 @@ class CollectorExporter_Spec_OTLPHTTP$Type extends MessageType<CollectorExporter
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP
  */
 export const CollectorExporter_Spec_OTLPHTTP = new CollectorExporter_Spec_OTLPHTTP$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class CollectorExporter_Spec_OTLPHTTP_Header$Type extends MessageType<CollectorExporter_Spec_OTLPHTTP_Header> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Header", [
+            { no: 1, name: "key", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "value", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<CollectorExporter_Spec_OTLPHTTP_Header>): CollectorExporter_Spec_OTLPHTTP_Header {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.key = "";
+        message.value = "";
+        if (value !== undefined)
+            reflectionMergePartial<CollectorExporter_Spec_OTLPHTTP_Header>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_OTLPHTTP_Header): CollectorExporter_Spec_OTLPHTTP_Header {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string key */ 1:
+                    message.key = reader.string();
+                    break;
+                case /* string value */ 2:
+                    message.value = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: CollectorExporter_Spec_OTLPHTTP_Header, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string key = 1; */
+        if (message.key !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.key);
+        /* string value = 2; */
+        if (message.value !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.value);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Header
+ */
+export const CollectorExporter_Spec_OTLPHTTP_Header = new CollectorExporter_Spec_OTLPHTTP_Header$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class CollectorExporter_Spec_OTLPHTTP_Auth$Type extends MessageType<CollectorExporter_Spec_OTLPHTTP_Auth> {
     constructor() {
@@ -6433,31 +6555,41 @@ class CollectorExporter_Spec_OTLPHTTP_Auth_Custom_Value$Type extends MessageType
  */
 export const CollectorExporter_Spec_OTLPHTTP_Auth_Custom_Value = new CollectorExporter_Spec_OTLPHTTP_Auth_Custom_Value$Type();
 // @generated message type with reflection information, may provide speed optimized methods
-class CollectorExporter_Spec_OTLPHTTP_KeyValue$Type extends MessageType<CollectorExporter_Spec_OTLPHTTP_KeyValue> {
+class CollectorExporter_Spec_OTLPHTTP_TLS$Type extends MessageType<CollectorExporter_Spec_OTLPHTTP_TLS> {
     constructor() {
-        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.KeyValue", [
-            { no: 1, name: "key", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "value", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        super("octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.TLS", [
+            { no: 1, name: "insecure", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 2, name: "insecureSkipVerify", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 3, name: "serverNameOverride", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "caPEM", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
-    create(value?: PartialMessage<CollectorExporter_Spec_OTLPHTTP_KeyValue>): CollectorExporter_Spec_OTLPHTTP_KeyValue {
+    create(value?: PartialMessage<CollectorExporter_Spec_OTLPHTTP_TLS>): CollectorExporter_Spec_OTLPHTTP_TLS {
         const message = globalThis.Object.create((this.messagePrototype!));
-        message.key = "";
-        message.value = "";
+        message.insecure = false;
+        message.insecureSkipVerify = false;
+        message.serverNameOverride = "";
+        message.caPEM = "";
         if (value !== undefined)
-            reflectionMergePartial<CollectorExporter_Spec_OTLPHTTP_KeyValue>(this, message, value);
+            reflectionMergePartial<CollectorExporter_Spec_OTLPHTTP_TLS>(this, message, value);
         return message;
     }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_OTLPHTTP_KeyValue): CollectorExporter_Spec_OTLPHTTP_KeyValue {
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CollectorExporter_Spec_OTLPHTTP_TLS): CollectorExporter_Spec_OTLPHTTP_TLS {
         let message = target ?? this.create(), end = reader.pos + length;
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* string key */ 1:
-                    message.key = reader.string();
+                case /* bool insecure */ 1:
+                    message.insecure = reader.bool();
                     break;
-                case /* string value */ 2:
-                    message.value = reader.string();
+                case /* bool insecureSkipVerify */ 2:
+                    message.insecureSkipVerify = reader.bool();
+                    break;
+                case /* string serverNameOverride */ 3:
+                    message.serverNameOverride = reader.string();
+                    break;
+                case /* string caPEM */ 4:
+                    message.caPEM = reader.string();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -6470,13 +6602,19 @@ class CollectorExporter_Spec_OTLPHTTP_KeyValue$Type extends MessageType<Collecto
         }
         return message;
     }
-    internalBinaryWrite(message: CollectorExporter_Spec_OTLPHTTP_KeyValue, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* string key = 1; */
-        if (message.key !== "")
-            writer.tag(1, WireType.LengthDelimited).string(message.key);
-        /* string value = 2; */
-        if (message.value !== "")
-            writer.tag(2, WireType.LengthDelimited).string(message.value);
+    internalBinaryWrite(message: CollectorExporter_Spec_OTLPHTTP_TLS, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bool insecure = 1; */
+        if (message.insecure !== false)
+            writer.tag(1, WireType.Varint).bool(message.insecure);
+        /* bool insecureSkipVerify = 2; */
+        if (message.insecureSkipVerify !== false)
+            writer.tag(2, WireType.Varint).bool(message.insecureSkipVerify);
+        /* string serverNameOverride = 3; */
+        if (message.serverNameOverride !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.serverNameOverride);
+        /* string caPEM = 4; */
+        if (message.caPEM !== "")
+            writer.tag(4, WireType.LengthDelimited).string(message.caPEM);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -6484,9 +6622,9 @@ class CollectorExporter_Spec_OTLPHTTP_KeyValue$Type extends MessageType<Collecto
     }
 }
 /**
- * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.KeyValue
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.TLS
  */
-export const CollectorExporter_Spec_OTLPHTTP_KeyValue = new CollectorExporter_Spec_OTLPHTTP_KeyValue$Type();
+export const CollectorExporter_Spec_OTLPHTTP_TLS = new CollectorExporter_Spec_OTLPHTTP_TLS$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class CollectorExporter_Spec_PrometheusRemoteWrite$Type extends MessageType<CollectorExporter_Spec_PrometheusRemoteWrite> {
     constructor() {

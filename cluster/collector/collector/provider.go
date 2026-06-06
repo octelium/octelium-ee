@@ -134,93 +134,55 @@ func (p *provider) getExporter(ctx context.Context, exp *enterprisev1.CollectorE
 		}
 
 	case *enterprisev1.CollectorExporter_Spec_OtlpHTTP:
-
 		ret.HasLogs = true
 		ret.HasMetrics = true
 
 		spec := exp.Spec.GetOtlpHTTP()
+		if spec == nil {
+			return nil, errors.Errorf("nil OTLPHTTP exporter spec")
+		}
+
+		timeout, err := durationToCollectorString(spec.Timeout)
+		if err != nil {
+			return nil, err
+		}
+
+		encoding, err := otlpHTTPEncodingToCollectorString(spec.Encoding)
+		if err != nil {
+			return nil, err
+		}
+
+		compression, err := otlpHTTPCompressionToCollectorString(spec.Compression)
+		if err != nil {
+			return nil, err
+		}
 
 		c := &exporterOTLPHTTP{
 			Endpoint:        spec.Endpoint,
 			MetricsEndpoint: spec.MetricsEndpoint,
 			LogsEndpoint:    spec.LogsEndpoint,
-			Headers: func() map[string]string {
-				if len(spec.Headers) < 1 {
-					return nil
-				}
-
-				ret := make(map[string]string)
-
-				for _, hdr := range spec.Headers {
-					ret[hdr.Key] = hdr.Value
-				}
-
-				return ret
-			}(),
+			Headers:         otlpHTTPHeadersToMap(spec.Headers),
+			Encoding:        encoding,
+			Compression:     compression,
+			Timeout:         timeout,
+			ReadBufferSize:  spec.ReadBufferSize,
+			WriteBufferSize: spec.WriteBufferSize,
 		}
 		ret.exp = c
 
-		// cfg.Encoding = otlphttpexporter.EncodingJSON
-		switch spec.Mode {
-		case enterprisev1.CollectorExporter_Spec_OTLPHTTP_JSON:
-			c.Encoding = "json"
-		case enterprisev1.CollectorExporter_Spec_OTLPHTTP_PROTO:
-			c.Encoding = "proto"
+		if spec.Tls != nil {
+			c.TLS = &otelHTTPClientTLS{
+				Insecure:           spec.Tls.Insecure,
+				InsecureSkipVerify: spec.Tls.InsecureSkipVerify,
+				ServerNameOverride: spec.Tls.ServerNameOverride,
+				CAPEM:              spec.Tls.CaPEM,
+			}
 		}
 
-		switch spec.Compression {
-		case enterprisev1.CollectorExporter_Spec_OTLPHTTP_NONE:
-			c.Compression = "none"
-		default:
-			c.Compression = "gzip"
-		}
-
-		if spec.Auth != nil {
-			if c.Headers == nil {
-				c.Headers = make(map[string]string)
-			}
-			switch spec.Auth.Type.(type) {
-			case *enterprisev1.CollectorExporter_Spec_OTLPHTTP_Auth_Bearer_:
-				if spec.Auth.GetBearer().GetFromSecret() != "" {
-					sec, err := octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
-						Name: spec.Auth.GetBearer().GetFromSecret(),
-					})
-					if err != nil {
-						return nil, err
-					}
-
-					c.Headers["Authorization"] = (fmt.Sprintf("Bearer %s", uenterprisev1.ToSecret(sec).GetValueStr()))
-				}
-			case *enterprisev1.CollectorExporter_Spec_OTLPHTTP_Auth_Basic_:
-				if spec.Auth.GetBasic().GetPassword() != nil && spec.Auth.GetBasic().GetPassword().GetFromSecret() != "" {
-					sec, err := octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
-						Name: spec.Auth.GetBasic().GetPassword().GetFromSecret(),
-					})
-					if err != nil {
-						return nil, err
-					}
-
-					authVal := base64.StdEncoding.EncodeToString(
-						[]byte(fmt.Sprintf("%s:%s",
-							spec.Auth.GetBasic().Username, uenterprisev1.ToSecret(sec).GetValueStr())))
-
-					c.Headers["Authorization"] = (fmt.Sprintf("Basic %s", authVal))
-
-				}
-			case *enterprisev1.CollectorExporter_Spec_OTLPHTTP_Auth_Custom_:
-				if spec.Auth.GetCustom().GetHeader() != "" &&
-					spec.Auth.GetCustom().GetValue() != nil &&
-					spec.Auth.GetCustom().GetValue().GetFromSecret() != "" {
-					sec, err := octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
-						Name: spec.Auth.GetCustom().GetValue().GetFromSecret(),
-					})
-					if err != nil {
-						return nil, err
-					}
-
-					c.Headers[spec.Auth.GetCustom().GetHeader()] = (uenterprisev1.ToSecret(sec).GetValueStr())
-				}
-			}
+		if err := p.applyOTLPHTTPAuth(ctx, c.Headers, func(h map[string]string) {
+			c.Headers = h
+		}, spec.Auth); err != nil {
+			return nil, err
 		}
 
 	case *enterprisev1.CollectorExporter_Spec_PrometheusRemoteWrite_:
@@ -1372,7 +1334,6 @@ func otlpCompressionToCollectorString(
 	switch compression {
 	case enterprisev1.CollectorExporter_Spec_OTLP_COMPRESSION_UNSET,
 		enterprisev1.CollectorExporter_Spec_OTLP_GZIP:
-		// OTLP exporter default is gzip. Omit it unless explicitly set to something else.
 		return "", nil
 	case enterprisev1.CollectorExporter_Spec_OTLP_NONE:
 		return "none", nil
@@ -1476,4 +1437,122 @@ func (p *provider) applyOTLPAuth(
 	}
 
 	return nil
+}
+
+func otlpHTTPHeadersToMap(headers []*enterprisev1.CollectorExporter_Spec_OTLPHTTP_Header) map[string]string {
+	if len(headers) == 0 {
+		return nil
+	}
+
+	ret := make(map[string]string, len(headers))
+	for _, h := range headers {
+		if h == nil || h.Key == "" {
+			continue
+		}
+
+		ret[h.Key] = h.Value
+	}
+
+	if len(ret) == 0 {
+		return nil
+	}
+
+	return ret
+}
+
+func (p *provider) applyOTLPHTTPAuth(
+	ctx context.Context,
+	headers map[string]string,
+	setHeaders func(map[string]string),
+	auth *enterprisev1.CollectorExporter_Spec_OTLPHTTP_Auth,
+) error {
+	if auth == nil {
+		return nil
+	}
+
+	if headers == nil {
+		headers = make(map[string]string)
+		setHeaders(headers)
+	}
+
+	switch auth.Type.(type) {
+	case *enterprisev1.CollectorExporter_Spec_OTLPHTTP_Auth_Bearer_:
+		if auth.GetBearer().GetFromSecret() == "" {
+			return nil
+		}
+
+		sec, err := p.octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
+			Name: auth.GetBearer().GetFromSecret(),
+		})
+		if err != nil {
+			return err
+		}
+
+		headers["Authorization"] = fmt.Sprintf("Bearer %s", uenterprisev1.ToSecret(sec).GetValueStr())
+
+	case *enterprisev1.CollectorExporter_Spec_OTLPHTTP_Auth_Basic_:
+		basic := auth.GetBasic()
+		if basic == nil || basic.GetPassword() == nil || basic.GetPassword().GetFromSecret() == "" {
+			return nil
+		}
+
+		sec, err := p.octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
+			Name: basic.GetPassword().GetFromSecret(),
+		})
+		if err != nil {
+			return err
+		}
+
+		raw := fmt.Sprintf("%s:%s", basic.Username, uenterprisev1.ToSecret(sec).GetValueStr())
+		headers["Authorization"] = "Basic " + base64.StdEncoding.EncodeToString([]byte(raw))
+
+	case *enterprisev1.CollectorExporter_Spec_OTLPHTTP_Auth_Custom_:
+		custom := auth.GetCustom()
+		if custom == nil || custom.Header == "" || custom.GetValue() == nil || custom.GetValue().GetFromSecret() == "" {
+			return nil
+		}
+
+		sec, err := p.octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
+			Name: custom.GetValue().GetFromSecret(),
+		})
+		if err != nil {
+			return err
+		}
+
+		headers[custom.Header] = uenterprisev1.ToSecret(sec).GetValueStr()
+	}
+
+	return nil
+}
+
+func otlpHTTPEncodingToCollectorString(
+	encoding enterprisev1.CollectorExporter_Spec_OTLPHTTP_Encoding,
+) (string, error) {
+	switch encoding {
+	case enterprisev1.CollectorExporter_Spec_OTLPHTTP_ENCODING_UNSET,
+		enterprisev1.CollectorExporter_Spec_OTLPHTTP_PROTO:
+		return "", nil
+
+	case enterprisev1.CollectorExporter_Spec_OTLPHTTP_JSON:
+		return "json", nil
+
+	default:
+		return "", errors.Errorf("invalid OTLPHTTP encoding")
+	}
+}
+
+func otlpHTTPCompressionToCollectorString(
+	compression enterprisev1.CollectorExporter_Spec_OTLPHTTP_Compression,
+) (string, error) {
+	switch compression {
+	case enterprisev1.CollectorExporter_Spec_OTLPHTTP_COMPRESSION_UNSET,
+		enterprisev1.CollectorExporter_Spec_OTLPHTTP_GZIP:
+		return "", nil
+
+	case enterprisev1.CollectorExporter_Spec_OTLPHTTP_NONE:
+		return "none", nil
+
+	default:
+		return "", errors.Errorf("invalid OTLPHTTP compression")
+	}
 }
