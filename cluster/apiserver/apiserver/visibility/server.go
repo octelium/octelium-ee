@@ -17,6 +17,7 @@ import (
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
 	pb "github.com/octelium/octelium/apis/main/visibilityv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcorev1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vmetricsv1"
 	oc "github.com/octelium/octelium/cluster/common/octeliumc"
 	"github.com/octelium/octelium/pkg/utils/ldflags"
 	"google.golang.org/grpc"
@@ -108,9 +109,9 @@ type ServerComponentLog struct {
 
 type ServerMetric struct {
 	octeliumC octeliumc.ClientInterface
-	pb.UnimplementedMetricsServiceServer
+	vmetricsv1.UnimplementedMetricsServiceServer
 
-	c pb.MetricsServiceClient
+	c vmetricsv1.MetricsServiceClient
 }
 
 func NewServerAuthenticationLog(ctx context.Context, octeliumC octeliumc.ClientInterface) (*ServerAuthenticationLog, error) {
@@ -224,6 +225,6 @@ func NewServerMetric(ctx context.Context, octeliumC octeliumc.ClientInterface) (
 
 	return &ServerMetric{
 		octeliumC: octeliumC,
-		c:         pb.NewMetricsServiceClient(grpcConn),
+		c:         vmetricsv1.NewMetricsServiceClient(grpcConn),
 	}, nil
 }

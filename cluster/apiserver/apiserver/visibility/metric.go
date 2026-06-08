@@ -11,17 +11,17 @@ package visibility
 import (
 	"context"
 
-	"github.com/octelium/octelium/apis/main/visibilityv1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vmetricsv1"
 )
 
-func (s *ServerMetric) GetCounter(ctx context.Context, req *visibilityv1.GetCounterRequest) (*visibilityv1.GetCounterResponse, error) {
-	return s.c.GetCounter(ctx, req)
+func (s *ServerMetric) QueryMetrics(ctx context.Context, req *vmetricsv1.QueryMetricsRequest) (*vmetricsv1.QueryMetricsResponse, error) {
+	return s.c.QueryMetrics(ctx, req)
 }
 
-func (s *ServerMetric) GetGauge(ctx context.Context, req *visibilityv1.GetGaugeRequest) (*visibilityv1.GetGaugeResponse, error) {
-	return s.c.GetGauge(ctx, req)
+func (s *ServerMetric) ListMetricDescriptors(ctx context.Context, req *vmetricsv1.ListMetricDescriptorsRequest) (*vmetricsv1.ListMetricDescriptorsResponse, error) {
+	return s.c.ListMetricDescriptors(ctx, req)
 }
 
-func (s *ServerMetric) GetHistogram(ctx context.Context, req *visibilityv1.GetHistogramRequest) (*visibilityv1.GetHistogramResponse, error) {
-	return s.c.GetHistogram(ctx, req)
+func (s *ServerMetric) ListMetricCatalog(ctx context.Context, req *vmetricsv1.ListMetricCatalogRequest) (*vmetricsv1.ListMetricCatalogResponse, error) {
+	return s.c.ListMetricCatalog(ctx, req)
 }

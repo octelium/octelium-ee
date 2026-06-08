@@ -21,6 +21,7 @@ import (
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcorev1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vmetricsv1"
 	"github.com/octelium/octelium/cluster/common/commoninit"
 	"github.com/octelium/octelium/cluster/common/healthcheck"
 	"github.com/octelium/octelium/cluster/common/userctx"
@@ -106,16 +107,16 @@ func Run(ctx context.Context) error {
 	visibilityv1.RegisterAccessLogServiceServer(s, srvVisibilityAccessLog)
 	visibilityv1.RegisterAuthenticationLogServiceServer(s, srvVisibilityAuthenticationLog)
 	visibilityv1.RegisterAuditLogServiceServer(s, srvVisibilityAuditLog)
-	visibilityv1.RegisterMetricsServiceServer(s, srvVisibilityMetric)
+	vmetricsv1.RegisterMetricsServiceServer(s, srvVisibilityMetric)
 	visibilityv1.RegisterComponentLogServiceServer(s, srvVisibilityComponentLog)
 	vcorev1.RegisterResourceServiceServer(s, srvVisibilityResource)
 	enterprisev1.RegisterPolicyPortalServiceServer(s, policyPortalSrv)
 	enterprisev1.RegisterClusterServiceServer(s, clusterSrv)
 
 	go func() {
-		zap.S().Debug("running gRPC server.")
+		zap.L().Debug("running gRPC server.")
 		if err := s.Serve(lis); err != nil {
-			zap.S().Infof("gRPC server closed: %+v", err)
+			zap.L().Info("gRPC server closed", zap.Error(err))
 		}
 	}()
 
