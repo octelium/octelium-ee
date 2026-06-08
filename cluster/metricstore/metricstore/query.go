@@ -10,292 +10,357 @@ package metricstore
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
+	"database/sql"
+	"math"
+	"sort"
 	"strings"
 	"time"
 
-	_ "github.com/marcboeker/go-duckdb"
-	"github.com/octelium/octelium/apis/main/visibilityv1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vmetricsv1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
-type TimeValue struct {
-	Timestamp time.Time
-	Labels    map[string]any
-	Value     float64
+type numberRow struct {
+	ts        time.Time
+	labels    map[string]string
+	fullKey   string
+	groupKey  string
+	intVal    *int64
+	doubleVal *float64
 }
 
-func (s *srvMetric) doQueryCounter(
+type gaugeBucket struct {
+	ts       time.Time
+	count    int
+	sum      float64
+	min      float64
+	max      float64
+	last     float64
+	lastTS   time.Time
+	hasValue bool
+}
+
+func (s *srvMetric) resolveDescriptor(ctx context.Context, q *querySpec) (*vmetricsv1.MetricDescriptor, error) {
+	row := s.s.db.QueryRowContext(ctx, `
+SELECT name, kind, value_type, unit, description, temporality
+FROM metrics
+WHERE name = ?
+ORDER BY timestamp DESC
+LIMIT 1
+`, q.name)
+
+	var name, kind, valueType, unit, description, temporality string
+	if err := row.Scan(&name, &kind, &valueType, &unit, &description, &temporality); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, status.Errorf(codes.NotFound, "metric not found: %s", q.name)
+		}
+		return nil, err
+	}
+
+	return &vmetricsv1.MetricDescriptor{
+		Name:        name,
+		Kind:        kindFromString(kind),
+		ValueType:   valueTypeFromString(valueType),
+		Unit:        unit,
+		Description: description,
+		Temporality: temporalityFromString(temporality),
+	}, nil
+}
+
+func (s *srvMetric) queryGauge(
 	ctx context.Context,
-	name string,
-	from, to time.Time,
-	filterLabels map[string]string,
-) (*visibilityv1.GetCounterResponse, error) {
-
-	where := []string{
-		"name = $1",
-		"metric_type = 'Sum'",
-		"timestamp >= $2",
-		"timestamp <= $3",
-	}
-
-	args := []any{name, from, to}
-	argIndex := 4
-
-	for k, v := range filterLabels {
-		where = append(where, fmt.Sprintf("attributes->>%d = $%d", argIndex, argIndex+1))
-		args = append(args, k, v)
-		argIndex += 2
-	}
-
-	query := fmt.Sprintf(`
-        SELECT timestamp, attributes, value
-        FROM metrics
-        WHERE %s
-        ORDER BY timestamp ASC
-    `, strings.Join(where, " AND "))
-
-	rows, err := s.s.db.QueryContext(ctx, query, args...)
+	q *querySpec,
+	desc *vmetricsv1.MetricDescriptor,
+) (*vmetricsv1.QueryMetricsResponse, error) {
+	rows, err := s.loadNumberRows(ctx, q, desc, false)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
-	resp := &visibilityv1.GetCounterResponse{}
+	bySeries := map[string]map[int]*gaugeBucket{}
+	labelsByKey := map[string][]*vmetricsv1.Attribute{}
 
-	for rows.Next() {
-		var ts time.Time
-		var labels map[string]any
-		var value float64
-
-		if err := rows.Scan(&ts, &labels, &value); err != nil {
-			return nil, err
+	for _, r := range rows {
+		if r.ts.Before(q.from) || !r.ts.Before(q.to) {
+			continue
 		}
 
-		resp.Attrs = pbutils.MapToStructMust(labels)
-		resp.Points = append(resp.Points, &visibilityv1.GetCounterResponse_DataPoint{
-			Timestamp: pbutils.Timestamp(ts),
-			Value:     value,
+		idx := int(r.ts.Sub(q.from) / q.step)
+		if idx < 0 {
+			continue
+		}
+
+		val := r.numberValue()
+
+		if _, ok := bySeries[r.groupKey]; !ok {
+			bySeries[r.groupKey] = map[int]*gaugeBucket{}
+			labelsByKey[r.groupKey] = labelsToProto(pickLabels(r.labels, q.groupBy))
+		}
+
+		b := bySeries[r.groupKey][idx]
+		if b == nil {
+			b = &gaugeBucket{
+				ts:  q.from.Add(time.Duration(idx+1) * q.step),
+				min: val,
+				max: val,
+			}
+			bySeries[r.groupKey][idx] = b
+		}
+
+		b.count++
+		b.sum += val
+		if val < b.min {
+			b.min = val
+		}
+		if val > b.max {
+			b.max = val
+		}
+		if !b.hasValue || r.ts.After(b.lastTS) {
+			b.last = val
+			b.lastTS = r.ts
+			b.hasValue = true
+		}
+	}
+
+	funcKind := q.req.Operation.GetGauge().Function
+	out := make([]*vmetricsv1.TimeSeries, 0, len(bySeries))
+
+	for key, buckets := range bySeries {
+		var idxs []int
+		for idx := range buckets {
+			idxs = append(idxs, idx)
+		}
+		sort.Ints(idxs)
+
+		pts := &vmetricsv1.NumberPointSeries{}
+		for _, idx := range idxs {
+			b := buckets[idx]
+			var val float64
+
+			switch funcKind {
+			case vmetricsv1.GaugeOperation_LAST:
+				val = b.last
+			case vmetricsv1.GaugeOperation_AVG:
+				val = b.sum / float64(b.count)
+			case vmetricsv1.GaugeOperation_MIN:
+				val = b.min
+			case vmetricsv1.GaugeOperation_MAX:
+				val = b.max
+			case vmetricsv1.GaugeOperation_SUM:
+				val = b.sum
+			default:
+				return nil, status.Error(codes.InvalidArgument, "invalid gauge function")
+			}
+
+			pts.Points = append(pts.Points, numberPointDouble(b.ts, val))
+		}
+
+		out = append(out, &vmetricsv1.TimeSeries{
+			Labels: labelsByKey[key],
+			Points: &vmetricsv1.TimeSeries_Number{
+				Number: pts,
+			},
+		})
+	}
+
+	out, total, truncated := limitAndSortSeries(out, q.limitSeries)
+	return buildResponse(q, desc, out, total, truncated), nil
+}
+
+func (s *srvMetric) queryCounter(
+	ctx context.Context,
+	q *querySpec,
+	desc *vmetricsv1.MetricDescriptor,
+) (*vmetricsv1.QueryMetricsResponse, error) {
+	includeLookback := q.req.Operation.GetCounter().Function != vmetricsv1.CounterOperation_RAW
+
+	rows, err := s.loadNumberRows(ctx, q, desc, includeLookback)
+	if err != nil {
+		return nil, err
+	}
+
+	byFullSeries := map[string][]numberRow{}
+	groupLabels := map[string][]*vmetricsv1.Attribute{}
+
+	for _, r := range rows {
+		byFullSeries[r.fullKey] = append(byFullSeries[r.fullKey], r)
+		groupLabels[r.groupKey] = labelsToProto(pickLabels(r.labels, q.groupBy))
+	}
+
+	for k := range byFullSeries {
+		sort.Slice(byFullSeries[k], func(i, j int) bool {
+			return byFullSeries[k][i].ts.Before(byFullSeries[k][j].ts)
+		})
+	}
+
+	fn := q.req.Operation.GetCounter().Function
+	if fn == vmetricsv1.CounterOperation_RAW {
+		return s.queryCounterRaw(q, desc, byFullSeries)
+	}
+
+	bucketsByGroup := map[string]map[int]float64{}
+
+	for _, seriesRows := range byFullSeries {
+		if len(seriesRows) == 0 {
+			continue
+		}
+
+		for i := 0; i < len(seriesRows); i++ {
+			cur := seriesRows[i]
+			if cur.ts.Before(q.from) || !cur.ts.Before(q.to) {
+				continue
+			}
+
+			idx := int(cur.ts.Sub(q.from) / q.step)
+			if idx < 0 {
+				continue
+			}
+
+			var inc float64
+
+			if desc.Temporality == vmetricsv1.MetricDescriptor_DELTA {
+				inc = cur.numberValue()
+			} else {
+				if i == 0 {
+					continue
+				}
+				prev := seriesRows[i-1]
+				inc = cur.numberValue() - prev.numberValue()
+				if inc < 0 {
+					inc = cur.numberValue()
+				}
+			}
+
+			if inc < 0 {
+				continue
+			}
+
+			if fn == vmetricsv1.CounterOperation_RATE {
+				inc = inc / q.step.Seconds()
+			}
+
+			if _, ok := bucketsByGroup[cur.groupKey]; !ok {
+				bucketsByGroup[cur.groupKey] = map[int]float64{}
+			}
+			bucketsByGroup[cur.groupKey][idx] += inc
+		}
+	}
+
+	out := make([]*vmetricsv1.TimeSeries, 0, len(bucketsByGroup))
+	for groupKey, buckets := range bucketsByGroup {
+		idxs := make([]int, 0, len(buckets))
+		for idx := range buckets {
+			idxs = append(idxs, idx)
+		}
+		sort.Ints(idxs)
+
+		pts := &vmetricsv1.NumberPointSeries{}
+		for _, idx := range idxs {
+			pts.Points = append(pts.Points, numberPointDouble(q.from.Add(time.Duration(idx+1)*q.step), buckets[idx]))
+		}
+
+		out = append(out, &vmetricsv1.TimeSeries{
+			Labels: groupLabels[groupKey],
+			Points: &vmetricsv1.TimeSeries_Number{
+				Number: pts,
+			},
+		})
+	}
+
+	out, total, truncated := limitAndSortSeries(out, q.limitSeries)
+	return buildResponse(q, desc, out, total, truncated), nil
+}
+
+func (s *srvMetric) queryCounterRaw(
+	q *querySpec,
+	desc *vmetricsv1.MetricDescriptor,
+	byFullSeries map[string][]numberRow,
+) (*vmetricsv1.QueryMetricsResponse, error) {
+	out := make([]*vmetricsv1.TimeSeries, 0, len(byFullSeries))
+	pointsTruncated := false
+
+	for _, rows := range byFullSeries {
+		if len(rows) == 0 {
+			continue
+		}
+
+		filtered := make([]numberRow, 0, len(rows))
+		for _, r := range rows {
+			if r.ts.Before(q.from) || !r.ts.Before(q.to) {
+				continue
+			}
+			filtered = append(filtered, r)
+		}
+
+		if len(filtered) == 0 {
+			continue
+		}
+
+		sort.Slice(filtered, func(i, j int) bool {
+			return filtered[i].ts.Before(filtered[j].ts)
 		})
 
-	}
-
-	return resp, nil
-}
-
-func (s *srvMetric) doQueryGauge(
-	ctx context.Context,
-	name string,
-	from, to time.Time,
-	filterLabels map[string]string,
-) (*visibilityv1.GetGaugeResponse, error) {
-
-	where := []string{
-		"name = $1",
-		"metric_type = 'Gauge'",
-		"timestamp >= $2",
-		"timestamp <= $3",
-	}
-
-	args := []any{name, from, to}
-	argIndex := 4
-
-	for k, v := range filterLabels {
-		where = append(where, fmt.Sprintf("attributes->>%d = $%d", argIndex, argIndex+1))
-		args = append(args, k, v)
-		argIndex += 2
-	}
-
-	query := fmt.Sprintf(`
-        SELECT timestamp, attributes, value
-        FROM metrics
-        WHERE %s
-        ORDER BY timestamp ASC
-    `, strings.Join(where, " AND "))
-
-	rows, err := s.s.db.QueryContext(ctx, query, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	resp := &visibilityv1.GetGaugeResponse{}
-
-	for rows.Next() {
-		var ts time.Time
-		var labels map[string]any
-		var value float64
-
-		if err := rows.Scan(&ts, &labels, &value); err != nil {
-			return nil, err
+		if len(filtered) > q.limitPointsPerSeries {
+			pointsTruncated = true
+			filtered = filtered[len(filtered)-q.limitPointsPerSeries:]
 		}
 
-		resp.Attrs = pbutils.MapToStructMust(labels)
-		resp.Points = append(resp.Points, &visibilityv1.GetGaugeResponse_DataPoint{
-			Timestamp: pbutils.Timestamp(ts),
-			Value:     value,
-		})
+		pts := &vmetricsv1.NumberPointSeries{}
 
-	}
-
-	return resp, nil
-}
-
-type Bucket struct {
-	UpperBound float64
-	Count      uint64
-}
-
-type Histogram struct {
-	Timestamp time.Time
-	Labels    map[string]any
-	Sum       float64
-	Count     uint64
-	Buckets   []Bucket
-}
-
-func (s *srvMetric) doQueryHistogram(
-	ctx context.Context,
-	name string,
-	from, to time.Time,
-	filterLabels map[string]string,
-) ([]Histogram, error) {
-
-	where := []string{
-		"name = $1",
-		"metric_type = 'Histogram'",
-		"timestamp >= $2",
-		"timestamp <= $3",
-	}
-	args := []any{name, from, to}
-	argIndex := 4
-
-	for k, v := range filterLabels {
-		where = append(where, fmt.Sprintf("attributes->>%d = $%d", argIndex, argIndex+1))
-		args = append(args, k, v)
-		argIndex += 2
-	}
-
-	query := fmt.Sprintf(`
-        SELECT
-            timestamp,
-            attributes,
-            histogram_bounds,
-            histogram_bucket_counts,
-            histogram_sum,
-            histogram_count
-        FROM metrics
-        WHERE %s
-        ORDER BY timestamp ASC
-    `, strings.Join(where, " AND "))
-
-	rows, err := s.s.db.QueryContext(ctx, query, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	histograms := []Histogram{}
-
-	for rows.Next() {
-		var (
-			ts            time.Time
-			labels        map[string]any
-			boundsI       []any
-			bucketCountsI []any
-			sumVal        float64
-			countVal      int64
-		)
-
-		if err := rows.Scan(
-			&ts,
-			&labels,
-			&boundsI,
-			&bucketCountsI,
-			&sumVal,
-			&countVal,
-		); err != nil {
-			return nil, err
-		}
-
-		bounds := make([]float64, len(boundsI))
-		for i, v := range boundsI {
-			bounds[i] = toFloat(v)
-		}
-
-		bucketCounts := make([]uint64, len(bucketCountsI))
-		for i, v := range bucketCountsI {
-			bucketCounts[i] = uint64(toFloat(v))
-		}
-
-		buckets := make([]Bucket, len(bounds))
-		for i := range bounds {
-			buckets[i] = Bucket{
-				UpperBound: bounds[i],
-				Count:      bucketCounts[i],
+		for _, r := range filtered {
+			if r.intVal != nil {
+				pts.Points = append(pts.Points, numberPointInt(r.ts, *r.intVal))
+			} else {
+				pts.Points = append(pts.Points, numberPointDouble(r.ts, r.numberValue()))
 			}
 		}
 
-		histograms = append(histograms, Histogram{
-			Timestamp: ts,
-			Labels:    labels,
-			Sum:       sumVal,
-			Count:     uint64(countVal),
-			Buckets:   buckets,
+		out = append(out, &vmetricsv1.TimeSeries{
+			Labels: labelsToProto(filtered[0].labels),
+			Points: &vmetricsv1.TimeSeries_Number{
+				Number: pts,
+			},
 		})
 	}
 
-	return histograms, nil
+	out, total, seriesTruncated := limitAndSortSeries(out, q.limitSeries)
+	return buildResponse(q, desc, out, total, seriesTruncated || pointsTruncated), nil
 }
 
-type Quantile struct {
-	Quantile float64 `json:"q"`
-	Value    float64 `json:"v"`
-}
-
-type Summary struct {
-	Timestamp time.Time
-	Labels    map[string]any
-	Sum       float64
-	Count     uint64
-	Quantiles []Quantile
-}
-
-func (s *srvMetric) doQuerySummary(
+func (s *srvMetric) loadNumberRows(
 	ctx context.Context,
-	name string,
-	from, to time.Time,
-	filterLabels map[string]string,
-) ([]Summary, error) {
+	q *querySpec,
+	desc *vmetricsv1.MetricDescriptor,
+	includeLookback bool,
+) ([]numberRow, error) {
+	from := q.from
+	if includeLookback {
+		from = from.Add(-q.step)
+	}
 
 	where := []string{
-		"name = $1",
-		"metric_type = 'Summary'",
-		"timestamp >= $2",
-		"timestamp <= $3",
+		"name = ?",
+		"timestamp >= ?",
+		"timestamp < ?",
+		"kind = ?",
+	}
+	args := []any{q.name, from, q.to, kindToString(desc.Kind)}
+
+	if desc.Temporality != vmetricsv1.MetricDescriptor_TEMPORALITY_UNSET {
+		where = append(where, "temporality = ?")
+		args = append(args, temporalityEnumToString(desc.Temporality))
 	}
 
-	args := []any{name, from, to}
-	argIndex := 4
+	appendFilterSQL(&where, &args, q.filters)
 
-	for k, v := range filterLabels {
-		where = append(where, fmt.Sprintf("attributes->>%d = $%d", argIndex, argIndex+1))
-		args = append(args, k, v)
-		argIndex += 2
-	}
-
-	query := fmt.Sprintf(`
-        SELECT
-            timestamp,
-            attributes,
-            summary_sum,
-            summary_count,
-            summary_quantiles
-        FROM metrics
-        WHERE %s
-        ORDER BY timestamp ASC
-    `, strings.Join(where, " AND "))
+	query := `
+SELECT timestamp, CAST(attributes AS VARCHAR), number_int, number_double
+FROM metrics
+WHERE ` + strings.Join(where, " AND ") + `
+ORDER BY timestamp ASC
+`
 
 	rows, err := s.s.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -303,71 +368,169 @@ func (s *srvMetric) doQuerySummary(
 	}
 	defer rows.Close()
 
-	out := []Summary{}
+	var ret []numberRow
 
 	for rows.Next() {
-		var (
-			ts            time.Time
-			labels        map[string]any
-			sumVal        float64
-			countVal      int64
-			quantilesJSON []byte
-		)
+		var ts time.Time
+		var attrsJSON string
+		var intNull sql.NullInt64
+		var doubleNull sql.NullFloat64
 
-		if err := rows.Scan(
-			&ts,
-			&labels,
-			&sumVal,
-			&countVal,
-			&quantilesJSON,
-		); err != nil {
+		if err := rows.Scan(&ts, &attrsJSON, &intNull, &doubleNull); err != nil {
 			return nil, err
 		}
 
-		var quantiles []Quantile
-		if len(quantilesJSON) > 0 {
-			if err := json.Unmarshal(quantilesJSON, &quantiles); err != nil {
-				return nil, err
+		attrs, err := decodeStringMap(attrsJSON)
+		if err != nil {
+			return nil, err
+		}
+
+		labels := anyMapToStringMap(attrs)
+		fullKey := labelsKey(labels, sortedKeys(labels))
+		groupKey := labelsKey(labels, q.groupBy)
+
+		r := numberRow{
+			ts:       ts.UTC(),
+			labels:   labels,
+			fullKey:  fullKey,
+			groupKey: groupKey,
+		}
+
+		if intNull.Valid {
+			v := intNull.Int64
+			r.intVal = &v
+		}
+		if doubleNull.Valid {
+			v := doubleNull.Float64
+			r.doubleVal = &v
+		}
+
+		ret = append(ret, r)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return ret, nil
+}
+
+func (r numberRow) numberValue() float64 {
+	if r.doubleVal != nil {
+		return *r.doubleVal
+	}
+	if r.intVal != nil {
+		return float64(*r.intVal)
+	}
+	return 0
+}
+
+func numberPointDouble(ts time.Time, val float64) *vmetricsv1.NumberPoint {
+	return &vmetricsv1.NumberPoint{
+		Timestamp: pbutils.Timestamp(ts),
+		Value: &vmetricsv1.NumberPoint_AsDouble{
+			AsDouble: val,
+		},
+	}
+}
+
+func numberPointInt(ts time.Time, val int64) *vmetricsv1.NumberPoint {
+	return &vmetricsv1.NumberPoint{
+		Timestamp: pbutils.Timestamp(ts),
+		Value: &vmetricsv1.NumberPoint_AsInt{
+			AsInt: val,
+		},
+	}
+}
+
+func limitAndSortSeries(in []*vmetricsv1.TimeSeries, limit int) ([]*vmetricsv1.TimeSeries, uint32, bool) {
+	sort.Slice(in, func(i, j int) bool {
+		return labelsKeyFromProto(in[i].Labels) < labelsKeyFromProto(in[j].Labels)
+	})
+
+	total := uint32(len(in))
+	if len(in) > limit {
+		return in[:limit], total, true
+	}
+
+	return in, total, false
+}
+
+func appendFilterSQL(where *[]string, args *[]any, filters map[string]attributeFilter) {
+	keys := make([]string, 0, len(filters))
+	for k := range filters {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, key := range keys {
+		f := filters[key]
+		path := jsonPathForKey(key)
+
+		switch f.op {
+		case vmetricsv1.AttributeFilter_EQ:
+			*where = append(*where, "json_extract_string(attributes, ?) = ?")
+			*args = append(*args, path, f.value)
+
+		case vmetricsv1.AttributeFilter_NOT_EQ:
+			*where = append(*where, "(json_extract_string(attributes, ?) IS NULL OR json_extract_string(attributes, ?) != ?)")
+			*args = append(*args, path, path, f.value)
+
+		case vmetricsv1.AttributeFilter_EXISTS:
+			*where = append(*where, "json_extract_string(attributes, ?) IS NOT NULL")
+			*args = append(*args, path)
+
+		case vmetricsv1.AttributeFilter_NOT_EXISTS:
+			*where = append(*where, "json_extract_string(attributes, ?) IS NULL")
+			*args = append(*args, path)
+
+		case vmetricsv1.AttributeFilter_IN:
+			var placeholders []string
+			*args = append(*args, path)
+			for _, v := range f.values {
+				placeholders = append(placeholders, "?")
+				*args = append(*args, v)
 			}
-		}
-
-		out = append(out, Summary{
-			Timestamp: ts,
-			Labels:    labels,
-			Sum:       sumVal,
-			Count:     uint64(countVal),
-			Quantiles: quantiles,
-		})
-	}
-
-	return out, nil
-}
-
-func toMapStr(source map[string]any) map[string]string {
-	destination := make(map[string]string, len(source))
-
-	for key, value := range source {
-		strValue, ok := value.(string)
-
-		if ok {
-			destination[key] = strValue
+			*where = append(*where, "json_extract_string(attributes, ?) IN ("+strings.Join(placeholders, ",")+")")
 		}
 	}
-
-	return destination
 }
 
-func toFloat(v any) float64 {
-	switch n := v.(type) {
-	case float64:
-		return n
-	case float32:
-		return float64(n)
-	case int64:
-		return float64(n)
-	case int:
-		return float64(n)
-	default:
+func jsonPathForKey(key string) string {
+	return `$."` + strings.ReplaceAll(key, `"`, `\"`) + `"`
+}
+
+func histogramQuantile(q float64, buckets []*vmetricsv1.HistogramBucket, count uint64) float64 {
+	if count == 0 || len(buckets) == 0 {
 		return 0
 	}
+
+	target := q * float64(count)
+
+	var prevCount uint64
+	var prevLe float64
+
+	for _, b := range buckets {
+		c := b.Count
+		if float64(c) >= target {
+			if b.IsInf {
+				return prevLe
+			}
+
+			bucketCount := c - prevCount
+			if bucketCount == 0 {
+				return b.Le
+			}
+
+			pos := (target - float64(prevCount)) / float64(bucketCount)
+			return prevLe + pos*(b.Le-prevLe)
+		}
+
+		prevCount = c
+		if !b.IsInf {
+			prevLe = b.Le
+		}
+	}
+
+	return math.NaN()
 }
