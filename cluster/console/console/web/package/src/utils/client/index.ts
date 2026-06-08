@@ -6,6 +6,7 @@ import * as CoreC from "../../apis/corev1/corev1.client";
 import * as EnterpriseC from "../../apis/enterprisev1/enterprisev1.client";
 import * as UserC from "../../apis/userv1/userv1.client";
 import * as VisibilityCoreC from "../../apis/visibilityv1/core/vcorev1.client";
+import * as VisibilityMetricsC from "../../apis/visibilityv1/metrics/vmetricsv1.client";
 import * as VisibilityC from "../../apis/visibilityv1/visibilityv1.client";
 
 export const getTransport = () => {
@@ -76,5 +77,10 @@ export const getClientPolicyPortal =
 export const getClientCluster = (): EnterpriseC.ClusterServiceClient => {
   return new EnterpriseC.ClusterServiceClient(getTransport());
 };
+
+export const getClientVisibilityMetrics =
+  (): VisibilityMetricsC.MetricsServiceClient => {
+    return new VisibilityMetricsC.MetricsServiceClient(getTransport());
+  };
 
 export const refetchIntervalChart = 15000;
