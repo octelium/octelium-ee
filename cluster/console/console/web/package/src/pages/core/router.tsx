@@ -31,6 +31,7 @@ import ResourceItemAuthenticationLogsPage from "@/components/ResourceLayout/Reso
 import ResourceCreatePage from "@/components/ResourceLayout/ResourceCreate";
 import ResourceItemMainPage from "@/components/ResourceLayout/ResourceItemMainPage";
 import ResourceItemPage from "@/components/ResourceLayout/ResourceItemPage";
+import ServiceMetricsPage from "@/components/ResourceLayout/ServiceMetricsPage";
 
 const resourceList = [
   serviceRouter,
@@ -113,6 +114,17 @@ const getResourceChildrenRouter = (arg: ResourceComponentInfo): RouteObject => {
     children.push({
       path: "accesslogs",
       element: <ResourceItemAccessLogsPage />,
+    });
+  }
+
+  if (
+    match(arg.Kind)
+      .with("Service", () => true)
+      .otherwise(() => false)
+  ) {
+    children.push({
+      path: "metrics",
+      element: <ServiceMetricsPage />,
     });
   }
 

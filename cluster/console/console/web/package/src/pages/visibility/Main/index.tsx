@@ -4,6 +4,7 @@ import {
   CounterOperation_Function,
   GaugeOperation_Function,
   HistogramOperation_Function,
+  MetricDescriptor_Kind,
 } from "@/apis/visibilityv1/metrics/vmetricsv1";
 import AccessLogDataPoint from "@/components/AccessLogViewer/AccessLogDataPoint";
 import AccessLogHealthWidget from "@/components/AccessLogViewer/AccessLogWidget";
@@ -396,11 +397,11 @@ export default () => {
 
       <MetricChart
         title="Authorization latency"
-        unit="ms"
+        unit="us"
         metric="authorization.req.duration"
         operation={histogramOp(
           HistogramOperation_Function.QUANTILE,
-          [0.95, 0.99],
+          [0.5, 0.75, 0.95, 0.99],
         )}
         component={ComponentSelector.create({ type: "octovigil" })}
       />
@@ -426,6 +427,25 @@ export default () => {
         metric="process.goroutines"
         operation={gaugeOp(GaugeOperation_Function.LAST)}
         groupBy={["octelium.component.type"]}
+      />
+
+      <MetricChart
+        title="Authorizations per interval"
+        unit="requests"
+        metric="authorization.req.total"
+        kind={MetricDescriptor_Kind.COUNTER}
+        operation={counterOp(CounterOperation_Function.INCREASE)}
+        component={ComponentSelector.create({ type: "octovigil" })}
+      />
+
+      <MetricChart
+        title="Authorization rate by replica"
+        unit="requests/s"
+        metric="authorization.req.total"
+        kind={MetricDescriptor_Kind.COUNTER}
+        operation={counterOp(CounterOperation_Function.RATE)}
+        component={ComponentSelector.create({ type: "octovigil" })}
+        groupBy={["octelium.component.name"]}
       />
     </div>
   );
