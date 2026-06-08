@@ -13,9 +13,6 @@ import (
 	"database/sql"
 	"errors"
 	"net"
-	"net/url"
-	"os"
-	"strings"
 	"time"
 
 	_ "github.com/marcboeker/go-duckdb"
@@ -29,11 +26,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric/pmetricotlp"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials"
 	_ "google.golang.org/grpc/encoding/gzip"
-	"google.golang.org/grpc/peer"
-	"google.golang.org/grpc/status"
 )
 
 const tstAddr = "localhost:32123"
@@ -135,8 +128,6 @@ func (s *Server) initGRPC(ctx context.Context) error {
 		grpc.WriteBufferSize(512*1024),
 		grpc.MaxRecvMsgSize(16<<20),
 		grpc.MaxConcurrentStreams(1024),
-		grpc.UnaryInterceptor(s.metricstoreAuthUnaryInterceptor()),
-		grpc.StreamInterceptor(s.metricstoreAuthStreamInterceptor()),
 	)
 
 	srv := s.newSrvMetric()
@@ -191,129 +182,4 @@ func (s *Server) initGRPC(ctx context.Context) error {
 	}()
 
 	return nil
-}
-
-func (s *Server) metricstoreAuthUnaryInterceptor() grpc.UnaryServerInterceptor {
-	return func(
-		ctx context.Context,
-		req any,
-		info *grpc.UnaryServerInfo,
-		handler grpc.UnaryHandler,
-	) (any, error) {
-		if err := s.authorizeMetricstoreMethod(ctx, info.FullMethod); err != nil {
-			return nil, err
-		}
-
-		return handler(ctx, req)
-	}
-}
-
-func (s *Server) metricstoreAuthStreamInterceptor() grpc.StreamServerInterceptor {
-	return func(
-		srv any,
-		ss grpc.ServerStream,
-		info *grpc.StreamServerInfo,
-		handler grpc.StreamHandler,
-	) error {
-		if err := s.authorizeMetricstoreMethod(ss.Context(), info.FullMethod); err != nil {
-			return err
-		}
-
-		return handler(srv, ss)
-	}
-}
-
-func (s *Server) authorizeMetricstoreMethod(ctx context.Context, fullMethod string) error {
-	if ovutils.IsMockMode() || ldflags.IsTest() {
-		return nil
-	}
-
-	spiffeID := getPeerSPIFFEID(ctx)
-
-	switch {
-	case strings.HasSuffix(fullMethod, "/Export"):
-		if !s.isCollectorSPIFFEID(spiffeID) {
-			return status.Error(codes.PermissionDenied, "not authorized to export metrics")
-		}
-
-	default:
-		if !s.isMetricsQuerySPIFFEID(spiffeID) {
-			return status.Error(codes.PermissionDenied, "not authorized to query metrics")
-		}
-	}
-
-	return nil
-}
-
-func getPeerSPIFFEID(ctx context.Context) string {
-	p, ok := peer.FromContext(ctx)
-	if !ok || p.AuthInfo == nil {
-		return ""
-	}
-
-	tlsInfo, ok := p.AuthInfo.(credentials.TLSInfo)
-	if !ok {
-		return ""
-	}
-
-	for _, cert := range tlsInfo.State.PeerCertificates {
-		for _, uri := range cert.URIs {
-			if uri.Scheme == "spiffe" {
-				return uri.String()
-			}
-		}
-	}
-
-	return ""
-}
-
-func (s *Server) isCollectorSPIFFEID(id string) bool {
-	return s.isAllowedSPIFFEID(id, map[string]struct{}{
-		"/ns/octelium/sa/octelium-collector": {},
-		"/ns/octelium/sa/collector":          {},
-	})
-}
-
-func (s *Server) isMetricsQuerySPIFFEID(id string) bool {
-	return s.isAllowedSPIFFEID(id, map[string]struct{}{
-		"/ns/octelium/sa/octelium-apiserver": {},
-		"/ns/octelium/sa/apiserver":          {},
-		"/ns/octelium/sa/octelium-console":   {},
-		"/ns/octelium/sa/console":            {},
-	})
-}
-
-func (s *Server) isAllowedSPIFFEID(id string, allowedPaths map[string]struct{}) bool {
-	trustDomain, path, ok := parseSPIFFEID(id)
-	if !ok {
-		return false
-	}
-
-	if trustDomain != s.expectedSPIFFETrustDomain() {
-		return false
-	}
-
-	_, ok = allowedPaths[path]
-	return ok
-}
-
-func (s *Server) expectedSPIFFETrustDomain() string {
-	if val := strings.TrimSpace(os.Getenv("OCTELIUM_SPIFFE_TRUST_DOMAIN")); val != "" {
-		return val
-	}
-
-	return s.clusterDomain
-}
-
-func parseSPIFFEID(id string) (trustDomain string, path string, ok bool) {
-	u, err := url.Parse(id)
-	if err != nil {
-		return "", "", false
-	}
-
-	if u.Scheme != "spiffe" || u.Host == "" || u.Path == "" {
-		return "", "", false
-	}
-
-	return u.Host, u.Path, true
 }
