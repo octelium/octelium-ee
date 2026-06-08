@@ -33,6 +33,7 @@ import (
 	"github.com/octelium/octelium/apis/main/userv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcorev1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vmetricsv1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/cluster/apiserver/apiserver/admin"
 	"github.com/octelium/octelium/cluster/apiserver/apiserver/user"
@@ -238,6 +239,8 @@ func Run(ctx context.Context) error {
 	}
 	visibilityv1.RegisterAccessLogServiceServer(s, vSrv)
 	visibilityv1.RegisterAuthenticationLogServiceServer(s, vSrv)
+
+	vmetricsv1.RegisterMetricsServiceServer(s, &tstMetricsService{})
 
 	vcorev1.RegisterResourceServiceServer(s, accessRscSrv)
 
