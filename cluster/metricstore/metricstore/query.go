@@ -79,8 +79,25 @@ func (s *srvMetric) queryGauge(
 		return nil, err
 	}
 
-	bySeries := map[string]map[int]*gaugeBucket{}
-	labelsByKey := map[string][]*vmetricsv1.Attribute{}
+	type fullSeries struct {
+		groupKey    string
+		groupLabels []*vmetricsv1.Attribute
+		fullLabels  map[string]string
+		buckets     map[int]*gaugeBucket
+	}
+
+	type groupedBucket struct {
+		ts       time.Time
+		count    int
+		sum      float64
+		min      float64
+		max      float64
+		hasValue bool
+	}
+
+	funcKind := q.req.Operation.GetGauge().Function
+
+	byFullSeries := map[string]*fullSeries{}
 
 	for _, r := range rows {
 		if r.ts.Before(q.from) || !r.ts.Before(q.to) {
@@ -92,25 +109,32 @@ func (s *srvMetric) queryGauge(
 			continue
 		}
 
-		val := r.numberValue()
-
-		if _, ok := bySeries[r.groupKey]; !ok {
-			bySeries[r.groupKey] = map[int]*gaugeBucket{}
-			labelsByKey[r.groupKey] = labelsToProto(pickLabels(r.labels, q.groupBy))
+		fs := byFullSeries[r.fullKey]
+		if fs == nil {
+			fs = &fullSeries{
+				groupKey:    r.groupKey,
+				groupLabels: labelsToProto(pickLabels(r.labels, q.groupBy)),
+				fullLabels:  r.labels,
+				buckets:     map[int]*gaugeBucket{},
+			}
+			byFullSeries[r.fullKey] = fs
 		}
 
-		b := bySeries[r.groupKey][idx]
+		val := r.numberValue()
+
+		b := fs.buckets[idx]
 		if b == nil {
 			b = &gaugeBucket{
 				ts:  q.from.Add(time.Duration(idx+1) * q.step),
 				min: val,
 				max: val,
 			}
-			bySeries[r.groupKey][idx] = b
+			fs.buckets[idx] = b
 		}
 
 		b.count++
 		b.sum += val
+
 		if val < b.min {
 			b.min = val
 		}
@@ -124,19 +148,16 @@ func (s *srvMetric) queryGauge(
 		}
 	}
 
-	funcKind := q.req.Operation.GetGauge().Function
-	out := make([]*vmetricsv1.TimeSeries, 0, len(bySeries))
+	grouped := map[string]map[int]*groupedBucket{}
+	labelsByGroup := map[string][]*vmetricsv1.Attribute{}
 
-	for key, buckets := range bySeries {
-		var idxs []int
-		for idx := range buckets {
-			idxs = append(idxs, idx)
+	for _, fs := range byFullSeries {
+		if grouped[fs.groupKey] == nil {
+			grouped[fs.groupKey] = map[int]*groupedBucket{}
+			labelsByGroup[fs.groupKey] = fs.groupLabels
 		}
-		sort.Ints(idxs)
 
-		pts := &vmetricsv1.NumberPointSeries{}
-		for _, idx := range idxs {
-			b := buckets[idx]
+		for idx, b := range fs.buckets {
 			var val float64
 
 			switch funcKind {
@@ -154,11 +175,78 @@ func (s *srvMetric) queryGauge(
 				return nil, status.Error(codes.InvalidArgument, "invalid gauge function")
 			}
 
+			gb := grouped[fs.groupKey][idx]
+			if gb == nil {
+				gb = &groupedBucket{
+					ts:  b.ts,
+					min: val,
+					max: val,
+				}
+				grouped[fs.groupKey][idx] = gb
+			}
+
+			gb.count++
+			gb.sum += val
+
+			if val < gb.min {
+				gb.min = val
+			}
+			if val > gb.max {
+				gb.max = val
+			}
+
+			gb.hasValue = true
+		}
+	}
+
+	out := make([]*vmetricsv1.TimeSeries, 0, len(grouped))
+
+	for groupKey, buckets := range grouped {
+		idxs := make([]int, 0, len(buckets))
+		for idx := range buckets {
+			idxs = append(idxs, idx)
+		}
+		sort.Ints(idxs)
+
+		pts := &vmetricsv1.NumberPointSeries{}
+
+		for _, idx := range idxs {
+			b := buckets[idx]
+			if !b.hasValue {
+				continue
+			}
+
+			var val float64
+
+			switch funcKind {
+			case vmetricsv1.GaugeOperation_LAST:
+				val = b.sum
+
+			case vmetricsv1.GaugeOperation_AVG:
+				val = b.sum / float64(b.count)
+
+			case vmetricsv1.GaugeOperation_MIN:
+				val = b.min
+
+			case vmetricsv1.GaugeOperation_MAX:
+				val = b.max
+
+			case vmetricsv1.GaugeOperation_SUM:
+				val = b.sum
+
+			default:
+				return nil, status.Error(codes.InvalidArgument, "invalid gauge function")
+			}
+
 			pts.Points = append(pts.Points, numberPointDouble(b.ts, val))
 		}
 
+		if len(pts.Points) == 0 {
+			continue
+		}
+
 		out = append(out, &vmetricsv1.TimeSeries{
-			Labels: labelsByKey[key],
+			Labels: labelsByGroup[groupKey],
 			Points: &vmetricsv1.TimeSeries_Number{
 				Number: pts,
 			},
