@@ -1,14 +1,14 @@
 module github.com/octelium/octelium-ee/cluster/nocturne
 
-go 1.25.8
+go 1.26.4
 
 require (
 	github.com/crowdstrike/gofalcon v0.8.0
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20260608201713-f1d93ddde5de
-	github.com/octelium/octelium/pkg v0.0.0-20260608201713-f1d93ddde5de
+	github.com/octelium/octelium/cluster/common v0.0.0-20260611175852-0f09263a7eea
+	github.com/octelium/octelium/pkg v0.0.0-20260611175852-0f09263a7eea
 	go.opentelemetry.io/collector/pdata v1.55.0
 	go.uber.org/zap v1.27.1
 	k8s.io/apimachinery v0.35.3
@@ -35,7 +35,7 @@ require (
 	github.com/hashicorp/go-version v1.8.0 // indirect
 	github.com/mileusna/useragent v1.3.5 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
-	github.com/octelium/octelium/cluster/apiserver v0.0.0-20260608201713-f1d93ddde5de // indirect
+	github.com/octelium/octelium/cluster/apiserver v0.0.0-20260611175852-0f09263a7eea // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/sirupsen/logrus v1.9.4 // indirect

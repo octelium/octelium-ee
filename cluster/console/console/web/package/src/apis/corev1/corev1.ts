@@ -9263,6 +9263,10 @@ export interface Authenticator_Status_Info_FIDO {
      * @generated from protobuf field: bool isHardware = 10
      */
     isHardware: boolean;
+    /**
+     * @generated from protobuf field: uint32 signCount = 11
+     */
+    signCount: number;
 }
 /**
  * @generated from protobuf enum octelium.api.main.core.v1.Authenticator.Status.Info.FIDO.Type
@@ -30490,7 +30494,8 @@ class Authenticator_Status_Info_FIDO$Type extends MessageType<Authenticator_Stat
             { no: 7, name: "backupEligible", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 8, name: "isAttestationVerified", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 9, name: "isSoftware", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
-            { no: 10, name: "isHardware", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 10, name: "isHardware", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 11, name: "signCount", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<Authenticator_Status_Info_FIDO>): Authenticator_Status_Info_FIDO {
@@ -30505,6 +30510,7 @@ class Authenticator_Status_Info_FIDO$Type extends MessageType<Authenticator_Stat
         message.isAttestationVerified = false;
         message.isSoftware = false;
         message.isHardware = false;
+        message.signCount = 0;
         if (value !== undefined)
             reflectionMergePartial<Authenticator_Status_Info_FIDO>(this, message, value);
         return message;
@@ -30543,6 +30549,9 @@ class Authenticator_Status_Info_FIDO$Type extends MessageType<Authenticator_Stat
                     break;
                 case /* bool isHardware */ 10:
                     message.isHardware = reader.bool();
+                    break;
+                case /* uint32 signCount */ 11:
+                    message.signCount = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -30586,6 +30595,9 @@ class Authenticator_Status_Info_FIDO$Type extends MessageType<Authenticator_Stat
         /* bool isHardware = 10; */
         if (message.isHardware !== false)
             writer.tag(10, WireType.Varint).bool(message.isHardware);
+        /* uint32 signCount = 11; */
+        if (message.signCount !== 0)
+            writer.tag(11, WireType.Varint).uint32(message.signCount);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

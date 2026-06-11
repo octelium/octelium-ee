@@ -273,6 +273,9 @@
                 },
                 "isHardware": {
                     "type": "boolean"
+                },
+                "signCount": {
+                    "type": "integer"
                 }
             },
             "additionalProperties": false,

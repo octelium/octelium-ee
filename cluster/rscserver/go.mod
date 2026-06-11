@@ -1,14 +1,14 @@
 module github.com/octelium/octelium-ee/cluster/rscserver
 
-go 1.25.8
+go 1.26.4
 
 require (
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20260608201713-f1d93ddde5de
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260608201713-f1d93ddde5de
-	github.com/octelium/octelium/pkg v0.0.0-20260608201713-f1d93ddde5de
+	github.com/octelium/octelium/cluster/common v0.0.0-20260611175852-0f09263a7eea
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260611175852-0f09263a7eea
+	github.com/octelium/octelium/pkg v0.0.0-20260611175852-0f09263a7eea
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.8.1
 	go.uber.org/zap v1.27.1

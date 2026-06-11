@@ -1,6 +1,4 @@
-go 1.25.8
-
-toolchain go1.25.8
+go 1.26.4
 
 use (
 	./apis
@@ -11,16 +9,16 @@ use (
 	./cluster/common
 	./cluster/console
 	./cluster/dirsync
+	./cluster/e2e
 	./cluster/genesis
 	./cluster/logstore
 	./cluster/metricstore
 	./cluster/mockapiserver
 	./cluster/nocturne
+	./cluster/policyportal
 	./cluster/publicserver
 	./cluster/rscserver
 	./cluster/rscstore
 	./cluster/secretman
-	./cluster/policyportal
-	./cluster/e2e
 	./pkg
 )

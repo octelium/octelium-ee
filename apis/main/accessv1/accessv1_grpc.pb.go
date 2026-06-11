@@ -618,6 +618,10 @@ const (
 	ReviewerService_ListCatalog_FullMethodName        = "/octelium.api.main.access.v1.ReviewerService/ListCatalog"
 	ReviewerService_ListCatalogService_FullMethodName = "/octelium.api.main.access.v1.ReviewerService/ListCatalogService"
 	ReviewerService_ListReview_FullMethodName         = "/octelium.api.main.access.v1.ReviewerService/ListReview"
+	ReviewerService_GetReview_FullMethodName          = "/octelium.api.main.access.v1.ReviewerService/GetReview"
+	ReviewerService_CreateReview_FullMethodName       = "/octelium.api.main.access.v1.ReviewerService/CreateReview"
+	ReviewerService_UpdateReview_FullMethodName       = "/octelium.api.main.access.v1.ReviewerService/UpdateReview"
+	ReviewerService_DeleteReview_FullMethodName       = "/octelium.api.main.access.v1.ReviewerService/DeleteReview"
 )
 
 // ReviewerServiceClient is the client API for ReviewerService service.
@@ -629,6 +633,10 @@ type ReviewerServiceClient interface {
 	ListCatalog(ctx context.Context, in *ListReviewerCatalogOptions, opts ...grpc.CallOption) (*CatalogList, error)
 	ListCatalogService(ctx context.Context, in *ListReviewerCatalogServiceOptions, opts ...grpc.CallOption) (*userv1.ServiceList, error)
 	ListReview(ctx context.Context, in *ListReviewerReviewRequest, opts ...grpc.CallOption) (*ReviewList, error)
+	GetReview(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*Review, error)
+	CreateReview(ctx context.Context, in *Review, opts ...grpc.CallOption) (*Review, error)
+	UpdateReview(ctx context.Context, in *Review, opts ...grpc.CallOption) (*Review, error)
+	DeleteReview(ctx context.Context, in *metav1.DeleteOptions, opts ...grpc.CallOption) (*metav1.OperationResult, error)
 }
 
 type reviewerServiceClient struct {
@@ -689,6 +697,46 @@ func (c *reviewerServiceClient) ListReview(ctx context.Context, in *ListReviewer
 	return out, nil
 }
 
+func (c *reviewerServiceClient) GetReview(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*Review, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Review)
+	err := c.cc.Invoke(ctx, ReviewerService_GetReview_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reviewerServiceClient) CreateReview(ctx context.Context, in *Review, opts ...grpc.CallOption) (*Review, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Review)
+	err := c.cc.Invoke(ctx, ReviewerService_CreateReview_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reviewerServiceClient) UpdateReview(ctx context.Context, in *Review, opts ...grpc.CallOption) (*Review, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Review)
+	err := c.cc.Invoke(ctx, ReviewerService_UpdateReview_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reviewerServiceClient) DeleteReview(ctx context.Context, in *metav1.DeleteOptions, opts ...grpc.CallOption) (*metav1.OperationResult, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(metav1.OperationResult)
+	err := c.cc.Invoke(ctx, ReviewerService_DeleteReview_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ReviewerServiceServer is the server API for ReviewerService service.
 // All implementations must embed UnimplementedReviewerServiceServer
 // for forward compatibility.
@@ -698,6 +746,10 @@ type ReviewerServiceServer interface {
 	ListCatalog(context.Context, *ListReviewerCatalogOptions) (*CatalogList, error)
 	ListCatalogService(context.Context, *ListReviewerCatalogServiceOptions) (*userv1.ServiceList, error)
 	ListReview(context.Context, *ListReviewerReviewRequest) (*ReviewList, error)
+	GetReview(context.Context, *metav1.GetOptions) (*Review, error)
+	CreateReview(context.Context, *Review) (*Review, error)
+	UpdateReview(context.Context, *Review) (*Review, error)
+	DeleteReview(context.Context, *metav1.DeleteOptions) (*metav1.OperationResult, error)
 	mustEmbedUnimplementedReviewerServiceServer()
 }
 
@@ -722,6 +774,18 @@ func (UnimplementedReviewerServiceServer) ListCatalogService(context.Context, *L
 }
 func (UnimplementedReviewerServiceServer) ListReview(context.Context, *ListReviewerReviewRequest) (*ReviewList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListReview not implemented")
+}
+func (UnimplementedReviewerServiceServer) GetReview(context.Context, *metav1.GetOptions) (*Review, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetReview not implemented")
+}
+func (UnimplementedReviewerServiceServer) CreateReview(context.Context, *Review) (*Review, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateReview not implemented")
+}
+func (UnimplementedReviewerServiceServer) UpdateReview(context.Context, *Review) (*Review, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateReview not implemented")
+}
+func (UnimplementedReviewerServiceServer) DeleteReview(context.Context, *metav1.DeleteOptions) (*metav1.OperationResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteReview not implemented")
 }
 func (UnimplementedReviewerServiceServer) mustEmbedUnimplementedReviewerServiceServer() {}
 func (UnimplementedReviewerServiceServer) testEmbeddedByValue()                         {}
@@ -834,6 +898,78 @@ func _ReviewerService_ListReview_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ReviewerService_GetReview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(metav1.GetOptions)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReviewerServiceServer).GetReview(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReviewerService_GetReview_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReviewerServiceServer).GetReview(ctx, req.(*metav1.GetOptions))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReviewerService_CreateReview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Review)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReviewerServiceServer).CreateReview(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReviewerService_CreateReview_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReviewerServiceServer).CreateReview(ctx, req.(*Review))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReviewerService_UpdateReview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Review)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReviewerServiceServer).UpdateReview(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReviewerService_UpdateReview_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReviewerServiceServer).UpdateReview(ctx, req.(*Review))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReviewerService_DeleteReview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(metav1.DeleteOptions)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReviewerServiceServer).DeleteReview(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReviewerService_DeleteReview_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReviewerServiceServer).DeleteReview(ctx, req.(*metav1.DeleteOptions))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ReviewerService_ServiceDesc is the grpc.ServiceDesc for ReviewerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -860,6 +996,22 @@ var ReviewerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListReview",
 			Handler:    _ReviewerService_ListReview_Handler,
+		},
+		{
+			MethodName: "GetReview",
+			Handler:    _ReviewerService_GetReview_Handler,
+		},
+		{
+			MethodName: "CreateReview",
+			Handler:    _ReviewerService_CreateReview_Handler,
+		},
+		{
+			MethodName: "UpdateReview",
+			Handler:    _ReviewerService_UpdateReview_Handler,
+		},
+		{
+			MethodName: "DeleteReview",
+			Handler:    _ReviewerService_DeleteReview_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
