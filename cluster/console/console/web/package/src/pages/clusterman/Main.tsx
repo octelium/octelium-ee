@@ -406,7 +406,7 @@ export default () => {
   const qry = useQuery({
     queryKey: ["clusterman", "main", "getCluster"],
     queryFn: async () => getClientEnterprise().getClusterConfig({} as any),
-    refetchInterval: 15000,
+    refetchInterval: 7000,
   });
 
   if (!qry.isSuccess || !qry.data) return null;
