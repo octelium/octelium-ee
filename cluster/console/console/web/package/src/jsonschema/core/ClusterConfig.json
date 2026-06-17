@@ -166,11 +166,267 @@
             "properties": {
                 "url": {
                     "type": "string"
+                },
+                "auth": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth",
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false,
             "type": "object",
             "title": "Upstream"
+        },
+        "octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth": {
+            "properties": {
+                "bearer": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Bearer",
+                    "additionalProperties": false,
+                    "description": "Bearer sets bearer authentication details"
+                },
+                "basic": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Basic",
+                    "additionalProperties": false,
+                    "description": "Basis sets basic authentication details"
+                },
+                "custom": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Custom",
+                    "additionalProperties": false,
+                    "description": "Custom sets authentication inside custom header"
+                },
+                "query": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Query",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "bearer"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "basic"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "custom"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "query"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "bearer"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "basic"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "custom"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "query"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Auth"
+        },
+        "octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Basic": {
+            "properties": {
+                "username": {
+                    "type": "string",
+                    "description": "Username is the username value of HTTP basic authentication"
+                },
+                "password": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Basic.Password",
+                    "additionalProperties": false,
+                    "description": "Password is the password value of HTTP basic authentication"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Basic"
+        },
+        "octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Basic.Password": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Password"
+        },
+        "octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Bearer": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Bearer"
+        },
+        "octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Custom": {
+            "properties": {
+                "header": {
+                    "type": "string",
+                    "description": "Header is the name of the HTTP header (e.g. \"X-Custom-Auth\")"
+                },
+                "value": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Custom.Value",
+                    "additionalProperties": false,
+                    "description": "Value is the value of the header"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Custom"
+        },
+        "octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Custom.Value": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Value"
+        },
+        "octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Query": {
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Query.Value",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Query"
+        },
+        "octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Query.Value": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Value"
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator": {
             "properties": {
@@ -626,6 +882,12 @@
                 "clusterNetwork": {
                     "type": "string",
                     "description": "ClusterNetwork is the Cluster network range. Currently `100.64.0.0/10` is used by default."
+                },
+                "gatewayBits": {
+                    "type": "integer"
+                },
+                "regionBits": {
+                    "type": "integer"
                 }
             },
             "additionalProperties": false,
