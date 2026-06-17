@@ -235,13 +235,23 @@ const Config = (props: {
                             isList
                             onSet={() => {
                               container.container.env = [
-                                CoreP.Service_Spec_Config_Upstream_Container_Env.create(),
+                                CoreP.Service_Spec_Config_Upstream_Container_Env.create(
+                                  {
+                                    name: "",
+                                    type: { oneofKind: "value", value: "" },
+                                  },
+                                ),
                               ];
                               updateReq();
                             }}
                             onAddListItem={() => {
                               container.container.env.push(
-                                CoreP.Service_Spec_Config_Upstream_Container_Env.create(),
+                                CoreP.Service_Spec_Config_Upstream_Container_Env.create(
+                                  {
+                                    name: "",
+                                    type: { oneofKind: "value", value: "" },
+                                  },
+                                ),
                               );
                               updateReq();
                             }}
@@ -283,12 +293,10 @@ const Config = (props: {
                                       : undefined
                                   }
                                   onChange={(v) => {
-                                    let g = container.container.env[idx]
-                                      .type as {
-                                      oneofKind: "value";
-                                      value: string;
+                                    container.container.env[idx].type = {
+                                      oneofKind: "value",
+                                      value: v.target.value,
                                     };
-                                    g.value = v.target.value;
                                     updateReq();
                                   }}
                                 />
@@ -1012,7 +1020,15 @@ const Config = (props: {
                         isList
                         onSet={() => {
                           http.http.header!.addRequestHeaders = [
-                            CoreP.Service_Spec_Config_HTTP_Header_KeyValue.create(),
+                            CoreP.Service_Spec_Config_HTTP_Header_KeyValue.create(
+                              {
+                                key: "",
+                                type: {
+                                  oneofKind: "value",
+                                  value: "",
+                                },
+                              },
+                            ),
                           ];
 
                           updateReq();
@@ -1111,7 +1127,15 @@ const Config = (props: {
                         isList
                         onSet={() => {
                           http.http.header!.addResponseHeaders = [
-                            CoreP.Service_Spec_Config_HTTP_Header_KeyValue.create(),
+                            CoreP.Service_Spec_Config_HTTP_Header_KeyValue.create(
+                              {
+                                key: "",
+                                type: {
+                                  oneofKind: "value",
+                                  value: "",
+                                },
+                              },
+                            ),
                           ];
 
                           updateReq();
@@ -2517,7 +2541,8 @@ const Config = (props: {
                                       min={0}
                                       value={Number(rateLimit.rateLimit.limit)}
                                       onChange={(v) => {
-                                        rateLimit.rateLimit.limit = v as number;
+                                        rateLimit.rateLimit.limit =
+                                          (v as number) || 0;
 
                                         updateReq();
                                       }}
@@ -2563,7 +2588,8 @@ const Config = (props: {
                                     min={0}
                                     value={Number(cache.cache.maxSize)}
                                     onChange={(v) => {
-                                      cache.cache.maxSize = v as number;
+                                      cache.cache.maxSize = (v as number) || 0;
+
                                       updateReq();
                                     }}
                                   />
@@ -3072,6 +3098,7 @@ const Config = (props: {
                           CoreP.Service_Spec_Config_Postgres_SSLMode.SSL_MODE_UNSET;
 
                         updateReq();
+                        return;
                       }
 
                       postgres.postgres!.sslMode =
@@ -3550,7 +3577,7 @@ const Edit = (props: {
               .with(CoreP.Service_Spec_Mode.MYSQL, () => {
                 match(init.spec!.config?.type)
                   .when(
-                    (x) => x?.oneofKind === `postgres`,
+                    (x) => x?.oneofKind === `mysql`,
                     (x) => {
                       req.spec!.config = init.spec!.config;
                     },
@@ -3609,6 +3636,7 @@ const Edit = (props: {
                     } as CoreP.Service_Spec_Config_Kubernetes,
                   },
                 });
+                updateReq();
               })
               .when(
                 (x) =>
