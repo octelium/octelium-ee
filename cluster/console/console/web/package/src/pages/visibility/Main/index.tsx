@@ -323,6 +323,13 @@ export default () => {
           <ResourcesTab key="resources" />
         )}
       </AnimatePresence>
+    </div>
+  );
+};
+
+const Metrics = () => {
+  return (
+    <div>
       <MetricChart
         title="Active requests — api"
         unit="requests"
