@@ -3970,7 +3970,40 @@ const Edit = (props: {
                             }}
                           />
                         </Group>
+
+                        <Select
+                          label="Rule type"
+                          required
+                          description="Set what the rule resolves to when it matches"
+                          data={[
+                            { label: "Config name", value: "configName" },
+                            { label: "Eval (CEL)", value: "eval" },
+                            { label: "OPA (Rego)", value: "opa" },
+                          ]}
+                          value={
+                            req.spec!.dynamicConfig!.rules[ruleIdx].type
+                              .oneofKind
+                          }
+                          onChange={(v) => {
+                            req.spec!.dynamicConfig!.rules[ruleIdx].type =
+                              match(v)
+                                .with("eval", () => ({
+                                  oneofKind: "eval" as const,
+                                  eval: "",
+                                }))
+                                .with("opa", () => ({
+                                  oneofKind: "opa" as const,
+                                  opa: "",
+                                }))
+                                .otherwise(() => ({
+                                  oneofKind: "configName" as const,
+                                  configName: "",
+                                }));
+                            updateReq();
+                          }}
+                        />
                       </EditItem>
+
                       {match(req.spec!.dynamicConfig!.rules[ruleIdx].type)
                         .when(
                           (x) => x.oneofKind === `configName`,
@@ -3987,6 +4020,44 @@ const Edit = (props: {
                                   )}
                                   onChange={(v) => {
                                     configName.configName = v ?? "";
+                                    updateReq();
+                                  }}
+                                />
+                              </div>
+                            );
+                          },
+                        )
+                        .when(
+                          (x) => x.oneofKind === `eval`,
+                          (evalType) => {
+                            return (
+                              <div>
+                                <TextAreaCustom
+                                  label="Eval (CEL)"
+                                  placeholder='ctx.user.spec.type == "HUMAN" ? "config-a" : "config-b"'
+                                  value={evalType.eval}
+                                  onChange={(v) => {
+                                    evalType.eval = v ?? "";
+                                    updateReq();
+                                  }}
+                                />
+                              </div>
+                            );
+                          },
+                        )
+                        .when(
+                          (x) => x.oneofKind === `opa`,
+                          (opa) => {
+                            return (
+                              <div>
+                                <TextAreaCustom
+                                  label="OPA (Rego)"
+                                  placeholder={`package octelium
+
+config_name := "config-a"`}
+                                  value={opa.opa}
+                                  onChange={(v) => {
+                                    opa.opa = v ?? "";
                                     updateReq();
                                   }}
                                 />
