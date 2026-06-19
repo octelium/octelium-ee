@@ -3093,6 +3093,7 @@ const Config = (props: {
                     </div>
                   )}
                 </EditItem>
+
                 <EditItem
                   title="Retry"
                   description="Set retry-specific configs"
@@ -3104,7 +3105,6 @@ const Config = (props: {
                   onSet={() => {
                     http.http.retry =
                       CoreP.Service_Spec_Config_HTTP_Retry.create();
-
                     updateReq();
                   }}
                 >
@@ -3120,7 +3120,30 @@ const Config = (props: {
                           value={http.http.retry!.maxRetries}
                           onChange={(v) => {
                             http.http.retry!.maxRetries = v as number;
+                            updateReq();
+                          }}
+                        />
 
+                        <NumberInput
+                          label="Multiplier"
+                          placeholder="2"
+                          description="Set the backoff multiplier"
+                          min={0}
+                          step={0.1}
+                          value={http.http.retry!.multiplier}
+                          onChange={(v) => {
+                            http.http.retry!.multiplier = v as number;
+                            updateReq();
+                          }}
+                        />
+
+                        <Switch
+                          label="Retry on server errors"
+                          description="Retry on upstream 5xx server errors"
+                          checked={http.http.retry!.retryOnServerErrors}
+                          onChange={(v) => {
+                            http.http.retry!.retryOnServerErrors =
+                              v.target.checked;
                             updateReq();
                           }}
                         />
@@ -3154,6 +3177,50 @@ const Config = (props: {
                           }}
                         />
                       </Group>
+
+                      <ItemMessage
+                        title="Retry status codes"
+                        obj={
+                          http.http.retry.statusCodes.length > 0
+                            ? http.http.retry.statusCodes
+                            : undefined
+                        }
+                        isList
+                        onSet={() => {
+                          http.http.retry!.statusCodes = [0];
+                          updateReq();
+                        }}
+                        onAddListItem={() => {
+                          http.http.retry!.statusCodes.push(0);
+                          updateReq();
+                        }}
+                      >
+                        {http.http.retry.statusCodes.map((x, idx) => (
+                          <div className="w-full flex mb-3" key={idx}>
+                            <CloseButton
+                              size="sm"
+                              variant="subtle"
+                              onClick={() => {
+                                http.http.retry!.statusCodes.splice(idx, 1);
+                                updateReq();
+                              }}
+                            />
+                            <NumberInput
+                              required
+                              label="Status code"
+                              placeholder="503"
+                              className="flex-1"
+                              min={100}
+                              max={599}
+                              value={http.http.retry!.statusCodes[idx]}
+                              onChange={(v) => {
+                                http.http.retry!.statusCodes[idx] = v as number;
+                                updateReq();
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </ItemMessage>
                     </div>
                   )}
                 </EditItem>
