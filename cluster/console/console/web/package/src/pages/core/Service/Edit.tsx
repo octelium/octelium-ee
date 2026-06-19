@@ -3236,7 +3236,6 @@ const Config = (props: {
                   onSet={() => {
                     http.http.cors =
                       CoreP.Service_Spec_Config_HTTP_CORS.create();
-
                     updateReq();
                   }}
                 >
@@ -3290,7 +3289,7 @@ const Config = (props: {
                         <TextInput
                           label="Max Age"
                           placeholder="86400"
-                          description="Set the allowed headers"
+                          description="Specify the content for the access-control-max-age header"
                           value={http.http.cors.maxAge}
                           onChange={(v) => {
                             http.http.cors!.maxAge = v.target.value;
@@ -3298,6 +3297,53 @@ const Config = (props: {
                           }}
                         />
                       </Group>
+                      <ItemMessage
+                        title="Allow Origin String Match"
+                        obj={
+                          http.http.cors.allowOriginStringMatch.length > 0
+                            ? http.http.cors.allowOriginStringMatch
+                            : undefined
+                        }
+                        isList
+                        onSet={() => {
+                          http.http.cors!.allowOriginStringMatch = [""];
+                          updateReq();
+                        }}
+                        onAddListItem={() => {
+                          http.http.cors!.allowOriginStringMatch.push("");
+                          updateReq();
+                        }}
+                      >
+                        {http.http.cors.allowOriginStringMatch.map((x, idx) => (
+                          <div className="w-full flex mb-3" key={idx}>
+                            <CloseButton
+                              size="sm"
+                              variant="subtle"
+                              onClick={() => {
+                                http.http.cors!.allowOriginStringMatch.splice(
+                                  idx,
+                                  1,
+                                );
+                                updateReq();
+                              }}
+                            />
+                            <TextInput
+                              required
+                              label="Origin pattern"
+                              placeholder="https://example.com"
+                              className="flex-1"
+                              value={
+                                http.http.cors!.allowOriginStringMatch[idx]
+                              }
+                              onChange={(v) => {
+                                http.http.cors!.allowOriginStringMatch[idx] =
+                                  v.target.value;
+                                updateReq();
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </ItemMessage>
                     </div>
                   )}
                 </EditItem>
@@ -3313,7 +3359,6 @@ const Config = (props: {
                   onSet={() => {
                     http.http.visibility =
                       CoreP.Service_Spec_Config_HTTP_Visibility.create();
-
                     updateReq();
                   }}
                 >
@@ -3464,6 +3509,117 @@ const Config = (props: {
                           )}
                         </ItemMessage>
 
+                        <ItemMessage
+                          title="Exclude request headers"
+                          obj={
+                            http.http.visibility!.excludeRequestHeaders.length >
+                            0
+                              ? http.http.visibility!.excludeRequestHeaders
+                              : undefined
+                          }
+                          isList
+                          onSet={() => {
+                            http.http.visibility!.excludeRequestHeaders = [""];
+                            updateReq();
+                          }}
+                          onAddListItem={() => {
+                            http.http.visibility!.excludeRequestHeaders.push(
+                              "",
+                            );
+                            updateReq();
+                          }}
+                        >
+                          {http.http.visibility!.excludeRequestHeaders.map(
+                            (x, idx) => (
+                              <div className="w-full flex mb-3" key={idx}>
+                                <CloseButton
+                                  size="sm"
+                                  variant="subtle"
+                                  onClick={() => {
+                                    http.http.visibility!.excludeRequestHeaders.splice(
+                                      idx,
+                                      1,
+                                    );
+                                    updateReq();
+                                  }}
+                                />
+                                <TextInput
+                                  required
+                                  label="Header"
+                                  placeholder="Authorization"
+                                  className="flex-1"
+                                  value={
+                                    http.http.visibility!.excludeRequestHeaders[
+                                      idx
+                                    ]
+                                  }
+                                  onChange={(v) => {
+                                    http.http.visibility!.excludeRequestHeaders[
+                                      idx
+                                    ] = v.target.value;
+                                    updateReq();
+                                  }}
+                                />
+                              </div>
+                            ),
+                          )}
+                        </ItemMessage>
+
+                        <ItemMessage
+                          title="Exclude response headers"
+                          obj={
+                            http.http.visibility!.excludeResponseHeaders
+                              .length > 0
+                              ? http.http.visibility!.excludeResponseHeaders
+                              : undefined
+                          }
+                          isList
+                          onSet={() => {
+                            http.http.visibility!.excludeResponseHeaders = [""];
+                            updateReq();
+                          }}
+                          onAddListItem={() => {
+                            http.http.visibility!.excludeResponseHeaders.push(
+                              "",
+                            );
+                            updateReq();
+                          }}
+                        >
+                          {http.http.visibility!.excludeResponseHeaders.map(
+                            (x, idx) => (
+                              <div className="w-full flex mb-3" key={idx}>
+                                <CloseButton
+                                  size="sm"
+                                  variant="subtle"
+                                  onClick={() => {
+                                    http.http.visibility!.excludeResponseHeaders.splice(
+                                      idx,
+                                      1,
+                                    );
+                                    updateReq();
+                                  }}
+                                />
+                                <TextInput
+                                  required
+                                  label="Header"
+                                  placeholder="Set-Cookie"
+                                  className="flex-1"
+                                  value={
+                                    http.http.visibility!
+                                      .excludeResponseHeaders[idx]
+                                  }
+                                  onChange={(v) => {
+                                    http.http.visibility!.excludeResponseHeaders[
+                                      idx
+                                    ] = v.target.value;
+                                    updateReq();
+                                  }}
+                                />
+                              </div>
+                            ),
+                          )}
+                        </ItemMessage>
+
                         <Group grow>
                           <Switch
                             label="Include all request headers"
@@ -3492,6 +3648,7 @@ const Config = (props: {
                     </div>
                   )}
                 </EditItem>
+
                 <ItemMessage
                   title="Plugins"
                   obj={http.http.plugins}
