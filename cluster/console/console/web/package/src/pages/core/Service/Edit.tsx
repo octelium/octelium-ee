@@ -3611,19 +3611,233 @@ const Config = (props: {
                             .when(
                               (x) => x.oneofKind === "direct",
                               (direct) => (
-                                <Group grow>
-                                  <NumberInput
-                                    label="Status Code"
-                                    description="HTTP status code to return"
-                                    min={100}
-                                    max={599}
-                                    value={direct.direct.statusCode}
-                                    onChange={(v) => {
-                                      direct.direct.statusCode = v as number;
+                                <div>
+                                  <Group grow>
+                                    <NumberInput
+                                      label="Status Code"
+                                      description="HTTP status code to return"
+                                      min={100}
+                                      max={599}
+                                      value={direct.direct.statusCode}
+                                      onChange={(v) => {
+                                        direct.direct.statusCode = v as number;
+                                        updateReq();
+                                      }}
+                                    />
+                                  </Group>
+
+                                  <EditItem
+                                    title="Body"
+                                    description="Set the direct response body"
+                                    onUnset={() => {
+                                      direct.direct.body = undefined;
                                       updateReq();
                                     }}
-                                  />
-                                </Group>
+                                    obj={direct.direct.body}
+                                    onSet={() => {
+                                      direct.direct.body =
+                                        CoreP.Service_Spec_Config_HTTP_Plugin_Direct_Body.create(
+                                          {
+                                            type: {
+                                              oneofKind: "inline",
+                                              inline: "",
+                                            },
+                                          },
+                                        );
+                                      updateReq();
+                                    }}
+                                  >
+                                    {direct.direct.body && (
+                                      <Tabs
+                                        defaultValue={
+                                          direct.direct.body.type.oneofKind ??
+                                          "inline"
+                                        }
+                                        onChange={(v) => {
+                                          match(v)
+                                            .with("inline", () => {
+                                              direct.direct.body!.type = {
+                                                oneofKind: "inline",
+                                                inline: "",
+                                              };
+                                            })
+                                            .with("inlineBytes", () => {
+                                              direct.direct.body!.type = {
+                                                oneofKind: "inlineBytes",
+                                                inlineBytes: new Uint8Array(),
+                                              };
+                                            })
+                                            .otherwise(() => {});
+                                          updateReq();
+                                        }}
+                                      >
+                                        <Tabs.List>
+                                          <Tabs.Tab value="inline">
+                                            Inline Text
+                                          </Tabs.Tab>
+                                          <Tabs.Tab value="inlineBytes">
+                                            Inline Bytes
+                                          </Tabs.Tab>
+                                        </Tabs.List>
+
+                                        <Tabs.Panel value="inline">
+                                          {match(direct.direct.body.type)
+                                            .when(
+                                              (x) => x.oneofKind === "inline",
+                                              (inline) => (
+                                                <div>
+                                                  <div className="flex justify-end mb-2">
+                                                    <button
+                                                      type="button"
+                                                      className="text-xs underline"
+                                                      onClick={() => {
+                                                        readFileAsText(
+                                                          (text) => {
+                                                            inline.inline =
+                                                              text;
+                                                            updateReq();
+                                                          },
+                                                        );
+                                                      }}
+                                                    >
+                                                      Open from file
+                                                    </button>
+                                                  </div>
+                                                  <TextAreaCustom
+                                                    label="Inline body"
+                                                    placeholder='{ "message": "ok" }'
+                                                    value={inline.inline}
+                                                    onChange={(v) => {
+                                                      inline.inline = v ?? "";
+                                                      updateReq();
+                                                    }}
+                                                  />
+                                                </div>
+                                              ),
+                                            )
+                                            .otherwise(() => (
+                                              <></>
+                                            ))}
+                                        </Tabs.Panel>
+
+                                        <Tabs.Panel value="inlineBytes">
+                                          {match(direct.direct.body.type)
+                                            .when(
+                                              (x) =>
+                                                x.oneofKind === "inlineBytes",
+                                              (inlineBytes) => (
+                                                <div>
+                                                  <div className="flex justify-end mb-2">
+                                                    <button
+                                                      type="button"
+                                                      className="text-xs underline"
+                                                      onClick={() => {
+                                                        readFileAsText(
+                                                          (text) => {
+                                                            inlineBytes.inlineBytes =
+                                                              new TextEncoder().encode(
+                                                                text,
+                                                              );
+                                                            updateReq();
+                                                          },
+                                                        );
+                                                      }}
+                                                    >
+                                                      Open from file
+                                                    </button>
+                                                  </div>
+                                                  <TextAreaCustom
+                                                    label="Inline bytes"
+                                                    placeholder="Raw bytes content"
+                                                    value={new TextDecoder().decode(
+                                                      inlineBytes.inlineBytes,
+                                                    )}
+                                                    onChange={(v) => {
+                                                      inlineBytes.inlineBytes =
+                                                        new TextEncoder().encode(
+                                                          v ?? "",
+                                                        );
+                                                      updateReq();
+                                                    }}
+                                                  />
+                                                </div>
+                                              ),
+                                            )
+                                            .otherwise(() => (
+                                              <></>
+                                            ))}
+                                        </Tabs.Panel>
+                                      </Tabs>
+                                    )}
+                                  </EditItem>
+
+                                  <ItemMessage
+                                    title="Headers"
+                                    obj={direct.direct.headers}
+                                    isList
+                                    onSet={() => {
+                                      direct.direct.headers = [
+                                        CoreP.Service_Spec_Config_HTTP_Plugin_Direct_KeyValue.create(),
+                                      ];
+                                      updateReq();
+                                    }}
+                                    onAddListItem={() => {
+                                      direct.direct.headers.push(
+                                        CoreP.Service_Spec_Config_HTTP_Plugin_Direct_KeyValue.create(),
+                                      );
+                                      updateReq();
+                                    }}
+                                  >
+                                    {direct.direct.headers.map((h, hIdx) => (
+                                      <div
+                                        className="w-full flex mb-3"
+                                        key={hIdx}
+                                      >
+                                        <CloseButton
+                                          size="sm"
+                                          variant="subtle"
+                                          className="mr-2"
+                                          onClick={() => {
+                                            direct.direct.headers.splice(
+                                              hIdx,
+                                              1,
+                                            );
+                                            updateReq();
+                                          }}
+                                        />
+                                        <Group className="flex w-full" grow>
+                                          <TextInput
+                                            required
+                                            label="Key"
+                                            placeholder="Content-Type"
+                                            value={
+                                              direct.direct.headers[hIdx].key
+                                            }
+                                            onChange={(v) => {
+                                              direct.direct.headers[hIdx].key =
+                                                v.target.value;
+                                              updateReq();
+                                            }}
+                                          />
+                                          <TextInput
+                                            required
+                                            label="Value"
+                                            placeholder="application/json"
+                                            value={
+                                              direct.direct.headers[hIdx].value
+                                            }
+                                            onChange={(v) => {
+                                              direct.direct.headers[
+                                                hIdx
+                                              ].value = v.target.value;
+                                              updateReq();
+                                            }}
+                                          />
+                                        </Group>
+                                      </div>
+                                    ))}
+                                  </ItemMessage>
+                                </div>
                               ),
                             )
                             .otherwise(() => (
