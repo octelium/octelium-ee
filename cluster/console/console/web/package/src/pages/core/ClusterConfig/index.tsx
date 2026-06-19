@@ -6,6 +6,7 @@ import ItemMessage from "@/components/ItemMessage";
 import { ResourceEdit } from "@/components/ResourceLayout/ResourceEdit";
 import SelectInlinePolicies from "@/components/ResourceLayout/SelectInlinePolicies";
 import SelectPolicies from "@/components/ResourceLayout/SelectPolicies";
+import SelectSecret from "@/components/ResourceLayout/SelectSecret";
 import { getClientCore } from "@/utils/client";
 import { strToNum } from "@/utils/convert";
 import { invalidateKey } from "@/utils/pb";
@@ -14,6 +15,7 @@ import {
   NumberInput,
   Select,
   Switch,
+  Tabs,
   TagsInput,
   TextInput,
 } from "@mantine/core";
@@ -101,7 +103,7 @@ const Edit = (props: {
           </EditItem>
           <EditItem
             title="Gateway"
-            description="Set the Cluster's DNS-related Configuration"
+            description="Set the Cluster's Gateway-related Configuration"
             onUnset={() => {
               req.spec!.gateway = undefined;
               updateReq();
@@ -295,13 +297,21 @@ const Edit = (props: {
                   isList
                   onSet={() => {
                     req.spec!.authenticator!.postAuthenticationRules = [
-                      CoreP.ClusterConfig_Spec_Authenticator_Rule.create(),
+                      CoreP.ClusterConfig_Spec_Authenticator_Rule.create({
+                        condition: CoreP.Condition.create({
+                          type: { oneofKind: "match", match: "" },
+                        }),
+                      }),
                     ];
                     updateReq();
                   }}
                   onAddListItem={() => {
                     req.spec!.authenticator!.postAuthenticationRules.push(
-                      CoreP.ClusterConfig_Spec_Authenticator_Rule.create({}),
+                      CoreP.ClusterConfig_Spec_Authenticator_Rule.create({
+                        condition: CoreP.Condition.create({
+                          type: { oneofKind: "match", match: "" },
+                        }),
+                      }),
                     );
                     updateReq();
                   }}
@@ -310,6 +320,7 @@ const Edit = (props: {
                     req.spec!.authenticator!.postAuthenticationRules.map(
                       (rule: any, ruleIdx: number) => (
                         <EditItem
+                          key={`${ruleIdx}`}
                           obj={
                             req.spec!.authenticator!.postAuthenticationRules[
                               ruleIdx
@@ -324,6 +335,22 @@ const Edit = (props: {
                           }}
                         >
                           <Group grow>
+                            <TextInput
+                              label="Name"
+                              description="Set an optional name for the rule (shown in Logs)"
+                              placeholder="my-rule"
+                              value={
+                                req.spec!.authenticator!
+                                  .postAuthenticationRules[ruleIdx].name
+                              }
+                              onChange={(v) => {
+                                req.spec!.authenticator!.postAuthenticationRules[
+                                  ruleIdx
+                                ].name = v.target.value;
+                                updateReq();
+                              }}
+                            />
+
                             <Select
                               label="Effect"
                               required
@@ -373,7 +400,10 @@ const Edit = (props: {
                             item={
                               req.spec!.authenticator!.postAuthenticationRules[
                                 ruleIdx
-                              ].condition
+                              ].condition ??
+                              CoreP.Condition.create({
+                                type: { oneofKind: "match", match: "" },
+                              })
                             }
                             onChange={(v) => {
                               req.spec!.authenticator!.postAuthenticationRules[
@@ -393,14 +423,24 @@ const Edit = (props: {
                   isList
                   onSet={() => {
                     req.spec!.authenticator!.authenticationEnforcementRules = [
-                      CoreP.ClusterConfig_Spec_Authenticator_EnforcementRule.create(),
+                      CoreP.ClusterConfig_Spec_Authenticator_EnforcementRule.create(
+                        {
+                          condition: CoreP.Condition.create({
+                            type: { oneofKind: "match", match: "" },
+                          }),
+                        },
+                      ),
                     ];
                     updateReq();
                   }}
                   onAddListItem={() => {
                     req.spec!.authenticator!.authenticationEnforcementRules.push(
                       CoreP.ClusterConfig_Spec_Authenticator_EnforcementRule.create(
-                        {},
+                        {
+                          condition: CoreP.Condition.create({
+                            type: { oneofKind: "match", match: "" },
+                          }),
+                        },
                       ),
                     );
                     updateReq();
@@ -410,6 +450,7 @@ const Edit = (props: {
                     req.spec!.authenticator!.authenticationEnforcementRules.map(
                       (rule: any, ruleIdx: number) => (
                         <EditItem
+                          key={`${ruleIdx}`}
                           obj={
                             req.spec!.authenticator!
                               .authenticationEnforcementRules[ruleIdx]
@@ -426,7 +467,7 @@ const Edit = (props: {
                             <Select
                               label="Effect"
                               required
-                              description="Set the effect to either ENFORCE or IGNORE"
+                              description="Set the effect to ENFORCE, IGNORE or RECOMMEND"
                               data={[
                                 {
                                   label: "Enforce",
@@ -446,6 +487,16 @@ const Edit = (props: {
                                       CoreP
                                         .ClusterConfig_Spec_Authenticator_EnforcementRule_Effect
                                         .IGNORE
+                                    ],
+                                },
+                                {
+                                  label: "Recommend",
+                                  value:
+                                    CoreP
+                                      .ClusterConfig_Spec_Authenticator_EnforcementRule_Effect[
+                                      CoreP
+                                        .ClusterConfig_Spec_Authenticator_EnforcementRule_Effect
+                                        .RECOMMEND
                                     ],
                                 },
                               ]}
@@ -473,7 +524,10 @@ const Edit = (props: {
                             item={
                               req.spec!.authenticator!
                                 .authenticationEnforcementRules[ruleIdx]
-                                .condition
+                                .condition ??
+                              CoreP.Condition.create({
+                                type: { oneofKind: "match", match: "" },
+                              })
                             }
                             onChange={(v) => {
                               req.spec!.authenticator!.authenticationEnforcementRules[
@@ -493,14 +547,24 @@ const Edit = (props: {
                   isList
                   onSet={() => {
                     req.spec!.authenticator!.registrationEnforcementRules = [
-                      CoreP.ClusterConfig_Spec_Authenticator_EnforcementRule.create(),
+                      CoreP.ClusterConfig_Spec_Authenticator_EnforcementRule.create(
+                        {
+                          condition: CoreP.Condition.create({
+                            type: { oneofKind: "match", match: "" },
+                          }),
+                        },
+                      ),
                     ];
                     updateReq();
                   }}
                   onAddListItem={() => {
                     req.spec!.authenticator!.registrationEnforcementRules.push(
                       CoreP.ClusterConfig_Spec_Authenticator_EnforcementRule.create(
-                        {},
+                        {
+                          condition: CoreP.Condition.create({
+                            type: { oneofKind: "match", match: "" },
+                          }),
+                        },
                       ),
                     );
                     updateReq();
@@ -510,6 +574,7 @@ const Edit = (props: {
                     req.spec!.authenticator!.registrationEnforcementRules.map(
                       (rule: any, ruleIdx: number) => (
                         <EditItem
+                          key={`${ruleIdx}`}
                           obj={
                             req.spec!.authenticator!
                               .registrationEnforcementRules[ruleIdx]
@@ -526,7 +591,7 @@ const Edit = (props: {
                             <Select
                               label="Effect"
                               required
-                              description="Set the effect to either ENFORCE or IGNORE"
+                              description="Set the effect to ENFORCE, IGNORE or RECOMMEND"
                               data={[
                                 {
                                   label: "Enforce",
@@ -546,6 +611,16 @@ const Edit = (props: {
                                       CoreP
                                         .ClusterConfig_Spec_Authenticator_EnforcementRule_Effect
                                         .IGNORE
+                                    ],
+                                },
+                                {
+                                  label: "Recommend",
+                                  value:
+                                    CoreP
+                                      .ClusterConfig_Spec_Authenticator_EnforcementRule_Effect[
+                                      CoreP
+                                        .ClusterConfig_Spec_Authenticator_EnforcementRule_Effect
+                                        .RECOMMEND
                                     ],
                                 },
                               ]}
@@ -572,7 +647,11 @@ const Edit = (props: {
                           <Cond
                             item={
                               req.spec!.authenticator!
-                                .registrationEnforcementRules[ruleIdx].condition
+                                .registrationEnforcementRules[ruleIdx]
+                                .condition ??
+                              CoreP.Condition.create({
+                                type: { oneofKind: "match", match: "" },
+                              })
                             }
                             onChange={(v) => {
                               req.spec!.authenticator!.registrationEnforcementRules[
@@ -708,11 +787,12 @@ const Edit = (props: {
                         <NumberInput
                           label="Max Per User"
                           description="Set the max number of Sessions per User"
-                          defaultValue={req.spec!.session!.human!.maxPerUser}
+                          value={req.spec!.session!.human!.maxPerUser}
                           min={1}
                           max={100000}
                           onChange={(v) => {
                             req.spec!.session!.human!.maxPerUser = strToNum(v);
+                            updateReq();
                           }}
                         />
 
@@ -829,12 +909,13 @@ const Edit = (props: {
                         <NumberInput
                           label="Max Per User"
                           description="Set the max number of Sessions per User"
-                          defaultValue={req.spec!.session!.workload!.maxPerUser}
+                          value={req.spec!.session!.workload!.maxPerUser}
                           min={1}
                           max={100000}
                           onChange={(v) => {
                             req.spec!.session!.workload!.maxPerUser =
                               strToNum(v);
+                            updateReq();
                           }}
                         />
 
@@ -887,6 +968,174 @@ const Edit = (props: {
           </EditItem>
 
           <EditItem
+            title="Device"
+            description="Set the Cluster's Device-related Configuration"
+            onUnset={() => {
+              req.spec!.device = undefined;
+              updateReq();
+            }}
+            obj={req.spec!.device}
+            onSet={() => {
+              if (!req.spec!.device) {
+                req.spec!.device = CoreP.ClusterConfig_Spec_Device.create();
+                updateReq();
+              }
+            }}
+          >
+            {req.spec!.device && (
+              <>
+                <EditItem
+                  title="Human"
+                  description="Set Human Device-related Configuration"
+                  onUnset={() => {
+                    req.spec!.device!.human = undefined;
+                    updateReq();
+                  }}
+                  obj={req.spec!.device!.human}
+                  onSet={() => {
+                    if (!req.spec!.device!.human) {
+                      req.spec!.device!.human =
+                        CoreP.ClusterConfig_Spec_Device_Human.create();
+                      updateReq();
+                    }
+                  }}
+                >
+                  {req.spec!.device!.human && (
+                    <Group grow>
+                      <NumberInput
+                        label="Max Per User"
+                        description="Set the max number of Devices per User"
+                        value={req.spec!.device!.human!.maxPerUser}
+                        min={1}
+                        max={100000}
+                        onChange={(v) => {
+                          req.spec!.device!.human!.maxPerUser = strToNum(v);
+                          updateReq();
+                        }}
+                      />
+
+                      <Select
+                        label="Default State"
+                        description="Set the Device's default state to ACTIVE, PENDING or REJECTED"
+                        data={[
+                          {
+                            label: "Active",
+                            value:
+                              CoreP.Device_Spec_State[
+                                CoreP.Device_Spec_State.ACTIVE
+                              ],
+                          },
+                          {
+                            label: "Pending",
+                            value:
+                              CoreP.Device_Spec_State[
+                                CoreP.Device_Spec_State.PENDING
+                              ],
+                          },
+                          {
+                            label: "Rejected",
+                            value:
+                              CoreP.Device_Spec_State[
+                                CoreP.Device_Spec_State.REJECTED
+                              ],
+                          },
+                        ]}
+                        value={
+                          CoreP.Device_Spec_State[
+                            req.spec!.device!.human!.defaultState
+                          ]
+                        }
+                        onChange={(v) => {
+                          if (!v) {
+                            return;
+                          }
+                          req.spec!.device!.human!.defaultState =
+                            CoreP.Device_Spec_State[v as "ACTIVE"];
+                          updateReq();
+                        }}
+                      />
+                    </Group>
+                  )}
+                </EditItem>
+
+                <EditItem
+                  title="Workload"
+                  description="Set Workload Device-related Configuration"
+                  onUnset={() => {
+                    req.spec!.device!.workload = undefined;
+                    updateReq();
+                  }}
+                  obj={req.spec!.device!.workload}
+                  onSet={() => {
+                    if (!req.spec!.device!.workload) {
+                      req.spec!.device!.workload =
+                        CoreP.ClusterConfig_Spec_Device_Workload.create();
+                      updateReq();
+                    }
+                  }}
+                >
+                  {req.spec!.device!.workload && (
+                    <Group grow>
+                      <NumberInput
+                        label="Max Per User"
+                        description="Set the max number of Devices per User"
+                        value={req.spec!.device!.workload!.maxPerUser}
+                        min={1}
+                        max={100000}
+                        onChange={(v) => {
+                          req.spec!.device!.workload!.maxPerUser = strToNum(v);
+                          updateReq();
+                        }}
+                      />
+
+                      <Select
+                        label="Default State"
+                        description="Set the Device's default state to ACTIVE, PENDING or REJECTED"
+                        data={[
+                          {
+                            label: "Active",
+                            value:
+                              CoreP.Device_Spec_State[
+                                CoreP.Device_Spec_State.ACTIVE
+                              ],
+                          },
+                          {
+                            label: "Pending",
+                            value:
+                              CoreP.Device_Spec_State[
+                                CoreP.Device_Spec_State.PENDING
+                              ],
+                          },
+                          {
+                            label: "Rejected",
+                            value:
+                              CoreP.Device_Spec_State[
+                                CoreP.Device_Spec_State.REJECTED
+                              ],
+                          },
+                        ]}
+                        value={
+                          CoreP.Device_Spec_State[
+                            req.spec!.device!.workload!.defaultState
+                          ]
+                        }
+                        onChange={(v) => {
+                          if (!v) {
+                            return;
+                          }
+                          req.spec!.device!.workload!.defaultState =
+                            CoreP.Device_Spec_State[v as "ACTIVE"];
+                          updateReq();
+                        }}
+                      />
+                    </Group>
+                  )}
+                </EditItem>
+              </>
+            )}
+          </EditItem>
+
+          <EditItem
             title="Ingress"
             description="Set the Cluster's Ingress-related Configuration"
             onUnset={() => {
@@ -917,11 +1166,12 @@ const Edit = (props: {
                 <NumberInput
                   label="X-Forwarded-For trusted Hops"
                   description="Set the number of trusted hops between Octelium ingress an the downstream"
-                  defaultValue={req.spec!.ingress!.xffNumTrustedHops}
+                  value={req.spec!.ingress!.xffNumTrustedHops}
                   min={0}
                   max={100}
                   onChange={(v) => {
                     req.spec!.ingress!.xffNumTrustedHops = strToNum(v);
+                    updateReq();
                   }}
                 />
               </Group>
@@ -984,7 +1234,58 @@ const Edit = (props: {
                           (mmdb) => {
                             return (
                               <div>
+                                <Select
+                                  label="MMDB Source"
+                                  description="Set the MMDB source"
+                                  data={[
+                                    {
+                                      label: "Upstream URL",
+                                      value: "upstream",
+                                    },
+                                    {
+                                      label: "From Config",
+                                      value: "fromConfig",
+                                    },
+                                  ]}
+                                  value={mmdb.mmdb.type.oneofKind}
+                                  onChange={(v) => {
+                                    mmdb.mmdb.type = match(v)
+                                      .with("fromConfig", () => ({
+                                        oneofKind: "fromConfig" as const,
+                                        fromConfig: "",
+                                      }))
+                                      .otherwise(() => ({
+                                        oneofKind: "upstream" as const,
+                                        upstream:
+                                          CoreP.ClusterConfig_Spec_Authentication_Geolocation_MMDB_Upstream.create(
+                                            { url: "" },
+                                          ),
+                                      }));
+                                    updateReq();
+                                  }}
+                                />
+
                                 {match(mmdb.mmdb.type)
+                                  .when(
+                                    (x) => x.oneofKind === `fromConfig`,
+                                    (fromConfig) => {
+                                      return (
+                                        <Group grow>
+                                          <TextInput
+                                            label="From Config"
+                                            placeholder="my-mmdb-config"
+                                            description="Set the name of the config containing the MMDB"
+                                            value={fromConfig.fromConfig}
+                                            onChange={(v) => {
+                                              fromConfig.fromConfig =
+                                                v.target.value;
+                                              updateReq();
+                                            }}
+                                          />
+                                        </Group>
+                                      );
+                                    },
+                                  )
                                   .when(
                                     (x) => x.oneofKind === `upstream`,
                                     (upstream) => {
@@ -1003,6 +1304,360 @@ const Edit = (props: {
                                               }}
                                             />
                                           </Group>
+
+                                          <EditItem
+                                            title="Authentication"
+                                            description="Set the MMDB upstream authentication"
+                                            onUnset={() => {
+                                              upstream.upstream.auth =
+                                                undefined;
+                                              updateReq();
+                                            }}
+                                            obj={upstream.upstream.auth}
+                                            onSet={() => {
+                                              upstream.upstream.auth =
+                                                CoreP.ClusterConfig_Spec_Authentication_Geolocation_MMDB_Upstream_Auth.create(
+                                                  {
+                                                    type: {
+                                                      oneofKind: "bearer",
+                                                      bearer: {
+                                                        type: {
+                                                          oneofKind:
+                                                            "fromSecret",
+                                                          fromSecret: "",
+                                                        },
+                                                      },
+                                                    },
+                                                  },
+                                                );
+                                              updateReq();
+                                            }}
+                                          >
+                                            {upstream.upstream.auth && (
+                                              <Tabs
+                                                defaultValue={
+                                                  upstream.upstream.auth.type
+                                                    .oneofKind
+                                                }
+                                                onChange={(v) => {
+                                                  match(v)
+                                                    .with("bearer", () => {
+                                                      upstream.upstream.auth!.type =
+                                                        {
+                                                          oneofKind: "bearer",
+                                                          bearer:
+                                                            CoreP.ClusterConfig_Spec_Authentication_Geolocation_MMDB_Upstream_Auth_Bearer.create(
+                                                              {
+                                                                type: {
+                                                                  oneofKind:
+                                                                    "fromSecret",
+                                                                  fromSecret:
+                                                                    "",
+                                                                },
+                                                              },
+                                                            ),
+                                                        };
+                                                    })
+                                                    .with("basic", () => {
+                                                      upstream.upstream.auth!.type =
+                                                        {
+                                                          oneofKind: "basic",
+                                                          basic:
+                                                            CoreP.ClusterConfig_Spec_Authentication_Geolocation_MMDB_Upstream_Auth_Basic.create(
+                                                              {
+                                                                password: {
+                                                                  type: {
+                                                                    oneofKind:
+                                                                      "fromSecret",
+                                                                    fromSecret:
+                                                                      "",
+                                                                  },
+                                                                },
+                                                              },
+                                                            ),
+                                                        };
+                                                    })
+                                                    .with("custom", () => {
+                                                      upstream.upstream.auth!.type =
+                                                        {
+                                                          oneofKind: "custom",
+                                                          custom:
+                                                            CoreP.ClusterConfig_Spec_Authentication_Geolocation_MMDB_Upstream_Auth_Custom.create(
+                                                              {
+                                                                value: {
+                                                                  type: {
+                                                                    oneofKind:
+                                                                      "fromSecret",
+                                                                    fromSecret:
+                                                                      "",
+                                                                  },
+                                                                },
+                                                              },
+                                                            ),
+                                                        };
+                                                    })
+                                                    .with("query", () => {
+                                                      upstream.upstream.auth!.type =
+                                                        {
+                                                          oneofKind: "query",
+                                                          query:
+                                                            CoreP.ClusterConfig_Spec_Authentication_Geolocation_MMDB_Upstream_Auth_Query.create(
+                                                              {
+                                                                value: {
+                                                                  type: {
+                                                                    oneofKind:
+                                                                      "fromSecret",
+                                                                    fromSecret:
+                                                                      "",
+                                                                  },
+                                                                },
+                                                              },
+                                                            ),
+                                                        };
+                                                    })
+                                                    .otherwise(() => {});
+                                                  updateReq();
+                                                }}
+                                              >
+                                                <Tabs.List>
+                                                  <Tabs.Tab value="bearer">
+                                                    Bearer
+                                                  </Tabs.Tab>
+                                                  <Tabs.Tab value="basic">
+                                                    Basic
+                                                  </Tabs.Tab>
+                                                  <Tabs.Tab value="custom">
+                                                    Custom Header
+                                                  </Tabs.Tab>
+                                                  <Tabs.Tab value="query">
+                                                    Query
+                                                  </Tabs.Tab>
+                                                </Tabs.List>
+
+                                                <Tabs.Panel value="bearer">
+                                                  {match(
+                                                    upstream.upstream.auth.type,
+                                                  )
+                                                    .when(
+                                                      (x) =>
+                                                        x.oneofKind ===
+                                                        "bearer",
+                                                      (bearer) => (
+                                                        <SelectSecret
+                                                          api="core"
+                                                          label="Bearer token Secret"
+                                                          description="Select the Secret of the bearer token"
+                                                          defaultValue={
+                                                            bearer.bearer.type
+                                                              .oneofKind ===
+                                                            "fromSecret"
+                                                              ? bearer.bearer
+                                                                  .type
+                                                                  .fromSecret
+                                                              : undefined
+                                                          }
+                                                          onChange={(val) => {
+                                                            match(
+                                                              bearer.bearer
+                                                                .type,
+                                                            ).when(
+                                                              (x) =>
+                                                                x.oneofKind ===
+                                                                "fromSecret",
+                                                              (x) => {
+                                                                x.fromSecret =
+                                                                  val ?? "";
+                                                              },
+                                                            );
+                                                            updateReq();
+                                                          }}
+                                                        />
+                                                      ),
+                                                    )
+                                                    .otherwise(() => (
+                                                      <></>
+                                                    ))}
+                                                </Tabs.Panel>
+
+                                                <Tabs.Panel value="basic">
+                                                  {match(
+                                                    upstream.upstream.auth.type,
+                                                  )
+                                                    .when(
+                                                      (x) =>
+                                                        x.oneofKind === "basic",
+                                                      (basic) => (
+                                                        <Group grow>
+                                                          <TextInput
+                                                            label="Username"
+                                                            placeholder="user1234"
+                                                            value={
+                                                              basic.basic
+                                                                .username
+                                                            }
+                                                            onChange={(v) => {
+                                                              basic.basic.username =
+                                                                v.target.value;
+                                                              updateReq();
+                                                            }}
+                                                          />
+                                                          {match(
+                                                            basic.basic.password
+                                                              ?.type,
+                                                          )
+                                                            .when(
+                                                              (x) =>
+                                                                x?.oneofKind ===
+                                                                "fromSecret",
+                                                              (x) => (
+                                                                <SelectSecret
+                                                                  api="core"
+                                                                  label="Password Secret"
+                                                                  description="Select the Secret of the password"
+                                                                  defaultValue={
+                                                                    x.fromSecret
+                                                                  }
+                                                                  onChange={(
+                                                                    v,
+                                                                  ) => {
+                                                                    x.fromSecret =
+                                                                      v ?? "";
+                                                                    updateReq();
+                                                                  }}
+                                                                />
+                                                              ),
+                                                            )
+                                                            .otherwise(() => (
+                                                              <></>
+                                                            ))}
+                                                        </Group>
+                                                      ),
+                                                    )
+                                                    .otherwise(() => (
+                                                      <></>
+                                                    ))}
+                                                </Tabs.Panel>
+
+                                                <Tabs.Panel value="custom">
+                                                  {match(
+                                                    upstream.upstream.auth.type,
+                                                  )
+                                                    .when(
+                                                      (x) =>
+                                                        x.oneofKind ===
+                                                        "custom",
+                                                      (custom) => (
+                                                        <Group grow>
+                                                          <TextInput
+                                                            label="Header Name"
+                                                            placeholder="X-Custom-Auth"
+                                                            value={
+                                                              custom.custom
+                                                                .header
+                                                            }
+                                                            onChange={(v) => {
+                                                              custom.custom.header =
+                                                                v.target.value;
+                                                              updateReq();
+                                                            }}
+                                                          />
+                                                          {match(
+                                                            custom.custom.value
+                                                              ?.type,
+                                                          )
+                                                            .when(
+                                                              (x) =>
+                                                                x?.oneofKind ===
+                                                                "fromSecret",
+                                                              (x) => (
+                                                                <SelectSecret
+                                                                  api="core"
+                                                                  label="Header value Secret"
+                                                                  description="Select the Secret of the header value"
+                                                                  defaultValue={
+                                                                    x.fromSecret
+                                                                  }
+                                                                  onChange={(
+                                                                    v,
+                                                                  ) => {
+                                                                    x.fromSecret =
+                                                                      v ?? "";
+                                                                    updateReq();
+                                                                  }}
+                                                                />
+                                                              ),
+                                                            )
+                                                            .otherwise(() => (
+                                                              <></>
+                                                            ))}
+                                                        </Group>
+                                                      ),
+                                                    )
+                                                    .otherwise(() => (
+                                                      <></>
+                                                    ))}
+                                                </Tabs.Panel>
+
+                                                <Tabs.Panel value="query">
+                                                  {match(
+                                                    upstream.upstream.auth.type,
+                                                  )
+                                                    .when(
+                                                      (x) =>
+                                                        x.oneofKind === "query",
+                                                      (query) => (
+                                                        <Group grow>
+                                                          <TextInput
+                                                            label="Query Key"
+                                                            placeholder="api_key"
+                                                            value={
+                                                              query.query.key
+                                                            }
+                                                            onChange={(v) => {
+                                                              query.query.key =
+                                                                v.target.value;
+                                                              updateReq();
+                                                            }}
+                                                          />
+                                                          {match(
+                                                            query.query.value
+                                                              ?.type,
+                                                          )
+                                                            .when(
+                                                              (x) =>
+                                                                x?.oneofKind ===
+                                                                "fromSecret",
+                                                              (x) => (
+                                                                <SelectSecret
+                                                                  api="core"
+                                                                  label="Query value Secret"
+                                                                  description="Select the Secret of the query value"
+                                                                  defaultValue={
+                                                                    x.fromSecret
+                                                                  }
+                                                                  onChange={(
+                                                                    v,
+                                                                  ) => {
+                                                                    x.fromSecret =
+                                                                      v ?? "";
+                                                                    updateReq();
+                                                                  }}
+                                                                />
+                                                              ),
+                                                            )
+                                                            .otherwise(() => (
+                                                              <></>
+                                                            ))}
+                                                        </Group>
+                                                      ),
+                                                    )
+                                                    .otherwise(() => (
+                                                      <></>
+                                                    ))}
+                                                </Tabs.Panel>
+                                              </Tabs>
+                                            )}
+                                          </EditItem>
                                         </div>
                                       );
                                     },
@@ -1030,7 +1685,7 @@ const Edit = (props: {
 };
 
 export default () => {
-  const { isSuccess, isLoading, data } = useQuery({
+  const { isSuccess, data } = useQuery({
     queryKey: ["core", "clusterconfig"],
     queryFn: async () => {
       return await getClientCore().getClusterConfig({});
