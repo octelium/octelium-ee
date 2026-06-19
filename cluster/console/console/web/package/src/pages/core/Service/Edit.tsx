@@ -24,6 +24,206 @@ import { strToNum } from "@/utils/convert";
 import { Tabs } from "@mantine/core";
 import { match } from "ts-pattern";
 
+const readFileAsText = (onLoad: (text: string) => void): void => {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.onchange = () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      onLoad((ev.target?.result as string) ?? "");
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+};
+
+const ContainerProbe = (props: {
+  title: string;
+  probe?: CoreP.Service_Spec_Config_Upstream_Container_Probe;
+  onUnset: () => void;
+  onSet: () => void;
+  onChange: () => void;
+}) => {
+  const { title, probe, onUnset, onSet, onChange } = props;
+
+  return (
+    <EditItem
+      title={title}
+      description="Set the container health probe"
+      onUnset={onUnset}
+      obj={probe}
+      onSet={onSet}
+    >
+      {probe && (
+        <div>
+          <Tabs
+            className="mb-4"
+            defaultValue={probe.type.oneofKind}
+            onChange={(v) => {
+              match(v)
+                .with("httpGet", () => {
+                  probe.type = {
+                    oneofKind: "httpGet",
+                    httpGet:
+                      CoreP.Service_Spec_Config_Upstream_Container_Probe_HTTPGet.create(),
+                  };
+                })
+                .with("tcpSocket", () => {
+                  probe.type = {
+                    oneofKind: "tcpSocket",
+                    tcpSocket:
+                      CoreP.Service_Spec_Config_Upstream_Container_Probe_TCPSocket.create(),
+                  };
+                })
+                .with("grpc", () => {
+                  probe.type = {
+                    oneofKind: "grpc",
+                    grpc: CoreP.Service_Spec_Config_Upstream_Container_Probe_GRPC.create(),
+                  };
+                })
+                .otherwise(() => {});
+              onChange();
+            }}
+          >
+            <Tabs.List>
+              <Tabs.Tab value="httpGet">HTTP Get</Tabs.Tab>
+              <Tabs.Tab value="tcpSocket">TCP Socket</Tabs.Tab>
+              <Tabs.Tab value="grpc">gRPC</Tabs.Tab>
+            </Tabs.List>
+
+            <Tabs.Panel value="httpGet">
+              {match(probe.type)
+                .when(
+                  (x) => x.oneofKind === "httpGet",
+                  (httpGet) => (
+                    <Group grow>
+                      <TextInput
+                        label="Path"
+                        placeholder="/healthz"
+                        value={httpGet.httpGet.path}
+                        onChange={(v) => {
+                          httpGet.httpGet.path = v.target.value;
+                          onChange();
+                        }}
+                      />
+                      <NumberInput
+                        label="Port"
+                        min={0}
+                        max={65535}
+                        value={httpGet.httpGet.port}
+                        onChange={(v) => {
+                          httpGet.httpGet.port = v as number;
+                          onChange();
+                        }}
+                      />
+                    </Group>
+                  ),
+                )
+                .otherwise(() => (
+                  <></>
+                ))}
+            </Tabs.Panel>
+
+            <Tabs.Panel value="tcpSocket">
+              {match(probe.type)
+                .when(
+                  (x) => x.oneofKind === "tcpSocket",
+                  (tcpSocket) => (
+                    <NumberInput
+                      label="Port"
+                      min={0}
+                      max={65535}
+                      value={tcpSocket.tcpSocket.port}
+                      onChange={(v) => {
+                        tcpSocket.tcpSocket.port = v as number;
+                        onChange();
+                      }}
+                    />
+                  ),
+                )
+                .otherwise(() => (
+                  <></>
+                ))}
+            </Tabs.Panel>
+
+            <Tabs.Panel value="grpc">
+              {match(probe.type)
+                .when(
+                  (x) => x.oneofKind === "grpc",
+                  (grpc) => (
+                    <NumberInput
+                      label="Port"
+                      min={0}
+                      max={65535}
+                      value={grpc.grpc.port}
+                      onChange={(v) => {
+                        grpc.grpc.port = v as number;
+                        onChange();
+                      }}
+                    />
+                  ),
+                )
+                .otherwise(() => (
+                  <></>
+                ))}
+            </Tabs.Panel>
+          </Tabs>
+
+          <Group grow>
+            <NumberInput
+              label="Initial delay (s)"
+              min={0}
+              value={probe.initialDelaySeconds}
+              onChange={(v) => {
+                probe.initialDelaySeconds = v as number;
+                onChange();
+              }}
+            />
+            <NumberInput
+              label="Timeout (s)"
+              min={0}
+              value={probe.timeoutSeconds}
+              onChange={(v) => {
+                probe.timeoutSeconds = v as number;
+                onChange();
+              }}
+            />
+            <NumberInput
+              label="Period (s)"
+              min={0}
+              value={probe.periodSeconds}
+              onChange={(v) => {
+                probe.periodSeconds = v as number;
+                onChange();
+              }}
+            />
+            <NumberInput
+              label="Success threshold"
+              min={0}
+              value={probe.successThreshold}
+              onChange={(v) => {
+                probe.successThreshold = v as number;
+                onChange();
+              }}
+            />
+            <NumberInput
+              label="Failure threshold"
+              min={0}
+              value={probe.failureThreshold}
+              onChange={(v) => {
+                probe.failureThreshold = v as number;
+                onChange();
+              }}
+            />
+          </Group>
+        </div>
+      )}
+    </EditItem>
+  );
+};
+
 const Config = (props: {
   item: CoreP.Service_Spec_Config;
 
@@ -183,6 +383,7 @@ const Config = (props: {
                     <></>
                   ))}
               </Tabs.Panel>
+
               <Tabs.Panel value="container">
                 {match(req.upstream.type)
                   .when(
@@ -256,51 +457,178 @@ const Config = (props: {
                               updateReq();
                             }}
                           >
-                            {container.container.env.map((x, idx) => (
-                              <Group key={idx} grow>
-                                <div className="flex">
-                                  <CloseButton
-                                    size={"sm"}
-                                    variant="subtle"
-                                    onClick={() => {
-                                      container.container.env.splice(idx, 1);
-                                      updateReq();
-                                    }}
-                                  ></CloseButton>
-                                  <TextInput
-                                    required
-                                    label="Key"
-                                    description="Set the environment variable key"
-                                    placeholder="MY_KEY"
-                                    className="flex-1"
-                                    value={container.container.env[idx].name}
-                                    onChange={(v) => {
-                                      container.container.env[idx].name =
-                                        v.target.value;
-                                      updateReq();
-                                    }}
-                                  />
-                                </div>
-                                <TextInput
-                                  required
-                                  label="Value"
-                                  description="Set the environment variable value"
-                                  placeholder="my-value"
-                                  value={
-                                    container.container.env[idx].type
-                                      .oneofKind === `value`
-                                      ? container.container.env[idx].type.value
-                                      : undefined
-                                  }
-                                  onChange={(v) => {
-                                    container.container.env[idx].type = {
-                                      oneofKind: "value",
-                                      value: v.target.value,
-                                    };
+                            {container.container.env.map((envVar, idx) => (
+                              <div className="w-full flex mb-3" key={idx}>
+                                <CloseButton
+                                  size={"sm"}
+                                  variant="subtle"
+                                  className="mr-2"
+                                  onClick={() => {
+                                    container.container.env.splice(idx, 1);
                                     updateReq();
                                   }}
-                                />
-                              </Group>
+                                ></CloseButton>
+                                <div className="flex-1">
+                                  <Group grow align="flex-start">
+                                    <TextInput
+                                      required
+                                      label="Key"
+                                      description="Set the environment variable key"
+                                      placeholder="MY_KEY"
+                                      value={container.container.env[idx].name}
+                                      onChange={(v) => {
+                                        container.container.env[idx].name =
+                                          v.target.value;
+                                        updateReq();
+                                      }}
+                                    />
+                                    <Select
+                                      label="Value type"
+                                      description="Set the value source"
+                                      data={[
+                                        { label: "Value", value: "value" },
+                                        {
+                                          label: "From Secret",
+                                          value: "fromSecret",
+                                        },
+                                        {
+                                          label: "Kubernetes Secret",
+                                          value: "kubernetesSecretRef",
+                                        },
+                                      ]}
+                                      value={
+                                        container.container.env[idx].type
+                                          .oneofKind
+                                      }
+                                      onChange={(val) => {
+                                        container.container.env[idx].type =
+                                          match(val)
+                                            .with("fromSecret", () => ({
+                                              oneofKind: "fromSecret" as const,
+                                              fromSecret: "",
+                                            }))
+                                            .with(
+                                              "kubernetesSecretRef",
+                                              () => ({
+                                                oneofKind:
+                                                  "kubernetesSecretRef" as const,
+                                                kubernetesSecretRef:
+                                                  CoreP.Service_Spec_Config_Upstream_Container_Env_KubernetesSecretRef.create(),
+                                              }),
+                                            )
+                                            .otherwise(() => ({
+                                              oneofKind: "value" as const,
+                                              value: "",
+                                            }));
+                                        updateReq();
+                                      }}
+                                    />
+                                  </Group>
+
+                                  {container.container.env[idx].type
+                                    .oneofKind === `value` && (
+                                    <TextInput
+                                      required
+                                      label="Value"
+                                      description="Set the environment variable value"
+                                      placeholder="my-value"
+                                      value={
+                                        container.container.env[idx].type
+                                          .oneofKind === `value`
+                                          ? container.container.env[idx].type
+                                              .value
+                                          : ""
+                                      }
+                                      onChange={(v) => {
+                                        container.container.env[idx].type = {
+                                          oneofKind: "value",
+                                          value: v.target.value,
+                                        };
+                                        updateReq();
+                                      }}
+                                    />
+                                  )}
+
+                                  {container.container.env[idx].type
+                                    .oneofKind === `fromSecret` && (
+                                    <SelectSecret
+                                      api="core"
+                                      label="Value Secret"
+                                      description="Select the Secret whose value is used"
+                                      defaultValue={
+                                        container.container.env[idx].type
+                                          .oneofKind === `fromSecret`
+                                          ? container.container.env[idx].type
+                                              .fromSecret
+                                          : undefined
+                                      }
+                                      onChange={(v) => {
+                                        container.container.env[idx].type = {
+                                          oneofKind: "fromSecret",
+                                          fromSecret: v ?? "",
+                                        };
+                                        updateReq();
+                                      }}
+                                    />
+                                  )}
+
+                                  {container.container.env[idx].type
+                                    .oneofKind === `kubernetesSecretRef` && (
+                                    <Group grow>
+                                      <TextInput
+                                        required
+                                        label="Kubernetes Secret name"
+                                        description="Set the Kubernetes secret name"
+                                        placeholder="my-secret"
+                                        value={
+                                          container.container.env[idx].type
+                                            .oneofKind === `kubernetesSecretRef`
+                                            ? container.container.env[idx].type
+                                                .kubernetesSecretRef.name
+                                            : ""
+                                        }
+                                        onChange={(v) => {
+                                          const t =
+                                            container.container.env[idx].type;
+                                          if (
+                                            t.oneofKind ===
+                                            `kubernetesSecretRef`
+                                          ) {
+                                            t.kubernetesSecretRef.name =
+                                              v.target.value;
+                                            updateReq();
+                                          }
+                                        }}
+                                      />
+                                      <TextInput
+                                        required
+                                        label="Kubernetes Secret key"
+                                        description="Set the Kubernetes secret data key"
+                                        placeholder="my-key"
+                                        value={
+                                          container.container.env[idx].type
+                                            .oneofKind === `kubernetesSecretRef`
+                                            ? container.container.env[idx].type
+                                                .kubernetesSecretRef.key
+                                            : ""
+                                        }
+                                        onChange={(v) => {
+                                          const t =
+                                            container.container.env[idx].type;
+                                          if (
+                                            t.oneofKind ===
+                                            `kubernetesSecretRef`
+                                          ) {
+                                            t.kubernetesSecretRef.key =
+                                              v.target.value;
+                                            updateReq();
+                                          }
+                                        }}
+                                      />
+                                    </Group>
+                                  )}
+                                </div>
+                              </div>
                             ))}
                           </ItemMessage>
 
@@ -419,12 +747,8 @@ const Config = (props: {
                               container.container.resourceLimit =
                                 CoreP.Service_Spec_Config_Upstream_Container_ResourceLimit.create(
                                   {
-                                    cpu: {
-                                      millicores: 0,
-                                    },
-                                    memory: {
-                                      megabytes: 0,
-                                    },
+                                    cpu: { millicores: 0 },
+                                    memory: { megabytes: 0 },
                                   },
                                 );
 
@@ -466,6 +790,81 @@ const Config = (props: {
                                     }}
                                   />
                                 </Group>
+
+                                <ItemMessage
+                                  title="Extended Resource Limits"
+                                  obj={
+                                    Object.keys(
+                                      container.container.resourceLimit!.ext,
+                                    ).length > 0
+                                      ? container.container.resourceLimit!.ext
+                                      : undefined
+                                  }
+                                  isList
+                                  onSet={() => {
+                                    container.container.resourceLimit!.ext[""] =
+                                      "";
+                                    updateReq();
+                                  }}
+                                  onAddListItem={() => {
+                                    container.container.resourceLimit!.ext[""] =
+                                      "";
+                                    updateReq();
+                                  }}
+                                >
+                                  {Object.entries(
+                                    container.container.resourceLimit!.ext,
+                                  ).map(([k, v], idx) => (
+                                    <div
+                                      className="w-full flex mb-3"
+                                      key={`${idx}`}
+                                    >
+                                      <CloseButton
+                                        size={"sm"}
+                                        variant="subtle"
+                                        className="mr-2"
+                                        onClick={() => {
+                                          delete container.container
+                                            .resourceLimit!.ext[k];
+                                          updateReq();
+                                        }}
+                                      ></CloseButton>
+                                      <Group className="flex w-full" grow>
+                                        <TextInput
+                                          required
+                                          label="Resource"
+                                          description="Set the resource name"
+                                          placeholder="nvidia.com/gpu"
+                                          value={k}
+                                          onChange={(e) => {
+                                            const val =
+                                              container.container.resourceLimit!
+                                                .ext[k];
+                                            delete container.container
+                                              .resourceLimit!.ext[k];
+                                            container.container.resourceLimit!.ext[
+                                              e.target.value
+                                            ] = val;
+                                            updateReq();
+                                          }}
+                                        />
+                                        <TextInput
+                                          required
+                                          label="Value"
+                                          description="Set the resource value"
+                                          placeholder="1"
+                                          value={v}
+                                          onChange={(e) => {
+                                            container.container.resourceLimit!.ext[
+                                              k
+                                            ] = e.target.value;
+                                            updateReq();
+                                          }}
+                                        />
+                                      </Group>
+                                    </div>
+                                  ))}
+                                </ItemMessage>
                               </div>
                             )}
                           </EditItem>
@@ -563,35 +962,442 @@ const Config = (props: {
                             }}
                           >
                             {container.container.securityContext && (
-                              <Group grow>
-                                <Switch
-                                  label="Read-only root filesystem"
-                                  checked={
-                                    container.container.securityContext
-                                      .readOnlyRootFilesystem
-                                  }
-                                  onChange={(v) => {
-                                    container.container.securityContext!.readOnlyRootFilesystem =
-                                      v.target.checked;
+                              <div>
+                                <Group grow>
+                                  <Switch
+                                    label="Read-only root filesystem"
+                                    checked={
+                                      container.container.securityContext
+                                        .readOnlyRootFilesystem
+                                    }
+                                    onChange={(v) => {
+                                      container.container.securityContext!.readOnlyRootFilesystem =
+                                        v.target.checked;
+                                      updateReq();
+                                    }}
+                                  />
+                                  <NumberInput
+                                    label="Run as user (UID)"
+                                    min={0}
+                                    value={
+                                      container.container.securityContext
+                                        .runAsUser
+                                    }
+                                    onChange={(v) => {
+                                      container.container.securityContext!.runAsUser =
+                                        v as number;
+                                      updateReq();
+                                    }}
+                                  />
+                                </Group>
+
+                                <EditItem
+                                  title="Capabilities"
+                                  description="Add or drop Linux capabilities"
+                                  onUnset={() => {
+                                    container.container.securityContext!.capabilities =
+                                      undefined;
                                     updateReq();
                                   }}
-                                />
-                                <NumberInput
-                                  label="Run as user (UID)"
-                                  min={0}
-                                  value={
+                                  obj={
                                     container.container.securityContext
-                                      .runAsUser
+                                      .capabilities
                                   }
-                                  onChange={(v) => {
-                                    container.container.securityContext!.runAsUser =
-                                      v as number;
+                                  onSet={() => {
+                                    container.container.securityContext!.capabilities =
+                                      CoreP.Service_Spec_Config_Upstream_Container_SecurityContext_Capabilities.create();
                                     updateReq();
                                   }}
-                                />
-                              </Group>
+                                >
+                                  {container.container.securityContext
+                                    .capabilities && (
+                                    <div>
+                                      <ItemMessage
+                                        title="Add"
+                                        obj={
+                                          container.container.securityContext
+                                            .capabilities.add
+                                        }
+                                        isList
+                                        onSet={() => {
+                                          container.container.securityContext!.capabilities!.add =
+                                            [""];
+                                          updateReq();
+                                        }}
+                                        onAddListItem={() => {
+                                          container.container.securityContext!.capabilities!.add.push(
+                                            "",
+                                          );
+                                          updateReq();
+                                        }}
+                                      >
+                                        {container.container.securityContext.capabilities.add.map(
+                                          (x, idx) => (
+                                            <div
+                                              className="w-full flex mb-3"
+                                              key={idx}
+                                            >
+                                              <CloseButton
+                                                size="sm"
+                                                variant="subtle"
+                                                onClick={() => {
+                                                  container.container.securityContext!.capabilities!.add.splice(
+                                                    idx,
+                                                    1,
+                                                  );
+                                                  updateReq();
+                                                }}
+                                              />
+                                              <TextInput
+                                                required
+                                                label="Capability"
+                                                placeholder="NET_ADMIN"
+                                                className="flex-1"
+                                                value={
+                                                  container.container
+                                                    .securityContext!
+                                                    .capabilities!.add[idx]
+                                                }
+                                                onChange={(v) => {
+                                                  container.container.securityContext!.capabilities!.add[
+                                                    idx
+                                                  ] = v.target.value;
+                                                  updateReq();
+                                                }}
+                                              />
+                                            </div>
+                                          ),
+                                        )}
+                                      </ItemMessage>
+
+                                      <ItemMessage
+                                        title="Drop"
+                                        obj={
+                                          container.container.securityContext
+                                            .capabilities.drop
+                                        }
+                                        isList
+                                        onSet={() => {
+                                          container.container.securityContext!.capabilities!.drop =
+                                            [""];
+                                          updateReq();
+                                        }}
+                                        onAddListItem={() => {
+                                          container.container.securityContext!.capabilities!.drop.push(
+                                            "",
+                                          );
+                                          updateReq();
+                                        }}
+                                      >
+                                        {container.container.securityContext.capabilities.drop.map(
+                                          (x, idx) => (
+                                            <div
+                                              className="w-full flex mb-3"
+                                              key={idx}
+                                            >
+                                              <CloseButton
+                                                size="sm"
+                                                variant="subtle"
+                                                onClick={() => {
+                                                  container.container.securityContext!.capabilities!.drop.splice(
+                                                    idx,
+                                                    1,
+                                                  );
+                                                  updateReq();
+                                                }}
+                                              />
+                                              <TextInput
+                                                required
+                                                label="Capability"
+                                                placeholder="ALL"
+                                                className="flex-1"
+                                                value={
+                                                  container.container
+                                                    .securityContext!
+                                                    .capabilities!.drop[idx]
+                                                }
+                                                onChange={(v) => {
+                                                  container.container.securityContext!.capabilities!.drop[
+                                                    idx
+                                                  ] = v.target.value;
+                                                  updateReq();
+                                                }}
+                                              />
+                                            </div>
+                                          ),
+                                        )}
+                                      </ItemMessage>
+                                    </div>
+                                  )}
+                                </EditItem>
+                              </div>
                             )}
                           </EditItem>
+
+                          <ItemMessage
+                            title="Volumes"
+                            obj={container.container.volumes}
+                            isList
+                            onSet={() => {
+                              container.container.volumes = [
+                                CoreP.Service_Spec_Config_Upstream_Container_Volume.create(
+                                  {
+                                    type: {
+                                      oneofKind: "emptyDir",
+                                      emptyDir:
+                                        CoreP.Service_Spec_Config_Upstream_Container_Volume_EmptyDir.create(),
+                                    },
+                                  },
+                                ),
+                              ];
+                              updateReq();
+                            }}
+                            onAddListItem={() => {
+                              container.container.volumes.push(
+                                CoreP.Service_Spec_Config_Upstream_Container_Volume.create(
+                                  {
+                                    type: {
+                                      oneofKind: "emptyDir",
+                                      emptyDir:
+                                        CoreP.Service_Spec_Config_Upstream_Container_Volume_EmptyDir.create(),
+                                    },
+                                  },
+                                ),
+                              );
+                              updateReq();
+                            }}
+                          >
+                            {container.container.volumes.map((volume, idx) => (
+                              <EditItem
+                                key={idx}
+                                obj={volume}
+                                onUnset={() => {
+                                  container.container.volumes.splice(idx, 1);
+                                  updateReq();
+                                }}
+                              >
+                                <Group grow>
+                                  <TextInput
+                                    required
+                                    label="Name"
+                                    placeholder="my-volume"
+                                    description="Set a unique volume name"
+                                    value={volume.name}
+                                    onChange={(v) => {
+                                      volume.name = v.target.value;
+                                      updateReq();
+                                    }}
+                                  />
+                                </Group>
+                                <Tabs
+                                  className="mb-4"
+                                  defaultValue={volume.type.oneofKind}
+                                  onChange={(v) => {
+                                    match(v)
+                                      .with("emptyDir", () => {
+                                        volume.type = {
+                                          oneofKind: "emptyDir",
+                                          emptyDir:
+                                            CoreP.Service_Spec_Config_Upstream_Container_Volume_EmptyDir.create(),
+                                        };
+                                      })
+                                      .with("persistentVolumeClaim", () => {
+                                        volume.type = {
+                                          oneofKind: "persistentVolumeClaim",
+                                          persistentVolumeClaim:
+                                            CoreP.Service_Spec_Config_Upstream_Container_Volume_PersistentVolumeClaim.create(),
+                                        };
+                                      })
+                                      .otherwise(() => {});
+                                    updateReq();
+                                  }}
+                                >
+                                  <Tabs.List>
+                                    <Tabs.Tab value="emptyDir">
+                                      Empty Dir
+                                    </Tabs.Tab>
+                                    <Tabs.Tab value="persistentVolumeClaim">
+                                      Persistent Volume Claim
+                                    </Tabs.Tab>
+                                  </Tabs.List>
+
+                                  <Tabs.Panel value="emptyDir">
+                                    {match(volume.type)
+                                      .when(
+                                        (x) => x.oneofKind === "emptyDir",
+                                        (emptyDir) => (
+                                          <NumberInput
+                                            label="Size limit (megabytes)"
+                                            placeholder="100"
+                                            min={0}
+                                            value={
+                                              emptyDir.emptyDir
+                                                .sizeLimitMegabytes
+                                            }
+                                            onChange={(v) => {
+                                              emptyDir.emptyDir.sizeLimitMegabytes =
+                                                v as number;
+                                              updateReq();
+                                            }}
+                                          />
+                                        ),
+                                      )
+                                      .otherwise(() => (
+                                        <></>
+                                      ))}
+                                  </Tabs.Panel>
+
+                                  <Tabs.Panel value="persistentVolumeClaim">
+                                    {match(volume.type)
+                                      .when(
+                                        (x) =>
+                                          x.oneofKind ===
+                                          "persistentVolumeClaim",
+                                        (pvc) => (
+                                          <TextInput
+                                            required
+                                            label="Claim name"
+                                            placeholder="my-pvc"
+                                            value={
+                                              pvc.persistentVolumeClaim.name
+                                            }
+                                            onChange={(v) => {
+                                              pvc.persistentVolumeClaim.name =
+                                                v.target.value;
+                                              updateReq();
+                                            }}
+                                          />
+                                        ),
+                                      )
+                                      .otherwise(() => (
+                                        <></>
+                                      ))}
+                                  </Tabs.Panel>
+                                </Tabs>
+                              </EditItem>
+                            ))}
+                          </ItemMessage>
+
+                          <ItemMessage
+                            title="Volume Mounts"
+                            obj={container.container.volumeMounts}
+                            isList
+                            onSet={() => {
+                              container.container.volumeMounts = [
+                                CoreP.Service_Spec_Config_Upstream_Container_VolumeMount.create(),
+                              ];
+                              updateReq();
+                            }}
+                            onAddListItem={() => {
+                              container.container.volumeMounts.push(
+                                CoreP.Service_Spec_Config_Upstream_Container_VolumeMount.create(),
+                              );
+                              updateReq();
+                            }}
+                          >
+                            {container.container.volumeMounts.map(
+                              (volumeMount, idx) => (
+                                <EditItem
+                                  key={idx}
+                                  obj={volumeMount}
+                                  onUnset={() => {
+                                    container.container.volumeMounts.splice(
+                                      idx,
+                                      1,
+                                    );
+                                    updateReq();
+                                  }}
+                                >
+                                  <Group grow>
+                                    <TextInput
+                                      required
+                                      label="Name"
+                                      placeholder="my-volume"
+                                      description="Set the volume name to mount"
+                                      value={volumeMount.name}
+                                      onChange={(v) => {
+                                        volumeMount.name = v.target.value;
+                                        updateReq();
+                                      }}
+                                    />
+                                    <TextInput
+                                      required
+                                      label="Mount path"
+                                      placeholder="/data"
+                                      value={volumeMount.mountPath}
+                                      onChange={(v) => {
+                                        volumeMount.mountPath = v.target.value;
+                                        updateReq();
+                                      }}
+                                    />
+                                    <TextInput
+                                      label="Sub path"
+                                      placeholder="subdir"
+                                      value={volumeMount.subPath}
+                                      onChange={(v) => {
+                                        volumeMount.subPath = v.target.value;
+                                        updateReq();
+                                      }}
+                                    />
+                                    <Switch
+                                      label="Read-only"
+                                      checked={volumeMount.readOnly}
+                                      onChange={(v) => {
+                                        volumeMount.readOnly = v.target.checked;
+                                        updateReq();
+                                      }}
+                                    />
+                                  </Group>
+                                </EditItem>
+                              ),
+                            )}
+                          </ItemMessage>
+
+                          <ContainerProbe
+                            title="Liveness Probe"
+                            probe={container.container.livenessProbe}
+                            onUnset={() => {
+                              container.container.livenessProbe = undefined;
+                              updateReq();
+                            }}
+                            onSet={() => {
+                              container.container.livenessProbe =
+                                CoreP.Service_Spec_Config_Upstream_Container_Probe.create(
+                                  {
+                                    type: {
+                                      oneofKind: "httpGet",
+                                      httpGet:
+                                        CoreP.Service_Spec_Config_Upstream_Container_Probe_HTTPGet.create(),
+                                    },
+                                  },
+                                );
+                              updateReq();
+                            }}
+                            onChange={() => updateReq()}
+                          />
+
+                          <ContainerProbe
+                            title="Readiness Probe"
+                            probe={container.container.readinessProbe}
+                            onUnset={() => {
+                              container.container.readinessProbe = undefined;
+                              updateReq();
+                            }}
+                            onSet={() => {
+                              container.container.readinessProbe =
+                                CoreP.Service_Spec_Config_Upstream_Container_Probe.create(
+                                  {
+                                    type: {
+                                      oneofKind: "httpGet",
+                                      httpGet:
+                                        CoreP.Service_Spec_Config_Upstream_Container_Probe_HTTPGet.create(),
+                                    },
+                                  },
+                                );
+                              updateReq();
+                            }}
+                            onChange={() => updateReq()}
+                          />
                         </div>
                       );
                     },
@@ -1398,6 +2204,176 @@ const Config = (props: {
                       </Group>
                     </div>
                   )}
+                </EditItem>
+
+                <EditItem
+                  title="Response"
+                  description="Set a direct response returned by the Service"
+                  onUnset={() => {
+                    http.http.response = undefined;
+                    updateReq();
+                  }}
+                  obj={http.http.response}
+                  onSet={() => {
+                    http.http.response =
+                      CoreP.Service_Spec_Config_HTTP_Response.create({
+                        type: {
+                          oneofKind: "direct",
+                          direct:
+                            CoreP.Service_Spec_Config_HTTP_Response_Direct.create(
+                              {
+                                type: { oneofKind: "inline", inline: "" },
+                              },
+                            ),
+                        },
+                      });
+                    updateReq();
+                  }}
+                >
+                  {http.http.response &&
+                    match(http.http.response.type)
+                      .when(
+                        (x) => x.oneofKind === "direct",
+                        (direct) => (
+                          <div>
+                            <Group grow>
+                              <NumberInput
+                                label="Status Code"
+                                description="HTTP status code to return"
+                                min={100}
+                                max={599}
+                                value={direct.direct.statusCode}
+                                onChange={(v) => {
+                                  direct.direct.statusCode = v as number;
+                                  updateReq();
+                                }}
+                              />
+                              <TextInput
+                                label="Content Type"
+                                description="Set the response Content-Type header"
+                                placeholder="application/json"
+                                value={direct.direct.contentType}
+                                onChange={(v) => {
+                                  direct.direct.contentType = v.target.value;
+                                  updateReq();
+                                }}
+                              />
+                            </Group>
+
+                            <Tabs
+                              className="mt-4"
+                              defaultValue={
+                                direct.direct.type.oneofKind ?? "inline"
+                              }
+                              onChange={(v) => {
+                                match(v)
+                                  .with("inline", () => {
+                                    direct.direct.type = {
+                                      oneofKind: "inline",
+                                      inline: "",
+                                    };
+                                  })
+                                  .with("inlineBytes", () => {
+                                    direct.direct.type = {
+                                      oneofKind: "inlineBytes",
+                                      inlineBytes: new Uint8Array(),
+                                    };
+                                  })
+                                  .otherwise(() => {});
+                                updateReq();
+                              }}
+                            >
+                              <Tabs.List>
+                                <Tabs.Tab value="inline">Inline Text</Tabs.Tab>
+                                <Tabs.Tab value="inlineBytes">
+                                  Inline Bytes
+                                </Tabs.Tab>
+                              </Tabs.List>
+
+                              <Tabs.Panel value="inline">
+                                {match(direct.direct.type)
+                                  .when(
+                                    (x) => x.oneofKind === "inline",
+                                    (inline) => (
+                                      <div>
+                                        <div className="flex justify-end mb-2">
+                                          <button
+                                            type="button"
+                                            className="text-xs underline"
+                                            onClick={() => {
+                                              readFileAsText((text) => {
+                                                inline.inline = text;
+                                                updateReq();
+                                              });
+                                            }}
+                                          >
+                                            Open from file
+                                          </button>
+                                        </div>
+                                        <TextAreaCustom
+                                          label="Inline response body"
+                                          placeholder='{ "message": "ok" }'
+                                          value={inline.inline}
+                                          onChange={(v) => {
+                                            inline.inline = v ?? "";
+                                            updateReq();
+                                          }}
+                                        />
+                                      </div>
+                                    ),
+                                  )
+                                  .otherwise(() => (
+                                    <></>
+                                  ))}
+                              </Tabs.Panel>
+
+                              <Tabs.Panel value="inlineBytes">
+                                {match(direct.direct.type)
+                                  .when(
+                                    (x) => x.oneofKind === "inlineBytes",
+                                    (inlineBytes) => (
+                                      <div>
+                                        <div className="flex justify-end mb-2">
+                                          <button
+                                            type="button"
+                                            className="text-xs underline"
+                                            onClick={() => {
+                                              readFileAsText((text) => {
+                                                inlineBytes.inlineBytes =
+                                                  new TextEncoder().encode(
+                                                    text,
+                                                  );
+                                                updateReq();
+                                              });
+                                            }}
+                                          >
+                                            Open from file
+                                          </button>
+                                        </div>
+                                        <TextAreaCustom
+                                          label="Inline response bytes"
+                                          placeholder="Raw bytes content"
+                                          value={new TextDecoder().decode(
+                                            inlineBytes.inlineBytes,
+                                          )}
+                                          onChange={(v) => {
+                                            inlineBytes.inlineBytes =
+                                              new TextEncoder().encode(v ?? "");
+                                            updateReq();
+                                          }}
+                                        />
+                                      </div>
+                                    ),
+                                  )
+                                  .otherwise(() => (
+                                    <></>
+                                  ))}
+                              </Tabs.Panel>
+                            </Tabs>
+                          </div>
+                        ),
+                      )
+                      .otherwise(() => <></>)}
                 </EditItem>
 
                 <EditItem
