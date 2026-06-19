@@ -2142,6 +2142,7 @@ const Config = (props: {
                           ),
                         )}
                       </ItemMessage>
+
                       <EditItem
                         title="Host header"
                         description="Set the Host header related configs"
@@ -2152,12 +2153,111 @@ const Config = (props: {
                         obj={http.http.header.host}
                         onSet={() => {
                           http.http.header!.host =
-                            CoreP.Service_Spec_Config_HTTP_Header_Host.create();
-
+                            CoreP.Service_Spec_Config_HTTP_Header_Host.create({
+                              type: { oneofKind: "preserve", preserve: true },
+                            });
                           updateReq();
                         }}
                       >
-                        {http.http.header.host && <div></div>}
+                        {http.http.header.host && (
+                          <Tabs
+                            defaultValue={http.http.header.host.type.oneofKind}
+                            onChange={(v) => {
+                              match(v)
+                                .with("preserve", () => {
+                                  http.http.header!.host!.type = {
+                                    oneofKind: "preserve",
+                                    preserve: true,
+                                  };
+                                })
+                                .with("value", () => {
+                                  http.http.header!.host!.type = {
+                                    oneofKind: "value",
+                                    value: "",
+                                  };
+                                })
+                                .with("eval", () => {
+                                  http.http.header!.host!.type = {
+                                    oneofKind: "eval",
+                                    eval: "",
+                                  };
+                                })
+                                .otherwise(() => {});
+                              updateReq();
+                            }}
+                          >
+                            <Tabs.List className="mb-2">
+                              <Tabs.Tab value="preserve">Preserve</Tabs.Tab>
+                              <Tabs.Tab value="value">Value</Tabs.Tab>
+                              <Tabs.Tab value="eval">Eval (CEL)</Tabs.Tab>
+                            </Tabs.List>
+
+                            <Tabs.Panel value="preserve">
+                              {match(http.http.header.host.type)
+                                .when(
+                                  (x) => x.oneofKind === "preserve",
+                                  (preserve) => (
+                                    <Switch
+                                      label="Preserve host header"
+                                      description="Preserve the downstream Host header to the upstream"
+                                      checked={preserve.preserve}
+                                      onChange={(v) => {
+                                        preserve.preserve = v.target.checked;
+                                        updateReq();
+                                      }}
+                                    />
+                                  ),
+                                )
+                                .otherwise(() => (
+                                  <></>
+                                ))}
+                            </Tabs.Panel>
+
+                            <Tabs.Panel value="value">
+                              {match(http.http.header.host.type)
+                                .when(
+                                  (x) => x.oneofKind === "value",
+                                  (value) => (
+                                    <TextInput
+                                      label="Host value"
+                                      description="Set a fixed Host header value sent to the upstream"
+                                      placeholder="example.com"
+                                      value={value.value}
+                                      onChange={(v) => {
+                                        value.value = v.target.value;
+                                        updateReq();
+                                      }}
+                                    />
+                                  ),
+                                )
+                                .otherwise(() => (
+                                  <></>
+                                ))}
+                            </Tabs.Panel>
+
+                            <Tabs.Panel value="eval">
+                              {match(http.http.header.host.type)
+                                .when(
+                                  (x) => x.oneofKind === "eval",
+                                  (evalType) => (
+                                    <TextInput
+                                      label="Host eval (CEL)"
+                                      description="Set a CEL expression that evaluates to the Host header value"
+                                      placeholder='ctx.request.host + ".internal"'
+                                      value={evalType.eval}
+                                      onChange={(v) => {
+                                        evalType.eval = v.target.value;
+                                        updateReq();
+                                      }}
+                                    />
+                                  ),
+                                )
+                                .otherwise(() => (
+                                  <></>
+                                ))}
+                            </Tabs.Panel>
+                          </Tabs>
+                        )}
                       </EditItem>
                     </div>
                   )}
