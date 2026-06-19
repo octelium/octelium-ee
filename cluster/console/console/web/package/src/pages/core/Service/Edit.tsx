@@ -3467,6 +3467,31 @@ const Config = (props: {
                                 path: CoreP.Service_Spec_Config_HTTP_Plugin_Path.create(),
                               };
                             })
+                            .with("jsonSchema", () => {
+                              plugin.type = {
+                                oneofKind: "jsonSchema",
+                                jsonSchema:
+                                  CoreP.Service_Spec_Config_HTTP_Plugin_JSONSchema.create(
+                                    {
+                                      type: { oneofKind: "inline", inline: "" },
+                                    },
+                                  ),
+                              };
+                            })
+                            .with("extProc", () => {
+                              plugin.type = {
+                                oneofKind: "extProc",
+                                extProc:
+                                  CoreP.Service_Spec_Config_HTTP_Plugin_ExtProc.create(
+                                    {
+                                      type: {
+                                        oneofKind: "address",
+                                        address: "",
+                                      },
+                                    },
+                                  ),
+                              };
+                            })
                             .otherwise(() => {});
                           updateReq();
                         }}
@@ -3477,6 +3502,8 @@ const Config = (props: {
                           <Tabs.Tab value="cache">Cache</Tabs.Tab>
                           <Tabs.Tab value="lua">Lua</Tabs.Tab>
                           <Tabs.Tab value="path">Path</Tabs.Tab>
+                          <Tabs.Tab value="jsonSchema">JSON Schema</Tabs.Tab>
+                          <Tabs.Tab value="extProc">Ext Proc</Tabs.Tab>
                         </Tabs.List>
 
                         <Tabs.Panel value="direct">
@@ -3624,6 +3651,493 @@ const Config = (props: {
                                     updateReq();
                                   }}
                                 />
+                              ),
+                            )
+                            .otherwise(() => (
+                              <></>
+                            ))}
+                        </Tabs.Panel>
+
+                        <Tabs.Panel value="jsonSchema">
+                          {match(plugin.type)
+                            .when(
+                              (x) => x.oneofKind === "jsonSchema",
+                              (jsonSchema) => (
+                                <div>
+                                  <Group grow>
+                                    <NumberInput
+                                      label="Status Code"
+                                      description="HTTP status code returned on validation failure"
+                                      min={100}
+                                      max={599}
+                                      value={jsonSchema.jsonSchema.statusCode}
+                                      onChange={(v) => {
+                                        jsonSchema.jsonSchema.statusCode =
+                                          v as number;
+                                        updateReq();
+                                      }}
+                                    />
+                                  </Group>
+                                  <div className="flex justify-end mb-2">
+                                    <button
+                                      type="button"
+                                      className="text-xs underline"
+                                      onClick={() => {
+                                        readFileAsText((text) => {
+                                          jsonSchema.jsonSchema.type = {
+                                            oneofKind: "inline",
+                                            inline: text,
+                                          };
+                                          updateReq();
+                                        });
+                                      }}
+                                    >
+                                      Open from file
+                                    </button>
+                                  </div>
+                                  <TextAreaCustom
+                                    label="JSON Schema"
+                                    placeholder='{ "type": "object" }'
+                                    value={
+                                      jsonSchema.jsonSchema.type.oneofKind ===
+                                      "inline"
+                                        ? jsonSchema.jsonSchema.type.inline
+                                        : ""
+                                    }
+                                    onChange={(v) => {
+                                      jsonSchema.jsonSchema.type = {
+                                        oneofKind: "inline",
+                                        inline: v ?? "",
+                                      };
+                                      updateReq();
+                                    }}
+                                  />
+
+                                  <EditItem
+                                    title="Body"
+                                    description="Set the response body on validation failure"
+                                    onUnset={() => {
+                                      jsonSchema.jsonSchema.body = undefined;
+                                      updateReq();
+                                    }}
+                                    obj={jsonSchema.jsonSchema.body}
+                                    onSet={() => {
+                                      jsonSchema.jsonSchema.body =
+                                        CoreP.Service_Spec_Config_HTTP_Plugin_JSONSchema_Body.create(
+                                          {
+                                            type: {
+                                              oneofKind: "inline",
+                                              inline: "",
+                                            },
+                                          },
+                                        );
+                                      updateReq();
+                                    }}
+                                  >
+                                    {jsonSchema.jsonSchema.body &&
+                                      match(jsonSchema.jsonSchema.body.type)
+                                        .when(
+                                          (x) => x.oneofKind === "inline",
+                                          (inline) => (
+                                            <div>
+                                              <div className="flex justify-end mb-2">
+                                                <button
+                                                  type="button"
+                                                  className="text-xs underline"
+                                                  onClick={() => {
+                                                    readFileAsText((text) => {
+                                                      inline.inline = text;
+                                                      updateReq();
+                                                    });
+                                                  }}
+                                                >
+                                                  Open from file
+                                                </button>
+                                              </div>
+                                              <TextAreaCustom
+                                                label="Inline body"
+                                                placeholder="Invalid request body"
+                                                value={inline.inline}
+                                                onChange={(v) => {
+                                                  inline.inline = v ?? "";
+                                                  updateReq();
+                                                }}
+                                              />
+                                            </div>
+                                          ),
+                                        )
+                                        .otherwise(() => <></>)}
+                                  </EditItem>
+
+                                  <ItemMessage
+                                    title="Headers"
+                                    obj={jsonSchema.jsonSchema.headers}
+                                    isList
+                                    onSet={() => {
+                                      jsonSchema.jsonSchema.headers = [
+                                        CoreP.Service_Spec_Config_HTTP_Plugin_JSONSchema_KeyValue.create(),
+                                      ];
+                                      updateReq();
+                                    }}
+                                    onAddListItem={() => {
+                                      jsonSchema.jsonSchema.headers.push(
+                                        CoreP.Service_Spec_Config_HTTP_Plugin_JSONSchema_KeyValue.create(),
+                                      );
+                                      updateReq();
+                                    }}
+                                  >
+                                    {jsonSchema.jsonSchema.headers.map(
+                                      (h, hIdx) => (
+                                        <div
+                                          className="w-full flex mb-3"
+                                          key={hIdx}
+                                        >
+                                          <CloseButton
+                                            size="sm"
+                                            variant="subtle"
+                                            className="mr-2"
+                                            onClick={() => {
+                                              jsonSchema.jsonSchema.headers.splice(
+                                                hIdx,
+                                                1,
+                                              );
+                                              updateReq();
+                                            }}
+                                          />
+                                          <Group className="flex w-full" grow>
+                                            <TextInput
+                                              required
+                                              label="Key"
+                                              placeholder="Content-Type"
+                                              value={
+                                                jsonSchema.jsonSchema.headers[
+                                                  hIdx
+                                                ].key
+                                              }
+                                              onChange={(v) => {
+                                                jsonSchema.jsonSchema.headers[
+                                                  hIdx
+                                                ].key = v.target.value;
+                                                updateReq();
+                                              }}
+                                            />
+                                            <TextInput
+                                              required
+                                              label="Value"
+                                              placeholder="application/json"
+                                              value={
+                                                jsonSchema.jsonSchema.headers[
+                                                  hIdx
+                                                ].value
+                                              }
+                                              onChange={(v) => {
+                                                jsonSchema.jsonSchema.headers[
+                                                  hIdx
+                                                ].value = v.target.value;
+                                                updateReq();
+                                              }}
+                                            />
+                                          </Group>
+                                        </div>
+                                      ),
+                                    )}
+                                  </ItemMessage>
+                                </div>
+                              ),
+                            )
+                            .otherwise(() => (
+                              <></>
+                            ))}
+                        </Tabs.Panel>
+
+                        <Tabs.Panel value="extProc">
+                          {match(plugin.type)
+                            .when(
+                              (x) => x.oneofKind === "extProc",
+                              (extProc) => (
+                                <div>
+                                  <Tabs
+                                    className="mb-4"
+                                    defaultValue={
+                                      extProc.extProc.type.oneofKind ??
+                                      "address"
+                                    }
+                                    onChange={(v) => {
+                                      match(v)
+                                        .with("address", () => {
+                                          extProc.extProc.type = {
+                                            oneofKind: "address",
+                                            address: "",
+                                          };
+                                        })
+                                        .with("container", () => {
+                                          extProc.extProc.type = {
+                                            oneofKind: "container",
+                                            container:
+                                              CoreP.Service_Spec_Config_HTTP_Plugin_ExtProc_Container.create(),
+                                          };
+                                        })
+                                        .otherwise(() => {});
+                                      updateReq();
+                                    }}
+                                  >
+                                    <Tabs.List>
+                                      <Tabs.Tab value="address">
+                                        Address
+                                      </Tabs.Tab>
+                                      <Tabs.Tab value="container">
+                                        Container
+                                      </Tabs.Tab>
+                                    </Tabs.List>
+
+                                    <Tabs.Panel value="address">
+                                      {match(extProc.extProc.type)
+                                        .when(
+                                          (x) => x.oneofKind === "address",
+                                          (address) => (
+                                            <TextInput
+                                              required
+                                              label="Address"
+                                              placeholder="ext-proc.default.svc:9000"
+                                              value={address.address}
+                                              onChange={(v) => {
+                                                address.address =
+                                                  v.target.value;
+                                                updateReq();
+                                              }}
+                                            />
+                                          ),
+                                        )
+                                        .otherwise(() => (
+                                          <></>
+                                        ))}
+                                    </Tabs.Panel>
+
+                                    <Tabs.Panel value="container">
+                                      {match(extProc.extProc.type)
+                                        .when(
+                                          (x) => x.oneofKind === "container",
+                                          (container) => (
+                                            <Group grow>
+                                              <TextInput
+                                                required
+                                                label="Image"
+                                                placeholder="ghcr.io/org/ext-proc:latest"
+                                                value={
+                                                  container.container.image
+                                                }
+                                                onChange={(v) => {
+                                                  container.container.image =
+                                                    v.target.value;
+                                                  updateReq();
+                                                }}
+                                              />
+                                              <NumberInput
+                                                label="Port"
+                                                min={0}
+                                                max={65535}
+                                                value={container.container.port}
+                                                onChange={(v) => {
+                                                  container.container.port =
+                                                    v as number;
+                                                  updateReq();
+                                                }}
+                                              />
+                                            </Group>
+                                          ),
+                                        )
+                                        .otherwise(() => (
+                                          <></>
+                                        ))}
+                                    </Tabs.Panel>
+                                  </Tabs>
+
+                                  <DurationPicker
+                                    value={extProc.extProc.messageTimeout}
+                                    title="Message timeout"
+                                    onChange={(v) => {
+                                      extProc.extProc.messageTimeout = v;
+                                      updateReq();
+                                    }}
+                                  />
+
+                                  <EditItem
+                                    title="Processing Mode"
+                                    description="Set the ext-proc processing mode"
+                                    onUnset={() => {
+                                      extProc.extProc.processingMode =
+                                        undefined;
+                                      updateReq();
+                                    }}
+                                    obj={extProc.extProc.processingMode}
+                                    onSet={() => {
+                                      extProc.extProc.processingMode =
+                                        CoreP.Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode.create();
+                                      updateReq();
+                                    }}
+                                  >
+                                    {extProc.extProc.processingMode && (
+                                      <Group grow>
+                                        <Select
+                                          label="Request header mode"
+                                          data={[
+                                            {
+                                              label: "Send",
+                                              value:
+                                                CoreP
+                                                  .Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_HeaderSendMode[
+                                                  CoreP
+                                                    .Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_HeaderSendMode
+                                                    .SEND
+                                                ],
+                                            },
+                                            {
+                                              label: "Skip",
+                                              value:
+                                                CoreP
+                                                  .Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_HeaderSendMode[
+                                                  CoreP
+                                                    .Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_HeaderSendMode
+                                                    .SKIP
+                                                ],
+                                            },
+                                          ]}
+                                          value={
+                                            CoreP
+                                              .Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_HeaderSendMode[
+                                              extProc.extProc.processingMode
+                                                .requestHeaderMode
+                                            ]
+                                          }
+                                          onChange={(v) => {
+                                            extProc.extProc.processingMode!.requestHeaderMode =
+                                              CoreP.Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_HeaderSendMode[
+                                                v as "SEND"
+                                              ];
+                                            updateReq();
+                                          }}
+                                        />
+                                        <Select
+                                          label="Response header mode"
+                                          data={[
+                                            {
+                                              label: "Send",
+                                              value:
+                                                CoreP
+                                                  .Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_HeaderSendMode[
+                                                  CoreP
+                                                    .Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_HeaderSendMode
+                                                    .SEND
+                                                ],
+                                            },
+                                            {
+                                              label: "Skip",
+                                              value:
+                                                CoreP
+                                                  .Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_HeaderSendMode[
+                                                  CoreP
+                                                    .Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_HeaderSendMode
+                                                    .SKIP
+                                                ],
+                                            },
+                                          ]}
+                                          value={
+                                            CoreP
+                                              .Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_HeaderSendMode[
+                                              extProc.extProc.processingMode
+                                                .responseHeaderMode
+                                            ]
+                                          }
+                                          onChange={(v) => {
+                                            extProc.extProc.processingMode!.responseHeaderMode =
+                                              CoreP.Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_HeaderSendMode[
+                                                v as "SEND"
+                                              ];
+                                            updateReq();
+                                          }}
+                                        />
+                                        <Select
+                                          label="Request body mode"
+                                          data={[
+                                            {
+                                              label: "None",
+                                              value:
+                                                CoreP
+                                                  .Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_BodySendMode[
+                                                  CoreP
+                                                    .Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_BodySendMode
+                                                    .NONE
+                                                ],
+                                            },
+                                            {
+                                              label: "Buffered",
+                                              value:
+                                                CoreP
+                                                  .Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_BodySendMode[
+                                                  CoreP
+                                                    .Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_BodySendMode
+                                                    .BUFFERED
+                                                ],
+                                            },
+                                          ]}
+                                          value={
+                                            CoreP
+                                              .Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_BodySendMode[
+                                              extProc.extProc.processingMode
+                                                .requestBodyMode
+                                            ]
+                                          }
+                                          onChange={(v) => {
+                                            extProc.extProc.processingMode!.requestBodyMode =
+                                              CoreP.Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_BodySendMode[
+                                                v as "NONE"
+                                              ];
+                                            updateReq();
+                                          }}
+                                        />
+                                        <Select
+                                          label="Response body mode"
+                                          data={[
+                                            {
+                                              label: "None",
+                                              value:
+                                                CoreP
+                                                  .Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_BodySendMode[
+                                                  CoreP
+                                                    .Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_BodySendMode
+                                                    .NONE
+                                                ],
+                                            },
+                                            {
+                                              label: "Buffered",
+                                              value:
+                                                CoreP
+                                                  .Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_BodySendMode[
+                                                  CoreP
+                                                    .Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_BodySendMode
+                                                    .BUFFERED
+                                                ],
+                                            },
+                                          ]}
+                                          value={
+                                            CoreP
+                                              .Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_BodySendMode[
+                                              extProc.extProc.processingMode
+                                                .responseBodyMode
+                                            ]
+                                          }
+                                          onChange={(v) => {
+                                            extProc.extProc.processingMode!.responseBodyMode =
+                                              CoreP.Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_BodySendMode[
+                                                v as "NONE"
+                                              ];
+                                            updateReq();
+                                          }}
+                                        />
+                                      </Group>
+                                    )}
+                                  </EditItem>
+                                </div>
                               ),
                             )
                             .otherwise(() => (
