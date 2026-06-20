@@ -35,6 +35,12 @@ const (
 	ResourceService_ListCatalog_FullMethodName   = "/octelium.api.rsc.access.v1.ResourceService/ListCatalog"
 	ResourceService_DeleteCatalog_FullMethodName = "/octelium.api.rsc.access.v1.ResourceService/DeleteCatalog"
 	ResourceService_WatchCatalog_FullMethodName  = "/octelium.api.rsc.access.v1.ResourceService/WatchCatalog"
+	ResourceService_CreatePolicy_FullMethodName  = "/octelium.api.rsc.access.v1.ResourceService/CreatePolicy"
+	ResourceService_UpdatePolicy_FullMethodName  = "/octelium.api.rsc.access.v1.ResourceService/UpdatePolicy"
+	ResourceService_GetPolicy_FullMethodName     = "/octelium.api.rsc.access.v1.ResourceService/GetPolicy"
+	ResourceService_ListPolicy_FullMethodName    = "/octelium.api.rsc.access.v1.ResourceService/ListPolicy"
+	ResourceService_DeletePolicy_FullMethodName  = "/octelium.api.rsc.access.v1.ResourceService/DeletePolicy"
+	ResourceService_WatchPolicy_FullMethodName   = "/octelium.api.rsc.access.v1.ResourceService/WatchPolicy"
 	ResourceService_CreateRequest_FullMethodName = "/octelium.api.rsc.access.v1.ResourceService/CreateRequest"
 	ResourceService_UpdateRequest_FullMethodName = "/octelium.api.rsc.access.v1.ResourceService/UpdateRequest"
 	ResourceService_GetRequest_FullMethodName    = "/octelium.api.rsc.access.v1.ResourceService/GetRequest"
@@ -59,6 +65,12 @@ type ResourceServiceClient interface {
 	ListCatalog(ctx context.Context, in *rmetav1.ListOptions, opts ...grpc.CallOption) (*accessv1.CatalogList, error)
 	DeleteCatalog(ctx context.Context, in *rmetav1.DeleteOptions, opts ...grpc.CallOption) (*rmetav1.OperationResult, error)
 	WatchCatalog(ctx context.Context, in *rmetav1.WatchOptions, opts ...grpc.CallOption) (grpc.ServerStreamingClient[rmetav1.WatchEvent], error)
+	CreatePolicy(ctx context.Context, in *accessv1.Policy, opts ...grpc.CallOption) (*accessv1.Policy, error)
+	UpdatePolicy(ctx context.Context, in *accessv1.Policy, opts ...grpc.CallOption) (*accessv1.Policy, error)
+	GetPolicy(ctx context.Context, in *rmetav1.GetOptions, opts ...grpc.CallOption) (*accessv1.Policy, error)
+	ListPolicy(ctx context.Context, in *rmetav1.ListOptions, opts ...grpc.CallOption) (*accessv1.PolicyList, error)
+	DeletePolicy(ctx context.Context, in *rmetav1.DeleteOptions, opts ...grpc.CallOption) (*rmetav1.OperationResult, error)
+	WatchPolicy(ctx context.Context, in *rmetav1.WatchOptions, opts ...grpc.CallOption) (grpc.ServerStreamingClient[rmetav1.WatchEvent], error)
 	CreateRequest(ctx context.Context, in *accessv1.Request, opts ...grpc.CallOption) (*accessv1.Request, error)
 	UpdateRequest(ctx context.Context, in *accessv1.Request, opts ...grpc.CallOption) (*accessv1.Request, error)
 	GetRequest(ctx context.Context, in *rmetav1.GetOptions, opts ...grpc.CallOption) (*accessv1.Request, error)
@@ -150,6 +162,75 @@ func (c *resourceServiceClient) WatchCatalog(ctx context.Context, in *rmetav1.Wa
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type ResourceService_WatchCatalogClient = grpc.ServerStreamingClient[rmetav1.WatchEvent]
 
+func (c *resourceServiceClient) CreatePolicy(ctx context.Context, in *accessv1.Policy, opts ...grpc.CallOption) (*accessv1.Policy, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(accessv1.Policy)
+	err := c.cc.Invoke(ctx, ResourceService_CreatePolicy_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resourceServiceClient) UpdatePolicy(ctx context.Context, in *accessv1.Policy, opts ...grpc.CallOption) (*accessv1.Policy, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(accessv1.Policy)
+	err := c.cc.Invoke(ctx, ResourceService_UpdatePolicy_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resourceServiceClient) GetPolicy(ctx context.Context, in *rmetav1.GetOptions, opts ...grpc.CallOption) (*accessv1.Policy, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(accessv1.Policy)
+	err := c.cc.Invoke(ctx, ResourceService_GetPolicy_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resourceServiceClient) ListPolicy(ctx context.Context, in *rmetav1.ListOptions, opts ...grpc.CallOption) (*accessv1.PolicyList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(accessv1.PolicyList)
+	err := c.cc.Invoke(ctx, ResourceService_ListPolicy_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resourceServiceClient) DeletePolicy(ctx context.Context, in *rmetav1.DeleteOptions, opts ...grpc.CallOption) (*rmetav1.OperationResult, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(rmetav1.OperationResult)
+	err := c.cc.Invoke(ctx, ResourceService_DeletePolicy_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resourceServiceClient) WatchPolicy(ctx context.Context, in *rmetav1.WatchOptions, opts ...grpc.CallOption) (grpc.ServerStreamingClient[rmetav1.WatchEvent], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &ResourceService_ServiceDesc.Streams[1], ResourceService_WatchPolicy_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[rmetav1.WatchOptions, rmetav1.WatchEvent]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type ResourceService_WatchPolicyClient = grpc.ServerStreamingClient[rmetav1.WatchEvent]
+
 func (c *resourceServiceClient) CreateRequest(ctx context.Context, in *accessv1.Request, opts ...grpc.CallOption) (*accessv1.Request, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(accessv1.Request)
@@ -202,7 +283,7 @@ func (c *resourceServiceClient) DeleteRequest(ctx context.Context, in *rmetav1.D
 
 func (c *resourceServiceClient) WatchRequest(ctx context.Context, in *rmetav1.WatchOptions, opts ...grpc.CallOption) (grpc.ServerStreamingClient[rmetav1.WatchEvent], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &ResourceService_ServiceDesc.Streams[1], ResourceService_WatchRequest_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &ResourceService_ServiceDesc.Streams[2], ResourceService_WatchRequest_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -271,7 +352,7 @@ func (c *resourceServiceClient) DeleteReview(ctx context.Context, in *rmetav1.De
 
 func (c *resourceServiceClient) WatchReview(ctx context.Context, in *rmetav1.WatchOptions, opts ...grpc.CallOption) (grpc.ServerStreamingClient[rmetav1.WatchEvent], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &ResourceService_ServiceDesc.Streams[2], ResourceService_WatchReview_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &ResourceService_ServiceDesc.Streams[3], ResourceService_WatchReview_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -298,6 +379,12 @@ type ResourceServiceServer interface {
 	ListCatalog(context.Context, *rmetav1.ListOptions) (*accessv1.CatalogList, error)
 	DeleteCatalog(context.Context, *rmetav1.DeleteOptions) (*rmetav1.OperationResult, error)
 	WatchCatalog(*rmetav1.WatchOptions, grpc.ServerStreamingServer[rmetav1.WatchEvent]) error
+	CreatePolicy(context.Context, *accessv1.Policy) (*accessv1.Policy, error)
+	UpdatePolicy(context.Context, *accessv1.Policy) (*accessv1.Policy, error)
+	GetPolicy(context.Context, *rmetav1.GetOptions) (*accessv1.Policy, error)
+	ListPolicy(context.Context, *rmetav1.ListOptions) (*accessv1.PolicyList, error)
+	DeletePolicy(context.Context, *rmetav1.DeleteOptions) (*rmetav1.OperationResult, error)
+	WatchPolicy(*rmetav1.WatchOptions, grpc.ServerStreamingServer[rmetav1.WatchEvent]) error
 	CreateRequest(context.Context, *accessv1.Request) (*accessv1.Request, error)
 	UpdateRequest(context.Context, *accessv1.Request) (*accessv1.Request, error)
 	GetRequest(context.Context, *rmetav1.GetOptions) (*accessv1.Request, error)
@@ -337,6 +424,24 @@ func (UnimplementedResourceServiceServer) DeleteCatalog(context.Context, *rmetav
 }
 func (UnimplementedResourceServiceServer) WatchCatalog(*rmetav1.WatchOptions, grpc.ServerStreamingServer[rmetav1.WatchEvent]) error {
 	return status.Errorf(codes.Unimplemented, "method WatchCatalog not implemented")
+}
+func (UnimplementedResourceServiceServer) CreatePolicy(context.Context, *accessv1.Policy) (*accessv1.Policy, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreatePolicy not implemented")
+}
+func (UnimplementedResourceServiceServer) UpdatePolicy(context.Context, *accessv1.Policy) (*accessv1.Policy, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdatePolicy not implemented")
+}
+func (UnimplementedResourceServiceServer) GetPolicy(context.Context, *rmetav1.GetOptions) (*accessv1.Policy, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPolicy not implemented")
+}
+func (UnimplementedResourceServiceServer) ListPolicy(context.Context, *rmetav1.ListOptions) (*accessv1.PolicyList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListPolicy not implemented")
+}
+func (UnimplementedResourceServiceServer) DeletePolicy(context.Context, *rmetav1.DeleteOptions) (*rmetav1.OperationResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeletePolicy not implemented")
+}
+func (UnimplementedResourceServiceServer) WatchPolicy(*rmetav1.WatchOptions, grpc.ServerStreamingServer[rmetav1.WatchEvent]) error {
+	return status.Errorf(codes.Unimplemented, "method WatchPolicy not implemented")
 }
 func (UnimplementedResourceServiceServer) CreateRequest(context.Context, *accessv1.Request) (*accessv1.Request, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateRequest not implemented")
@@ -495,6 +600,107 @@ func _ResourceService_WatchCatalog_Handler(srv interface{}, stream grpc.ServerSt
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type ResourceService_WatchCatalogServer = grpc.ServerStreamingServer[rmetav1.WatchEvent]
+
+func _ResourceService_CreatePolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(accessv1.Policy)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceServiceServer).CreatePolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ResourceService_CreatePolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceServiceServer).CreatePolicy(ctx, req.(*accessv1.Policy))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ResourceService_UpdatePolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(accessv1.Policy)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceServiceServer).UpdatePolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ResourceService_UpdatePolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceServiceServer).UpdatePolicy(ctx, req.(*accessv1.Policy))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ResourceService_GetPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(rmetav1.GetOptions)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceServiceServer).GetPolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ResourceService_GetPolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceServiceServer).GetPolicy(ctx, req.(*rmetav1.GetOptions))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ResourceService_ListPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(rmetav1.ListOptions)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceServiceServer).ListPolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ResourceService_ListPolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceServiceServer).ListPolicy(ctx, req.(*rmetav1.ListOptions))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ResourceService_DeletePolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(rmetav1.DeleteOptions)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResourceServiceServer).DeletePolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ResourceService_DeletePolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResourceServiceServer).DeletePolicy(ctx, req.(*rmetav1.DeleteOptions))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ResourceService_WatchPolicy_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(rmetav1.WatchOptions)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(ResourceServiceServer).WatchPolicy(m, &grpc.GenericServerStream[rmetav1.WatchOptions, rmetav1.WatchEvent]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type ResourceService_WatchPolicyServer = grpc.ServerStreamingServer[rmetav1.WatchEvent]
 
 func _ResourceService_CreateRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(accessv1.Request)
@@ -726,6 +932,26 @@ var ResourceService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ResourceService_DeleteCatalog_Handler,
 		},
 		{
+			MethodName: "CreatePolicy",
+			Handler:    _ResourceService_CreatePolicy_Handler,
+		},
+		{
+			MethodName: "UpdatePolicy",
+			Handler:    _ResourceService_UpdatePolicy_Handler,
+		},
+		{
+			MethodName: "GetPolicy",
+			Handler:    _ResourceService_GetPolicy_Handler,
+		},
+		{
+			MethodName: "ListPolicy",
+			Handler:    _ResourceService_ListPolicy_Handler,
+		},
+		{
+			MethodName: "DeletePolicy",
+			Handler:    _ResourceService_DeletePolicy_Handler,
+		},
+		{
 			MethodName: "CreateRequest",
 			Handler:    _ResourceService_CreateRequest_Handler,
 		},
@@ -770,6 +996,11 @@ var ResourceService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "WatchCatalog",
 			Handler:       _ResourceService_WatchCatalog_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "WatchPolicy",
+			Handler:       _ResourceService_WatchPolicy_Handler,
 			ServerStreams: true,
 		},
 		{
