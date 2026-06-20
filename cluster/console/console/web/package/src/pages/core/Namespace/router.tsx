@@ -1,7 +1,7 @@
 import { ResourceComponentInfo } from "@/pages/utils/types";
 
-import { ExtraComponent, LabelComponent } from "./List";
 import Edit from "./Edit";
+import { ExtraComponent, LabelComponent } from "./List";
 import Main from "./Main";
 
 const resourceComponentInfo: ResourceComponentInfo = {
@@ -19,6 +19,8 @@ const resourceComponentInfo: ResourceComponentInfo = {
     // @ts-ignore
     Main: Main,
   },
+
+  cloneable: true,
 };
 
 export default resourceComponentInfo;

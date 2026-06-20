@@ -33,6 +33,7 @@ import { getServicePublicURL } from "@/utils/octelium";
 import { ChevronDown, ExternalLink, Pencil, Plus } from "lucide-react";
 import DeleteResource from "../DeleteResource";
 import TimeAgo from "../TimeAgo";
+import CloneResource from "./CloneResource";
 import { parseQueryString } from "./queryParse";
 import ResourceInfo, { ResourceVisibilityButtons } from "./ResourceInfo";
 import ResourceListItemDetails from "./ResourceListItemDetails";
@@ -146,6 +147,8 @@ const Item = (props: { item: Resource; info: ResourceComponentInfo }) => {
                 Edit
               </Button>
             )}
+
+            {props.info.cloneable && <CloneResource item={item} />}
 
             {item.apiVersion === "core/v1" &&
               item.kind === "Service" &&

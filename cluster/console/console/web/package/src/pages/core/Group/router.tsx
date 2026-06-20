@@ -19,6 +19,8 @@ const resourceComponentInfo: ResourceComponentInfo = {
     // @ts-ignore
     Main: Main,
   },
+
+  cloneable: true,
 };
 
 export default resourceComponentInfo;
