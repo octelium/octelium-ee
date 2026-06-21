@@ -36,6 +36,7 @@ func (s *ServerReviewer) CreateReview(ctx context.Context, req *accessv1.Review)
 
 	if err := apivalidation.ValidateCommon(req, &apivalidation.ValidateCommonOpts{
 		ValidateMetadataOpts: apivalidation.ValidateMetadataOpts{},
+		RequireStatus:        true,
 	}); err != nil {
 		return nil, err
 	}
@@ -141,6 +142,7 @@ func (s *ServerReviewer) UpdateReview(ctx context.Context, req *accessv1.Review)
 	if err := apivalidation.ValidateCommon(req, &apivalidation.ValidateCommonOpts{
 		ValidateMetadataOpts: apivalidation.ValidateMetadataOpts{
 			RequireName: true,
+			ParentsMust: 1,
 		},
 	}); err != nil {
 		return nil, err
@@ -202,7 +204,9 @@ func (s *ServerReviewer) CancelReview(ctx context.Context, req *accessv1.CancelR
 		return nil, grpcutils.InvalidArg("ReviewRef must be set")
 	}
 
-	if err := apivalidation.CheckObjectRef(req.ReviewRef, &apivalidation.CheckGetOptionsOpts{}); err != nil {
+	if err := apivalidation.CheckObjectRef(req.ReviewRef, &apivalidation.CheckGetOptionsOpts{
+		ParentsMust: 1,
+	}); err != nil {
 		return nil, err
 	}
 
