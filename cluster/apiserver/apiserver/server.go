@@ -13,11 +13,13 @@ import (
 	"net"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/octelium/octelium-ee/cluster/apiserver/apiserver/access"
 	"github.com/octelium/octelium-ee/cluster/apiserver/apiserver/cluster"
 	eesrv "github.com/octelium/octelium-ee/cluster/apiserver/apiserver/enterprise"
 	"github.com/octelium/octelium-ee/cluster/apiserver/apiserver/policyportal"
 	"github.com/octelium/octelium-ee/cluster/apiserver/apiserver/visibility"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
+	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcorev1"
@@ -31,7 +33,7 @@ import (
 )
 
 func Run(ctx context.Context) error {
-	zap.S().Debug("Starting Enterprise octelium API server...")
+	zap.L().Debug("Starting Enterprise octelium API server...")
 
 	if err := commoninit.Run(ctx, nil); err != nil {
 		return err
@@ -49,7 +51,7 @@ func Run(ctx context.Context) error {
 
 	srv := eesrv.NewServer(octeliumC)
 
-	zap.S().Debug("starting gRPC server....")
+	zap.L().Debug("starting gRPC server....")
 
 	mdlwr, err := userctx.New(ctx, octeliumC)
 	if err != nil {
@@ -104,6 +106,10 @@ func Run(ctx context.Context) error {
 		return err
 	}
 
+	accessMainSrv := access.NewServerMain(octeliumC)
+	accessReviewSrv := access.NewServerReviewer(octeliumC)
+	accessUserSrv := access.NewServerUser(octeliumC)
+
 	visibilityv1.RegisterAccessLogServiceServer(s, srvVisibilityAccessLog)
 	visibilityv1.RegisterAuthenticationLogServiceServer(s, srvVisibilityAuthenticationLog)
 	visibilityv1.RegisterAuditLogServiceServer(s, srvVisibilityAuditLog)
@@ -112,6 +118,10 @@ func Run(ctx context.Context) error {
 	vcorev1.RegisterResourceServiceServer(s, srvVisibilityResource)
 	enterprisev1.RegisterPolicyPortalServiceServer(s, policyPortalSrv)
 	enterprisev1.RegisterClusterServiceServer(s, clusterSrv)
+
+	accessv1.RegisterMainServiceServer(s, accessMainSrv)
+	accessv1.RegisterReviewerServiceServer(s, accessReviewSrv)
+	accessv1.RegisterUserServiceServer(s, accessUserSrv)
 
 	go func() {
 		zap.L().Debug("running gRPC server.")
