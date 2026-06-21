@@ -1107,15 +1107,13 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	ReviewerService_GetRequest_FullMethodName         = "/octelium.api.main.access.v1.ReviewerService/GetRequest"
-	ReviewerService_ListRequest_FullMethodName        = "/octelium.api.main.access.v1.ReviewerService/ListRequest"
-	ReviewerService_ListCatalog_FullMethodName        = "/octelium.api.main.access.v1.ReviewerService/ListCatalog"
-	ReviewerService_ListCatalogService_FullMethodName = "/octelium.api.main.access.v1.ReviewerService/ListCatalogService"
-	ReviewerService_ListReview_FullMethodName         = "/octelium.api.main.access.v1.ReviewerService/ListReview"
-	ReviewerService_GetReview_FullMethodName          = "/octelium.api.main.access.v1.ReviewerService/GetReview"
-	ReviewerService_CreateReview_FullMethodName       = "/octelium.api.main.access.v1.ReviewerService/CreateReview"
-	ReviewerService_UpdateReview_FullMethodName       = "/octelium.api.main.access.v1.ReviewerService/UpdateReview"
-	ReviewerService_CancelReview_FullMethodName       = "/octelium.api.main.access.v1.ReviewerService/CancelReview"
+	ReviewerService_GetRequest_FullMethodName   = "/octelium.api.main.access.v1.ReviewerService/GetRequest"
+	ReviewerService_ListRequest_FullMethodName  = "/octelium.api.main.access.v1.ReviewerService/ListRequest"
+	ReviewerService_ListReview_FullMethodName   = "/octelium.api.main.access.v1.ReviewerService/ListReview"
+	ReviewerService_GetReview_FullMethodName    = "/octelium.api.main.access.v1.ReviewerService/GetReview"
+	ReviewerService_CreateReview_FullMethodName = "/octelium.api.main.access.v1.ReviewerService/CreateReview"
+	ReviewerService_UpdateReview_FullMethodName = "/octelium.api.main.access.v1.ReviewerService/UpdateReview"
+	ReviewerService_CancelReview_FullMethodName = "/octelium.api.main.access.v1.ReviewerService/CancelReview"
 )
 
 // ReviewerServiceClient is the client API for ReviewerService service.
@@ -1124,8 +1122,6 @@ const (
 type ReviewerServiceClient interface {
 	GetRequest(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*Request, error)
 	ListRequest(ctx context.Context, in *ListReviewerRequestOptions, opts ...grpc.CallOption) (*RequestList, error)
-	ListCatalog(ctx context.Context, in *ListReviewerCatalogOptions, opts ...grpc.CallOption) (*CatalogList, error)
-	ListCatalogService(ctx context.Context, in *ListReviewerCatalogServiceOptions, opts ...grpc.CallOption) (*userv1.ServiceList, error)
 	ListReview(ctx context.Context, in *ListReviewerReviewOptions, opts ...grpc.CallOption) (*ReviewList, error)
 	GetReview(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*Review, error)
 	CreateReview(ctx context.Context, in *Review, opts ...grpc.CallOption) (*Review, error)
@@ -1155,26 +1151,6 @@ func (c *reviewerServiceClient) ListRequest(ctx context.Context, in *ListReviewe
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RequestList)
 	err := c.cc.Invoke(ctx, ReviewerService_ListRequest_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *reviewerServiceClient) ListCatalog(ctx context.Context, in *ListReviewerCatalogOptions, opts ...grpc.CallOption) (*CatalogList, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CatalogList)
-	err := c.cc.Invoke(ctx, ReviewerService_ListCatalog_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *reviewerServiceClient) ListCatalogService(ctx context.Context, in *ListReviewerCatalogServiceOptions, opts ...grpc.CallOption) (*userv1.ServiceList, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(userv1.ServiceList)
-	err := c.cc.Invoke(ctx, ReviewerService_ListCatalogService_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1237,8 +1213,6 @@ func (c *reviewerServiceClient) CancelReview(ctx context.Context, in *CancelRevi
 type ReviewerServiceServer interface {
 	GetRequest(context.Context, *metav1.GetOptions) (*Request, error)
 	ListRequest(context.Context, *ListReviewerRequestOptions) (*RequestList, error)
-	ListCatalog(context.Context, *ListReviewerCatalogOptions) (*CatalogList, error)
-	ListCatalogService(context.Context, *ListReviewerCatalogServiceOptions) (*userv1.ServiceList, error)
 	ListReview(context.Context, *ListReviewerReviewOptions) (*ReviewList, error)
 	GetReview(context.Context, *metav1.GetOptions) (*Review, error)
 	CreateReview(context.Context, *Review) (*Review, error)
@@ -1259,12 +1233,6 @@ func (UnimplementedReviewerServiceServer) GetRequest(context.Context, *metav1.Ge
 }
 func (UnimplementedReviewerServiceServer) ListRequest(context.Context, *ListReviewerRequestOptions) (*RequestList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListRequest not implemented")
-}
-func (UnimplementedReviewerServiceServer) ListCatalog(context.Context, *ListReviewerCatalogOptions) (*CatalogList, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListCatalog not implemented")
-}
-func (UnimplementedReviewerServiceServer) ListCatalogService(context.Context, *ListReviewerCatalogServiceOptions) (*userv1.ServiceList, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListCatalogService not implemented")
 }
 func (UnimplementedReviewerServiceServer) ListReview(context.Context, *ListReviewerReviewOptions) (*ReviewList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListReview not implemented")
@@ -1334,42 +1302,6 @@ func _ReviewerService_ListRequest_Handler(srv interface{}, ctx context.Context, 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ReviewerServiceServer).ListRequest(ctx, req.(*ListReviewerRequestOptions))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ReviewerService_ListCatalog_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListReviewerCatalogOptions)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ReviewerServiceServer).ListCatalog(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ReviewerService_ListCatalog_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReviewerServiceServer).ListCatalog(ctx, req.(*ListReviewerCatalogOptions))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ReviewerService_ListCatalogService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListReviewerCatalogServiceOptions)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ReviewerServiceServer).ListCatalogService(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ReviewerService_ListCatalogService_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReviewerServiceServer).ListCatalogService(ctx, req.(*ListReviewerCatalogServiceOptions))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1478,14 +1410,6 @@ var ReviewerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListRequest",
 			Handler:    _ReviewerService_ListRequest_Handler,
-		},
-		{
-			MethodName: "ListCatalog",
-			Handler:    _ReviewerService_ListCatalog_Handler,
-		},
-		{
-			MethodName: "ListCatalogService",
-			Handler:    _ReviewerService_ListCatalogService_Handler,
 		},
 		{
 			MethodName: "ListReview",
