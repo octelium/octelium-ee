@@ -17,6 +17,7 @@ import (
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
+	"github.com/octelium/octelium/apis/rsc/raccessv1"
 	"github.com/octelium/octelium/apis/rsc/rcorev1"
 	"github.com/octelium/octelium/apis/rsc/renterprisev1"
 	ot "github.com/octelium/octelium/cluster/common/tests"
@@ -118,6 +119,10 @@ The initial SecretStore powered by the Kubernetes Cluster of the default Region
 				}{})
 				renterprisev1.RegisterResourceServiceServer(s, &struct {
 					renterprisev1.UnimplementedResourceServiceServer
+				}{})
+
+				raccessv1.RegisterResourceServiceServer(s, &struct {
+					raccessv1.UnimplementedResourceServiceServer
 				}{})
 
 				return nil

@@ -15,6 +15,7 @@ import (
 	"path"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
+	"github.com/octelium/octelium-ee/pkg/apiutils/uaccessv1"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
 	"github.com/octelium/octelium/apis/cluster/cbootstrapv1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
@@ -32,6 +33,8 @@ func NewResourceObject(api, version, kind string) (umetav1.ResourceObjectI, erro
 		return ucorev1.NewObject(kind)
 	case uenterprisev1.API:
 		return uenterprisev1.NewObject(kind)
+	case uaccessv1.API:
+		return uaccessv1.NewObject(kind)
 	default:
 		return nil, errors.Errorf("Invalid API: %s", api)
 	}
@@ -43,6 +46,8 @@ func NewResourceObjectList(api, version, kind string) (proto.Message, error) {
 		return ucorev1.NewObjectList(kind)
 	case uenterprisev1.API:
 		return uenterprisev1.NewObjectList(kind)
+	case uaccessv1.API:
+		return uaccessv1.NewObjectList(kind)
 	default:
 		return nil, errors.Errorf("Invalid API: %s", api)
 	}

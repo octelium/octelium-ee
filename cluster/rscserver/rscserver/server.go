@@ -15,6 +15,7 @@ import (
 	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
+	"github.com/octelium/octelium/apis/rsc/raccessv1"
 	"github.com/octelium/octelium/apis/rsc/rcorev1"
 	"github.com/octelium/octelium/apis/rsc/renterprisev1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
@@ -43,6 +44,10 @@ func NewServer(ctx context.Context) (*Server, error) {
 
 			renterprisev1.RegisterResourceServiceServer(s, &struct {
 				renterprisev1.UnimplementedResourceServiceServer
+			}{})
+
+			raccessv1.RegisterResourceServiceServer(s, &struct {
+				raccessv1.UnimplementedResourceServiceServer
 			}{})
 
 			return nil
