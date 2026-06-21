@@ -345,6 +345,8 @@ func checkUserRequestPending(req *accessv1.Request) error {
 	return grpcutils.InvalidArg("Only pending Requests can be updated or cancelled")
 }
 
+const maxRequestStates = 100
+
 func setUserRequestState(req *accessv1.Request, status accessv1.Request_Status_State_Status) {
 	now := pbutils.Now()
 
@@ -354,8 +356,16 @@ func setUserRequestState(req *accessv1.Request, status accessv1.Request_Status_S
 
 	if req.Status.State != nil &&
 		req.Status.State.Status != accessv1.Request_Status_State_STATUS_UNKNOWN {
-		req.Status.LastStates = append(req.Status.LastStates,
-			pbutils.Clone(req.Status.State).(*accessv1.Request_Status_State))
+		prevState := pbutils.Clone(req.Status.State).(*accessv1.Request_Status_State)
+
+		req.Status.LastStates = append(
+			[]*accessv1.Request_Status_State{prevState},
+			req.Status.LastStates...,
+		)
+
+		if len(req.Status.LastStates) > maxRequestStates {
+			req.Status.LastStates = req.Status.LastStates[:maxRequestStates]
+		}
 	}
 
 	req.Status.State = &accessv1.Request_Status_State{
