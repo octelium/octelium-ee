@@ -345,21 +345,13 @@ func (s *ServerMain) validatePolicyReview(ctx context.Context,
 			return grpcutils.InvalidArg("Rule %s Review Step %d has invalid OnTimeout", ruleName, idx)
 		}
 
-		switch step.OnApproval {
-		case accessv1.Policy_Spec_Rule_Action_Review_Step_ON_APPROVAL_UNSET,
-			accessv1.Policy_Spec_Rule_Action_Review_Step_ON_APPROVAL_APPROVE,
-			accessv1.Policy_Spec_Rule_Action_Review_Step_ON_APPROVAL_GOTO_NEXT_STEP:
+		switch step.ApprovalRequirement {
+		case accessv1.Policy_Spec_Rule_Action_Review_Step_ALL,
+			accessv1.Policy_Spec_Rule_Action_Review_Step_ANY,
+			accessv1.Policy_Spec_Rule_Action_Review_Step_COUNT:
 		default:
 			return grpcutils.InvalidArg("Rule %s Review Step %d has invalid OnApproval", ruleName, idx)
 		}
-	}
-
-	switch review.ApprovalMode {
-	case accessv1.Policy_Spec_Rule_Action_Review_APPROVAL_MODE_UNSET,
-		accessv1.Policy_Spec_Rule_Action_Review_APPROVAL_MODE_FIRST,
-		accessv1.Policy_Spec_Rule_Action_Review_APPROVAL_MODE_ALL_STEPS:
-	default:
-		return grpcutils.InvalidArg("Rule %s Review has invalid ApprovalMode", ruleName)
 	}
 
 	return nil

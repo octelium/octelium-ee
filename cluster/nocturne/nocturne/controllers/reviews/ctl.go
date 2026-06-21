@@ -10,6 +10,7 @@ package reviews
 
 import (
 	"context"
+	"sort"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium/apis/main/accessv1"
@@ -21,6 +22,8 @@ import (
 	"github.com/pkg/errors"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
+
+const maxRequestStateHistory = 100
 
 type Controller struct {
 	octeliumC octeliumc.ClientInterface
@@ -126,7 +129,7 @@ func (c *Controller) reconcile(ctx context.Context, rev *accessv1.Review, force 
 		c.setState(next, accessv1.Request_Status_State_REJECTED)
 
 	case accessv1.Review_Spec_DECISION_APPROVE:
-		if err := c.applyApproval(next, actionReview); err != nil {
+		if err := c.applyApproval(ctx, next, actionReview, rev); err != nil {
 			return err
 		}
 
@@ -143,41 +146,34 @@ func (c *Controller) reconcile(ctx context.Context, rev *accessv1.Review, force 
 }
 
 func (c *Controller) applyApproval(
+	ctx context.Context,
 	req *accessv1.Request,
 	actionReview *accessv1.Policy_Spec_Rule_Action_Review,
+	rev *accessv1.Review,
 ) error {
-	step := actionReview.Steps[req.Status.Review.CurrentStep]
-
-	switch step.OnApproval {
-	case accessv1.Policy_Spec_Rule_Action_Review_Step_ON_APPROVAL_APPROVE:
-		c.setState(req, accessv1.Request_Status_State_APPROVED)
-		return nil
-
-	case accessv1.Policy_Spec_Rule_Action_Review_Step_ON_APPROVAL_GOTO_NEXT_STEP:
-		c.gotoNextStepOrApprove(req, actionReview)
-		return nil
-
-	case accessv1.Policy_Spec_Rule_Action_Review_Step_ON_APPROVAL_UNSET:
-		switch actionReview.ApprovalMode {
-		case accessv1.Policy_Spec_Rule_Action_Review_APPROVAL_MODE_FIRST:
-			c.setState(req, accessv1.Request_Status_State_APPROVED)
-			return nil
-
-		case accessv1.Policy_Spec_Rule_Action_Review_APPROVAL_MODE_ALL_STEPS:
-			c.gotoNextStepOrApprove(req, actionReview)
-			return nil
-
-		case accessv1.Policy_Spec_Rule_Action_Review_APPROVAL_MODE_UNSET:
-			c.gotoNextStepOrApprove(req, actionReview)
-			return nil
-
-		default:
-			return errors.Errorf("request %q has invalid approval mode", req.Metadata.Name)
-		}
-
-	default:
-		return errors.Errorf("request %q has invalid onApproval mode", req.Metadata.Name)
+	appliedReviews, err := c.getAppliedReviews(ctx, req, rev)
+	if err != nil {
+		return err
 	}
+
+	currentStepReviews, err := c.getCurrentStepReviews(ctx, req, actionReview, appliedReviews)
+	if err != nil {
+		return err
+	}
+
+	step := actionReview.Steps[int(req.Status.Review.CurrentStep)]
+
+	approved, err := c.isStepApproved(ctx, step, currentStepReviews)
+	if err != nil {
+		return err
+	}
+
+	if !approved {
+		return nil
+	}
+
+	c.gotoNextStepOrApprove(req, actionReview)
+	return nil
 }
 
 func (c *Controller) gotoNextStepOrApprove(
@@ -190,6 +186,314 @@ func (c *Controller) gotoNextStepOrApprove(
 	}
 
 	req.Status.Review.CurrentStep++
+}
+
+func (c *Controller) getCurrentStepReviews(
+	ctx context.Context,
+	req *accessv1.Request,
+	actionReview *accessv1.Policy_Spec_Rule_Action_Review,
+	appliedReviews []*accessv1.Review,
+) ([]*accessv1.Review, error) {
+	startIdx := 0
+
+	for stepIdx := int32(0); stepIdx < req.Status.Review.CurrentStep; stepIdx++ {
+		if int(stepIdx) >= len(actionReview.Steps) {
+			return nil, errors.Errorf("request %q has invalid review step history", req.Metadata.Name)
+		}
+
+		consumed, err := c.getConsumedReviewCountForApprovedStep(ctx,
+			actionReview.Steps[int(stepIdx)], appliedReviews[startIdx:])
+		if err != nil {
+			return nil, err
+		}
+
+		startIdx += consumed
+
+		if startIdx > len(appliedReviews) {
+			return nil, errors.Errorf("request %q has invalid review history", req.Metadata.Name)
+		}
+	}
+
+	return appliedReviews[startIdx:], nil
+}
+
+func (c *Controller) getConsumedReviewCountForApprovedStep(
+	ctx context.Context,
+	step *accessv1.Policy_Spec_Rule_Action_Review_Step,
+	reviews []*accessv1.Review,
+) (int, error) {
+	for i := range reviews {
+		approved, err := c.isStepApproved(ctx, step, reviews[:i+1])
+		if err != nil {
+			return 0, err
+		}
+
+		if approved {
+			return i + 1, nil
+		}
+	}
+
+	return 0, errors.Errorf("could not determine consumed reviews for approved step")
+}
+
+func (c *Controller) isStepApproved(
+	ctx context.Context,
+	step *accessv1.Policy_Spec_Rule_Action_Review_Step,
+	reviews []*accessv1.Review,
+) (bool, error) {
+	switch step.ApprovalRequirement {
+	case accessv1.Policy_Spec_Rule_Action_Review_Step_ANY:
+		return c.isStepApprovedAny(ctx, step, reviews)
+
+	case accessv1.Policy_Spec_Rule_Action_Review_Step_ALL:
+		return c.isStepApprovedAll(ctx, step, reviews)
+
+	case accessv1.Policy_Spec_Rule_Action_Review_Step_COUNT:
+		return c.isStepApprovedCount(ctx, step, reviews)
+
+	case accessv1.Policy_Spec_Rule_Action_Review_Step_APPROVAL_REQUIREMENT_UNSET:
+		return false, errors.Errorf("approval requirement must be set")
+
+	default:
+		return false, errors.Errorf("invalid approval requirement")
+	}
+}
+
+func (c *Controller) isStepApprovedAny(
+	ctx context.Context,
+	step *accessv1.Policy_Spec_Rule_Action_Review_Step,
+	reviews []*accessv1.Review,
+) (bool, error) {
+	for _, rev := range reviews {
+		if rev.Spec.Decision != accessv1.Review_Spec_DECISION_APPROVE {
+			continue
+		}
+
+		ok, err := c.userMatchesAnyReviewer(ctx, rev.Status.UserRef, step.Reviewers)
+		if err != nil {
+			return false, err
+		}
+
+		if ok {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func (c *Controller) isStepApprovedAll(
+	ctx context.Context,
+	step *accessv1.Policy_Spec_Rule_Action_Review_Step,
+	reviews []*accessv1.Review,
+) (bool, error) {
+	if len(step.Reviewers) == 0 {
+		return false, nil
+	}
+
+	for _, reviewer := range step.Reviewers {
+		if reviewer == nil {
+			return false, nil
+		}
+
+		found := false
+		for _, rev := range reviews {
+			if rev.Spec.Decision != accessv1.Review_Spec_DECISION_APPROVE {
+				continue
+			}
+
+			ok, err := c.userMatchesReviewer(ctx, rev.Status.UserRef, reviewer)
+			if err != nil {
+				return false, err
+			}
+
+			if ok {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
+func (c *Controller) isStepApprovedCount(
+	ctx context.Context,
+	step *accessv1.Policy_Spec_Rule_Action_Review_Step,
+	reviews []*accessv1.Review,
+) (bool, error) {
+	if step.ApprovalCount == 0 {
+		return false, errors.Errorf("approvalCount must be greater than zero")
+	}
+
+	approvals := map[string]struct{}{}
+
+	for _, rev := range reviews {
+		if rev.Spec.Decision != accessv1.Review_Spec_DECISION_APPROVE {
+			continue
+		}
+
+		if rev.Status.UserRef == nil || rev.Status.UserRef.Uid == "" {
+			continue
+		}
+
+		ok, err := c.userMatchesAnyReviewer(ctx, rev.Status.UserRef, step.Reviewers)
+		if err != nil {
+			return false, err
+		}
+
+		if !ok {
+			continue
+		}
+
+		approvals[rev.Status.UserRef.Uid] = struct{}{}
+	}
+
+	return uint32(len(approvals)) >= step.ApprovalCount, nil
+}
+
+func (c *Controller) userMatchesAnyReviewer(
+	ctx context.Context,
+	userRef *metav1.ObjectReference,
+	reviewers []*accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer,
+) (bool, error) {
+	for _, reviewer := range reviewers {
+		if reviewer == nil {
+			continue
+		}
+
+		ok, err := c.userMatchesReviewer(ctx, userRef, reviewer)
+		if err != nil {
+			return false, err
+		}
+
+		if ok {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func (c *Controller) userMatchesReviewer(
+	ctx context.Context,
+	userRef *metav1.ObjectReference,
+	reviewer *accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer,
+) (bool, error) {
+	if userRef == nil || userRef.Uid == "" || reviewer == nil {
+		return false, nil
+	}
+
+	switch reviewer.Type.(type) {
+	case *accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_User_:
+		return reviewer.GetUser().GetUserRef() != nil &&
+			reviewer.GetUser().GetUserRef().Uid != "" &&
+			reviewer.GetUser().GetUserRef().Uid == userRef.Uid, nil
+
+	case *accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_Group_:
+		return c.userMatchesGroup(ctx, userRef, reviewer.GetGroup().GetGroupRef())
+
+	default:
+		return false, nil
+	}
+}
+
+func (c *Controller) userMatchesGroup(
+	ctx context.Context,
+	userRef *metav1.ObjectReference,
+	groupRef *metav1.ObjectReference,
+) (bool, error) {
+	if userRef == nil || userRef.Uid == "" || groupRef == nil || groupRef.Uid == "" {
+		return false, nil
+	}
+
+	grp, err := c.octeliumC.CoreC().GetGroup(ctx, &rmetav1.GetOptions{
+		Uid: groupRef.Uid,
+	})
+	if err != nil {
+		if grpcerr.IsNotFound(err) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	if grp.Metadata.Name == "all" {
+		return true, nil
+	}
+
+	usr, err := c.octeliumC.CoreC().GetUser(ctx, &rmetav1.GetOptions{
+		Uid: userRef.Uid,
+	})
+	if err != nil {
+		if grpcerr.IsNotFound(err) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	for _, groupName := range usr.Spec.Groups {
+		if groupName == grp.Metadata.Name {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func (c *Controller) getAppliedReviews(
+	ctx context.Context,
+	req *accessv1.Request,
+	curr *accessv1.Review,
+) ([]*accessv1.Review, error) {
+	if req.Status.Review == nil {
+		return nil, nil
+	}
+
+	steps := append([]*accessv1.Request_Status_Review_Step{}, req.Status.Review.LastSteps...)
+
+	sort.SliceStable(steps, func(i, j int) bool {
+		if steps[i].SetAt == nil || steps[j].SetAt == nil {
+			return false
+		}
+		return steps[i].SetAt.AsTime().Before(steps[j].SetAt.AsTime())
+	})
+
+	ret := make([]*accessv1.Review, 0, len(steps))
+	seen := map[string]struct{}{}
+
+	for _, step := range steps {
+		if step.ReviewRef == nil || step.ReviewRef.Uid == "" {
+			continue
+		}
+
+		if _, ok := seen[step.ReviewRef.Uid]; ok {
+			continue
+		}
+		seen[step.ReviewRef.Uid] = struct{}{}
+
+		if curr != nil && curr.Metadata.Uid == step.ReviewRef.Uid {
+			ret = append(ret, curr)
+			continue
+		}
+
+		rev, err := c.octeliumC.AccessC().GetReview(ctx, &rmetav1.GetOptions{
+			Uid: step.ReviewRef.Uid,
+		})
+		if err != nil {
+			if grpcerr.IsNotFound(err) {
+				continue
+			}
+			return nil, err
+		}
+
+		ret = append(ret, rev)
+	}
+
+	return ret, nil
 }
 
 func (c *Controller) getRequest(ctx context.Context, ref *metav1.ObjectReference) (*accessv1.Request, error) {
@@ -215,8 +519,16 @@ func (c *Controller) setState(req *accessv1.Request, status accessv1.Request_Sta
 
 	if req.Status.State != nil &&
 		req.Status.State.Status != accessv1.Request_Status_State_STATUS_UNKNOWN {
-		req.Status.LastStates = append(req.Status.LastStates,
-			pbutils.Clone(req.Status.State).(*accessv1.Request_Status_State))
+		prevState := pbutils.Clone(req.Status.State).(*accessv1.Request_Status_State)
+
+		req.Status.LastStates = append(
+			[]*accessv1.Request_Status_State{prevState},
+			req.Status.LastStates...,
+		)
+
+		if len(req.Status.LastStates) > maxRequestStateHistory {
+			req.Status.LastStates = req.Status.LastStates[:maxRequestStateHistory]
+		}
 	}
 
 	req.Status.State = &accessv1.Request_Status_State{

@@ -85,7 +85,7 @@ func newReviewerTest(t *testing.T) (*ServerReviewer, *tstuser.User, *tstuser.Use
 									},
 								},
 							},
-							OnApproval: accessv1.Policy_Spec_Rule_Action_Review_Step_ON_APPROVAL_APPROVE,
+							ApprovalRequirement: accessv1.Policy_Spec_Rule_Action_Review_Step_ANY,
 						},
 					},
 				},

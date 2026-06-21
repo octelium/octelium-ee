@@ -12,6 +12,8 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
@@ -19,11 +21,14 @@ import (
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
+	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/pkg/errors"
 )
+
+const maxRequestStateHistory = 100
 
 type Controller struct {
 	octeliumC octeliumc.ClientInterface
@@ -113,8 +118,12 @@ func (c *Controller) initializeRequest(ctx context.Context, req *accessv1.Reques
 		c.setState(req, accessv1.Request_Status_State_REJECTED)
 
 	case accessv1.Policy_Spec_Rule_REVIEW:
-		if rule.Action == nil || rule.Action.GetReview() == nil || len(rule.Action.GetReview().Steps) == 0 {
-			return errors.Errorf("matched review rule %q has no review steps", rule.Name)
+		if rule.Action == nil || rule.Action.GetReview() == nil {
+			return errors.Errorf("matched review rule %q has no review action", rule.Name)
+		}
+
+		if err := validateReviewAction(rule.Action.GetReview()); err != nil {
+			return errors.Wrapf(err, "matched review rule %q is invalid", rule.Name)
 		}
 
 		c.setState(req, accessv1.Request_Status_State_PENDING)
@@ -158,12 +167,15 @@ func (c *Controller) matchPolicyRule(ctx context.Context, req *accessv1.Request)
 	})
 
 	for _, pol := range policies {
-		if pol.Spec.IsDisabled {
+		if pol == nil || pol.Spec.IsDisabled {
 			continue
 		}
 
 		rules := append([]*accessv1.Policy_Spec_Rule{}, pol.Spec.Rules...)
 		sort.SliceStable(rules, func(i, j int) bool {
+			if rules[i] == nil || rules[j] == nil {
+				return false
+			}
 			if rules[i].Priority == rules[j].Priority {
 				return false
 			}
@@ -171,6 +183,10 @@ func (c *Controller) matchPolicyRule(ctx context.Context, req *accessv1.Request)
 		})
 
 		for _, rule := range rules {
+			if rule == nil {
+				continue
+			}
+
 			matched, err := c.matchCondition(ctx, req, rule.Condition)
 			if err != nil {
 				return nil, nil, err
@@ -196,7 +212,7 @@ func (c *Controller) matchCondition(ctx context.Context, req *accessv1.Request, 
 		return cond.GetMatchAny(), nil
 
 	case *accessv1.Policy_Spec_Rule_Condition_Subject_:
-		return c.matchSubject(req, cond.GetSubject()), nil
+		return c.matchSubject(ctx, req, cond.GetSubject())
 
 	case *accessv1.Policy_Spec_Rule_Condition_Resource_:
 		return c.matchResource(req, cond.GetResource()), nil
@@ -244,21 +260,63 @@ func (c *Controller) matchCondition(ctx context.Context, req *accessv1.Request, 
 	}
 }
 
-func (c *Controller) matchSubject(req *accessv1.Request, subject *accessv1.Policy_Spec_Rule_Condition_Subject) bool {
+func (c *Controller) matchSubject(ctx context.Context,
+	req *accessv1.Request,
+	subject *accessv1.Policy_Spec_Rule_Condition_Subject,
+) (bool, error) {
 	if subject == nil {
-		return false
+		return false, nil
 	}
 
 	switch subject.Type.(type) {
 	case *accessv1.Policy_Spec_Rule_Condition_Subject_UserRef:
-		return refEqual(req.Spec.Subject.GetUserRef(), subject.GetUserRef())
+		return refEqual(getRequestSubjectUserRef(req), subject.GetUserRef()), nil
 
 	case *accessv1.Policy_Spec_Rule_Condition_Subject_GroupRef:
-		return false
+		return c.matchSubjectGroup(ctx, getRequestSubjectUserRef(req), subject.GetGroupRef())
 
 	default:
-		return false
+		return false, nil
 	}
+}
+
+func (c *Controller) matchSubjectGroup(ctx context.Context,
+	userRef *metav1.ObjectReference,
+	groupRef *metav1.ObjectReference,
+) (bool, error) {
+	if userRef == nil || userRef.Uid == "" || groupRef == nil {
+		return false, nil
+	}
+
+	grp, err := c.getGroup(ctx, groupRef)
+	if err != nil {
+		return false, err
+	}
+	if grp == nil {
+		return false, nil
+	}
+
+	if grp.Metadata.Name == "all" {
+		return true, nil
+	}
+
+	usr, err := c.octeliumC.CoreC().GetUser(ctx, &rmetav1.GetOptions{
+		Uid: userRef.Uid,
+	})
+	if err != nil {
+		if grpcerr.IsNotFound(err) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	for _, groupName := range usr.Spec.Groups {
+		if groupName == grp.Metadata.Name {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 func (c *Controller) matchResource(req *accessv1.Request, resource *accessv1.Policy_Spec_Rule_Condition_Resource) bool {
@@ -285,7 +343,7 @@ func (c *Controller) ensurePolicyTrigger(ctx context.Context, req *accessv1.Requ
 
 	authz := req.Status.Rule.Authorization
 
-	ptDesired, err := c.buildPolicyTrigger(req, authz)
+	ptDesired, err := c.buildPolicyTrigger(ctx, req, authz)
 	if err != nil {
 		return err
 	}
@@ -337,19 +395,30 @@ func (c *Controller) ensureNoPolicyTrigger(ctx context.Context, req *accessv1.Re
 	return nil
 }
 
-func (c *Controller) buildPolicyTrigger(req *accessv1.Request, authz *accessv1.Policy_Spec_Rule_Authorization) (*corev1.PolicyTrigger, error) {
-	subjectRef := req.Spec.Subject.GetUserRef()
-	if subjectRef == nil {
-		subjectRef = req.Status.UserRef
-	}
+func (c *Controller) buildPolicyTrigger(
+	ctx context.Context,
+	req *accessv1.Request,
+	authz *accessv1.Policy_Spec_Rule_Authorization,
+) (*corev1.PolicyTrigger, error) {
+	subjectRef := getRequestSubjectUserRef(req)
 	if subjectRef == nil {
 		return nil, errors.Errorf("request %q has no subject or requester userRef", req.Metadata.Name)
+	}
+
+	targetCondition, err := c.buildTargetCondition(ctx, req)
+	if err != nil {
+		return nil, err
 	}
 
 	preConditionItems := []*corev1.PolicyTrigger_Status_PreCondition{
 		{
 			Type: &corev1.PolicyTrigger_Status_PreCondition_UserRef{
 				UserRef: pbutils.Clone(subjectRef).(*metav1.ObjectReference),
+			},
+		},
+		{
+			Type: &corev1.PolicyTrigger_Status_PreCondition_Condition{
+				Condition: targetCondition,
 			},
 		},
 	}
@@ -361,6 +430,16 @@ func (c *Controller) buildPolicyTrigger(req *accessv1.Request, authz *accessv1.P
 				NotAfter: pbutils.Timestamp(pbutils.Now().AsTime().Add(accessDuration)),
 			},
 		})
+	}
+
+	policies := []string{}
+	inlinePolicies := []*corev1.InlinePolicy{
+		buildDefaultAccessRequestInlinePolicy(),
+	}
+
+	if authz != nil {
+		policies = clonePolicyNames(authz.Policies)
+		inlinePolicies = append(inlinePolicies, cloneInlinePolicies(authz.InlinePolicies)...)
 	}
 
 	return &corev1.PolicyTrigger{
@@ -379,15 +458,119 @@ func (c *Controller) buildPolicyTrigger(req *accessv1.Request, authz *accessv1.P
 					},
 				},
 			},
-			Policies:       append([]string{}, authz.Policies...),
-			InlinePolicies: cloneInlinePolicies(authz.InlinePolicies),
+			Policies:       policies,
+			InlinePolicies: inlinePolicies,
 			IsDisabled:     false,
 		},
 	}, nil
 }
 
+func (c *Controller) buildTargetCondition(ctx context.Context, req *accessv1.Request) (*corev1.Condition, error) {
+	if req.Spec.Resource == nil {
+		return nil, errors.Errorf("request %q has no resource", req.Metadata.Name)
+	}
+
+	switch req.Spec.Resource.Type.(type) {
+	case *accessv1.Request_Spec_Resource_ServiceRef:
+		ref := req.Spec.Resource.GetServiceRef()
+		if ref == nil {
+			return nil, errors.Errorf("request %q has no serviceRef", req.Metadata.Name)
+		}
+
+		uid, err := c.getServiceUID(ctx, ref)
+		if err != nil {
+			return nil, err
+		}
+		if uid == "" {
+			return nil, errors.Errorf("request %q target Service does not exist", req.Metadata.Name)
+		}
+
+		return matchCondition(fmt.Sprintf("ctx.service.metadata.uid == %s", strconv.Quote(uid))), nil
+
+	case *accessv1.Request_Spec_Resource_Catalog_:
+		catalogRef := req.Spec.Resource.GetCatalog().GetCatalogRef()
+		if catalogRef == nil {
+			return nil, errors.Errorf("request %q has no catalogRef", req.Metadata.Name)
+		}
+
+		catalog, err := c.getCatalog(ctx, catalogRef)
+		if err != nil {
+			return nil, err
+		}
+		if catalog == nil {
+			return nil, errors.Errorf("request %q target Catalog does not exist", req.Metadata.Name)
+		}
+
+		return c.buildCatalogTargetCondition(ctx, req, catalog)
+
+	default:
+		return nil, errors.Errorf("request %q has invalid resource type", req.Metadata.Name)
+	}
+}
+
+func (c *Controller) buildCatalogTargetCondition(
+	ctx context.Context,
+	req *accessv1.Request,
+	catalog *accessv1.Catalog,
+) (*corev1.Condition, error) {
+	if catalog.Spec.ResourceCollection == nil ||
+		catalog.Spec.ResourceCollection.Service == nil {
+		return nil, errors.Errorf("request %q target Catalog %q has no Service resource collection",
+			req.Metadata.Name, catalog.Metadata.Name)
+	}
+
+	var conditions []string
+
+	for _, svcName := range catalog.Spec.ResourceCollection.Service.Services {
+		if svcName == "" {
+			continue
+		}
+
+		uid, err := c.getServiceUID(ctx, &metav1.ObjectReference{
+			Name: vutils.GetServiceFullNameFromName(svcName),
+		})
+		if err != nil {
+			return nil, err
+		}
+		if uid == "" {
+			continue
+		}
+
+		conditions = append(conditions, fmt.Sprintf("ctx.service.metadata.uid == %s", strconv.Quote(uid)))
+	}
+
+	for _, nsName := range catalog.Spec.ResourceCollection.Service.Namespaces {
+		if nsName == "" {
+			continue
+		}
+
+		uid, err := c.getNamespaceUID(ctx, &metav1.ObjectReference{
+			Name: nsName,
+		})
+		if err != nil {
+			return nil, err
+		}
+		if uid == "" {
+			continue
+		}
+
+		conditions = append(conditions, fmt.Sprintf("ctx.namespace.metadata.uid == %s", strconv.Quote(uid)))
+	}
+
+	if len(conditions) == 0 {
+		return nil, errors.Errorf("request %q target Catalog %q does not resolve to any Service or Namespace",
+			req.Metadata.Name, catalog.Metadata.Name)
+	}
+
+	if len(conditions) == 1 {
+		return matchCondition(conditions[0]), nil
+	}
+
+	return matchCondition("(" + strings.Join(conditions, ") || (") + ")"), nil
+}
+
 func (c *Controller) deletePolicyTrigger(ctx context.Context, ref *metav1.ObjectReference) error {
-	if ref == nil {
+	if ref == nil || ref.Uid == "" {
 		return nil
 	}
 
@@ -410,8 +593,16 @@ func (c *Controller) setState(req *accessv1.Request, status accessv1.Request_Sta
 
 	if req.Status.State != nil &&
 		req.Status.State.Status != accessv1.Request_Status_State_STATUS_UNKNOWN {
-		req.Status.LastStates = append(req.Status.LastStates,
-			pbutils.Clone(req.Status.State).(*accessv1.Request_Status_State))
+		prevState := pbutils.Clone(req.Status.State).(*accessv1.Request_Status_State)
+
+		req.Status.LastStates = append(
+			[]*accessv1.Request_Status_State{prevState},
+			req.Status.LastStates...,
+		)
+
+		if len(req.Status.LastStates) > maxRequestStateHistory {
+			req.Status.LastStates = req.Status.LastStates[:maxRequestStateHistory]
+		}
 	}
 
 	req.Status.State = &accessv1.Request_Status_State{
@@ -431,9 +622,16 @@ func (c *Controller) setState(req *accessv1.Request, status accessv1.Request_Sta
 	}
 }
 
-func (c *Controller) getAccessDuration(req *accessv1.Request, authz *accessv1.Policy_Spec_Rule_Authorization) time.Duration {
+func (c *Controller) getAccessDuration(
+	req *accessv1.Request,
+	authz *accessv1.Policy_Spec_Rule_Authorization,
+) time.Duration {
 	reqDuration := umetav1.ToDuration(req.Spec.Duration).ToGo()
-	maxDuration := umetav1.ToDuration(authz.MaxAccessDuration).ToGo()
+
+	var maxDuration time.Duration
+	if authz != nil {
+		maxDuration = umetav1.ToDuration(authz.MaxAccessDuration).ToGo()
+	}
 
 	switch {
 	case reqDuration <= 0 && maxDuration <= 0:
@@ -449,6 +647,192 @@ func (c *Controller) getAccessDuration(req *accessv1.Request, authz *accessv1.Po
 	}
 }
 
+func (c *Controller) getServiceUID(ctx context.Context, ref *metav1.ObjectReference) (string, error) {
+	if ref == nil {
+		return "", nil
+	}
+
+	if ref.Uid != "" {
+		return ref.Uid, nil
+	}
+
+	if ref.Name == "" {
+		return "", nil
+	}
+
+	svc, err := c.octeliumC.CoreC().GetService(ctx, &rmetav1.GetOptions{
+		Name: ref.Name,
+	})
+	if err != nil {
+		if grpcerr.IsNotFound(err) {
+			return "", nil
+		}
+		return "", err
+	}
+
+	return svc.Metadata.Uid, nil
+}
+
+func (c *Controller) getNamespaceUID(ctx context.Context, ref *metav1.ObjectReference) (string, error) {
+	if ref == nil {
+		return "", nil
+	}
+
+	if ref.Uid != "" {
+		return ref.Uid, nil
+	}
+
+	if ref.Name == "" {
+		return "", nil
+	}
+
+	ns, err := c.octeliumC.CoreC().GetNamespace(ctx, &rmetav1.GetOptions{
+		Name: ref.Name,
+	})
+	if err != nil {
+		if grpcerr.IsNotFound(err) {
+			return "", nil
+		}
+		return "", err
+	}
+
+	return ns.Metadata.Uid, nil
+}
+
+func (c *Controller) getCatalog(ctx context.Context, ref *metav1.ObjectReference) (*accessv1.Catalog, error) {
+	if ref == nil {
+		return nil, nil
+	}
+
+	catalog, err := c.octeliumC.AccessC().GetCatalog(ctx, &rmetav1.GetOptions{
+		Uid:  ref.Uid,
+		Name: ref.Name,
+	})
+	if err != nil {
+		if grpcerr.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return catalog, nil
+}
+
+func (c *Controller) getGroup(ctx context.Context, ref *metav1.ObjectReference) (*corev1.Group, error) {
+	if ref == nil {
+		return nil, nil
+	}
+
+	grp, err := c.octeliumC.CoreC().GetGroup(ctx, &rmetav1.GetOptions{
+		Uid:  ref.Uid,
+		Name: ref.Name,
+	})
+	if err != nil {
+		if grpcerr.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return grp, nil
+}
+
+func validateReviewAction(review *accessv1.Policy_Spec_Rule_Action_Review) error {
+	if review == nil {
+		return errors.Errorf("review action is nil")
+	}
+
+	if len(review.Steps) == 0 {
+		return errors.Errorf("review action has no steps")
+	}
+
+	for i, step := range review.Steps {
+		if step == nil {
+			return errors.Errorf("review step %d is nil", i)
+		}
+
+		if len(step.Reviewers) == 0 {
+			return errors.Errorf("review step %d has no reviewers", i)
+		}
+
+		switch step.ApprovalRequirement {
+		case accessv1.Policy_Spec_Rule_Action_Review_Step_ANY:
+			if step.ApprovalCount != 0 {
+				return errors.Errorf("review step %d with ANY must not set approvalCount", i)
+			}
+
+		case accessv1.Policy_Spec_Rule_Action_Review_Step_ALL:
+			if step.ApprovalCount != 0 {
+				return errors.Errorf("review step %d with ALL must not set approvalCount", i)
+			}
+
+		case accessv1.Policy_Spec_Rule_Action_Review_Step_COUNT:
+			if step.ApprovalCount == 0 {
+				return errors.Errorf("review step %d with COUNT must set approvalCount", i)
+			}
+
+		case accessv1.Policy_Spec_Rule_Action_Review_Step_APPROVAL_REQUIREMENT_UNSET:
+			return errors.Errorf("review step %d has unset approvalRequirement", i)
+
+		default:
+			return errors.Errorf("review step %d has invalid approvalRequirement", i)
+		}
+
+		switch step.OnTimeout {
+		case accessv1.Policy_Spec_Rule_Action_Review_Step_ON_TIMEOUT_UNSET,
+			accessv1.Policy_Spec_Rule_Action_Review_Step_ON_TIMEOUT_GOTO_NEXT_STEP,
+			accessv1.Policy_Spec_Rule_Action_Review_Step_ON_TIMEOUT_REJECT:
+		default:
+			return errors.Errorf("review step %d has invalid onTimeout", i)
+		}
+	}
+
+	return nil
+}
+
+func buildDefaultAccessRequestInlinePolicy() *corev1.InlinePolicy {
+	return &corev1.InlinePolicy{
+		Name: "access-request-default",
+		Spec: &corev1.Policy_Spec{
+			Rules: []*corev1.Policy_Spec_Rule{
+				{
+					Effect: corev1.Policy_Spec_Rule_ALLOW,
+					Condition: &corev1.Condition{
+						Type: &corev1.Condition_MatchAny{
+							MatchAny: true,
+						},
+					},
+					Priority: -1,
+				},
+			},
+		},
+	}
+}
+
+func matchCondition(match string) *corev1.Condition {
+	return &corev1.Condition{
+		Type: &corev1.Condition_Match{
+			Match: match,
+		},
+	}
+}
+
+func clonePolicyNames(in []string) []string {
+	if len(in) == 0 {
+		return nil
+	}
+
+	ret := make([]string, 0, len(in))
+	for _, itm := range in {
+		if itm == "" {
+			continue
+		}
+		ret = append(ret, itm)
+	}
+
+	return ret
+}
+
 func cloneInlinePolicies(in []*corev1.InlinePolicy) []*corev1.InlinePolicy {
 	if len(in) == 0 {
 		return nil
@@ -462,6 +846,14 @@ func cloneInlinePolicies(in []*corev1.InlinePolicy) []*corev1.InlinePolicy {
 		ret = append(ret, pbutils.Clone(itm).(*corev1.InlinePolicy))
 	}
 	return ret
+}
+
+func getRequestSubjectUserRef(req *accessv1.Request) *metav1.ObjectReference {
+	if req.Spec.Subject != nil && req.Spec.Subject.GetUserRef() != nil {
+		return req.Spec.Subject.GetUserRef()
+	}
+
+	return req.Status.UserRef
 }
 
 func refEqual(a, b *metav1.ObjectReference) bool {
