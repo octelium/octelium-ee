@@ -11,6 +11,7 @@ package requests
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -65,23 +66,49 @@ func durationHours(h int64) *metav1.Duration {
 	}
 }
 
-func catalogResource(ref *metav1.ObjectReference) *accessv1.Request_Spec_Resource {
+func serviceResource(uid string) *accessv1.Request_Spec_Resource {
 	return &accessv1.Request_Spec_Resource{
-		Type: &accessv1.Request_Spec_Resource_Catalog_{
-			Catalog: &accessv1.Request_Spec_Resource_Catalog{
-				CatalogRef: ref,
+		Type: &accessv1.Request_Spec_Resource_ServiceRef{
+			ServiceRef: &metav1.ObjectReference{Uid: uid},
+		},
+	}
+}
+
+func userReviewer(ref *metav1.ObjectReference) *accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer {
+	return &accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer{
+		Type: &accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_User_{
+			User: &accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_User{
+				UserRef: ref,
 			},
 		},
 	}
 }
 
-func baseRequest(uref *metav1.ObjectReference) *accessv1.Request {
+func anyStep(reviewers ...*accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer) *accessv1.Policy_Spec_Rule_Action_Review_Step {
+	return &accessv1.Policy_Spec_Rule_Action_Review_Step{
+		Reviewers:           reviewers,
+		ApprovalRequirement: accessv1.Policy_Spec_Rule_Action_Review_Step_ANY,
+	}
+}
+
+func reviewAction(steps ...*accessv1.Policy_Spec_Rule_Action_Review_Step) *accessv1.Policy_Spec_Rule_Action {
+	return &accessv1.Policy_Spec_Rule_Action{
+		Type: &accessv1.Policy_Spec_Rule_Action_Review_{
+			Review: &accessv1.Policy_Spec_Rule_Action_Review{
+				Steps: steps,
+			},
+		},
+	}
+}
+
+func baseRequest(uref *metav1.ObjectReference, svcUid string) *accessv1.Request {
 	return &accessv1.Request{
 		Metadata: &metav1.Metadata{
 			Name: utilrand.GetRandomStringCanonical(8),
 		},
 		Spec: &accessv1.Request_Spec{
-			Urgency: accessv1.Request_Spec_NORMAL,
+			Urgency:  accessv1.Request_Spec_NORMAL,
+			Resource: serviceResource(svcUid),
 		},
 		Status: &accessv1.Request_Status{
 			UserRef: uref,
@@ -115,32 +142,19 @@ func getRequest(t *testing.T, ctx context.Context, octeliumC octeliumc.ClientInt
 	return out
 }
 
-func setupApproved(t *testing.T, ctx context.Context, ctrl *Controller, octeliumC octeliumc.ClientInterface) *accessv1.Request {
-	createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
-		Name:      utilrand.GetRandomStringCanonical(6),
-		Effect:    accessv1.Policy_Spec_Rule_AUTO_APPROVE,
-		Condition: matchAny(),
-		Authorization: &accessv1.Policy_Spec_Rule_Authorization{
-			Policies: []string{utilrand.GetRandomStringCanonical(6)},
-		},
-	})
-
-	req := baseRequest(objRef("User"))
-	req.Spec.Resource = catalogResource(objRef("Catalog"))
-	req = createRequest(t, ctx, octeliumC, req)
-
-	assert.Nil(t, ctrl.OnAdd(ctx, req))
-
-	out := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
-	assert.Equal(t, accessv1.Request_Status_State_APPROVED, out.Status.State.Status)
-	assert.NotNil(t, out.Status.PolicyTriggerRef)
-	return out
+func converge(t *testing.T, ctx context.Context, ctrl *Controller, octeliumC octeliumc.ClientInterface, uid string) *accessv1.Request {
+	for i := 0; i < 4; i++ {
+		req := getRequest(t, ctx, octeliumC, uid)
+		assert.Nil(t, ctrl.OnAdd(ctx, req), "pass %d", i)
+	}
+	return getRequest(t, ctx, octeliumC, uid)
 }
 
-func TestControllerAutoApprove(t *testing.T) {
+func TestRequestAutoApprove(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
 	uref := objRef("User")
+	svcUid := utilrand.GetRandomStringCanonical(16)
 	authzPol := utilrand.GetRandomStringCanonical(6)
 
 	pol := createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
@@ -153,13 +167,9 @@ func TestControllerAutoApprove(t *testing.T) {
 		},
 	})
 
-	req := baseRequest(uref)
-	req.Spec.Resource = catalogResource(objRef("Catalog"))
-	req = createRequest(t, ctx, octeliumC, req)
+	req := createRequest(t, ctx, octeliumC, baseRequest(uref, svcUid))
+	reqG := converge(t, ctx, ctrl, octeliumC, req.Metadata.Uid)
 
-	assert.Nil(t, ctrl.OnAdd(ctx, req))
-
-	reqG := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
 	assert.Equal(t, accessv1.Request_Status_State_APPROVED, reqG.Status.State.Status)
 	assert.NotNil(t, reqG.Status.Rule)
 	assert.Equal(t, accessv1.Policy_Spec_Rule_AUTO_APPROVE, reqG.Status.Rule.Effect)
@@ -167,6 +177,7 @@ func TestControllerAutoApprove(t *testing.T) {
 	assert.Equal(t, pol.Metadata.Uid, reqG.Status.PolicyRef.Uid)
 	assert.NotNil(t, reqG.Status.ApprovalStartAt)
 	assert.NotNil(t, reqG.Status.ApprovalEndAt)
+	assert.NotNil(t, reqG.Status.AccessEndsAt)
 	assert.NotNil(t, reqG.Status.PolicyTriggerRef)
 
 	pt, err := octeliumC.CoreC().GetPolicyTrigger(ctx, &rmetav1.GetOptions{
@@ -178,19 +189,26 @@ func TestControllerAutoApprove(t *testing.T) {
 	assert.NotNil(t, pt.Status.OwnerRef)
 	assert.Equal(t, req.Metadata.Uid, pt.Status.OwnerRef.Uid)
 	assert.Equal(t, []string{authzPol}, pt.Status.Policies)
+	assert.True(t, len(pt.Status.InlinePolicies) >= 1)
+	assert.Equal(t, "access-request-default", pt.Status.InlinePolicies[0].Name)
 
 	all := pt.Status.PreCondition.GetAll()
 	assert.NotNil(t, all)
-	assert.Equal(t, 2, len(all.Of))
+	assert.Equal(t, 3, len(all.Of))
 	assert.NotNil(t, all.Of[0].GetUserRef())
 	assert.Equal(t, uref.Uid, all.Of[0].GetUserRef().Uid)
-	assert.NotNil(t, all.Of[1].GetNotAfter())
+	assert.NotNil(t, all.Of[1].GetCondition())
+	assert.True(t, strings.Contains(all.Of[1].GetCondition().GetMatch(), svcUid))
+	assert.NotNil(t, all.Of[2].GetNotAfter())
+	assert.Equal(t, reqG.Status.AccessEndsAt.AsTime(), all.Of[2].GetNotAfter().AsTime())
 }
 
-func TestControllerAutoApproveNoDuration(t *testing.T) {
+func TestRequestAutoApproveNoDuration(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
 	uref := objRef("User")
+	svcUid := utilrand.GetRandomStringCanonical(16)
+
 	createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
 		Name:      utilrand.GetRandomStringCanonical(6),
 		Effect:    accessv1.Policy_Spec_Rule_AUTO_APPROVE,
@@ -200,14 +218,11 @@ func TestControllerAutoApproveNoDuration(t *testing.T) {
 		},
 	})
 
-	req := baseRequest(uref)
-	req.Spec.Resource = catalogResource(objRef("Catalog"))
-	req = createRequest(t, ctx, octeliumC, req)
+	req := createRequest(t, ctx, octeliumC, baseRequest(uref, svcUid))
+	reqG := converge(t, ctx, ctrl, octeliumC, req.Metadata.Uid)
 
-	assert.Nil(t, ctrl.OnAdd(ctx, req))
-
-	reqG := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
 	assert.Equal(t, accessv1.Request_Status_State_APPROVED, reqG.Status.State.Status)
+	assert.Nil(t, reqG.Status.AccessEndsAt)
 	assert.NotNil(t, reqG.Status.PolicyTriggerRef)
 
 	pt, err := octeliumC.CoreC().GetPolicyTrigger(ctx, &rmetav1.GetOptions{
@@ -217,12 +232,12 @@ func TestControllerAutoApproveNoDuration(t *testing.T) {
 
 	all := pt.Status.PreCondition.GetAll()
 	assert.NotNil(t, all)
-	assert.Equal(t, 1, len(all.Of))
+	assert.Equal(t, 2, len(all.Of))
 	assert.NotNil(t, all.Of[0].GetUserRef())
-	assert.Equal(t, uref.Uid, all.Of[0].GetUserRef().Uid)
+	assert.NotNil(t, all.Of[1].GetCondition())
 }
 
-func TestControllerReview(t *testing.T) {
+func TestRequestReview(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
 	uref := objRef("User")
@@ -230,38 +245,15 @@ func TestControllerReview(t *testing.T) {
 		Name:      utilrand.GetRandomStringCanonical(6),
 		Effect:    accessv1.Policy_Spec_Rule_REVIEW,
 		Condition: matchAny(),
-		Action: &accessv1.Policy_Spec_Rule_Action{
-			Type: &accessv1.Policy_Spec_Rule_Action_Review_{
-				Review: &accessv1.Policy_Spec_Rule_Action_Review{
-					Steps: []*accessv1.Policy_Spec_Rule_Action_Review_Step{
-						{
-							Reviewers: []*accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer{
-								{
-									Type: &accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_User_{
-										User: &accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_User{
-											UserRef: objRef("User"),
-										},
-									},
-								},
-							},
-							OnApproval: accessv1.Policy_Spec_Rule_Action_Review_Step_ON_APPROVAL_APPROVE,
-						},
-					},
-				},
-			},
-		},
+		Action:    reviewAction(anyStep(userReviewer(objRef("User")))),
 		Authorization: &accessv1.Policy_Spec_Rule_Authorization{
 			Policies: []string{utilrand.GetRandomStringCanonical(6)},
 		},
 	})
 
-	req := baseRequest(uref)
-	req.Spec.Resource = catalogResource(objRef("Catalog"))
-	req = createRequest(t, ctx, octeliumC, req)
+	req := createRequest(t, ctx, octeliumC, baseRequest(uref, utilrand.GetRandomStringCanonical(16)))
+	reqG := converge(t, ctx, ctrl, octeliumC, req.Metadata.Uid)
 
-	assert.Nil(t, ctrl.OnAdd(ctx, req))
-
-	reqG := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
 	assert.Equal(t, accessv1.Request_Status_State_PENDING, reqG.Status.State.Status)
 	assert.NotNil(t, reqG.Status.Rule)
 	assert.Equal(t, accessv1.Policy_Spec_Rule_REVIEW, reqG.Status.Rule.Effect)
@@ -269,48 +261,40 @@ func TestControllerReview(t *testing.T) {
 	assert.Equal(t, int32(0), reqG.Status.Review.CurrentStep)
 	assert.NotNil(t, reqG.Status.ApprovalStartAt)
 	assert.Nil(t, reqG.Status.PolicyTriggerRef)
+	assert.Nil(t, reqG.Status.AccessEndsAt)
 }
 
-func TestControllerDeny(t *testing.T) {
+func TestRequestDeny(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
-	uref := objRef("User")
 	createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
 		Name:      utilrand.GetRandomStringCanonical(6),
 		Effect:    accessv1.Policy_Spec_Rule_DENY,
 		Condition: matchAny(),
 	})
 
-	req := baseRequest(uref)
-	req.Spec.Resource = catalogResource(objRef("Catalog"))
-	req = createRequest(t, ctx, octeliumC, req)
+	req := createRequest(t, ctx, octeliumC, baseRequest(objRef("User"), utilrand.GetRandomStringCanonical(16)))
+	reqG := converge(t, ctx, ctrl, octeliumC, req.Metadata.Uid)
 
-	assert.Nil(t, ctrl.OnAdd(ctx, req))
-
-	reqG := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
 	assert.Equal(t, accessv1.Request_Status_State_REJECTED, reqG.Status.State.Status)
 	assert.NotNil(t, reqG.Status.Rule)
 	assert.Equal(t, accessv1.Policy_Spec_Rule_DENY, reqG.Status.Rule.Effect)
 	assert.Nil(t, reqG.Status.PolicyTriggerRef)
 }
 
-func TestControllerNoMatch(t *testing.T) {
+func TestRequestNoMatch(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
-	req := baseRequest(objRef("User"))
-	req.Spec.Resource = catalogResource(objRef("Catalog"))
-	req = createRequest(t, ctx, octeliumC, req)
+	req := createRequest(t, ctx, octeliumC, baseRequest(objRef("User"), utilrand.GetRandomStringCanonical(16)))
+	reqG := converge(t, ctx, ctrl, octeliumC, req.Metadata.Uid)
 
-	assert.Nil(t, ctrl.OnAdd(ctx, req))
-
-	reqG := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
 	assert.Equal(t, accessv1.Request_Status_State_REJECTED, reqG.Status.State.Status)
 	assert.Nil(t, reqG.Status.Rule)
 	assert.Nil(t, reqG.Status.PolicyRef)
 	assert.Nil(t, reqG.Status.PolicyTriggerRef)
 }
 
-func TestControllerDisabledPolicySkipped(t *testing.T) {
+func TestRequestDisabledPolicySkipped(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
 	createPolicy(t, ctx, octeliumC, true, &accessv1.Policy_Spec_Rule{
@@ -322,68 +306,14 @@ func TestControllerDisabledPolicySkipped(t *testing.T) {
 		},
 	})
 
-	req := baseRequest(objRef("User"))
-	req.Spec.Resource = catalogResource(objRef("Catalog"))
-	req = createRequest(t, ctx, octeliumC, req)
+	req := createRequest(t, ctx, octeliumC, baseRequest(objRef("User"), utilrand.GetRandomStringCanonical(16)))
+	reqG := converge(t, ctx, ctrl, octeliumC, req.Metadata.Uid)
 
-	assert.Nil(t, ctrl.OnAdd(ctx, req))
-
-	reqG := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
 	assert.Equal(t, accessv1.Request_Status_State_REJECTED, reqG.Status.State.Status)
 	assert.Nil(t, reqG.Status.Rule)
-	assert.Nil(t, reqG.Status.PolicyTriggerRef)
 }
 
-func TestControllerReviewNoSteps(t *testing.T) {
-	ctx, ctrl, octeliumC := newControllerTest(t)
-
-	createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
-		Name:      utilrand.GetRandomStringCanonical(6),
-		Effect:    accessv1.Policy_Spec_Rule_REVIEW,
-		Condition: matchAny(),
-		Action: &accessv1.Policy_Spec_Rule_Action{
-			Type: &accessv1.Policy_Spec_Rule_Action_Review_{
-				Review: &accessv1.Policy_Spec_Rule_Action_Review{
-					Steps: nil,
-				},
-			},
-		},
-		Authorization: &accessv1.Policy_Spec_Rule_Authorization{
-			Policies: []string{utilrand.GetRandomStringCanonical(6)},
-		},
-	})
-
-	req := baseRequest(objRef("User"))
-	req.Spec.Resource = catalogResource(objRef("Catalog"))
-	req = createRequest(t, ctx, octeliumC, req)
-
-	assert.NotNil(t, ctrl.OnAdd(ctx, req))
-}
-
-func TestControllerCELMatchErrors(t *testing.T) {
-	ctx, ctrl, octeliumC := newControllerTest(t)
-
-	createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
-		Name:   utilrand.GetRandomStringCanonical(6),
-		Effect: accessv1.Policy_Spec_Rule_AUTO_APPROVE,
-		Condition: &accessv1.Policy_Spec_Rule_Condition{
-			Type: &accessv1.Policy_Spec_Rule_Condition_Match{
-				Match: "true",
-			},
-		},
-		Authorization: &accessv1.Policy_Spec_Rule_Authorization{
-			Policies: []string{utilrand.GetRandomStringCanonical(6)},
-		},
-	})
-
-	req := baseRequest(objRef("User"))
-	req.Spec.Resource = catalogResource(objRef("Catalog"))
-	req = createRequest(t, ctx, octeliumC, req)
-
-	assert.NotNil(t, ctrl.OnAdd(ctx, req))
-}
-
-func TestControllerPriorityOrder(t *testing.T) {
+func TestRequestPriorityOrder(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
 	createPolicy(t, ctx, octeliumC, false,
@@ -404,57 +334,14 @@ func TestControllerPriorityOrder(t *testing.T) {
 		},
 	)
 
-	req := baseRequest(objRef("User"))
-	req.Spec.Resource = catalogResource(objRef("Catalog"))
-	req = createRequest(t, ctx, octeliumC, req)
+	req := createRequest(t, ctx, octeliumC, baseRequest(objRef("User"), utilrand.GetRandomStringCanonical(16)))
+	reqG := converge(t, ctx, ctrl, octeliumC, req.Metadata.Uid)
 
-	assert.Nil(t, ctrl.OnAdd(ctx, req))
-
-	reqG := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
 	assert.Equal(t, accessv1.Request_Status_State_REJECTED, reqG.Status.State.Status)
-	assert.NotNil(t, reqG.Status.Rule)
 	assert.Equal(t, accessv1.Policy_Spec_Rule_DENY, reqG.Status.Rule.Effect)
-	assert.Nil(t, reqG.Status.PolicyTriggerRef)
 }
 
-func TestControllerResourceCatalogCondition(t *testing.T) {
-	ctx, ctrl, octeliumC := newControllerTest(t)
-
-	catRef := objRef("Catalog")
-	createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
-		Name:   utilrand.GetRandomStringCanonical(6),
-		Effect: accessv1.Policy_Spec_Rule_AUTO_APPROVE,
-		Condition: &accessv1.Policy_Spec_Rule_Condition{
-			Type: &accessv1.Policy_Spec_Rule_Condition_Resource_{
-				Resource: &accessv1.Policy_Spec_Rule_Condition_Resource{
-					Type: &accessv1.Policy_Spec_Rule_Condition_Resource_CatalogRef{
-						CatalogRef: catRef,
-					},
-				},
-			},
-		},
-		Authorization: &accessv1.Policy_Spec_Rule_Authorization{
-			Policies: []string{utilrand.GetRandomStringCanonical(6)},
-		},
-	})
-
-	reqMatch := baseRequest(objRef("User"))
-	reqMatch.Spec.Resource = catalogResource(catRef)
-	reqMatch = createRequest(t, ctx, octeliumC, reqMatch)
-	assert.Nil(t, ctrl.OnAdd(ctx, reqMatch))
-	reqMatchG := getRequest(t, ctx, octeliumC, reqMatch.Metadata.Uid)
-	assert.Equal(t, accessv1.Request_Status_State_APPROVED, reqMatchG.Status.State.Status)
-
-	reqMiss := baseRequest(objRef("User"))
-	reqMiss.Spec.Resource = catalogResource(objRef("Catalog"))
-	reqMiss = createRequest(t, ctx, octeliumC, reqMiss)
-	assert.Nil(t, ctrl.OnAdd(ctx, reqMiss))
-	reqMissG := getRequest(t, ctx, octeliumC, reqMiss.Metadata.Uid)
-	assert.Equal(t, accessv1.Request_Status_State_REJECTED, reqMissG.Status.State.Status)
-	assert.Nil(t, reqMissG.Status.Rule)
-}
-
-func TestControllerSubjectUserRefCondition(t *testing.T) {
+func TestRequestSubjectUserRefCondition(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
 	subjRef := objRef("User")
@@ -475,16 +362,14 @@ func TestControllerSubjectUserRefCondition(t *testing.T) {
 		},
 	})
 
-	reqMatch := baseRequest(objRef("User"))
-	reqMatch.Spec.Resource = catalogResource(objRef("Catalog"))
+	reqMatch := baseRequest(objRef("User"), utilrand.GetRandomStringCanonical(16))
 	reqMatch.Spec.Subject = &accessv1.Request_Spec_Subject{
 		Type: &accessv1.Request_Spec_Subject_UserRef{
 			UserRef: subjRef,
 		},
 	}
 	reqMatch = createRequest(t, ctx, octeliumC, reqMatch)
-	assert.Nil(t, ctrl.OnAdd(ctx, reqMatch))
-	reqMatchG := getRequest(t, ctx, octeliumC, reqMatch.Metadata.Uid)
+	reqMatchG := converge(t, ctx, ctrl, octeliumC, reqMatch.Metadata.Uid)
 	assert.Equal(t, accessv1.Request_Status_State_APPROVED, reqMatchG.Status.State.Status)
 
 	pt, err := octeliumC.CoreC().GetPolicyTrigger(ctx, &rmetav1.GetOptions{
@@ -493,79 +378,237 @@ func TestControllerSubjectUserRefCondition(t *testing.T) {
 	assert.Nil(t, err, "%+v", err)
 	assert.Equal(t, subjRef.Uid, pt.Status.PreCondition.GetAll().Of[0].GetUserRef().Uid)
 
-	reqMiss := baseRequest(objRef("User"))
-	reqMiss.Spec.Resource = catalogResource(objRef("Catalog"))
+	reqMiss := baseRequest(objRef("User"), utilrand.GetRandomStringCanonical(16))
 	reqMiss.Spec.Subject = &accessv1.Request_Spec_Subject{
 		Type: &accessv1.Request_Spec_Subject_UserRef{
 			UserRef: objRef("User"),
 		},
 	}
 	reqMiss = createRequest(t, ctx, octeliumC, reqMiss)
-	assert.Nil(t, ctrl.OnAdd(ctx, reqMiss))
-	reqMissG := getRequest(t, ctx, octeliumC, reqMiss.Metadata.Uid)
+	reqMissG := converge(t, ctx, ctrl, octeliumC, reqMiss.Metadata.Uid)
 	assert.Equal(t, accessv1.Request_Status_State_REJECTED, reqMissG.Status.State.Status)
 }
 
-func TestControllerIdempotent(t *testing.T) {
+func TestRequestUserRefCondition(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
-	reqApproved := setupApproved(t, ctx, ctrl, octeliumC)
-	ptUid := reqApproved.Status.PolicyTriggerRef.Uid
-
-	assert.Nil(t, ctrl.OnAdd(ctx, reqApproved))
-
-	reqG := getRequest(t, ctx, octeliumC, reqApproved.Metadata.Uid)
-	assert.Equal(t, accessv1.Request_Status_State_APPROVED, reqG.Status.State.Status)
-	assert.NotNil(t, reqG.Status.PolicyTriggerRef)
-	assert.Equal(t, ptUid, reqG.Status.PolicyTriggerRef.Uid)
-
-	pt, err := octeliumC.CoreC().GetPolicyTrigger(ctx, &rmetav1.GetOptions{
-		Uid: ptUid,
+	requester := objRef("User")
+	createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
+		Name:   utilrand.GetRandomStringCanonical(6),
+		Effect: accessv1.Policy_Spec_Rule_AUTO_APPROVE,
+		Condition: &accessv1.Policy_Spec_Rule_Condition{
+			Type: &accessv1.Policy_Spec_Rule_Condition_UserRef{
+				UserRef: requester,
+			},
+		},
+		Authorization: &accessv1.Policy_Spec_Rule_Authorization{
+			Policies: []string{utilrand.GetRandomStringCanonical(6)},
+		},
 	})
-	assert.Nil(t, err, "%+v", err)
-	assert.Equal(t, ptUid, pt.Metadata.Uid)
+
+	reqMatch := createRequest(t, ctx, octeliumC, baseRequest(requester, utilrand.GetRandomStringCanonical(16)))
+	reqMatchG := converge(t, ctx, ctrl, octeliumC, reqMatch.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED, reqMatchG.Status.State.Status)
+
+	reqMiss := createRequest(t, ctx, octeliumC, baseRequest(objRef("User"), utilrand.GetRandomStringCanonical(16)))
+	reqMissG := converge(t, ctx, ctrl, octeliumC, reqMiss.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_REJECTED, reqMissG.Status.State.Status)
 }
 
-func TestControllerRevoke(t *testing.T) {
+func TestRequestReviewNoSteps(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
-	reqApproved := setupApproved(t, ctx, ctrl, octeliumC)
+	createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
+		Name:      utilrand.GetRandomStringCanonical(6),
+		Effect:    accessv1.Policy_Spec_Rule_REVIEW,
+		Condition: matchAny(),
+		Action:    reviewAction(),
+		Authorization: &accessv1.Policy_Spec_Rule_Authorization{
+			Policies: []string{utilrand.GetRandomStringCanonical(6)},
+		},
+	})
+
+	req := createRequest(t, ctx, octeliumC, baseRequest(objRef("User"), utilrand.GetRandomStringCanonical(16)))
+	assert.NotNil(t, ctrl.OnAdd(ctx, req))
+}
+
+func TestRequestReviewUnsetRequirement(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
+		Name:      utilrand.GetRandomStringCanonical(6),
+		Effect:    accessv1.Policy_Spec_Rule_REVIEW,
+		Condition: matchAny(),
+		Action: reviewAction(&accessv1.Policy_Spec_Rule_Action_Review_Step{
+			Reviewers: []*accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer{
+				userReviewer(objRef("User")),
+			},
+		}),
+		Authorization: &accessv1.Policy_Spec_Rule_Authorization{
+			Policies: []string{utilrand.GetRandomStringCanonical(6)},
+		},
+	})
+
+	req := createRequest(t, ctx, octeliumC, baseRequest(objRef("User"), utilrand.GetRandomStringCanonical(16)))
+	assert.NotNil(t, ctrl.OnAdd(ctx, req))
+}
+
+func TestRequestReviewCountZero(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
+		Name:      utilrand.GetRandomStringCanonical(6),
+		Effect:    accessv1.Policy_Spec_Rule_REVIEW,
+		Condition: matchAny(),
+		Action: reviewAction(&accessv1.Policy_Spec_Rule_Action_Review_Step{
+			Reviewers: []*accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer{
+				userReviewer(objRef("User")),
+			},
+			ApprovalRequirement: accessv1.Policy_Spec_Rule_Action_Review_Step_COUNT,
+		}),
+		Authorization: &accessv1.Policy_Spec_Rule_Authorization{
+			Policies: []string{utilrand.GetRandomStringCanonical(6)},
+		},
+	})
+
+	req := createRequest(t, ctx, octeliumC, baseRequest(objRef("User"), utilrand.GetRandomStringCanonical(16)))
+	assert.NotNil(t, ctrl.OnAdd(ctx, req))
+}
+
+func TestRequestCELMatch(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
+		Name:   utilrand.GetRandomStringCanonical(6),
+		Effect: accessv1.Policy_Spec_Rule_AUTO_APPROVE,
+		Condition: &accessv1.Policy_Spec_Rule_Condition{
+			Type: &accessv1.Policy_Spec_Rule_Condition_Match{
+				Match: "true",
+			},
+		},
+		Authorization: &accessv1.Policy_Spec_Rule_Authorization{
+			Policies: []string{utilrand.GetRandomStringCanonical(6)},
+		},
+	})
+
+	req := createRequest(t, ctx, octeliumC, baseRequest(objRef("User"), utilrand.GetRandomStringCanonical(16)))
+	assert.NotNil(t, ctrl.OnAdd(ctx, req))
+}
+
+func TestRequestExpire(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
+		Name:      utilrand.GetRandomStringCanonical(6),
+		Effect:    accessv1.Policy_Spec_Rule_AUTO_APPROVE,
+		Condition: matchAny(),
+		Authorization: &accessv1.Policy_Spec_Rule_Authorization{
+			Policies:          []string{utilrand.GetRandomStringCanonical(6)},
+			MaxAccessDuration: durationHours(1),
+		},
+	})
+
+	req := createRequest(t, ctx, octeliumC, baseRequest(objRef("User"), utilrand.GetRandomStringCanonical(16)))
+	reqApproved := converge(t, ctx, ctrl, octeliumC, req.Metadata.Uid)
+	assert.NotNil(t, reqApproved.Status.PolicyTriggerRef)
+	ptUid := reqApproved.Status.PolicyTriggerRef.Uid
+
+	reqApproved.Status.AccessEndsAt = pbutils.Timestamp(time.Now().Add(-2 * time.Hour))
+	_, err := octeliumC.AccessC().UpdateRequest(ctx, reqApproved)
+	assert.Nil(t, err, "%+v", err)
+
+	reqG := converge(t, ctx, ctrl, octeliumC, req.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_EXPIRED, reqG.Status.State.Status)
+	assert.Nil(t, reqG.Status.PolicyTriggerRef)
+
+	_, err = octeliumC.CoreC().GetPolicyTrigger(ctx, &rmetav1.GetOptions{Uid: ptUid})
+	assert.True(t, grpcerr.IsNotFound(err))
+}
+
+func TestRequestRevoke(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
+		Name:      utilrand.GetRandomStringCanonical(6),
+		Effect:    accessv1.Policy_Spec_Rule_AUTO_APPROVE,
+		Condition: matchAny(),
+		Authorization: &accessv1.Policy_Spec_Rule_Authorization{
+			Policies:          []string{utilrand.GetRandomStringCanonical(6)},
+			MaxAccessDuration: durationHours(1),
+		},
+	})
+
+	req := createRequest(t, ctx, octeliumC, baseRequest(objRef("User"), utilrand.GetRandomStringCanonical(16)))
+	reqApproved := converge(t, ctx, ctrl, octeliumC, req.Metadata.Uid)
 	ptUid := reqApproved.Status.PolicyTriggerRef.Uid
 
 	reqApproved.Status.State = &accessv1.Request_Status_State{
 		CreatedAt: pbutils.Now(),
 		Status:    accessv1.Request_Status_State_REVOKED,
 	}
-	reqRevoked, err := octeliumC.AccessC().UpdateRequest(ctx, reqApproved)
+	_, err := octeliumC.AccessC().UpdateRequest(ctx, reqApproved)
 	assert.Nil(t, err, "%+v", err)
 
-	assert.Nil(t, ctrl.OnUpdate(ctx, reqRevoked, reqApproved))
-
-	reqG := getRequest(t, ctx, octeliumC, reqApproved.Metadata.Uid)
+	reqG := converge(t, ctx, ctrl, octeliumC, req.Metadata.Uid)
 	assert.Equal(t, accessv1.Request_Status_State_REVOKED, reqG.Status.State.Status)
 	assert.Nil(t, reqG.Status.PolicyTriggerRef)
 
-	_, err = octeliumC.CoreC().GetPolicyTrigger(ctx, &rmetav1.GetOptions{
-		Uid: ptUid,
-	})
+	_, err = octeliumC.CoreC().GetPolicyTrigger(ctx, &rmetav1.GetOptions{Uid: ptUid})
 	assert.True(t, grpcerr.IsNotFound(err))
 }
 
-func TestControllerOnDelete(t *testing.T) {
+func TestRequestOnDelete(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
-	reqApproved := setupApproved(t, ctx, ctrl, octeliumC)
+	createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
+		Name:      utilrand.GetRandomStringCanonical(6),
+		Effect:    accessv1.Policy_Spec_Rule_AUTO_APPROVE,
+		Condition: matchAny(),
+		Authorization: &accessv1.Policy_Spec_Rule_Authorization{
+			Policies:          []string{utilrand.GetRandomStringCanonical(6)},
+			MaxAccessDuration: durationHours(1),
+		},
+	})
+
+	req := createRequest(t, ctx, octeliumC, baseRequest(objRef("User"), utilrand.GetRandomStringCanonical(16)))
+	reqApproved := converge(t, ctx, ctrl, octeliumC, req.Metadata.Uid)
 	ptUid := reqApproved.Status.PolicyTriggerRef.Uid
 
 	assert.Nil(t, ctrl.OnDelete(ctx, reqApproved))
 
-	_, err := octeliumC.CoreC().GetPolicyTrigger(ctx, &rmetav1.GetOptions{
-		Uid: ptUid,
-	})
+	_, err := octeliumC.CoreC().GetPolicyTrigger(ctx, &rmetav1.GetOptions{Uid: ptUid})
 	assert.True(t, grpcerr.IsNotFound(err))
 }
 
-func TestControllerGetAccessDuration(t *testing.T) {
+func TestRequestAnchorNoSliding(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
+		Name:      utilrand.GetRandomStringCanonical(6),
+		Effect:    accessv1.Policy_Spec_Rule_AUTO_APPROVE,
+		Condition: matchAny(),
+		Authorization: &accessv1.Policy_Spec_Rule_Authorization{
+			Policies:          []string{utilrand.GetRandomStringCanonical(6)},
+			MaxAccessDuration: durationHours(1),
+		},
+	})
+
+	req := createRequest(t, ctx, octeliumC, baseRequest(objRef("User"), utilrand.GetRandomStringCanonical(16)))
+	reqA := converge(t, ctx, ctrl, octeliumC, req.Metadata.Uid)
+	ptUidA := reqA.Status.PolicyTriggerRef.Uid
+	accessEndsA := reqA.Status.AccessEndsAt.AsTime()
+
+	reqB := converge(t, ctx, ctrl, octeliumC, req.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED, reqB.Status.State.Status)
+	assert.Equal(t, ptUidA, reqB.Status.PolicyTriggerRef.Uid)
+	assert.Equal(t, accessEndsA, reqB.Status.AccessEndsAt.AsTime())
+
+	pt, err := octeliumC.CoreC().GetPolicyTrigger(ctx, &rmetav1.GetOptions{Uid: ptUidA})
+	assert.Nil(t, err, "%+v", err)
+	assert.Equal(t, accessEndsA, pt.Status.PreCondition.GetAll().Of[2].GetNotAfter().AsTime())
+}
+
+func TestRequestGetAccessDuration(t *testing.T) {
 	ctrl := &Controller{}
 
 	none := ctrl.getAccessDuration(
@@ -592,9 +635,9 @@ func TestControllerGetAccessDuration(t *testing.T) {
 	)
 	assert.Equal(t, 2*time.Hour, clamped)
 
-	underMax := ctrl.getAccessDuration(
+	nilAuthz := ctrl.getAccessDuration(
 		&accessv1.Request{Spec: &accessv1.Request_Spec{Duration: durationHours(1)}},
-		&accessv1.Policy_Spec_Rule_Authorization{MaxAccessDuration: durationHours(4)},
+		nil,
 	)
-	assert.Equal(t, 1*time.Hour, underMax)
+	assert.Equal(t, 1*time.Hour, nilAuthz)
 }

@@ -10,10 +10,10 @@ package reviews
 
 import (
 	"context"
-	"sort"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium/apis/main/accessv1"
+	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
@@ -107,20 +107,36 @@ func (c *Controller) reconcile(ctx context.Context, rev *accessv1.Review, force 
 			next.Metadata.Name, next.Status.Review.CurrentStep)
 	}
 
-	alreadyApplied := hasReview(next.Status.Review, rev)
-
-	if alreadyApplied && !force {
+	if rev.Status.StepIndex != next.Status.Review.CurrentStep {
 		return nil
 	}
 
-	if alreadyApplied && force && rev.Spec.Decision != accessv1.Review_Spec_DECISION_REJECT {
+	step := actionReview.Steps[int(next.Status.Review.CurrentStep)]
+
+	isReviewer, err := c.userMatchesAnyReviewer(ctx, rev.Status.UserRef, step.Reviewers)
+	if err != nil {
+		return err
+	}
+	if !isReviewer {
 		return nil
+	}
+
+	alreadyApplied, appliedStepIndex := findAppliedReviewStep(next.Status.Review, rev)
+	if alreadyApplied {
+		if appliedStepIndex != next.Status.Review.CurrentStep {
+			return nil
+		}
+
+		if !force {
+			return nil
+		}
 	}
 
 	if !alreadyApplied {
 		next.Status.Review.LastSteps = append(next.Status.Review.LastSteps, &accessv1.Request_Status_Review_Step{
 			ReviewRef: umetav1.GetObjectReference(rev),
 			SetAt:     reviewSetAt(rev),
+			StepIndex: rev.Status.StepIndex,
 		})
 	}
 
@@ -149,14 +165,9 @@ func (c *Controller) applyApproval(
 	ctx context.Context,
 	req *accessv1.Request,
 	actionReview *accessv1.Policy_Spec_Rule_Action_Review,
-	rev *accessv1.Review,
+	curr *accessv1.Review,
 ) error {
-	appliedReviews, err := c.getAppliedReviews(ctx, req, rev)
-	if err != nil {
-		return err
-	}
-
-	currentStepReviews, err := c.getCurrentStepReviews(ctx, req, actionReview, appliedReviews)
+	currentStepReviews, err := c.getCurrentStepReviews(ctx, req, curr)
 	if err != nil {
 		return err
 	}
@@ -191,49 +202,49 @@ func (c *Controller) gotoNextStepOrApprove(
 func (c *Controller) getCurrentStepReviews(
 	ctx context.Context,
 	req *accessv1.Request,
-	actionReview *accessv1.Policy_Spec_Rule_Action_Review,
-	appliedReviews []*accessv1.Review,
+	curr *accessv1.Review,
 ) ([]*accessv1.Review, error) {
-	startIdx := 0
+	if req.Status.Review == nil {
+		return nil, nil
+	}
 
-	for stepIdx := int32(0); stepIdx < req.Status.Review.CurrentStep; stepIdx++ {
-		if int(stepIdx) >= len(actionReview.Steps) {
-			return nil, errors.Errorf("request %q has invalid review step history", req.Metadata.Name)
+	currentStep := req.Status.Review.CurrentStep
+	ret := []*accessv1.Review{}
+	seen := map[string]struct{}{}
+
+	for _, step := range req.Status.Review.LastSteps {
+		if step == nil || step.StepIndex != currentStep {
+			continue
 		}
 
-		consumed, err := c.getConsumedReviewCountForApprovedStep(ctx,
-			actionReview.Steps[int(stepIdx)], appliedReviews[startIdx:])
+		if step.ReviewRef == nil || step.ReviewRef.Uid == "" {
+			continue
+		}
+
+		if _, ok := seen[step.ReviewRef.Uid]; ok {
+			continue
+		}
+		seen[step.ReviewRef.Uid] = struct{}{}
+
+		if curr != nil && curr.Metadata.Uid == step.ReviewRef.Uid {
+			ret = append(ret, curr)
+			continue
+		}
+
+		rev, err := c.octeliumC.AccessC().GetReview(ctx, &rmetav1.GetOptions{
+			Uid: step.ReviewRef.Uid,
+		})
 		if err != nil {
+			if grpcerr.IsNotFound(err) {
+				continue
+			}
 			return nil, err
 		}
 
-		startIdx += consumed
-
-		if startIdx > len(appliedReviews) {
-			return nil, errors.Errorf("request %q has invalid review history", req.Metadata.Name)
-		}
+		ret = append(ret, rev)
 	}
 
-	return appliedReviews[startIdx:], nil
-}
-
-func (c *Controller) getConsumedReviewCountForApprovedStep(
-	ctx context.Context,
-	step *accessv1.Policy_Spec_Rule_Action_Review_Step,
-	reviews []*accessv1.Review,
-) (int, error) {
-	for i := range reviews {
-		approved, err := c.isStepApproved(ctx, step, reviews[:i+1])
-		if err != nil {
-			return 0, err
-		}
-
-		if approved {
-			return i + 1, nil
-		}
-	}
-
-	return 0, errors.Errorf("could not determine consumed reviews for approved step")
+	return ret, nil
 }
 
 func (c *Controller) isStepApproved(
@@ -407,22 +418,16 @@ func (c *Controller) userMatchesGroup(
 	userRef *metav1.ObjectReference,
 	groupRef *metav1.ObjectReference,
 ) (bool, error) {
-	if userRef == nil || userRef.Uid == "" || groupRef == nil || groupRef.Uid == "" {
+	if userRef == nil || userRef.Uid == "" || groupRef == nil {
 		return false, nil
 	}
 
-	grp, err := c.octeliumC.CoreC().GetGroup(ctx, &rmetav1.GetOptions{
-		Uid: groupRef.Uid,
-	})
+	grp, err := c.getGroup(ctx, groupRef)
 	if err != nil {
-		if grpcerr.IsNotFound(err) {
-			return false, nil
-		}
 		return false, err
 	}
-
-	if grp.Metadata.Name == "all" {
-		return true, nil
+	if grp == nil {
+		return false, nil
 	}
 
 	usr, err := c.octeliumC.CoreC().GetUser(ctx, &rmetav1.GetOptions{
@@ -444,56 +449,23 @@ func (c *Controller) userMatchesGroup(
 	return false, nil
 }
 
-func (c *Controller) getAppliedReviews(
-	ctx context.Context,
-	req *accessv1.Request,
-	curr *accessv1.Review,
-) ([]*accessv1.Review, error) {
-	if req.Status.Review == nil {
+func (c *Controller) getGroup(ctx context.Context, ref *metav1.ObjectReference) (*corev1.Group, error) {
+	if ref == nil {
 		return nil, nil
 	}
 
-	steps := append([]*accessv1.Request_Status_Review_Step{}, req.Status.Review.LastSteps...)
-
-	sort.SliceStable(steps, func(i, j int) bool {
-		if steps[i].SetAt == nil || steps[j].SetAt == nil {
-			return false
-		}
-		return steps[i].SetAt.AsTime().Before(steps[j].SetAt.AsTime())
+	grp, err := c.octeliumC.CoreC().GetGroup(ctx, &rmetav1.GetOptions{
+		Uid:  ref.Uid,
+		Name: ref.Name,
 	})
-
-	ret := make([]*accessv1.Review, 0, len(steps))
-	seen := map[string]struct{}{}
-
-	for _, step := range steps {
-		if step.ReviewRef == nil || step.ReviewRef.Uid == "" {
-			continue
+	if err != nil {
+		if grpcerr.IsNotFound(err) {
+			return nil, nil
 		}
-
-		if _, ok := seen[step.ReviewRef.Uid]; ok {
-			continue
-		}
-		seen[step.ReviewRef.Uid] = struct{}{}
-
-		if curr != nil && curr.Metadata.Uid == step.ReviewRef.Uid {
-			ret = append(ret, curr)
-			continue
-		}
-
-		rev, err := c.octeliumC.AccessC().GetReview(ctx, &rmetav1.GetOptions{
-			Uid: step.ReviewRef.Uid,
-		})
-		if err != nil {
-			if grpcerr.IsNotFound(err) {
-				continue
-			}
-			return nil, err
-		}
-
-		ret = append(ret, rev)
+		return nil, err
 	}
 
-	return ret, nil
+	return grp, nil
 }
 
 func (c *Controller) getRequest(ctx context.Context, ref *metav1.ObjectReference) (*accessv1.Request, error) {
@@ -548,16 +520,16 @@ func (c *Controller) setState(req *accessv1.Request, status accessv1.Request_Sta
 	}
 }
 
-func hasReview(reqReview *accessv1.Request_Status_Review, rev *accessv1.Review) bool {
+func findAppliedReviewStep(reqReview *accessv1.Request_Status_Review, rev *accessv1.Review) (bool, int32) {
 	for _, step := range reqReview.LastSteps {
 		if step.ReviewRef != nil &&
 			step.ReviewRef.Uid != "" &&
 			step.ReviewRef.Uid == rev.Metadata.Uid {
-			return true
+			return true, step.StepIndex
 		}
 	}
 
-	return false
+	return false, 0
 }
 
 func reviewSetAt(rev *accessv1.Review) *timestamppb.Timestamp {

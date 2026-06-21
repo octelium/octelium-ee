@@ -69,6 +69,16 @@ func (c *Controller) reconcile(ctx context.Context, itm *accessv1.Request) error
 		}
 	}
 
+	if next.Status.State.Status == accessv1.Request_Status_State_APPROVED {
+		c.ensureAccessEndsAt(next)
+		c.expireIfNeeded(next)
+	}
+
+	if !pbutils.IsEqual(itm, next) {
+		_, err := c.octeliumC.AccessC().UpdateRequest(ctx, next)
+		return err
+	}
+
 	switch next.Status.State.Status {
 	case accessv1.Request_Status_State_PENDING:
 		if next.Status.Rule == nil {
@@ -127,9 +137,11 @@ func (c *Controller) initializeRequest(ctx context.Context, req *accessv1.Reques
 		}
 
 		c.setState(req, accessv1.Request_Status_State_PENDING)
+
 		if req.Status.ApprovalStartAt == nil {
 			req.Status.ApprovalStartAt = pbutils.Now()
 		}
+
 		if req.Status.Review == nil {
 			req.Status.Review = &accessv1.Request_Status_Review{
 				CurrentStep: 0,
@@ -138,14 +150,13 @@ func (c *Controller) initializeRequest(ctx context.Context, req *accessv1.Reques
 
 	case accessv1.Policy_Spec_Rule_AUTO_APPROVE:
 		c.setState(req, accessv1.Request_Status_State_APPROVED)
+
 		if req.Status.ApprovalStartAt == nil {
 			req.Status.ApprovalStartAt = pbutils.Now()
 		}
+
 		if req.Status.ApprovalEndAt == nil {
 			req.Status.ApprovalEndAt = pbutils.Now()
-		}
-		if err := c.ensurePolicyTrigger(ctx, req); err != nil {
-			return err
 		}
 
 	default:
@@ -222,6 +233,7 @@ func (c *Controller) matchCondition(ctx context.Context, req *accessv1.Request, 
 		if len(arg.Of) == 0 {
 			return false, nil
 		}
+
 		for _, sub := range arg.Of {
 			matched, err := c.matchCondition(ctx, req, sub)
 			if err != nil {
@@ -231,6 +243,7 @@ func (c *Controller) matchCondition(ctx context.Context, req *accessv1.Request, 
 				return false, nil
 			}
 		}
+
 		return true, nil
 
 	case *accessv1.Policy_Spec_Rule_Condition_Any_:
@@ -238,6 +251,7 @@ func (c *Controller) matchCondition(ctx context.Context, req *accessv1.Request, 
 		if len(arg.Of) == 0 {
 			return false, nil
 		}
+
 		for _, sub := range arg.Of {
 			matched, err := c.matchCondition(ctx, req, sub)
 			if err != nil {
@@ -247,6 +261,7 @@ func (c *Controller) matchCondition(ctx context.Context, req *accessv1.Request, 
 				return true, nil
 			}
 		}
+
 		return false, nil
 
 	case *accessv1.Policy_Spec_Rule_Condition_UserRef:
@@ -260,7 +275,8 @@ func (c *Controller) matchCondition(ctx context.Context, req *accessv1.Request, 
 	}
 }
 
-func (c *Controller) matchSubject(ctx context.Context,
+func (c *Controller) matchSubject(
+	ctx context.Context,
 	req *accessv1.Request,
 	subject *accessv1.Policy_Spec_Rule_Condition_Subject,
 ) (bool, error) {
@@ -280,7 +296,8 @@ func (c *Controller) matchSubject(ctx context.Context,
 	}
 }
 
-func (c *Controller) matchSubjectGroup(ctx context.Context,
+func (c *Controller) matchSubjectGroup(
+	ctx context.Context,
 	userRef *metav1.ObjectReference,
 	groupRef *metav1.ObjectReference,
 ) (bool, error) {
@@ -341,9 +358,7 @@ func (c *Controller) ensurePolicyTrigger(ctx context.Context, req *accessv1.Requ
 		return nil
 	}
 
-	authz := req.Status.Rule.Authorization
-
-	ptDesired, err := c.buildPolicyTrigger(ctx, req, authz)
+	ptDesired, err := c.buildPolicyTrigger(ctx, req, req.Status.Rule.Authorization)
 	if err != nil {
 		return err
 	}
@@ -423,11 +438,10 @@ func (c *Controller) buildPolicyTrigger(
 		},
 	}
 
-	accessDuration := c.getAccessDuration(req, authz)
-	if accessDuration > 0 {
+	if req.Status.AccessEndsAt != nil {
 		preConditionItems = append(preConditionItems, &corev1.PolicyTrigger_Status_PreCondition{
 			Type: &corev1.PolicyTrigger_Status_PreCondition_NotAfter{
-				NotAfter: pbutils.Timestamp(pbutils.Now().AsTime().Add(accessDuration)),
+				NotAfter: pbutils.Timestamp(req.Status.AccessEndsAt.AsTime()),
 			},
 		})
 	}
@@ -582,6 +596,42 @@ func (c *Controller) deletePolicyTrigger(ctx context.Context, ref *metav1.Object
 	}
 
 	return nil
+}
+
+func (c *Controller) ensureAccessEndsAt(req *accessv1.Request) {
+	if req.Status.AccessEndsAt != nil {
+		return
+	}
+
+	if req.Status.Rule == nil {
+		return
+	}
+
+	accessDuration := c.getAccessDuration(req, req.Status.Rule.Authorization)
+	if accessDuration <= 0 {
+		return
+	}
+
+	anchor := req.Status.ApprovalEndAt
+	if anchor == nil {
+		anchor = pbutils.Now()
+		req.Status.ApprovalEndAt = anchor
+	}
+
+	req.Status.AccessEndsAt = pbutils.Timestamp(anchor.AsTime().Add(accessDuration))
+}
+
+func (c *Controller) expireIfNeeded(req *accessv1.Request) {
+	if req.Status.AccessEndsAt == nil {
+		return
+	}
+
+	now := pbutils.Now()
+	if req.Status.AccessEndsAt.AsTime().After(now.AsTime()) {
+		return
+	}
+
+	c.setState(req, accessv1.Request_Status_State_EXPIRED)
 }
 
 func (c *Controller) setState(req *accessv1.Request, status accessv1.Request_Status_State_Status) {
