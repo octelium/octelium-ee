@@ -20,6 +20,8 @@ import (
 	"github.com/octelium/octelium-ee/cluster/common/watchers"
 	cccontroller "github.com/octelium/octelium-ee/cluster/nocturne/nocturne/controllers/cluster_config"
 	dpcontroller "github.com/octelium/octelium-ee/cluster/nocturne/nocturne/controllers/directoryproviders"
+	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/controllers/requests"
+	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/controllers/reviews"
 	sesscontroller "github.com/octelium/octelium-ee/cluster/nocturne/nocturne/controllers/sessions"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
@@ -59,6 +61,7 @@ func Run(ctx context.Context) error {
 
 	watcher := watchers.NewEnterpriseV1(octeliumC)
 	cWatcher := cwatchers.NewCoreV1(octeliumC)
+	aWatcher := watchers.NewAccessV1(octeliumC)
 
 	{
 		ccCtl := cccontroller.NewController(octeliumC, k8sC)
@@ -74,6 +77,28 @@ func Run(ctx context.Context) error {
 		}
 		if err := watcher.DirectoryProvider(ctx, nil,
 			dpCtl.OnAdd, dpCtl.OnUpdate, dpCtl.OnDelete); err != nil {
+			return err
+		}
+	}
+
+	{
+		ctl, err := requests.NewController(ctx, octeliumC)
+		if err != nil {
+			return err
+		}
+		if err := aWatcher.Request(ctx, nil,
+			ctl.OnAdd, ctl.OnUpdate, ctl.OnDelete); err != nil {
+			return err
+		}
+	}
+
+	{
+		ctl, err := reviews.NewController(ctx, octeliumC)
+		if err != nil {
+			return err
+		}
+		if err := aWatcher.Review(ctx, nil,
+			ctl.OnAdd, ctl.OnUpdate, ctl.OnDelete); err != nil {
 			return err
 		}
 	}
