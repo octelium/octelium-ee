@@ -19,6 +19,7 @@ import (
 	"github.com/octelium/octelium/cluster/common/apivalidation"
 	"github.com/octelium/octelium/cluster/common/grpcutils"
 	"github.com/octelium/octelium/cluster/common/urscsrv"
+	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/grpcerr"
 )
 
@@ -174,16 +175,20 @@ func (s *ServerMain) validatePolicy(ctx context.Context, req *accessv1.Policy) e
 			if err := s.validatePolicyReview(ctx, rule.Name, rule.Action.GetReview()); err != nil {
 				return err
 			}
-			if err := s.validatePolicyAuthorization(ctx, rule.Name, rule.Authorization); err != nil {
-				return err
+			if rule.Authorization != nil {
+				if err := s.validatePolicyAuthorization(ctx, rule.Name, rule.Authorization); err != nil {
+					return err
+				}
 			}
 
 		case accessv1.Policy_Spec_Rule_AUTO_APPROVE:
 			if rule.Action != nil && rule.Action.GetReview() != nil {
 				return grpcutils.InvalidArg("AUTO_APPROVE Rule %s cannot have Review action", rule.Name)
 			}
-			if err := s.validatePolicyAuthorization(ctx, rule.Name, rule.Authorization); err != nil {
-				return err
+			if rule.Authorization != nil {
+				if err := s.validatePolicyAuthorization(ctx, rule.Name, rule.Authorization); err != nil {
+					return err
+				}
 			}
 
 		case accessv1.Policy_Spec_Rule_EFFECT_UNSET:
@@ -366,13 +371,15 @@ func (s *ServerMain) validatePolicyAuthorization(ctx context.Context,
 		return grpcutils.InvalidArg("Rule %s Authorization must be set", ruleName)
 	}
 
-	if len(authorization.Policies) == 0 && len(authorization.InlinePolicies) == 0 {
-		return grpcutils.InvalidArg("Rule %s Authorization must include at least one Policy or InlinePolicy", ruleName)
-	}
-
 	for _, pol := range authorization.Policies {
-		if pol == "" {
-			return grpcutils.InvalidArg("Rule %s Authorization has empty Policy", ruleName)
+		if err := apivalidation.ValidateName(pol, 0, vutils.MaxPolicyParents); err != nil {
+			return err
+		}
+
+		if _, err := s.octeliumC.CoreC().GetPolicy(ctx, &rmetav1.GetOptions{
+			Name: pol,
+		}); err != nil {
+			return serr.K8sNotFoundOrInternalWithErr(err)
 		}
 	}
 

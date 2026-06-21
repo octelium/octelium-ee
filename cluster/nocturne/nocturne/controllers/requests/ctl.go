@@ -284,9 +284,6 @@ func (c *Controller) ensurePolicyTrigger(ctx context.Context, req *accessv1.Requ
 	}
 
 	authz := req.Status.Rule.Authorization
-	if authz == nil {
-		return errors.Errorf("approved request %q has no authorization snapshot", req.Metadata.Name)
-	}
 
 	ptDesired, err := c.buildPolicyTrigger(req, authz)
 	if err != nil {
