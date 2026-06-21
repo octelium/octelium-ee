@@ -23,7 +23,6 @@ import (
 )
 
 func (s *ServerMain) CreateCatalog(ctx context.Context, req *accessv1.Catalog) (*accessv1.Catalog, error) {
-
 	if err := apivalidation.ValidateCommon(req, &apivalidation.ValidateCommonOpts{
 		ValidateMetadataOpts: apivalidation.ValidateMetadataOpts{
 			RequireName: true,
@@ -32,14 +31,12 @@ func (s *ServerMain) CreateCatalog(ctx context.Context, req *accessv1.Catalog) (
 		return nil, err
 	}
 
-	{
-		_, err := s.octeliumC.AccessC().GetCatalog(ctx, &rmetav1.GetOptions{Name: req.Metadata.Name})
-		if err == nil {
-			return nil, grpcutils.AlreadyExists("The Catalog %s already exists", req.Metadata.Name)
-		}
-		if !grpcerr.IsNotFound(err) {
-			return nil, grpcutils.InternalWithErr(err)
-		}
+	_, err := s.octeliumC.AccessC().GetCatalog(ctx, apivalidation.ObjectToRGetOptions(req))
+	if err == nil {
+		return nil, grpcutils.AlreadyExists("The Catalog %s already exists", req.Metadata.Name)
+	}
+	if !grpcerr.IsNotFound(err) {
+		return nil, grpcutils.InternalWithErr(err)
 	}
 
 	if err := s.validateCatalog(ctx, req); err != nil {
@@ -52,7 +49,7 @@ func (s *ServerMain) CreateCatalog(ctx context.Context, req *accessv1.Catalog) (
 		Status:   &accessv1.Catalog_Status{},
 	}
 
-	item, err := s.octeliumC.AccessC().CreateCatalog(ctx, item)
+	item, err = s.octeliumC.AccessC().CreateCatalog(ctx, item)
 	if err != nil {
 		return nil, serr.InternalWithErr(err)
 	}
@@ -65,19 +62,15 @@ func (s *ServerMain) GetCatalog(ctx context.Context, req *metav1.GetOptions) (*a
 		return nil, err
 	}
 
-	ret, err := s.octeliumC.AccessC().GetCatalog(ctx, &rmetav1.GetOptions{
-		Uid:  req.Uid,
-		Name: req.Name,
-	})
+	item, err := s.octeliumC.AccessC().GetCatalog(ctx, apivalidation.GetOptionsToRGetOptions(req))
 	if err != nil {
 		return nil, serr.K8sNotFoundOrInternalWithErr(err)
 	}
 
-	return ret, nil
+	return item, nil
 }
 
 func (s *ServerMain) ListCatalog(ctx context.Context, req *accessv1.ListCatalogOptions) (*accessv1.CatalogList, error) {
-
 	itemList, err := s.octeliumC.AccessC().ListCatalog(ctx, urscsrv.GetPublicListOptions(req))
 	if err != nil {
 		return nil, serr.InternalWithErr(err)
@@ -87,21 +80,18 @@ func (s *ServerMain) ListCatalog(ctx context.Context, req *accessv1.ListCatalogO
 }
 
 func (s *ServerMain) DeleteCatalog(ctx context.Context, req *metav1.DeleteOptions) (*metav1.OperationResult, error) {
-
-	g, err := s.octeliumC.AccessC().GetCatalog(ctx, &rmetav1.GetOptions{Name: req.Name, Uid: req.Uid})
+	item, err := s.octeliumC.AccessC().GetCatalog(ctx, apivalidation.DeleteOptionsToRGetOptions(req))
 	if err != nil {
+		return nil, serr.K8sNotFoundOrInternalWithErr(err)
+	}
+
+	if err := apivalidation.CheckIsSystem(item); err != nil {
 		return nil, err
 	}
 
-	if g.Metadata.IsSystem {
-		return nil, serr.InvalidArg("Cannot delete the system group: %s", req.Name)
-	}
-
-	if err != nil {
-		return nil, serr.K8sInternal(err)
-	}
-
-	_, err = s.octeliumC.AccessC().DeleteCatalog(ctx, &rmetav1.DeleteOptions{Uid: g.Metadata.Uid})
+	_, err = s.octeliumC.AccessC().DeleteCatalog(ctx, &rmetav1.DeleteOptions{
+		Uid: item.Metadata.Uid,
+	})
 	if err != nil {
 		return nil, serr.K8sInternal(err)
 	}
@@ -110,7 +100,6 @@ func (s *ServerMain) DeleteCatalog(ctx context.Context, req *metav1.DeleteOption
 }
 
 func (s *ServerMain) UpdateCatalog(ctx context.Context, req *accessv1.Catalog) (*accessv1.Catalog, error) {
-
 	if err := apivalidation.ValidateCommon(req, &apivalidation.ValidateCommonOpts{
 		ValidateMetadataOpts: apivalidation.ValidateMetadataOpts{
 			RequireName: true,
@@ -123,8 +112,12 @@ func (s *ServerMain) UpdateCatalog(ctx context.Context, req *accessv1.Catalog) (
 		return nil, err
 	}
 
-	item, err := s.octeliumC.AccessC().GetCatalog(ctx, &rmetav1.GetOptions{Name: req.Metadata.Name})
+	item, err := s.octeliumC.AccessC().GetCatalog(ctx, apivalidation.ObjectToRGetOptions(req))
 	if err != nil {
+		return nil, serr.K8sNotFoundOrInternalWithErr(err)
+	}
+
+	if err := apivalidation.CheckIsSystem(item); err != nil {
 		return nil, err
 	}
 
@@ -140,9 +133,33 @@ func (s *ServerMain) UpdateCatalog(ctx context.Context, req *accessv1.Catalog) (
 }
 
 func (s *ServerMain) validateCatalog(ctx context.Context, req *accessv1.Catalog) error {
-	spec := req.Spec
-	if spec == nil {
-		return grpcutils.InvalidArg("Nil spec")
+	if req.Spec == nil {
+		return grpcutils.InvalidArg("Nil Spec")
+	}
+
+	if req.Spec.ResourceCollection == nil {
+		return grpcutils.InvalidArg("ResourceCollection must be set")
+	}
+
+	if req.Spec.ResourceCollection.Service == nil {
+		return grpcutils.InvalidArg("ResourceCollection Service must be set")
+	}
+
+	if len(req.Spec.ResourceCollection.Service.Services) == 0 &&
+		len(req.Spec.ResourceCollection.Service.Namespaces) == 0 {
+		return grpcutils.InvalidArg("ResourceCollection Service must include at least one Service or Namespace")
+	}
+
+	for _, svc := range req.Spec.ResourceCollection.Service.Services {
+		if svc == "" {
+			return grpcutils.InvalidArg("Service name cannot be empty")
+		}
+	}
+
+	for _, ns := range req.Spec.ResourceCollection.Service.Namespaces {
+		if ns == "" {
+			return grpcutils.InvalidArg("Namespace name cannot be empty")
+		}
 	}
 
 	return nil

@@ -10,12 +10,12 @@ package access
 
 import (
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
-	pb "github.com/octelium/octelium/apis/main/accessv1"
+	"github.com/octelium/octelium/apis/main/accessv1"
 )
 
 type ServerMain struct {
 	octeliumC octeliumc.ClientInterface
-	pb.UnimplementedMainServiceServer
+	accessv1.UnimplementedMainServiceServer
 }
 
 func NewServerMain(octeliumC octeliumc.ClientInterface) *ServerMain {
@@ -26,7 +26,7 @@ func NewServerMain(octeliumC octeliumc.ClientInterface) *ServerMain {
 
 type ServerUser struct {
 	octeliumC octeliumc.ClientInterface
-	pb.UnimplementedUserServiceServer
+	accessv1.UnimplementedUserServiceServer
 }
 
 func NewServerUser(octeliumC octeliumc.ClientInterface) *ServerUser {
@@ -37,7 +37,7 @@ func NewServerUser(octeliumC octeliumc.ClientInterface) *ServerUser {
 
 type ServerReviewer struct {
 	octeliumC octeliumc.ClientInterface
-	pb.UnimplementedReviewerServiceServer
+	accessv1.UnimplementedReviewerServiceServer
 }
 
 func NewServerReviewer(octeliumC octeliumc.ClientInterface) *ServerReviewer {
