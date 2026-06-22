@@ -3,7 +3,7 @@ import {
   Condition,
   Condition_Expression as Expression,
 } from "@/apis/enterprisev1/enterprisev1";
-import { Drawer, ScrollArea, Select, Tooltip } from "@mantine/core";
+import { Drawer, Select, Tooltip } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { Edit2, Plus, Search, Trash2 } from "lucide-react";
 import * as React from "react";
@@ -317,12 +317,17 @@ const ExpressionC = (props: {
             borderBottom: "1px solid #e2e8f0",
             paddingBottom: "12px",
           },
-          body: { padding: "16px" },
+          content: { display: "flex", flexDirection: "column" },
+          body: {
+            flex: 1,
+            minHeight: 0,
+            display: "flex",
+            flexDirection: "column",
+            padding: "16px",
+          },
         }}
       >
-        <ScrollArea type="auto" offsetScrollbars>
-          <ExpressionEditC item={props.item} onUpdate={props.onUpdate} />
-        </ScrollArea>
+        <ExpressionEditC item={props.item} onUpdate={props.onUpdate} />
       </Drawer>
     </>
   );
@@ -358,112 +363,117 @@ const ExpressionEditC = (props: {
   };
 
   return (
-    <div className="w-full flex flex-col gap-5">
-      <div className="flex flex-col gap-2.5">
-        <div className="relative">
-          <Search
-            size={13}
-            strokeWidth={2.5}
-            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-          />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search rule types..."
-            className="w-full pl-8 pr-3 h-8 text-[0.78rem] font-semibold text-slate-700 bg-white border border-slate-200 rounded-md shadow-[0_1px_3px_rgba(15,23,42,0.05)] outline-none focus:border-slate-400 focus:shadow-[0_0_0_2px_rgba(148,163,184,0.2)] transition-all duration-150 placeholder:text-slate-400 placeholder:font-semibold"
-          />
-        </div>
+    <div className="w-full h-full min-h-0 flex flex-col gap-4">
+      <div className="shrink-0 flex flex-col gap-4">
+        <div className="flex flex-col gap-2.5">
+          <div className="relative">
+            <Search
+              size={13}
+              strokeWidth={2.5}
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+            />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search rule types..."
+              className="w-full pl-8 pr-3 h-8 text-[0.78rem] font-semibold text-slate-700 bg-white border border-slate-200 rounded-md shadow-[0_1px_3px_rgba(15,23,42,0.05)] outline-none focus:border-slate-400 focus:shadow-[0_0_0_2px_rgba(148,163,184,0.2)] transition-all duration-150 placeholder:text-slate-400 placeholder:font-semibold"
+            />
+          </div>
 
-        <div className="flex flex-wrap gap-1.5">
-          <button
-            onClick={() => setActiveTag(null)}
-            className={twMerge(
-              "px-2 py-0.5 rounded-md text-[0.65rem] font-bold uppercase tracking-[0.05em] border transition-colors duration-150 cursor-pointer",
-              activeTag === null
-                ? "bg-slate-900 text-white border-slate-900"
-                : "bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-800",
-            )}
-          >
-            All
-          </button>
-          {ALL_TAGS.map((tag) => (
+          <div className="flex flex-wrap gap-1.5">
             <button
-              key={tag}
-              onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+              onClick={() => setActiveTag(null)}
               className={twMerge(
                 "px-2 py-0.5 rounded-md text-[0.65rem] font-bold uppercase tracking-[0.05em] border transition-colors duration-150 cursor-pointer",
-                activeTag === tag
+                activeTag === null
                   ? "bg-slate-900 text-white border-slate-900"
                   : "bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-800",
               )}
             >
-              {tag}
+              All
             </button>
-          ))}
+            {ALL_TAGS.map((tag) => (
+              <button
+                key={tag}
+                onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+                className={twMerge(
+                  "px-2 py-0.5 rounded-md text-[0.65rem] font-bold uppercase tracking-[0.05em] border transition-colors duration-150 cursor-pointer",
+                  activeTag === tag
+                    ? "bg-slate-900 text-white border-slate-900"
+                    : "bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-800",
+                )}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
 
-      <div className="flex flex-col gap-2">
-        <span className="text-[0.65rem] font-bold uppercase tracking-[0.08em] text-slate-400">
-          Rule type
-        </span>
-        {filtered.length === 0 ? (
-          <p className="text-[0.75rem] font-semibold text-slate-400 py-6 text-center">
-            No rule types match your search.
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {filtered.map((x) => {
-              const isSelected = selectedType === x.type;
-              return (
-                <button
-                  key={x.type}
-                  onClick={() => selectType(x)}
-                  className={twMerge(
-                    "flex flex-col items-start text-left rounded-lg border px-3 py-2 transition-[border-color,box-shadow,background-color] duration-150 cursor-pointer",
-                    isSelected
-                      ? "border-slate-900 bg-slate-50 shadow-[0_2px_8px_rgba(15,23,42,0.10)]"
-                      : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 hover:shadow-[0_1px_4px_rgba(15,23,42,0.06)]",
-                  )}
-                >
-                  <span
-                    className={twMerge(
-                      "text-[0.75rem] font-bold",
-                      isSelected ? "text-slate-900" : "text-slate-700",
-                    )}
-                  >
-                    {x.title}
-                  </span>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {x.tags.slice(0, 3).map((t) => (
-                      <span
-                        key={t}
-                        className="text-[0.6rem] font-bold uppercase tracking-[0.04em] text-slate-400"
-                      >
-                        {t}
-                      </span>
-                    ))}
-                  </div>
-                </button>
-              );
-            })}
+        {selectedDef && (
+          <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
+            <div className="px-3 py-2 bg-slate-900 text-white text-[0.72rem] font-bold uppercase tracking-[0.04em]">
+              {selectedDef.title}
+            </div>
+            <div className="p-3">
+              <selectedDef.components.Edit
+                item={props.item}
+                onUpdate={props.onUpdate}
+              />
+            </div>
           </div>
         )}
       </div>
 
-      {selectedDef && (
-        <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
-          <div className="px-3 py-2 bg-slate-900 text-white text-[0.72rem] font-bold uppercase tracking-[0.04em]">
-            Configure: {selectedDef.title}
-          </div>
-          <div className="p-3">
-            <selectedDef.components.Edit
-              item={props.item}
-              onUpdate={props.onUpdate}
-            />
-          </div>
+      <div className="flex-1 min-h-0 flex flex-col gap-2">
+        <span className="shrink-0 text-[0.65rem] font-bold uppercase tracking-[0.08em] text-slate-400">
+          Available rule types
+        </span>
+
+        <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+          {filtered.length === 0 ? (
+            <p className="text-[0.75rem] font-semibold text-slate-400 py-6 text-center">
+              No rule types match your search.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pb-1">
+              {filtered.map((x) => {
+                const isSelected = selectedType === x.type;
+                return (
+                  <button
+                    key={x.type}
+                    onClick={() => selectType(x)}
+                    className={twMerge(
+                      "flex flex-col items-start text-left rounded-lg border px-3 py-2 transition-[border-color,box-shadow,background-color] duration-150 cursor-pointer",
+                      isSelected
+                        ? "border-slate-900 bg-slate-50 shadow-[0_2px_8px_rgba(15,23,42,0.10)]"
+                        : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 hover:shadow-[0_1px_4px_rgba(15,23,42,0.06)]",
+                    )}
+                  >
+                    <span
+                      className={twMerge(
+                        "text-[0.75rem] font-bold",
+                        isSelected ? "text-slate-900" : "text-slate-700",
+                      )}
+                    >
+                      {x.title}
+                    </span>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {x.tags.slice(0, 3).map((t) => (
+                        <span
+                          key={t}
+                          className="text-[0.6rem] font-bold uppercase tracking-[0.04em] text-slate-400"
+                        >
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };
