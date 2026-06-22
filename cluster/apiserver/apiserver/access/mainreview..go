@@ -85,9 +85,7 @@ func (s *ServerMain) UpdateReview(ctx context.Context, req *accessv1.Review) (*a
 		return nil, err
 	}
 
-	apisrvcommon.MetadataUpdate(item.Metadata, req.Metadata)
 	item.Spec = req.Spec
-	item.Status = req.Status
 
 	item, err = s.octeliumC.AccessC().UpdateReview(ctx, item)
 	if err != nil {

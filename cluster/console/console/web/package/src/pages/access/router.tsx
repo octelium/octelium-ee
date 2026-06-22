@@ -5,7 +5,10 @@ import ResourceListPage from "@/components/ResourceLayout/ResourceList";
 import { getResourcePathFromAPIKind } from "@/utils/pb";
 import { ResourceComponentInfo } from "../utils/types";
 
+import catalogRouter from "./Catalog/router";
 import policyRouter from "./Policy/router";
+import requestRouter from "./Request/router";
+import reviewRouter from "./Review/router";
 
 import ResourceItemActionsPage from "@/components/ResourceLayout/ResourceActions";
 import ResourceItemAuditLogsPage from "@/components/ResourceLayout/ResourceAuditLogs";
@@ -13,7 +16,7 @@ import ResourceCreatePage from "@/components/ResourceLayout/ResourceCreate";
 import ResourceItemMainPage from "@/components/ResourceLayout/ResourceItemMainPage";
 import ResourceItemPage from "@/components/ResourceLayout/ResourceItemPage";
 
-const resourceList = [policyRouter];
+const resourceList = [policyRouter, requestRouter, reviewRouter, catalogRouter];
 
 export default (): RouteObject => {
   const ret = {
