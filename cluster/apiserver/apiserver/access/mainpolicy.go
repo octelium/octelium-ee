@@ -247,7 +247,9 @@ func (s *ServerMain) validatePolicyCondition(ctx context.Context,
 
 		switch resource.Type.(type) {
 		case *accessv1.Policy_Spec_Rule_Condition_Resource_ServiceRef:
-			if err := apivalidation.CheckObjectRef(resource.GetServiceRef(), &apivalidation.CheckGetOptionsOpts{}); err != nil {
+			if err := apivalidation.CheckObjectRef(resource.GetServiceRef(), &apivalidation.CheckGetOptionsOpts{
+				ParentsMax: 1,
+			}); err != nil {
 				return err
 			}
 		case *accessv1.Policy_Spec_Rule_Condition_Resource_CatalogRef:

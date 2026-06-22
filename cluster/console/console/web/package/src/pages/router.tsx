@@ -1,4 +1,5 @@
 import { RouteObject } from "react-router-dom";
+import routerAccess from "./access/router";
 import routerClusterMan from "./clusterman/router";
 import routerCore from "./core/router";
 import routerEnterprise from "./enterprise/router";
@@ -22,6 +23,7 @@ export default (): RouteObject => {
       routerEnterprise(),
       routerClusterMan(),
       routerVisibility(),
+      routerAccess(),
     ],
   };
 };

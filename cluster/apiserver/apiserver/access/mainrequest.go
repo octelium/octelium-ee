@@ -112,7 +112,9 @@ func (s *ServerMain) validateRequest(ctx context.Context, req *accessv1.Request)
 
 	switch req.Spec.Resource.Type.(type) {
 	case *accessv1.Request_Spec_Resource_ServiceRef:
-		if err := apivalidation.CheckObjectRef(req.Spec.Resource.GetServiceRef(), &apivalidation.CheckGetOptionsOpts{}); err != nil {
+		if err := apivalidation.CheckObjectRef(req.Spec.Resource.GetServiceRef(), &apivalidation.CheckGetOptionsOpts{
+			ParentsMax: 1,
+		}); err != nil {
 			return err
 		}
 	case *accessv1.Request_Spec_Resource_Catalog_:

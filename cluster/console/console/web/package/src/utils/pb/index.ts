@@ -1,5 +1,6 @@
 import Yaml from "js-yaml";
 
+import * as AccessP from "../../apis/accessv1/accessv1";
 import * as CoreP from "../../apis/corev1/corev1";
 import * as EnterpriseP from "../../apis/enterprisev1/enterprisev1";
 import * as MetaPB from "../../apis/metav1/metav1";
@@ -8,16 +9,23 @@ import * as VisibilityCoreP from "../../apis/visibilityv1/core/vcorev1";
 import { queryClient } from "@/utils";
 import { match } from "ts-pattern";
 import {
+  getClientAccess,
   getClientCore,
   getClientEnterprise,
   getClientVisibilityCore,
 } from "../client";
 
-export type Resource = ResourceCore | ResourceEnterprise;
-export type ResourceList = ResourceCoreList | ResourceEnterpriseList;
-export type ResourceName = ResourceCoreName | ResourceEnterpriseName;
+export type Resource = ResourceCore | ResourceEnterprise | ResourceAccess;
+export type ResourceList =
+  | ResourceCoreList
+  | ResourceEnterpriseList
+  | ResourceAccessList;
+export type ResourceName =
+  | ResourceCoreName
+  | ResourceEnterpriseName
+  | ResourceAccessName;
 
-export type API = "core" | "enterprise";
+export type API = "core" | "enterprise" | "access";
 
 export type ResourceCore =
   | CoreP.Service
@@ -46,6 +54,12 @@ export type ResourceEnterprise =
   | EnterpriseP.DeviceManager
   | EnterpriseP.DirectoryProvider;
 
+export type ResourceAccess =
+  | AccessP.Catalog
+  | AccessP.Policy
+  | AccessP.Request
+  | AccessP.Review;
+
 export type ResourceCoreList =
   | CoreP.ServiceList
   | CoreP.NamespaceList
@@ -69,6 +83,12 @@ export type ResourceEnterpriseList =
   | EnterpriseP.SecretStoreList
   | EnterpriseP.DeviceManagerList
   | EnterpriseP.DirectoryProviderList;
+
+export type ResourceAccessList =
+  | AccessP.CatalogList
+  | AccessP.PolicyList
+  | AccessP.RequestList
+  | AccessP.ReviewList;
 
 export type ResourceCoreName =
   | "Service"
@@ -96,6 +116,8 @@ export type ResourceEnterpriseName =
   | "SecretStore"
   | "DeviceManager"
   | "DirectoryProvider";
+
+export type ResourceAccessName = "Catalog" | "Policy" | "Request" | "Review";
 
 const coreResourcePathMap = new Map<string, ResourceCoreName>([
   ["services", "Service"],
@@ -125,12 +147,23 @@ const enterpriseResourcePathMap = new Map<string, ResourceEnterpriseName>([
   ["secretstores", "SecretStore"],
 ]);
 
+const accessResourcePathMap = new Map<string, ResourceAccessName>([
+  ["catalogs", "Catalog"],
+  ["policies", "Policy"],
+  ["requests", "Request"],
+  ["reviews", "Review"],
+]);
+
 const coreKindToPathMap = new Map<ResourceCoreName, string>(
   [...coreResourcePathMap].map(([path, kind]) => [kind, path]),
 );
 
 const enterpriseKindToPathMap = new Map<ResourceEnterpriseName, string>(
   [...enterpriseResourcePathMap].map(([path, kind]) => [kind, path]),
+);
+
+const accessKindToPathMap = new Map<ResourceAccessName, string>(
+  [...accessResourcePathMap].map(([path, kind]) => [kind, path]),
 );
 
 export const getAPIFromAPIVersion = (arg: string): API | undefined => {
@@ -140,6 +173,8 @@ export const getAPIFromAPIVersion = (arg: string): API | undefined => {
       return "core";
     case "enterprise":
       return "enterprise";
+    case "access":
+      return "access";
     default:
       return undefined;
   }
@@ -171,6 +206,10 @@ export const cloneResource = (arg: Resource): Resource => {
       return EnterpriseP[arg.kind as ResourceEnterpriseName].clone(
         arg as any,
       ) as Resource;
+    case "access":
+      return AccessP[arg.kind as ResourceAccessName].clone(
+        arg as any,
+      ) as Resource;
     default:
       return CoreP[arg.kind as ResourceCoreName].clone(arg as any) as Resource;
   }
@@ -194,6 +233,12 @@ export const resourceToJSON = (arg: Resource): string => {
             EnterpriseP[arg.kind as ResourceEnterpriseName].toJsonString(
               arg as any,
             ),
+          ),
+        );
+      case "access":
+        return safeJSONStringify(
+          JSON.parse(
+            AccessP[arg.kind as ResourceAccessName].toJsonString(arg as any),
           ),
         );
       default:
@@ -269,6 +314,8 @@ export const resourceFromJSON = (arg: string): Resource | undefined => {
         return CoreP[kind as ResourceCoreName].fromJsonString(arg);
       case "enterprise":
         return EnterpriseP[kind as ResourceEnterpriseName].fromJsonString(arg);
+      case "access":
+        return AccessP[kind as ResourceAccessName].fromJsonString(arg);
       default:
         return undefined;
     }
@@ -303,6 +350,8 @@ export const getResourcePathFromAPIKind = (arg: APIKind): string => {
       return (
         enterpriseKindToPathMap.get(arg.kind as ResourceEnterpriseName) ?? ""
       );
+    case "access":
+      return accessKindToPathMap.get(arg.kind as ResourceAccessName) ?? "";
     default:
       return "";
   }
@@ -375,6 +424,7 @@ export const getAPIKindFromPath = (path: string): APIKind | undefined => {
   const api = match(args[1])
     .with("core", () => "core" as const)
     .with("enterprise", () => "enterprise" as const)
+    .with("access", () => "access" as const)
     .otherwise(() => undefined);
 
   if (!api) return undefined;
@@ -382,6 +432,7 @@ export const getAPIKindFromPath = (path: string): APIKind | undefined => {
   const kind = match(api)
     .with("core", () => coreResourcePathMap.get(args[2]))
     .with("enterprise", () => enterpriseResourcePathMap.get(args[2]))
+    .with("access", () => accessResourcePathMap.get(args[2]))
     .otherwise(() => undefined) as ResourceName | undefined;
 
   if (!kind) return undefined;
@@ -408,18 +459,21 @@ export const getPBFromAPI = (api: API) =>
   match(api)
     .with("core", () => CoreP)
     .with("enterprise", () => EnterpriseP)
+    .with("access", () => AccessP)
     .otherwise(() => undefined);
 
 export const getPBResourceListFromAPI = (api: API) =>
   match(api)
     .with("core", () => VisibilityCoreP)
     .with("enterprise", () => EnterpriseP)
+    .with("access", () => AccessP)
     .otherwise(() => undefined);
 
 export const getClient = (api: API) =>
   match(api)
     .with("core", () => getClientCore())
     .with("enterprise", () => getClientEnterprise())
+    .with("access", () => getClientAccess())
     .otherwise(() => undefined);
 
 export const getResourceClient = (arg: Resource) => {
@@ -438,12 +492,14 @@ export const getClientResourceList = (api: API) =>
   match(api)
     .with("core", () => getClientVisibilityCore())
     .with("enterprise", () => getClientEnterprise())
+    .with("access", () => getClientAccess())
     .otherwise(() => undefined);
 
 export const getClientResourceListP = (api: API) =>
   match(api)
     .with("core", () => VisibilityCoreP)
     .with("enterprise", () => EnterpriseP)
+    .with("access", () => AccessP)
     .otherwise(() => undefined);
 
 export const printResourceNameWithDisplay = (arg: Resource): string =>

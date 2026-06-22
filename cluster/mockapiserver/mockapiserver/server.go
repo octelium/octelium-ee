@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/octelium/octelium-ee/cluster/apiserver/apiserver/access"
 	"github.com/octelium/octelium-ee/cluster/apiserver/apiserver/cluster"
 	"github.com/octelium/octelium-ee/cluster/apiserver/apiserver/enterprise"
 	"github.com/octelium/octelium-ee/cluster/apiserver/apiserver/visibility"
@@ -26,6 +27,7 @@ import (
 	"github.com/octelium/octelium-ee/cluster/policyportal/policyportal"
 	"github.com/octelium/octelium-ee/cluster/rscserver/rscserver"
 	"github.com/octelium/octelium-ee/cluster/rscstore/rscstore"
+	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/authv1"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
@@ -259,6 +261,12 @@ func Run(ctx context.Context) error {
 		}
 
 		enterprisev1.RegisterClusterServiceServer(s, pSrv)
+	}
+
+	{
+		accessv1.RegisterMainServiceServer(s, access.NewServerMain(octeliumC))
+		accessv1.RegisterReviewerServiceServer(s, access.NewServerReviewer(octeliumC))
+		accessv1.RegisterUserServiceServer(s, access.NewServerUser(octeliumC))
 	}
 
 	go func() {

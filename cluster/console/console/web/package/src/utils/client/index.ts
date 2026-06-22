@@ -1,6 +1,7 @@
 import * as grpcWeb from "@protobuf-ts/grpcweb-transport";
 
 import { getDomain, isDev } from "..";
+import * as AccessC from "../../apis/accessv1/accessv1.client";
 import * as AuthGRPC from "../../apis/authv1/authv1.client";
 import * as CoreC from "../../apis/corev1/corev1.client";
 import * as EnterpriseC from "../../apis/enterprisev1/enterprisev1.client";
@@ -34,6 +35,10 @@ export const getClientCore = (): CoreC.MainServiceClient => {
 
 export const getClientEnterprise = (): EnterpriseC.MainServiceClient => {
   return new EnterpriseC.MainServiceClient(getTransport());
+};
+
+export const getClientAccess = (): AccessC.MainServiceClient => {
+  return new AccessC.MainServiceClient(getTransport());
 };
 
 export const getClientUser = (): UserC.MainServiceClient => {

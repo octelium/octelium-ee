@@ -264,7 +264,9 @@ func (s *ServerUser) validateUserRequest(ctx context.Context, req *accessv1.Requ
 }
 
 func (s *ServerUser) validateUserRequestService(ctx context.Context, ref *metav1.ObjectReference) error {
-	if err := apivalidation.CheckObjectRef(ref, &apivalidation.CheckGetOptionsOpts{}); err != nil {
+	if err := apivalidation.CheckObjectRef(ref, &apivalidation.CheckGetOptionsOpts{
+		ParentsMax: 1,
+	}); err != nil {
 		return err
 	}
 
