@@ -72,6 +72,9 @@ build-policyportal:
 	CGO_ENABLED=0 GOOS=linux go build $(LDFLAGS) -o bin/octeliumee-policyportal github.com/octelium/octelium-ee/cluster/policyportal
 build-e2e:
 	CGO_ENABLED=0 GOOS=linux go build $(LDFLAGS) -o bin/octeliumee-e2e github.com/octelium/octelium-ee/cluster/e2e
+build-accessportal:
+	CGO_ENABLED=0 GOOS=linux go build $(LDFLAGS) -o bin/octeliumee-accessportal github.com/octelium/octelium-ee/cluster/accessportal
+
 
 protoc-install:
 	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.1
@@ -199,4 +202,5 @@ tidy:
 	cd cluster/rscstore; $(CMD_TIDY)
 	cd cluster/metricstore; $(CMD_TIDY)
 	cd cluster/policyportal; $(CMD_TIDY)
+	cd cluster/accessportal; $(CMD_TIDY)
 	cd cluster/e2e; $(CMD_TIDY)

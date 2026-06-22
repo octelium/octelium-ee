@@ -36,6 +36,7 @@ jobs:
             rscstore,
             metricstore,
             policyportal,
+            accessportal,
           ]
         arch:
           - amd64
@@ -131,6 +132,7 @@ jobs:
             rscstore,
             metricstore,
             policyportal,
+            accessportal,
           ]
     steps:
       - name: Check out code

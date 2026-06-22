@@ -20,5 +20,6 @@ use (
 	./cluster/rscserver
 	./cluster/rscstore
 	./cluster/secretman
+	./cluster/accessportal
 	./pkg
 )
