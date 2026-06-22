@@ -5,11 +5,12 @@ import {
 } from "@/apis/enterprisev1/enterprisev1";
 import { Drawer, ScrollArea, Select, Tooltip } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { Edit2, Plus, Trash2 } from "lucide-react";
+import { Edit2, Plus, Search, Trash2 } from "lucide-react";
 import * as React from "react";
+import { useMemo, useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
-import itemList from "./ItemList";
+import itemList, { ItemDef } from "./ItemList";
 import { ExprChip } from "./PrintCondition";
 
 const getNewExpression = () =>
@@ -19,8 +20,6 @@ const getNewExpression = () =>
       serviceMode: { mode: CoreP.Service_Spec_Mode.HTTP },
     },
   });
-
-type itemT = (typeof itemList)[0];
 
 const TYPE_OPTIONS = [
   { value: "expression", label: "Expression" },
@@ -329,48 +328,6 @@ const ExpressionC = (props: {
   );
 };
 
-const ExpressionItemC = (props: {
-  item?: Expression;
-  itemI: itemT;
-  onUpdate: (item?: Expression) => void;
-}) => {
-  const isSelected = props.itemI.type === props.item?.type.oneofKind;
-
-  return (
-    <div
-      className={twMerge(
-        "flex flex-col rounded-lg border bg-white overflow-hidden transition-[border-color,box-shadow] duration-150",
-        isSelected
-          ? "border-slate-800 shadow-[0_2px_8px_rgba(15,23,42,0.10)]"
-          : "border-slate-200 hover:border-slate-300 hover:shadow-[0_1px_4px_rgba(15,23,42,0.06)]",
-      )}
-    >
-      <div
-        className={twMerge(
-          "text-[0.72rem] font-bold uppercase tracking-[0.04em] px-3 py-2 border-b",
-          isSelected
-            ? "bg-slate-900 text-white border-slate-900"
-            : "bg-slate-50 border-slate-100 text-slate-600",
-        )}
-      >
-        {props.itemI.title}
-      </div>
-
-      <div className="p-3 flex-1">
-        <props.itemI.components.Edit
-          item={props.item}
-          onUpdate={props.onUpdate}
-        />
-      </div>
-    </div>
-  );
-};
-
-export default Cond;
-
-import { Search } from "lucide-react";
-import { useMemo, useState } from "react";
-
 const ALL_TAGS = Array.from(new Set(itemList.flatMap((x) => x.tags))).sort();
 
 const ExpressionEditC = (props: {
@@ -379,6 +336,9 @@ const ExpressionEditC = (props: {
 }) => {
   const [query, setQuery] = useState("");
   const [activeTag, setActiveTag] = useState<string | null>(null);
+
+  const selectedType = props.item?.type.oneofKind;
+  const selectedDef = itemList.find((x) => x.type === selectedType);
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
@@ -392,8 +352,13 @@ const ExpressionEditC = (props: {
     });
   }, [query, activeTag]);
 
+  const selectType = (def: ItemDef) => {
+    if (props.item?.type.oneofKind === def.type) return;
+    props.onUpdate(def.makeDefault());
+  };
+
   return (
-    <div className="w-full flex flex-col gap-4">
+    <div className="w-full flex flex-col gap-5">
       <div className="flex flex-col gap-2.5">
         <div className="relative">
           <Search
@@ -404,7 +369,7 @@ const ExpressionEditC = (props: {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search rule types…"
+            placeholder="Search rule types..."
             className="w-full pl-8 pr-3 h-8 text-[0.78rem] font-semibold text-slate-700 bg-white border border-slate-200 rounded-md shadow-[0_1px_3px_rgba(15,23,42,0.05)] outline-none focus:border-slate-400 focus:shadow-[0_0_0_2px_rgba(148,163,184,0.2)] transition-all duration-150 placeholder:text-slate-400 placeholder:font-semibold"
           />
         </div>
@@ -438,22 +403,69 @@ const ExpressionEditC = (props: {
         </div>
       </div>
 
-      {filtered.length === 0 ? (
-        <p className="text-[0.75rem] font-semibold text-slate-400 py-6 text-center">
-          No rule types match your search.
-        </p>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          {filtered.map((x) => (
-            <ExpressionItemC
-              key={x.type}
+      <div className="flex flex-col gap-2">
+        <span className="text-[0.65rem] font-bold uppercase tracking-[0.08em] text-slate-400">
+          Rule type
+        </span>
+        {filtered.length === 0 ? (
+          <p className="text-[0.75rem] font-semibold text-slate-400 py-6 text-center">
+            No rule types match your search.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {filtered.map((x) => {
+              const isSelected = selectedType === x.type;
+              return (
+                <button
+                  key={x.type}
+                  onClick={() => selectType(x)}
+                  className={twMerge(
+                    "flex flex-col items-start text-left rounded-lg border px-3 py-2 transition-[border-color,box-shadow,background-color] duration-150 cursor-pointer",
+                    isSelected
+                      ? "border-slate-900 bg-slate-50 shadow-[0_2px_8px_rgba(15,23,42,0.10)]"
+                      : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 hover:shadow-[0_1px_4px_rgba(15,23,42,0.06)]",
+                  )}
+                >
+                  <span
+                    className={twMerge(
+                      "text-[0.75rem] font-bold",
+                      isSelected ? "text-slate-900" : "text-slate-700",
+                    )}
+                  >
+                    {x.title}
+                  </span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {x.tags.slice(0, 3).map((t) => (
+                      <span
+                        key={t}
+                        className="text-[0.6rem] font-bold uppercase tracking-[0.04em] text-slate-400"
+                      >
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {selectedDef && (
+        <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
+          <div className="px-3 py-2 bg-slate-900 text-white text-[0.72rem] font-bold uppercase tracking-[0.04em]">
+            Configure: {selectedDef.title}
+          </div>
+          <div className="p-3">
+            <selectedDef.components.Edit
               item={props.item}
-              itemI={x}
               onUpdate={props.onUpdate}
             />
-          ))}
+          </div>
         </div>
       )}
     </div>
   );
 };
+
+export default Cond;
