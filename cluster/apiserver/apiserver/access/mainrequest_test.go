@@ -87,11 +87,6 @@ func TestMainRequest(t *testing.T) {
 	}
 	assert.True(t, found)
 
-	reqG.Status.State.Status = accessv1.Request_Status_State_APPROVED
-	reqU, err := mainSrv.UpdateRequest(ctx, reqG)
-	assert.Nil(t, err, "%+v", err)
-	assert.Equal(t, accessv1.Request_Status_State_APPROVED, reqU.Status.State.Status)
-
 	_, err = mainSrv.DeleteRequest(ctx, &metav1.DeleteOptions{
 		Uid: req.Metadata.Uid,
 	})

@@ -93,10 +93,6 @@ export interface IMainServiceClient {
      */
     listPolicy(input: ListPolicyOptions, options?: RpcOptions): UnaryCall<ListPolicyOptions, PolicyList>;
     /**
-     * @generated from protobuf rpc: UpdateRequest
-     */
-    updateRequest(input: Request, options?: RpcOptions): UnaryCall<Request, Request>;
-    /**
      * @generated from protobuf rpc: GetRequest
      */
     getRequest(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, Request>;
@@ -116,10 +112,6 @@ export interface IMainServiceClient {
      * @generated from protobuf rpc: GetReview
      */
     getReview(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, Review>;
-    /**
-     * @generated from protobuf rpc: UpdateReview
-     */
-    updateReview(input: Review, options?: RpcOptions): UnaryCall<Review, Review>;
     /**
      * @generated from protobuf rpc: DeleteReview
      */
@@ -205,59 +197,45 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<ListPolicyOptions, PolicyList>("unary", this._transport, method, opt, input);
     }
     /**
-     * @generated from protobuf rpc: UpdateRequest
-     */
-    updateRequest(input: Request, options?: RpcOptions): UnaryCall<Request, Request> {
-        const method = this.methods[10], opt = this._transport.mergeOptions(options);
-        return stackIntercept<Request, Request>("unary", this._transport, method, opt, input);
-    }
-    /**
      * @generated from protobuf rpc: GetRequest
      */
     getRequest(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, Request> {
-        const method = this.methods[11], opt = this._transport.mergeOptions(options);
+        const method = this.methods[10], opt = this._transport.mergeOptions(options);
         return stackIntercept<GetOptions, Request>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: DeleteRequest
      */
     deleteRequest(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult> {
-        const method = this.methods[12], opt = this._transport.mergeOptions(options);
+        const method = this.methods[11], opt = this._transport.mergeOptions(options);
         return stackIntercept<DeleteOptions, OperationResult>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: ListRequest
      */
     listRequest(input: ListRequestOptions, options?: RpcOptions): UnaryCall<ListRequestOptions, RequestList> {
-        const method = this.methods[13], opt = this._transport.mergeOptions(options);
+        const method = this.methods[12], opt = this._transport.mergeOptions(options);
         return stackIntercept<ListRequestOptions, RequestList>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: ListReview
      */
     listReview(input: ListReviewOptions, options?: RpcOptions): UnaryCall<ListReviewOptions, ReviewList> {
-        const method = this.methods[14], opt = this._transport.mergeOptions(options);
+        const method = this.methods[13], opt = this._transport.mergeOptions(options);
         return stackIntercept<ListReviewOptions, ReviewList>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: GetReview
      */
     getReview(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, Review> {
-        const method = this.methods[15], opt = this._transport.mergeOptions(options);
+        const method = this.methods[14], opt = this._transport.mergeOptions(options);
         return stackIntercept<GetOptions, Review>("unary", this._transport, method, opt, input);
-    }
-    /**
-     * @generated from protobuf rpc: UpdateReview
-     */
-    updateReview(input: Review, options?: RpcOptions): UnaryCall<Review, Review> {
-        const method = this.methods[16], opt = this._transport.mergeOptions(options);
-        return stackIntercept<Review, Review>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: DeleteReview
      */
     deleteReview(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult> {
-        const method = this.methods[17], opt = this._transport.mergeOptions(options);
+        const method = this.methods[15], opt = this._transport.mergeOptions(options);
         return stackIntercept<DeleteOptions, OperationResult>("unary", this._transport, method, opt, input);
     }
 }

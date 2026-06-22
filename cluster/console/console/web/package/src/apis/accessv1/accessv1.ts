@@ -3959,13 +3959,11 @@ export const MainService = new ServiceType("octelium.api.main.access.v1.MainServ
     { name: "UpdatePolicy", options: {}, I: Policy, O: Policy },
     { name: "DeletePolicy", options: {}, I: DeleteOptions, O: OperationResult },
     { name: "ListPolicy", options: {}, I: ListPolicyOptions, O: PolicyList },
-    { name: "UpdateRequest", options: {}, I: Request, O: Request },
     { name: "GetRequest", options: {}, I: GetOptions, O: Request },
     { name: "DeleteRequest", options: {}, I: DeleteOptions, O: OperationResult },
     { name: "ListRequest", options: {}, I: ListRequestOptions, O: RequestList },
     { name: "ListReview", options: {}, I: ListReviewOptions, O: ReviewList },
     { name: "GetReview", options: {}, I: GetOptions, O: Review },
-    { name: "UpdateReview", options: {}, I: Review, O: Review },
     { name: "DeleteReview", options: {}, I: DeleteOptions, O: OperationResult }
 ]);
 /**

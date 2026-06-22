@@ -63,38 +63,6 @@ func (s *ServerMain) DeleteRequest(ctx context.Context, req *metav1.DeleteOption
 	return &metav1.OperationResult{}, nil
 }
 
-func (s *ServerMain) UpdateRequest(ctx context.Context, req *accessv1.Request) (*accessv1.Request, error) {
-	if err := apivalidation.ValidateCommon(req, &apivalidation.ValidateCommonOpts{
-		ValidateMetadataOpts: apivalidation.ValidateMetadataOpts{
-			RequireName: true,
-		},
-	}); err != nil {
-		return nil, err
-	}
-
-	if err := s.validateRequest(ctx, req); err != nil {
-		return nil, err
-	}
-
-	item, err := s.octeliumC.AccessC().GetRequest(ctx, apivalidation.ObjectToRGetOptions(req))
-	if err != nil {
-		return nil, serr.K8sNotFoundOrInternalWithErr(err)
-	}
-
-	if err := apivalidation.CheckIsSystem(item); err != nil {
-		return nil, err
-	}
-
-	item.Spec = req.Spec
-
-	item, err = s.octeliumC.AccessC().UpdateRequest(ctx, item)
-	if err != nil {
-		return nil, serr.K8sInternal(err)
-	}
-
-	return item, nil
-}
-
 func (s *ServerMain) validateRequest(ctx context.Context, req *accessv1.Request) error {
 	if req.Spec == nil {
 		return grpcutils.InvalidArg("Nil Spec")

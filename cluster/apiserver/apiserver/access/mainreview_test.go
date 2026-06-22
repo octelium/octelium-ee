@@ -60,11 +60,6 @@ func TestMainReview(t *testing.T) {
 	}
 	assert.True(t, found)
 
-	reviewG.Spec.Decision = accessv1.Review_Spec_DECISION_REJECT
-	reviewU, err := mainSrv.UpdateReview(ctx, reviewG)
-	assert.Nil(t, err, "%+v", err)
-	assert.Equal(t, accessv1.Review_Spec_DECISION_REJECT, reviewU.Spec.Decision)
-
 	_, err = mainSrv.DeleteReview(ctx, &metav1.DeleteOptions{
 		Uid: review.Metadata.Uid,
 	})

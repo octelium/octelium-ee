@@ -39,13 +39,11 @@ const (
 	MainService_UpdatePolicy_FullMethodName  = "/octelium.api.main.access.v1.MainService/UpdatePolicy"
 	MainService_DeletePolicy_FullMethodName  = "/octelium.api.main.access.v1.MainService/DeletePolicy"
 	MainService_ListPolicy_FullMethodName    = "/octelium.api.main.access.v1.MainService/ListPolicy"
-	MainService_UpdateRequest_FullMethodName = "/octelium.api.main.access.v1.MainService/UpdateRequest"
 	MainService_GetRequest_FullMethodName    = "/octelium.api.main.access.v1.MainService/GetRequest"
 	MainService_DeleteRequest_FullMethodName = "/octelium.api.main.access.v1.MainService/DeleteRequest"
 	MainService_ListRequest_FullMethodName   = "/octelium.api.main.access.v1.MainService/ListRequest"
 	MainService_ListReview_FullMethodName    = "/octelium.api.main.access.v1.MainService/ListReview"
 	MainService_GetReview_FullMethodName     = "/octelium.api.main.access.v1.MainService/GetReview"
-	MainService_UpdateReview_FullMethodName  = "/octelium.api.main.access.v1.MainService/UpdateReview"
 	MainService_DeleteReview_FullMethodName  = "/octelium.api.main.access.v1.MainService/DeleteReview"
 )
 
@@ -63,13 +61,11 @@ type MainServiceClient interface {
 	UpdatePolicy(ctx context.Context, in *Policy, opts ...grpc.CallOption) (*Policy, error)
 	DeletePolicy(ctx context.Context, in *metav1.DeleteOptions, opts ...grpc.CallOption) (*metav1.OperationResult, error)
 	ListPolicy(ctx context.Context, in *ListPolicyOptions, opts ...grpc.CallOption) (*PolicyList, error)
-	UpdateRequest(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Request, error)
 	GetRequest(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*Request, error)
 	DeleteRequest(ctx context.Context, in *metav1.DeleteOptions, opts ...grpc.CallOption) (*metav1.OperationResult, error)
 	ListRequest(ctx context.Context, in *ListRequestOptions, opts ...grpc.CallOption) (*RequestList, error)
 	ListReview(ctx context.Context, in *ListReviewOptions, opts ...grpc.CallOption) (*ReviewList, error)
 	GetReview(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*Review, error)
-	UpdateReview(ctx context.Context, in *Review, opts ...grpc.CallOption) (*Review, error)
 	DeleteReview(ctx context.Context, in *metav1.DeleteOptions, opts ...grpc.CallOption) (*metav1.OperationResult, error)
 }
 
@@ -181,16 +177,6 @@ func (c *mainServiceClient) ListPolicy(ctx context.Context, in *ListPolicyOption
 	return out, nil
 }
 
-func (c *mainServiceClient) UpdateRequest(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Request, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Request)
-	err := c.cc.Invoke(ctx, MainService_UpdateRequest_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *mainServiceClient) GetRequest(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*Request, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Request)
@@ -241,16 +227,6 @@ func (c *mainServiceClient) GetReview(ctx context.Context, in *metav1.GetOptions
 	return out, nil
 }
 
-func (c *mainServiceClient) UpdateReview(ctx context.Context, in *Review, opts ...grpc.CallOption) (*Review, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Review)
-	err := c.cc.Invoke(ctx, MainService_UpdateReview_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *mainServiceClient) DeleteReview(ctx context.Context, in *metav1.DeleteOptions, opts ...grpc.CallOption) (*metav1.OperationResult, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(metav1.OperationResult)
@@ -275,13 +251,11 @@ type MainServiceServer interface {
 	UpdatePolicy(context.Context, *Policy) (*Policy, error)
 	DeletePolicy(context.Context, *metav1.DeleteOptions) (*metav1.OperationResult, error)
 	ListPolicy(context.Context, *ListPolicyOptions) (*PolicyList, error)
-	UpdateRequest(context.Context, *Request) (*Request, error)
 	GetRequest(context.Context, *metav1.GetOptions) (*Request, error)
 	DeleteRequest(context.Context, *metav1.DeleteOptions) (*metav1.OperationResult, error)
 	ListRequest(context.Context, *ListRequestOptions) (*RequestList, error)
 	ListReview(context.Context, *ListReviewOptions) (*ReviewList, error)
 	GetReview(context.Context, *metav1.GetOptions) (*Review, error)
-	UpdateReview(context.Context, *Review) (*Review, error)
 	DeleteReview(context.Context, *metav1.DeleteOptions) (*metav1.OperationResult, error)
 	mustEmbedUnimplementedMainServiceServer()
 }
@@ -323,9 +297,6 @@ func (UnimplementedMainServiceServer) DeletePolicy(context.Context, *metav1.Dele
 func (UnimplementedMainServiceServer) ListPolicy(context.Context, *ListPolicyOptions) (*PolicyList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListPolicy not implemented")
 }
-func (UnimplementedMainServiceServer) UpdateRequest(context.Context, *Request) (*Request, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateRequest not implemented")
-}
 func (UnimplementedMainServiceServer) GetRequest(context.Context, *metav1.GetOptions) (*Request, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRequest not implemented")
 }
@@ -340,9 +311,6 @@ func (UnimplementedMainServiceServer) ListReview(context.Context, *ListReviewOpt
 }
 func (UnimplementedMainServiceServer) GetReview(context.Context, *metav1.GetOptions) (*Review, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetReview not implemented")
-}
-func (UnimplementedMainServiceServer) UpdateReview(context.Context, *Review) (*Review, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateReview not implemented")
 }
 func (UnimplementedMainServiceServer) DeleteReview(context.Context, *metav1.DeleteOptions) (*metav1.OperationResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteReview not implemented")
@@ -548,24 +516,6 @@ func _MainService_ListPolicy_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MainService_UpdateRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Request)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MainServiceServer).UpdateRequest(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: MainService_UpdateRequest_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MainServiceServer).UpdateRequest(ctx, req.(*Request))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _MainService_GetRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(metav1.GetOptions)
 	if err := dec(in); err != nil {
@@ -656,24 +606,6 @@ func _MainService_GetReview_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MainService_UpdateReview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Review)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MainServiceServer).UpdateReview(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: MainService_UpdateReview_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MainServiceServer).UpdateReview(ctx, req.(*Review))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _MainService_DeleteReview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(metav1.DeleteOptions)
 	if err := dec(in); err != nil {
@@ -740,10 +672,6 @@ var MainService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _MainService_ListPolicy_Handler,
 		},
 		{
-			MethodName: "UpdateRequest",
-			Handler:    _MainService_UpdateRequest_Handler,
-		},
-		{
 			MethodName: "GetRequest",
 			Handler:    _MainService_GetRequest_Handler,
 		},
@@ -762,10 +690,6 @@ var MainService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetReview",
 			Handler:    _MainService_GetReview_Handler,
-		},
-		{
-			MethodName: "UpdateReview",
-			Handler:    _MainService_UpdateReview_Handler,
 		},
 		{
 			MethodName: "DeleteReview",
