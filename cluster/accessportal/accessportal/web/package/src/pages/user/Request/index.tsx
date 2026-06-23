@@ -1,8 +1,13 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
-import { Button } from "@mantine/core";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button, Pagination } from "@mantine/core";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { ChevronRight, Inbox, Plus, X } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import TimeAgo from "@/components/TimeAgo";
@@ -16,6 +21,8 @@ import {
 } from "../../../ui";
 import { requestResourceLabel, statusMeta, urgencyMeta } from "../../../utils";
 import { getUserClient } from "../../../utils/client";
+
+const ITEMS_PER_PAGE = 20;
 
 const RequestRow = (props: {
   item: AccessP.Request;
@@ -80,12 +87,17 @@ const RequestRow = (props: {
 const Requests = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
 
   const qry = useQuery({
-    queryKey: ["user", "listRequest"],
+    queryKey: ["user", "listRequest", page],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       const { response } = await getUserClient().listRequest(
-        AccessP.ListUserRequestOptions.create({}),
+        AccessP.ListUserRequestOptions.create({
+          common: { page: page - 1, itemsPerPage: ITEMS_PER_PAGE },
+        }),
       );
       return response;
     },
@@ -107,6 +119,18 @@ const Requests = () => {
     },
   });
 
+  const meta = qry.data?.listResponseMeta;
+  const perPage = meta?.itemsPerPage || ITEMS_PER_PAGE;
+  const totalPages = meta
+    ? Math.max(1, Math.ceil(meta.totalCount / perPage))
+    : 1;
+
+  const setPage = (v: number) =>
+    setSearchParams((prev) => {
+      prev.set("page", String(v));
+      return prev;
+    });
+
   return (
     <div className="w-full">
       <PageHeader
@@ -127,7 +151,7 @@ const Requests = () => {
 
       {qry.isLoading ? (
         <Loading label="Loading your requests..." />
-      ) : !qry.data || qry.data.items.length === 0 ? (
+      ) : (qry.data?.items.length ?? 0) === 0 ? (
         <Card>
           <EmptyState
             icon={<Inbox size={20} strokeWidth={2} />}
@@ -146,19 +170,34 @@ const Requests = () => {
           />
         </Card>
       ) : (
-        <div className="flex flex-col gap-2">
-          {qry.data.items.map((item) => (
-            <RequestRow
-              key={item.metadata!.uid || item.metadata!.name}
-              item={item}
-              canceling={
-                cancelMutation.isPending &&
-                cancelMutation.variables === item.metadata!.name
-              }
-              onCancel={(name) => cancelMutation.mutate(name)}
-            />
-          ))}
-        </div>
+        <>
+          <div className="flex flex-col gap-2">
+            {qry.data!.items.map((item) => (
+              <RequestRow
+                key={item.metadata!.uid || item.metadata!.name}
+                item={item}
+                canceling={
+                  cancelMutation.isPending &&
+                  cancelMutation.variables === item.metadata!.name
+                }
+                onCancel={(name) => cancelMutation.mutate(name)}
+              />
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex justify-center mt-6">
+              <Pagination
+                value={page}
+                total={totalPages}
+                onChange={setPage}
+                color="dark"
+                size="sm"
+                radius="md"
+              />
+            </div>
+          )}
+        </>
       )}
     </div>
   );

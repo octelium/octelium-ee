@@ -1,7 +1,8 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
-import { useQuery } from "@tanstack/react-query";
+import { Pagination } from "@mantine/core";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { ChevronRight, ClipboardCheck } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 import TimeAgo from "@/components/TimeAgo";
 import {
@@ -19,6 +20,8 @@ import {
   urgencyMeta,
 } from "../../../utils";
 import { getReviewerClient } from "../../../utils/client";
+
+const ITEMS_PER_PAGE = 20;
 
 const QueueRow = (props: { item: AccessP.Request }) => {
   const { item } = props;
@@ -62,11 +65,17 @@ const QueueRow = (props: { item: AccessP.Request }) => {
 };
 
 const Queue = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
+
   const qry = useQuery({
-    queryKey: ["reviewer", "listRequest"],
+    queryKey: ["reviewer", "listRequest", page],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       const { response } = await getReviewerClient().listRequest(
-        AccessP.ListReviewerRequestOptions.create({}),
+        AccessP.ListReviewerRequestOptions.create({
+          common: { page: page - 1, itemsPerPage: ITEMS_PER_PAGE },
+        }),
       );
       return response;
     },
@@ -81,6 +90,18 @@ const Queue = () => {
     (x) =>
       x.status?.state?.status !== AccessP.Request_Status_State_Status.PENDING,
   );
+
+  const meta = qry.data?.listResponseMeta;
+  const perPage = meta?.itemsPerPage || ITEMS_PER_PAGE;
+  const totalPages = meta
+    ? Math.max(1, Math.ceil(meta.totalCount / perPage))
+    : 1;
+
+  const setPage = (v: number) =>
+    setSearchParams((prev) => {
+      prev.set("page", String(v));
+      return prev;
+    });
 
   return (
     <div className="w-full">
@@ -101,31 +122,46 @@ const Queue = () => {
           />
         </Card>
       ) : (
-        <div className="flex flex-col gap-6">
-          {pending.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <Eyebrow>Awaiting review ({pending.length})</Eyebrow>
-              {pending.map((item) => (
-                <QueueRow
-                  key={item.metadata!.uid || item.metadata!.name}
-                  item={item}
-                />
-              ))}
-            </div>
-          )}
+        <>
+          <div className="flex flex-col gap-6">
+            {pending.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <Eyebrow>Awaiting review ({pending.length})</Eyebrow>
+                {pending.map((item) => (
+                  <QueueRow
+                    key={item.metadata!.uid || item.metadata!.name}
+                    item={item}
+                  />
+                ))}
+              </div>
+            )}
 
-          {others.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <Eyebrow>Recently decided</Eyebrow>
-              {others.map((item) => (
-                <QueueRow
-                  key={item.metadata!.uid || item.metadata!.name}
-                  item={item}
-                />
-              ))}
+            {others.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <Eyebrow>Recently decided</Eyebrow>
+                {others.map((item) => (
+                  <QueueRow
+                    key={item.metadata!.uid || item.metadata!.name}
+                    item={item}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex justify-center mt-6">
+              <Pagination
+                value={page}
+                total={totalPages}
+                onChange={setPage}
+                color="dark"
+                size="sm"
+                radius="md"
+              />
             </div>
           )}
-        </div>
+        </>
       )}
     </div>
   );
