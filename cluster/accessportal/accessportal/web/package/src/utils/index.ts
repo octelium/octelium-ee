@@ -128,6 +128,7 @@ export function slugify(input: string): string {
 
 import * as AccessP from "@/apis/accessv1/accessv1";
 import * as MetaP from "@/apis/metav1/metav1";
+import * as UserP from "@/apis/userv1/userv1";
 import { match } from "ts-pattern";
 
 export type Tone = "amber" | "emerald" | "red" | "slate" | "blue" | "violet";
@@ -247,6 +248,58 @@ export const requestResourceLabel = (
 
 export const shortName = (name?: string): string =>
   name?.split(".").at(0) ?? "";
+
+export const namespaceFromName = (name?: string): string => {
+  if (!name) return "";
+  const parts = name.split(".");
+  return parts.length > 1 ? parts.slice(1).join(".") : "";
+};
+
+export const serviceModeMeta = (
+  mode?: UserP.Service_Spec_Type,
+): { label: string; tone: Tone } =>
+  match(mode)
+    .with(UserP.Service_Spec_Type.HTTP, () => ({
+      label: "HTTP",
+      tone: "blue" as Tone,
+    }))
+    .with(UserP.Service_Spec_Type.WEB, () => ({
+      label: "Web",
+      tone: "blue" as Tone,
+    }))
+    .with(UserP.Service_Spec_Type.GRPC, () => ({
+      label: "gRPC",
+      tone: "violet" as Tone,
+    }))
+    .with(UserP.Service_Spec_Type.TCP, () => ({
+      label: "TCP",
+      tone: "slate" as Tone,
+    }))
+    .with(UserP.Service_Spec_Type.UDP, () => ({
+      label: "UDP",
+      tone: "slate" as Tone,
+    }))
+    .with(UserP.Service_Spec_Type.SSH, () => ({
+      label: "SSH",
+      tone: "violet" as Tone,
+    }))
+    .with(UserP.Service_Spec_Type.KUBERNETES, () => ({
+      label: "Kubernetes",
+      tone: "blue" as Tone,
+    }))
+    .with(UserP.Service_Spec_Type.POSTGRES, () => ({
+      label: "PostgreSQL",
+      tone: "emerald" as Tone,
+    }))
+    .with(UserP.Service_Spec_Type.MYSQL, () => ({
+      label: "MySQL",
+      tone: "emerald" as Tone,
+    }))
+    .with(UserP.Service_Spec_Type.DNS, () => ({
+      label: "DNS",
+      tone: "amber" as Tone,
+    }))
+    .otherwise(() => ({ label: "Service", tone: "slate" as Tone }));
 
 const DURATION_UNITS = ["minutes", "hours", "days"] as const;
 export type DurationUnit = (typeof DURATION_UNITS)[number];

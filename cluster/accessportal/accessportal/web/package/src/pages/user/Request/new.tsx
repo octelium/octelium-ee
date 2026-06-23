@@ -1,6 +1,5 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
 import * as MetaP from "@/apis/metav1/metav1";
-import * as UserP from "@/apis/userv1/userv1";
 import { Button, Select, Textarea } from "@mantine/core";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Boxes, Layers, Search, Send } from "lucide-react";
@@ -9,9 +8,10 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { twMerge } from "tailwind-merge";
 
-import { getUserClient } from "../../../utils/client";
-import { Badge, Card, EmptyState, Eyebrow, Field, Loading } from "../../../ui";
 import DurationInput from "../../../components/DurationInput";
+import { Badge, Card, EmptyState, Eyebrow, Field, Loading } from "../../../ui";
+import { getUserClient } from "../../../utils/client";
+import ServicePicker from "./ServicePicker";
 
 type Selection =
   | { kind: "service"; name: string; label: string }
@@ -37,7 +37,7 @@ const TabButton = (props: {
   </button>
 );
 
-const ResourceCard = (props: {
+const CatalogCard = (props: {
   title: string;
   subtitle?: string;
   badge?: string;
@@ -58,7 +58,7 @@ const ResourceCard = (props: {
         {props.title}
       </div>
       {props.subtitle && (
-        <div className="text-[0.7rem] font-semibold text-slate-400 truncate">
+        <div className="text-[0.7rem] font-semibold text-slate-400 truncate font-mono">
           {props.subtitle}
         </div>
       )}
@@ -72,7 +72,7 @@ const NewRequest = () => {
   const [searchParams] = useSearchParams();
   const deepLinkApplied = React.useRef(false);
   const [tab, setTab] = React.useState<"service" | "catalog">("service");
-  const [query, setQuery] = React.useState("");
+  const [catalogQuery, setCatalogQuery] = React.useState("");
   const [selection, setSelection] = React.useState<Selection | undefined>();
 
   const [urgency, setUrgency] = React.useState<AccessP.Request_Spec_Urgency>(
@@ -83,16 +83,6 @@ const NewRequest = () => {
     MetaP.Duration.create({ type: { oneofKind: "hours", hours: 1 } as any }),
   );
 
-  const servicesQry = useQuery({
-    queryKey: ["user", "listCatalogService"],
-    queryFn: async () => {
-      const { response } = await getUserClient().listCatalogService(
-        AccessP.ListUserCatalogServiceOptions.create({}),
-      );
-      return response;
-    },
-  });
-
   const catalogsQry = useQuery({
     queryKey: ["user", "listCatalog"],
     queryFn: async () => {
@@ -102,6 +92,31 @@ const NewRequest = () => {
       return response;
     },
   });
+
+  const catalogs = (catalogsQry.data?.items ?? []) as AccessP.Catalog[];
+
+  React.useEffect(() => {
+    if (deepLinkApplied.current) return;
+
+    const svcName = searchParams.get("serviceRef.name");
+    const catName = searchParams.get("catalogRef.name");
+
+    if (svcName) {
+      deepLinkApplied.current = true;
+      setTab("service");
+      setSelection({ kind: "service", name: svcName, label: svcName });
+    } else if (catName) {
+      if (catalogsQry.isLoading) return;
+      deepLinkApplied.current = true;
+      const cat = catalogs.find((c) => c.metadata?.name === catName);
+      setTab("catalog");
+      setSelection({
+        kind: "catalog",
+        name: catName,
+        label: cat?.metadata?.displayName || cat?.metadata?.name || catName,
+      });
+    }
+  }, [searchParams, catalogsQry.isLoading, catalogs]);
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -152,60 +167,13 @@ const NewRequest = () => {
     },
   });
 
-  const services = (servicesQry.data?.items ?? []) as UserP.Service[];
-  const catalogs = (catalogsQry.data?.items ?? []) as AccessP.Catalog[];
-
-  React.useEffect(() => {
-    if (deepLinkApplied.current) return;
-
-    const svcName = searchParams.get("serviceRef.name");
-    const catName = searchParams.get("catalogRef.name");
-
-    if (svcName) {
-      if (servicesQry.isLoading) return;
-      deepLinkApplied.current = true;
-      const svc = services.find((s) => s.metadata?.name === svcName);
-      setTab("service");
-      setSelection({
-        kind: "service",
-        name: svcName,
-        label: svc?.metadata?.displayName || svc?.metadata?.name || svcName,
-      });
-    } else if (catName) {
-      if (catalogsQry.isLoading) return;
-      deepLinkApplied.current = true;
-      const cat = catalogs.find((c) => c.metadata?.name === catName);
-      setTab("catalog");
-      setSelection({
-        kind: "catalog",
-        name: catName,
-        label: cat?.metadata?.displayName || cat?.metadata?.name || catName,
-      });
-    }
-  }, [
-    searchParams,
-    servicesQry.isLoading,
-    catalogsQry.isLoading,
-    services,
-    catalogs,
-  ]);
-
-  const q = query.toLowerCase().trim();
-  const filteredServices = services.filter(
-    (s) =>
-      !q ||
-      s.metadata?.name.toLowerCase().includes(q) ||
-      s.metadata?.displayName?.toLowerCase().includes(q),
-  );
+  const cq = catalogQuery.toLowerCase().trim();
   const filteredCatalogs = catalogs.filter(
     (c) =>
-      !q ||
-      c.metadata?.name.toLowerCase().includes(q) ||
-      c.metadata?.displayName?.toLowerCase().includes(q),
+      !cq ||
+      c.metadata?.name.toLowerCase().includes(cq) ||
+      c.metadata?.displayName?.toLowerCase().includes(cq),
   );
-
-  const loading =
-    tab === "service" ? servicesQry.isLoading : catalogsQry.isLoading;
 
   return (
     <div className="w-full">
@@ -244,82 +212,70 @@ const NewRequest = () => {
             </TabButton>
           </div>
 
-          <div className="relative mb-3">
-            <Search
-              size={13}
-              strokeWidth={2.5}
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-            />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={`Search ${tab === "service" ? "services" : "catalogs"}...`}
-              className="w-full pl-8 pr-3 h-8 text-[0.78rem] font-semibold text-slate-700 bg-white border border-slate-200 rounded-md shadow-[0_1px_3px_rgba(15,23,42,0.05)] outline-none focus:border-slate-400 focus:shadow-[0_0_0_2px_rgba(148,163,184,0.2)] transition-all duration-150 placeholder:text-slate-400 placeholder:font-semibold"
-            />
-          </div>
-
-          {loading ? (
-            <Loading />
-          ) : tab === "service" ? (
-            filteredServices.length === 0 ? (
-              <EmptyState
-                icon={<Boxes size={20} strokeWidth={2} />}
-                title="No services available"
-                description="There are no Services you can currently request access to."
-              />
-            ) : (
-              <div className="flex flex-col gap-2">
-                {filteredServices.map((s) => (
-                  <ResourceCard
-                    key={s.metadata!.uid || s.metadata!.name}
-                    title={s.metadata!.displayName || s.metadata!.name}
-                    subtitle={s.metadata!.name}
-                    selected={
-                      selection?.kind === "service" &&
-                      selection.name === s.metadata!.name
-                    }
-                    onClick={() =>
-                      setSelection({
-                        kind: "service",
-                        name: s.metadata!.name,
-                        label: s.metadata!.displayName || s.metadata!.name,
-                      })
-                    }
-                  />
-                ))}
-              </div>
-            )
-          ) : filteredCatalogs.length === 0 ? (
-            <EmptyState
-              icon={<Layers size={20} strokeWidth={2} />}
-              title="No catalogs available"
-              description="There are no Catalogs you can currently request access to."
+          {tab === "service" ? (
+            <ServicePicker
+              value={selection?.kind === "service" ? selection.name : undefined}
+              onChange={(svc) =>
+                setSelection({
+                  kind: "service",
+                  name: svc.metadata!.name,
+                  label: svc.metadata!.displayName || svc.metadata!.name,
+                })
+              }
             />
           ) : (
-            <div className="flex flex-col gap-2">
-              {filteredCatalogs.map((c) => {
-                const svcCount =
-                  c.spec?.resourceCollection?.service?.services.length ?? 0;
-                return (
-                  <ResourceCard
-                    key={c.metadata!.uid || c.metadata!.name}
-                    title={c.metadata!.displayName || c.metadata!.name}
-                    subtitle={c.metadata!.name}
-                    badge={svcCount > 0 ? `${svcCount} services` : undefined}
-                    selected={
-                      selection?.kind === "catalog" &&
-                      selection.name === c.metadata!.name
-                    }
-                    onClick={() =>
-                      setSelection({
-                        kind: "catalog",
-                        name: c.metadata!.name,
-                        label: c.metadata!.displayName || c.metadata!.name,
-                      })
-                    }
-                  />
-                );
-              })}
+            <div className="flex flex-col gap-3">
+              <div className="relative">
+                <Search
+                  size={13}
+                  strokeWidth={2.5}
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                />
+                <input
+                  value={catalogQuery}
+                  onChange={(e) => setCatalogQuery(e.target.value)}
+                  placeholder="Search catalogs..."
+                  className="w-full pl-8 pr-3 h-8 text-[0.78rem] font-semibold text-slate-700 bg-white border border-slate-200 rounded-md shadow-[0_1px_3px_rgba(15,23,42,0.05)] outline-none focus:border-slate-400 focus:shadow-[0_0_0_2px_rgba(148,163,184,0.2)] transition-all duration-150 placeholder:text-slate-400 placeholder:font-semibold"
+                />
+              </div>
+
+              {catalogsQry.isLoading ? (
+                <Loading />
+              ) : filteredCatalogs.length === 0 ? (
+                <EmptyState
+                  icon={<Layers size={20} strokeWidth={2} />}
+                  title="No catalogs available"
+                  description="There are no Catalogs you can currently request access to."
+                />
+              ) : (
+                <div className="flex flex-col gap-2 max-h-[460px] overflow-y-auto pr-0.5">
+                  {filteredCatalogs.map((c) => {
+                    const svcCount =
+                      c.spec?.resourceCollection?.service?.services.length ?? 0;
+                    return (
+                      <CatalogCard
+                        key={c.metadata!.uid || c.metadata!.name}
+                        title={c.metadata!.displayName || c.metadata!.name}
+                        subtitle={c.metadata!.name}
+                        badge={
+                          svcCount > 0 ? `${svcCount} services` : undefined
+                        }
+                        selected={
+                          selection?.kind === "catalog" &&
+                          selection.name === c.metadata!.name
+                        }
+                        onClick={() =>
+                          setSelection({
+                            kind: "catalog",
+                            name: c.metadata!.name,
+                            label: c.metadata!.displayName || c.metadata!.name,
+                          })
+                        }
+                      />
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </Card>
