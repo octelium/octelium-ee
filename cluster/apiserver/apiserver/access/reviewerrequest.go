@@ -14,6 +14,7 @@ import (
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
+	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	apisrvcommon "github.com/octelium/octelium/cluster/apiserver/apiserver/common"
 	"github.com/octelium/octelium/cluster/apiserver/apiserver/serr"
 	"github.com/octelium/octelium/cluster/common/apivalidation"
@@ -56,8 +57,16 @@ func (s *ServerReviewer) ListRequest(ctx context.Context,
 		return nil, err
 	}
 
-	itemList, err := s.octeliumC.AccessC().ListRequest(ctx, urscsrv.GetPublicListOptions(req,
-		urscsrv.FilterFieldEQValStr("status.state.status", "PENDING")))
+	listOpts := urscsrv.GetPublicListOptions(req,
+		urscsrv.FilterFieldEQValStr("status.state.status", "PENDING"))
+	listOpts.OrderBy = []*rmetav1.ListOptions_OrderBy{
+		{
+			Type: rmetav1.ListOptions_OrderBy_TYPE_CREATED_AT,
+			Mode: rmetav1.ListOptions_OrderBy_MODE_DESC,
+		},
+	}
+
+	itemList, err := s.octeliumC.AccessC().ListRequest(ctx, listOpts)
 	if err != nil {
 		return nil, serr.InternalWithErr(err)
 	}

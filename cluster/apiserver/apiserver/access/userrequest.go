@@ -106,8 +106,16 @@ func (s *ServerUser) ListRequest(ctx context.Context, req *accessv1.ListUserRequ
 		return nil, err
 	}
 
+	listOpts := urscsrv.GetPublicListOptions(req, urscsrv.FilterStatusUserUID(i.User.Metadata.Uid))
+	listOpts.OrderBy = []*rmetav1.ListOptions_OrderBy{
+		{
+			Type: rmetav1.ListOptions_OrderBy_TYPE_CREATED_AT,
+			Mode: rmetav1.ListOptions_OrderBy_MODE_DESC,
+		},
+	}
+
 	itemList, err := s.octeliumC.AccessC().ListRequest(ctx,
-		urscsrv.GetPublicListOptions(req, urscsrv.FilterStatusUserUID(i.User.Metadata.Uid)))
+		listOpts)
 	if err != nil {
 		return nil, serr.InternalWithErr(err)
 	}
