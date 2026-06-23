@@ -28,6 +28,7 @@ const LogStore components.ComponentType = "logstore"
 const RscStore components.ComponentType = "rscstore"
 const MetricStore components.ComponentType = "metricstore"
 const PolicyPortal components.ComponentType = "policyportal"
+const AccessPortal components.ComponentType = "accessportal"
 
 const ClusterMan = "clusterman"
 const Console = "console"

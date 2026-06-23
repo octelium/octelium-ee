@@ -266,6 +266,38 @@ func (g *Genesis) installOcteliumResources(ctx context.Context, clusterCfg *core
 				return err
 			}
 		}
+		{
+			svc := &corev1.Service{
+				Metadata: &metav1.Metadata{
+					Name:        "access.octelium",
+					IsSystem:    true,
+					DisplayName: "Octelium Access",
+					Description: "Octelium Access web portal",
+				},
+				Spec: &corev1.Service_Spec{
+					Port:     8080,
+					IsPublic: true,
+					Mode:     corev1.Service_Spec_WEB,
+				},
+				Status: &corev1.Service_Status{
+					ManagedService: &corev1.Service_Status_ManagedService{
+						Image:              oc.GetImage(oc.AccessPortal, ""),
+						ReadOnlyFileSystem: true,
+						HealthCheck: &corev1.Service_Status_ManagedService_HealthCheck{
+							Type: &corev1.Service_Status_ManagedService_HealthCheck_Grpc{
+								Grpc: &corev1.Service_Status_ManagedService_HealthCheck_GRPC{
+									Port: vutils.HealthCheckPortManagedService,
+								},
+							},
+						},
+					},
+				},
+			}
+
+			if err := genesisutils.CreateOrUpdateService(ctx, g.octeliumC, svc); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil

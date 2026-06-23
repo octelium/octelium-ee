@@ -16,7 +16,7 @@ import (
 
 func init() {
 	components.SetComponentNamespace(eec.ComponentNamespaceOcteliumEE)
-	components.SetComponentType(eec.Console)
+	components.SetComponentType(eec.AccessPortal)
 }
 
 func main() {
