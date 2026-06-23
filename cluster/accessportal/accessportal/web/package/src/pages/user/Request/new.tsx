@@ -1,7 +1,7 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
 import * as MetaP from "@/apis/metav1/metav1";
 import { Button, Select, Textarea } from "@mantine/core";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Boxes, Layers, Search, Send } from "lucide-react";
 import * as React from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -69,6 +69,7 @@ const CatalogCard = (props: {
 
 const NewRequest = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const deepLinkApplied = React.useRef(false);
   const [tab, setTab] = React.useState<"service" | "catalog">("service");
@@ -160,6 +161,7 @@ const NewRequest = () => {
     },
     onSuccess: (response) => {
       toast.success("Access request submitted");
+      queryClient.invalidateQueries({ queryKey: ["user", "listRequest"] });
       navigate(`/user/requests/${response.metadata!.name}`);
     },
     onError: (e) => {

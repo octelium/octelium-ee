@@ -61,6 +61,9 @@ const ReviewRequest = () => {
       toast.success("Review submitted");
       queryClient.invalidateQueries({ queryKey: ["reviewer", "listRequest"] });
       queryClient.invalidateQueries({ queryKey: ["reviewer", "listReview"] });
+      queryClient.invalidateQueries({
+        queryKey: ["reviewer", "getRequest", name],
+      });
       navigate("/reviewer/requests");
     },
     onError: (e) => {
