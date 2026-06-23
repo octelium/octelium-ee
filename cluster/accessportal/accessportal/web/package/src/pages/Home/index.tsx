@@ -1,5 +1,5 @@
 import { Navigate } from "react-router-dom";
 
 export default () => {
-  return <Navigate to={`/core`} />;
+  return <Navigate to={`/user/requests`} />;
 };
