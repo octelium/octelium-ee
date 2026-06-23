@@ -56,7 +56,8 @@ func (s *ServerReviewer) ListRequest(ctx context.Context,
 		return nil, err
 	}
 
-	itemList, err := s.octeliumC.AccessC().ListRequest(ctx, urscsrv.GetPublicListOptions(req))
+	itemList, err := s.octeliumC.AccessC().ListRequest(ctx, urscsrv.GetPublicListOptions(req,
+		urscsrv.FilterFieldEQValStr("status.state.status", "PENDING")))
 	if err != nil {
 		return nil, serr.InternalWithErr(err)
 	}

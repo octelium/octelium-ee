@@ -53,8 +53,10 @@ func (s *ServerUser) CreateRequest(ctx context.Context, req *accessv1.Request) (
 	}
 
 	item := &accessv1.Request{
-		Metadata: apisrvcommon.MetadataFrom(req.Metadata),
-		Spec:     spec,
+		Metadata: &metav1.Metadata{
+			Name: name,
+		},
+		Spec: spec,
 		Status: &accessv1.Request_Status{
 			UserRef: umetav1.GetObjectReference(i.User),
 			State: &accessv1.Request_Status_State{
@@ -63,8 +65,6 @@ func (s *ServerUser) CreateRequest(ctx context.Context, req *accessv1.Request) (
 			},
 		},
 	}
-
-	item.Metadata.Name = name
 
 	if err := s.validateUserRequest(ctx, item); err != nil {
 		return nil, err
@@ -154,7 +154,6 @@ func (s *ServerUser) UpdateRequest(ctx context.Context, req *accessv1.Request) (
 		return nil, grpcutils.InvalidArg("Cannot change Request subject")
 	}
 
-	apisrvcommon.MetadataUpdate(item.Metadata, req.Metadata)
 	item.Spec.Urgency = req.Spec.Urgency
 	item.Spec.Justification = req.Spec.Justification
 	item.Spec.Deadline = req.Spec.Deadline
@@ -258,6 +257,10 @@ func (s *ServerUser) validateUserRequest(ctx context.Context, req *accessv1.Requ
 		accessv1.Request_Spec_HIGHEST:
 	default:
 		return grpcutils.InvalidArg("Invalid Urgency")
+	}
+
+	if len(req.Spec.Justification) > 1500 {
+		return grpcutils.InvalidArg("Justification is too long")
 	}
 
 	return nil
