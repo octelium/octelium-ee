@@ -21,6 +21,7 @@ import (
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
+	"github.com/octelium/octelium/cluster/common/apivalidation"
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
@@ -311,10 +312,6 @@ func (c *Controller) matchSubjectGroup(
 	}
 	if grp == nil {
 		return false, nil
-	}
-
-	if grp.Metadata.Name == "all" {
-		return true, nil
 	}
 
 	usr, err := c.octeliumC.CoreC().GetUser(ctx, &rmetav1.GetOptions{
@@ -754,10 +751,7 @@ func (c *Controller) getCatalog(ctx context.Context, ref *metav1.ObjectReference
 		return nil, nil
 	}
 
-	catalog, err := c.octeliumC.AccessC().GetCatalog(ctx, &rmetav1.GetOptions{
-		Uid:  ref.Uid,
-		Name: ref.Name,
-	})
+	catalog, err := c.octeliumC.AccessC().GetCatalog(ctx, apivalidation.ObjectReferenceToRGetOptions(ref))
 	if err != nil {
 		if grpcerr.IsNotFound(err) {
 			return nil, nil
@@ -773,10 +767,7 @@ func (c *Controller) getGroup(ctx context.Context, ref *metav1.ObjectReference) 
 		return nil, nil
 	}
 
-	grp, err := c.octeliumC.CoreC().GetGroup(ctx, &rmetav1.GetOptions{
-		Uid:  ref.Uid,
-		Name: ref.Name,
-	})
+	grp, err := c.octeliumC.CoreC().GetGroup(ctx, apivalidation.ObjectReferenceToRGetOptions(ref))
 	if err != nil {
 		if grpcerr.IsNotFound(err) {
 			return nil, nil
