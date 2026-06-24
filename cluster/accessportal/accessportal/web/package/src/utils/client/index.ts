@@ -3,21 +3,27 @@ import {
   UserServiceClient,
 } from "@/apis/accessv1/accessv1.client";
 import { MainServiceClient as UserMainServiceClient } from "@/apis/userv1/userv1.client";
-import { GrpcWebFetchTransport } from "@protobuf-ts/grpcweb-transport";
+import * as grpcWeb from "@protobuf-ts/grpcweb-transport";
+import { getDomain, isDev } from "..";
 import * as AuthGRPC from "../../apis/authv1/authv1.client";
 
-const getBaseUrl = (): string => window.location.origin;
+export const getTransport = () => {
+  const domain = getDomain();
+  const scheme = location.protocol === "https:" ? "https" : "http";
 
-let transport: GrpcWebFetchTransport | undefined;
+  let baseUrl = `${scheme}://octelium-api.${domain}`;
 
-const getTransport = (): GrpcWebFetchTransport => {
-  if (!transport) {
-    transport = new GrpcWebFetchTransport({
-      baseUrl: getBaseUrl(),
-      fetchInit: { credentials: "include" },
-    });
+  if (isDev()) {
+    baseUrl = `https://${window.location.host}`;
   }
-  return transport;
+
+  return new grpcWeb.GrpcWebFetchTransport({
+    baseUrl,
+
+    fetchInit: {
+      credentials: "include",
+    },
+  });
 };
 
 export const getUserClient = (): UserServiceClient =>
