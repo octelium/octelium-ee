@@ -12,8 +12,6 @@ import (
 	"context"
 	"fmt"
 	"sort"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
@@ -30,6 +28,7 @@ import (
 )
 
 const maxRequestStateHistory = 100
+const defaultAccessRequestAllowPriority = -1
 
 type Controller struct {
 	octeliumC octeliumc.ClientInterface
@@ -191,7 +190,7 @@ func (c *Controller) matchPolicyRule(ctx context.Context, req *accessv1.Request)
 			if rules[i].Priority == rules[j].Priority {
 				return false
 			}
-			return rules[i].Priority > rules[j].Priority
+			return rules[i].Priority < rules[j].Priority
 		})
 
 		for _, rule := range rules {
@@ -417,7 +416,7 @@ func (c *Controller) buildPolicyTrigger(
 		return nil, errors.Errorf("request %q has no subject or requester userRef", req.Metadata.Name)
 	}
 
-	targetCondition, err := c.buildTargetCondition(ctx, req)
+	targetPreCondition, err := c.buildTargetPreCondition(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -428,11 +427,7 @@ func (c *Controller) buildPolicyTrigger(
 				UserRef: pbutils.Clone(subjectRef).(*metav1.ObjectReference),
 			},
 		},
-		{
-			Type: &corev1.PolicyTrigger_Status_PreCondition_Condition{
-				Condition: targetCondition,
-			},
-		},
+		targetPreCondition,
 	}
 
 	if req.Status.AccessEndsAt != nil {
@@ -476,7 +471,7 @@ func (c *Controller) buildPolicyTrigger(
 	}, nil
 }
 
-func (c *Controller) buildTargetCondition(ctx context.Context, req *accessv1.Request) (*corev1.Condition, error) {
+func (c *Controller) buildTargetPreCondition(ctx context.Context, req *accessv1.Request) (*corev1.PolicyTrigger_Status_PreCondition, error) {
 	if req.Spec.Resource == nil {
 		return nil, errors.Errorf("request %q has no resource", req.Metadata.Name)
 	}
@@ -488,15 +483,7 @@ func (c *Controller) buildTargetCondition(ctx context.Context, req *accessv1.Req
 			return nil, errors.Errorf("request %q has no serviceRef", req.Metadata.Name)
 		}
 
-		uid, err := c.getServiceUID(ctx, ref)
-		if err != nil {
-			return nil, err
-		}
-		if uid == "" {
-			return nil, errors.Errorf("request %q target Service does not exist", req.Metadata.Name)
-		}
-
-		return matchCondition(fmt.Sprintf("ctx.service.metadata.uid == %s", strconv.Quote(uid))), nil
+		return servicePreCondition(ref), nil
 
 	case *accessv1.Request_Spec_Resource_Catalog_:
 		catalogRef := req.Spec.Resource.GetCatalog().GetCatalogRef()
@@ -512,42 +499,42 @@ func (c *Controller) buildTargetCondition(ctx context.Context, req *accessv1.Req
 			return nil, errors.Errorf("request %q target Catalog does not exist", req.Metadata.Name)
 		}
 
-		return c.buildCatalogTargetCondition(ctx, req, catalog)
+		return c.buildCatalogTargetPreCondition(ctx, req, catalog)
 
 	default:
 		return nil, errors.Errorf("request %q has invalid resource type", req.Metadata.Name)
 	}
 }
 
-func (c *Controller) buildCatalogTargetCondition(
+func (c *Controller) buildCatalogTargetPreCondition(
 	ctx context.Context,
 	req *accessv1.Request,
 	catalog *accessv1.Catalog,
-) (*corev1.Condition, error) {
+) (*corev1.PolicyTrigger_Status_PreCondition, error) {
 	if catalog.Spec.ResourceCollection == nil ||
 		catalog.Spec.ResourceCollection.Service == nil {
 		return nil, errors.Errorf("request %q target Catalog %q has no Service resource collection",
 			req.Metadata.Name, catalog.Metadata.Name)
 	}
 
-	var conditions []string
+	var preConditions []*corev1.PolicyTrigger_Status_PreCondition
 
 	for _, svcName := range catalog.Spec.ResourceCollection.Service.Services {
 		if svcName == "" {
 			continue
 		}
 
-		uid, err := c.getServiceUID(ctx, &metav1.ObjectReference{
+		svc, err := c.octeliumC.CoreC().GetService(ctx, &rmetav1.GetOptions{
 			Name: vutils.GetServiceFullNameFromName(svcName),
 		})
 		if err != nil {
+			if grpcerr.IsNotFound(err) {
+				continue
+			}
 			return nil, err
 		}
-		if uid == "" {
-			continue
-		}
 
-		conditions = append(conditions, fmt.Sprintf("ctx.service.metadata.uid == %s", strconv.Quote(uid)))
+		preConditions = append(preConditions, servicePreCondition(umetav1.GetObjectReference(svc)))
 	}
 
 	for _, nsName := range catalog.Spec.ResourceCollection.Service.Namespaces {
@@ -555,29 +542,35 @@ func (c *Controller) buildCatalogTargetCondition(
 			continue
 		}
 
-		uid, err := c.getNamespaceUID(ctx, &metav1.ObjectReference{
+		ns, err := c.octeliumC.CoreC().GetNamespace(ctx, &rmetav1.GetOptions{
 			Name: nsName,
 		})
 		if err != nil {
+			if grpcerr.IsNotFound(err) {
+				continue
+			}
 			return nil, err
 		}
-		if uid == "" {
-			continue
-		}
 
-		conditions = append(conditions, fmt.Sprintf("ctx.namespace.metadata.uid == %s", strconv.Quote(uid)))
+		preConditions = append(preConditions, namespacePreCondition(umetav1.GetObjectReference(ns)))
 	}
 
-	if len(conditions) == 0 {
+	if len(preConditions) == 0 {
 		return nil, errors.Errorf("request %q target Catalog %q does not resolve to any Service or Namespace",
 			req.Metadata.Name, catalog.Metadata.Name)
 	}
 
-	if len(conditions) == 1 {
-		return matchCondition(conditions[0]), nil
+	if len(preConditions) == 1 {
+		return preConditions[0], nil
 	}
 
-	return matchCondition("(" + strings.Join(conditions, ") || (") + ")"), nil
+	return &corev1.PolicyTrigger_Status_PreCondition{
+		Type: &corev1.PolicyTrigger_Status_PreCondition_Any_{
+			Any: &corev1.PolicyTrigger_Status_PreCondition_Any{
+				Of: preConditions,
+			},
+		},
+	}, nil
 }
 
 func (c *Controller) deletePolicyTrigger(ctx context.Context, ref *metav1.ObjectReference) error {
@@ -694,58 +687,6 @@ func (c *Controller) getAccessDuration(
 	}
 }
 
-func (c *Controller) getServiceUID(ctx context.Context, ref *metav1.ObjectReference) (string, error) {
-	if ref == nil {
-		return "", nil
-	}
-
-	if ref.Uid != "" {
-		return ref.Uid, nil
-	}
-
-	if ref.Name == "" {
-		return "", nil
-	}
-
-	svc, err := c.octeliumC.CoreC().GetService(ctx, &rmetav1.GetOptions{
-		Name: ref.Name,
-	})
-	if err != nil {
-		if grpcerr.IsNotFound(err) {
-			return "", nil
-		}
-		return "", err
-	}
-
-	return svc.Metadata.Uid, nil
-}
-
-func (c *Controller) getNamespaceUID(ctx context.Context, ref *metav1.ObjectReference) (string, error) {
-	if ref == nil {
-		return "", nil
-	}
-
-	if ref.Uid != "" {
-		return ref.Uid, nil
-	}
-
-	if ref.Name == "" {
-		return "", nil
-	}
-
-	ns, err := c.octeliumC.CoreC().GetNamespace(ctx, &rmetav1.GetOptions{
-		Name: ref.Name,
-	})
-	if err != nil {
-		if grpcerr.IsNotFound(err) {
-			return "", nil
-		}
-		return "", err
-	}
-
-	return ns.Metadata.Uid, nil
-}
-
 func (c *Controller) getCatalog(ctx context.Context, ref *metav1.ObjectReference) (*accessv1.Catalog, error) {
 	if ref == nil {
 		return nil, nil
@@ -843,17 +784,25 @@ func buildDefaultAccessRequestInlinePolicy() *corev1.InlinePolicy {
 							MatchAny: true,
 						},
 					},
-					Priority: -1,
+					Priority: defaultAccessRequestAllowPriority,
 				},
 			},
 		},
 	}
 }
 
-func matchCondition(match string) *corev1.Condition {
-	return &corev1.Condition{
-		Type: &corev1.Condition_Match{
-			Match: match,
+func servicePreCondition(ref *metav1.ObjectReference) *corev1.PolicyTrigger_Status_PreCondition {
+	return &corev1.PolicyTrigger_Status_PreCondition{
+		Type: &corev1.PolicyTrigger_Status_PreCondition_ServiceRef{
+			ServiceRef: pbutils.Clone(ref).(*metav1.ObjectReference),
+		},
+	}
+}
+
+func namespacePreCondition(ref *metav1.ObjectReference) *corev1.PolicyTrigger_Status_PreCondition {
+	return &corev1.PolicyTrigger_Status_PreCondition{
+		Type: &corev1.PolicyTrigger_Status_PreCondition_NamespaceRef{
+			NamespaceRef: pbutils.Clone(ref).(*metav1.ObjectReference),
 		},
 	}
 }
