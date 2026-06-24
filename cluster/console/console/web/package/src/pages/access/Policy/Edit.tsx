@@ -10,6 +10,7 @@ import SelectPolicies from "@/components/ResourceLayout/SelectPolicies";
 import SelectResource from "@/components/ResourceLayout/SelectResource";
 import TextAreaCustom from "@/components/TextAreaCustom";
 import { strToNum } from "@/utils/convert";
+import { getResourceRef } from "@/utils/pb";
 import { Group, NumberInput, Select, Switch, TextInput } from "@mantine/core";
 import { match } from "ts-pattern";
 
@@ -397,9 +398,9 @@ const ReviewStepEdit = (props: {
                 defaultValue={reviewer.type.user.userRef?.name}
                 onChange={(v) => {
                   if (reviewer.type.oneofKind === "user") {
-                    reviewer.type.user.userRef = MetaP.ObjectReference.create({
-                      name: v?.metadata?.name ?? "",
-                    });
+                    reviewer.type.user.userRef = v
+                      ? getResourceRef(v)
+                      : undefined;
                     onUpdate();
                   }
                 }}
@@ -414,11 +415,9 @@ const ReviewStepEdit = (props: {
                 defaultValue={reviewer.type.group.groupRef?.name}
                 onChange={(v) => {
                   if (reviewer.type.oneofKind === "group") {
-                    reviewer.type.group.groupRef = MetaP.ObjectReference.create(
-                      {
-                        name: v?.metadata?.name ?? "",
-                      },
-                    );
+                    reviewer.type.group.groupRef = v
+                      ? getResourceRef(v)
+                      : undefined;
                     onUpdate();
                   }
                 }}
