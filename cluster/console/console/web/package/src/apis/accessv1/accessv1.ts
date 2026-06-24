@@ -787,6 +787,10 @@ export interface Request_Status_Review {
      * @generated from protobuf field: repeated octelium.api.main.access.v1.Request.Status.Review.Step lastSteps = 2
      */
     lastSteps: Request_Status_Review_Step[];
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp currentStepStartedAt = 3
+     */
+    currentStepStartedAt?: Timestamp;
 }
 /**
  * @generated from protobuf message octelium.api.main.access.v1.Request.Status.Review.Step
@@ -2920,7 +2924,8 @@ class Request_Status_Review$Type extends MessageType<Request_Status_Review> {
     constructor() {
         super("octelium.api.main.access.v1.Request.Status.Review", [
             { no: 1, name: "currentStep", kind: "scalar", T: 5 /*ScalarType.INT32*/ },
-            { no: 2, name: "lastSteps", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Request_Status_Review_Step }
+            { no: 2, name: "lastSteps", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Request_Status_Review_Step },
+            { no: 3, name: "currentStepStartedAt", kind: "message", T: () => Timestamp }
         ]);
     }
     create(value?: PartialMessage<Request_Status_Review>): Request_Status_Review {
@@ -2942,6 +2947,9 @@ class Request_Status_Review$Type extends MessageType<Request_Status_Review> {
                 case /* repeated octelium.api.main.access.v1.Request.Status.Review.Step lastSteps */ 2:
                     message.lastSteps.push(Request_Status_Review_Step.internalBinaryRead(reader, reader.uint32(), options));
                     break;
+                case /* google.protobuf.Timestamp currentStepStartedAt */ 3:
+                    message.currentStepStartedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.currentStepStartedAt);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -2960,6 +2968,9 @@ class Request_Status_Review$Type extends MessageType<Request_Status_Review> {
         /* repeated octelium.api.main.access.v1.Request.Status.Review.Step lastSteps = 2; */
         for (let i = 0; i < message.lastSteps.length; i++)
             Request_Status_Review_Step.internalBinaryWrite(message.lastSteps[i], writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp currentStepStartedAt = 3; */
+        if (message.currentStepStartedAt)
+            Timestamp.internalBinaryWrite(message.currentStepStartedAt, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

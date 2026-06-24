@@ -91,7 +91,8 @@ func (c *Controller) reconcile(ctx context.Context, rev *accessv1.Review, force 
 
 	if next.Status.Review == nil {
 		next.Status.Review = &accessv1.Request_Status_Review{
-			CurrentStep: 0,
+			CurrentStep:          0,
+			CurrentStepStartedAt: pbutils.Now(),
 		}
 	}
 
@@ -197,6 +198,7 @@ func (c *Controller) gotoNextStepOrApprove(
 	}
 
 	req.Status.Review.CurrentStep++
+	req.Status.Review.CurrentStepStartedAt = pbutils.Now()
 }
 
 func (c *Controller) getCurrentStepReviews(

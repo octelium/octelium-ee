@@ -144,7 +144,8 @@ func (c *Controller) initializeRequest(ctx context.Context, req *accessv1.Reques
 
 		if req.Status.Review == nil {
 			req.Status.Review = &accessv1.Request_Status_Review{
-				CurrentStep: 0,
+				CurrentStep:          0,
+				CurrentStepStartedAt: pbutils.Now(),
 			}
 		}
 

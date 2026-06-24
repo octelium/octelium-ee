@@ -23,6 +23,7 @@ import (
 	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/controllers/requests"
 	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/controllers/reviews"
 	sesscontroller "github.com/octelium/octelium-ee/cluster/nocturne/nocturne/controllers/sessions"
+	ewatcher "github.com/octelium/octelium-ee/cluster/nocturne/nocturne/watcher"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
@@ -113,6 +114,8 @@ func Run(ctx context.Context) error {
 			return err
 		}
 	}
+
+	ewatcher.InitWatcher(octeliumC).Run(ctx)
 
 	zap.L().Info("Enterprise Nocturne is now running...")
 	healthcheck.Run(vutils.HealthCheckPortMain)
