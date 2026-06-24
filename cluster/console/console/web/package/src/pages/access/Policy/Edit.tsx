@@ -136,8 +136,10 @@ const ConditionEdit = (props: {
                     defaultValue={subject.subject.type.userRef.name}
                     onChange={(v) => {
                       if (subject.subject.type.oneofKind === "userRef") {
-                        subject.subject.type.userRef.name =
-                          v?.metadata?.name ?? "";
+                        if (!v) {
+                          return;
+                        }
+                        subject.subject.type.userRef = getResourceRef(v);
                         onUpdate();
                       }
                     }}
@@ -152,8 +154,10 @@ const ConditionEdit = (props: {
                     defaultValue={subject.subject.type.groupRef.name}
                     onChange={(v) => {
                       if (subject.subject.type.oneofKind === "groupRef") {
-                        subject.subject.type.groupRef.name =
-                          v?.metadata?.name ?? "";
+                        if (!v) {
+                          return;
+                        }
+                        subject.subject.type.groupRef = getResourceRef(v);
                         onUpdate();
                       }
                     }}
@@ -197,8 +201,10 @@ const ConditionEdit = (props: {
                     defaultValue={resource.resource.type.serviceRef.name}
                     onChange={(v) => {
                       if (resource.resource.type.oneofKind === "serviceRef") {
-                        resource.resource.type.serviceRef.name =
-                          v?.metadata?.name ?? "";
+                        if (!v) {
+                          return;
+                        }
+                        resource.resource.type.serviceRef = getResourceRef(v);
                         onUpdate();
                       }
                     }}
@@ -213,8 +219,10 @@ const ConditionEdit = (props: {
                     defaultValue={resource.resource.type.catalogRef.name}
                     onChange={(v) => {
                       if (resource.resource.type.oneofKind === "catalogRef") {
-                        resource.resource.type.catalogRef.name =
-                          v?.metadata?.name ?? "";
+                        if (!v) {
+                          return;
+                        }
+                        resource.resource.type.catalogRef = getResourceRef(v);
                         onUpdate();
                       }
                     }}
@@ -295,7 +303,10 @@ const ConditionEdit = (props: {
                 description="Matches the requester against this User"
                 defaultValue={userRef.userRef.name}
                 onChange={(v) => {
-                  userRef.userRef.name = v?.metadata?.name ?? "";
+                  if (!v) {
+                    return;
+                  }
+                  userRef.userRef = getResourceRef(v);
                   onUpdate();
                 }}
               />

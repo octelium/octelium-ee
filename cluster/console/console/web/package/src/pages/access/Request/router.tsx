@@ -27,7 +27,8 @@ const resourceComponentInfo: ResourceComponentInfo = {
   // @ts-ignore
   infoItemsGetter: MainInfo,
 
-  cloneable: false,
+  unCreatable: true,
+  unEditable: true,
 };
 
 export default resourceComponentInfo;
