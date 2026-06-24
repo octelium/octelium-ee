@@ -90,9 +90,7 @@ func (s *ServerMain) DeletePolicy(ctx context.Context, req *metav1.DeleteOptions
 		return nil, err
 	}
 
-	_, err = s.octeliumC.AccessC().DeletePolicy(ctx, &rmetav1.DeleteOptions{
-		Uid: item.Metadata.Uid,
-	})
+	_, err = s.octeliumC.AccessC().DeletePolicy(ctx, apivalidation.ObjectToRDeleteOptions(item))
 	if err != nil {
 		return nil, serr.K8sInternal(err)
 	}
@@ -228,11 +226,17 @@ func (s *ServerMain) validatePolicyCondition(ctx context.Context,
 
 		switch subject.Type.(type) {
 		case *accessv1.Policy_Spec_Rule_Condition_Subject_UserRef:
-			if err := apivalidation.CheckObjectRef(subject.GetUserRef(), &apivalidation.CheckGetOptionsOpts{}); err != nil {
+			if err := apivalidation.CheckObjectRef(subject.GetUserRef(), &apivalidation.CheckGetOptionsOpts{
+				HasName: true,
+				HasUID:  true,
+			}); err != nil {
 				return err
 			}
 		case *accessv1.Policy_Spec_Rule_Condition_Subject_GroupRef:
-			if err := apivalidation.CheckObjectRef(subject.GetGroupRef(), &apivalidation.CheckGetOptionsOpts{}); err != nil {
+			if err := apivalidation.CheckObjectRef(subject.GetGroupRef(), &apivalidation.CheckGetOptionsOpts{
+				HasName: true,
+				HasUID:  true,
+			}); err != nil {
 				return err
 			}
 		default:
@@ -249,11 +253,16 @@ func (s *ServerMain) validatePolicyCondition(ctx context.Context,
 		case *accessv1.Policy_Spec_Rule_Condition_Resource_ServiceRef:
 			if err := apivalidation.CheckObjectRef(resource.GetServiceRef(), &apivalidation.CheckGetOptionsOpts{
 				ParentsMax: 1,
+				HasName:    true,
+				HasUID:     true,
 			}); err != nil {
 				return err
 			}
 		case *accessv1.Policy_Spec_Rule_Condition_Resource_CatalogRef:
-			if err := apivalidation.CheckObjectRef(resource.GetCatalogRef(), &apivalidation.CheckGetOptionsOpts{}); err != nil {
+			if err := apivalidation.CheckObjectRef(resource.GetCatalogRef(), &apivalidation.CheckGetOptionsOpts{
+				HasName: true,
+				HasUID:  true,
+			}); err != nil {
 				return err
 			}
 		default:
@@ -285,7 +294,10 @@ func (s *ServerMain) validatePolicyCondition(ctx context.Context,
 		}
 
 	case *accessv1.Policy_Spec_Rule_Condition_UserRef:
-		if err := apivalidation.CheckObjectRef(cond.GetUserRef(), &apivalidation.CheckGetOptionsOpts{}); err != nil {
+		if err := apivalidation.CheckObjectRef(cond.GetUserRef(), &apivalidation.CheckGetOptionsOpts{
+			HasName: true,
+			HasUID:  true,
+		}); err != nil {
 			return err
 		}
 
@@ -327,11 +339,17 @@ func (s *ServerMain) validatePolicyReview(ctx context.Context,
 
 			switch reviewer.Type.(type) {
 			case *accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_User_:
-				if err := apivalidation.CheckObjectRef(reviewer.GetUser().GetUserRef(), &apivalidation.CheckGetOptionsOpts{}); err != nil {
+				if err := apivalidation.CheckObjectRef(reviewer.GetUser().GetUserRef(), &apivalidation.CheckGetOptionsOpts{
+					HasName: true,
+					HasUID:  true,
+				}); err != nil {
 					return err
 				}
 			case *accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_Group_:
-				if err := apivalidation.CheckObjectRef(reviewer.GetGroup().GetGroupRef(), &apivalidation.CheckGetOptionsOpts{}); err != nil {
+				if err := apivalidation.CheckObjectRef(reviewer.GetGroup().GetGroupRef(), &apivalidation.CheckGetOptionsOpts{
+					HasName: true,
+					HasUID:  true,
+				}); err != nil {
 					return err
 				}
 			default:
