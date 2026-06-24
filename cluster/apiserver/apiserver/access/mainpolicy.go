@@ -232,6 +232,14 @@ func (s *ServerMain) validatePolicyCondition(ctx context.Context,
 			}); err != nil {
 				return err
 			}
+
+			if _, err := s.octeliumC.CoreC().GetUser(ctx, apivalidation.ObjectReferenceToRGetOptions(subject.GetUserRef())); err != nil {
+				if grpcerr.IsNotFound(err) {
+					return grpcutils.InvalidArg("The User does not exist")
+				}
+				return grpcutils.InternalWithErr(err)
+			}
+
 		case *accessv1.Policy_Spec_Rule_Condition_Subject_GroupRef:
 			if err := apivalidation.CheckObjectRef(subject.GetGroupRef(), &apivalidation.CheckGetOptionsOpts{
 				HasName: true,
@@ -239,6 +247,14 @@ func (s *ServerMain) validatePolicyCondition(ctx context.Context,
 			}); err != nil {
 				return err
 			}
+
+			if _, err := s.octeliumC.CoreC().GetGroup(ctx, apivalidation.ObjectReferenceToRGetOptions(subject.GetGroupRef())); err != nil {
+				if grpcerr.IsNotFound(err) {
+					return grpcutils.InvalidArg("The Group does not exist")
+				}
+				return grpcutils.InternalWithErr(err)
+			}
+
 		default:
 			return grpcutils.InvalidArg("Subject condition type must be set")
 		}
@@ -258,6 +274,14 @@ func (s *ServerMain) validatePolicyCondition(ctx context.Context,
 			}); err != nil {
 				return err
 			}
+
+			if _, err := s.octeliumC.CoreC().GetService(ctx, apivalidation.ObjectReferenceToRGetOptions(resource.GetServiceRef())); err != nil {
+				if grpcerr.IsNotFound(err) {
+					return grpcutils.InvalidArg("The Service does not exist")
+				}
+				return grpcutils.InternalWithErr(err)
+			}
+
 		case *accessv1.Policy_Spec_Rule_Condition_Resource_CatalogRef:
 			if err := apivalidation.CheckObjectRef(resource.GetCatalogRef(), &apivalidation.CheckGetOptionsOpts{
 				HasName: true,
@@ -265,6 +289,14 @@ func (s *ServerMain) validatePolicyCondition(ctx context.Context,
 			}); err != nil {
 				return err
 			}
+
+			if _, err := s.octeliumC.AccessC().GetCatalog(ctx, apivalidation.ObjectReferenceToRGetOptions(resource.GetCatalogRef())); err != nil {
+				if grpcerr.IsNotFound(err) {
+					return grpcutils.InvalidArg("The Catalog does not exist")
+				}
+				return grpcutils.InternalWithErr(err)
+			}
+
 		default:
 			return grpcutils.InvalidArg("Resource condition type must be set")
 		}
@@ -299,6 +331,13 @@ func (s *ServerMain) validatePolicyCondition(ctx context.Context,
 			HasUID:  true,
 		}); err != nil {
 			return err
+		}
+
+		if _, err := s.octeliumC.CoreC().GetUser(ctx, apivalidation.ObjectReferenceToRGetOptions(cond.GetUserRef())); err != nil {
+			if grpcerr.IsNotFound(err) {
+				return grpcutils.InvalidArg("The User does not exist")
+			}
+			return grpcutils.InternalWithErr(err)
 		}
 
 	case *accessv1.Policy_Spec_Rule_Condition_Match:
@@ -345,6 +384,14 @@ func (s *ServerMain) validatePolicyReview(ctx context.Context,
 				}); err != nil {
 					return err
 				}
+
+				if _, err := s.octeliumC.CoreC().GetUser(ctx, apivalidation.ObjectReferenceToRGetOptions(reviewer.GetUser().GetUserRef())); err != nil {
+					if grpcerr.IsNotFound(err) {
+						return grpcutils.InvalidArg("The User does not exist")
+					}
+					return grpcutils.InternalWithErr(err)
+				}
+
 			case *accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_Group_:
 				if err := apivalidation.CheckObjectRef(reviewer.GetGroup().GetGroupRef(), &apivalidation.CheckGetOptionsOpts{
 					HasName: true,
@@ -352,6 +399,14 @@ func (s *ServerMain) validatePolicyReview(ctx context.Context,
 				}); err != nil {
 					return err
 				}
+
+				if _, err := s.octeliumC.CoreC().GetGroup(ctx, apivalidation.ObjectReferenceToRGetOptions(reviewer.GetGroup().GetGroupRef())); err != nil {
+					if grpcerr.IsNotFound(err) {
+						return grpcutils.InvalidArg("The Group does not exist")
+					}
+					return grpcutils.InternalWithErr(err)
+				}
+
 			default:
 				return grpcutils.InvalidArg("Rule %s Review Step %d Reviewer type must be set", ruleName, idx)
 			}
