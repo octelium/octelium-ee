@@ -425,6 +425,22 @@
                 "all": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.All",
                     "additionalProperties": false
+                },
+                "serviceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                },
+                "namespaceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                },
+                "groupRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                },
+                "deviceRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false,
@@ -474,6 +490,26 @@
                                         "required": [
                                             "all"
                                         ]
+                                    },
+                                    {
+                                        "required": [
+                                            "serviceRef"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "namespaceRef"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "groupRef"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "deviceRef"
+                                        ]
                                     }
                                 ]
                             }
@@ -516,6 +552,26 @@
                         {
                             "required": [
                                 "all"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "serviceRef"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "namespaceRef"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "groupRef"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "deviceRef"
                             ]
                         }
                     ]

@@ -9042,6 +9042,30 @@ export interface PolicyTrigger_Status_PreCondition {
          */
         all: PolicyTrigger_Status_PreCondition_All;
     } | {
+        oneofKind: "serviceRef";
+        /**
+         * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference serviceRef = 9
+         */
+        serviceRef: ObjectReference;
+    } | {
+        oneofKind: "namespaceRef";
+        /**
+         * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference namespaceRef = 10
+         */
+        namespaceRef: ObjectReference;
+    } | {
+        oneofKind: "groupRef";
+        /**
+         * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference groupRef = 11
+         */
+        groupRef: ObjectReference;
+    } | {
+        oneofKind: "deviceRef";
+        /**
+         * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference deviceRef = 12
+         */
+        deviceRef: ObjectReference;
+    } | {
         oneofKind: undefined;
     };
 }
@@ -9461,6 +9485,47 @@ export interface Authenticator_Status_Info_TOTP {
      * @generated from protobuf field: octelium.api.main.core.v1.Authenticator.Status.EncryptedData sharedSecret = 1
      */
     sharedSecret?: Authenticator_Status_EncryptedData;
+    /**
+     * @generated from protobuf field: uint32 periodSeconds = 2
+     */
+    periodSeconds: number;
+    /**
+     * @generated from protobuf field: uint32 digits = 3
+     */
+    digits: number;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Authenticator.Status.Info.TOTP.Algorithm algorithm = 4
+     */
+    algorithm: Authenticator_Status_Info_TOTP_Algorithm;
+    /**
+     * @generated from protobuf field: uint64 lastAcceptedTimeStep = 5
+     */
+    lastAcceptedTimeStep: number;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp lastAcceptedAt = 6
+     */
+    lastAcceptedAt?: Timestamp;
+}
+/**
+ * @generated from protobuf enum octelium.api.main.core.v1.Authenticator.Status.Info.TOTP.Algorithm
+ */
+export enum Authenticator_Status_Info_TOTP_Algorithm {
+    /**
+     * @generated from protobuf enum value: ALGORITHM_UNSET = 0;
+     */
+    ALGORITHM_UNSET = 0,
+    /**
+     * @generated from protobuf enum value: SHA1 = 1;
+     */
+    SHA1 = 1,
+    /**
+     * @generated from protobuf enum value: SHA256 = 2;
+     */
+    SHA256 = 2,
+    /**
+     * @generated from protobuf enum value: SHA512 = 3;
+     */
+    SHA512 = 3
 }
 /**
  * @generated from protobuf message octelium.api.main.core.v1.Authenticator.Status.Info.TPM
@@ -9528,6 +9593,10 @@ export interface Authenticator_Status_AuthenticationAttempt {
      * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference sessionRef = 5
      */
     sessionRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp completedAt = 6
+     */
+    completedAt?: Timestamp;
 }
 /**
  * @generated from protobuf enum octelium.api.main.core.v1.Authenticator.Status.Type
@@ -30195,7 +30264,11 @@ class PolicyTrigger_Status_PreCondition$Type extends MessageType<PolicyTrigger_S
             { no: 5, name: "matchAny", kind: "scalar", oneof: "type", T: 8 /*ScalarType.BOOL*/ },
             { no: 6, name: "condition", kind: "message", oneof: "type", T: () => Condition },
             { no: 7, name: "any", kind: "message", oneof: "type", T: () => PolicyTrigger_Status_PreCondition_Any },
-            { no: 8, name: "all", kind: "message", oneof: "type", T: () => PolicyTrigger_Status_PreCondition_All }
+            { no: 8, name: "all", kind: "message", oneof: "type", T: () => PolicyTrigger_Status_PreCondition_All },
+            { no: 9, name: "serviceRef", kind: "message", oneof: "type", T: () => ObjectReference },
+            { no: 10, name: "namespaceRef", kind: "message", oneof: "type", T: () => ObjectReference },
+            { no: 11, name: "groupRef", kind: "message", oneof: "type", T: () => ObjectReference },
+            { no: 12, name: "deviceRef", kind: "message", oneof: "type", T: () => ObjectReference }
         ]);
     }
     create(value?: PartialMessage<PolicyTrigger_Status_PreCondition>): PolicyTrigger_Status_PreCondition {
@@ -30258,6 +30331,30 @@ class PolicyTrigger_Status_PreCondition$Type extends MessageType<PolicyTrigger_S
                         all: PolicyTrigger_Status_PreCondition_All.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).all)
                     };
                     break;
+                case /* octelium.api.main.meta.v1.ObjectReference serviceRef */ 9:
+                    message.type = {
+                        oneofKind: "serviceRef",
+                        serviceRef: ObjectReference.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).serviceRef)
+                    };
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference namespaceRef */ 10:
+                    message.type = {
+                        oneofKind: "namespaceRef",
+                        namespaceRef: ObjectReference.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).namespaceRef)
+                    };
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference groupRef */ 11:
+                    message.type = {
+                        oneofKind: "groupRef",
+                        groupRef: ObjectReference.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).groupRef)
+                    };
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference deviceRef */ 12:
+                    message.type = {
+                        oneofKind: "deviceRef",
+                        deviceRef: ObjectReference.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).deviceRef)
+                    };
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -30294,6 +30391,18 @@ class PolicyTrigger_Status_PreCondition$Type extends MessageType<PolicyTrigger_S
         /* octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.All all = 8; */
         if (message.type.oneofKind === "all")
             PolicyTrigger_Status_PreCondition_All.internalBinaryWrite(message.type.all, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference serviceRef = 9; */
+        if (message.type.oneofKind === "serviceRef")
+            ObjectReference.internalBinaryWrite(message.type.serviceRef, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference namespaceRef = 10; */
+        if (message.type.oneofKind === "namespaceRef")
+            ObjectReference.internalBinaryWrite(message.type.namespaceRef, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference groupRef = 11; */
+        if (message.type.oneofKind === "groupRef")
+            ObjectReference.internalBinaryWrite(message.type.groupRef, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference deviceRef = 12; */
+        if (message.type.oneofKind === "deviceRef")
+            ObjectReference.internalBinaryWrite(message.type.deviceRef, writer.tag(12, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -31245,11 +31354,20 @@ export const Authenticator_Status_Info_FIDO = new Authenticator_Status_Info_FIDO
 class Authenticator_Status_Info_TOTP$Type extends MessageType<Authenticator_Status_Info_TOTP> {
     constructor() {
         super("octelium.api.main.core.v1.Authenticator.Status.Info.TOTP", [
-            { no: 1, name: "sharedSecret", kind: "message", T: () => Authenticator_Status_EncryptedData }
+            { no: 1, name: "sharedSecret", kind: "message", T: () => Authenticator_Status_EncryptedData },
+            { no: 2, name: "periodSeconds", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 3, name: "digits", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 4, name: "algorithm", kind: "enum", T: () => ["octelium.api.main.core.v1.Authenticator.Status.Info.TOTP.Algorithm", Authenticator_Status_Info_TOTP_Algorithm] },
+            { no: 5, name: "lastAcceptedTimeStep", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 6, name: "lastAcceptedAt", kind: "message", T: () => Timestamp }
         ]);
     }
     create(value?: PartialMessage<Authenticator_Status_Info_TOTP>): Authenticator_Status_Info_TOTP {
         const message = globalThis.Object.create((this.messagePrototype!));
+        message.periodSeconds = 0;
+        message.digits = 0;
+        message.algorithm = 0;
+        message.lastAcceptedTimeStep = 0;
         if (value !== undefined)
             reflectionMergePartial<Authenticator_Status_Info_TOTP>(this, message, value);
         return message;
@@ -31261,6 +31379,21 @@ class Authenticator_Status_Info_TOTP$Type extends MessageType<Authenticator_Stat
             switch (fieldNo) {
                 case /* octelium.api.main.core.v1.Authenticator.Status.EncryptedData sharedSecret */ 1:
                     message.sharedSecret = Authenticator_Status_EncryptedData.internalBinaryRead(reader, reader.uint32(), options, message.sharedSecret);
+                    break;
+                case /* uint32 periodSeconds */ 2:
+                    message.periodSeconds = reader.uint32();
+                    break;
+                case /* uint32 digits */ 3:
+                    message.digits = reader.uint32();
+                    break;
+                case /* octelium.api.main.core.v1.Authenticator.Status.Info.TOTP.Algorithm algorithm */ 4:
+                    message.algorithm = reader.int32();
+                    break;
+                case /* uint64 lastAcceptedTimeStep */ 5:
+                    message.lastAcceptedTimeStep = reader.uint64().toNumber();
+                    break;
+                case /* google.protobuf.Timestamp lastAcceptedAt */ 6:
+                    message.lastAcceptedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.lastAcceptedAt);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -31277,6 +31410,21 @@ class Authenticator_Status_Info_TOTP$Type extends MessageType<Authenticator_Stat
         /* octelium.api.main.core.v1.Authenticator.Status.EncryptedData sharedSecret = 1; */
         if (message.sharedSecret)
             Authenticator_Status_EncryptedData.internalBinaryWrite(message.sharedSecret, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* uint32 periodSeconds = 2; */
+        if (message.periodSeconds !== 0)
+            writer.tag(2, WireType.Varint).uint32(message.periodSeconds);
+        /* uint32 digits = 3; */
+        if (message.digits !== 0)
+            writer.tag(3, WireType.Varint).uint32(message.digits);
+        /* octelium.api.main.core.v1.Authenticator.Status.Info.TOTP.Algorithm algorithm = 4; */
+        if (message.algorithm !== 0)
+            writer.tag(4, WireType.Varint).int32(message.algorithm);
+        /* uint64 lastAcceptedTimeStep = 5; */
+        if (message.lastAcceptedTimeStep !== 0)
+            writer.tag(5, WireType.Varint).uint64(message.lastAcceptedTimeStep);
+        /* google.protobuf.Timestamp lastAcceptedAt = 6; */
+        if (message.lastAcceptedAt)
+            Timestamp.internalBinaryWrite(message.lastAcceptedAt, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -31428,7 +31576,8 @@ class Authenticator_Status_AuthenticationAttempt$Type extends MessageType<Authen
             { no: 2, name: "encryptedChallengeRequest", kind: "message", T: () => Authenticator_Status_EncryptedData },
             { no: 3, name: "encryptedDataMap", kind: "map", K: 9 /*ScalarType.STRING*/, V: { kind: "message", T: () => Authenticator_Status_EncryptedData } },
             { no: 4, name: "dataMap", kind: "map", K: 9 /*ScalarType.STRING*/, V: { kind: "scalar", T: 12 /*ScalarType.BYTES*/ } },
-            { no: 5, name: "sessionRef", kind: "message", T: () => ObjectReference }
+            { no: 5, name: "sessionRef", kind: "message", T: () => ObjectReference },
+            { no: 6, name: "completedAt", kind: "message", T: () => Timestamp }
         ]);
     }
     create(value?: PartialMessage<Authenticator_Status_AuthenticationAttempt>): Authenticator_Status_AuthenticationAttempt {
@@ -31458,6 +31607,9 @@ class Authenticator_Status_AuthenticationAttempt$Type extends MessageType<Authen
                     break;
                 case /* octelium.api.main.meta.v1.ObjectReference sessionRef */ 5:
                     message.sessionRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.sessionRef);
+                    break;
+                case /* google.protobuf.Timestamp completedAt */ 6:
+                    message.completedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.completedAt);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -31522,6 +31674,9 @@ class Authenticator_Status_AuthenticationAttempt$Type extends MessageType<Authen
         /* octelium.api.main.meta.v1.ObjectReference sessionRef = 5; */
         if (message.sessionRef)
             ObjectReference.internalBinaryWrite(message.sessionRef, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp completedAt = 6; */
+        if (message.completedAt)
+            Timestamp.internalBinaryWrite(message.completedAt, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

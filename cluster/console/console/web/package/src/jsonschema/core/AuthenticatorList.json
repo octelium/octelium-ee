@@ -170,6 +170,10 @@
                 "sessionRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
                     "additionalProperties": false
+                },
+                "completedAt": {
+                    "type": "string",
+                    "format": "date-time"
                 }
             },
             "additionalProperties": false,
@@ -315,6 +319,29 @@
                 "sharedSecret": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Authenticator.Status.EncryptedData",
                     "additionalProperties": false
+                },
+                "periodSeconds": {
+                    "type": "integer"
+                },
+                "digits": {
+                    "type": "integer"
+                },
+                "algorithm": {
+                    "enum": [
+                        "ALGORITHM_UNSET",
+                        "SHA1",
+                        "SHA256",
+                        "SHA512"
+                    ],
+                    "type": "string",
+                    "title": "Algorithm"
+                },
+                "lastAcceptedTimeStep": {
+                    "type": "integer"
+                },
+                "lastAcceptedAt": {
+                    "type": "string",
+                    "format": "date-time"
                 }
             },
             "additionalProperties": false,
