@@ -137,7 +137,7 @@ func (g *Genesis) installOcteliumResources(ctx context.Context, clusterCfg *core
 
 					SystemLabels: map[string]string{
 						"octelium-apiserver": "true",
-						"apiserver-path":     "/octelium.api.main.enterprise,/octelium.api.main.identity,/octelium.api.main.clusterman,/octelium.api.main.visibility",
+						"apiserver-path":     "/octelium.api.main.enterprise,/octelium.api.main.access,/octelium.api.main.clusterman,/octelium.api.main.visibility",
 					},
 				},
 				Spec: &corev1.Service_Spec{
