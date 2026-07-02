@@ -1257,6 +1257,12 @@
                 "eSSHPort": {
                     "type": "integer",
                     "description": "ESSHPort is the port number of the eSSH Server. Only meaningful if ESSHEnable is set to true"
+                },
+                "eSOCKS5Enable": {
+                    "type": "boolean"
+                },
+                "eSOCKS5Port": {
+                    "type": "integer"
                 }
             },
             "additionalProperties": false,

@@ -883,7 +883,9 @@
                         "MYSQL",
                         "GRPC",
                         "WEB",
-                        "DNS"
+                        "DNS",
+                        "SOCKS5",
+                        "RDP_WEB"
                     ],
                     "type": "string",
                     "title": "Mode"

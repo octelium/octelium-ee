@@ -76,7 +76,9 @@
                         "MYSQL",
                         "GRPC",
                         "WEB",
-                        "DNS"
+                        "DNS",
+                        "SOCKS5",
+                        "RDP_WEB"
                     ],
                     "type": "string",
                     "title": "Mode"
@@ -357,6 +359,10 @@
                     "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Info.DNS",
                     "additionalProperties": false,
                     "description": "DNS sets the DNS-specific entry details"
+                },
+                "socks5": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5",
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false,
@@ -411,6 +417,11 @@
                                         "required": [
                                             "dns"
                                         ]
+                                    },
+                                    {
+                                        "required": [
+                                            "socks5"
+                                        ]
                                     }
                                 ]
                             }
@@ -458,6 +469,11 @@
                         {
                             "required": [
                                 "dns"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "socks5"
                             ]
                         }
                     ]
@@ -994,6 +1010,50 @@
             "additionalProperties": false,
             "type": "object",
             "title": "Start"
+        },
+        "octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "TYPE_UNSPECIFIED",
+                        "CONNECT",
+                        "SESSION_END"
+                    ],
+                    "type": "string",
+                    "title": "Type"
+                },
+                "host": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "integer"
+                },
+                "addressType": {
+                    "enum": [
+                        "ADDRESS_TYPE_UNSPECIFIED",
+                        "IPV4",
+                        "DOMAIN",
+                        "IPV6"
+                    ],
+                    "type": "string",
+                    "title": "Address Type"
+                },
+                "receivedBytes": {
+                    "type": "integer"
+                },
+                "sentBytes": {
+                    "type": "integer"
+                },
+                "upstreamHost": {
+                    "type": "string"
+                },
+                "upstreamPort": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "SOCKS 5"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.SSH": {
             "properties": {

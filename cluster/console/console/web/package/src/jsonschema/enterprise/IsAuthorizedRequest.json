@@ -431,6 +431,10 @@
                     "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.DNS",
                     "additionalProperties": false
                 },
+                "socks5": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.SOCKS5",
+                    "additionalProperties": false
+                },
                 "ip": {
                     "type": "string"
                 }
@@ -472,6 +476,11 @@
                                         "required": [
                                             "dns"
                                         ]
+                                    },
+                                    {
+                                        "required": [
+                                            "socks5"
+                                        ]
                                     }
                                 ]
                             }
@@ -504,6 +513,11 @@
                         {
                             "required": [
                                 "dns"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "socks5"
                             ]
                         }
                     ]
@@ -741,6 +755,62 @@
             "additionalProperties": false,
             "type": "object",
             "title": "Query"
+        },
+        "octelium.api.main.core.v1.RequestContext.Request.SOCKS5": {
+            "properties": {
+                "connect": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "connect"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "connect"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "SOCKS 5"
+        },
+        "octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect": {
+            "properties": {
+                "host": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "integer"
+                },
+                "addressType": {
+                    "enum": [
+                        "ADDRESS_TYPE_UNSPECIFIED",
+                        "IPV4",
+                        "DOMAIN",
+                        "IPV6"
+                    ],
+                    "type": "string",
+                    "title": "Address Type"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Connect"
         },
         "octelium.api.main.core.v1.RequestContext.Request.SSH": {
             "properties": {

@@ -362,7 +362,7 @@
                         "type": "string"
                     },
                     "type": "array",
-                    "description": "Groups is the list of Group names that this User belongs to. You must not add the `root` Group as it's only used by the `root` User or the `all` Group as it's already added by the Cluster automatically."
+                    "description": "Groups is the list of Group names that this User belongs to."
                 },
                 "email": {
                     "type": "string",

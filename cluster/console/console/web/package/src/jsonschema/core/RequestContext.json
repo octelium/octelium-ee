@@ -794,6 +794,10 @@
                     "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.DNS",
                     "additionalProperties": false
                 },
+                "socks5": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.SOCKS5",
+                    "additionalProperties": false
+                },
                 "ip": {
                     "type": "string"
                 }
@@ -835,6 +839,11 @@
                                         "required": [
                                             "dns"
                                         ]
+                                    },
+                                    {
+                                        "required": [
+                                            "socks5"
+                                        ]
                                     }
                                 ]
                             }
@@ -867,6 +876,11 @@
                         {
                             "required": [
                                 "dns"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "socks5"
                             ]
                         }
                     ]
@@ -1104,6 +1118,62 @@
             "additionalProperties": false,
             "type": "object",
             "title": "Query"
+        },
+        "octelium.api.main.core.v1.RequestContext.Request.SOCKS5": {
+            "properties": {
+                "connect": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "connect"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "connect"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "SOCKS 5"
+        },
+        "octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect": {
+            "properties": {
+                "host": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "integer"
+                },
+                "addressType": {
+                    "enum": [
+                        "ADDRESS_TYPE_UNSPECIFIED",
+                        "IPV4",
+                        "DOMAIN",
+                        "IPV6"
+                    ],
+                    "type": "string",
+                    "title": "Address Type"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Connect"
         },
         "octelium.api.main.core.v1.RequestContext.Request.SSH": {
             "properties": {
@@ -1402,7 +1472,9 @@
                         "MYSQL",
                         "GRPC",
                         "WEB",
-                        "DNS"
+                        "DNS",
+                        "SOCKS5",
+                        "RDP_WEB"
                     ],
                     "type": "string",
                     "title": "Mode"
@@ -1529,6 +1601,14 @@
                     "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Kubernetes",
                     "additionalProperties": false,
                     "description": "Kubernetes sets Kubernetes-specific configuration"
+                },
+                "socks5": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.SOCKS5",
+                    "additionalProperties": false
+                },
+                "rdp": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.RDP",
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false,
@@ -1563,6 +1643,16 @@
                                         "required": [
                                             "kubernetes"
                                         ]
+                                    },
+                                    {
+                                        "required": [
+                                            "socks5"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "rdp"
+                                        ]
                                     }
                                 ]
                             }
@@ -1590,6 +1680,16 @@
                         {
                             "required": [
                                 "kubernetes"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "socks5"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "rdp"
                             ]
                         }
                     ]
@@ -3538,6 +3638,192 @@
             "type": "object",
             "title": "Authorization"
         },
+        "octelium.api.main.core.v1.Service.Spec.Config.RDP": {
+            "properties": {
+                "auth": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.RDP.Auth",
+                    "additionalProperties": false
+                },
+                "upstreamTLS": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.RDP.UpstreamTLS",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "RDP"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.RDP.Auth": {
+            "properties": {
+                "user": {
+                    "type": "string"
+                },
+                "domain": {
+                    "type": "string"
+                },
+                "password": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.RDP.Auth.Password",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Auth"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.RDP.Auth.Password": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Password"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.RDP.UpstreamTLS": {
+            "properties": {
+                "pinnedCertSHA256": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "allowAnyCert": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Upstream TLS"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.SOCKS5": {
+            "properties": {
+                "auth": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.SOCKS5.Auth",
+                    "additionalProperties": false
+                },
+                "isEmbeddedMode": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "SOCKS 5"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.SOCKS5.Auth": {
+            "properties": {
+                "noAuth": {
+                    "type": "boolean"
+                },
+                "usernamePassword": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.SOCKS5.Auth.UsernamePassword",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "noAuth"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "usernamePassword"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "noAuth"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "usernamePassword"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Auth"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.SOCKS5.Auth.UsernamePassword": {
+            "properties": {
+                "username": {
+                    "type": "string"
+                },
+                "password": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.SOCKS5.Auth.UsernamePassword.Password",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Username Password"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.SOCKS5.Auth.UsernamePassword.Password": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Password"
+        },
         "octelium.api.main.core.v1.Service.Spec.Config.SSH": {
             "properties": {
                 "user": {
@@ -5295,6 +5581,12 @@
                 "eSSHPort": {
                     "type": "integer",
                     "description": "ESSHPort is the port number of the eSSH Server. Only meaningful if ESSHEnable is set to true"
+                },
+                "eSOCKS5Enable": {
+                    "type": "boolean"
+                },
+                "eSOCKS5Port": {
+                    "type": "integer"
                 }
             },
             "additionalProperties": false,
@@ -5462,7 +5754,7 @@
                         "type": "string"
                     },
                     "type": "array",
-                    "description": "Groups is the list of Group names that this User belongs to. You must not add the `root` Group as it's only used by the `root` User or the `all` Group as it's already added by the Cluster automatically."
+                    "description": "Groups is the list of Group names that this User belongs to."
                 },
                 "email": {
                     "type": "string",
