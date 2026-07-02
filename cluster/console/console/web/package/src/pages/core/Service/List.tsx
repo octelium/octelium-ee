@@ -327,6 +327,30 @@ const DoSummary = (props: { resp: GetServiceSummaryResponse }) => {
           UDP
         </SummaryItemCount>
         <SummaryItemCount
+          count={resp.totalSOCKS5}
+          to={toURLWithQry(`/core/services`, {
+            mode: Service_Spec_Mode[Service_Spec_Mode.SOCKS5],
+          })}
+          active={
+            searchParams.get(`mode`) ===
+            Service_Spec_Mode[Service_Spec_Mode.SOCKS5]
+          }
+        >
+          SOCKS5
+        </SummaryItemCount>
+        <SummaryItemCount
+          count={resp.totalSOCKS5}
+          to={toURLWithQry(`/core/services`, {
+            mode: Service_Spec_Mode[Service_Spec_Mode.RDP_WEB],
+          })}
+          active={
+            searchParams.get(`mode`) ===
+            Service_Spec_Mode[Service_Spec_Mode.RDP_WEB]
+          }
+        >
+          RDP Web
+        </SummaryItemCount>
+        <SummaryItemCount
           count={resp.totalPublic}
           to={toURLWithQry(`/core/services`, {
             isPublic: "true",

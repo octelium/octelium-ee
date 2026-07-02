@@ -281,6 +281,14 @@ export interface GetServiceSummaryResponse {
      * @generated from protobuf field: uint32 totalWeb = 13
      */
     totalWeb: number;
+    /**
+     * @generated from protobuf field: uint32 totalSOCKS5 = 14
+     */
+    totalSOCKS5: number;
+    /**
+     * @generated from protobuf field: uint32 totalRDPWeb = 15
+     */
+    totalRDPWeb: number;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.core.v1.GetCredentialSummaryResponse
@@ -1796,7 +1804,9 @@ class GetServiceSummaryResponse$Type extends MessageType<GetServiceSummaryRespon
             { no: 10, name: "totalUDP", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
             { no: 11, name: "totalKubernetes", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
             { no: 12, name: "totalGRPC", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 13, name: "totalWeb", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 13, name: "totalWeb", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 14, name: "totalSOCKS5", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 15, name: "totalRDPWeb", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<GetServiceSummaryResponse>): GetServiceSummaryResponse {
@@ -1814,6 +1824,8 @@ class GetServiceSummaryResponse$Type extends MessageType<GetServiceSummaryRespon
         message.totalKubernetes = 0;
         message.totalGRPC = 0;
         message.totalWeb = 0;
+        message.totalSOCKS5 = 0;
+        message.totalRDPWeb = 0;
         if (value !== undefined)
             reflectionMergePartial<GetServiceSummaryResponse>(this, message, value);
         return message;
@@ -1861,6 +1873,12 @@ class GetServiceSummaryResponse$Type extends MessageType<GetServiceSummaryRespon
                     break;
                 case /* uint32 totalWeb */ 13:
                     message.totalWeb = reader.uint32();
+                    break;
+                case /* uint32 totalSOCKS5 */ 14:
+                    message.totalSOCKS5 = reader.uint32();
+                    break;
+                case /* uint32 totalRDPWeb */ 15:
+                    message.totalRDPWeb = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -1913,6 +1931,12 @@ class GetServiceSummaryResponse$Type extends MessageType<GetServiceSummaryRespon
         /* uint32 totalWeb = 13; */
         if (message.totalWeb !== 0)
             writer.tag(13, WireType.Varint).uint32(message.totalWeb);
+        /* uint32 totalSOCKS5 = 14; */
+        if (message.totalSOCKS5 !== 0)
+            writer.tag(14, WireType.Varint).uint32(message.totalSOCKS5);
+        /* uint32 totalRDPWeb = 15; */
+        if (message.totalRDPWeb !== 0)
+            writer.tag(15, WireType.Varint).uint32(message.totalRDPWeb);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

@@ -530,6 +530,8 @@ export const printServiceMode = (mode: CoreP.Service_Spec_Mode): string =>
     .with(CoreP.Service_Spec_Mode.UDP, () => "UDP")
     .with(CoreP.Service_Spec_Mode.WEB, () => "Web")
     .with(CoreP.Service_Spec_Mode.DNS, () => "DNS")
+    .with(CoreP.Service_Spec_Mode.SOCKS5, () => "SOCKS5")
+    .with(CoreP.Service_Spec_Mode.RDP_WEB, () => "RDP Web")
     .otherwise((v) => v.toString());
 
 export const hasAuthenticationLog = (resource: Resource): boolean =>

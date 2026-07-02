@@ -165,6 +165,8 @@ func (s *Server) getSummaryCoreService(ctx context.Context, req *vcorev1.GetServ
 			getModeCount(corev1.Service_Spec_DNS),
 			getModeCount(corev1.Service_Spec_GRPC),
 			getModeCount(corev1.Service_Spec_WEB),
+			getModeCount(corev1.Service_Spec_SOCKS5),
+			getModeCount(corev1.Service_Spec_RDP_WEB),
 			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.isPublic') = true) AS count_public`),
 			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.isAnonymous') = true) AS count_anonymous`),
 		)
@@ -190,6 +192,7 @@ func (s *Server) getSummaryCoreService(ctx context.Context, req *vcorev1.GetServ
 			&ret.TotalSSH, &ret.TotalKubernetes,
 			&ret.TotalPostgres, &ret.TotalMysql,
 			&ret.TotalDNS, &ret.TotalGRPC, &ret.TotalWeb,
+			&ret.TotalSOCKS5, &ret.TotalRDPWeb,
 			&ret.TotalPublic, &ret.TotalAnonymous)
 		if err != nil {
 			return nil, err
