@@ -3873,6 +3873,10 @@ export interface SecretStore_Spec_AzureKeyVault {
      * @generated from protobuf field: string vaultURL = 3
      */
     vaultURL: string;
+    /**
+     * @generated from protobuf field: string key = 4
+     */
+    key: string;
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.SecretStore.Spec.Kubernetes
@@ -15758,7 +15762,8 @@ class SecretStore_Spec_AzureKeyVault$Type extends MessageType<SecretStore_Spec_A
         super("octelium.api.main.enterprise.v1.SecretStore.Spec.AzureKeyVault", [
             { no: 1, name: "clientID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "tenantID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 3, name: "vaultURL", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 3, name: "vaultURL", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "key", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<SecretStore_Spec_AzureKeyVault>): SecretStore_Spec_AzureKeyVault {
@@ -15766,6 +15771,7 @@ class SecretStore_Spec_AzureKeyVault$Type extends MessageType<SecretStore_Spec_A
         message.clientID = "";
         message.tenantID = "";
         message.vaultURL = "";
+        message.key = "";
         if (value !== undefined)
             reflectionMergePartial<SecretStore_Spec_AzureKeyVault>(this, message, value);
         return message;
@@ -15783,6 +15789,9 @@ class SecretStore_Spec_AzureKeyVault$Type extends MessageType<SecretStore_Spec_A
                     break;
                 case /* string vaultURL */ 3:
                     message.vaultURL = reader.string();
+                    break;
+                case /* string key */ 4:
+                    message.key = reader.string();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -15805,6 +15814,9 @@ class SecretStore_Spec_AzureKeyVault$Type extends MessageType<SecretStore_Spec_A
         /* string vaultURL = 3; */
         if (message.vaultURL !== "")
             writer.tag(3, WireType.LengthDelimited).string(message.vaultURL);
+        /* string key = 4; */
+        if (message.key !== "")
+            writer.tag(4, WireType.LengthDelimited).string(message.key);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
