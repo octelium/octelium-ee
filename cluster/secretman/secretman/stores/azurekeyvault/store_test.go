@@ -6,14 +6,13 @@
 //
 // See the LICENSE file in the repository root for full license text.
 
-package hashicorpvault
+package azurekeyvault
 
 import (
 	"context"
 	"fmt"
 	"testing"
 
-	vault "github.com/hashicorp/vault/api"
 	otests "github.com/octelium/octelium-ee/cluster/common/tests"
 	"github.com/octelium/octelium-ee/cluster/secretman/secretman/migrations"
 	"github.com/octelium/octelium-ee/cluster/secretman/secretman/stores"
@@ -27,9 +26,6 @@ import (
 
 func TestServer(t *testing.T) {
 	ctx := context.Background()
-
-	t.Setenv(transitMountPathEnv, defaultTransitMountPath)
-	t.Setenv(kubernetesAuthMountPathEnv, defaultKubernetesAuthMountPath)
 
 	tst, err := otests.Initialize(nil)
 	assert.Nil(t, err, "%+v", err)
@@ -55,106 +51,27 @@ func TestServer(t *testing.T) {
 		return
 	}
 
-	vaultCfg := vault.DefaultConfig()
-	assert.NotNil(t, vaultCfg)
-	if vaultCfg == nil {
-		return
-	}
-
-	assert.Nil(t, vaultCfg.Error, "%+v", vaultCfg.Error)
-	if vaultCfg.Error != nil {
-		return
-	}
-
-	vaultC, err := vault.NewClient(vaultCfg)
-	assert.Nil(t, err, "%+v", err)
-	if err != nil {
-		return
-	}
-
-	vaultC.SetToken(testToken)
-
-	mounts, err := vaultC.Sys().ListMountsWithContext(ctx)
-	assert.Nil(t, err, "%+v", err)
-	if err != nil {
-		return
-	}
-
-	if _, ok := mounts[defaultTransitMountPath+"/"]; !ok {
-		err = vaultC.Sys().MountWithContext(
-			ctx,
-			defaultTransitMountPath,
-			&vault.MountInput{
-				Type: "transit",
-			},
-		)
-		assert.Nil(t, err, "%+v", err)
-		if err != nil {
-			return
-		}
-	}
-
-	keyName := fmt.Sprintf("octelium-test-%s", vutils.UUIDv4())
-	keyPath := fmt.Sprintf(
-		"%s/keys/%s",
-		defaultTransitMountPath,
-		keyName,
-	)
-
-	_, err = vaultC.Logical().WriteWithContext(
-		ctx,
-		keyPath,
-		map[string]interface{}{
-			"type": "aes256-gcm96",
-		},
-	)
-	assert.Nil(t, err, "%+v", err)
-	if err != nil {
-		return
-	}
-
-	t.Cleanup(func() {
-		cleanupCtx := context.Background()
-
-		_, err := vaultC.Logical().WriteWithContext(
-			cleanupCtx,
-			keyPath+"/config",
-			map[string]interface{}{
-				"deletion_allowed": true,
-			},
-		)
-		assert.Nil(t, err, "%+v", err)
-		if err != nil {
-			return
-		}
-
-		_, err = vaultC.Logical().DeleteWithContext(
-			cleanupCtx,
-			keyPath,
-		)
-		assert.Nil(t, err, "%+v", err)
-	})
-
 	ss, err := fakeC.OcteliumC.EnterpriseC().CreateSecretStore(
 		ctx,
 		&enterprisev1.SecretStore{
 			Metadata: &metav1.Metadata{
-				Name:           fmt.Sprintf("test-hashicorp-vault-%s", vutils.GetMyRegionName()),
+				Name:           fmt.Sprintf("test-azure-key-vault-%s", vutils.GetMyRegionName()),
 				IsSystem:       true,
 				IsSystemHidden: true,
 			},
 			Spec: &enterprisev1.SecretStore_Spec{
-				Type: &enterprisev1.SecretStore_Spec_HashicorpVault_{
-					HashicorpVault: &enterprisev1.SecretStore_Spec_HashicorpVault{
-						Address: vaultCfg.Address,
-						Role:    "octelium-test",
-						Key:     keyName,
+				Type: &enterprisev1.SecretStore_Spec_AzureKeyVault_{
+					AzureKeyVault: &enterprisev1.SecretStore_Spec_AzureKeyVault{
+						ClientID: "00000000-0000-0000-0000-000000000001",
+						TenantID: "00000000-0000-0000-0000-000000000002",
+						VaultURL: "https://octelium-test.vault.azure.net",
+						Key:      "octelium-test-key",
 					},
 				},
 			},
 			Status: &enterprisev1.SecretStore_Status{
 				State: enterprisev1.SecretStore_Status_OK,
-				Type:  enterprisev1.SecretStore_Status_TYPE_HASHICORP_VAULT,
+				Type:  enterprisev1.SecretStore_Status_TYPE_AZURE_KEY_VAULT,
 			},
 		},
 	)
@@ -292,47 +209,4 @@ func TestServer(t *testing.T) {
 		_, err = store.Decrypt(ctx, uid, []byte("invalid"))
 		assert.NotNil(t, err)
 	}
-
-	assert.Nil(t, store.Close())
-	assert.Nil(t, store.Close())
-}
-
-func TestGetMountPath(t *testing.T) {
-	{
-		ret, err := getMountPath("", "transit")
-		assert.Nil(t, err, "%+v", err)
-		assert.Equal(t, "transit", ret)
-	}
-
-	{
-		ret, err := getMountPath("/custom/transit/", "transit")
-		assert.Nil(t, err, "%+v", err)
-		assert.Equal(t, "custom/transit", ret)
-	}
-
-	{
-		_, err := getMountPath("/", "")
-		assert.NotNil(t, err)
-	}
-
-	{
-		_, err := getMountPath("../transit", "transit")
-		assert.NotNil(t, err)
-	}
-
-	{
-		_, err := getMountPath("transit/../other", "transit")
-		assert.NotNil(t, err)
-	}
-}
-
-func TestValidateKeyName(t *testing.T) {
-	assert.Nil(t, validateKeyName("octelium-key"))
-	assert.Nil(t, validateKeyName("octelium_key-01"))
-
-	assert.NotNil(t, validateKeyName(""))
-	assert.NotNil(t, validateKeyName(" "))
-	assert.NotNil(t, validateKeyName("."))
-	assert.NotNil(t, validateKeyName(".."))
-	assert.NotNil(t, validateKeyName("path/to/key"))
 }
