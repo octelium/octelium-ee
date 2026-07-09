@@ -316,11 +316,168 @@
                         "type": "string"
                     },
                     "type": "array"
+                },
+                "posture": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Device.Status.Posture",
+                    "additionalProperties": false
+                },
+                "probe": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Device.Status.Probe",
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false,
             "type": "object",
             "title": "Status"
+        },
+        "octelium.api.main.core.v1.Device.Status.Posture": {
+            "properties": {
+                "ownerRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                },
+                "externalID": {
+                    "type": "string"
+                },
+                "riskLevel": {
+                    "enum": [
+                        "RISK_LEVEL_UNKNOWN",
+                        "LOW",
+                        "MEDIUM",
+                        "HIGH",
+                        "CRITICAL"
+                    ],
+                    "type": "string",
+                    "title": "Risk Level"
+                },
+                "signals": {
+                    "additionalProperties": {
+                        "enum": [
+                            "SIGNAL_STATE_UNKNOWN",
+                            "PASS",
+                            "FAIL",
+                            "NOT_APPLICABLE"
+                        ],
+                        "type": "string",
+                        "title": "Signal State"
+                    },
+                    "type": "object"
+                },
+                "lastSyncAt": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "lastSeenAt": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "expiresAt": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "attrs": {
+                    "additionalProperties": true,
+                    "type": "object"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Posture"
+        },
+        "octelium.api.main.core.v1.Device.Status.Probe": {
+            "properties": {
+                "request": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Device.Status.Probe.Request",
+                    "additionalProperties": false
+                },
+                "requestedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "results": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Device.Status.Probe.Result"
+                    },
+                    "additionalProperties": false,
+                    "type": "array"
+                },
+                "setAt": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Probe"
+        },
+        "octelium.api.main.core.v1.Device.Status.Probe.Request": {
+            "properties": {
+                "ownerRefs": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference"
+                    },
+                    "additionalProperties": false,
+                    "type": "array"
+                },
+                "issuedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request"
+        },
+        "octelium.api.main.core.v1.Device.Status.Probe.Result": {
+            "properties": {
+                "ownerRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                },
+                "output": {
+                    "type": "string",
+                    "format": "binary",
+                    "binaryEncoding": "base64"
+                },
+                "error": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "output"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "error"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "output"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "error"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Result"
         },
         "octelium.api.main.core.v1.InlinePolicy": {
             "properties": {

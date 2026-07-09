@@ -5,13 +5,13 @@ go 1.26.4
 require (
 	github.com/aws/aws-sdk-go-v2 v1.32.3
 	github.com/aws/aws-sdk-go-v2/config v1.26.6
-	github.com/aws/aws-sdk-go-v2/credentials v1.16.16 // indirect
+	github.com/aws/aws-sdk-go-v2/credentials v1.16.16
 	github.com/hashicorp/vault/api v1.15.0
 	github.com/octelium/octelium/cluster/common v0.0.0-20260701062913-e77a79054167
 	github.com/octelium/octelium/pkg v0.0.0-20260701062913-e77a79054167
 	github.com/pkg/errors v0.9.1
 	go.uber.org/zap v1.27.1
-	google.golang.org/api v0.180.0
+	google.golang.org/api v0.180.0 // indirect
 	google.golang.org/grpc v1.80.0
 	k8s.io/apimachinery v0.35.3 // indirect
 	k8s.io/client-go v0.35.3 // indirect
@@ -19,9 +19,8 @@ require (
 
 require (
 	cloud.google.com/go/kms v1.17.1
-	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.16.0
+	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.8.0
 	github.com/Azure/azure-sdk-for-go/sdk/security/keyvault/azkeys v1.3.0
-	github.com/AzureAD/microsoft-authentication-library-for-go v1.3.1
 	github.com/aws/aws-sdk-go-v2/service/kms v1.37.3
 	github.com/aws/aws-sdk-go-v2/service/sts v1.26.7
 	github.com/doug-martin/goqu/v9 v9.19.0
@@ -31,6 +30,7 @@ require (
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260701062913-e77a79054167
 	github.com/stretchr/testify v1.11.1
+	google.golang.org/protobuf v1.36.11
 )
 
 require (
@@ -40,8 +40,10 @@ require (
 	cloud.google.com/go/compute/metadata v0.9.0 // indirect
 	cloud.google.com/go/iam v1.1.8 // indirect
 	cloud.google.com/go/longrunning v0.5.7 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.16.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.10.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/security/keyvault/internal v1.1.0 // indirect
+	github.com/AzureAD/microsoft-authentication-library-for-go v1.3.1 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.14.11 // indirect
@@ -100,6 +102,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000 // indirect
+	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.6.0 // indirect
@@ -132,7 +135,6 @@ require (
 	google.golang.org/genproto v0.0.0-20240604185151-ef581f913117 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260401024825-9d38bb4040a9 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260401024825-9d38bb4040a9 // indirect
-	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

@@ -30,30 +30,223 @@
             "type": "object",
             "title": "Device Manager List"
         },
+        "octelium.api.main.core.v1.Condition": {
+            "properties": {
+                "matchAny": {
+                    "type": "boolean",
+                    "description": "MatchAny matches anything"
+                },
+                "match": {
+                    "type": "string",
+                    "description": "Match contains a single CEL expression"
+                },
+                "all": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition.All",
+                    "additionalProperties": false,
+                    "description": "All acts as a logical AND operator on its list of CEL expressions"
+                },
+                "any": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition.Any",
+                    "additionalProperties": false,
+                    "description": "Any acts as a logical OR operator on its list of CEL expressions"
+                },
+                "not": {
+                    "type": "string",
+                    "description": "Not acts as a logical NOT operator of a single CEL expression"
+                },
+                "none": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition.None",
+                    "additionalProperties": false,
+                    "description": "None acts as a logical NOR operator on its list of CEL expressions (i.e. none of the expressions matches)"
+                },
+                "opa": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition.OPA",
+                    "additionalProperties": false,
+                    "description": "OPA contains an OPA (Open Policy Agent) Rego script"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "matchAny"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "match"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "all"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "any"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "not"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "none"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "opa"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "matchAny"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "match"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "all"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "any"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "not"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "none"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "opa"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Condition"
+        },
+        "octelium.api.main.core.v1.Condition.All": {
+            "properties": {
+                "of": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Condition"
+                    },
+                    "additionalProperties": false,
+                    "type": "array"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "All"
+        },
+        "octelium.api.main.core.v1.Condition.Any": {
+            "properties": {
+                "of": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Condition"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Expressions is the list of CEL expressions"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Any"
+        },
+        "octelium.api.main.core.v1.Condition.None": {
+            "properties": {
+                "of": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Condition"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Expressions is the list of CEL expressions"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "None"
+        },
+        "octelium.api.main.core.v1.Condition.OPA": {
+            "properties": {
+                "inline": {
+                    "type": "string",
+                    "description": "Inline is the OPA Rego script directly provided as a string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "inline"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "inline"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "OPA"
+        },
         "octelium.api.main.enterprise.v1.DeviceManager": {
             "properties": {
                 "apiVersion": {
-                    "type": "string",
-                    "description": "APIVersion is the API version of the object."
+                    "type": "string"
                 },
                 "kind": {
-                    "type": "string",
-                    "description": "Kind is the resource name (i.e. `Secret`)."
+                    "type": "string"
                 },
                 "metadata": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Metadata",
-                    "additionalProperties": false,
-                    "description": "octelium.api.main.meta.v1.Metadata is the object's metadata."
+                    "additionalProperties": false
                 },
                 "spec": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec",
-                    "additionalProperties": false,
-                    "description": "Spec is the Secret specification."
+                    "additionalProperties": false
                 },
                 "status": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Status",
-                    "additionalProperties": false,
-                    "description": "Status is the current status of the Secret."
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false,
@@ -62,8 +255,36 @@
         },
         "octelium.api.main.enterprise.v1.DeviceManager.Spec": {
             "properties": {
+                "condition": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition",
+                    "additionalProperties": false
+                },
+                "polling": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling",
+                    "additionalProperties": false
+                },
+                "linking": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking",
+                    "additionalProperties": false
+                },
                 "crowdStrike": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike",
+                    "additionalProperties": false
+                },
+                "sentinelOne": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne",
+                    "additionalProperties": false
+                },
+                "microsoftIntune": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune",
+                    "additionalProperties": false
+                },
+                "jamf": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.Jamf",
+                    "additionalProperties": false
+                },
+                "onePassword": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword",
                     "additionalProperties": false
                 }
             },
@@ -79,6 +300,26 @@
                                         "required": [
                                             "crowdStrike"
                                         ]
+                                    },
+                                    {
+                                        "required": [
+                                            "sentinelOne"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "microsoftIntune"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "jamf"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "onePassword"
+                                        ]
                                     }
                                 ]
                             }
@@ -86,6 +327,26 @@
                         {
                             "required": [
                                 "crowdStrike"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "sentinelOne"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "microsoftIntune"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "jamf"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "onePassword"
                             ]
                         }
                     ]
@@ -101,7 +362,8 @@
                         "US_1",
                         "US_2",
                         "EU_1",
-                        "US_GOV"
+                        "US_GOV_1",
+                        "US_GOV_2"
                     ],
                     "type": "string",
                     "title": "Region"
@@ -112,6 +374,15 @@
                 "clientSecret": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike.ClientSecret",
                     "additionalProperties": false
+                },
+                "memberCID": {
+                    "type": "string"
+                },
+                "hostFilter": {
+                    "type": "string"
+                },
+                "disableZeroTrustAssessment": {
+                    "type": "boolean"
                 }
             },
             "additionalProperties": false,
@@ -150,10 +421,449 @@
             ],
             "title": "Client Secret"
         },
+        "octelium.api.main.enterprise.v1.DeviceManager.Spec.Jamf": {
+            "properties": {
+                "baseURL": {
+                    "type": "string"
+                },
+                "clientID": {
+                    "type": "string"
+                },
+                "clientSecret": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.Jamf.ClientSecret",
+                    "additionalProperties": false
+                },
+                "filter": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Jamf"
+        },
+        "octelium.api.main.enterprise.v1.DeviceManager.Spec.Jamf.ClientSecret": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Client Secret"
+        },
+        "octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking": {
+            "properties": {
+                "strategy": {
+                    "enum": [
+                        "STRATEGY_UNSET",
+                        "IDENTITY_ONLY",
+                        "PROBE_ONLY",
+                        "IDENTITY_THEN_PROBE"
+                    ],
+                    "type": "string",
+                    "title": "Strategy"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Linking"
+        },
+        "octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune": {
+            "properties": {
+                "tenantID": {
+                    "type": "string"
+                },
+                "clientID": {
+                    "type": "string"
+                },
+                "clientSecret": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune.ClientSecret",
+                    "additionalProperties": false
+                },
+                "cloud": {
+                    "enum": [
+                        "CLOUD_UNKNOWN",
+                        "PUBLIC",
+                        "US_GOV",
+                        "CHINA"
+                    ],
+                    "type": "string",
+                    "title": "Cloud"
+                },
+                "filter": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Microsoft Intune"
+        },
+        "octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune.ClientSecret": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Client Secret"
+        },
+        "octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword": {
+            "properties": {
+                "baseURL": {
+                    "type": "string"
+                },
+                "apiToken": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword.APIToken",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "One Password"
+        },
+        "octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword.APIToken": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "API Token"
+        },
+        "octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling": {
+            "properties": {
+                "interval": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false
+                },
+                "timeout": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false
+                },
+                "staleAfter": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false
+                },
+                "isDisabled": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Polling"
+        },
+        "octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne": {
+            "properties": {
+                "managementURL": {
+                    "type": "string"
+                },
+                "apiToken": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne.APIToken",
+                    "additionalProperties": false
+                },
+                "siteIDs": {
+                    "type": "string"
+                },
+                "accountIDs": {
+                    "type": "string"
+                },
+                "agentQuery": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Sentinel One"
+        },
+        "octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne.APIToken": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "API Token"
+        },
         "octelium.api.main.enterprise.v1.DeviceManager.Status": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "TYPE_UNKNOWN",
+                        "CROWDSTRIKE",
+                        "SENTINELONE",
+                        "MICROSOFT_DEFENDER",
+                        "MICROSOFT_INTUNE",
+                        "JAMF_PRO",
+                        "ONEPASSWORD"
+                    ],
+                    "type": "string",
+                    "title": "Type"
+                },
+                "state": {
+                    "enum": [
+                        "STATE_UNKNOWN",
+                        "OK",
+                        "LOADING",
+                        "ERROR",
+                        "DEGRADED"
+                    ],
+                    "type": "string",
+                    "title": "State"
+                },
+                "collection": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Status.Collection",
+                    "additionalProperties": false
+                }
+            },
             "additionalProperties": false,
             "type": "object",
             "title": "Status"
+        },
+        "octelium.api.main.enterprise.v1.DeviceManager.Status.Collection": {
+            "properties": {
+                "lastAttemptAt": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "lastSuccessAt": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "state": {
+                    "enum": [
+                        "STATE_UNKNOWN",
+                        "OK",
+                        "LOADING",
+                        "ERROR",
+                        "DEGRADED"
+                    ],
+                    "type": "string",
+                    "title": "State"
+                },
+                "managedDevices": {
+                    "type": "integer"
+                },
+                "linkedDevices": {
+                    "type": "integer"
+                },
+                "lastError": {
+                    "type": "string"
+                },
+                "failedUpdates": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Collection"
+        },
+        "octelium.api.main.meta.v1.Duration": {
+            "properties": {
+                "milliseconds": {
+                    "type": "integer",
+                    "description": "Milliseconds is the duration set in milliseconds"
+                },
+                "seconds": {
+                    "type": "integer",
+                    "description": "Seconds is the duration set in seconds"
+                },
+                "minutes": {
+                    "type": "integer",
+                    "description": "Minutes is the duration set in minutes"
+                },
+                "hours": {
+                    "type": "integer",
+                    "description": "Hours is the duration set in hours"
+                },
+                "days": {
+                    "type": "integer",
+                    "description": "Days is the duration set in days"
+                },
+                "weeks": {
+                    "type": "integer",
+                    "description": "Weeks is the duration set in weeks"
+                },
+                "months": {
+                    "type": "integer",
+                    "description": "Months is the duration set in months"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "milliseconds"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "seconds"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "minutes"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "hours"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "days"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "weeks"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "months"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "milliseconds"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "seconds"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "minutes"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "hours"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "days"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "weeks"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "months"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Duration"
         },
         "octelium.api.main.meta.v1.ListResponseMeta": {
             "properties": {

@@ -3,7 +3,7 @@ module github.com/octelium/octelium-ee/cluster/nocturne
 go 1.26.4
 
 require (
-	github.com/crowdstrike/gofalcon v0.8.0
+	github.com/crowdstrike/gofalcon v0.21.0
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000

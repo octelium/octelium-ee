@@ -787,11 +787,161 @@
                 "secretManager": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Status.SecretManager",
                     "additionalProperties": false
+                },
+                "device": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Status.Device",
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false,
             "type": "object",
             "title": "Status"
+        },
+        "octelium.api.main.core.v1.ClusterConfig.Status.Device": {
+            "properties": {
+                "probes": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe"
+                    },
+                    "additionalProperties": false,
+                    "type": "array"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Device"
+        },
+        "octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe": {
+            "properties": {
+                "ownerRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                },
+                "osType": {
+                    "enum": [
+                        "OS_TYPE_UNKNOWN",
+                        "LINUX",
+                        "WINDOWS",
+                        "MAC",
+                        "ANDROID",
+                        "IOS"
+                    ],
+                    "type": "string",
+                    "title": "OS Type"
+                },
+                "requireElevation": {
+                    "type": "boolean"
+                },
+                "condition": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition",
+                    "additionalProperties": false
+                },
+                "runCommand": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.RunCommand",
+                    "additionalProperties": false
+                },
+                "readFile": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ReadFile",
+                    "additionalProperties": false
+                },
+                "readRegistry": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ReadRegistry",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "runCommand"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "readFile"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "readRegistry"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "runCommand"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "readFile"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "readRegistry"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Probe"
+        },
+        "octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ReadFile": {
+            "properties": {
+                "path": {
+                    "type": "string"
+                },
+                "maxBytes": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Read File"
+        },
+        "octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ReadRegistry": {
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Read Registry"
+        },
+        "octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.RunCommand": {
+            "properties": {
+                "command": {
+                    "type": "string"
+                },
+                "args": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "timeoutSeconds": {
+                    "type": "integer"
+                },
+                "maxOutputBytes": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Run Command"
         },
         "octelium.api.main.core.v1.ClusterConfig.Status.Network": {
             "properties": {
