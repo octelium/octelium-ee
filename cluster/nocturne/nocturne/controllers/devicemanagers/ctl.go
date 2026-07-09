@@ -6,7 +6,7 @@
 //
 // See the LICENSE file in the repository root for full license text.
 
-package devicemanager
+package devicemanagers
 
 import (
 	"context"

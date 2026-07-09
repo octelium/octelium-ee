@@ -31,13 +31,14 @@ const (
 	KindSecretStore            = "SecretStore"
 	KindAuditLog               = "AuditLog"
 	KindAuthenticationLog      = "AuthenticationLog"
+	KindDeviceManager          = "DeviceManager"
 )
 
 type ResourceObjectRefG interface {
 	*enterprisev1.Secret | *enterprisev1.Certificate | *enterprisev1.CertificateIssuer |
 		*enterprisev1.DNSProvider |
 		*enterprisev1.DirectoryProvider | *enterprisev1.DirectoryProviderUser | *enterprisev1.DirectoryProviderGroup |
-		*enterprisev1.ClusterConfig | *enterprisev1.CollectorExporter | *enterprisev1.SecretStore
+		*enterprisev1.ClusterConfig | *enterprisev1.CollectorExporter | *enterprisev1.SecretStore | *enterprisev1.DeviceManager
 }
 
 const API = "enterprise"
@@ -64,6 +65,10 @@ type DirectoryProvider struct {
 	*enterprisev1.DirectoryProvider
 }
 
+type DeviceManager struct {
+	*enterprisev1.DeviceManager
+}
+
 func NewObjectList(kind string) (umetav1.ObjectI, error) {
 
 	switch kind {
@@ -85,6 +90,8 @@ func NewObjectList(kind string) (umetav1.ObjectI, error) {
 		return &enterprisev1.DirectoryProviderGroupList{}, nil
 	case KindSecretStore:
 		return &enterprisev1.SecretStoreList{}, nil
+	case KindDeviceManager:
+		return &enterprisev1.DeviceManagerList{}, nil
 	default:
 		return nil, errors.Errorf("Invalid kind: %s", kind)
 	}
@@ -99,6 +106,20 @@ func NewObjectListOptions(kind string) (proto.Message, error) {
 		return &enterprisev1.ListCollectorExporterOptions{}, nil
 	case KindSecretStore:
 		return &enterprisev1.ListSecretStoreOptions{}, nil
+	case KindDeviceManager:
+		return &enterprisev1.ListDeviceManagerOptions{}, nil
+	case KindCertificate:
+		return &enterprisev1.ListCertificateOptions{}, nil
+	case KindCertificateIssuer:
+		return &enterprisev1.ListCertificateIssuerOptions{}, nil
+	case KindDNSProvider:
+		return &enterprisev1.ListDNSProviderOptions{}, nil
+	case KindDirectoryProvider:
+		return &enterprisev1.ListDirectoryProviderOptions{}, nil
+	case KindDirectoryProviderUser:
+		return &enterprisev1.ListDirectoryProviderUserOptions{}, nil
+	case KindDirectoryProviderGroup:
+		return &enterprisev1.ListDirectoryProviderGroupOptions{}, nil
 	default:
 		return nil, errors.Errorf("Invalid kind: %s", kind)
 	}
@@ -127,6 +148,8 @@ func NewObject(kind string) (umetav1.ResourceObjectI, error) {
 		return &enterprisev1.DirectoryProviderGroup{}, nil
 	case KindSecretStore:
 		return &enterprisev1.SecretStore{}, nil
+	case KindDeviceManager:
+		return &enterprisev1.DeviceManager{}, nil
 	default:
 		return nil, errors.Errorf("Invalid kind: %s", kind)
 	}

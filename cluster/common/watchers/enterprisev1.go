@@ -106,6 +106,16 @@ func (c *EnterpriseV1Watcher) SecretStore(
 	return runWatcherEnterpriseV1(ctx, c.octeliumC, opts, uenterprisev1.KindSecretStore, onCreate, onUpdate, onDelete)
 }
 
+func (c *EnterpriseV1Watcher) DeviceManager(
+	ctx context.Context,
+	opts *watchers.Opts,
+	onCreate func(ctx context.Context, item *enterprisev1.DeviceManager) error,
+	onUpdate func(ctx context.Context, new, old *enterprisev1.DeviceManager) error,
+	onDelete func(ctx context.Context, item *enterprisev1.DeviceManager) error,
+) error {
+	return runWatcherEnterpriseV1(ctx, c.octeliumC, opts, uenterprisev1.KindDeviceManager, onCreate, onUpdate, onDelete)
+}
+
 func runWatcherEnterpriseV1[T uenterprisev1.ResourceObjectRefG](
 	ctx context.Context, octeliumC octeliumc.ClientInterface,
 	opts *watchers.Opts,

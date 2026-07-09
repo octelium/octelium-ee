@@ -19,6 +19,7 @@ import (
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
 	"github.com/octelium/octelium-ee/cluster/common/watchers"
 	cccontroller "github.com/octelium/octelium-ee/cluster/nocturne/nocturne/controllers/cluster_config"
+	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/controllers/devicemanagers"
 	dpcontroller "github.com/octelium/octelium-ee/cluster/nocturne/nocturne/controllers/directoryproviders"
 	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/controllers/requests"
 	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/controllers/reviews"
@@ -70,6 +71,15 @@ func Run(ctx context.Context) error {
 			return err
 		}
 
+	}
+	{
+		dmCtl, err := devicemanagers.NewController(ctx, octeliumC, nil)
+		if err != nil {
+			return err
+		}
+		if err := watcher.DeviceManager(ctx, nil, dmCtl.OnAdd, dmCtl.OnUpdate, dmCtl.OnDelete); err != nil {
+			return err
+		}
 	}
 	{
 		dpCtl, err := dpcontroller.NewController(ctx, octeliumC)
