@@ -378,6 +378,36 @@
                     "type": "string",
                     "title": "Risk Level"
                 },
+                "diskEncryption": {
+                    "enum": [
+                        "SIGNAL_STATE_UNKNOWN",
+                        "PASS",
+                        "FAIL",
+                        "NOT_APPLICABLE"
+                    ],
+                    "type": "string",
+                    "title": "Signal State"
+                },
+                "compliant": {
+                    "enum": [
+                        "SIGNAL_STATE_UNKNOWN",
+                        "PASS",
+                        "FAIL",
+                        "NOT_APPLICABLE"
+                    ],
+                    "type": "string",
+                    "title": "Signal State"
+                },
+                "threatFree": {
+                    "enum": [
+                        "SIGNAL_STATE_UNKNOWN",
+                        "PASS",
+                        "FAIL",
+                        "NOT_APPLICABLE"
+                    ],
+                    "type": "string",
+                    "title": "Signal State"
+                },
                 "signals": {
                     "additionalProperties": {
                         "enum": [

@@ -258,6 +258,18 @@
                 "onePassword": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword",
                     "additionalProperties": false
+                },
+                "fleetDM": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.FleetDM",
+                    "additionalProperties": false
+                },
+                "huntress": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.Huntress",
+                    "additionalProperties": false
+                },
+                "iru": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru",
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false,
@@ -292,6 +304,21 @@
                                         "required": [
                                             "onePassword"
                                         ]
+                                    },
+                                    {
+                                        "required": [
+                                            "fleetDM"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "huntress"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "iru"
+                                        ]
                                     }
                                 ]
                             }
@@ -319,6 +346,21 @@
                         {
                             "required": [
                                 "onePassword"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "fleetDM"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "huntress"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "iru"
                             ]
                         }
                     ]
@@ -392,6 +434,150 @@
                 }
             ],
             "title": "Client Secret"
+        },
+        "octelium.api.main.enterprise.v1.DeviceManager.Spec.FleetDM": {
+            "properties": {
+                "baseURL": {
+                    "type": "string"
+                },
+                "apiToken": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.FleetDM.APIToken",
+                    "additionalProperties": false
+                },
+                "teamID": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Fleet DM"
+        },
+        "octelium.api.main.enterprise.v1.DeviceManager.Spec.FleetDM.APIToken": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "API Token"
+        },
+        "octelium.api.main.enterprise.v1.DeviceManager.Spec.Huntress": {
+            "properties": {
+                "baseURL": {
+                    "type": "string"
+                },
+                "apiKey": {
+                    "type": "string"
+                },
+                "apiSecret": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.Huntress.APISecret",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Huntress"
+        },
+        "octelium.api.main.enterprise.v1.DeviceManager.Spec.Huntress.APISecret": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "API Secret"
+        },
+        "octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru": {
+            "properties": {
+                "baseURL": {
+                    "type": "string"
+                },
+                "apiToken": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru.APIToken",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Iru"
+        },
+        "octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru.APIToken": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "API Token"
         },
         "octelium.api.main.enterprise.v1.DeviceManager.Spec.Jamf": {
             "properties": {
@@ -657,7 +843,10 @@
                         "MICROSOFT_DEFENDER",
                         "MICROSOFT_INTUNE",
                         "JAMF_PRO",
-                        "ONEPASSWORD"
+                        "ONEPASSWORD",
+                        "FLEETDM",
+                        "HUNTRESS",
+                        "IRU"
                     ],
                     "type": "string",
                     "title": "Type"

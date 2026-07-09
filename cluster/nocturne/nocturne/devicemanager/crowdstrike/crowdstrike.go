@@ -281,6 +281,7 @@ func toEntry(d *models.DeviceapiDeviceSwagger, z *models.DomainSignalProperties)
 
 	p := &corev1.Device_Status_Posture{
 		ExternalID: aid,
+		ThreatFree: csThreatFree(d),
 		Signals:    csSignals(d),
 		Attrs:      csAttrs(d, z),
 	}
@@ -291,7 +292,6 @@ func toEntry(d *models.DeviceapiDeviceSwagger, z *models.DomainSignalProperties)
 		overall := *z.Assessment.Overall
 		p.RiskLevel = csRisk(overall)
 		p.Attrs = withField(p.Attrs, "ztaScoreOverall", float64(overall))
-
 		if z.Assessment.Os != nil {
 			p.Attrs = withField(p.Attrs, "ztaScoreOs", float64(*z.Assessment.Os))
 		}
@@ -308,21 +308,24 @@ func toEntry(d *models.DeviceapiDeviceSwagger, z *models.DomainSignalProperties)
 	}
 }
 
+func csThreatFree(d *models.DeviceapiDeviceSwagger) corev1.Device_Status_Posture_SignalState {
+	switch strings.ToLower(strings.TrimSpace(d.FilesystemContainmentStatus)) {
+	case "normal", "not_contained":
+		return corev1.Device_Status_Posture_PASS
+	case "":
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
+	default:
+		return corev1.Device_Status_Posture_FAIL
+	}
+}
+
 func csSignals(d *models.DeviceapiDeviceSwagger) map[string]corev1.Device_Status_Posture_SignalState {
 	rfm := isYes(d.ReducedFunctionalityMode)
 	running := strings.EqualFold(d.Status, "normal") || strings.EqualFold(d.Status, "containment")
-
-	sig := map[string]corev1.Device_Status_Posture_SignalState{
+	return map[string]corev1.Device_Status_Posture_SignalState{
 		"agentRunning":  passFail(running),
 		"sensorHealthy": passFail(running && !rfm),
 	}
-	switch strings.ToLower(strings.TrimSpace(d.FilesystemContainmentStatus)) {
-	case "", "normal", "not_contained":
-		sig["notContained"] = corev1.Device_Status_Posture_PASS
-	default:
-		sig["notContained"] = corev1.Device_Status_Posture_FAIL
-	}
-	return sig
 }
 
 func csAttrs(d *models.DeviceapiDeviceSwagger, z *models.DomainSignalProperties) *structpb.Struct {

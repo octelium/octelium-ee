@@ -18117,17 +18117,20 @@ func (x *Device_Spec_Authorization) GetInlinePolicies() []*InlinePolicy {
 }
 
 type Device_Status_Posture struct {
-	state         protoimpl.MessageState                       `protogen:"open.v1"`
-	OwnerRef      *metav1.ObjectReference                      `protobuf:"bytes,1,opt,name=ownerRef,proto3" json:"ownerRef,omitempty"`
-	ExternalID    string                                       `protobuf:"bytes,2,opt,name=externalID,proto3" json:"externalID,omitempty"`
-	RiskLevel     Device_Status_Posture_RiskLevel              `protobuf:"varint,3,opt,name=riskLevel,proto3,enum=octelium.api.main.core.v1.Device_Status_Posture_RiskLevel" json:"riskLevel,omitempty"`
-	Signals       map[string]Device_Status_Posture_SignalState `protobuf:"bytes,4,rep,name=signals,proto3" json:"signals,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value,enum=octelium.api.main.core.v1.Device_Status_Posture_SignalState"`
-	LastSyncAt    *timestamppb.Timestamp                       `protobuf:"bytes,5,opt,name=lastSyncAt,proto3" json:"lastSyncAt,omitempty"`
-	LastSeenAt    *timestamppb.Timestamp                       `protobuf:"bytes,6,opt,name=lastSeenAt,proto3" json:"lastSeenAt,omitempty"`
-	ExpiresAt     *timestamppb.Timestamp                       `protobuf:"bytes,7,opt,name=expiresAt,proto3" json:"expiresAt,omitempty"`
-	Attrs         *structpb.Struct                             `protobuf:"bytes,8,opt,name=attrs,proto3" json:"attrs,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState                       `protogen:"open.v1"`
+	OwnerRef       *metav1.ObjectReference                      `protobuf:"bytes,1,opt,name=ownerRef,proto3" json:"ownerRef,omitempty"`
+	ExternalID     string                                       `protobuf:"bytes,2,opt,name=externalID,proto3" json:"externalID,omitempty"`
+	RiskLevel      Device_Status_Posture_RiskLevel              `protobuf:"varint,3,opt,name=riskLevel,proto3,enum=octelium.api.main.core.v1.Device_Status_Posture_RiskLevel" json:"riskLevel,omitempty"`
+	DiskEncryption Device_Status_Posture_SignalState            `protobuf:"varint,4,opt,name=diskEncryption,proto3,enum=octelium.api.main.core.v1.Device_Status_Posture_SignalState" json:"diskEncryption,omitempty"`
+	Compliant      Device_Status_Posture_SignalState            `protobuf:"varint,5,opt,name=compliant,proto3,enum=octelium.api.main.core.v1.Device_Status_Posture_SignalState" json:"compliant,omitempty"`
+	ThreatFree     Device_Status_Posture_SignalState            `protobuf:"varint,6,opt,name=threatFree,proto3,enum=octelium.api.main.core.v1.Device_Status_Posture_SignalState" json:"threatFree,omitempty"`
+	Signals        map[string]Device_Status_Posture_SignalState `protobuf:"bytes,7,rep,name=signals,proto3" json:"signals,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value,enum=octelium.api.main.core.v1.Device_Status_Posture_SignalState"`
+	LastSyncAt     *timestamppb.Timestamp                       `protobuf:"bytes,8,opt,name=lastSyncAt,proto3" json:"lastSyncAt,omitempty"`
+	LastSeenAt     *timestamppb.Timestamp                       `protobuf:"bytes,9,opt,name=lastSeenAt,proto3" json:"lastSeenAt,omitempty"`
+	ExpiresAt      *timestamppb.Timestamp                       `protobuf:"bytes,10,opt,name=expiresAt,proto3" json:"expiresAt,omitempty"`
+	Attrs          *structpb.Struct                             `protobuf:"bytes,11,opt,name=attrs,proto3" json:"attrs,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Device_Status_Posture) Reset() {
@@ -18179,6 +18182,27 @@ func (x *Device_Status_Posture) GetRiskLevel() Device_Status_Posture_RiskLevel {
 		return x.RiskLevel
 	}
 	return Device_Status_Posture_RISK_LEVEL_UNKNOWN
+}
+
+func (x *Device_Status_Posture) GetDiskEncryption() Device_Status_Posture_SignalState {
+	if x != nil {
+		return x.DiskEncryption
+	}
+	return Device_Status_Posture_SIGNAL_STATE_UNKNOWN
+}
+
+func (x *Device_Status_Posture) GetCompliant() Device_Status_Posture_SignalState {
+	if x != nil {
+		return x.Compliant
+	}
+	return Device_Status_Posture_SIGNAL_STATE_UNKNOWN
+}
+
+func (x *Device_Status_Posture) GetThreatFree() Device_Status_Posture_SignalState {
+	if x != nil {
+		return x.ThreatFree
+	}
+	return Device_Status_Posture_SIGNAL_STATE_UNKNOWN
 }
 
 func (x *Device_Status_Posture) GetSignals() map[string]Device_Status_Posture_SignalState {
@@ -31250,7 +31274,7 @@ var file_corev1_proto_rawDesc = []byte{
 	0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73,
 	0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d, 0x65, 0x74, 0x61, 0x52, 0x10, 0x6c,
 	0x69, 0x73, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d, 0x65, 0x74, 0x61, 0x22,
-	0xea, 0x14, 0x0a, 0x06, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x12, 0x1e, 0x0a, 0x0a, 0x61, 0x70,
+	0x8a, 0x17, 0x0a, 0x06, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x12, 0x1e, 0x0a, 0x0a, 0x61, 0x70,
 	0x69, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a,
 	0x61, 0x70, 0x69, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x12, 0x0a, 0x04, 0x6b, 0x69,
 	0x6e, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6b, 0x69, 0x6e, 0x64, 0x12, 0x3f,
@@ -31288,7 +31312,7 @@ var file_corev1_proto_rawDesc = []byte{
 	0x0d, 0x53, 0x54, 0x41, 0x54, 0x45, 0x5f, 0x55, 0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x10, 0x00,
 	0x12, 0x0a, 0x0a, 0x06, 0x41, 0x43, 0x54, 0x49, 0x56, 0x45, 0x10, 0x01, 0x12, 0x0b, 0x0a, 0x07,
 	0x50, 0x45, 0x4e, 0x44, 0x49, 0x4e, 0x47, 0x10, 0x02, 0x12, 0x0c, 0x0a, 0x08, 0x52, 0x45, 0x4a,
-	0x45, 0x43, 0x54, 0x45, 0x44, 0x10, 0x03, 0x1a, 0x82, 0x10, 0x0a, 0x06, 0x53, 0x74, 0x61, 0x74,
+	0x45, 0x43, 0x54, 0x45, 0x44, 0x10, 0x03, 0x1a, 0xa2, 0x12, 0x0a, 0x06, 0x53, 0x74, 0x61, 0x74,
 	0x75, 0x73, 0x12, 0x43, 0x0a, 0x03, 0x65, 0x78, 0x74, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32,
 	0x31, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
 	0x61, 0x69, 0x6e, 0x2e, 0x63, 0x6f, 0x72, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x76, 0x69,
@@ -31320,7 +31344,7 @@ var file_corev1_proto_rawDesc = []byte{
 	0x0b, 0x32, 0x2e, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69,
 	0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x63, 0x6f, 0x72, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65,
 	0x76, 0x69, 0x63, 0x65, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x2e, 0x50, 0x72, 0x6f, 0x62,
-	0x65, 0x52, 0x05, 0x70, 0x72, 0x6f, 0x62, 0x65, 0x1a, 0xa2, 0x06, 0x0a, 0x07, 0x50, 0x6f, 0x73,
+	0x65, 0x52, 0x05, 0x70, 0x72, 0x6f, 0x62, 0x65, 0x1a, 0xc2, 0x08, 0x0a, 0x07, 0x50, 0x6f, 0x73,
 	0x74, 0x75, 0x72, 0x65, 0x12, 0x46, 0x0a, 0x08, 0x6f, 0x77, 0x6e, 0x65, 0x72, 0x52, 0x65, 0x66,
 	0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2a, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75,
 	0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x6d, 0x65, 0x74, 0x61, 0x2e,
@@ -31333,24 +31357,42 @@ var file_corev1_proto_rawDesc = []byte{
 	0x61, 0x69, 0x6e, 0x2e, 0x63, 0x6f, 0x72, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x76, 0x69,
 	0x63, 0x65, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x2e, 0x50, 0x6f, 0x73, 0x74, 0x75, 0x72,
 	0x65, 0x2e, 0x52, 0x69, 0x73, 0x6b, 0x4c, 0x65, 0x76, 0x65, 0x6c, 0x52, 0x09, 0x72, 0x69, 0x73,
-	0x6b, 0x4c, 0x65, 0x76, 0x65, 0x6c, 0x12, 0x57, 0x0a, 0x07, 0x73, 0x69, 0x67, 0x6e, 0x61, 0x6c,
-	0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x3d, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
+	0x6b, 0x4c, 0x65, 0x76, 0x65, 0x6c, 0x12, 0x64, 0x0a, 0x0e, 0x64, 0x69, 0x73, 0x6b, 0x45, 0x6e,
+	0x63, 0x72, 0x79, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x3c,
+	0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61,
+	0x69, 0x6e, 0x2e, 0x63, 0x6f, 0x72, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x76, 0x69, 0x63,
+	0x65, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x2e, 0x50, 0x6f, 0x73, 0x74, 0x75, 0x72, 0x65,
+	0x2e, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x6c, 0x53, 0x74, 0x61, 0x74, 0x65, 0x52, 0x0e, 0x64, 0x69,
+	0x73, 0x6b, 0x45, 0x6e, 0x63, 0x72, 0x79, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x5a, 0x0a, 0x09,
+	0x63, 0x6f, 0x6d, 0x70, 0x6c, 0x69, 0x61, 0x6e, 0x74, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0e, 0x32,
+	0x3c, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d,
+	0x61, 0x69, 0x6e, 0x2e, 0x63, 0x6f, 0x72, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x76, 0x69,
+	0x63, 0x65, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x2e, 0x50, 0x6f, 0x73, 0x74, 0x75, 0x72,
+	0x65, 0x2e, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x6c, 0x53, 0x74, 0x61, 0x74, 0x65, 0x52, 0x09, 0x63,
+	0x6f, 0x6d, 0x70, 0x6c, 0x69, 0x61, 0x6e, 0x74, 0x12, 0x5c, 0x0a, 0x0a, 0x74, 0x68, 0x72, 0x65,
+	0x61, 0x74, 0x46, 0x72, 0x65, 0x65, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x3c, 0x2e, 0x6f,
+	0x63, 0x74, 0x65, 0x6c, 0x69, 0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e,
+	0x2e, 0x63, 0x6f, 0x72, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x2e,
+	0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x2e, 0x50, 0x6f, 0x73, 0x74, 0x75, 0x72, 0x65, 0x2e, 0x53,
+	0x69, 0x67, 0x6e, 0x61, 0x6c, 0x53, 0x74, 0x61, 0x74, 0x65, 0x52, 0x0a, 0x74, 0x68, 0x72, 0x65,
+	0x61, 0x74, 0x46, 0x72, 0x65, 0x65, 0x12, 0x57, 0x0a, 0x07, 0x73, 0x69, 0x67, 0x6e, 0x61, 0x6c,
+	0x73, 0x18, 0x07, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x3d, 0x2e, 0x6f, 0x63, 0x74, 0x65, 0x6c, 0x69,
 	0x75, 0x6d, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x6d, 0x61, 0x69, 0x6e, 0x2e, 0x63, 0x6f, 0x72, 0x65,
 	0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x75,
 	0x73, 0x2e, 0x50, 0x6f, 0x73, 0x74, 0x75, 0x72, 0x65, 0x2e, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x6c,
 	0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x52, 0x07, 0x73, 0x69, 0x67, 0x6e, 0x61, 0x6c, 0x73, 0x12,
-	0x3a, 0x0a, 0x0a, 0x6c, 0x61, 0x73, 0x74, 0x53, 0x79, 0x6e, 0x63, 0x41, 0x74, 0x18, 0x05, 0x20,
+	0x3a, 0x0a, 0x0a, 0x6c, 0x61, 0x73, 0x74, 0x53, 0x79, 0x6e, 0x63, 0x41, 0x74, 0x18, 0x08, 0x20,
 	0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f,
 	0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52,
 	0x0a, 0x6c, 0x61, 0x73, 0x74, 0x53, 0x79, 0x6e, 0x63, 0x41, 0x74, 0x12, 0x3a, 0x0a, 0x0a, 0x6c,
-	0x61, 0x73, 0x74, 0x53, 0x65, 0x65, 0x6e, 0x41, 0x74, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x61, 0x73, 0x74, 0x53, 0x65, 0x65, 0x6e, 0x41, 0x74, 0x18, 0x09, 0x20, 0x01, 0x28, 0x0b, 0x32,
 	0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75,
 	0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x0a, 0x6c, 0x61, 0x73,
 	0x74, 0x53, 0x65, 0x65, 0x6e, 0x41, 0x74, 0x12, 0x38, 0x0a, 0x09, 0x65, 0x78, 0x70, 0x69, 0x72,
-	0x65, 0x73, 0x41, 0x74, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f,
+	0x65, 0x73, 0x41, 0x74, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f,
 	0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d,
 	0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x09, 0x65, 0x78, 0x70, 0x69, 0x72, 0x65, 0x73, 0x41,
-	0x74, 0x12, 0x2d, 0x0a, 0x05, 0x61, 0x74, 0x74, 0x72, 0x73, 0x18, 0x08, 0x20, 0x01, 0x28, 0x0b,
+	0x74, 0x12, 0x2d, 0x0a, 0x05, 0x61, 0x74, 0x74, 0x72, 0x73, 0x18, 0x0b, 0x20, 0x01, 0x28, 0x0b,
 	0x32, 0x17, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62,
 	0x75, 0x66, 0x2e, 0x53, 0x74, 0x72, 0x75, 0x63, 0x74, 0x52, 0x05, 0x61, 0x74, 0x74, 0x72, 0x73,
 	0x1a, 0x78, 0x0a, 0x0c, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x6c, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79,
@@ -35175,393 +35217,396 @@ var file_corev1_proto_depIdxs = []int32{
 	55,  // 366: octelium.api.main.core.v1.Device.Spec.Authorization.inlinePolicies:type_name -> octelium.api.main.core.v1.InlinePolicy
 	429, // 367: octelium.api.main.core.v1.Device.Status.Posture.ownerRef:type_name -> octelium.api.main.meta.v1.ObjectReference
 	23,  // 368: octelium.api.main.core.v1.Device.Status.Posture.riskLevel:type_name -> octelium.api.main.core.v1.Device.Status.Posture.RiskLevel
-	266, // 369: octelium.api.main.core.v1.Device.Status.Posture.signals:type_name -> octelium.api.main.core.v1.Device.Status.Posture.SignalsEntry
-	435, // 370: octelium.api.main.core.v1.Device.Status.Posture.lastSyncAt:type_name -> google.protobuf.Timestamp
-	435, // 371: octelium.api.main.core.v1.Device.Status.Posture.lastSeenAt:type_name -> google.protobuf.Timestamp
-	435, // 372: octelium.api.main.core.v1.Device.Status.Posture.expiresAt:type_name -> google.protobuf.Timestamp
-	432, // 373: octelium.api.main.core.v1.Device.Status.Posture.attrs:type_name -> google.protobuf.Struct
-	267, // 374: octelium.api.main.core.v1.Device.Status.Probe.request:type_name -> octelium.api.main.core.v1.Device.Status.Probe.Request
-	435, // 375: octelium.api.main.core.v1.Device.Status.Probe.requestedAt:type_name -> google.protobuf.Timestamp
-	268, // 376: octelium.api.main.core.v1.Device.Status.Probe.results:type_name -> octelium.api.main.core.v1.Device.Status.Probe.Result
-	435, // 377: octelium.api.main.core.v1.Device.Status.Probe.setAt:type_name -> google.protobuf.Timestamp
-	432, // 378: octelium.api.main.core.v1.Device.Status.ExtEntry.value:type_name -> google.protobuf.Struct
-	24,  // 379: octelium.api.main.core.v1.Device.Status.Posture.SignalsEntry.value:type_name -> octelium.api.main.core.v1.Device.Status.Posture.SignalState
-	429, // 380: octelium.api.main.core.v1.Device.Status.Probe.Request.ownerRefs:type_name -> octelium.api.main.meta.v1.ObjectReference
-	435, // 381: octelium.api.main.core.v1.Device.Status.Probe.Request.issuedAt:type_name -> google.protobuf.Timestamp
-	429, // 382: octelium.api.main.core.v1.Device.Status.Probe.Result.ownerRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	272, // 383: octelium.api.main.core.v1.Config.Data.dataMap:type_name -> octelium.api.main.core.v1.Config.Data.DataMap
-	432, // 384: octelium.api.main.core.v1.Config.Data.attrs:type_name -> google.protobuf.Struct
-	273, // 385: octelium.api.main.core.v1.Config.Data.DataMap.map:type_name -> octelium.api.main.core.v1.Config.Data.DataMap.MapEntry
-	276, // 386: octelium.api.main.core.v1.Scope.Service.all:type_name -> octelium.api.main.core.v1.Scope.Service.All
-	277, // 387: octelium.api.main.core.v1.Scope.Service.filter:type_name -> octelium.api.main.core.v1.Scope.Service.Filter
-	278, // 388: octelium.api.main.core.v1.Scope.API.all:type_name -> octelium.api.main.core.v1.Scope.API.All
-	279, // 389: octelium.api.main.core.v1.Scope.API.filter:type_name -> octelium.api.main.core.v1.Scope.API.Filter
-	282, // 390: octelium.api.main.core.v1.Policy.Spec.rules:type_name -> octelium.api.main.core.v1.Policy.Spec.Rule
-	283, // 391: octelium.api.main.core.v1.Policy.Spec.enforcementRules:type_name -> octelium.api.main.core.v1.Policy.Spec.EnforcementRule
-	432, // 392: octelium.api.main.core.v1.Policy.Spec.attrs:type_name -> google.protobuf.Struct
-	429, // 393: octelium.api.main.core.v1.Policy.Status.parentPolicyRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	97,  // 394: octelium.api.main.core.v1.Policy.Spec.Rule.condition:type_name -> octelium.api.main.core.v1.Condition
-	25,  // 395: octelium.api.main.core.v1.Policy.Spec.Rule.effect:type_name -> octelium.api.main.core.v1.Policy.Spec.Rule.Effect
-	97,  // 396: octelium.api.main.core.v1.Policy.Spec.EnforcementRule.condition:type_name -> octelium.api.main.core.v1.Condition
-	26,  // 397: octelium.api.main.core.v1.Policy.Spec.EnforcementRule.effect:type_name -> octelium.api.main.core.v1.Policy.Spec.EnforcementRule.Effect
-	286, // 398: octelium.api.main.core.v1.AccessLog.Entry.common:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common
-	285, // 399: octelium.api.main.core.v1.AccessLog.Entry.info:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info
-	288, // 400: octelium.api.main.core.v1.AccessLog.Entry.Info.tcp:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.TCP
-	287, // 401: octelium.api.main.core.v1.AccessLog.Entry.Info.http:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP
-	289, // 402: octelium.api.main.core.v1.AccessLog.Entry.Info.ssh:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.SSH
-	290, // 403: octelium.api.main.core.v1.AccessLog.Entry.Info.udp:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.UDP
-	291, // 404: octelium.api.main.core.v1.AccessLog.Entry.Info.postgres:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.Postgres
-	293, // 405: octelium.api.main.core.v1.AccessLog.Entry.Info.kubernetes:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.Kubernetes
-	294, // 406: octelium.api.main.core.v1.AccessLog.Entry.Info.grpc:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.GRPC
-	292, // 407: octelium.api.main.core.v1.AccessLog.Entry.Info.mysql:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL
-	295, // 408: octelium.api.main.core.v1.AccessLog.Entry.Info.dns:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.DNS
-	296, // 409: octelium.api.main.core.v1.AccessLog.Entry.Info.socks5:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5
-	435, // 410: octelium.api.main.core.v1.AccessLog.Entry.Common.startedAt:type_name -> google.protobuf.Timestamp
-	435, // 411: octelium.api.main.core.v1.AccessLog.Entry.Common.endedAt:type_name -> google.protobuf.Timestamp
-	37,  // 412: octelium.api.main.core.v1.AccessLog.Entry.Common.status:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Status
-	1,   // 413: octelium.api.main.core.v1.AccessLog.Entry.Common.mode:type_name -> octelium.api.main.core.v1.Service.Spec.Mode
-	314, // 414: octelium.api.main.core.v1.AccessLog.Entry.Common.reason:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason
-	429, // 415: octelium.api.main.core.v1.AccessLog.Entry.Common.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	429, // 416: octelium.api.main.core.v1.AccessLog.Entry.Common.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	429, // 417: octelium.api.main.core.v1.AccessLog.Entry.Common.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	429, // 418: octelium.api.main.core.v1.AccessLog.Entry.Common.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	429, // 419: octelium.api.main.core.v1.AccessLog.Entry.Common.namespaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	429, // 420: octelium.api.main.core.v1.AccessLog.Entry.Common.regionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	297, // 421: octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP.request:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP.Request
-	298, // 422: octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP.response:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP.Response
-	27,  // 423: octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP.httpVersion:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP.HTTPVersion
-	28,  // 424: octelium.api.main.core.v1.AccessLog.Entry.Info.TCP.type:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.TCP.Type
-	29,  // 425: octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.type:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.Type
-	301, // 426: octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.start:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.Start
-	305, // 427: octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.directTCPIPStart:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.DirectTCPIPStart
-	302, // 428: octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.sessionRecording:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.SessionRecording
-	303, // 429: octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.sessionRequestExec:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.SessionRequestExec
-	304, // 430: octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.sessionRequestSubsystem:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.SessionRequestSubsystem
-	31,  // 431: octelium.api.main.core.v1.AccessLog.Entry.Info.UDP.type:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.UDP.Type
-	32,  // 432: octelium.api.main.core.v1.AccessLog.Entry.Info.Postgres.type:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.Postgres.Type
-	306, // 433: octelium.api.main.core.v1.AccessLog.Entry.Info.Postgres.start:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.Postgres.Start
-	307, // 434: octelium.api.main.core.v1.AccessLog.Entry.Info.Postgres.query:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.Postgres.Query
-	308, // 435: octelium.api.main.core.v1.AccessLog.Entry.Info.Postgres.parse:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.Postgres.Parse
-	33,  // 436: octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.type:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.Type
-	309, // 437: octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.query:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.Query
-	310, // 438: octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.initDB:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.InitDB
-	311, // 439: octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.createDB:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.CreateDB
-	312, // 440: octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.dropDB:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.DropDB
-	313, // 441: octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.prepareStatement:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.PrepareStatement
-	287, // 442: octelium.api.main.core.v1.AccessLog.Entry.Info.Kubernetes.http:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP
-	287, // 443: octelium.api.main.core.v1.AccessLog.Entry.Info.GRPC.http:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP
-	34,  // 444: octelium.api.main.core.v1.AccessLog.Entry.Info.DNS.type:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.DNS.Type
-	35,  // 445: octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5.type:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5.Type
-	36,  // 446: octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5.addressType:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5.AddressType
-	432, // 447: octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP.Request.bodyMap:type_name -> google.protobuf.Struct
-	299, // 448: octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP.Request.headers:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP.Request.HeadersEntry
-	432, // 449: octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP.Response.bodyMap:type_name -> google.protobuf.Struct
-	300, // 450: octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP.Response.headers:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP.Response.HeadersEntry
-	30,  // 451: octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.SessionRecording.type:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.SessionRecording.Type
-	38,  // 452: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.type:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type
-	315, // 453: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.details:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details
-	316, // 454: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.policyMatch:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.PolicyMatch
-	317, // 455: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.sessionNotActive:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.SessionNotActive
-	319, // 456: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.PolicyMatch.policy:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.PolicyMatch.Policy
-	318, // 457: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.PolicyMatch.inlinePolicy:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.PolicyMatch.InlinePolicy
-	10,  // 458: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.SessionNotActive.state:type_name -> octelium.api.main.core.v1.Session.Spec.State
-	429, // 459: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.PolicyMatch.InlinePolicy.resourceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	429, // 460: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.PolicyMatch.Policy.policyRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	326, // 461: octelium.api.main.core.v1.IdentityProvider.Spec.aalRules:type_name -> octelium.api.main.core.v1.IdentityProvider.Spec.AALRule
-	327, // 462: octelium.api.main.core.v1.IdentityProvider.Spec.postAuthenticationRules:type_name -> octelium.api.main.core.v1.IdentityProvider.Spec.PostAuthenticationRule
-	322, // 463: octelium.api.main.core.v1.IdentityProvider.Spec.github:type_name -> octelium.api.main.core.v1.IdentityProvider.Spec.Github
-	323, // 464: octelium.api.main.core.v1.IdentityProvider.Spec.oidc:type_name -> octelium.api.main.core.v1.IdentityProvider.Spec.OIDC
-	324, // 465: octelium.api.main.core.v1.IdentityProvider.Spec.saml:type_name -> octelium.api.main.core.v1.IdentityProvider.Spec.SAML
-	325, // 466: octelium.api.main.core.v1.IdentityProvider.Spec.oidcIdentityToken:type_name -> octelium.api.main.core.v1.IdentityProvider.Spec.OIDCIdentityToken
-	41,  // 467: octelium.api.main.core.v1.IdentityProvider.Status.type:type_name -> octelium.api.main.core.v1.IdentityProvider.Status.Type
-	328, // 468: octelium.api.main.core.v1.IdentityProvider.Spec.Github.clientSecret:type_name -> octelium.api.main.core.v1.IdentityProvider.Spec.Github.ClientSecret
-	329, // 469: octelium.api.main.core.v1.IdentityProvider.Spec.OIDC.clientSecret:type_name -> octelium.api.main.core.v1.IdentityProvider.Spec.OIDC.ClientSecret
-	97,  // 470: octelium.api.main.core.v1.IdentityProvider.Spec.AALRule.condition:type_name -> octelium.api.main.core.v1.Condition
-	39,  // 471: octelium.api.main.core.v1.IdentityProvider.Spec.AALRule.aal:type_name -> octelium.api.main.core.v1.IdentityProvider.Spec.AALRule.AAL
-	97,  // 472: octelium.api.main.core.v1.IdentityProvider.Spec.PostAuthenticationRule.condition:type_name -> octelium.api.main.core.v1.Condition
-	40,  // 473: octelium.api.main.core.v1.IdentityProvider.Spec.PostAuthenticationRule.effect:type_name -> octelium.api.main.core.v1.IdentityProvider.Spec.PostAuthenticationRule.Effect
-	333, // 474: octelium.api.main.core.v1.Region.Status.ext:type_name -> octelium.api.main.core.v1.Region.Status.ExtEntry
-	334, // 475: octelium.api.main.core.v1.Region.Status.versionInfoMap:type_name -> octelium.api.main.core.v1.Region.Status.VersionInfoMapEntry
-	435, // 476: octelium.api.main.core.v1.Region.Status.VersionInfo.setAt:type_name -> google.protobuf.Timestamp
-	335, // 477: octelium.api.main.core.v1.Region.Status.VersionInfo.ext:type_name -> octelium.api.main.core.v1.Region.Status.VersionInfo.ExtEntry
-	432, // 478: octelium.api.main.core.v1.Region.Status.ExtEntry.value:type_name -> google.protobuf.Struct
-	332, // 479: octelium.api.main.core.v1.Region.Status.VersionInfoMapEntry.value:type_name -> octelium.api.main.core.v1.Region.Status.VersionInfo
-	432, // 480: octelium.api.main.core.v1.Region.Status.VersionInfo.ExtEntry.value:type_name -> google.protobuf.Struct
-	429, // 481: octelium.api.main.core.v1.Gateway.Status.regionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	429, // 482: octelium.api.main.core.v1.Gateway.Status.nodeRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	436, // 483: octelium.api.main.core.v1.Gateway.Status.cidr:type_name -> octelium.api.main.meta.v1.DualStackNetwork
-	338, // 484: octelium.api.main.core.v1.Gateway.Status.wireguard:type_name -> octelium.api.main.core.v1.Gateway.Status.WireGuard
-	339, // 485: octelium.api.main.core.v1.Gateway.Status.quicv0:type_name -> octelium.api.main.core.v1.Gateway.Status.QUICV0
-	435, // 486: octelium.api.main.core.v1.Gateway.Status.WireGuard.keyRotatedAt:type_name -> google.protobuf.Timestamp
-	97,  // 487: octelium.api.main.core.v1.Condition.All.of:type_name -> octelium.api.main.core.v1.Condition
-	97,  // 488: octelium.api.main.core.v1.Condition.Any.of:type_name -> octelium.api.main.core.v1.Condition
-	97,  // 489: octelium.api.main.core.v1.Condition.None.of:type_name -> octelium.api.main.core.v1.Condition
-	351, // 490: octelium.api.main.core.v1.ClusterConfig.Spec.authorization:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authorization
-	346, // 491: octelium.api.main.core.v1.ClusterConfig.Spec.ingress:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Ingress
-	347, // 492: octelium.api.main.core.v1.ClusterConfig.Spec.session:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Session
-	348, // 493: octelium.api.main.core.v1.ClusterConfig.Spec.device:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Device
-	349, // 494: octelium.api.main.core.v1.ClusterConfig.Spec.gateway:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Gateway
-	350, // 495: octelium.api.main.core.v1.ClusterConfig.Spec.dns:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.DNS
-	352, // 496: octelium.api.main.core.v1.ClusterConfig.Spec.authenticator:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator
-	353, // 497: octelium.api.main.core.v1.ClusterConfig.Spec.authentication:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authentication
-	374, // 498: octelium.api.main.core.v1.ClusterConfig.Status.network:type_name -> octelium.api.main.core.v1.ClusterConfig.Status.Network
-	373, // 499: octelium.api.main.core.v1.ClusterConfig.Status.networkConfig:type_name -> octelium.api.main.core.v1.ClusterConfig.Status.NetworkConfig
-	375, // 500: octelium.api.main.core.v1.ClusterConfig.Status.secretManager:type_name -> octelium.api.main.core.v1.ClusterConfig.Status.SecretManager
-	376, // 501: octelium.api.main.core.v1.ClusterConfig.Status.device:type_name -> octelium.api.main.core.v1.ClusterConfig.Status.Device
-	354, // 502: octelium.api.main.core.v1.ClusterConfig.Spec.Session.human:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Session.Human
-	355, // 503: octelium.api.main.core.v1.ClusterConfig.Spec.Session.workload:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Session.Workload
-	356, // 504: octelium.api.main.core.v1.ClusterConfig.Spec.Device.human:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Device.Human
-	357, // 505: octelium.api.main.core.v1.ClusterConfig.Spec.Device.workload:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Device.Workload
-	433, // 506: octelium.api.main.core.v1.ClusterConfig.Spec.Gateway.wireguardKeyRotationDuration:type_name -> octelium.api.main.meta.v1.Duration
-	358, // 507: octelium.api.main.core.v1.ClusterConfig.Spec.DNS.fallbackZone:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.DNS.Zone
-	55,  // 508: octelium.api.main.core.v1.ClusterConfig.Spec.Authorization.inlinePolicies:type_name -> octelium.api.main.core.v1.InlinePolicy
-	359, // 509: octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.registrationEnforcementRules:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.EnforcementRule
-	359, // 510: octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.authenticationEnforcementRules:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.EnforcementRule
-	360, // 511: octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.postAuthenticationRules:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.Rule
-	48,  // 512: octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.defaultState:type_name -> octelium.api.main.core.v1.Authenticator.Spec.State
-	361, // 513: octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.fido:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.FIDO
-	362, // 514: octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.geolocation:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation
-	433, // 515: octelium.api.main.core.v1.ClusterConfig.Spec.Session.Human.clientDuration:type_name -> octelium.api.main.meta.v1.Duration
-	433, // 516: octelium.api.main.core.v1.ClusterConfig.Spec.Session.Human.clientlessDuration:type_name -> octelium.api.main.meta.v1.Duration
-	433, // 517: octelium.api.main.core.v1.ClusterConfig.Spec.Session.Human.accessTokenDuration:type_name -> octelium.api.main.meta.v1.Duration
-	433, // 518: octelium.api.main.core.v1.ClusterConfig.Spec.Session.Human.refreshTokenDuration:type_name -> octelium.api.main.meta.v1.Duration
-	10,  // 519: octelium.api.main.core.v1.ClusterConfig.Spec.Session.Human.defaultState:type_name -> octelium.api.main.core.v1.Session.Spec.State
-	433, // 520: octelium.api.main.core.v1.ClusterConfig.Spec.Session.Workload.clientDuration:type_name -> octelium.api.main.meta.v1.Duration
-	433, // 521: octelium.api.main.core.v1.ClusterConfig.Spec.Session.Workload.clientlessDuration:type_name -> octelium.api.main.meta.v1.Duration
-	433, // 522: octelium.api.main.core.v1.ClusterConfig.Spec.Session.Workload.accessTokenDuration:type_name -> octelium.api.main.meta.v1.Duration
-	433, // 523: octelium.api.main.core.v1.ClusterConfig.Spec.Session.Workload.refreshTokenDuration:type_name -> octelium.api.main.meta.v1.Duration
-	10,  // 524: octelium.api.main.core.v1.ClusterConfig.Spec.Session.Workload.defaultState:type_name -> octelium.api.main.core.v1.Session.Spec.State
-	21,  // 525: octelium.api.main.core.v1.ClusterConfig.Spec.Device.Human.defaultState:type_name -> octelium.api.main.core.v1.Device.Spec.State
-	21,  // 526: octelium.api.main.core.v1.ClusterConfig.Spec.Device.Workload.defaultState:type_name -> octelium.api.main.core.v1.Device.Spec.State
-	433, // 527: octelium.api.main.core.v1.ClusterConfig.Spec.DNS.Zone.cacheDuration:type_name -> octelium.api.main.meta.v1.Duration
-	97,  // 528: octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.EnforcementRule.condition:type_name -> octelium.api.main.core.v1.Condition
-	42,  // 529: octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.EnforcementRule.effect:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.EnforcementRule.Effect
-	97,  // 530: octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.Rule.condition:type_name -> octelium.api.main.core.v1.Condition
-	43,  // 531: octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.Rule.effect:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.Rule.Effect
-	44,  // 532: octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.FIDO.attestationConveyancePreference:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.FIDO.AttestationConveyancePreference
-	363, // 533: octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.mmdb:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB
-	364, // 534: octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.upstream:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream
-	365, // 535: octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.auth:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth
-	366, // 536: octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.bearer:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Bearer
-	367, // 537: octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.basic:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Basic
-	368, // 538: octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.custom:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Custom
-	369, // 539: octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.query:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Query
-	370, // 540: octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Basic.password:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Basic.Password
-	371, // 541: octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Custom.value:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Custom.Value
-	372, // 542: octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Query.value:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Query.Value
-	45,  // 543: octelium.api.main.core.v1.ClusterConfig.Status.NetworkConfig.mode:type_name -> octelium.api.main.core.v1.ClusterConfig.Status.NetworkConfig.Mode
-	377, // 544: octelium.api.main.core.v1.ClusterConfig.Status.NetworkConfig.v4:type_name -> octelium.api.main.core.v1.ClusterConfig.Status.NetworkConfig.V4
-	378, // 545: octelium.api.main.core.v1.ClusterConfig.Status.NetworkConfig.v6:type_name -> octelium.api.main.core.v1.ClusterConfig.Status.NetworkConfig.V6
-	379, // 546: octelium.api.main.core.v1.ClusterConfig.Status.NetworkConfig.wireguard:type_name -> octelium.api.main.core.v1.ClusterConfig.Status.NetworkConfig.Wireguard
-	380, // 547: octelium.api.main.core.v1.ClusterConfig.Status.NetworkConfig.quicv0:type_name -> octelium.api.main.core.v1.ClusterConfig.Status.NetworkConfig.QUICV0
-	436, // 548: octelium.api.main.core.v1.ClusterConfig.Status.Network.clusterNetwork:type_name -> octelium.api.main.meta.v1.DualStackNetwork
-	436, // 549: octelium.api.main.core.v1.ClusterConfig.Status.Network.wgConnSubnet:type_name -> octelium.api.main.meta.v1.DualStackNetwork
-	436, // 550: octelium.api.main.core.v1.ClusterConfig.Status.Network.serviceSubnet:type_name -> octelium.api.main.meta.v1.DualStackNetwork
-	436, // 551: octelium.api.main.core.v1.ClusterConfig.Status.Network.quicConnSubnet:type_name -> octelium.api.main.meta.v1.DualStackNetwork
-	381, // 552: octelium.api.main.core.v1.ClusterConfig.Status.SecretManager.tls:type_name -> octelium.api.main.core.v1.ClusterConfig.Status.SecretManager.TLS
-	382, // 553: octelium.api.main.core.v1.ClusterConfig.Status.Device.probes:type_name -> octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe
-	429, // 554: octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ownerRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	22,  // 555: octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.osType:type_name -> octelium.api.main.core.v1.Device.Status.OSType
-	97,  // 556: octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.condition:type_name -> octelium.api.main.core.v1.Condition
-	383, // 557: octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.runCommand:type_name -> octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.RunCommand
-	384, // 558: octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.readFile:type_name -> octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ReadFile
-	385, // 559: octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.readRegistry:type_name -> octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ReadRegistry
-	387, // 560: octelium.api.main.core.v1.RequestContext.Request.http:type_name -> octelium.api.main.core.v1.RequestContext.Request.HTTP
-	388, // 561: octelium.api.main.core.v1.RequestContext.Request.ssh:type_name -> octelium.api.main.core.v1.RequestContext.Request.SSH
-	389, // 562: octelium.api.main.core.v1.RequestContext.Request.kubernetes:type_name -> octelium.api.main.core.v1.RequestContext.Request.Kubernetes
-	390, // 563: octelium.api.main.core.v1.RequestContext.Request.grpc:type_name -> octelium.api.main.core.v1.RequestContext.Request.GRPC
-	391, // 564: octelium.api.main.core.v1.RequestContext.Request.postgres:type_name -> octelium.api.main.core.v1.RequestContext.Request.Postgres
-	392, // 565: octelium.api.main.core.v1.RequestContext.Request.dns:type_name -> octelium.api.main.core.v1.RequestContext.Request.DNS
-	393, // 566: octelium.api.main.core.v1.RequestContext.Request.socks5:type_name -> octelium.api.main.core.v1.RequestContext.Request.SOCKS5
-	394, // 567: octelium.api.main.core.v1.RequestContext.Request.HTTP.headers:type_name -> octelium.api.main.core.v1.RequestContext.Request.HTTP.HeadersEntry
-	432, // 568: octelium.api.main.core.v1.RequestContext.Request.HTTP.bodyMap:type_name -> google.protobuf.Struct
-	395, // 569: octelium.api.main.core.v1.RequestContext.Request.HTTP.queryParams:type_name -> octelium.api.main.core.v1.RequestContext.Request.HTTP.QueryParamsEntry
-	396, // 570: octelium.api.main.core.v1.RequestContext.Request.SSH.connect:type_name -> octelium.api.main.core.v1.RequestContext.Request.SSH.Connect
-	387, // 571: octelium.api.main.core.v1.RequestContext.Request.Kubernetes.http:type_name -> octelium.api.main.core.v1.RequestContext.Request.HTTP
-	387, // 572: octelium.api.main.core.v1.RequestContext.Request.GRPC.http:type_name -> octelium.api.main.core.v1.RequestContext.Request.HTTP
-	397, // 573: octelium.api.main.core.v1.RequestContext.Request.Postgres.connect:type_name -> octelium.api.main.core.v1.RequestContext.Request.Postgres.Connect
-	398, // 574: octelium.api.main.core.v1.RequestContext.Request.Postgres.query:type_name -> octelium.api.main.core.v1.RequestContext.Request.Postgres.Query
-	399, // 575: octelium.api.main.core.v1.RequestContext.Request.Postgres.parse:type_name -> octelium.api.main.core.v1.RequestContext.Request.Postgres.Parse
-	400, // 576: octelium.api.main.core.v1.RequestContext.Request.SOCKS5.connect:type_name -> octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect
-	46,  // 577: octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect.addressType:type_name -> octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect.AddressType
-	429, // 578: octelium.api.main.core.v1.PolicyTrigger.Status.ownerRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	403, // 579: octelium.api.main.core.v1.PolicyTrigger.Status.preCondition:type_name -> octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition
-	55,  // 580: octelium.api.main.core.v1.PolicyTrigger.Status.inlinePolicies:type_name -> octelium.api.main.core.v1.InlinePolicy
-	435, // 581: octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.notBefore:type_name -> google.protobuf.Timestamp
-	435, // 582: octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.notAfter:type_name -> google.protobuf.Timestamp
-	429, // 583: octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	429, // 584: octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	97,  // 585: octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.condition:type_name -> octelium.api.main.core.v1.Condition
-	404, // 586: octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.any:type_name -> octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.Any
-	405, // 587: octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.all:type_name -> octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.All
-	429, // 588: octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	429, // 589: octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.namespaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	429, // 590: octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.groupRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	429, // 591: octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	403, // 592: octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.Any.of:type_name -> octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition
-	403, // 593: octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.All.of:type_name -> octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition
-	47,  // 594: octelium.api.main.core.v1.ComponentLog.Entry.level:type_name -> octelium.api.main.core.v1.ComponentLog.Entry.Level
-	407, // 595: octelium.api.main.core.v1.ComponentLog.Entry.component:type_name -> octelium.api.main.core.v1.ComponentLog.Entry.Component
-	432, // 596: octelium.api.main.core.v1.ComponentLog.Entry.fields:type_name -> google.protobuf.Struct
-	435, // 597: octelium.api.main.core.v1.ComponentLog.Entry.time:type_name -> google.protobuf.Timestamp
-	48,  // 598: octelium.api.main.core.v1.Authenticator.Spec.state:type_name -> octelium.api.main.core.v1.Authenticator.Spec.State
-	429, // 599: octelium.api.main.core.v1.Authenticator.Status.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	429, // 600: octelium.api.main.core.v1.Authenticator.Status.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	49,  // 601: octelium.api.main.core.v1.Authenticator.Status.type:type_name -> octelium.api.main.core.v1.Authenticator.Status.Type
-	411, // 602: octelium.api.main.core.v1.Authenticator.Status.info:type_name -> octelium.api.main.core.v1.Authenticator.Status.Info
-	412, // 603: octelium.api.main.core.v1.Authenticator.Status.authenticationAttempt:type_name -> octelium.api.main.core.v1.Authenticator.Status.AuthenticationAttempt
-	412, // 604: octelium.api.main.core.v1.Authenticator.Status.lastAuthenticationAttempts:type_name -> octelium.api.main.core.v1.Authenticator.Status.AuthenticationAttempt
-	413, // 605: octelium.api.main.core.v1.Authenticator.Status.ext:type_name -> octelium.api.main.core.v1.Authenticator.Status.ExtEntry
-	429, // 606: octelium.api.main.core.v1.Authenticator.Status.EncryptedData.keySecretRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	414, // 607: octelium.api.main.core.v1.Authenticator.Status.Info.fido:type_name -> octelium.api.main.core.v1.Authenticator.Status.Info.FIDO
-	415, // 608: octelium.api.main.core.v1.Authenticator.Status.Info.totp:type_name -> octelium.api.main.core.v1.Authenticator.Status.Info.TOTP
-	416, // 609: octelium.api.main.core.v1.Authenticator.Status.Info.tpm:type_name -> octelium.api.main.core.v1.Authenticator.Status.Info.TPM
-	435, // 610: octelium.api.main.core.v1.Authenticator.Status.AuthenticationAttempt.createdAt:type_name -> google.protobuf.Timestamp
-	410, // 611: octelium.api.main.core.v1.Authenticator.Status.AuthenticationAttempt.encryptedChallengeRequest:type_name -> octelium.api.main.core.v1.Authenticator.Status.EncryptedData
-	418, // 612: octelium.api.main.core.v1.Authenticator.Status.AuthenticationAttempt.encryptedDataMap:type_name -> octelium.api.main.core.v1.Authenticator.Status.AuthenticationAttempt.EncryptedDataMapEntry
-	419, // 613: octelium.api.main.core.v1.Authenticator.Status.AuthenticationAttempt.dataMap:type_name -> octelium.api.main.core.v1.Authenticator.Status.AuthenticationAttempt.DataMapEntry
-	429, // 614: octelium.api.main.core.v1.Authenticator.Status.AuthenticationAttempt.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
-	435, // 615: octelium.api.main.core.v1.Authenticator.Status.AuthenticationAttempt.completedAt:type_name -> google.protobuf.Timestamp
-	432, // 616: octelium.api.main.core.v1.Authenticator.Status.ExtEntry.value:type_name -> google.protobuf.Struct
-	50,  // 617: octelium.api.main.core.v1.Authenticator.Status.Info.FIDO.type:type_name -> octelium.api.main.core.v1.Authenticator.Status.Info.FIDO.Type
-	410, // 618: octelium.api.main.core.v1.Authenticator.Status.Info.TOTP.sharedSecret:type_name -> octelium.api.main.core.v1.Authenticator.Status.EncryptedData
-	51,  // 619: octelium.api.main.core.v1.Authenticator.Status.Info.TOTP.algorithm:type_name -> octelium.api.main.core.v1.Authenticator.Status.Info.TOTP.Algorithm
-	435, // 620: octelium.api.main.core.v1.Authenticator.Status.Info.TOTP.lastAcceptedAt:type_name -> google.protobuf.Timestamp
-	417, // 621: octelium.api.main.core.v1.Authenticator.Status.Info.TPM.attestationParameters:type_name -> octelium.api.main.core.v1.Authenticator.Status.Info.TPM.AttestationParameters
-	410, // 622: octelium.api.main.core.v1.Authenticator.Status.AuthenticationAttempt.EncryptedDataMapEntry.value:type_name -> octelium.api.main.core.v1.Authenticator.Status.EncryptedData
-	84,  // 623: octelium.api.main.core.v1.MainService.CreatePolicy:input_type -> octelium.api.main.core.v1.Policy
-	86,  // 624: octelium.api.main.core.v1.MainService.ListPolicy:input_type -> octelium.api.main.core.v1.ListPolicyOptions
-	84,  // 625: octelium.api.main.core.v1.MainService.UpdatePolicy:input_type -> octelium.api.main.core.v1.Policy
-	437, // 626: octelium.api.main.core.v1.MainService.DeletePolicy:input_type -> octelium.api.main.meta.v1.DeleteOptions
-	438, // 627: octelium.api.main.core.v1.MainService.GetPolicy:input_type -> octelium.api.main.meta.v1.GetOptions
-	56,  // 628: octelium.api.main.core.v1.MainService.CreateUser:input_type -> octelium.api.main.core.v1.User
-	72,  // 629: octelium.api.main.core.v1.MainService.ListUser:input_type -> octelium.api.main.core.v1.ListUserOptions
-	56,  // 630: octelium.api.main.core.v1.MainService.UpdateUser:input_type -> octelium.api.main.core.v1.User
-	437, // 631: octelium.api.main.core.v1.MainService.DeleteUser:input_type -> octelium.api.main.meta.v1.DeleteOptions
-	438, // 632: octelium.api.main.core.v1.MainService.GetUser:input_type -> octelium.api.main.meta.v1.GetOptions
-	53,  // 633: octelium.api.main.core.v1.MainService.CreateNamespace:input_type -> octelium.api.main.core.v1.Namespace
-	53,  // 634: octelium.api.main.core.v1.MainService.UpdateNamespace:input_type -> octelium.api.main.core.v1.Namespace
-	73,  // 635: octelium.api.main.core.v1.MainService.ListNamespace:input_type -> octelium.api.main.core.v1.ListNamespaceOptions
-	437, // 636: octelium.api.main.core.v1.MainService.DeleteNamespace:input_type -> octelium.api.main.meta.v1.DeleteOptions
-	438, // 637: octelium.api.main.core.v1.MainService.GetNamespace:input_type -> octelium.api.main.meta.v1.GetOptions
-	58,  // 638: octelium.api.main.core.v1.MainService.CreateService:input_type -> octelium.api.main.core.v1.Service
-	74,  // 639: octelium.api.main.core.v1.MainService.ListService:input_type -> octelium.api.main.core.v1.ListServiceOptions
-	58,  // 640: octelium.api.main.core.v1.MainService.UpdateService:input_type -> octelium.api.main.core.v1.Service
-	437, // 641: octelium.api.main.core.v1.MainService.DeleteService:input_type -> octelium.api.main.meta.v1.DeleteOptions
-	438, // 642: octelium.api.main.core.v1.MainService.GetService:input_type -> octelium.api.main.meta.v1.GetOptions
-	75,  // 643: octelium.api.main.core.v1.MainService.ListSession:input_type -> octelium.api.main.core.v1.ListSessionOptions
-	437, // 644: octelium.api.main.core.v1.MainService.DeleteSession:input_type -> octelium.api.main.meta.v1.DeleteOptions
-	438, // 645: octelium.api.main.core.v1.MainService.GetSession:input_type -> octelium.api.main.meta.v1.GetOptions
-	62,  // 646: octelium.api.main.core.v1.MainService.UpdateSession:input_type -> octelium.api.main.core.v1.Session
-	64,  // 647: octelium.api.main.core.v1.MainService.CreateSecret:input_type -> octelium.api.main.core.v1.Secret
-	76,  // 648: octelium.api.main.core.v1.MainService.ListSecret:input_type -> octelium.api.main.core.v1.ListSecretOptions
-	437, // 649: octelium.api.main.core.v1.MainService.DeleteSecret:input_type -> octelium.api.main.meta.v1.DeleteOptions
-	438, // 650: octelium.api.main.core.v1.MainService.GetSecret:input_type -> octelium.api.main.meta.v1.GetOptions
-	64,  // 651: octelium.api.main.core.v1.MainService.UpdateSecret:input_type -> octelium.api.main.core.v1.Secret
-	68,  // 652: octelium.api.main.core.v1.MainService.CreateGroup:input_type -> octelium.api.main.core.v1.Group
-	78,  // 653: octelium.api.main.core.v1.MainService.ListGroup:input_type -> octelium.api.main.core.v1.ListGroupOptions
-	68,  // 654: octelium.api.main.core.v1.MainService.UpdateGroup:input_type -> octelium.api.main.core.v1.Group
-	437, // 655: octelium.api.main.core.v1.MainService.DeleteGroup:input_type -> octelium.api.main.meta.v1.DeleteOptions
-	438, // 656: octelium.api.main.core.v1.MainService.GetGroup:input_type -> octelium.api.main.meta.v1.GetOptions
-	79,  // 657: octelium.api.main.core.v1.MainService.ListDevice:input_type -> octelium.api.main.core.v1.ListDeviceOptions
-	437, // 658: octelium.api.main.core.v1.MainService.DeleteDevice:input_type -> octelium.api.main.meta.v1.DeleteOptions
-	438, // 659: octelium.api.main.core.v1.MainService.GetDevice:input_type -> octelium.api.main.meta.v1.GetOptions
-	70,  // 660: octelium.api.main.core.v1.MainService.UpdateDevice:input_type -> octelium.api.main.core.v1.Device
-	66,  // 661: octelium.api.main.core.v1.MainService.CreateCredential:input_type -> octelium.api.main.core.v1.Credential
-	66,  // 662: octelium.api.main.core.v1.MainService.UpdateCredential:input_type -> octelium.api.main.core.v1.Credential
-	437, // 663: octelium.api.main.core.v1.MainService.DeleteCredential:input_type -> octelium.api.main.meta.v1.DeleteOptions
-	77,  // 664: octelium.api.main.core.v1.MainService.ListCredential:input_type -> octelium.api.main.core.v1.ListCredentialOptions
-	438, // 665: octelium.api.main.core.v1.MainService.GetCredential:input_type -> octelium.api.main.meta.v1.GetOptions
-	60,  // 666: octelium.api.main.core.v1.MainService.GenerateCredentialToken:input_type -> octelium.api.main.core.v1.GenerateCredentialTokenRequest
-	89,  // 667: octelium.api.main.core.v1.MainService.CreateIdentityProvider:input_type -> octelium.api.main.core.v1.IdentityProvider
-	438, // 668: octelium.api.main.core.v1.MainService.GetIdentityProvider:input_type -> octelium.api.main.meta.v1.GetOptions
-	88,  // 669: octelium.api.main.core.v1.MainService.ListIdentityProvider:input_type -> octelium.api.main.core.v1.ListIdentityProviderOptions
-	89,  // 670: octelium.api.main.core.v1.MainService.UpdateIdentityProvider:input_type -> octelium.api.main.core.v1.IdentityProvider
-	437, // 671: octelium.api.main.core.v1.MainService.DeleteIdentityProvider:input_type -> octelium.api.main.meta.v1.DeleteOptions
-	438, // 672: octelium.api.main.core.v1.MainService.GetRegion:input_type -> octelium.api.main.meta.v1.GetOptions
-	96,  // 673: octelium.api.main.core.v1.MainService.ListRegion:input_type -> octelium.api.main.core.v1.ListRegionOptions
-	95,  // 674: octelium.api.main.core.v1.MainService.ListGateway:input_type -> octelium.api.main.core.v1.ListGatewayOptions
-	438, // 675: octelium.api.main.core.v1.MainService.GetGateway:input_type -> octelium.api.main.meta.v1.GetOptions
-	98,  // 676: octelium.api.main.core.v1.MainService.GetClusterConfig:input_type -> octelium.api.main.core.v1.GetClusterConfigRequest
-	99,  // 677: octelium.api.main.core.v1.MainService.UpdateClusterConfig:input_type -> octelium.api.main.core.v1.ClusterConfig
-	106, // 678: octelium.api.main.core.v1.MainService.ListAuthenticator:input_type -> octelium.api.main.core.v1.ListAuthenticatorOptions
-	437, // 679: octelium.api.main.core.v1.MainService.DeleteAuthenticator:input_type -> octelium.api.main.meta.v1.DeleteOptions
-	438, // 680: octelium.api.main.core.v1.MainService.GetAuthenticator:input_type -> octelium.api.main.meta.v1.GetOptions
-	104, // 681: octelium.api.main.core.v1.MainService.UpdateAuthenticator:input_type -> octelium.api.main.core.v1.Authenticator
-	81,  // 682: octelium.api.main.core.v1.MainService.CreateConfig:input_type -> octelium.api.main.core.v1.Config
-	80,  // 683: octelium.api.main.core.v1.MainService.ListConfig:input_type -> octelium.api.main.core.v1.ListConfigOptions
-	81,  // 684: octelium.api.main.core.v1.MainService.UpdateConfig:input_type -> octelium.api.main.core.v1.Config
-	437, // 685: octelium.api.main.core.v1.MainService.DeleteConfig:input_type -> octelium.api.main.meta.v1.DeleteOptions
-	438, // 686: octelium.api.main.core.v1.MainService.GetConfig:input_type -> octelium.api.main.meta.v1.GetOptions
-	84,  // 687: octelium.api.main.core.v1.MainService.CreatePolicy:output_type -> octelium.api.main.core.v1.Policy
-	85,  // 688: octelium.api.main.core.v1.MainService.ListPolicy:output_type -> octelium.api.main.core.v1.PolicyList
-	84,  // 689: octelium.api.main.core.v1.MainService.UpdatePolicy:output_type -> octelium.api.main.core.v1.Policy
-	439, // 690: octelium.api.main.core.v1.MainService.DeletePolicy:output_type -> octelium.api.main.meta.v1.OperationResult
-	84,  // 691: octelium.api.main.core.v1.MainService.GetPolicy:output_type -> octelium.api.main.core.v1.Policy
-	56,  // 692: octelium.api.main.core.v1.MainService.CreateUser:output_type -> octelium.api.main.core.v1.User
-	57,  // 693: octelium.api.main.core.v1.MainService.ListUser:output_type -> octelium.api.main.core.v1.UserList
-	56,  // 694: octelium.api.main.core.v1.MainService.UpdateUser:output_type -> octelium.api.main.core.v1.User
-	439, // 695: octelium.api.main.core.v1.MainService.DeleteUser:output_type -> octelium.api.main.meta.v1.OperationResult
-	56,  // 696: octelium.api.main.core.v1.MainService.GetUser:output_type -> octelium.api.main.core.v1.User
-	53,  // 697: octelium.api.main.core.v1.MainService.CreateNamespace:output_type -> octelium.api.main.core.v1.Namespace
-	53,  // 698: octelium.api.main.core.v1.MainService.UpdateNamespace:output_type -> octelium.api.main.core.v1.Namespace
-	54,  // 699: octelium.api.main.core.v1.MainService.ListNamespace:output_type -> octelium.api.main.core.v1.NamespaceList
-	439, // 700: octelium.api.main.core.v1.MainService.DeleteNamespace:output_type -> octelium.api.main.meta.v1.OperationResult
-	53,  // 701: octelium.api.main.core.v1.MainService.GetNamespace:output_type -> octelium.api.main.core.v1.Namespace
-	58,  // 702: octelium.api.main.core.v1.MainService.CreateService:output_type -> octelium.api.main.core.v1.Service
-	59,  // 703: octelium.api.main.core.v1.MainService.ListService:output_type -> octelium.api.main.core.v1.ServiceList
-	58,  // 704: octelium.api.main.core.v1.MainService.UpdateService:output_type -> octelium.api.main.core.v1.Service
-	439, // 705: octelium.api.main.core.v1.MainService.DeleteService:output_type -> octelium.api.main.meta.v1.OperationResult
-	58,  // 706: octelium.api.main.core.v1.MainService.GetService:output_type -> octelium.api.main.core.v1.Service
-	63,  // 707: octelium.api.main.core.v1.MainService.ListSession:output_type -> octelium.api.main.core.v1.SessionList
-	439, // 708: octelium.api.main.core.v1.MainService.DeleteSession:output_type -> octelium.api.main.meta.v1.OperationResult
-	62,  // 709: octelium.api.main.core.v1.MainService.GetSession:output_type -> octelium.api.main.core.v1.Session
-	62,  // 710: octelium.api.main.core.v1.MainService.UpdateSession:output_type -> octelium.api.main.core.v1.Session
-	64,  // 711: octelium.api.main.core.v1.MainService.CreateSecret:output_type -> octelium.api.main.core.v1.Secret
-	65,  // 712: octelium.api.main.core.v1.MainService.ListSecret:output_type -> octelium.api.main.core.v1.SecretList
-	439, // 713: octelium.api.main.core.v1.MainService.DeleteSecret:output_type -> octelium.api.main.meta.v1.OperationResult
-	64,  // 714: octelium.api.main.core.v1.MainService.GetSecret:output_type -> octelium.api.main.core.v1.Secret
-	64,  // 715: octelium.api.main.core.v1.MainService.UpdateSecret:output_type -> octelium.api.main.core.v1.Secret
-	68,  // 716: octelium.api.main.core.v1.MainService.CreateGroup:output_type -> octelium.api.main.core.v1.Group
-	69,  // 717: octelium.api.main.core.v1.MainService.ListGroup:output_type -> octelium.api.main.core.v1.GroupList
-	68,  // 718: octelium.api.main.core.v1.MainService.UpdateGroup:output_type -> octelium.api.main.core.v1.Group
-	439, // 719: octelium.api.main.core.v1.MainService.DeleteGroup:output_type -> octelium.api.main.meta.v1.OperationResult
-	68,  // 720: octelium.api.main.core.v1.MainService.GetGroup:output_type -> octelium.api.main.core.v1.Group
-	71,  // 721: octelium.api.main.core.v1.MainService.ListDevice:output_type -> octelium.api.main.core.v1.DeviceList
-	439, // 722: octelium.api.main.core.v1.MainService.DeleteDevice:output_type -> octelium.api.main.meta.v1.OperationResult
-	70,  // 723: octelium.api.main.core.v1.MainService.GetDevice:output_type -> octelium.api.main.core.v1.Device
-	70,  // 724: octelium.api.main.core.v1.MainService.UpdateDevice:output_type -> octelium.api.main.core.v1.Device
-	66,  // 725: octelium.api.main.core.v1.MainService.CreateCredential:output_type -> octelium.api.main.core.v1.Credential
-	66,  // 726: octelium.api.main.core.v1.MainService.UpdateCredential:output_type -> octelium.api.main.core.v1.Credential
-	439, // 727: octelium.api.main.core.v1.MainService.DeleteCredential:output_type -> octelium.api.main.meta.v1.OperationResult
-	67,  // 728: octelium.api.main.core.v1.MainService.ListCredential:output_type -> octelium.api.main.core.v1.CredentialList
-	66,  // 729: octelium.api.main.core.v1.MainService.GetCredential:output_type -> octelium.api.main.core.v1.Credential
-	61,  // 730: octelium.api.main.core.v1.MainService.GenerateCredentialToken:output_type -> octelium.api.main.core.v1.CredentialToken
-	89,  // 731: octelium.api.main.core.v1.MainService.CreateIdentityProvider:output_type -> octelium.api.main.core.v1.IdentityProvider
-	89,  // 732: octelium.api.main.core.v1.MainService.GetIdentityProvider:output_type -> octelium.api.main.core.v1.IdentityProvider
-	90,  // 733: octelium.api.main.core.v1.MainService.ListIdentityProvider:output_type -> octelium.api.main.core.v1.IdentityProviderList
-	89,  // 734: octelium.api.main.core.v1.MainService.UpdateIdentityProvider:output_type -> octelium.api.main.core.v1.IdentityProvider
-	439, // 735: octelium.api.main.core.v1.MainService.DeleteIdentityProvider:output_type -> octelium.api.main.meta.v1.OperationResult
-	91,  // 736: octelium.api.main.core.v1.MainService.GetRegion:output_type -> octelium.api.main.core.v1.Region
-	92,  // 737: octelium.api.main.core.v1.MainService.ListRegion:output_type -> octelium.api.main.core.v1.RegionList
-	94,  // 738: octelium.api.main.core.v1.MainService.ListGateway:output_type -> octelium.api.main.core.v1.GatewayList
-	93,  // 739: octelium.api.main.core.v1.MainService.GetGateway:output_type -> octelium.api.main.core.v1.Gateway
-	99,  // 740: octelium.api.main.core.v1.MainService.GetClusterConfig:output_type -> octelium.api.main.core.v1.ClusterConfig
-	99,  // 741: octelium.api.main.core.v1.MainService.UpdateClusterConfig:output_type -> octelium.api.main.core.v1.ClusterConfig
-	105, // 742: octelium.api.main.core.v1.MainService.ListAuthenticator:output_type -> octelium.api.main.core.v1.AuthenticatorList
-	439, // 743: octelium.api.main.core.v1.MainService.DeleteAuthenticator:output_type -> octelium.api.main.meta.v1.OperationResult
-	104, // 744: octelium.api.main.core.v1.MainService.GetAuthenticator:output_type -> octelium.api.main.core.v1.Authenticator
-	104, // 745: octelium.api.main.core.v1.MainService.UpdateAuthenticator:output_type -> octelium.api.main.core.v1.Authenticator
-	81,  // 746: octelium.api.main.core.v1.MainService.CreateConfig:output_type -> octelium.api.main.core.v1.Config
-	82,  // 747: octelium.api.main.core.v1.MainService.ListConfig:output_type -> octelium.api.main.core.v1.ConfigList
-	81,  // 748: octelium.api.main.core.v1.MainService.UpdateConfig:output_type -> octelium.api.main.core.v1.Config
-	439, // 749: octelium.api.main.core.v1.MainService.DeleteConfig:output_type -> octelium.api.main.meta.v1.OperationResult
-	81,  // 750: octelium.api.main.core.v1.MainService.GetConfig:output_type -> octelium.api.main.core.v1.Config
-	687, // [687:751] is the sub-list for method output_type
-	623, // [623:687] is the sub-list for method input_type
-	623, // [623:623] is the sub-list for extension type_name
-	623, // [623:623] is the sub-list for extension extendee
-	0,   // [0:623] is the sub-list for field type_name
+	24,  // 369: octelium.api.main.core.v1.Device.Status.Posture.diskEncryption:type_name -> octelium.api.main.core.v1.Device.Status.Posture.SignalState
+	24,  // 370: octelium.api.main.core.v1.Device.Status.Posture.compliant:type_name -> octelium.api.main.core.v1.Device.Status.Posture.SignalState
+	24,  // 371: octelium.api.main.core.v1.Device.Status.Posture.threatFree:type_name -> octelium.api.main.core.v1.Device.Status.Posture.SignalState
+	266, // 372: octelium.api.main.core.v1.Device.Status.Posture.signals:type_name -> octelium.api.main.core.v1.Device.Status.Posture.SignalsEntry
+	435, // 373: octelium.api.main.core.v1.Device.Status.Posture.lastSyncAt:type_name -> google.protobuf.Timestamp
+	435, // 374: octelium.api.main.core.v1.Device.Status.Posture.lastSeenAt:type_name -> google.protobuf.Timestamp
+	435, // 375: octelium.api.main.core.v1.Device.Status.Posture.expiresAt:type_name -> google.protobuf.Timestamp
+	432, // 376: octelium.api.main.core.v1.Device.Status.Posture.attrs:type_name -> google.protobuf.Struct
+	267, // 377: octelium.api.main.core.v1.Device.Status.Probe.request:type_name -> octelium.api.main.core.v1.Device.Status.Probe.Request
+	435, // 378: octelium.api.main.core.v1.Device.Status.Probe.requestedAt:type_name -> google.protobuf.Timestamp
+	268, // 379: octelium.api.main.core.v1.Device.Status.Probe.results:type_name -> octelium.api.main.core.v1.Device.Status.Probe.Result
+	435, // 380: octelium.api.main.core.v1.Device.Status.Probe.setAt:type_name -> google.protobuf.Timestamp
+	432, // 381: octelium.api.main.core.v1.Device.Status.ExtEntry.value:type_name -> google.protobuf.Struct
+	24,  // 382: octelium.api.main.core.v1.Device.Status.Posture.SignalsEntry.value:type_name -> octelium.api.main.core.v1.Device.Status.Posture.SignalState
+	429, // 383: octelium.api.main.core.v1.Device.Status.Probe.Request.ownerRefs:type_name -> octelium.api.main.meta.v1.ObjectReference
+	435, // 384: octelium.api.main.core.v1.Device.Status.Probe.Request.issuedAt:type_name -> google.protobuf.Timestamp
+	429, // 385: octelium.api.main.core.v1.Device.Status.Probe.Result.ownerRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	272, // 386: octelium.api.main.core.v1.Config.Data.dataMap:type_name -> octelium.api.main.core.v1.Config.Data.DataMap
+	432, // 387: octelium.api.main.core.v1.Config.Data.attrs:type_name -> google.protobuf.Struct
+	273, // 388: octelium.api.main.core.v1.Config.Data.DataMap.map:type_name -> octelium.api.main.core.v1.Config.Data.DataMap.MapEntry
+	276, // 389: octelium.api.main.core.v1.Scope.Service.all:type_name -> octelium.api.main.core.v1.Scope.Service.All
+	277, // 390: octelium.api.main.core.v1.Scope.Service.filter:type_name -> octelium.api.main.core.v1.Scope.Service.Filter
+	278, // 391: octelium.api.main.core.v1.Scope.API.all:type_name -> octelium.api.main.core.v1.Scope.API.All
+	279, // 392: octelium.api.main.core.v1.Scope.API.filter:type_name -> octelium.api.main.core.v1.Scope.API.Filter
+	282, // 393: octelium.api.main.core.v1.Policy.Spec.rules:type_name -> octelium.api.main.core.v1.Policy.Spec.Rule
+	283, // 394: octelium.api.main.core.v1.Policy.Spec.enforcementRules:type_name -> octelium.api.main.core.v1.Policy.Spec.EnforcementRule
+	432, // 395: octelium.api.main.core.v1.Policy.Spec.attrs:type_name -> google.protobuf.Struct
+	429, // 396: octelium.api.main.core.v1.Policy.Status.parentPolicyRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	97,  // 397: octelium.api.main.core.v1.Policy.Spec.Rule.condition:type_name -> octelium.api.main.core.v1.Condition
+	25,  // 398: octelium.api.main.core.v1.Policy.Spec.Rule.effect:type_name -> octelium.api.main.core.v1.Policy.Spec.Rule.Effect
+	97,  // 399: octelium.api.main.core.v1.Policy.Spec.EnforcementRule.condition:type_name -> octelium.api.main.core.v1.Condition
+	26,  // 400: octelium.api.main.core.v1.Policy.Spec.EnforcementRule.effect:type_name -> octelium.api.main.core.v1.Policy.Spec.EnforcementRule.Effect
+	286, // 401: octelium.api.main.core.v1.AccessLog.Entry.common:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common
+	285, // 402: octelium.api.main.core.v1.AccessLog.Entry.info:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info
+	288, // 403: octelium.api.main.core.v1.AccessLog.Entry.Info.tcp:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.TCP
+	287, // 404: octelium.api.main.core.v1.AccessLog.Entry.Info.http:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP
+	289, // 405: octelium.api.main.core.v1.AccessLog.Entry.Info.ssh:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.SSH
+	290, // 406: octelium.api.main.core.v1.AccessLog.Entry.Info.udp:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.UDP
+	291, // 407: octelium.api.main.core.v1.AccessLog.Entry.Info.postgres:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.Postgres
+	293, // 408: octelium.api.main.core.v1.AccessLog.Entry.Info.kubernetes:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.Kubernetes
+	294, // 409: octelium.api.main.core.v1.AccessLog.Entry.Info.grpc:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.GRPC
+	292, // 410: octelium.api.main.core.v1.AccessLog.Entry.Info.mysql:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL
+	295, // 411: octelium.api.main.core.v1.AccessLog.Entry.Info.dns:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.DNS
+	296, // 412: octelium.api.main.core.v1.AccessLog.Entry.Info.socks5:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5
+	435, // 413: octelium.api.main.core.v1.AccessLog.Entry.Common.startedAt:type_name -> google.protobuf.Timestamp
+	435, // 414: octelium.api.main.core.v1.AccessLog.Entry.Common.endedAt:type_name -> google.protobuf.Timestamp
+	37,  // 415: octelium.api.main.core.v1.AccessLog.Entry.Common.status:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Status
+	1,   // 416: octelium.api.main.core.v1.AccessLog.Entry.Common.mode:type_name -> octelium.api.main.core.v1.Service.Spec.Mode
+	314, // 417: octelium.api.main.core.v1.AccessLog.Entry.Common.reason:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason
+	429, // 418: octelium.api.main.core.v1.AccessLog.Entry.Common.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	429, // 419: octelium.api.main.core.v1.AccessLog.Entry.Common.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	429, // 420: octelium.api.main.core.v1.AccessLog.Entry.Common.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	429, // 421: octelium.api.main.core.v1.AccessLog.Entry.Common.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	429, // 422: octelium.api.main.core.v1.AccessLog.Entry.Common.namespaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	429, // 423: octelium.api.main.core.v1.AccessLog.Entry.Common.regionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	297, // 424: octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP.request:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP.Request
+	298, // 425: octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP.response:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP.Response
+	27,  // 426: octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP.httpVersion:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP.HTTPVersion
+	28,  // 427: octelium.api.main.core.v1.AccessLog.Entry.Info.TCP.type:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.TCP.Type
+	29,  // 428: octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.type:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.Type
+	301, // 429: octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.start:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.Start
+	305, // 430: octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.directTCPIPStart:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.DirectTCPIPStart
+	302, // 431: octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.sessionRecording:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.SessionRecording
+	303, // 432: octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.sessionRequestExec:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.SessionRequestExec
+	304, // 433: octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.sessionRequestSubsystem:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.SessionRequestSubsystem
+	31,  // 434: octelium.api.main.core.v1.AccessLog.Entry.Info.UDP.type:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.UDP.Type
+	32,  // 435: octelium.api.main.core.v1.AccessLog.Entry.Info.Postgres.type:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.Postgres.Type
+	306, // 436: octelium.api.main.core.v1.AccessLog.Entry.Info.Postgres.start:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.Postgres.Start
+	307, // 437: octelium.api.main.core.v1.AccessLog.Entry.Info.Postgres.query:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.Postgres.Query
+	308, // 438: octelium.api.main.core.v1.AccessLog.Entry.Info.Postgres.parse:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.Postgres.Parse
+	33,  // 439: octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.type:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.Type
+	309, // 440: octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.query:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.Query
+	310, // 441: octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.initDB:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.InitDB
+	311, // 442: octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.createDB:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.CreateDB
+	312, // 443: octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.dropDB:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.DropDB
+	313, // 444: octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.prepareStatement:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.PrepareStatement
+	287, // 445: octelium.api.main.core.v1.AccessLog.Entry.Info.Kubernetes.http:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP
+	287, // 446: octelium.api.main.core.v1.AccessLog.Entry.Info.GRPC.http:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP
+	34,  // 447: octelium.api.main.core.v1.AccessLog.Entry.Info.DNS.type:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.DNS.Type
+	35,  // 448: octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5.type:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5.Type
+	36,  // 449: octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5.addressType:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5.AddressType
+	432, // 450: octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP.Request.bodyMap:type_name -> google.protobuf.Struct
+	299, // 451: octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP.Request.headers:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP.Request.HeadersEntry
+	432, // 452: octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP.Response.bodyMap:type_name -> google.protobuf.Struct
+	300, // 453: octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP.Response.headers:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP.Response.HeadersEntry
+	30,  // 454: octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.SessionRecording.type:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.SessionRecording.Type
+	38,  // 455: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.type:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Type
+	315, // 456: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.details:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details
+	316, // 457: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.policyMatch:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.PolicyMatch
+	317, // 458: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.sessionNotActive:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.SessionNotActive
+	319, // 459: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.PolicyMatch.policy:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.PolicyMatch.Policy
+	318, // 460: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.PolicyMatch.inlinePolicy:type_name -> octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.PolicyMatch.InlinePolicy
+	10,  // 461: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.SessionNotActive.state:type_name -> octelium.api.main.core.v1.Session.Spec.State
+	429, // 462: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.PolicyMatch.InlinePolicy.resourceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	429, // 463: octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.PolicyMatch.Policy.policyRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	326, // 464: octelium.api.main.core.v1.IdentityProvider.Spec.aalRules:type_name -> octelium.api.main.core.v1.IdentityProvider.Spec.AALRule
+	327, // 465: octelium.api.main.core.v1.IdentityProvider.Spec.postAuthenticationRules:type_name -> octelium.api.main.core.v1.IdentityProvider.Spec.PostAuthenticationRule
+	322, // 466: octelium.api.main.core.v1.IdentityProvider.Spec.github:type_name -> octelium.api.main.core.v1.IdentityProvider.Spec.Github
+	323, // 467: octelium.api.main.core.v1.IdentityProvider.Spec.oidc:type_name -> octelium.api.main.core.v1.IdentityProvider.Spec.OIDC
+	324, // 468: octelium.api.main.core.v1.IdentityProvider.Spec.saml:type_name -> octelium.api.main.core.v1.IdentityProvider.Spec.SAML
+	325, // 469: octelium.api.main.core.v1.IdentityProvider.Spec.oidcIdentityToken:type_name -> octelium.api.main.core.v1.IdentityProvider.Spec.OIDCIdentityToken
+	41,  // 470: octelium.api.main.core.v1.IdentityProvider.Status.type:type_name -> octelium.api.main.core.v1.IdentityProvider.Status.Type
+	328, // 471: octelium.api.main.core.v1.IdentityProvider.Spec.Github.clientSecret:type_name -> octelium.api.main.core.v1.IdentityProvider.Spec.Github.ClientSecret
+	329, // 472: octelium.api.main.core.v1.IdentityProvider.Spec.OIDC.clientSecret:type_name -> octelium.api.main.core.v1.IdentityProvider.Spec.OIDC.ClientSecret
+	97,  // 473: octelium.api.main.core.v1.IdentityProvider.Spec.AALRule.condition:type_name -> octelium.api.main.core.v1.Condition
+	39,  // 474: octelium.api.main.core.v1.IdentityProvider.Spec.AALRule.aal:type_name -> octelium.api.main.core.v1.IdentityProvider.Spec.AALRule.AAL
+	97,  // 475: octelium.api.main.core.v1.IdentityProvider.Spec.PostAuthenticationRule.condition:type_name -> octelium.api.main.core.v1.Condition
+	40,  // 476: octelium.api.main.core.v1.IdentityProvider.Spec.PostAuthenticationRule.effect:type_name -> octelium.api.main.core.v1.IdentityProvider.Spec.PostAuthenticationRule.Effect
+	333, // 477: octelium.api.main.core.v1.Region.Status.ext:type_name -> octelium.api.main.core.v1.Region.Status.ExtEntry
+	334, // 478: octelium.api.main.core.v1.Region.Status.versionInfoMap:type_name -> octelium.api.main.core.v1.Region.Status.VersionInfoMapEntry
+	435, // 479: octelium.api.main.core.v1.Region.Status.VersionInfo.setAt:type_name -> google.protobuf.Timestamp
+	335, // 480: octelium.api.main.core.v1.Region.Status.VersionInfo.ext:type_name -> octelium.api.main.core.v1.Region.Status.VersionInfo.ExtEntry
+	432, // 481: octelium.api.main.core.v1.Region.Status.ExtEntry.value:type_name -> google.protobuf.Struct
+	332, // 482: octelium.api.main.core.v1.Region.Status.VersionInfoMapEntry.value:type_name -> octelium.api.main.core.v1.Region.Status.VersionInfo
+	432, // 483: octelium.api.main.core.v1.Region.Status.VersionInfo.ExtEntry.value:type_name -> google.protobuf.Struct
+	429, // 484: octelium.api.main.core.v1.Gateway.Status.regionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	429, // 485: octelium.api.main.core.v1.Gateway.Status.nodeRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	436, // 486: octelium.api.main.core.v1.Gateway.Status.cidr:type_name -> octelium.api.main.meta.v1.DualStackNetwork
+	338, // 487: octelium.api.main.core.v1.Gateway.Status.wireguard:type_name -> octelium.api.main.core.v1.Gateway.Status.WireGuard
+	339, // 488: octelium.api.main.core.v1.Gateway.Status.quicv0:type_name -> octelium.api.main.core.v1.Gateway.Status.QUICV0
+	435, // 489: octelium.api.main.core.v1.Gateway.Status.WireGuard.keyRotatedAt:type_name -> google.protobuf.Timestamp
+	97,  // 490: octelium.api.main.core.v1.Condition.All.of:type_name -> octelium.api.main.core.v1.Condition
+	97,  // 491: octelium.api.main.core.v1.Condition.Any.of:type_name -> octelium.api.main.core.v1.Condition
+	97,  // 492: octelium.api.main.core.v1.Condition.None.of:type_name -> octelium.api.main.core.v1.Condition
+	351, // 493: octelium.api.main.core.v1.ClusterConfig.Spec.authorization:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authorization
+	346, // 494: octelium.api.main.core.v1.ClusterConfig.Spec.ingress:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Ingress
+	347, // 495: octelium.api.main.core.v1.ClusterConfig.Spec.session:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Session
+	348, // 496: octelium.api.main.core.v1.ClusterConfig.Spec.device:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Device
+	349, // 497: octelium.api.main.core.v1.ClusterConfig.Spec.gateway:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Gateway
+	350, // 498: octelium.api.main.core.v1.ClusterConfig.Spec.dns:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.DNS
+	352, // 499: octelium.api.main.core.v1.ClusterConfig.Spec.authenticator:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator
+	353, // 500: octelium.api.main.core.v1.ClusterConfig.Spec.authentication:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authentication
+	374, // 501: octelium.api.main.core.v1.ClusterConfig.Status.network:type_name -> octelium.api.main.core.v1.ClusterConfig.Status.Network
+	373, // 502: octelium.api.main.core.v1.ClusterConfig.Status.networkConfig:type_name -> octelium.api.main.core.v1.ClusterConfig.Status.NetworkConfig
+	375, // 503: octelium.api.main.core.v1.ClusterConfig.Status.secretManager:type_name -> octelium.api.main.core.v1.ClusterConfig.Status.SecretManager
+	376, // 504: octelium.api.main.core.v1.ClusterConfig.Status.device:type_name -> octelium.api.main.core.v1.ClusterConfig.Status.Device
+	354, // 505: octelium.api.main.core.v1.ClusterConfig.Spec.Session.human:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Session.Human
+	355, // 506: octelium.api.main.core.v1.ClusterConfig.Spec.Session.workload:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Session.Workload
+	356, // 507: octelium.api.main.core.v1.ClusterConfig.Spec.Device.human:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Device.Human
+	357, // 508: octelium.api.main.core.v1.ClusterConfig.Spec.Device.workload:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Device.Workload
+	433, // 509: octelium.api.main.core.v1.ClusterConfig.Spec.Gateway.wireguardKeyRotationDuration:type_name -> octelium.api.main.meta.v1.Duration
+	358, // 510: octelium.api.main.core.v1.ClusterConfig.Spec.DNS.fallbackZone:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.DNS.Zone
+	55,  // 511: octelium.api.main.core.v1.ClusterConfig.Spec.Authorization.inlinePolicies:type_name -> octelium.api.main.core.v1.InlinePolicy
+	359, // 512: octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.registrationEnforcementRules:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.EnforcementRule
+	359, // 513: octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.authenticationEnforcementRules:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.EnforcementRule
+	360, // 514: octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.postAuthenticationRules:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.Rule
+	48,  // 515: octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.defaultState:type_name -> octelium.api.main.core.v1.Authenticator.Spec.State
+	361, // 516: octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.fido:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.FIDO
+	362, // 517: octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.geolocation:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation
+	433, // 518: octelium.api.main.core.v1.ClusterConfig.Spec.Session.Human.clientDuration:type_name -> octelium.api.main.meta.v1.Duration
+	433, // 519: octelium.api.main.core.v1.ClusterConfig.Spec.Session.Human.clientlessDuration:type_name -> octelium.api.main.meta.v1.Duration
+	433, // 520: octelium.api.main.core.v1.ClusterConfig.Spec.Session.Human.accessTokenDuration:type_name -> octelium.api.main.meta.v1.Duration
+	433, // 521: octelium.api.main.core.v1.ClusterConfig.Spec.Session.Human.refreshTokenDuration:type_name -> octelium.api.main.meta.v1.Duration
+	10,  // 522: octelium.api.main.core.v1.ClusterConfig.Spec.Session.Human.defaultState:type_name -> octelium.api.main.core.v1.Session.Spec.State
+	433, // 523: octelium.api.main.core.v1.ClusterConfig.Spec.Session.Workload.clientDuration:type_name -> octelium.api.main.meta.v1.Duration
+	433, // 524: octelium.api.main.core.v1.ClusterConfig.Spec.Session.Workload.clientlessDuration:type_name -> octelium.api.main.meta.v1.Duration
+	433, // 525: octelium.api.main.core.v1.ClusterConfig.Spec.Session.Workload.accessTokenDuration:type_name -> octelium.api.main.meta.v1.Duration
+	433, // 526: octelium.api.main.core.v1.ClusterConfig.Spec.Session.Workload.refreshTokenDuration:type_name -> octelium.api.main.meta.v1.Duration
+	10,  // 527: octelium.api.main.core.v1.ClusterConfig.Spec.Session.Workload.defaultState:type_name -> octelium.api.main.core.v1.Session.Spec.State
+	21,  // 528: octelium.api.main.core.v1.ClusterConfig.Spec.Device.Human.defaultState:type_name -> octelium.api.main.core.v1.Device.Spec.State
+	21,  // 529: octelium.api.main.core.v1.ClusterConfig.Spec.Device.Workload.defaultState:type_name -> octelium.api.main.core.v1.Device.Spec.State
+	433, // 530: octelium.api.main.core.v1.ClusterConfig.Spec.DNS.Zone.cacheDuration:type_name -> octelium.api.main.meta.v1.Duration
+	97,  // 531: octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.EnforcementRule.condition:type_name -> octelium.api.main.core.v1.Condition
+	42,  // 532: octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.EnforcementRule.effect:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.EnforcementRule.Effect
+	97,  // 533: octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.Rule.condition:type_name -> octelium.api.main.core.v1.Condition
+	43,  // 534: octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.Rule.effect:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.Rule.Effect
+	44,  // 535: octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.FIDO.attestationConveyancePreference:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.FIDO.AttestationConveyancePreference
+	363, // 536: octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.mmdb:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB
+	364, // 537: octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.upstream:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream
+	365, // 538: octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.auth:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth
+	366, // 539: octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.bearer:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Bearer
+	367, // 540: octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.basic:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Basic
+	368, // 541: octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.custom:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Custom
+	369, // 542: octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.query:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Query
+	370, // 543: octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Basic.password:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Basic.Password
+	371, // 544: octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Custom.value:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Custom.Value
+	372, // 545: octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Query.value:type_name -> octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Query.Value
+	45,  // 546: octelium.api.main.core.v1.ClusterConfig.Status.NetworkConfig.mode:type_name -> octelium.api.main.core.v1.ClusterConfig.Status.NetworkConfig.Mode
+	377, // 547: octelium.api.main.core.v1.ClusterConfig.Status.NetworkConfig.v4:type_name -> octelium.api.main.core.v1.ClusterConfig.Status.NetworkConfig.V4
+	378, // 548: octelium.api.main.core.v1.ClusterConfig.Status.NetworkConfig.v6:type_name -> octelium.api.main.core.v1.ClusterConfig.Status.NetworkConfig.V6
+	379, // 549: octelium.api.main.core.v1.ClusterConfig.Status.NetworkConfig.wireguard:type_name -> octelium.api.main.core.v1.ClusterConfig.Status.NetworkConfig.Wireguard
+	380, // 550: octelium.api.main.core.v1.ClusterConfig.Status.NetworkConfig.quicv0:type_name -> octelium.api.main.core.v1.ClusterConfig.Status.NetworkConfig.QUICV0
+	436, // 551: octelium.api.main.core.v1.ClusterConfig.Status.Network.clusterNetwork:type_name -> octelium.api.main.meta.v1.DualStackNetwork
+	436, // 552: octelium.api.main.core.v1.ClusterConfig.Status.Network.wgConnSubnet:type_name -> octelium.api.main.meta.v1.DualStackNetwork
+	436, // 553: octelium.api.main.core.v1.ClusterConfig.Status.Network.serviceSubnet:type_name -> octelium.api.main.meta.v1.DualStackNetwork
+	436, // 554: octelium.api.main.core.v1.ClusterConfig.Status.Network.quicConnSubnet:type_name -> octelium.api.main.meta.v1.DualStackNetwork
+	381, // 555: octelium.api.main.core.v1.ClusterConfig.Status.SecretManager.tls:type_name -> octelium.api.main.core.v1.ClusterConfig.Status.SecretManager.TLS
+	382, // 556: octelium.api.main.core.v1.ClusterConfig.Status.Device.probes:type_name -> octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe
+	429, // 557: octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ownerRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	22,  // 558: octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.osType:type_name -> octelium.api.main.core.v1.Device.Status.OSType
+	97,  // 559: octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.condition:type_name -> octelium.api.main.core.v1.Condition
+	383, // 560: octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.runCommand:type_name -> octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.RunCommand
+	384, // 561: octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.readFile:type_name -> octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ReadFile
+	385, // 562: octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.readRegistry:type_name -> octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ReadRegistry
+	387, // 563: octelium.api.main.core.v1.RequestContext.Request.http:type_name -> octelium.api.main.core.v1.RequestContext.Request.HTTP
+	388, // 564: octelium.api.main.core.v1.RequestContext.Request.ssh:type_name -> octelium.api.main.core.v1.RequestContext.Request.SSH
+	389, // 565: octelium.api.main.core.v1.RequestContext.Request.kubernetes:type_name -> octelium.api.main.core.v1.RequestContext.Request.Kubernetes
+	390, // 566: octelium.api.main.core.v1.RequestContext.Request.grpc:type_name -> octelium.api.main.core.v1.RequestContext.Request.GRPC
+	391, // 567: octelium.api.main.core.v1.RequestContext.Request.postgres:type_name -> octelium.api.main.core.v1.RequestContext.Request.Postgres
+	392, // 568: octelium.api.main.core.v1.RequestContext.Request.dns:type_name -> octelium.api.main.core.v1.RequestContext.Request.DNS
+	393, // 569: octelium.api.main.core.v1.RequestContext.Request.socks5:type_name -> octelium.api.main.core.v1.RequestContext.Request.SOCKS5
+	394, // 570: octelium.api.main.core.v1.RequestContext.Request.HTTP.headers:type_name -> octelium.api.main.core.v1.RequestContext.Request.HTTP.HeadersEntry
+	432, // 571: octelium.api.main.core.v1.RequestContext.Request.HTTP.bodyMap:type_name -> google.protobuf.Struct
+	395, // 572: octelium.api.main.core.v1.RequestContext.Request.HTTP.queryParams:type_name -> octelium.api.main.core.v1.RequestContext.Request.HTTP.QueryParamsEntry
+	396, // 573: octelium.api.main.core.v1.RequestContext.Request.SSH.connect:type_name -> octelium.api.main.core.v1.RequestContext.Request.SSH.Connect
+	387, // 574: octelium.api.main.core.v1.RequestContext.Request.Kubernetes.http:type_name -> octelium.api.main.core.v1.RequestContext.Request.HTTP
+	387, // 575: octelium.api.main.core.v1.RequestContext.Request.GRPC.http:type_name -> octelium.api.main.core.v1.RequestContext.Request.HTTP
+	397, // 576: octelium.api.main.core.v1.RequestContext.Request.Postgres.connect:type_name -> octelium.api.main.core.v1.RequestContext.Request.Postgres.Connect
+	398, // 577: octelium.api.main.core.v1.RequestContext.Request.Postgres.query:type_name -> octelium.api.main.core.v1.RequestContext.Request.Postgres.Query
+	399, // 578: octelium.api.main.core.v1.RequestContext.Request.Postgres.parse:type_name -> octelium.api.main.core.v1.RequestContext.Request.Postgres.Parse
+	400, // 579: octelium.api.main.core.v1.RequestContext.Request.SOCKS5.connect:type_name -> octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect
+	46,  // 580: octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect.addressType:type_name -> octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect.AddressType
+	429, // 581: octelium.api.main.core.v1.PolicyTrigger.Status.ownerRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	403, // 582: octelium.api.main.core.v1.PolicyTrigger.Status.preCondition:type_name -> octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition
+	55,  // 583: octelium.api.main.core.v1.PolicyTrigger.Status.inlinePolicies:type_name -> octelium.api.main.core.v1.InlinePolicy
+	435, // 584: octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.notBefore:type_name -> google.protobuf.Timestamp
+	435, // 585: octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.notAfter:type_name -> google.protobuf.Timestamp
+	429, // 586: octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	429, // 587: octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	97,  // 588: octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.condition:type_name -> octelium.api.main.core.v1.Condition
+	404, // 589: octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.any:type_name -> octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.Any
+	405, // 590: octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.all:type_name -> octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.All
+	429, // 591: octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.serviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	429, // 592: octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.namespaceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	429, // 593: octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.groupRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	429, // 594: octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	403, // 595: octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.Any.of:type_name -> octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition
+	403, // 596: octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.All.of:type_name -> octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition
+	47,  // 597: octelium.api.main.core.v1.ComponentLog.Entry.level:type_name -> octelium.api.main.core.v1.ComponentLog.Entry.Level
+	407, // 598: octelium.api.main.core.v1.ComponentLog.Entry.component:type_name -> octelium.api.main.core.v1.ComponentLog.Entry.Component
+	432, // 599: octelium.api.main.core.v1.ComponentLog.Entry.fields:type_name -> google.protobuf.Struct
+	435, // 600: octelium.api.main.core.v1.ComponentLog.Entry.time:type_name -> google.protobuf.Timestamp
+	48,  // 601: octelium.api.main.core.v1.Authenticator.Spec.state:type_name -> octelium.api.main.core.v1.Authenticator.Spec.State
+	429, // 602: octelium.api.main.core.v1.Authenticator.Status.userRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	429, // 603: octelium.api.main.core.v1.Authenticator.Status.deviceRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	49,  // 604: octelium.api.main.core.v1.Authenticator.Status.type:type_name -> octelium.api.main.core.v1.Authenticator.Status.Type
+	411, // 605: octelium.api.main.core.v1.Authenticator.Status.info:type_name -> octelium.api.main.core.v1.Authenticator.Status.Info
+	412, // 606: octelium.api.main.core.v1.Authenticator.Status.authenticationAttempt:type_name -> octelium.api.main.core.v1.Authenticator.Status.AuthenticationAttempt
+	412, // 607: octelium.api.main.core.v1.Authenticator.Status.lastAuthenticationAttempts:type_name -> octelium.api.main.core.v1.Authenticator.Status.AuthenticationAttempt
+	413, // 608: octelium.api.main.core.v1.Authenticator.Status.ext:type_name -> octelium.api.main.core.v1.Authenticator.Status.ExtEntry
+	429, // 609: octelium.api.main.core.v1.Authenticator.Status.EncryptedData.keySecretRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	414, // 610: octelium.api.main.core.v1.Authenticator.Status.Info.fido:type_name -> octelium.api.main.core.v1.Authenticator.Status.Info.FIDO
+	415, // 611: octelium.api.main.core.v1.Authenticator.Status.Info.totp:type_name -> octelium.api.main.core.v1.Authenticator.Status.Info.TOTP
+	416, // 612: octelium.api.main.core.v1.Authenticator.Status.Info.tpm:type_name -> octelium.api.main.core.v1.Authenticator.Status.Info.TPM
+	435, // 613: octelium.api.main.core.v1.Authenticator.Status.AuthenticationAttempt.createdAt:type_name -> google.protobuf.Timestamp
+	410, // 614: octelium.api.main.core.v1.Authenticator.Status.AuthenticationAttempt.encryptedChallengeRequest:type_name -> octelium.api.main.core.v1.Authenticator.Status.EncryptedData
+	418, // 615: octelium.api.main.core.v1.Authenticator.Status.AuthenticationAttempt.encryptedDataMap:type_name -> octelium.api.main.core.v1.Authenticator.Status.AuthenticationAttempt.EncryptedDataMapEntry
+	419, // 616: octelium.api.main.core.v1.Authenticator.Status.AuthenticationAttempt.dataMap:type_name -> octelium.api.main.core.v1.Authenticator.Status.AuthenticationAttempt.DataMapEntry
+	429, // 617: octelium.api.main.core.v1.Authenticator.Status.AuthenticationAttempt.sessionRef:type_name -> octelium.api.main.meta.v1.ObjectReference
+	435, // 618: octelium.api.main.core.v1.Authenticator.Status.AuthenticationAttempt.completedAt:type_name -> google.protobuf.Timestamp
+	432, // 619: octelium.api.main.core.v1.Authenticator.Status.ExtEntry.value:type_name -> google.protobuf.Struct
+	50,  // 620: octelium.api.main.core.v1.Authenticator.Status.Info.FIDO.type:type_name -> octelium.api.main.core.v1.Authenticator.Status.Info.FIDO.Type
+	410, // 621: octelium.api.main.core.v1.Authenticator.Status.Info.TOTP.sharedSecret:type_name -> octelium.api.main.core.v1.Authenticator.Status.EncryptedData
+	51,  // 622: octelium.api.main.core.v1.Authenticator.Status.Info.TOTP.algorithm:type_name -> octelium.api.main.core.v1.Authenticator.Status.Info.TOTP.Algorithm
+	435, // 623: octelium.api.main.core.v1.Authenticator.Status.Info.TOTP.lastAcceptedAt:type_name -> google.protobuf.Timestamp
+	417, // 624: octelium.api.main.core.v1.Authenticator.Status.Info.TPM.attestationParameters:type_name -> octelium.api.main.core.v1.Authenticator.Status.Info.TPM.AttestationParameters
+	410, // 625: octelium.api.main.core.v1.Authenticator.Status.AuthenticationAttempt.EncryptedDataMapEntry.value:type_name -> octelium.api.main.core.v1.Authenticator.Status.EncryptedData
+	84,  // 626: octelium.api.main.core.v1.MainService.CreatePolicy:input_type -> octelium.api.main.core.v1.Policy
+	86,  // 627: octelium.api.main.core.v1.MainService.ListPolicy:input_type -> octelium.api.main.core.v1.ListPolicyOptions
+	84,  // 628: octelium.api.main.core.v1.MainService.UpdatePolicy:input_type -> octelium.api.main.core.v1.Policy
+	437, // 629: octelium.api.main.core.v1.MainService.DeletePolicy:input_type -> octelium.api.main.meta.v1.DeleteOptions
+	438, // 630: octelium.api.main.core.v1.MainService.GetPolicy:input_type -> octelium.api.main.meta.v1.GetOptions
+	56,  // 631: octelium.api.main.core.v1.MainService.CreateUser:input_type -> octelium.api.main.core.v1.User
+	72,  // 632: octelium.api.main.core.v1.MainService.ListUser:input_type -> octelium.api.main.core.v1.ListUserOptions
+	56,  // 633: octelium.api.main.core.v1.MainService.UpdateUser:input_type -> octelium.api.main.core.v1.User
+	437, // 634: octelium.api.main.core.v1.MainService.DeleteUser:input_type -> octelium.api.main.meta.v1.DeleteOptions
+	438, // 635: octelium.api.main.core.v1.MainService.GetUser:input_type -> octelium.api.main.meta.v1.GetOptions
+	53,  // 636: octelium.api.main.core.v1.MainService.CreateNamespace:input_type -> octelium.api.main.core.v1.Namespace
+	53,  // 637: octelium.api.main.core.v1.MainService.UpdateNamespace:input_type -> octelium.api.main.core.v1.Namespace
+	73,  // 638: octelium.api.main.core.v1.MainService.ListNamespace:input_type -> octelium.api.main.core.v1.ListNamespaceOptions
+	437, // 639: octelium.api.main.core.v1.MainService.DeleteNamespace:input_type -> octelium.api.main.meta.v1.DeleteOptions
+	438, // 640: octelium.api.main.core.v1.MainService.GetNamespace:input_type -> octelium.api.main.meta.v1.GetOptions
+	58,  // 641: octelium.api.main.core.v1.MainService.CreateService:input_type -> octelium.api.main.core.v1.Service
+	74,  // 642: octelium.api.main.core.v1.MainService.ListService:input_type -> octelium.api.main.core.v1.ListServiceOptions
+	58,  // 643: octelium.api.main.core.v1.MainService.UpdateService:input_type -> octelium.api.main.core.v1.Service
+	437, // 644: octelium.api.main.core.v1.MainService.DeleteService:input_type -> octelium.api.main.meta.v1.DeleteOptions
+	438, // 645: octelium.api.main.core.v1.MainService.GetService:input_type -> octelium.api.main.meta.v1.GetOptions
+	75,  // 646: octelium.api.main.core.v1.MainService.ListSession:input_type -> octelium.api.main.core.v1.ListSessionOptions
+	437, // 647: octelium.api.main.core.v1.MainService.DeleteSession:input_type -> octelium.api.main.meta.v1.DeleteOptions
+	438, // 648: octelium.api.main.core.v1.MainService.GetSession:input_type -> octelium.api.main.meta.v1.GetOptions
+	62,  // 649: octelium.api.main.core.v1.MainService.UpdateSession:input_type -> octelium.api.main.core.v1.Session
+	64,  // 650: octelium.api.main.core.v1.MainService.CreateSecret:input_type -> octelium.api.main.core.v1.Secret
+	76,  // 651: octelium.api.main.core.v1.MainService.ListSecret:input_type -> octelium.api.main.core.v1.ListSecretOptions
+	437, // 652: octelium.api.main.core.v1.MainService.DeleteSecret:input_type -> octelium.api.main.meta.v1.DeleteOptions
+	438, // 653: octelium.api.main.core.v1.MainService.GetSecret:input_type -> octelium.api.main.meta.v1.GetOptions
+	64,  // 654: octelium.api.main.core.v1.MainService.UpdateSecret:input_type -> octelium.api.main.core.v1.Secret
+	68,  // 655: octelium.api.main.core.v1.MainService.CreateGroup:input_type -> octelium.api.main.core.v1.Group
+	78,  // 656: octelium.api.main.core.v1.MainService.ListGroup:input_type -> octelium.api.main.core.v1.ListGroupOptions
+	68,  // 657: octelium.api.main.core.v1.MainService.UpdateGroup:input_type -> octelium.api.main.core.v1.Group
+	437, // 658: octelium.api.main.core.v1.MainService.DeleteGroup:input_type -> octelium.api.main.meta.v1.DeleteOptions
+	438, // 659: octelium.api.main.core.v1.MainService.GetGroup:input_type -> octelium.api.main.meta.v1.GetOptions
+	79,  // 660: octelium.api.main.core.v1.MainService.ListDevice:input_type -> octelium.api.main.core.v1.ListDeviceOptions
+	437, // 661: octelium.api.main.core.v1.MainService.DeleteDevice:input_type -> octelium.api.main.meta.v1.DeleteOptions
+	438, // 662: octelium.api.main.core.v1.MainService.GetDevice:input_type -> octelium.api.main.meta.v1.GetOptions
+	70,  // 663: octelium.api.main.core.v1.MainService.UpdateDevice:input_type -> octelium.api.main.core.v1.Device
+	66,  // 664: octelium.api.main.core.v1.MainService.CreateCredential:input_type -> octelium.api.main.core.v1.Credential
+	66,  // 665: octelium.api.main.core.v1.MainService.UpdateCredential:input_type -> octelium.api.main.core.v1.Credential
+	437, // 666: octelium.api.main.core.v1.MainService.DeleteCredential:input_type -> octelium.api.main.meta.v1.DeleteOptions
+	77,  // 667: octelium.api.main.core.v1.MainService.ListCredential:input_type -> octelium.api.main.core.v1.ListCredentialOptions
+	438, // 668: octelium.api.main.core.v1.MainService.GetCredential:input_type -> octelium.api.main.meta.v1.GetOptions
+	60,  // 669: octelium.api.main.core.v1.MainService.GenerateCredentialToken:input_type -> octelium.api.main.core.v1.GenerateCredentialTokenRequest
+	89,  // 670: octelium.api.main.core.v1.MainService.CreateIdentityProvider:input_type -> octelium.api.main.core.v1.IdentityProvider
+	438, // 671: octelium.api.main.core.v1.MainService.GetIdentityProvider:input_type -> octelium.api.main.meta.v1.GetOptions
+	88,  // 672: octelium.api.main.core.v1.MainService.ListIdentityProvider:input_type -> octelium.api.main.core.v1.ListIdentityProviderOptions
+	89,  // 673: octelium.api.main.core.v1.MainService.UpdateIdentityProvider:input_type -> octelium.api.main.core.v1.IdentityProvider
+	437, // 674: octelium.api.main.core.v1.MainService.DeleteIdentityProvider:input_type -> octelium.api.main.meta.v1.DeleteOptions
+	438, // 675: octelium.api.main.core.v1.MainService.GetRegion:input_type -> octelium.api.main.meta.v1.GetOptions
+	96,  // 676: octelium.api.main.core.v1.MainService.ListRegion:input_type -> octelium.api.main.core.v1.ListRegionOptions
+	95,  // 677: octelium.api.main.core.v1.MainService.ListGateway:input_type -> octelium.api.main.core.v1.ListGatewayOptions
+	438, // 678: octelium.api.main.core.v1.MainService.GetGateway:input_type -> octelium.api.main.meta.v1.GetOptions
+	98,  // 679: octelium.api.main.core.v1.MainService.GetClusterConfig:input_type -> octelium.api.main.core.v1.GetClusterConfigRequest
+	99,  // 680: octelium.api.main.core.v1.MainService.UpdateClusterConfig:input_type -> octelium.api.main.core.v1.ClusterConfig
+	106, // 681: octelium.api.main.core.v1.MainService.ListAuthenticator:input_type -> octelium.api.main.core.v1.ListAuthenticatorOptions
+	437, // 682: octelium.api.main.core.v1.MainService.DeleteAuthenticator:input_type -> octelium.api.main.meta.v1.DeleteOptions
+	438, // 683: octelium.api.main.core.v1.MainService.GetAuthenticator:input_type -> octelium.api.main.meta.v1.GetOptions
+	104, // 684: octelium.api.main.core.v1.MainService.UpdateAuthenticator:input_type -> octelium.api.main.core.v1.Authenticator
+	81,  // 685: octelium.api.main.core.v1.MainService.CreateConfig:input_type -> octelium.api.main.core.v1.Config
+	80,  // 686: octelium.api.main.core.v1.MainService.ListConfig:input_type -> octelium.api.main.core.v1.ListConfigOptions
+	81,  // 687: octelium.api.main.core.v1.MainService.UpdateConfig:input_type -> octelium.api.main.core.v1.Config
+	437, // 688: octelium.api.main.core.v1.MainService.DeleteConfig:input_type -> octelium.api.main.meta.v1.DeleteOptions
+	438, // 689: octelium.api.main.core.v1.MainService.GetConfig:input_type -> octelium.api.main.meta.v1.GetOptions
+	84,  // 690: octelium.api.main.core.v1.MainService.CreatePolicy:output_type -> octelium.api.main.core.v1.Policy
+	85,  // 691: octelium.api.main.core.v1.MainService.ListPolicy:output_type -> octelium.api.main.core.v1.PolicyList
+	84,  // 692: octelium.api.main.core.v1.MainService.UpdatePolicy:output_type -> octelium.api.main.core.v1.Policy
+	439, // 693: octelium.api.main.core.v1.MainService.DeletePolicy:output_type -> octelium.api.main.meta.v1.OperationResult
+	84,  // 694: octelium.api.main.core.v1.MainService.GetPolicy:output_type -> octelium.api.main.core.v1.Policy
+	56,  // 695: octelium.api.main.core.v1.MainService.CreateUser:output_type -> octelium.api.main.core.v1.User
+	57,  // 696: octelium.api.main.core.v1.MainService.ListUser:output_type -> octelium.api.main.core.v1.UserList
+	56,  // 697: octelium.api.main.core.v1.MainService.UpdateUser:output_type -> octelium.api.main.core.v1.User
+	439, // 698: octelium.api.main.core.v1.MainService.DeleteUser:output_type -> octelium.api.main.meta.v1.OperationResult
+	56,  // 699: octelium.api.main.core.v1.MainService.GetUser:output_type -> octelium.api.main.core.v1.User
+	53,  // 700: octelium.api.main.core.v1.MainService.CreateNamespace:output_type -> octelium.api.main.core.v1.Namespace
+	53,  // 701: octelium.api.main.core.v1.MainService.UpdateNamespace:output_type -> octelium.api.main.core.v1.Namespace
+	54,  // 702: octelium.api.main.core.v1.MainService.ListNamespace:output_type -> octelium.api.main.core.v1.NamespaceList
+	439, // 703: octelium.api.main.core.v1.MainService.DeleteNamespace:output_type -> octelium.api.main.meta.v1.OperationResult
+	53,  // 704: octelium.api.main.core.v1.MainService.GetNamespace:output_type -> octelium.api.main.core.v1.Namespace
+	58,  // 705: octelium.api.main.core.v1.MainService.CreateService:output_type -> octelium.api.main.core.v1.Service
+	59,  // 706: octelium.api.main.core.v1.MainService.ListService:output_type -> octelium.api.main.core.v1.ServiceList
+	58,  // 707: octelium.api.main.core.v1.MainService.UpdateService:output_type -> octelium.api.main.core.v1.Service
+	439, // 708: octelium.api.main.core.v1.MainService.DeleteService:output_type -> octelium.api.main.meta.v1.OperationResult
+	58,  // 709: octelium.api.main.core.v1.MainService.GetService:output_type -> octelium.api.main.core.v1.Service
+	63,  // 710: octelium.api.main.core.v1.MainService.ListSession:output_type -> octelium.api.main.core.v1.SessionList
+	439, // 711: octelium.api.main.core.v1.MainService.DeleteSession:output_type -> octelium.api.main.meta.v1.OperationResult
+	62,  // 712: octelium.api.main.core.v1.MainService.GetSession:output_type -> octelium.api.main.core.v1.Session
+	62,  // 713: octelium.api.main.core.v1.MainService.UpdateSession:output_type -> octelium.api.main.core.v1.Session
+	64,  // 714: octelium.api.main.core.v1.MainService.CreateSecret:output_type -> octelium.api.main.core.v1.Secret
+	65,  // 715: octelium.api.main.core.v1.MainService.ListSecret:output_type -> octelium.api.main.core.v1.SecretList
+	439, // 716: octelium.api.main.core.v1.MainService.DeleteSecret:output_type -> octelium.api.main.meta.v1.OperationResult
+	64,  // 717: octelium.api.main.core.v1.MainService.GetSecret:output_type -> octelium.api.main.core.v1.Secret
+	64,  // 718: octelium.api.main.core.v1.MainService.UpdateSecret:output_type -> octelium.api.main.core.v1.Secret
+	68,  // 719: octelium.api.main.core.v1.MainService.CreateGroup:output_type -> octelium.api.main.core.v1.Group
+	69,  // 720: octelium.api.main.core.v1.MainService.ListGroup:output_type -> octelium.api.main.core.v1.GroupList
+	68,  // 721: octelium.api.main.core.v1.MainService.UpdateGroup:output_type -> octelium.api.main.core.v1.Group
+	439, // 722: octelium.api.main.core.v1.MainService.DeleteGroup:output_type -> octelium.api.main.meta.v1.OperationResult
+	68,  // 723: octelium.api.main.core.v1.MainService.GetGroup:output_type -> octelium.api.main.core.v1.Group
+	71,  // 724: octelium.api.main.core.v1.MainService.ListDevice:output_type -> octelium.api.main.core.v1.DeviceList
+	439, // 725: octelium.api.main.core.v1.MainService.DeleteDevice:output_type -> octelium.api.main.meta.v1.OperationResult
+	70,  // 726: octelium.api.main.core.v1.MainService.GetDevice:output_type -> octelium.api.main.core.v1.Device
+	70,  // 727: octelium.api.main.core.v1.MainService.UpdateDevice:output_type -> octelium.api.main.core.v1.Device
+	66,  // 728: octelium.api.main.core.v1.MainService.CreateCredential:output_type -> octelium.api.main.core.v1.Credential
+	66,  // 729: octelium.api.main.core.v1.MainService.UpdateCredential:output_type -> octelium.api.main.core.v1.Credential
+	439, // 730: octelium.api.main.core.v1.MainService.DeleteCredential:output_type -> octelium.api.main.meta.v1.OperationResult
+	67,  // 731: octelium.api.main.core.v1.MainService.ListCredential:output_type -> octelium.api.main.core.v1.CredentialList
+	66,  // 732: octelium.api.main.core.v1.MainService.GetCredential:output_type -> octelium.api.main.core.v1.Credential
+	61,  // 733: octelium.api.main.core.v1.MainService.GenerateCredentialToken:output_type -> octelium.api.main.core.v1.CredentialToken
+	89,  // 734: octelium.api.main.core.v1.MainService.CreateIdentityProvider:output_type -> octelium.api.main.core.v1.IdentityProvider
+	89,  // 735: octelium.api.main.core.v1.MainService.GetIdentityProvider:output_type -> octelium.api.main.core.v1.IdentityProvider
+	90,  // 736: octelium.api.main.core.v1.MainService.ListIdentityProvider:output_type -> octelium.api.main.core.v1.IdentityProviderList
+	89,  // 737: octelium.api.main.core.v1.MainService.UpdateIdentityProvider:output_type -> octelium.api.main.core.v1.IdentityProvider
+	439, // 738: octelium.api.main.core.v1.MainService.DeleteIdentityProvider:output_type -> octelium.api.main.meta.v1.OperationResult
+	91,  // 739: octelium.api.main.core.v1.MainService.GetRegion:output_type -> octelium.api.main.core.v1.Region
+	92,  // 740: octelium.api.main.core.v1.MainService.ListRegion:output_type -> octelium.api.main.core.v1.RegionList
+	94,  // 741: octelium.api.main.core.v1.MainService.ListGateway:output_type -> octelium.api.main.core.v1.GatewayList
+	93,  // 742: octelium.api.main.core.v1.MainService.GetGateway:output_type -> octelium.api.main.core.v1.Gateway
+	99,  // 743: octelium.api.main.core.v1.MainService.GetClusterConfig:output_type -> octelium.api.main.core.v1.ClusterConfig
+	99,  // 744: octelium.api.main.core.v1.MainService.UpdateClusterConfig:output_type -> octelium.api.main.core.v1.ClusterConfig
+	105, // 745: octelium.api.main.core.v1.MainService.ListAuthenticator:output_type -> octelium.api.main.core.v1.AuthenticatorList
+	439, // 746: octelium.api.main.core.v1.MainService.DeleteAuthenticator:output_type -> octelium.api.main.meta.v1.OperationResult
+	104, // 747: octelium.api.main.core.v1.MainService.GetAuthenticator:output_type -> octelium.api.main.core.v1.Authenticator
+	104, // 748: octelium.api.main.core.v1.MainService.UpdateAuthenticator:output_type -> octelium.api.main.core.v1.Authenticator
+	81,  // 749: octelium.api.main.core.v1.MainService.CreateConfig:output_type -> octelium.api.main.core.v1.Config
+	82,  // 750: octelium.api.main.core.v1.MainService.ListConfig:output_type -> octelium.api.main.core.v1.ConfigList
+	81,  // 751: octelium.api.main.core.v1.MainService.UpdateConfig:output_type -> octelium.api.main.core.v1.Config
+	439, // 752: octelium.api.main.core.v1.MainService.DeleteConfig:output_type -> octelium.api.main.meta.v1.OperationResult
+	81,  // 753: octelium.api.main.core.v1.MainService.GetConfig:output_type -> octelium.api.main.core.v1.Config
+	690, // [690:754] is the sub-list for method output_type
+	626, // [626:690] is the sub-list for method input_type
+	626, // [626:626] is the sub-list for extension type_name
+	626, // [626:626] is the sub-list for extension extendee
+	0,   // [0:626] is the sub-list for field type_name
 }
 
 func init() { file_corev1_proto_init() }

@@ -4941,25 +4941,37 @@ export interface Device_Status_Posture {
      */
     riskLevel: Device_Status_Posture_RiskLevel;
     /**
-     * @generated from protobuf field: map<string, octelium.api.main.core.v1.Device.Status.Posture.SignalState> signals = 4
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture.SignalState diskEncryption = 4
+     */
+    diskEncryption: Device_Status_Posture_SignalState;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture.SignalState compliant = 5
+     */
+    compliant: Device_Status_Posture_SignalState;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture.SignalState threatFree = 6
+     */
+    threatFree: Device_Status_Posture_SignalState;
+    /**
+     * @generated from protobuf field: map<string, octelium.api.main.core.v1.Device.Status.Posture.SignalState> signals = 7
      */
     signals: {
         [key: string]: Device_Status_Posture_SignalState;
     };
     /**
-     * @generated from protobuf field: google.protobuf.Timestamp lastSyncAt = 5
+     * @generated from protobuf field: google.protobuf.Timestamp lastSyncAt = 8
      */
     lastSyncAt?: Timestamp;
     /**
-     * @generated from protobuf field: google.protobuf.Timestamp lastSeenAt = 6
+     * @generated from protobuf field: google.protobuf.Timestamp lastSeenAt = 9
      */
     lastSeenAt?: Timestamp;
     /**
-     * @generated from protobuf field: google.protobuf.Timestamp expiresAt = 7
+     * @generated from protobuf field: google.protobuf.Timestamp expiresAt = 10
      */
     expiresAt?: Timestamp;
     /**
-     * @generated from protobuf field: google.protobuf.Struct attrs = 8
+     * @generated from protobuf field: google.protobuf.Struct attrs = 11
      */
     attrs?: Struct;
 }
@@ -21702,17 +21714,23 @@ class Device_Status_Posture$Type extends MessageType<Device_Status_Posture> {
             { no: 1, name: "ownerRef", kind: "message", T: () => ObjectReference },
             { no: 2, name: "externalID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 3, name: "riskLevel", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.RiskLevel", Device_Status_Posture_RiskLevel] },
-            { no: 4, name: "signals", kind: "map", K: 9 /*ScalarType.STRING*/, V: { kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.SignalState", Device_Status_Posture_SignalState] } },
-            { no: 5, name: "lastSyncAt", kind: "message", T: () => Timestamp },
-            { no: 6, name: "lastSeenAt", kind: "message", T: () => Timestamp },
-            { no: 7, name: "expiresAt", kind: "message", T: () => Timestamp },
-            { no: 8, name: "attrs", kind: "message", T: () => Struct }
+            { no: 4, name: "diskEncryption", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.SignalState", Device_Status_Posture_SignalState] },
+            { no: 5, name: "compliant", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.SignalState", Device_Status_Posture_SignalState] },
+            { no: 6, name: "threatFree", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.SignalState", Device_Status_Posture_SignalState] },
+            { no: 7, name: "signals", kind: "map", K: 9 /*ScalarType.STRING*/, V: { kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.SignalState", Device_Status_Posture_SignalState] } },
+            { no: 8, name: "lastSyncAt", kind: "message", T: () => Timestamp },
+            { no: 9, name: "lastSeenAt", kind: "message", T: () => Timestamp },
+            { no: 10, name: "expiresAt", kind: "message", T: () => Timestamp },
+            { no: 11, name: "attrs", kind: "message", T: () => Struct }
         ]);
     }
     create(value?: PartialMessage<Device_Status_Posture>): Device_Status_Posture {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.externalID = "";
         message.riskLevel = 0;
+        message.diskEncryption = 0;
+        message.compliant = 0;
+        message.threatFree = 0;
         message.signals = {};
         if (value !== undefined)
             reflectionMergePartial<Device_Status_Posture>(this, message, value);
@@ -21732,19 +21750,28 @@ class Device_Status_Posture$Type extends MessageType<Device_Status_Posture> {
                 case /* octelium.api.main.core.v1.Device.Status.Posture.RiskLevel riskLevel */ 3:
                     message.riskLevel = reader.int32();
                     break;
-                case /* map<string, octelium.api.main.core.v1.Device.Status.Posture.SignalState> signals */ 4:
-                    this.binaryReadMap4(message.signals, reader, options);
+                case /* octelium.api.main.core.v1.Device.Status.Posture.SignalState diskEncryption */ 4:
+                    message.diskEncryption = reader.int32();
                     break;
-                case /* google.protobuf.Timestamp lastSyncAt */ 5:
+                case /* octelium.api.main.core.v1.Device.Status.Posture.SignalState compliant */ 5:
+                    message.compliant = reader.int32();
+                    break;
+                case /* octelium.api.main.core.v1.Device.Status.Posture.SignalState threatFree */ 6:
+                    message.threatFree = reader.int32();
+                    break;
+                case /* map<string, octelium.api.main.core.v1.Device.Status.Posture.SignalState> signals */ 7:
+                    this.binaryReadMap7(message.signals, reader, options);
+                    break;
+                case /* google.protobuf.Timestamp lastSyncAt */ 8:
                     message.lastSyncAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.lastSyncAt);
                     break;
-                case /* google.protobuf.Timestamp lastSeenAt */ 6:
+                case /* google.protobuf.Timestamp lastSeenAt */ 9:
                     message.lastSeenAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.lastSeenAt);
                     break;
-                case /* google.protobuf.Timestamp expiresAt */ 7:
+                case /* google.protobuf.Timestamp expiresAt */ 10:
                     message.expiresAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.expiresAt);
                     break;
-                case /* google.protobuf.Struct attrs */ 8:
+                case /* google.protobuf.Struct attrs */ 11:
                     message.attrs = Struct.internalBinaryRead(reader, reader.uint32(), options, message.attrs);
                     break;
                 default:
@@ -21758,7 +21785,7 @@ class Device_Status_Posture$Type extends MessageType<Device_Status_Posture> {
         }
         return message;
     }
-    private binaryReadMap4(map: Device_Status_Posture["signals"], reader: IBinaryReader, options: BinaryReadOptions): void {
+    private binaryReadMap7(map: Device_Status_Posture["signals"], reader: IBinaryReader, options: BinaryReadOptions): void {
         let len = reader.uint32(), end = reader.pos + len, key: keyof Device_Status_Posture["signals"] | undefined, val: Device_Status_Posture["signals"][any] | undefined;
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
@@ -21784,21 +21811,30 @@ class Device_Status_Posture$Type extends MessageType<Device_Status_Posture> {
         /* octelium.api.main.core.v1.Device.Status.Posture.RiskLevel riskLevel = 3; */
         if (message.riskLevel !== 0)
             writer.tag(3, WireType.Varint).int32(message.riskLevel);
-        /* map<string, octelium.api.main.core.v1.Device.Status.Posture.SignalState> signals = 4; */
+        /* octelium.api.main.core.v1.Device.Status.Posture.SignalState diskEncryption = 4; */
+        if (message.diskEncryption !== 0)
+            writer.tag(4, WireType.Varint).int32(message.diskEncryption);
+        /* octelium.api.main.core.v1.Device.Status.Posture.SignalState compliant = 5; */
+        if (message.compliant !== 0)
+            writer.tag(5, WireType.Varint).int32(message.compliant);
+        /* octelium.api.main.core.v1.Device.Status.Posture.SignalState threatFree = 6; */
+        if (message.threatFree !== 0)
+            writer.tag(6, WireType.Varint).int32(message.threatFree);
+        /* map<string, octelium.api.main.core.v1.Device.Status.Posture.SignalState> signals = 7; */
         for (let k of globalThis.Object.keys(message.signals))
-            writer.tag(4, WireType.LengthDelimited).fork().tag(1, WireType.LengthDelimited).string(k).tag(2, WireType.Varint).int32(message.signals[k]).join();
-        /* google.protobuf.Timestamp lastSyncAt = 5; */
+            writer.tag(7, WireType.LengthDelimited).fork().tag(1, WireType.LengthDelimited).string(k).tag(2, WireType.Varint).int32(message.signals[k]).join();
+        /* google.protobuf.Timestamp lastSyncAt = 8; */
         if (message.lastSyncAt)
-            Timestamp.internalBinaryWrite(message.lastSyncAt, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
-        /* google.protobuf.Timestamp lastSeenAt = 6; */
+            Timestamp.internalBinaryWrite(message.lastSyncAt, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp lastSeenAt = 9; */
         if (message.lastSeenAt)
-            Timestamp.internalBinaryWrite(message.lastSeenAt, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
-        /* google.protobuf.Timestamp expiresAt = 7; */
+            Timestamp.internalBinaryWrite(message.lastSeenAt, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp expiresAt = 10; */
         if (message.expiresAt)
-            Timestamp.internalBinaryWrite(message.expiresAt, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
-        /* google.protobuf.Struct attrs = 8; */
+            Timestamp.internalBinaryWrite(message.expiresAt, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Struct attrs = 11; */
         if (message.attrs)
-            Struct.internalBinaryWrite(message.attrs, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+            Struct.internalBinaryWrite(message.attrs, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
