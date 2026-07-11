@@ -10,8 +10,6 @@ package sentinelone
 
 import (
 	"context"
-	"encoding/json"
-	"io"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -19,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/devicemanager/devicemgrcommon"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
@@ -34,14 +33,17 @@ const (
 	agentsPath    = "/web/api/v2.1/agents"
 	s1PageLimit   = 1000
 	s1HTTPTimeout = 60 * time.Second
-	s1MaxRetries  = 5
+	s1MaxRetries  = 4
 	s1MaxRespByte = 64 << 20
 
 	probeTimeoutSeconds = 15
 	probeMaxOutputBytes = 8192
 )
 
-var uuidRe = regexp.MustCompile(`(?i)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`)
+var (
+	uuidRe    = regexp.MustCompile(`(?i)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`)
+	agentIDRe = regexp.MustCompile(`^[0-9a-f-]{16,64}$`)
+)
 
 type Manager struct {
 	api        *apiClient
@@ -71,12 +73,20 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 		return nil, err
 	}
 
+	rc := resty.New().
+		SetBaseURL(strings.TrimRight(strings.TrimSpace(spec.ManagementURL), "/")).
+		SetTimeout(s1HTTPTimeout).
+		SetHeader("Accept", "application/json").
+		SetHeader("Authorization", "ApiToken "+uenterprisev1.ToSecret(sec).GetValueStr()).
+		SetResponseBodyLimit(s1MaxRespByte).
+		SetRetryCount(s1MaxRetries).
+		SetRetryWaitTime(2 * time.Second).
+		SetRetryMaxWaitTime(30 * time.Second).
+		AddRetryCondition(retryCondition).
+		SetRetryAfter(retryAfter)
+
 	return &Manager{
-		api: &apiClient{
-			httpc: &http.Client{Timeout: s1HTTPTimeout},
-			base:  strings.TrimRight(strings.TrimSpace(spec.ManagementURL), "/"),
-			token: uenterprisev1.ToSecret(sec).GetValueStr(),
-		},
+		api:        &apiClient{rc: rc},
 		siteIDs:    spec.SiteIDs,
 		accountIDs: spec.AccountIDs,
 		agentQuery: spec.AgentQuery,
@@ -88,15 +98,14 @@ func (m *Manager) Type() devicemgrcommon.ProviderType {
 }
 
 func (m *Manager) Close() error {
-	m.api.httpc.CloseIdleConnections()
+	m.api.rc.GetClient().CloseIdleConnections()
 	return nil
 }
 
 func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 	return []*devicemgrcommon.Probe{
 		{
-			OSType: corev1.Device_Status_LINUX,
-
+			OSType:           corev1.Device_Status_LINUX,
 			RequireElevation: true,
 			RunCommand: &devicemgrcommon.RunCommand{
 				Command:        "/opt/sentinelone/bin/sentinelctl",
@@ -106,8 +115,17 @@ func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 			},
 		},
 		{
-			OSType: corev1.Device_Status_MAC,
-
+			OSType:           corev1.Device_Status_MAC,
+			RequireElevation: true,
+			RunCommand: &devicemgrcommon.RunCommand{
+				Command:        "/usr/local/bin/sentinelctl",
+				Args:           []string{"agent_id"},
+				TimeoutSeconds: probeTimeoutSeconds,
+				MaxOutputBytes: probeMaxOutputBytes,
+			},
+		},
+		{
+			OSType:           corev1.Device_Status_MAC,
 			RequireElevation: true,
 			RunCommand: &devicemgrcommon.RunCommand{
 				Command:        "/Library/Sentinel/sentinel-agent.bundle/Contents/MacOS/sentinelctl",
@@ -117,8 +135,7 @@ func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 			},
 		},
 		{
-			OSType: corev1.Device_Status_WINDOWS,
-
+			OSType:           corev1.Device_Status_WINDOWS,
 			RequireElevation: true,
 			ReadRegistry: &devicemgrcommon.ReadRegistry{
 				Key:  `HKLM\SOFTWARE\SentinelOne\Monitor`,
@@ -137,7 +154,7 @@ func (m *Manager) ParseExternalID(osType corev1.Device_Status_OSType, results []
 		if u := uuidRe.FindString(s); u != "" {
 			return strings.ToLower(u), nil
 		}
-		if t := strings.ToLower(strings.TrimSpace(s)); t != "" && !strings.ContainsAny(t, " \t") {
+		if t := strings.ToLower(strings.TrimSpace(s)); agentIDRe.MatchString(t) {
 			return t, nil
 		}
 	}
@@ -153,11 +170,13 @@ func (m *Manager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
 		q.Set("accountIds", m.accountIDs)
 	}
 	if m.agentQuery != "" {
-		if extra, err := url.ParseQuery(m.agentQuery); err == nil {
-			for k, vs := range extra {
-				for _, v := range vs {
-					q.Add(k, v)
-				}
+		extra, err := url.ParseQuery(m.agentQuery)
+		if err != nil {
+			return nil, errors.Wrap(err, "Invalid SentinelOne agentQuery")
+		}
+		for k, vs := range extra {
+			for _, v := range vs {
+				q.Add(k, v)
 			}
 		}
 	}
@@ -178,9 +197,7 @@ func (m *Manager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
 }
 
 type apiClient struct {
-	httpc *http.Client
-	base  string
-	token string
+	rc *resty.Client
 }
 
 type agentsResponse struct {
@@ -208,11 +225,11 @@ func (c *apiClient) listAgents(ctx context.Context, base url.Values) ([]*s1Agent
 		}
 
 		var page agentsResponse
-		if err := c.do(ctx, http.MethodGet, agentsPath, q, &page); err != nil {
+		if err := c.get(ctx, agentsPath+"?"+q.Encode(), &page); err != nil {
 			return nil, err
 		}
 		out = append(out, page.Data...)
-		if page.Pagination.NextCursor == "" {
+		if page.Pagination.NextCursor == "" || len(page.Data) == 0 {
 			break
 		}
 		cursor = page.Pagination.NextCursor
@@ -220,49 +237,19 @@ func (c *apiClient) listAgents(ctx context.Context, base url.Values) ([]*s1Agent
 	return out, nil
 }
 
-func (c *apiClient) do(ctx context.Context, method, path string, q url.Values, out any) error {
-	u := c.base + path
-	if len(q) > 0 {
-		u += "?" + q.Encode()
+func (c *apiClient) get(ctx context.Context, u string, out any) error {
+	resp, err := c.rc.R().SetContext(ctx).SetResult(out).Get(u)
+	if err != nil {
+		return errors.Wrap(err, "SentinelOne request")
 	}
-
-	var lastErr error
-	for attempt := 0; attempt < s1MaxRetries; attempt++ {
-		req, err := http.NewRequestWithContext(ctx, method, u, nil)
-		if err != nil {
-			return errors.Wrap(err, "SentinelOne build request")
+	if resp.IsError() {
+		if resp.StatusCode() == http.StatusUnauthorized || resp.StatusCode() == http.StatusForbidden {
+			return errors.Errorf("SentinelOne status %d (check API token and its scope): %s",
+				resp.StatusCode(), snippet(resp.Body()))
 		}
-		req.Header.Set("Authorization", "ApiToken "+c.token)
-		req.Header.Set("Accept", "application/json")
-
-		resp, err := c.httpc.Do(req)
-		if err != nil {
-			lastErr = errors.Wrap(err, "SentinelOne request")
-			if !sleepBackoff(ctx, attempt, nil) {
-				return lastErr
-			}
-			continue
-		}
-
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, s1MaxRespByte))
-		resp.Body.Close()
-
-		switch {
-		case resp.StatusCode == http.StatusOK:
-			if err := json.Unmarshal(body, out); err != nil {
-				return errors.Wrap(err, "SentinelOne decode")
-			}
-			return nil
-		case resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500:
-			lastErr = errors.Errorf("SentinelOne status %d: %s", resp.StatusCode, snippet(body))
-			if !sleepBackoff(ctx, attempt, resp) {
-				return lastErr
-			}
-		default:
-			return errors.Errorf("SentinelOne status %d: %s", resp.StatusCode, snippet(body))
-		}
+		return errors.Errorf("SentinelOne status %d: %s", resp.StatusCode(), snippet(resp.Body()))
 	}
-	return lastErr
+	return nil
 }
 
 type s1Agent struct {
@@ -320,14 +307,14 @@ func toEntry(a *s1Agent) *devicemgrcommon.Entry {
 	}
 
 	p := &corev1.Device_Status_Posture{
-		ExternalID:     strings.ToLower(a.UUID),
 		RiskLevel:      riskBand(score),
 		DiskEncryption: passFail(a.EncryptedApplications),
-		Compliant:      passFail(a.IsActive),
+		Compliant:      corev1.Device_Status_Posture_NOT_APPLICABLE,
 		ThreatFree:     passFail(!threat),
 		Signals: map[string]corev1.Device_Status_Posture_SignalState{
-			"firewall":      passFail(a.FirewallEnabled),
+			"agentRunning":  passFail(a.IsActive),
 			"agentUpToDate": passFail(a.IsUpToDate),
+			"firewall":      passFail(a.FirewallEnabled),
 		},
 		Attrs: s1Attrs(a),
 	}
@@ -421,30 +408,26 @@ func parseTime(s string) (time.Time, bool) {
 	return time.Time{}, false
 }
 
-func sleepBackoff(ctx context.Context, attempt int, resp *http.Response) bool {
-	d := time.Duration(1<<uint(attempt)) * time.Second
-	if d > 30*time.Second {
-		d = 30 * time.Second
+func retryCondition(r *resty.Response, err error) bool {
+	if err != nil {
+		return true
 	}
-	if resp != nil {
-		if ra := resp.Header.Get("Retry-After"); ra != "" {
-			if secs, err := strconv.Atoi(strings.TrimSpace(ra)); err == nil && secs >= 0 {
-				d = time.Duration(secs) * time.Second
+	return r.StatusCode() == http.StatusTooManyRequests || r.StatusCode() >= 500
+}
+
+func retryAfter(c *resty.Client, r *resty.Response) (time.Duration, error) {
+	if r != nil {
+		if ra := r.Header().Get("Retry-After"); ra != "" {
+			if secs, err := strconv.Atoi(strings.TrimSpace(ra)); err == nil && secs >= 0 && secs <= 300 {
+				return time.Duration(secs) * time.Second, nil
 			}
 		}
 	}
-	t := time.NewTimer(d)
-	defer t.Stop()
-	select {
-	case <-ctx.Done():
-		return false
-	case <-t.C:
-		return true
-	}
+	return 0, nil
 }
 
 func snippet(b []byte) string {
-	const max = 200
+	const max = 300
 	s := strings.TrimSpace(string(b))
 	if len(s) > max {
 		return s[:max] + "..."

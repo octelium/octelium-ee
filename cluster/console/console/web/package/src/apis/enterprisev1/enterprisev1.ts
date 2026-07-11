@@ -4214,6 +4214,10 @@ export interface DeviceManager {
  */
 export interface DeviceManager_Spec {
     /**
+     * Condition scopes which Devices this DeviceManager applies to. It is
+     * evaluated server-side (at RunDeviceProbeBegin and by the Device
+     * controller) against the stored Device and is never sent to clients.
+     *
      * @generated from protobuf field: octelium.api.main.core.v1.Condition condition = 12
      */
     condition?: Condition$;
@@ -4301,10 +4305,17 @@ export interface DeviceManager_Spec_CrowdStrike {
      */
     memberCID: string;
     /**
+     * HostFilter is an FQL filter applied to host listing. It scopes
+     * provider API collection only and never influences probe content.
+     *
      * @generated from protobuf field: string hostFilter = 6
      */
     hostFilter: string;
     /**
+     * DisableZeroTrustAssessment skips the ZTA score collection. The API
+     * client credential otherwise requires the Zero Trust Assessment Read
+     * scope in addition to Hosts Read.
+     *
      * @generated from protobuf field: bool disableZeroTrustAssessment = 7
      */
     disableZeroTrustAssessment: boolean;
@@ -4376,6 +4387,10 @@ export interface DeviceManager_Spec_SentinelOne {
      */
     accountIDs: string;
     /**
+     * AgentQuery is an urlencoded set of extra query parameters appended to
+     * the agents listing request. Invalid encodings fail collection rather
+     * than being silently ignored.
+     *
      * @generated from protobuf field: string agentQuery = 5
      */
     agentQuery: string;
@@ -4418,6 +4433,8 @@ export interface DeviceManager_Spec_MicrosoftIntune {
      */
     cloud: DeviceManager_Spec_MicrosoftIntune_Cloud;
     /**
+     * Filter is an OData $filter expression for the managedDevices listing.
+     *
      * @generated from protobuf field: string filter = 5
      */
     filter: string;
@@ -4477,6 +4494,9 @@ export interface DeviceManager_Spec_Jamf {
      */
     clientSecret?: DeviceManager_Spec_Jamf_ClientSecret;
     /**
+     * Filter is an RSQL filter expression for the computers-inventory
+     * listing.
+     *
      * @generated from protobuf field: string filter = 4
      */
     filter: string;
@@ -4499,6 +4519,9 @@ export interface DeviceManager_Spec_Jamf_ClientSecret {
     };
 }
 /**
+ * OnePassword integrates 1Password Extended Device Trust (Kolide).
+ * BaseURL defaults to https://k2.kolide.com when unset.
+ *
  * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword
  */
 export interface DeviceManager_Spec_OnePassword {
@@ -4571,6 +4594,10 @@ export interface DeviceManager_Spec_Huntress {
      */
     baseURL: string;
     /**
+     * APIKey is the public half of the Huntress API keypair. It is
+     * deliberately a plaintext field, unlike APISecret; this is not a
+     * mistake.
+     *
      * @generated from protobuf field: string apiKey = 2
      */
     apiKey: string;
@@ -4597,6 +4624,12 @@ export interface DeviceManager_Spec_Huntress_APISecret {
     };
 }
 /**
+ * Iru device identifiers are provider-assigned and cannot be derived on
+ * the endpoint, so probe-based linking is unsupported: the adapter
+ * declares no identity probes and Devices link through identity
+ * attributes (serial number). Configure Linking.strategy IDENTITY_ONLY;
+ * PROBE_ONLY renders the DeviceManager unable to bind anything.
+ *
  * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru
  */
 export interface DeviceManager_Spec_Iru {
@@ -4631,14 +4664,26 @@ export interface DeviceManager_Spec_Iru_APIToken {
  */
 export interface DeviceManager_Spec_Polling {
     /**
+     * Interval between provider inventory collections. Defaults to 5m,
+     * floored at 30s.
+     *
      * @generated from protobuf field: octelium.api.main.meta.v1.Duration interval = 1
      */
     interval?: Duration;
     /**
+     * Timeout bounds a single provider collection. Defaults to 2m. It no
+     * longer bounds any Device-side work, which belongs to the Device
+     * watcher.
+     *
      * @generated from protobuf field: octelium.api.main.meta.v1.Duration timeout = 2
      */
     timeout?: Duration;
     /**
+     * StaleAfter is how long a collected inventory snapshot remains usable
+     * for binding decisions and posture refresh. Defaults to 1h. Posture
+     * materialized from a snapshot expires at collection time plus this
+     * value, and the PDP treats expired posture as absent.
+     *
      * @generated from protobuf field: octelium.api.main.meta.v1.Duration staleAfter = 3
      */
     staleAfter?: Duration;
@@ -4655,6 +4700,50 @@ export interface DeviceManager_Spec_Linking {
      * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Strategy strategy = 1
      */
     strategy: DeviceManager_Spec_Linking_Strategy;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.ApprovalMode approvalMode = 2
+     */
+    approvalMode: DeviceManager_Spec_Linking_ApprovalMode;
+    /**
+     * RequireAgreement hardens AUTOMATIC mode against self-reported
+     * identifier spoofing: acceptance requires that identity attributes
+     * and the probe external ID independently resolve to the same
+     * inventory entry. Only meaningful with IDENTITY_AND_PROBE.
+     *
+     * @generated from protobuf field: bool requireAgreement = 3
+     */
+    requireAgreement: boolean;
+    /**
+     * Priority resolves overlap deterministically when the Conditions of
+     * multiple DeviceManagers match the same Device and more than one
+     * produces a unique candidate. Higher wins. Equal priorities leave the
+     * Device AMBIGUOUS with the tied DeviceManagers named in
+     * Device.Status.Binding.message. Overlapping Conditions without
+     * distinct priorities is a misconfiguration that status surfaces
+     * rather than silently resolves.
+     *
+     * @generated from protobuf field: uint32 priority = 4
+     */
+    priority: number;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Verification verification = 5
+     */
+    verification?: DeviceManager_Spec_Linking_Verification;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Verification
+ */
+export interface DeviceManager_Spec_Linking_Verification {
+    /**
+     * Interval between re-probes of the ACCEPTED Binding. Unset disables
+     * re-verification. Verification is flag-only: failures increment
+     * Device.Status.Binding.verificationFailures and never unbind.
+     * "Bound forever" and "posture trusted forever" are different
+     * claims; this mechanism keeps the second one false.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration interval = 1
+     */
+    interval?: Duration;
 }
 /**
  * @generated from protobuf enum octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Strategy
@@ -4665,17 +4754,67 @@ export enum DeviceManager_Spec_Linking_Strategy {
      */
     STRATEGY_UNSET = 0,
     /**
+     * Discover and bind Devices only through provider inventory identity
+     * attributes available on both the Octelium Device and the
+     * DeviceManager inventory, such as serial number or MAC address.
+     *
      * @generated from protobuf enum value: IDENTITY_ONLY = 1;
      */
     IDENTITY_ONLY = 1,
     /**
+     * Discover and bind Devices only through provider-specific local
+     * probes that return an external device identifier, such as a
+     * CrowdStrike AID.
+     *
      * @generated from protobuf enum value: PROBE_ONLY = 2;
      */
     PROBE_ONLY = 2,
     /**
-     * @generated from protobuf enum value: IDENTITY_THEN_PROBE = 3;
+     * Evaluate both candidate sources concurrently. Within one
+     * DeviceManager, probe and identity resolving to different inventory
+     * entries is surfaced as AMBIGUOUS rather than silently ranked.
+     * Renamed from IDENTITY_THEN_PROBE: the implementation is concurrent
+     * ranked selection, not sequential fallback. If sequential-fallback
+     * semantics are ever wanted, add IDENTITY_THEN_PROBE = 4 with real
+     * sequencing rather than reinterpreting this value.
+     *
+     * @generated from protobuf enum value: IDENTITY_AND_PROBE = 3;
      */
-    IDENTITY_THEN_PROBE = 3
+    IDENTITY_AND_PROBE = 3
+}
+/**
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.ApprovalMode
+ */
+export enum DeviceManager_Spec_Linking_ApprovalMode {
+    /**
+     * @generated from protobuf enum value: APPROVAL_MODE_UNSET = 0;
+     */
+    APPROVAL_MODE_UNSET = 0,
+    /**
+     * Automatically accept a candidate binding once the provider-side
+     * external Device resolves uniquely in the DeviceManager inventory.
+     *
+     * @generated from protobuf enum value: AUTOMATIC = 1;
+     */
+    AUTOMATIC = 1,
+    /**
+     * Automatically accept a candidate binding only when a provider-side
+     * owner email matches the canonical email of the Octelium User that
+     * owns the Device.
+     *
+     * @generated from protobuf enum value: EMAIL = 2;
+     */
+    EMAIL = 2,
+    /**
+     * Require explicit Cluster administrator approval before accepting
+     * the candidate binding. This is the default and the recommended
+     * mode: all binding identifiers (serial, MAC, probe output)
+     * originate from the endpoint and are spoofable, and under
+     * quasi-permanence a spoofed binding persists until reset.
+     *
+     * @generated from protobuf enum value: MANUAL = 3;
+     */
+    MANUAL = 3
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceManager.Status
@@ -4693,8 +4832,16 @@ export interface DeviceManager_Status {
      * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceManager.Status.Collection collection = 3
      */
     collection?: DeviceManager_Status_Collection;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceManager.Status.Linking linking = 4
+     */
+    linking?: DeviceManager_Status_Linking;
 }
 /**
+ * Collection is written exclusively by the DeviceManager worker after
+ * each provider poll. It carries no Device-side counts: the worker never
+ * touches Devices.
+ *
  * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceManager.Status.Collection
  */
 export interface DeviceManager_Status_Collection {
@@ -4707,23 +4854,41 @@ export interface DeviceManager_Status_Collection {
      */
     lastSuccessAt?: Timestamp;
     /**
-     * @generated from protobuf field: octelium.api.main.enterprise.v1.DeviceManager.Status.State state = 3
-     */
-    state: DeviceManager_Status_State;
-    /**
-     * @generated from protobuf field: uint32 managedDevices = 4
+     * @generated from protobuf field: uint32 managedDevices = 3
      */
     managedDevices: number;
     /**
-     * @generated from protobuf field: uint32 linkedDevices = 5
+     * @generated from protobuf field: string lastError = 4
+     */
+    lastError: string;
+}
+/**
+ * Linking is written exclusively by the Device watcher after each sweep.
+ * Separate message, separate writer, so the two status writers never
+ * read-modify-write each other's fields. Counts are eventually
+ * consistent snapshots of the last completed sweep.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceManager.Status.Linking
+ */
+export interface DeviceManager_Status_Linking {
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp lastSweepAt = 1
+     */
+    lastSweepAt?: Timestamp;
+    /**
+     * @generated from protobuf field: uint32 linkedDevices = 2
      */
     linkedDevices: number;
     /**
-     * @generated from protobuf field: string lastError = 6
+     * @generated from protobuf field: uint32 waitingApproval = 3
      */
-    lastError: string;
+    waitingApproval: number;
     /**
-     * @generated from protobuf field: uint32 failedUpdates = 7
+     * @generated from protobuf field: uint32 ambiguous = 4
+     */
+    ambiguous: number;
+    /**
+     * @generated from protobuf field: uint32 failedUpdates = 5
      */
     failedUpdates: number;
 }
@@ -4743,10 +4908,6 @@ export enum DeviceManager_Status_Type {
      * @generated from protobuf enum value: SENTINELONE = 2;
      */
     SENTINELONE = 2,
-    /**
-     * @generated from protobuf enum value: MICROSOFT_DEFENDER = 3;
-     */
-    MICROSOFT_DEFENDER = 3,
     /**
      * @generated from protobuf enum value: MICROSOFT_INTUNE = 4;
      */
@@ -18345,12 +18506,19 @@ export const DeviceManager_Spec_Polling = new DeviceManager_Spec_Polling$Type();
 class DeviceManager_Spec_Linking$Type extends MessageType<DeviceManager_Spec_Linking> {
     constructor() {
         super("octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking", [
-            { no: 1, name: "strategy", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Strategy", DeviceManager_Spec_Linking_Strategy] }
+            { no: 1, name: "strategy", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Strategy", DeviceManager_Spec_Linking_Strategy] },
+            { no: 2, name: "approvalMode", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.ApprovalMode", DeviceManager_Spec_Linking_ApprovalMode] },
+            { no: 3, name: "requireAgreement", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 4, name: "priority", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 5, name: "verification", kind: "message", T: () => DeviceManager_Spec_Linking_Verification }
         ]);
     }
     create(value?: PartialMessage<DeviceManager_Spec_Linking>): DeviceManager_Spec_Linking {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.strategy = 0;
+        message.approvalMode = 0;
+        message.requireAgreement = false;
+        message.priority = 0;
         if (value !== undefined)
             reflectionMergePartial<DeviceManager_Spec_Linking>(this, message, value);
         return message;
@@ -18362,6 +18530,18 @@ class DeviceManager_Spec_Linking$Type extends MessageType<DeviceManager_Spec_Lin
             switch (fieldNo) {
                 case /* octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Strategy strategy */ 1:
                     message.strategy = reader.int32();
+                    break;
+                case /* octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.ApprovalMode approvalMode */ 2:
+                    message.approvalMode = reader.int32();
+                    break;
+                case /* bool requireAgreement */ 3:
+                    message.requireAgreement = reader.bool();
+                    break;
+                case /* uint32 priority */ 4:
+                    message.priority = reader.uint32();
+                    break;
+                case /* octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Verification verification */ 5:
+                    message.verification = DeviceManager_Spec_Linking_Verification.internalBinaryRead(reader, reader.uint32(), options, message.verification);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -18378,6 +18558,18 @@ class DeviceManager_Spec_Linking$Type extends MessageType<DeviceManager_Spec_Lin
         /* octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Strategy strategy = 1; */
         if (message.strategy !== 0)
             writer.tag(1, WireType.Varint).int32(message.strategy);
+        /* octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.ApprovalMode approvalMode = 2; */
+        if (message.approvalMode !== 0)
+            writer.tag(2, WireType.Varint).int32(message.approvalMode);
+        /* bool requireAgreement = 3; */
+        if (message.requireAgreement !== false)
+            writer.tag(3, WireType.Varint).bool(message.requireAgreement);
+        /* uint32 priority = 4; */
+        if (message.priority !== 0)
+            writer.tag(4, WireType.Varint).uint32(message.priority);
+        /* octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Verification verification = 5; */
+        if (message.verification)
+            DeviceManager_Spec_Linking_Verification.internalBinaryWrite(message.verification, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -18389,12 +18581,59 @@ class DeviceManager_Spec_Linking$Type extends MessageType<DeviceManager_Spec_Lin
  */
 export const DeviceManager_Spec_Linking = new DeviceManager_Spec_Linking$Type();
 // @generated message type with reflection information, may provide speed optimized methods
+class DeviceManager_Spec_Linking_Verification$Type extends MessageType<DeviceManager_Spec_Linking_Verification> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Verification", [
+            { no: 1, name: "interval", kind: "message", T: () => Duration }
+        ]);
+    }
+    create(value?: PartialMessage<DeviceManager_Spec_Linking_Verification>): DeviceManager_Spec_Linking_Verification {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<DeviceManager_Spec_Linking_Verification>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DeviceManager_Spec_Linking_Verification): DeviceManager_Spec_Linking_Verification {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.Duration interval */ 1:
+                    message.interval = Duration.internalBinaryRead(reader, reader.uint32(), options, message.interval);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: DeviceManager_Spec_Linking_Verification, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.Duration interval = 1; */
+        if (message.interval)
+            Duration.internalBinaryWrite(message.interval, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Verification
+ */
+export const DeviceManager_Spec_Linking_Verification = new DeviceManager_Spec_Linking_Verification$Type();
+// @generated message type with reflection information, may provide speed optimized methods
 class DeviceManager_Status$Type extends MessageType<DeviceManager_Status> {
     constructor() {
         super("octelium.api.main.enterprise.v1.DeviceManager.Status", [
             { no: 1, name: "type", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.DeviceManager.Status.Type", DeviceManager_Status_Type] },
             { no: 2, name: "state", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.DeviceManager.Status.State", DeviceManager_Status_State] },
-            { no: 3, name: "collection", kind: "message", T: () => DeviceManager_Status_Collection }
+            { no: 3, name: "collection", kind: "message", T: () => DeviceManager_Status_Collection },
+            { no: 4, name: "linking", kind: "message", T: () => DeviceManager_Status_Linking }
         ]);
     }
     create(value?: PartialMessage<DeviceManager_Status>): DeviceManager_Status {
@@ -18419,6 +18658,9 @@ class DeviceManager_Status$Type extends MessageType<DeviceManager_Status> {
                 case /* octelium.api.main.enterprise.v1.DeviceManager.Status.Collection collection */ 3:
                     message.collection = DeviceManager_Status_Collection.internalBinaryRead(reader, reader.uint32(), options, message.collection);
                     break;
+                case /* octelium.api.main.enterprise.v1.DeviceManager.Status.Linking linking */ 4:
+                    message.linking = DeviceManager_Status_Linking.internalBinaryRead(reader, reader.uint32(), options, message.linking);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -18440,6 +18682,9 @@ class DeviceManager_Status$Type extends MessageType<DeviceManager_Status> {
         /* octelium.api.main.enterprise.v1.DeviceManager.Status.Collection collection = 3; */
         if (message.collection)
             DeviceManager_Status_Collection.internalBinaryWrite(message.collection, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.DeviceManager.Status.Linking linking = 4; */
+        if (message.linking)
+            DeviceManager_Status_Linking.internalBinaryWrite(message.linking, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -18456,20 +18701,14 @@ class DeviceManager_Status_Collection$Type extends MessageType<DeviceManager_Sta
         super("octelium.api.main.enterprise.v1.DeviceManager.Status.Collection", [
             { no: 1, name: "lastAttemptAt", kind: "message", T: () => Timestamp },
             { no: 2, name: "lastSuccessAt", kind: "message", T: () => Timestamp },
-            { no: 3, name: "state", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.DeviceManager.Status.State", DeviceManager_Status_State] },
-            { no: 4, name: "managedDevices", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 5, name: "linkedDevices", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 6, name: "lastError", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 7, name: "failedUpdates", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 3, name: "managedDevices", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 4, name: "lastError", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
     create(value?: PartialMessage<DeviceManager_Status_Collection>): DeviceManager_Status_Collection {
         const message = globalThis.Object.create((this.messagePrototype!));
-        message.state = 0;
         message.managedDevices = 0;
-        message.linkedDevices = 0;
         message.lastError = "";
-        message.failedUpdates = 0;
         if (value !== undefined)
             reflectionMergePartial<DeviceManager_Status_Collection>(this, message, value);
         return message;
@@ -18485,20 +18724,11 @@ class DeviceManager_Status_Collection$Type extends MessageType<DeviceManager_Sta
                 case /* google.protobuf.Timestamp lastSuccessAt */ 2:
                     message.lastSuccessAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.lastSuccessAt);
                     break;
-                case /* octelium.api.main.enterprise.v1.DeviceManager.Status.State state */ 3:
-                    message.state = reader.int32();
-                    break;
-                case /* uint32 managedDevices */ 4:
+                case /* uint32 managedDevices */ 3:
                     message.managedDevices = reader.uint32();
                     break;
-                case /* uint32 linkedDevices */ 5:
-                    message.linkedDevices = reader.uint32();
-                    break;
-                case /* string lastError */ 6:
+                case /* string lastError */ 4:
                     message.lastError = reader.string();
-                    break;
-                case /* uint32 failedUpdates */ 7:
-                    message.failedUpdates = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -18518,21 +18748,12 @@ class DeviceManager_Status_Collection$Type extends MessageType<DeviceManager_Sta
         /* google.protobuf.Timestamp lastSuccessAt = 2; */
         if (message.lastSuccessAt)
             Timestamp.internalBinaryWrite(message.lastSuccessAt, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
-        /* octelium.api.main.enterprise.v1.DeviceManager.Status.State state = 3; */
-        if (message.state !== 0)
-            writer.tag(3, WireType.Varint).int32(message.state);
-        /* uint32 managedDevices = 4; */
+        /* uint32 managedDevices = 3; */
         if (message.managedDevices !== 0)
-            writer.tag(4, WireType.Varint).uint32(message.managedDevices);
-        /* uint32 linkedDevices = 5; */
-        if (message.linkedDevices !== 0)
-            writer.tag(5, WireType.Varint).uint32(message.linkedDevices);
-        /* string lastError = 6; */
+            writer.tag(3, WireType.Varint).uint32(message.managedDevices);
+        /* string lastError = 4; */
         if (message.lastError !== "")
-            writer.tag(6, WireType.LengthDelimited).string(message.lastError);
-        /* uint32 failedUpdates = 7; */
-        if (message.failedUpdates !== 0)
-            writer.tag(7, WireType.Varint).uint32(message.failedUpdates);
+            writer.tag(4, WireType.LengthDelimited).string(message.lastError);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -18543,6 +18764,84 @@ class DeviceManager_Status_Collection$Type extends MessageType<DeviceManager_Sta
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.DeviceManager.Status.Collection
  */
 export const DeviceManager_Status_Collection = new DeviceManager_Status_Collection$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class DeviceManager_Status_Linking$Type extends MessageType<DeviceManager_Status_Linking> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.DeviceManager.Status.Linking", [
+            { no: 1, name: "lastSweepAt", kind: "message", T: () => Timestamp },
+            { no: 2, name: "linkedDevices", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 3, name: "waitingApproval", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 4, name: "ambiguous", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 5, name: "failedUpdates", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+        ]);
+    }
+    create(value?: PartialMessage<DeviceManager_Status_Linking>): DeviceManager_Status_Linking {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.linkedDevices = 0;
+        message.waitingApproval = 0;
+        message.ambiguous = 0;
+        message.failedUpdates = 0;
+        if (value !== undefined)
+            reflectionMergePartial<DeviceManager_Status_Linking>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DeviceManager_Status_Linking): DeviceManager_Status_Linking {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* google.protobuf.Timestamp lastSweepAt */ 1:
+                    message.lastSweepAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.lastSweepAt);
+                    break;
+                case /* uint32 linkedDevices */ 2:
+                    message.linkedDevices = reader.uint32();
+                    break;
+                case /* uint32 waitingApproval */ 3:
+                    message.waitingApproval = reader.uint32();
+                    break;
+                case /* uint32 ambiguous */ 4:
+                    message.ambiguous = reader.uint32();
+                    break;
+                case /* uint32 failedUpdates */ 5:
+                    message.failedUpdates = reader.uint32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: DeviceManager_Status_Linking, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* google.protobuf.Timestamp lastSweepAt = 1; */
+        if (message.lastSweepAt)
+            Timestamp.internalBinaryWrite(message.lastSweepAt, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* uint32 linkedDevices = 2; */
+        if (message.linkedDevices !== 0)
+            writer.tag(2, WireType.Varint).uint32(message.linkedDevices);
+        /* uint32 waitingApproval = 3; */
+        if (message.waitingApproval !== 0)
+            writer.tag(3, WireType.Varint).uint32(message.waitingApproval);
+        /* uint32 ambiguous = 4; */
+        if (message.ambiguous !== 0)
+            writer.tag(4, WireType.Varint).uint32(message.ambiguous);
+        /* uint32 failedUpdates = 5; */
+        if (message.failedUpdates !== 0)
+            writer.tag(5, WireType.Varint).uint32(message.failedUpdates);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.DeviceManager.Status.Linking
+ */
+export const DeviceManager_Status_Linking = new DeviceManager_Status_Linking$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class DeviceManagerList$Type extends MessageType<DeviceManagerList> {
     constructor() {

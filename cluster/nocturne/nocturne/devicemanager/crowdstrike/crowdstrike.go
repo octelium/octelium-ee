@@ -60,6 +60,9 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 	if spec == nil {
 		return nil, errors.Errorf("Not a CrowdStrike DeviceManager: %s", opts.DeviceManager.Metadata.Name)
 	}
+	if spec.ClientID == "" {
+		return nil, errors.Errorf("Empty CrowdStrike clientID")
+	}
 	if spec.ClientSecret.GetFromSecret() == "" {
 		return nil, errors.Errorf("Empty CrowdStrike clientSecret")
 	}
@@ -174,7 +177,8 @@ func (m *Manager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
 		if z, zErr := m.getZTA(ctx, ids); zErr == nil {
 			zta = z
 		} else {
-			zap.L().Warn("Could not get CrowdStrike ZTA", zap.Error(zErr))
+			zap.L().Warn("Could not get CrowdStrike ZTA (Zero Trust Assessment Read scope required)",
+				zap.Error(zErr))
 		}
 	}
 
@@ -280,10 +284,11 @@ func toEntry(d *models.DeviceapiDeviceSwagger, z *models.DomainSignalProperties)
 	}
 
 	p := &corev1.Device_Status_Posture{
-		ExternalID: aid,
-		ThreatFree: csThreatFree(d),
-		Signals:    csSignals(d),
-		Attrs:      csAttrs(d, z),
+		DiskEncryption: corev1.Device_Status_Posture_NOT_APPLICABLE,
+		Compliant:      corev1.Device_Status_Posture_NOT_APPLICABLE,
+		ThreatFree:     csThreatFree(d),
+		Signals:        csSignals(d),
+		Attrs:          csAttrs(d, z),
 	}
 	if t, ok := parseTime(d.LastSeen); ok {
 		p.LastSeenAt = timestamppb.New(t)
@@ -309,19 +314,37 @@ func toEntry(d *models.DeviceapiDeviceSwagger, z *models.DomainSignalProperties)
 }
 
 func csThreatFree(d *models.DeviceapiDeviceSwagger) corev1.Device_Status_Posture_SignalState {
-	switch strings.ToLower(strings.TrimSpace(d.FilesystemContainmentStatus)) {
-	case "normal", "not_contained":
-		return corev1.Device_Status_Posture_PASS
-	case "":
-		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
-	default:
+	status := strings.ToLower(strings.TrimSpace(d.Status))
+	containment := strings.ToLower(strings.TrimSpace(d.FilesystemContainmentStatus))
+
+	switch status {
+	case "contained", "containment_pending", "lift_containment_pending":
 		return corev1.Device_Status_Posture_FAIL
 	}
+
+	switch containment {
+	case "contained", "pending", "containment_pending":
+		return corev1.Device_Status_Posture_FAIL
+	case "normal", "not_contained":
+		return corev1.Device_Status_Posture_PASS
+	}
+
+	if status == "normal" {
+		return corev1.Device_Status_Posture_PASS
+	}
+
+	return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
 }
 
 func csSignals(d *models.DeviceapiDeviceSwagger) map[string]corev1.Device_Status_Posture_SignalState {
 	rfm := isYes(d.ReducedFunctionalityMode)
-	running := strings.EqualFold(d.Status, "normal") || strings.EqualFold(d.Status, "containment")
+
+	running := false
+	switch strings.ToLower(strings.TrimSpace(d.Status)) {
+	case "normal", "contained", "containment_pending", "lift_containment_pending":
+		running = true
+	}
+
 	return map[string]corev1.Device_Status_Posture_SignalState{
 		"agentRunning":  passFail(running),
 		"sensorHealthy": passFail(running && !rfm),
@@ -341,6 +364,8 @@ func csAttrs(d *models.DeviceapiDeviceSwagger, z *models.DomainSignalProperties)
 	put("productTypeDesc", d.ProductTypeDesc)
 	put("provisionStatus", d.ProvisionStatus)
 	put("filesystemContainmentStatus", d.FilesystemContainmentStatus)
+	put("osVersion", d.OsVersion)
+	put("platformName", d.PlatformName)
 	if z != nil {
 		if z.Cid != nil {
 			put("cid", *z.Cid)

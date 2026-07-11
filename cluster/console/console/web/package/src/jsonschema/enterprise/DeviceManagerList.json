@@ -257,7 +257,8 @@
             "properties": {
                 "condition": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Condition",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Condition scopes which Devices this DeviceManager applies to. It is evaluated server-side (at RunDeviceProbeBegin and by the Device controller) against the stored Device and is never sent to clients."
                 },
                 "polling": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling",
@@ -421,10 +422,12 @@
                     "type": "string"
                 },
                 "hostFilter": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "HostFilter is an FQL filter applied to host listing. It scopes provider API collection only and never influences probe content."
                 },
                 "disableZeroTrustAssessment": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "DisableZeroTrustAssessment skips the ZTA score collection. The API client credential otherwise requires the Zero Trust Assessment Read scope in addition to Hosts Read."
                 }
             },
             "additionalProperties": false,
@@ -518,7 +521,8 @@
                     "type": "string"
                 },
                 "apiKey": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "APIKey is the public half of the Huntress API keypair. It is deliberately a plaintext field, unlike APISecret; this is not a mistake."
                 },
                 "apiSecret": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.Huntress.APISecret",
@@ -573,7 +577,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Iru"
+            "title": "Iru",
+            "description": "Iru device identifiers are provider-assigned and cannot be derived on the endpoint, so probe-based linking is unsupported: the adapter declares no identity probes and Devices link through identity attributes (serial number). Configure Linking.strategy IDENTITY_ONLY; PROBE_ONLY renders the DeviceManager unable to bind anything."
         },
         "octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru.APIToken": {
             "properties": {
@@ -620,7 +625,8 @@
                     "additionalProperties": false
                 },
                 "filter": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Filter is an RSQL filter expression for the computers-inventory listing."
                 }
             },
             "additionalProperties": false,
@@ -666,15 +672,49 @@
                         "STRATEGY_UNSET",
                         "IDENTITY_ONLY",
                         "PROBE_ONLY",
-                        "IDENTITY_THEN_PROBE"
+                        "IDENTITY_AND_PROBE"
                     ],
                     "type": "string",
                     "title": "Strategy"
+                },
+                "approvalMode": {
+                    "enum": [
+                        "APPROVAL_MODE_UNSET",
+                        "AUTOMATIC",
+                        "EMAIL",
+                        "MANUAL"
+                    ],
+                    "type": "string",
+                    "title": "Approval Mode"
+                },
+                "requireAgreement": {
+                    "type": "boolean",
+                    "description": "RequireAgreement hardens AUTOMATIC mode against self-reported identifier spoofing: acceptance requires that identity attributes and the probe external ID independently resolve to the same inventory entry. Only meaningful with IDENTITY_AND_PROBE."
+                },
+                "priority": {
+                    "type": "integer",
+                    "description": "Priority resolves overlap deterministically when the Conditions of multiple DeviceManagers match the same Device and more than one produces a unique candidate. Higher wins. Equal priorities leave the Device AMBIGUOUS with the tied DeviceManagers named in Device.Status.Binding.message. Overlapping Conditions without distinct priorities is a misconfiguration that status surfaces rather than silently resolves."
+                },
+                "verification": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Verification",
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false,
             "type": "object",
             "title": "Linking"
+        },
+        "octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Verification": {
+            "properties": {
+                "interval": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false,
+                    "description": "Interval between re-probes of the ACCEPTED Binding. Unset disables re-verification. Verification is flag-only: failures increment Device.Status.Binding.verificationFailures and never unbind. \"Bound forever\" and \"posture trusted forever\" are different claims; this mechanism keeps the second one false."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Verification"
         },
         "octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune": {
             "properties": {
@@ -699,7 +739,8 @@
                     "title": "Cloud"
                 },
                 "filter": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Filter is an OData $filter expression for the managedDevices listing."
                 }
             },
             "additionalProperties": false,
@@ -750,7 +791,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "One Password"
+            "title": "One Password",
+            "description": "OnePassword integrates 1Password Extended Device Trust (Kolide). BaseURL defaults to https://k2.kolide.com when unset."
         },
         "octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword.APIToken": {
             "properties": {
@@ -788,15 +830,18 @@
             "properties": {
                 "interval": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Interval between provider inventory collections. Defaults to 5m, floored at 30s."
                 },
                 "timeout": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Timeout bounds a single provider collection. Defaults to 2m. It no longer bounds any Device-side work, which belongs to the Device watcher."
                 },
                 "staleAfter": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "StaleAfter is how long a collected inventory snapshot remains usable for binding decisions and posture refresh. Defaults to 1h. Posture materialized from a snapshot expires at collection time plus this value, and the PDP treats expired posture as absent."
                 },
                 "isDisabled": {
                     "type": "boolean"
@@ -822,7 +867,8 @@
                     "type": "string"
                 },
                 "agentQuery": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "AgentQuery is an urlencoded set of extra query parameters appended to the agents listing request. Invalid encodings fail collection rather than being silently ignored."
                 }
             },
             "additionalProperties": false,
@@ -868,7 +914,6 @@
                         "TYPE_UNKNOWN",
                         "CROWDSTRIKE",
                         "SENTINELONE",
-                        "MICROSOFT_DEFENDER",
                         "MICROSOFT_INTUNE",
                         "JAMF_PRO",
                         "ONEPASSWORD",
@@ -893,6 +938,10 @@
                 "collection": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Status.Collection",
                     "additionalProperties": false
+                },
+                "linking": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Status.Linking",
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false,
@@ -909,25 +958,32 @@
                     "type": "string",
                     "format": "date-time"
                 },
-                "state": {
-                    "enum": [
-                        "STATE_UNKNOWN",
-                        "OK",
-                        "LOADING",
-                        "ERROR",
-                        "DEGRADED"
-                    ],
-                    "type": "string",
-                    "title": "State"
-                },
                 "managedDevices": {
-                    "type": "integer"
-                },
-                "linkedDevices": {
                     "type": "integer"
                 },
                 "lastError": {
                     "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Collection",
+            "description": "Collection is written exclusively by the DeviceManager worker after each provider poll. It carries no Device-side counts: the worker never touches Devices."
+        },
+        "octelium.api.main.enterprise.v1.DeviceManager.Status.Linking": {
+            "properties": {
+                "lastSweepAt": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "linkedDevices": {
+                    "type": "integer"
+                },
+                "waitingApproval": {
+                    "type": "integer"
+                },
+                "ambiguous": {
+                    "type": "integer"
                 },
                 "failedUpdates": {
                     "type": "integer"
@@ -935,7 +991,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Collection"
+            "title": "Linking",
+            "description": "Linking is written exclusively by the Device watcher after each sweep. Separate message, separate writer, so the two status writers never read-modify-write each other's fields. Counts are eventually consistent snapshots of the last completed sweep."
         },
         "octelium.api.main.meta.v1.Duration": {
             "properties": {

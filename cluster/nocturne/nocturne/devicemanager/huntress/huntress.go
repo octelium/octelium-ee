@@ -10,15 +10,13 @@ package huntress
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
-	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/devicemanager/devicemgrcommon"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
@@ -35,7 +33,7 @@ const (
 	agentsPath      = "/v1/agents"
 	huntPageLimit   = 100
 	huntHTTPTimeout = 60 * time.Second
-	huntMaxRetries  = 5
+	huntMaxRetries  = 4
 	huntMaxRespByte = 64 << 20
 
 	offlineAfter = 24 * time.Hour
@@ -71,15 +69,20 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 		base = defaultBaseURL
 	}
 
-	basic := base64.StdEncoding.EncodeToString(
-		[]byte(spec.ApiKey + ":" + uenterprisev1.ToSecret(sec).GetValueStr()))
+	rc := resty.New().
+		SetBaseURL(base).
+		SetTimeout(huntHTTPTimeout).
+		SetHeader("Accept", "application/json").
+		SetBasicAuth(spec.ApiKey, uenterprisev1.ToSecret(sec).GetValueStr()).
+		SetResponseBodyLimit(huntMaxRespByte).
+		SetRetryCount(huntMaxRetries).
+		SetRetryWaitTime(2 * time.Second).
+		SetRetryMaxWaitTime(30 * time.Second).
+		AddRetryCondition(retryCondition).
+		SetRetryAfter(retryAfter)
 
 	return &Manager{
-		api: &apiClient{
-			httpc: &http.Client{Timeout: huntHTTPTimeout},
-			base:  base,
-			basic: basic,
-		},
+		api: &apiClient{rc: rc},
 	}, nil
 }
 
@@ -88,7 +91,7 @@ func (m *Manager) Type() devicemgrcommon.ProviderType {
 }
 
 func (m *Manager) Close() error {
-	m.api.httpc.CloseIdleConnections()
+	m.api.rc.GetClient().CloseIdleConnections()
 	return nil
 }
 
@@ -116,9 +119,7 @@ func (m *Manager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
 }
 
 type apiClient struct {
-	httpc *http.Client
-	base  string
-	basic string
+	rc *resty.Client
 }
 
 type agentsResponse struct {
@@ -142,11 +143,13 @@ func (c *apiClient) listAgents(ctx context.Context) ([]*huntressAgent, error) {
 		q.Set("limit", strconv.Itoa(huntPageLimit))
 
 		var resp agentsResponse
-		if err := c.do(ctx, c.base+agentsPath+"?"+q.Encode(), &resp); err != nil {
+		if err := c.get(ctx, agentsPath+"?"+q.Encode(), &resp); err != nil {
 			return nil, err
 		}
 		out = append(out, resp.Agents...)
-		if resp.Pagination.NextPage == nil || len(resp.Agents) == 0 {
+		if resp.Pagination.NextPage == nil ||
+			*resp.Pagination.NextPage <= page ||
+			len(resp.Agents) == 0 {
 			break
 		}
 		page = *resp.Pagination.NextPage
@@ -154,46 +157,19 @@ func (c *apiClient) listAgents(ctx context.Context) ([]*huntressAgent, error) {
 	return out, nil
 }
 
-func (c *apiClient) do(ctx context.Context, u string, out any) error {
-	var lastErr error
-	for attempt := 0; attempt < huntMaxRetries; attempt++ {
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
-		if err != nil {
-			return errors.Wrap(err, "Huntress build request")
-		}
-		req.Header.Set("Authorization", "Basic "+c.basic)
-		req.Header.Set("Accept", "application/json")
-
-		resp, err := c.httpc.Do(req)
-		if err != nil {
-			lastErr = errors.Wrap(err, "Huntress request")
-			if !sleepBackoff(ctx, attempt, nil) {
-				return lastErr
-			}
-			continue
-		}
-
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, huntMaxRespByte))
-		resp.Body.Close()
-
-		switch {
-		case resp.StatusCode == http.StatusOK:
-			if err := json.Unmarshal(body, out); err != nil {
-				return errors.Wrap(err, "Huntress decode")
-			}
-			return nil
-		case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
-			return errors.Errorf("Huntress status %d (check API key/secret): %s", resp.StatusCode, snippet(body))
-		case resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500:
-			lastErr = errors.Errorf("Huntress status %d: %s", resp.StatusCode, snippet(body))
-			if !sleepBackoff(ctx, attempt, resp) {
-				return lastErr
-			}
-		default:
-			return errors.Errorf("Huntress status %d: %s", resp.StatusCode, snippet(body))
-		}
+func (c *apiClient) get(ctx context.Context, u string, out any) error {
+	resp, err := c.rc.R().SetContext(ctx).SetResult(out).Get(u)
+	if err != nil {
+		return errors.Wrap(err, "Huntress request")
 	}
-	return lastErr
+	if resp.IsError() {
+		if resp.StatusCode() == http.StatusUnauthorized || resp.StatusCode() == http.StatusForbidden {
+			return errors.Errorf("Huntress status %d (check API key/secret): %s",
+				resp.StatusCode(), snippet(resp.Body()))
+		}
+		return errors.Errorf("Huntress status %d: %s", resp.StatusCode(), snippet(resp.Body()))
+	}
+	return nil
 }
 
 type huntressAgent struct {
@@ -215,10 +191,11 @@ type huntressAgent struct {
 func toEntry(a *huntressAgent) *devicemgrcommon.Entry {
 	lastSeen, haveSeen := parseTime(a.LastSeen)
 	reporting := haveSeen && time.Since(lastSeen) < offlineAfter
+	isWindows := strings.EqualFold(strings.TrimSpace(a.Platform), "windows")
 	defenderOK := isDefenderOK(a.DefenderStatus)
 
 	score := int32(100)
-	if !defenderOK {
+	if isWindows && !defenderOK {
 		score -= 40
 	}
 	if !reporting {
@@ -228,11 +205,18 @@ func toEntry(a *huntressAgent) *devicemgrcommon.Entry {
 		score = 20
 	}
 
+	defenderSignal := corev1.Device_Status_Posture_NOT_APPLICABLE
+	if isWindows {
+		defenderSignal = passFail(defenderOK)
+	}
+
 	p := &corev1.Device_Status_Posture{
-		ExternalID: strconv.FormatInt(a.ID, 10),
-		RiskLevel:  riskBand(score),
+		RiskLevel:      riskBand(score),
+		DiskEncryption: corev1.Device_Status_Posture_NOT_APPLICABLE,
+		Compliant:      corev1.Device_Status_Posture_NOT_APPLICABLE,
+		ThreatFree:     corev1.Device_Status_Posture_NOT_APPLICABLE,
 		Signals: map[string]corev1.Device_Status_Posture_SignalState{
-			"defenderEnabled": passFail(defenderOK),
+			"defenderEnabled": defenderSignal,
 			"agentReporting":  passFail(reporting),
 		},
 		Attrs: huntressAttrs(a),
@@ -251,7 +235,7 @@ func toEntry(a *huntressAgent) *devicemgrcommon.Entry {
 
 func isDefenderOK(status string) bool {
 	switch strings.ToLower(strings.TrimSpace(status)) {
-	case "active", "running", "enabled", "healthy":
+	case "active", "running", "enabled", "healthy", "protected", "managed":
 		return true
 	}
 	return false
@@ -316,26 +300,22 @@ func parseTime(s string) (time.Time, bool) {
 	return time.Time{}, false
 }
 
-func sleepBackoff(ctx context.Context, attempt int, resp *http.Response) bool {
-	d := time.Duration(1<<uint(attempt)) * time.Second
-	if d > 30*time.Second {
-		d = 30 * time.Second
+func retryCondition(r *resty.Response, err error) bool {
+	if err != nil {
+		return true
 	}
-	if resp != nil {
-		if ra := resp.Header.Get("Retry-After"); ra != "" {
-			if secs, err := strconv.Atoi(strings.TrimSpace(ra)); err == nil && secs >= 0 {
-				d = time.Duration(secs) * time.Second
+	return r.StatusCode() == http.StatusTooManyRequests || r.StatusCode() >= 500
+}
+
+func retryAfter(c *resty.Client, r *resty.Response) (time.Duration, error) {
+	if r != nil {
+		if ra := r.Header().Get("Retry-After"); ra != "" {
+			if secs, err := strconv.Atoi(strings.TrimSpace(ra)); err == nil && secs >= 0 && secs <= 300 {
+				return time.Duration(secs) * time.Second, nil
 			}
 		}
 	}
-	t := time.NewTimer(d)
-	defer t.Stop()
-	select {
-	case <-ctx.Done():
-		return false
-	case <-t.C:
-		return true
-	}
+	return 0, nil
 }
 
 func snippet(b []byte) string {

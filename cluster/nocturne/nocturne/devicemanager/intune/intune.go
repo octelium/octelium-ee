@@ -10,8 +10,6 @@ package intune
 
 import (
 	"context"
-	"encoding/json"
-	"io"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -19,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/devicemanager/devicemgrcommon"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
@@ -34,10 +33,10 @@ import (
 
 const (
 	managedDevicesPath = "/v1.0/deviceManagement/managedDevices"
-	graphPageTop       = 1000
+	graphPageTop       = 500
 	graphHTTPTimeout   = 60 * time.Second
 	tokenHTTPTimeout   = 30 * time.Second
-	graphMaxRetries    = 5
+	graphMaxRetries    = 4
 	graphMaxRespByte   = 64 << 20
 
 	probeTimeoutSeconds = 15
@@ -85,7 +84,7 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 	conf := &clientcredentials.Config{
 		ClientID:     spec.ClientID,
 		ClientSecret: uenterprisev1.ToSecret(sec).GetValueStr(),
-		TokenURL:     ep.login + "/" + spec.TenantID + "/oauth2/v2.0/token",
+		TokenURL:     ep.login + "/" + url.PathEscape(spec.TenantID) + "/oauth2/v2.0/token",
 		Scopes:       []string{ep.graph + "/.default"},
 		AuthStyle:    oauth2.AuthStyleInParams,
 	}
@@ -95,8 +94,17 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 	hc := conf.Client(tokenCtx)
 	hc.Timeout = graphHTTPTimeout
 
+	rc := resty.NewWithClient(hc).
+		SetHeader("Accept", "application/json").
+		SetResponseBodyLimit(graphMaxRespByte).
+		SetRetryCount(graphMaxRetries).
+		SetRetryWaitTime(2 * time.Second).
+		SetRetryMaxWaitTime(30 * time.Second).
+		AddRetryCondition(retryCondition).
+		SetRetryAfter(retryAfter)
+
 	return &Manager{
-		graph:  &graphClient{httpc: hc, base: ep.graph},
+		graph:  &graphClient{rc: rc, base: ep.graph},
 		filter: spec.Filter,
 	}, nil
 }
@@ -106,7 +114,7 @@ func (m *Manager) Type() devicemgrcommon.ProviderType {
 }
 
 func (m *Manager) Close() error {
-	m.graph.httpc.CloseIdleConnections()
+	m.graph.rc.GetClient().CloseIdleConnections()
 	return nil
 }
 
@@ -161,15 +169,15 @@ func cloudEndpoints(c enterprisev1.DeviceManager_Spec_MicrosoftIntune_Cloud) end
 	case enterprisev1.DeviceManager_Spec_MicrosoftIntune_US_GOV:
 		return endpoints{"https://login.microsoftonline.us", "https://graph.microsoft.us"}
 	case enterprisev1.DeviceManager_Spec_MicrosoftIntune_CHINA:
-		return endpoints{"https://login.chinacloudapi.cn", "https://microsoftgraph.chinacloudapi.cn"}
+		return endpoints{"https://login.partner.microsoftonline.cn", "https://microsoftgraph.chinacloudapi.cn"}
 	default:
 		return endpoints{"https://login.microsoftonline.com", "https://graph.microsoft.com"}
 	}
 }
 
 type graphClient struct {
-	httpc *http.Client
-	base  string
+	rc   *resty.Client
+	base string
 }
 
 type managedDevicesResponse struct {
@@ -191,7 +199,7 @@ func (g *graphClient) listManagedDevices(ctx context.Context, filter string) ([]
 			return nil, err
 		}
 		var page managedDevicesResponse
-		if err := g.do(ctx, u, &page); err != nil {
+		if err := g.get(ctx, u, &page); err != nil {
 			return nil, err
 		}
 		out = append(out, page.Value...)
@@ -200,46 +208,19 @@ func (g *graphClient) listManagedDevices(ctx context.Context, filter string) ([]
 	return out, nil
 }
 
-func (g *graphClient) do(ctx context.Context, u string, out any) error {
-	var lastErr error
-	for attempt := 0; attempt < graphMaxRetries; attempt++ {
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
-		if err != nil {
-			return errors.Wrap(err, "Intune build request")
-		}
-		req.Header.Set("Accept", "application/json")
-
-		resp, err := g.httpc.Do(req)
-		if err != nil {
-			lastErr = errors.Wrap(err, "Intune request")
-			if !sleepBackoff(ctx, attempt, nil) {
-				return lastErr
-			}
-			continue
-		}
-
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, graphMaxRespByte))
-		resp.Body.Close()
-
-		switch {
-		case resp.StatusCode == http.StatusOK:
-			if err := json.Unmarshal(body, out); err != nil {
-				return errors.Wrap(err, "Intune decode")
-			}
-			return nil
-		case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
-			return errors.Errorf("Intune status %d (check DeviceManagementManagedDevices.Read.All consent): %s",
-				resp.StatusCode, snippet(body))
-		case resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500:
-			lastErr = errors.Errorf("Intune status %d: %s", resp.StatusCode, snippet(body))
-			if !sleepBackoff(ctx, attempt, resp) {
-				return lastErr
-			}
-		default:
-			return errors.Errorf("Intune status %d: %s", resp.StatusCode, snippet(body))
-		}
+func (g *graphClient) get(ctx context.Context, u string, out any) error {
+	resp, err := g.rc.R().SetContext(ctx).SetResult(out).Get(u)
+	if err != nil {
+		return errors.Wrap(err, "Intune request")
 	}
-	return lastErr
+	if resp.IsError() {
+		if resp.StatusCode() == http.StatusUnauthorized || resp.StatusCode() == http.StatusForbidden {
+			return errors.Errorf("Intune status %d (check DeviceManagementManagedDevices.Read.All application consent): %s",
+				resp.StatusCode(), snippet(resp.Body()))
+		}
+		return errors.Errorf("Intune status %d: %s", resp.StatusCode(), snippet(resp.Body()))
+	}
+	return nil
 }
 
 type managedDevice struct {
@@ -276,7 +257,7 @@ func toEntry(d *managedDevice) *devicemgrcommon.Entry {
 	if strings.EqualFold(d.JailBroken, "true") {
 		score = 0
 	}
-	if strings.EqualFold(d.PartnerReportedThreatState, "highRisk") && score > 20 {
+	if threatSignal(d.PartnerReportedThreatState) == corev1.Device_Status_Posture_FAIL && score > 20 {
 		score = 20
 	}
 	if score < 0 {
@@ -284,10 +265,9 @@ func toEntry(d *managedDevice) *devicemgrcommon.Entry {
 	}
 
 	p := &corev1.Device_Status_Posture{
-		ExternalID:     strings.ToLower(d.AzureADDeviceID),
 		RiskLevel:      riskBand(score),
 		DiskEncryption: passFail(d.IsEncrypted),
-		Compliant:      passFail(strings.EqualFold(d.ComplianceState, "compliant")),
+		Compliant:      complianceSignal(d.ComplianceState),
 		ThreatFree:     threatSignal(d.PartnerReportedThreatState),
 		Signals: map[string]corev1.Device_Status_Posture_SignalState{
 			"notJailbroken": jailSignal(d.JailBroken),
@@ -298,11 +278,17 @@ func toEntry(d *managedDevice) *devicemgrcommon.Entry {
 		p.LastSeenAt = timestamppb.New(t)
 	}
 
+	var emails []string
+	if upn := strings.TrimSpace(d.UserPrincipalName); strings.Contains(upn, "@") {
+		emails = []string{upn}
+	}
+
 	return &devicemgrcommon.Entry{
-		ExternalID: strings.ToLower(d.AzureADDeviceID),
-		Serial:     d.SerialNumber,
-		MACs:       intuneMACs(d),
-		Posture:    p,
+		ExternalID:  strings.ToLower(strings.TrimSpace(d.AzureADDeviceID)),
+		Serial:      d.SerialNumber,
+		MACs:        intuneMACs(d),
+		OwnerEmails: emails,
+		Posture:     p,
 	}
 }
 
@@ -339,6 +325,8 @@ func intuneAttrs(d *managedDevice) *structpb.Struct {
 	put("partnerReportedThreatState", d.PartnerReportedThreatState)
 	put("ownerType", d.ManagedDeviceOwnerType)
 	put("userPrincipalName", d.UserPrincipalName)
+	put("operatingSystem", d.OperatingSystem)
+	put("osVersion", d.OSVersion)
 	fields["isEncrypted"] = d.IsEncrypted
 	if len(fields) == 0 {
 		return nil
@@ -351,7 +339,7 @@ func intuneAttrs(d *managedDevice) *structpb.Struct {
 }
 
 func complianceScore(state string) int32 {
-	switch strings.ToLower(state) {
+	switch strings.ToLower(strings.TrimSpace(state)) {
 	case "compliant":
 		return 100
 	case "configmanager":
@@ -369,8 +357,21 @@ func complianceScore(state string) int32 {
 	}
 }
 
+func complianceSignal(state string) corev1.Device_Status_Posture_SignalState {
+	switch strings.ToLower(strings.TrimSpace(state)) {
+	case "compliant", "configmanager", "ingraceperiod":
+		return corev1.Device_Status_Posture_PASS
+	case "noncompliant", "conflict", "error":
+		return corev1.Device_Status_Posture_FAIL
+	case "", "unknown":
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
+	default:
+		return corev1.Device_Status_Posture_SIGNAL_STATE_UNKNOWN
+	}
+}
+
 func jailSignal(s string) corev1.Device_Status_Posture_SignalState {
-	switch strings.ToLower(s) {
+	switch strings.ToLower(strings.TrimSpace(s)) {
 	case "true":
 		return corev1.Device_Status_Posture_FAIL
 	case "false":
@@ -381,13 +382,15 @@ func jailSignal(s string) corev1.Device_Status_Posture_SignalState {
 }
 
 func threatSignal(s string) corev1.Device_Status_Posture_SignalState {
-	switch strings.ToLower(s) {
-	case "highrisk", "infected":
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "secured", "lowseverity", "activated":
+		return corev1.Device_Status_Posture_PASS
+	case "mediumseverity", "highseverity", "compromised", "misconfigured", "unresponsive":
 		return corev1.Device_Status_Posture_FAIL
-	case "", "unknown":
+	case "", "unknown", "deactivated":
 		return corev1.Device_Status_Posture_NOT_APPLICABLE
 	default:
-		return corev1.Device_Status_Posture_PASS
+		return corev1.Device_Status_Posture_NOT_APPLICABLE
 	}
 }
 
@@ -423,26 +426,22 @@ func parseTime(s string) (time.Time, bool) {
 	return time.Time{}, false
 }
 
-func sleepBackoff(ctx context.Context, attempt int, resp *http.Response) bool {
-	d := time.Duration(1<<uint(attempt)) * time.Second
-	if d > 30*time.Second {
-		d = 30 * time.Second
+func retryCondition(r *resty.Response, err error) bool {
+	if err != nil {
+		return true
 	}
-	if resp != nil {
-		if ra := resp.Header.Get("Retry-After"); ra != "" {
-			if secs, err := strconv.Atoi(strings.TrimSpace(ra)); err == nil && secs >= 0 {
-				d = time.Duration(secs) * time.Second
+	return r.StatusCode() == http.StatusTooManyRequests || r.StatusCode() >= 500
+}
+
+func retryAfter(c *resty.Client, r *resty.Response) (time.Duration, error) {
+	if r != nil {
+		if ra := r.Header().Get("Retry-After"); ra != "" {
+			if secs, err := strconv.Atoi(strings.TrimSpace(ra)); err == nil && secs >= 0 && secs <= 300 {
+				return time.Duration(secs) * time.Second, nil
 			}
 		}
 	}
-	t := time.NewTimer(d)
-	defer t.Stop()
-	select {
-	case <-ctx.Done():
-		return false
-	case <-t.C:
-		return true
-	}
+	return 0, nil
 }
 
 func snippet(b []byte) string {

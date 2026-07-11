@@ -10,8 +10,6 @@ package jamf
 
 import (
 	"context"
-	"encoding/json"
-	"io"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -19,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/devicemanager/devicemgrcommon"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
@@ -38,11 +37,8 @@ const (
 	jamfPageSize     = 100
 	jamfHTTPTimeout  = 60 * time.Second
 	tokenHTTPTimeout = 30 * time.Second
-	jamfMaxRetries   = 5
+	jamfMaxRetries   = 4
 	jamfMaxRespByte  = 64 << 20
-
-	probeTimeoutSeconds = 15
-	probeMaxOutputBytes = 16384
 )
 
 var inventorySections = []string{
@@ -91,8 +87,18 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 	hc := conf.Client(tokenCtx)
 	hc.Timeout = jamfHTTPTimeout
 
+	rc := resty.NewWithClient(hc).
+		SetBaseURL(base).
+		SetHeader("Accept", "application/json").
+		SetResponseBodyLimit(jamfMaxRespByte).
+		SetRetryCount(jamfMaxRetries).
+		SetRetryWaitTime(2 * time.Second).
+		SetRetryMaxWaitTime(30 * time.Second).
+		AddRetryCondition(retryCondition).
+		SetRetryAfter(retryAfter)
+
 	return &Manager{
-		jamf:   &jamfClient{httpc: hc, base: base},
+		jamf:   &jamfClient{rc: rc},
 		filter: spec.Filter,
 	}, nil
 }
@@ -102,7 +108,7 @@ func (m *Manager) Type() devicemgrcommon.ProviderType {
 }
 
 func (m *Manager) Close() error {
-	m.jamf.httpc.CloseIdleConnections()
+	m.jamf.rc.GetClient().CloseIdleConnections()
 	return nil
 }
 
@@ -110,13 +116,6 @@ func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 	return []*devicemgrcommon.Probe{
 		{
 			OSType: corev1.Device_Status_MAC,
-
-			RunCommand: &devicemgrcommon.RunCommand{
-				Command:        "/usr/sbin/ioreg",
-				Args:           []string{"-rd1", "-c", "IOPlatformExpertDevice"},
-				TimeoutSeconds: probeTimeoutSeconds,
-				MaxOutputBytes: probeMaxOutputBytes,
-			},
 		},
 	}
 }
@@ -152,8 +151,7 @@ func (m *Manager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
 }
 
 type jamfClient struct {
-	httpc *http.Client
-	base  string
+	rc *resty.Client
 }
 
 type inventoryResponse struct {
@@ -180,7 +178,7 @@ func (c *jamfClient) listComputers(ctx context.Context, filter string) ([]*compu
 		}
 
 		var resp inventoryResponse
-		if err := c.do(ctx, c.base+inventoryPath+"?"+q.Encode(), &resp); err != nil {
+		if err := c.get(ctx, inventoryPath+"?"+q.Encode(), &resp); err != nil {
 			return nil, err
 		}
 		out = append(out, resp.Results...)
@@ -192,46 +190,19 @@ func (c *jamfClient) listComputers(ctx context.Context, filter string) ([]*compu
 	return out, nil
 }
 
-func (c *jamfClient) do(ctx context.Context, u string, out any) error {
-	var lastErr error
-	for attempt := 0; attempt < jamfMaxRetries; attempt++ {
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
-		if err != nil {
-			return errors.Wrap(err, "Jamf build request")
-		}
-		req.Header.Set("Accept", "application/json")
-
-		resp, err := c.httpc.Do(req)
-		if err != nil {
-			lastErr = errors.Wrap(err, "Jamf request")
-			if !sleepBackoff(ctx, attempt, nil) {
-				return lastErr
-			}
-			continue
-		}
-
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, jamfMaxRespByte))
-		resp.Body.Close()
-
-		switch {
-		case resp.StatusCode == http.StatusOK:
-			if err := json.Unmarshal(body, out); err != nil {
-				return errors.Wrap(err, "Jamf decode")
-			}
-			return nil
-		case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
-			return errors.Errorf("Jamf status %d (check API Role has Read Computers): %s",
-				resp.StatusCode, snippet(body))
-		case resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500:
-			lastErr = errors.Errorf("Jamf status %d: %s", resp.StatusCode, snippet(body))
-			if !sleepBackoff(ctx, attempt, resp) {
-				return lastErr
-			}
-		default:
-			return errors.Errorf("Jamf status %d: %s", resp.StatusCode, snippet(body))
-		}
+func (c *jamfClient) get(ctx context.Context, u string, out any) error {
+	resp, err := c.rc.R().SetContext(ctx).SetResult(out).Get(u)
+	if err != nil {
+		return errors.Wrap(err, "Jamf request")
 	}
-	return lastErr
+	if resp.IsError() {
+		if resp.StatusCode() == http.StatusUnauthorized || resp.StatusCode() == http.StatusForbidden {
+			return errors.Errorf("Jamf status %d (check the API Role has Read Computers): %s",
+				resp.StatusCode(), snippet(resp.Body()))
+		}
+		return errors.Errorf("Jamf status %d: %s", resp.StatusCode(), snippet(resp.Body()))
+	}
+	return nil
 }
 
 type computer struct {
@@ -240,6 +211,7 @@ type computer struct {
 	General         *general         `json:"general"`
 	Hardware        *hardware        `json:"hardware"`
 	OperatingSystem *operatingSystem `json:"operatingSystem"`
+	UserAndLocation *userAndLocation `json:"userAndLocation"`
 	Security        *security        `json:"security"`
 	DiskEncryption  *diskEncryption  `json:"diskEncryption"`
 }
@@ -278,6 +250,12 @@ type operatingSystem struct {
 	Name    string `json:"name"`
 	Version string `json:"version"`
 	Build   string `json:"build"`
+}
+
+type userAndLocation struct {
+	Username string `json:"username"`
+	Realname string `json:"realname"`
+	Email    string `json:"email"`
 }
 
 type security struct {
@@ -347,6 +325,7 @@ func toEntry(c *computer) *devicemgrcommon.Entry {
 		"firewall":   passFail(sec.FirewallEnabled),
 		"sip":        passFail(sip),
 		"gatekeeper": passFail(gatekeeper),
+		"managed":    passFail(managed),
 	}
 	if hw.AppleSilicon {
 		signals["secureBoot"] = passFail(secureBootFull)
@@ -355,10 +334,10 @@ func toEntry(c *computer) *devicemgrcommon.Entry {
 	}
 
 	p := &corev1.Device_Status_Posture{
-		ExternalID:     strings.ToLower(c.UDID),
 		RiskLevel:      riskBand(score),
 		DiskEncryption: passFail(encrypted),
 		Compliant:      passFail(managed),
+		ThreatFree:     corev1.Device_Status_Posture_NOT_APPLICABLE,
 		Signals:        signals,
 		Attrs:          jamfAttrs(c, gen, hw, os, sec),
 	}
@@ -367,11 +346,25 @@ func toEntry(c *computer) *devicemgrcommon.Entry {
 	}
 
 	return &devicemgrcommon.Entry{
-		ExternalID: strings.ToLower(c.UDID),
-		Serial:     hw.SerialNumber,
-		MACs:       jamfMACs(hw),
-		Posture:    p,
+		ExternalID:  strings.ToLower(strings.TrimSpace(c.UDID)),
+		Serial:      hw.SerialNumber,
+		MACs:        jamfMACs(hw),
+		OwnerEmails: jamfOwnerEmails(c.UserAndLocation),
+		Posture:     p,
 	}
+}
+
+func jamfOwnerEmails(u *userAndLocation) []string {
+	if u == nil {
+		return nil
+	}
+	if email := strings.TrimSpace(u.Email); strings.Contains(email, "@") {
+		return []string{email}
+	}
+	if username := strings.TrimSpace(u.Username); strings.Contains(username, "@") {
+		return []string{username}
+	}
+	return nil
 }
 
 func jamfMACs(hw *hardware) []string {
@@ -476,26 +469,22 @@ func parseTime(s string) (time.Time, bool) {
 	return time.Time{}, false
 }
 
-func sleepBackoff(ctx context.Context, attempt int, resp *http.Response) bool {
-	d := time.Duration(1<<uint(attempt)) * time.Second
-	if d > 30*time.Second {
-		d = 30 * time.Second
+func retryCondition(r *resty.Response, err error) bool {
+	if err != nil {
+		return true
 	}
-	if resp != nil {
-		if ra := resp.Header.Get("Retry-After"); ra != "" {
-			if secs, err := strconv.Atoi(strings.TrimSpace(ra)); err == nil && secs >= 0 {
-				d = time.Duration(secs) * time.Second
+	return r.StatusCode() == http.StatusTooManyRequests || r.StatusCode() >= 500
+}
+
+func retryAfter(c *resty.Client, r *resty.Response) (time.Duration, error) {
+	if r != nil {
+		if ra := r.Header().Get("Retry-After"); ra != "" {
+			if secs, err := strconv.Atoi(strings.TrimSpace(ra)); err == nil && secs >= 0 && secs <= 300 {
+				return time.Duration(secs) * time.Second, nil
 			}
 		}
 	}
-	t := time.NewTimer(d)
-	defer t.Stop()
-	select {
-	case <-ctx.Done():
-		return false
-	case <-t.C:
-		return true
-	}
+	return 0, nil
 }
 
 func snippet(b []byte) string {

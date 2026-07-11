@@ -4916,62 +4916,66 @@ export interface Device_Status {
      */
     macAddresses: string[];
     /**
+     * Posture originates from binding.ownerRef and is valid only while
+     * binding.state == ACCEPTED. Materialized at acceptance time from the
+     * same inventory snapshot the acceptance decision was based on, then
+     * refreshed by the device watcher. Cleared on reset and on expiry.
+     *
      * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture posture = 9
      */
     posture?: Device_Status_Posture;
     /**
-     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Probe probe = 10
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Binding binding = 11
      */
-    probe?: Device_Status_Probe;
+    binding?: Device_Status_Binding;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.ProbeAttempt probeAttempt = 12
+     */
+    probeAttempt?: Device_Status_ProbeAttempt;
 }
 /**
  * @generated from protobuf message octelium.api.main.core.v1.Device.Status.Posture
  */
 export interface Device_Status_Posture {
     /**
-     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference ownerRef = 1
-     */
-    ownerRef?: ObjectReference;
-    /**
-     * @generated from protobuf field: string externalID = 2
-     */
-    externalID: string;
-    /**
-     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture.RiskLevel riskLevel = 3
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture.RiskLevel riskLevel = 1
      */
     riskLevel: Device_Status_Posture_RiskLevel;
     /**
-     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture.SignalState diskEncryption = 4
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture.SignalState diskEncryption = 2
      */
     diskEncryption: Device_Status_Posture_SignalState;
     /**
-     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture.SignalState compliant = 5
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture.SignalState compliant = 3
      */
     compliant: Device_Status_Posture_SignalState;
     /**
-     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture.SignalState threatFree = 6
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture.SignalState threatFree = 4
      */
     threatFree: Device_Status_Posture_SignalState;
     /**
-     * @generated from protobuf field: map<string, octelium.api.main.core.v1.Device.Status.Posture.SignalState> signals = 7
+     * @generated from protobuf field: map<string, octelium.api.main.core.v1.Device.Status.Posture.SignalState> signals = 5
      */
     signals: {
         [key: string]: Device_Status_Posture_SignalState;
     };
     /**
-     * @generated from protobuf field: google.protobuf.Timestamp lastSyncAt = 8
+     * @generated from protobuf field: google.protobuf.Timestamp lastSyncAt = 6
      */
     lastSyncAt?: Timestamp;
     /**
-     * @generated from protobuf field: google.protobuf.Timestamp lastSeenAt = 9
+     * @generated from protobuf field: google.protobuf.Timestamp lastSeenAt = 7
      */
     lastSeenAt?: Timestamp;
     /**
-     * @generated from protobuf field: google.protobuf.Timestamp expiresAt = 10
+     * The PDP MUST treat posture with expiresAt in the past as absent.
+     * The device watcher additionally clears expired posture as hygiene.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp expiresAt = 8
      */
     expiresAt?: Timestamp;
     /**
-     * @generated from protobuf field: google.protobuf.Struct attrs = 11
+     * @generated from protobuf field: google.protobuf.Struct attrs = 9
      */
     attrs?: Struct;
 }
@@ -5001,6 +5005,15 @@ export enum Device_Status_Posture_RiskLevel {
     CRITICAL = 4
 }
 /**
+ * SignalState semantics under the single-provider model: adapters MUST
+ * set NOT_APPLICABLE for every named signal outside their provider's
+ * domain (an EDR adapter sets compliant = NOT_APPLICABLE, an MDM
+ * adapter sets threatFree = NOT_APPLICABLE). SIGNAL_STATE_UNKNOWN is
+ * reserved for "the provider should know this but did not report it"
+ * and fails closed in policy. Leaving a signal UNKNOWN when it is
+ * actually out-of-domain will lock devices out under any policy that
+ * requires that signal.
+ *
  * @generated from protobuf enum octelium.api.main.core.v1.Device.Status.Posture.SignalState
  */
 export enum Device_Status_Posture_SignalState {
@@ -5022,47 +5035,192 @@ export enum Device_Status_Posture_SignalState {
     NOT_APPLICABLE = 3
 }
 /**
- * @generated from protobuf message octelium.api.main.core.v1.Device.Status.Probe
+ * Binding is the singular, quasi-permanent link between this Device and
+ * one DeviceManager. ownerRef lives here and only here; Posture validity
+ * is defined as binding.state == ACCEPTED, so Posture does not carry a
+ * duplicate ownerRef that could diverge.
+ *
+ * ACCEPTED and REJECTED are both sticky: reconciliation never overwrites
+ * them, and only ResetDeviceBinding / ResetDeviceManagerBindings (or
+ * DeviceManager deletion, which auto-resets) clears them. There is no
+ * PENDING or EXPIRED state: attempt lifecycle belongs to ProbeAttempt,
+ * and an unbound Device simply has no Binding, so nothing dead-ends.
+ *
+ * @generated from protobuf message octelium.api.main.core.v1.Device.Status.Binding
  */
-export interface Device_Status_Probe {
+export interface Device_Status_Binding {
     /**
-     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Probe.Request request = 1
+     * @generated from protobuf field: string uid = 1
      */
-    request?: Device_Status_Probe_Request;
+    uid: string;
     /**
-     * @generated from protobuf field: google.protobuf.Timestamp requestedAt = 2
-     */
-    requestedAt?: Timestamp;
-    /**
-     * @generated from protobuf field: repeated octelium.api.main.core.v1.Device.Status.Probe.Result results = 3
-     */
-    results: Device_Status_Probe_Result[];
-    /**
-     * @generated from protobuf field: google.protobuf.Timestamp setAt = 4
-     */
-    setAt?: Timestamp;
-}
-/**
- * @generated from protobuf message octelium.api.main.core.v1.Device.Status.Probe.Request
- */
-export interface Device_Status_Probe_Request {
-    /**
-     * @generated from protobuf field: repeated octelium.api.main.meta.v1.ObjectReference ownerRefs = 1
-     */
-    ownerRefs: ObjectReference[];
-    /**
-     * @generated from protobuf field: google.protobuf.Timestamp issuedAt = 2
-     */
-    issuedAt?: Timestamp;
-}
-/**
- * @generated from protobuf message octelium.api.main.core.v1.Device.Status.Probe.Result
- */
-export interface Device_Status_Probe_Result {
-    /**
-     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference ownerRef = 1
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference ownerRef = 2
      */
     ownerRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: string externalID = 3
+     */
+    externalID: string;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Binding.State state = 4
+     */
+    state: Device_Status_Binding_State;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Binding.AcceptanceMethod acceptanceMethod = 5
+     */
+    acceptanceMethod: Device_Status_Binding_AcceptanceMethod;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp acceptedAt = 6
+     */
+    acceptedAt?: Timestamp;
+    /**
+     * ExpiresAt applies only to WAITING_APPROVAL.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp expiresAt = 7
+     */
+    expiresAt?: Timestamp;
+    /**
+     * Re-verification is flag-only under quasi-permanence: verification
+     * failure never clears an ACCEPTED Binding, it increments
+     * verificationFailures and surfaces for administrators. "Bound
+     * forever" and "posture trusted forever" are different claims; this
+     * field keeps the second one false. Posture freshness is enforced
+     * independently via Posture.expiresAt.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp lastVerifiedAt = 8
+     */
+    lastVerifiedAt?: Timestamp;
+    /**
+     * @generated from protobuf field: uint32 verificationFailures = 9
+     */
+    verificationFailures: number;
+    /**
+     * Message is a human-readable reason for the current state: which
+     * identifiers were ambiguous, which DeviceManagers tied on priority,
+     * or why a candidate was rejected.
+     *
+     * @generated from protobuf field: string message = 10
+     */
+    message: string;
+}
+/**
+ * @generated from protobuf enum octelium.api.main.core.v1.Device.Status.Binding.State
+ */
+export enum Device_Status_Binding_State {
+    /**
+     * @generated from protobuf enum value: STATE_UNKNOWN = 0;
+     */
+    STATE_UNKNOWN = 0,
+    /**
+     * WAITING_APPROVAL means a unique candidate exists and MANUAL
+     * approval mode requires administrator action before acceptance.
+     * Expiry (per expiresAt) clears the Binding rather than tombstoning
+     * it, so a later attempt can retry.
+     *
+     * @generated from protobuf enum value: WAITING_APPROVAL = 1;
+     */
+    WAITING_APPROVAL = 1,
+    /**
+     * @generated from protobuf enum value: ACCEPTED = 2;
+     */
+    ACCEPTED = 2,
+    /**
+     * REJECTED is a sticky record that this Device must not bind to
+     * ownerRef, set by administrator rejection or by losing a uniqueness
+     * claim to another Device. Cleared only by reset.
+     *
+     * @generated from protobuf enum value: REJECTED = 3;
+     */
+    REJECTED = 3,
+    /**
+     * AMBIGUOUS means candidate selection could not resolve uniquely:
+     * multiple DeviceManagers matched at equal priority, a provider
+     * inventory matched non-uniquely, or probe and identity sources
+     * disagreed within one DeviceManager. The specifics are in message.
+     * Recomputed on each reconcile; clears itself once resolved.
+     *
+     * @generated from protobuf enum value: AMBIGUOUS = 4;
+     */
+    AMBIGUOUS = 4
+}
+/**
+ * @generated from protobuf enum octelium.api.main.core.v1.Device.Status.Binding.AcceptanceMethod
+ */
+export enum Device_Status_Binding_AcceptanceMethod {
+    /**
+     * @generated from protobuf enum value: ACCEPTANCE_METHOD_UNKNOWN = 0;
+     */
+    ACCEPTANCE_METHOD_UNKNOWN = 0,
+    /**
+     * @generated from protobuf enum value: AUTOMATIC = 1;
+     */
+    AUTOMATIC = 1,
+    /**
+     * @generated from protobuf enum value: EMAIL = 2;
+     */
+    EMAIL = 2,
+    /**
+     * @generated from protobuf enum value: MANUAL = 3;
+     */
+    MANUAL = 3
+}
+/**
+ * ProbeAttempt is the persisted record of one Begin/Finish exchange.
+ *
+ * Lifecycle contract (enforced by the AuthServer and Device controller,
+ * recorded here because this message is the interface between them):
+ * - Begin returns the existing attempt untouched while it is unexpired
+ *   and has no results, so a device cannot re-arm the TTL by looping
+ *   Begin. Expiry is startedAt plus probeAttemptTTL, a constant that
+ *   MUST be identical in the AuthServer and the Device controller.
+ * - Probes is the issued set, persisted with Conditions stripped. It is
+ *   the uid-to-owner correlation store: the wire probeID of an issued
+ *   probe is its decimal index into this list.
+ * - Finish is one-shot: the AuthServer rejects a Finish whose attemptUID
+ *   does not match uid, rejects it if results is already non-empty,
+ *   rejects an incomplete or duplicated result set (exactly one result
+ *   per issued probe), rejects unknown probeIDs, and enforces per-probe
+ *   output caps from the persisted issued set, hard-ceilinged
+ *   server-side, regardless of any client-claimed limits.
+ * - Non-empty results is the finished marker. The Device controller
+ *   consumes the results during reconciliation and clears the whole
+ *   attempt once they produce a binding decision; unconsumed attempts
+ *   are cleared at expiry.
+ *
+ * @generated from protobuf message octelium.api.main.core.v1.Device.Status.ProbeAttempt
+ */
+export interface Device_Status_ProbeAttempt {
+    /**
+     * Uid is the attemptUID echoed in RunDeviceProbeBeginResponse and
+     * required in RunDeviceProbeFinishRequest.
+     *
+     * @generated from protobuf field: string uid = 1
+     */
+    uid: string;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp startedAt = 2
+     */
+    startedAt?: Timestamp;
+    /**
+     * @generated from protobuf field: repeated octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe probes = 3
+     */
+    probes: ClusterConfig_Status_Device_Probe[];
+    /**
+     * @generated from protobuf field: repeated octelium.api.main.core.v1.Device.Status.ProbeAttempt.Result results = 4
+     */
+    results: Device_Status_ProbeAttempt_Result[];
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.Device.Status.ProbeAttempt.Result
+ */
+export interface Device_Status_ProbeAttempt_Result {
+    /**
+     * ProbeID is the decimal index of the corresponding issued probe in
+     * probes.
+     *
+     * @generated from protobuf field: string probeID = 1
+     */
+    probeID: string;
     /**
      * @generated from protobuf oneof: type
      */
@@ -21584,7 +21742,8 @@ class Device_Status$Type extends MessageType<Device_Status> {
             { no: 7, name: "isLocked", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 8, name: "macAddresses", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
             { no: 9, name: "posture", kind: "message", T: () => Device_Status_Posture },
-            { no: 10, name: "probe", kind: "message", T: () => Device_Status_Probe }
+            { no: 11, name: "binding", kind: "message", T: () => Device_Status_Binding },
+            { no: 12, name: "probeAttempt", kind: "message", T: () => Device_Status_ProbeAttempt }
         ]);
     }
     create(value?: PartialMessage<Device_Status>): Device_Status {
@@ -21632,8 +21791,11 @@ class Device_Status$Type extends MessageType<Device_Status> {
                 case /* octelium.api.main.core.v1.Device.Status.Posture posture */ 9:
                     message.posture = Device_Status_Posture.internalBinaryRead(reader, reader.uint32(), options, message.posture);
                     break;
-                case /* octelium.api.main.core.v1.Device.Status.Probe probe */ 10:
-                    message.probe = Device_Status_Probe.internalBinaryRead(reader, reader.uint32(), options, message.probe);
+                case /* octelium.api.main.core.v1.Device.Status.Binding binding */ 11:
+                    message.binding = Device_Status_Binding.internalBinaryRead(reader, reader.uint32(), options, message.binding);
+                    break;
+                case /* octelium.api.main.core.v1.Device.Status.ProbeAttempt probeAttempt */ 12:
+                    message.probeAttempt = Device_Status_ProbeAttempt.internalBinaryRead(reader, reader.uint32(), options, message.probeAttempt);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -21694,9 +21856,12 @@ class Device_Status$Type extends MessageType<Device_Status> {
         /* octelium.api.main.core.v1.Device.Status.Posture posture = 9; */
         if (message.posture)
             Device_Status_Posture.internalBinaryWrite(message.posture, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
-        /* octelium.api.main.core.v1.Device.Status.Probe probe = 10; */
-        if (message.probe)
-            Device_Status_Probe.internalBinaryWrite(message.probe, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.Device.Status.Binding binding = 11; */
+        if (message.binding)
+            Device_Status_Binding.internalBinaryWrite(message.binding, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.Device.Status.ProbeAttempt probeAttempt = 12; */
+        if (message.probeAttempt)
+            Device_Status_ProbeAttempt.internalBinaryWrite(message.probeAttempt, writer.tag(12, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -21711,22 +21876,19 @@ export const Device_Status = new Device_Status$Type();
 class Device_Status_Posture$Type extends MessageType<Device_Status_Posture> {
     constructor() {
         super("octelium.api.main.core.v1.Device.Status.Posture", [
-            { no: 1, name: "ownerRef", kind: "message", T: () => ObjectReference },
-            { no: 2, name: "externalID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 3, name: "riskLevel", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.RiskLevel", Device_Status_Posture_RiskLevel] },
-            { no: 4, name: "diskEncryption", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.SignalState", Device_Status_Posture_SignalState] },
-            { no: 5, name: "compliant", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.SignalState", Device_Status_Posture_SignalState] },
-            { no: 6, name: "threatFree", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.SignalState", Device_Status_Posture_SignalState] },
-            { no: 7, name: "signals", kind: "map", K: 9 /*ScalarType.STRING*/, V: { kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.SignalState", Device_Status_Posture_SignalState] } },
-            { no: 8, name: "lastSyncAt", kind: "message", T: () => Timestamp },
-            { no: 9, name: "lastSeenAt", kind: "message", T: () => Timestamp },
-            { no: 10, name: "expiresAt", kind: "message", T: () => Timestamp },
-            { no: 11, name: "attrs", kind: "message", T: () => Struct }
+            { no: 1, name: "riskLevel", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.RiskLevel", Device_Status_Posture_RiskLevel] },
+            { no: 2, name: "diskEncryption", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.SignalState", Device_Status_Posture_SignalState] },
+            { no: 3, name: "compliant", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.SignalState", Device_Status_Posture_SignalState] },
+            { no: 4, name: "threatFree", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.SignalState", Device_Status_Posture_SignalState] },
+            { no: 5, name: "signals", kind: "map", K: 9 /*ScalarType.STRING*/, V: { kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.SignalState", Device_Status_Posture_SignalState] } },
+            { no: 6, name: "lastSyncAt", kind: "message", T: () => Timestamp },
+            { no: 7, name: "lastSeenAt", kind: "message", T: () => Timestamp },
+            { no: 8, name: "expiresAt", kind: "message", T: () => Timestamp },
+            { no: 9, name: "attrs", kind: "message", T: () => Struct }
         ]);
     }
     create(value?: PartialMessage<Device_Status_Posture>): Device_Status_Posture {
         const message = globalThis.Object.create((this.messagePrototype!));
-        message.externalID = "";
         message.riskLevel = 0;
         message.diskEncryption = 0;
         message.compliant = 0;
@@ -21741,37 +21903,31 @@ class Device_Status_Posture$Type extends MessageType<Device_Status_Posture> {
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* octelium.api.main.meta.v1.ObjectReference ownerRef */ 1:
-                    message.ownerRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.ownerRef);
-                    break;
-                case /* string externalID */ 2:
-                    message.externalID = reader.string();
-                    break;
-                case /* octelium.api.main.core.v1.Device.Status.Posture.RiskLevel riskLevel */ 3:
+                case /* octelium.api.main.core.v1.Device.Status.Posture.RiskLevel riskLevel */ 1:
                     message.riskLevel = reader.int32();
                     break;
-                case /* octelium.api.main.core.v1.Device.Status.Posture.SignalState diskEncryption */ 4:
+                case /* octelium.api.main.core.v1.Device.Status.Posture.SignalState diskEncryption */ 2:
                     message.diskEncryption = reader.int32();
                     break;
-                case /* octelium.api.main.core.v1.Device.Status.Posture.SignalState compliant */ 5:
+                case /* octelium.api.main.core.v1.Device.Status.Posture.SignalState compliant */ 3:
                     message.compliant = reader.int32();
                     break;
-                case /* octelium.api.main.core.v1.Device.Status.Posture.SignalState threatFree */ 6:
+                case /* octelium.api.main.core.v1.Device.Status.Posture.SignalState threatFree */ 4:
                     message.threatFree = reader.int32();
                     break;
-                case /* map<string, octelium.api.main.core.v1.Device.Status.Posture.SignalState> signals */ 7:
-                    this.binaryReadMap7(message.signals, reader, options);
+                case /* map<string, octelium.api.main.core.v1.Device.Status.Posture.SignalState> signals */ 5:
+                    this.binaryReadMap5(message.signals, reader, options);
                     break;
-                case /* google.protobuf.Timestamp lastSyncAt */ 8:
+                case /* google.protobuf.Timestamp lastSyncAt */ 6:
                     message.lastSyncAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.lastSyncAt);
                     break;
-                case /* google.protobuf.Timestamp lastSeenAt */ 9:
+                case /* google.protobuf.Timestamp lastSeenAt */ 7:
                     message.lastSeenAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.lastSeenAt);
                     break;
-                case /* google.protobuf.Timestamp expiresAt */ 10:
+                case /* google.protobuf.Timestamp expiresAt */ 8:
                     message.expiresAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.expiresAt);
                     break;
-                case /* google.protobuf.Struct attrs */ 11:
+                case /* google.protobuf.Struct attrs */ 9:
                     message.attrs = Struct.internalBinaryRead(reader, reader.uint32(), options, message.attrs);
                     break;
                 default:
@@ -21785,7 +21941,7 @@ class Device_Status_Posture$Type extends MessageType<Device_Status_Posture> {
         }
         return message;
     }
-    private binaryReadMap7(map: Device_Status_Posture["signals"], reader: IBinaryReader, options: BinaryReadOptions): void {
+    private binaryReadMap5(map: Device_Status_Posture["signals"], reader: IBinaryReader, options: BinaryReadOptions): void {
         let len = reader.uint32(), end = reader.pos + len, key: keyof Device_Status_Posture["signals"] | undefined, val: Device_Status_Posture["signals"][any] | undefined;
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
@@ -21802,39 +21958,33 @@ class Device_Status_Posture$Type extends MessageType<Device_Status_Posture> {
         map[key ?? ""] = val ?? 0;
     }
     internalBinaryWrite(message: Device_Status_Posture, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* octelium.api.main.meta.v1.ObjectReference ownerRef = 1; */
-        if (message.ownerRef)
-            ObjectReference.internalBinaryWrite(message.ownerRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
-        /* string externalID = 2; */
-        if (message.externalID !== "")
-            writer.tag(2, WireType.LengthDelimited).string(message.externalID);
-        /* octelium.api.main.core.v1.Device.Status.Posture.RiskLevel riskLevel = 3; */
+        /* octelium.api.main.core.v1.Device.Status.Posture.RiskLevel riskLevel = 1; */
         if (message.riskLevel !== 0)
-            writer.tag(3, WireType.Varint).int32(message.riskLevel);
-        /* octelium.api.main.core.v1.Device.Status.Posture.SignalState diskEncryption = 4; */
+            writer.tag(1, WireType.Varint).int32(message.riskLevel);
+        /* octelium.api.main.core.v1.Device.Status.Posture.SignalState diskEncryption = 2; */
         if (message.diskEncryption !== 0)
-            writer.tag(4, WireType.Varint).int32(message.diskEncryption);
-        /* octelium.api.main.core.v1.Device.Status.Posture.SignalState compliant = 5; */
+            writer.tag(2, WireType.Varint).int32(message.diskEncryption);
+        /* octelium.api.main.core.v1.Device.Status.Posture.SignalState compliant = 3; */
         if (message.compliant !== 0)
-            writer.tag(5, WireType.Varint).int32(message.compliant);
-        /* octelium.api.main.core.v1.Device.Status.Posture.SignalState threatFree = 6; */
+            writer.tag(3, WireType.Varint).int32(message.compliant);
+        /* octelium.api.main.core.v1.Device.Status.Posture.SignalState threatFree = 4; */
         if (message.threatFree !== 0)
-            writer.tag(6, WireType.Varint).int32(message.threatFree);
-        /* map<string, octelium.api.main.core.v1.Device.Status.Posture.SignalState> signals = 7; */
+            writer.tag(4, WireType.Varint).int32(message.threatFree);
+        /* map<string, octelium.api.main.core.v1.Device.Status.Posture.SignalState> signals = 5; */
         for (let k of globalThis.Object.keys(message.signals))
-            writer.tag(7, WireType.LengthDelimited).fork().tag(1, WireType.LengthDelimited).string(k).tag(2, WireType.Varint).int32(message.signals[k]).join();
-        /* google.protobuf.Timestamp lastSyncAt = 8; */
+            writer.tag(5, WireType.LengthDelimited).fork().tag(1, WireType.LengthDelimited).string(k).tag(2, WireType.Varint).int32(message.signals[k]).join();
+        /* google.protobuf.Timestamp lastSyncAt = 6; */
         if (message.lastSyncAt)
-            Timestamp.internalBinaryWrite(message.lastSyncAt, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
-        /* google.protobuf.Timestamp lastSeenAt = 9; */
+            Timestamp.internalBinaryWrite(message.lastSyncAt, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp lastSeenAt = 7; */
         if (message.lastSeenAt)
-            Timestamp.internalBinaryWrite(message.lastSeenAt, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
-        /* google.protobuf.Timestamp expiresAt = 10; */
+            Timestamp.internalBinaryWrite(message.lastSeenAt, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp expiresAt = 8; */
         if (message.expiresAt)
-            Timestamp.internalBinaryWrite(message.expiresAt, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
-        /* google.protobuf.Struct attrs = 11; */
+            Timestamp.internalBinaryWrite(message.expiresAt, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Struct attrs = 9; */
         if (message.attrs)
-            Struct.internalBinaryWrite(message.attrs, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+            Struct.internalBinaryWrite(message.attrs, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -21846,38 +21996,155 @@ class Device_Status_Posture$Type extends MessageType<Device_Status_Posture> {
  */
 export const Device_Status_Posture = new Device_Status_Posture$Type();
 // @generated message type with reflection information, may provide speed optimized methods
-class Device_Status_Probe$Type extends MessageType<Device_Status_Probe> {
+class Device_Status_Binding$Type extends MessageType<Device_Status_Binding> {
     constructor() {
-        super("octelium.api.main.core.v1.Device.Status.Probe", [
-            { no: 1, name: "request", kind: "message", T: () => Device_Status_Probe_Request },
-            { no: 2, name: "requestedAt", kind: "message", T: () => Timestamp },
-            { no: 3, name: "results", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Device_Status_Probe_Result },
-            { no: 4, name: "setAt", kind: "message", T: () => Timestamp }
+        super("octelium.api.main.core.v1.Device.Status.Binding", [
+            { no: 1, name: "uid", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "ownerRef", kind: "message", T: () => ObjectReference },
+            { no: 3, name: "externalID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "state", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Binding.State", Device_Status_Binding_State] },
+            { no: 5, name: "acceptanceMethod", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Binding.AcceptanceMethod", Device_Status_Binding_AcceptanceMethod] },
+            { no: 6, name: "acceptedAt", kind: "message", T: () => Timestamp },
+            { no: 7, name: "expiresAt", kind: "message", T: () => Timestamp },
+            { no: 8, name: "lastVerifiedAt", kind: "message", T: () => Timestamp },
+            { no: 9, name: "verificationFailures", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 10, name: "message", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
-    create(value?: PartialMessage<Device_Status_Probe>): Device_Status_Probe {
+    create(value?: PartialMessage<Device_Status_Binding>): Device_Status_Binding {
         const message = globalThis.Object.create((this.messagePrototype!));
+        message.uid = "";
+        message.externalID = "";
+        message.state = 0;
+        message.acceptanceMethod = 0;
+        message.verificationFailures = 0;
+        message.message = "";
+        if (value !== undefined)
+            reflectionMergePartial<Device_Status_Binding>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Device_Status_Binding): Device_Status_Binding {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string uid */ 1:
+                    message.uid = reader.string();
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference ownerRef */ 2:
+                    message.ownerRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.ownerRef);
+                    break;
+                case /* string externalID */ 3:
+                    message.externalID = reader.string();
+                    break;
+                case /* octelium.api.main.core.v1.Device.Status.Binding.State state */ 4:
+                    message.state = reader.int32();
+                    break;
+                case /* octelium.api.main.core.v1.Device.Status.Binding.AcceptanceMethod acceptanceMethod */ 5:
+                    message.acceptanceMethod = reader.int32();
+                    break;
+                case /* google.protobuf.Timestamp acceptedAt */ 6:
+                    message.acceptedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.acceptedAt);
+                    break;
+                case /* google.protobuf.Timestamp expiresAt */ 7:
+                    message.expiresAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.expiresAt);
+                    break;
+                case /* google.protobuf.Timestamp lastVerifiedAt */ 8:
+                    message.lastVerifiedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.lastVerifiedAt);
+                    break;
+                case /* uint32 verificationFailures */ 9:
+                    message.verificationFailures = reader.uint32();
+                    break;
+                case /* string message */ 10:
+                    message.message = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Device_Status_Binding, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string uid = 1; */
+        if (message.uid !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.uid);
+        /* octelium.api.main.meta.v1.ObjectReference ownerRef = 2; */
+        if (message.ownerRef)
+            ObjectReference.internalBinaryWrite(message.ownerRef, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* string externalID = 3; */
+        if (message.externalID !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.externalID);
+        /* octelium.api.main.core.v1.Device.Status.Binding.State state = 4; */
+        if (message.state !== 0)
+            writer.tag(4, WireType.Varint).int32(message.state);
+        /* octelium.api.main.core.v1.Device.Status.Binding.AcceptanceMethod acceptanceMethod = 5; */
+        if (message.acceptanceMethod !== 0)
+            writer.tag(5, WireType.Varint).int32(message.acceptanceMethod);
+        /* google.protobuf.Timestamp acceptedAt = 6; */
+        if (message.acceptedAt)
+            Timestamp.internalBinaryWrite(message.acceptedAt, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp expiresAt = 7; */
+        if (message.expiresAt)
+            Timestamp.internalBinaryWrite(message.expiresAt, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp lastVerifiedAt = 8; */
+        if (message.lastVerifiedAt)
+            Timestamp.internalBinaryWrite(message.lastVerifiedAt, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* uint32 verificationFailures = 9; */
+        if (message.verificationFailures !== 0)
+            writer.tag(9, WireType.Varint).uint32(message.verificationFailures);
+        /* string message = 10; */
+        if (message.message !== "")
+            writer.tag(10, WireType.LengthDelimited).string(message.message);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.Device.Status.Binding
+ */
+export const Device_Status_Binding = new Device_Status_Binding$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Device_Status_ProbeAttempt$Type extends MessageType<Device_Status_ProbeAttempt> {
+    constructor() {
+        super("octelium.api.main.core.v1.Device.Status.ProbeAttempt", [
+            { no: 1, name: "uid", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "startedAt", kind: "message", T: () => Timestamp },
+            { no: 3, name: "probes", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ClusterConfig_Status_Device_Probe },
+            { no: 4, name: "results", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Device_Status_ProbeAttempt_Result }
+        ]);
+    }
+    create(value?: PartialMessage<Device_Status_ProbeAttempt>): Device_Status_ProbeAttempt {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.uid = "";
+        message.probes = [];
         message.results = [];
         if (value !== undefined)
-            reflectionMergePartial<Device_Status_Probe>(this, message, value);
+            reflectionMergePartial<Device_Status_ProbeAttempt>(this, message, value);
         return message;
     }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Device_Status_Probe): Device_Status_Probe {
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Device_Status_ProbeAttempt): Device_Status_ProbeAttempt {
         let message = target ?? this.create(), end = reader.pos + length;
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* octelium.api.main.core.v1.Device.Status.Probe.Request request */ 1:
-                    message.request = Device_Status_Probe_Request.internalBinaryRead(reader, reader.uint32(), options, message.request);
+                case /* string uid */ 1:
+                    message.uid = reader.string();
                     break;
-                case /* google.protobuf.Timestamp requestedAt */ 2:
-                    message.requestedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.requestedAt);
+                case /* google.protobuf.Timestamp startedAt */ 2:
+                    message.startedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.startedAt);
                     break;
-                case /* repeated octelium.api.main.core.v1.Device.Status.Probe.Result results */ 3:
-                    message.results.push(Device_Status_Probe_Result.internalBinaryRead(reader, reader.uint32(), options));
+                case /* repeated octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe probes */ 3:
+                    message.probes.push(ClusterConfig_Status_Device_Probe.internalBinaryRead(reader, reader.uint32(), options));
                     break;
-                case /* google.protobuf.Timestamp setAt */ 4:
-                    message.setAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.setAt);
+                case /* repeated octelium.api.main.core.v1.Device.Status.ProbeAttempt.Result results */ 4:
+                    message.results.push(Device_Status_ProbeAttempt_Result.internalBinaryRead(reader, reader.uint32(), options));
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -21890,19 +22157,19 @@ class Device_Status_Probe$Type extends MessageType<Device_Status_Probe> {
         }
         return message;
     }
-    internalBinaryWrite(message: Device_Status_Probe, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* octelium.api.main.core.v1.Device.Status.Probe.Request request = 1; */
-        if (message.request)
-            Device_Status_Probe_Request.internalBinaryWrite(message.request, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
-        /* google.protobuf.Timestamp requestedAt = 2; */
-        if (message.requestedAt)
-            Timestamp.internalBinaryWrite(message.requestedAt, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
-        /* repeated octelium.api.main.core.v1.Device.Status.Probe.Result results = 3; */
+    internalBinaryWrite(message: Device_Status_ProbeAttempt, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string uid = 1; */
+        if (message.uid !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.uid);
+        /* google.protobuf.Timestamp startedAt = 2; */
+        if (message.startedAt)
+            Timestamp.internalBinaryWrite(message.startedAt, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe probes = 3; */
+        for (let i = 0; i < message.probes.length; i++)
+            ClusterConfig_Status_Device_Probe.internalBinaryWrite(message.probes[i], writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.core.v1.Device.Status.ProbeAttempt.Result results = 4; */
         for (let i = 0; i < message.results.length; i++)
-            Device_Status_Probe_Result.internalBinaryWrite(message.results[i], writer.tag(3, WireType.LengthDelimited).fork(), options).join();
-        /* google.protobuf.Timestamp setAt = 4; */
-        if (message.setAt)
-            Timestamp.internalBinaryWrite(message.setAt, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+            Device_Status_ProbeAttempt_Result.internalBinaryWrite(message.results[i], writer.tag(4, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -21910,86 +22177,33 @@ class Device_Status_Probe$Type extends MessageType<Device_Status_Probe> {
     }
 }
 /**
- * @generated MessageType for protobuf message octelium.api.main.core.v1.Device.Status.Probe
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.Device.Status.ProbeAttempt
  */
-export const Device_Status_Probe = new Device_Status_Probe$Type();
+export const Device_Status_ProbeAttempt = new Device_Status_ProbeAttempt$Type();
 // @generated message type with reflection information, may provide speed optimized methods
-class Device_Status_Probe_Request$Type extends MessageType<Device_Status_Probe_Request> {
+class Device_Status_ProbeAttempt_Result$Type extends MessageType<Device_Status_ProbeAttempt_Result> {
     constructor() {
-        super("octelium.api.main.core.v1.Device.Status.Probe.Request", [
-            { no: 1, name: "ownerRefs", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ObjectReference },
-            { no: 2, name: "issuedAt", kind: "message", T: () => Timestamp }
-        ]);
-    }
-    create(value?: PartialMessage<Device_Status_Probe_Request>): Device_Status_Probe_Request {
-        const message = globalThis.Object.create((this.messagePrototype!));
-        message.ownerRefs = [];
-        if (value !== undefined)
-            reflectionMergePartial<Device_Status_Probe_Request>(this, message, value);
-        return message;
-    }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Device_Status_Probe_Request): Device_Status_Probe_Request {
-        let message = target ?? this.create(), end = reader.pos + length;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case /* repeated octelium.api.main.meta.v1.ObjectReference ownerRefs */ 1:
-                    message.ownerRefs.push(ObjectReference.internalBinaryRead(reader, reader.uint32(), options));
-                    break;
-                case /* google.protobuf.Timestamp issuedAt */ 2:
-                    message.issuedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.issuedAt);
-                    break;
-                default:
-                    let u = options.readUnknownField;
-                    if (u === "throw")
-                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
-                    let d = reader.skip(wireType);
-                    if (u !== false)
-                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
-            }
-        }
-        return message;
-    }
-    internalBinaryWrite(message: Device_Status_Probe_Request, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* repeated octelium.api.main.meta.v1.ObjectReference ownerRefs = 1; */
-        for (let i = 0; i < message.ownerRefs.length; i++)
-            ObjectReference.internalBinaryWrite(message.ownerRefs[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
-        /* google.protobuf.Timestamp issuedAt = 2; */
-        if (message.issuedAt)
-            Timestamp.internalBinaryWrite(message.issuedAt, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
-        let u = options.writeUnknownFields;
-        if (u !== false)
-            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-        return writer;
-    }
-}
-/**
- * @generated MessageType for protobuf message octelium.api.main.core.v1.Device.Status.Probe.Request
- */
-export const Device_Status_Probe_Request = new Device_Status_Probe_Request$Type();
-// @generated message type with reflection information, may provide speed optimized methods
-class Device_Status_Probe_Result$Type extends MessageType<Device_Status_Probe_Result> {
-    constructor() {
-        super("octelium.api.main.core.v1.Device.Status.Probe.Result", [
-            { no: 1, name: "ownerRef", kind: "message", T: () => ObjectReference },
+        super("octelium.api.main.core.v1.Device.Status.ProbeAttempt.Result", [
+            { no: 1, name: "probeID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "output", kind: "scalar", oneof: "type", T: 12 /*ScalarType.BYTES*/ },
             { no: 3, name: "error", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
-    create(value?: PartialMessage<Device_Status_Probe_Result>): Device_Status_Probe_Result {
+    create(value?: PartialMessage<Device_Status_ProbeAttempt_Result>): Device_Status_ProbeAttempt_Result {
         const message = globalThis.Object.create((this.messagePrototype!));
+        message.probeID = "";
         message.type = { oneofKind: undefined };
         if (value !== undefined)
-            reflectionMergePartial<Device_Status_Probe_Result>(this, message, value);
+            reflectionMergePartial<Device_Status_ProbeAttempt_Result>(this, message, value);
         return message;
     }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Device_Status_Probe_Result): Device_Status_Probe_Result {
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Device_Status_ProbeAttempt_Result): Device_Status_ProbeAttempt_Result {
         let message = target ?? this.create(), end = reader.pos + length;
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* octelium.api.main.meta.v1.ObjectReference ownerRef */ 1:
-                    message.ownerRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.ownerRef);
+                case /* string probeID */ 1:
+                    message.probeID = reader.string();
                     break;
                 case /* bytes output */ 2:
                     message.type = {
@@ -22014,10 +22228,10 @@ class Device_Status_Probe_Result$Type extends MessageType<Device_Status_Probe_Re
         }
         return message;
     }
-    internalBinaryWrite(message: Device_Status_Probe_Result, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* octelium.api.main.meta.v1.ObjectReference ownerRef = 1; */
-        if (message.ownerRef)
-            ObjectReference.internalBinaryWrite(message.ownerRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+    internalBinaryWrite(message: Device_Status_ProbeAttempt_Result, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string probeID = 1; */
+        if (message.probeID !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.probeID);
         /* bytes output = 2; */
         if (message.type.oneofKind === "output")
             writer.tag(2, WireType.LengthDelimited).bytes(message.type.output);
@@ -22031,9 +22245,9 @@ class Device_Status_Probe_Result$Type extends MessageType<Device_Status_Probe_Re
     }
 }
 /**
- * @generated MessageType for protobuf message octelium.api.main.core.v1.Device.Status.Probe.Result
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.Device.Status.ProbeAttempt.Result
  */
-export const Device_Status_Probe_Result = new Device_Status_Probe_Result$Type();
+export const Device_Status_ProbeAttempt_Result = new Device_Status_ProbeAttempt_Result$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class DeviceList$Type extends MessageType<DeviceList> {
     constructor() {

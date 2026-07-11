@@ -10,15 +10,13 @@ package iru
 
 import (
 	"context"
-	"encoding/json"
-	"io"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/devicemanager/devicemgrcommon"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
@@ -34,14 +32,9 @@ const (
 	devicesPath    = "/api/v1/devices"
 	iruPageSize    = 300
 	iruHTTPTimeout = 60 * time.Second
-	iruMaxRetries  = 5
+	iruMaxRetries  = 4
 	iruMaxRespByte = 64 << 20
-
-	probeTimeoutSeconds = 15
-	probeMaxOutputBytes = 16384
 )
-
-var platformUUIDRe = regexp.MustCompile(`(?i)"IOPlatformUUID"\s*=\s*"([0-9a-f-]{36})"`)
 
 type Manager struct {
 	api *apiClient
@@ -68,12 +61,20 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 		return nil, err
 	}
 
+	rc := resty.New().
+		SetBaseURL(strings.TrimRight(strings.TrimSpace(spec.BaseURL), "/")).
+		SetTimeout(iruHTTPTimeout).
+		SetHeader("Accept", "application/json").
+		SetAuthToken(uenterprisev1.ToSecret(sec).GetValueStr()).
+		SetResponseBodyLimit(iruMaxRespByte).
+		SetRetryCount(iruMaxRetries).
+		SetRetryWaitTime(2 * time.Second).
+		SetRetryMaxWaitTime(30 * time.Second).
+		AddRetryCondition(retryCondition).
+		SetRetryAfter(retryAfter)
+
 	return &Manager{
-		api: &apiClient{
-			httpc: &http.Client{Timeout: iruHTTPTimeout},
-			base:  strings.TrimRight(strings.TrimSpace(spec.BaseURL), "/"),
-			token: uenterprisev1.ToSecret(sec).GetValueStr(),
-		},
+		api: &apiClient{rc: rc},
 	}, nil
 }
 
@@ -82,36 +83,15 @@ func (m *Manager) Type() devicemgrcommon.ProviderType {
 }
 
 func (m *Manager) Close() error {
-	m.api.httpc.CloseIdleConnections()
+	m.api.rc.GetClient().CloseIdleConnections()
 	return nil
 }
 
 func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
-	return []*devicemgrcommon.Probe{
-		{
-			OSType: corev1.Device_Status_MAC,
-			RunCommand: &devicemgrcommon.RunCommand{
-				Command:        "/usr/sbin/ioreg",
-				Args:           []string{"-rd1", "-c", "IOPlatformExpertDevice"},
-				TimeoutSeconds: probeTimeoutSeconds,
-				MaxOutputBytes: probeMaxOutputBytes,
-			},
-		},
-	}
+	return nil
 }
 
 func (m *Manager) ParseExternalID(osType corev1.Device_Status_OSType, results []*devicemgrcommon.ProbeResult) (string, error) {
-	if osType != corev1.Device_Status_MAC {
-		return "", nil
-	}
-	for _, r := range results {
-		if r == nil || r.Err != nil || len(r.Output) == 0 {
-			continue
-		}
-		if mm := platformUUIDRe.FindStringSubmatch(string(r.Output)); len(mm) == 2 {
-			return strings.ToLower(mm[1]), nil
-		}
-	}
 	return "", nil
 }
 
@@ -122,7 +102,7 @@ func (m *Manager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
 	}
 	entries := make([]*devicemgrcommon.Entry, 0, len(devices))
 	for _, d := range devices {
-		if d == nil {
+		if d == nil || d.IsRemoved {
 			continue
 		}
 		entries = append(entries, toEntry(d))
@@ -131,9 +111,7 @@ func (m *Manager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
 }
 
 type apiClient struct {
-	httpc *http.Client
-	base  string
-	token string
+	rc *resty.Client
 }
 
 func (c *apiClient) listDevices(ctx context.Context) ([]*iruDevice, error) {
@@ -148,7 +126,7 @@ func (c *apiClient) listDevices(ctx context.Context) ([]*iruDevice, error) {
 		q.Set("offset", strconv.Itoa(offset))
 
 		var page []*iruDevice
-		if err := c.do(ctx, c.base+devicesPath+"?"+q.Encode(), &page); err != nil {
+		if err := c.get(ctx, devicesPath+"?"+q.Encode(), &page); err != nil {
 			return nil, err
 		}
 		out = append(out, page...)
@@ -160,60 +138,38 @@ func (c *apiClient) listDevices(ctx context.Context) ([]*iruDevice, error) {
 	return out, nil
 }
 
-func (c *apiClient) do(ctx context.Context, u string, out any) error {
-	var lastErr error
-	for attempt := 0; attempt < iruMaxRetries; attempt++ {
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
-		if err != nil {
-			return errors.Wrap(err, "Iru build request")
-		}
-		req.Header.Set("Authorization", "Bearer "+c.token)
-		req.Header.Set("Accept", "application/json")
-
-		resp, err := c.httpc.Do(req)
-		if err != nil {
-			lastErr = errors.Wrap(err, "Iru request")
-			if !sleepBackoff(ctx, attempt, nil) {
-				return lastErr
-			}
-			continue
-		}
-
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, iruMaxRespByte))
-		resp.Body.Close()
-
-		switch {
-		case resp.StatusCode == http.StatusOK:
-			if err := json.Unmarshal(body, out); err != nil {
-				return errors.Wrap(err, "Iru decode")
-			}
-			return nil
-		case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
-			return errors.Errorf("Iru status %d (check API token): %s", resp.StatusCode, snippet(body))
-		case resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500:
-			lastErr = errors.Errorf("Iru status %d: %s", resp.StatusCode, snippet(body))
-			if !sleepBackoff(ctx, attempt, resp) {
-				return lastErr
-			}
-		default:
-			return errors.Errorf("Iru status %d: %s", resp.StatusCode, snippet(body))
-		}
+func (c *apiClient) get(ctx context.Context, u string, out any) error {
+	resp, err := c.rc.R().SetContext(ctx).SetResult(out).Get(u)
+	if err != nil {
+		return errors.Wrap(err, "Iru request")
 	}
-	return lastErr
+	if resp.IsError() {
+		if resp.StatusCode() == http.StatusUnauthorized || resp.StatusCode() == http.StatusForbidden {
+			return errors.Errorf("Iru status %d (check API token and Device list permission): %s",
+				resp.StatusCode(), snippet(resp.Body()))
+		}
+		return errors.Errorf("Iru status %d: %s", resp.StatusCode(), snippet(resp.Body()))
+	}
+	return nil
 }
 
 type iruDevice struct {
-	DeviceID     string   `json:"device_id"`
-	DeviceName   string   `json:"device_name"`
-	SerialNumber string   `json:"serial_number"`
-	Platform     string   `json:"platform"`
-	OSVersion    string   `json:"os_version"`
-	Model        string   `json:"model"`
-	MacAddress   string   `json:"mac_address"`
-	LastCheckIn  string   `json:"last_check_in"`
-	IsMissing    bool     `json:"is_missing"`
-	BlueprintID  string   `json:"blueprint_id"`
-	User         *iruUser `json:"user"`
+	DeviceID       string   `json:"device_id"`
+	DeviceName     string   `json:"device_name"`
+	SerialNumber   string   `json:"serial_number"`
+	Platform       string   `json:"platform"`
+	OSVersion      string   `json:"os_version"`
+	Model          string   `json:"model"`
+	MacAddress     string   `json:"mac_address"`
+	LastCheckIn    string   `json:"last_check_in"`
+	IsMissing      bool     `json:"is_missing"`
+	IsRemoved      bool     `json:"is_removed"`
+	MDMEnabled     bool     `json:"mdm_enabled"`
+	AgentInstalled bool     `json:"agent_installed"`
+	AgentVersion   string   `json:"agent_version"`
+	AssetTag       string   `json:"asset_tag"`
+	BlueprintID    string   `json:"blueprint_id"`
+	User           *iruUser `json:"user"`
 }
 
 type iruUser struct {
@@ -222,19 +178,24 @@ type iruUser struct {
 }
 
 func toEntry(d *iruDevice) *devicemgrcommon.Entry {
-	missing := d.IsMissing
+	healthy := d.MDMEnabled && !d.IsMissing
 
 	score := int32(100)
-	if missing {
+	if d.IsMissing {
 		score = 20
+	} else if !d.MDMEnabled {
+		score = 50
 	}
 
 	p := &corev1.Device_Status_Posture{
-		ExternalID: strings.ToLower(d.DeviceID),
-		RiskLevel:  riskBand(score),
-		Compliant:  passFail(!missing),
+		RiskLevel:      riskBand(score),
+		DiskEncryption: corev1.Device_Status_Posture_NOT_APPLICABLE,
+		Compliant:      passFail(healthy),
+		ThreatFree:     corev1.Device_Status_Posture_NOT_APPLICABLE,
 		Signals: map[string]corev1.Device_Status_Posture_SignalState{
-			"managed": corev1.Device_Status_Posture_PASS,
+			"mdmEnabled":     passFail(d.MDMEnabled),
+			"agentInstalled": passFail(d.AgentInstalled),
+			"notMissing":     passFail(!d.IsMissing),
 		},
 		Attrs: iruAttrs(d),
 	}
@@ -253,7 +214,6 @@ func toEntry(d *iruDevice) *devicemgrcommon.Entry {
 	}
 
 	return &devicemgrcommon.Entry{
-		ExternalID:  strings.ToLower(d.DeviceID),
 		Serial:      d.SerialNumber,
 		MACs:        macs,
 		OwnerEmails: emails,
@@ -272,12 +232,16 @@ func iruAttrs(d *iruDevice) *structpb.Struct {
 	put("platform", d.Platform)
 	put("osVersion", d.OSVersion)
 	put("model", d.Model)
+	put("agentVersion", d.AgentVersion)
+	put("assetTag", d.AssetTag)
 	put("blueprintId", d.BlueprintID)
 	if d.User != nil {
 		put("userEmail", d.User.Email)
 		put("userName", d.User.Name)
 	}
 	fields["isMissing"] = d.IsMissing
+	fields["mdmEnabled"] = d.MDMEnabled
+	fields["agentInstalled"] = d.AgentInstalled
 	if len(fields) == 0 {
 		return nil
 	}
@@ -320,26 +284,22 @@ func parseTime(s string) (time.Time, bool) {
 	return time.Time{}, false
 }
 
-func sleepBackoff(ctx context.Context, attempt int, resp *http.Response) bool {
-	d := time.Duration(1<<uint(attempt)) * time.Second
-	if d > 30*time.Second {
-		d = 30 * time.Second
+func retryCondition(r *resty.Response, err error) bool {
+	if err != nil {
+		return true
 	}
-	if resp != nil {
-		if ra := resp.Header.Get("Retry-After"); ra != "" {
-			if secs, err := strconv.Atoi(strings.TrimSpace(ra)); err == nil && secs >= 0 {
-				d = time.Duration(secs) * time.Second
+	return r.StatusCode() == http.StatusTooManyRequests || r.StatusCode() >= 500
+}
+
+func retryAfter(c *resty.Client, r *resty.Response) (time.Duration, error) {
+	if r != nil {
+		if ra := r.Header().Get("Retry-After"); ra != "" {
+			if secs, err := strconv.Atoi(strings.TrimSpace(ra)); err == nil && secs >= 0 && secs <= 300 {
+				return time.Duration(secs) * time.Second, nil
 			}
 		}
 	}
-	t := time.NewTimer(d)
-	defer t.Stop()
-	select {
-	case <-ctx.Done():
-		return false
-	case <-t.C:
-		return true
-	}
+	return 0, nil
 }
 
 func snippet(b []byte) string {

@@ -10,8 +10,6 @@ package fleetdm
 
 import (
 	"context"
-	"encoding/json"
-	"io"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -19,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/devicemanager/devicemgrcommon"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
@@ -31,14 +30,13 @@ import (
 )
 
 const (
+	catalogRefHardwareUUID = "octelium/hardware-uuid/v1"
+
 	hostsPath        = "/api/v1/fleet/hosts"
 	fleetPageSize    = 100
 	fleetHTTPTimeout = 60 * time.Second
-	fleetMaxRetries  = 5
+	fleetMaxRetries  = 4
 	fleetMaxRespByte = 64 << 20
-
-	probeTimeoutSeconds = 15
-	probeMaxOutputBytes = 16384
 )
 
 var (
@@ -72,12 +70,20 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 		return nil, err
 	}
 
+	rc := resty.New().
+		SetBaseURL(strings.TrimRight(strings.TrimSpace(spec.BaseURL), "/")).
+		SetTimeout(fleetHTTPTimeout).
+		SetHeader("Accept", "application/json").
+		SetAuthToken(uenterprisev1.ToSecret(sec).GetValueStr()).
+		SetResponseBodyLimit(fleetMaxRespByte).
+		SetRetryCount(fleetMaxRetries).
+		SetRetryWaitTime(2 * time.Second).
+		SetRetryMaxWaitTime(30 * time.Second).
+		AddRetryCondition(retryCondition).
+		SetRetryAfter(retryAfter)
+
 	return &Manager{
-		api: &apiClient{
-			httpc: &http.Client{Timeout: fleetHTTPTimeout},
-			base:  strings.TrimRight(strings.TrimSpace(spec.BaseURL), "/"),
-			token: uenterprisev1.ToSecret(sec).GetValueStr(),
-		},
+		api:    &apiClient{rc: rc},
 		teamID: spec.TeamID,
 	}, nil
 }
@@ -87,7 +93,7 @@ func (m *Manager) Type() devicemgrcommon.ProviderType {
 }
 
 func (m *Manager) Close() error {
-	m.api.httpc.CloseIdleConnections()
+	m.api.rc.GetClient().CloseIdleConnections()
 	return nil
 }
 
@@ -95,30 +101,12 @@ func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 	return []*devicemgrcommon.Probe{
 		{
 			OSType: corev1.Device_Status_MAC,
-			RunCommand: &devicemgrcommon.RunCommand{
-				Command:        "/usr/sbin/ioreg",
-				Args:           []string{"-rd1", "-c", "IOPlatformExpertDevice"},
-				TimeoutSeconds: probeTimeoutSeconds,
-				MaxOutputBytes: probeMaxOutputBytes,
-			},
 		},
 		{
 			OSType: corev1.Device_Status_WINDOWS,
-
-			RunCommand: &devicemgrcommon.RunCommand{
-				Command:        `C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe`,
-				Args:           []string{"-NoProfile", "-Command", "(Get-CimInstance -ClassName Win32_ComputerSystemProduct).UUID"},
-				TimeoutSeconds: probeTimeoutSeconds,
-				MaxOutputBytes: probeMaxOutputBytes,
-			},
 		},
 		{
-			OSType:           corev1.Device_Status_LINUX,
-			RequireElevation: true,
-			ReadFile: &devicemgrcommon.ReadFile{
-				Path:     "/sys/class/dmi/id/product_uuid",
-				MaxBytes: 128,
-			},
+			OSType: corev1.Device_Status_LINUX,
 		},
 	}
 }
@@ -158,9 +146,7 @@ func (m *Manager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
 }
 
 type apiClient struct {
-	httpc *http.Client
-	base  string
-	token string
+	rc *resty.Client
 }
 
 type hostsResponse struct {
@@ -181,12 +167,12 @@ func (c *apiClient) listHosts(ctx context.Context, teamID uint32) ([]*fleetHost,
 			q.Set("team_id", strconv.FormatUint(uint64(teamID), 10))
 		}
 
-		var page0 hostsResponse
-		if err := c.do(ctx, c.base+hostsPath+"?"+q.Encode(), &page0); err != nil {
+		var resp hostsResponse
+		if err := c.get(ctx, hostsPath+"?"+q.Encode(), &resp); err != nil {
 			return nil, err
 		}
-		out = append(out, page0.Hosts...)
-		if len(page0.Hosts) < fleetPageSize {
+		out = append(out, resp.Hosts...)
+		if len(resp.Hosts) < fleetPageSize {
 			break
 		}
 		page++
@@ -194,46 +180,19 @@ func (c *apiClient) listHosts(ctx context.Context, teamID uint32) ([]*fleetHost,
 	return out, nil
 }
 
-func (c *apiClient) do(ctx context.Context, u string, out any) error {
-	var lastErr error
-	for attempt := 0; attempt < fleetMaxRetries; attempt++ {
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
-		if err != nil {
-			return errors.Wrap(err, "FleetDM build request")
-		}
-		req.Header.Set("Authorization", "Bearer "+c.token)
-		req.Header.Set("Accept", "application/json")
-
-		resp, err := c.httpc.Do(req)
-		if err != nil {
-			lastErr = errors.Wrap(err, "FleetDM request")
-			if !sleepBackoff(ctx, attempt, nil) {
-				return lastErr
-			}
-			continue
-		}
-
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, fleetMaxRespByte))
-		resp.Body.Close()
-
-		switch {
-		case resp.StatusCode == http.StatusOK:
-			if err := json.Unmarshal(body, out); err != nil {
-				return errors.Wrap(err, "FleetDM decode")
-			}
-			return nil
-		case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
-			return errors.Errorf("FleetDM status %d (check API token): %s", resp.StatusCode, snippet(body))
-		case resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500:
-			lastErr = errors.Errorf("FleetDM status %d: %s", resp.StatusCode, snippet(body))
-			if !sleepBackoff(ctx, attempt, resp) {
-				return lastErr
-			}
-		default:
-			return errors.Errorf("FleetDM status %d: %s", resp.StatusCode, snippet(body))
-		}
+func (c *apiClient) get(ctx context.Context, u string, out any) error {
+	resp, err := c.rc.R().SetContext(ctx).SetResult(out).Get(u)
+	if err != nil {
+		return errors.Wrap(err, "FleetDM request")
 	}
-	return lastErr
+	if resp.IsError() {
+		if resp.StatusCode() == http.StatusUnauthorized || resp.StatusCode() == http.StatusForbidden {
+			return errors.Errorf("FleetDM status %d (check API-only user token): %s",
+				resp.StatusCode(), snippet(resp.Body()))
+		}
+		return errors.Errorf("FleetDM status %d: %s", resp.StatusCode(), snippet(resp.Body()))
+	}
+	return nil
 }
 
 type fleetHost struct {
@@ -245,8 +204,9 @@ type fleetHost struct {
 	Platform              string       `json:"platform"`
 	OSVersion             string       `json:"os_version"`
 	PublicIP              string       `json:"public_ip"`
+	Status                string       `json:"status"`
 	SeenTime              string       `json:"seen_time"`
-	DiskEncryptionEnabled bool         `json:"disk_encryption_enabled"`
+	DiskEncryptionEnabled *bool        `json:"disk_encryption_enabled"`
 	Issues                *fleetIssues `json:"issues"`
 	MDM                   *fleetMDM    `json:"mdm"`
 }
@@ -276,11 +236,28 @@ func toEntry(h *fleetHost) *devicemgrcommon.Entry {
 		}
 	}
 
+	diskEncryption := corev1.Device_Status_Posture_NOT_APPLICABLE
+	if h.DiskEncryptionEnabled != nil {
+		diskEncryption = passFail(*h.DiskEncryptionEnabled)
+		if !*h.DiskEncryptionEnabled && score > 60 {
+			score = 60
+		}
+	}
+
+	signals := map[string]corev1.Device_Status_Posture_SignalState{
+		"agentOnline": passFail(strings.EqualFold(h.Status, "online")),
+	}
+	if h.MDM != nil && strings.TrimSpace(h.MDM.EnrollmentStatus) != "" {
+		signals["mdmEnrolled"] = passFail(
+			strings.HasPrefix(strings.ToLower(h.MDM.EnrollmentStatus), "on"))
+	}
+
 	p := &corev1.Device_Status_Posture{
-		ExternalID:     strings.ToLower(h.UUID),
 		RiskLevel:      riskBand(score),
-		DiskEncryption: passFail(h.DiskEncryptionEnabled),
+		DiskEncryption: diskEncryption,
 		Compliant:      passFail(compliant),
+		ThreatFree:     corev1.Device_Status_Posture_NOT_APPLICABLE,
+		Signals:        signals,
 		Attrs:          fleetAttrs(h),
 	}
 	if t, ok := parseTime(h.SeenTime); ok {
@@ -293,7 +270,7 @@ func toEntry(h *fleetHost) *devicemgrcommon.Entry {
 	}
 
 	return &devicemgrcommon.Entry{
-		ExternalID: strings.ToLower(h.UUID),
+		ExternalID: strings.ToLower(strings.TrimSpace(h.UUID)),
 		Serial:     h.HardwareSerial,
 		MACs:       macs,
 		Posture:    p,
@@ -312,6 +289,7 @@ func fleetAttrs(h *fleetHost) *structpb.Struct {
 	put("platform", h.Platform)
 	put("osVersion", h.OSVersion)
 	put("publicIP", h.PublicIP)
+	put("status", h.Status)
 	if h.MDM != nil {
 		put("mdmEnrollmentStatus", h.MDM.EnrollmentStatus)
 		put("mdmName", h.MDM.Name)
@@ -361,26 +339,22 @@ func parseTime(s string) (time.Time, bool) {
 	return time.Time{}, false
 }
 
-func sleepBackoff(ctx context.Context, attempt int, resp *http.Response) bool {
-	d := time.Duration(1<<uint(attempt)) * time.Second
-	if d > 30*time.Second {
-		d = 30 * time.Second
+func retryCondition(r *resty.Response, err error) bool {
+	if err != nil {
+		return true
 	}
-	if resp != nil {
-		if ra := resp.Header.Get("Retry-After"); ra != "" {
-			if secs, err := strconv.Atoi(strings.TrimSpace(ra)); err == nil && secs >= 0 {
-				d = time.Duration(secs) * time.Second
+	return r.StatusCode() == http.StatusTooManyRequests || r.StatusCode() >= 500
+}
+
+func retryAfter(c *resty.Client, r *resty.Response) (time.Duration, error) {
+	if r != nil {
+		if ra := r.Header().Get("Retry-After"); ra != "" {
+			if secs, err := strconv.Atoi(strings.TrimSpace(ra)); err == nil && secs >= 0 && secs <= 300 {
+				return time.Duration(secs) * time.Second, nil
 			}
 		}
 	}
-	t := time.NewTimer(d)
-	defer t.Stop()
-	select {
-	case <-ctx.Done():
-		return false
-	case <-t.C:
-		return true
-	}
+	return 0, nil
 }
 
 func snippet(b []byte) string {

@@ -10,8 +10,6 @@ package onepassword
 
 import (
 	"context"
-	"encoding/json"
-	"io"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -19,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/devicemanager/devicemgrcommon"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
@@ -35,11 +34,8 @@ const (
 	devicesPath    = "/api/v0/devices"
 	opPageSize     = 100
 	opHTTPTimeout  = 60 * time.Second
-	opMaxRetries   = 5
+	opMaxRetries   = 4
 	opMaxRespByte  = 64 << 20
-
-	probeTimeoutSeconds = 15
-	probeMaxOutputBytes = 16384
 )
 
 var (
@@ -74,12 +70,20 @@ func New(ctx context.Context, octeliumC octeliumc.ClientInterface, opts *devicem
 		base = defaultBaseURL
 	}
 
+	rc := resty.New().
+		SetBaseURL(base).
+		SetTimeout(opHTTPTimeout).
+		SetHeader("Accept", "application/json").
+		SetAuthToken(uenterprisev1.ToSecret(sec).GetValueStr()).
+		SetResponseBodyLimit(opMaxRespByte).
+		SetRetryCount(opMaxRetries).
+		SetRetryWaitTime(2 * time.Second).
+		SetRetryMaxWaitTime(30 * time.Second).
+		AddRetryCondition(retryCondition).
+		SetRetryAfter(retryAfter)
+
 	return &Manager{
-		api: &apiClient{
-			httpc: &http.Client{Timeout: opHTTPTimeout},
-			base:  base,
-			token: uenterprisev1.ToSecret(sec).GetValueStr(),
-		},
+		api: &apiClient{rc: rc},
 	}, nil
 }
 
@@ -88,7 +92,7 @@ func (m *Manager) Type() devicemgrcommon.ProviderType {
 }
 
 func (m *Manager) Close() error {
-	m.api.httpc.CloseIdleConnections()
+	m.api.rc.GetClient().CloseIdleConnections()
 	return nil
 }
 
@@ -96,32 +100,12 @@ func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 	return []*devicemgrcommon.Probe{
 		{
 			OSType: corev1.Device_Status_MAC,
-
-			RunCommand: &devicemgrcommon.RunCommand{
-				Command:        "/usr/sbin/ioreg",
-				Args:           []string{"-rd1", "-c", "IOPlatformExpertDevice"},
-				TimeoutSeconds: probeTimeoutSeconds,
-				MaxOutputBytes: probeMaxOutputBytes,
-			},
 		},
 		{
 			OSType: corev1.Device_Status_WINDOWS,
-
-			RunCommand: &devicemgrcommon.RunCommand{
-				Command:        `C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe`,
-				Args:           []string{"-NoProfile", "-Command", "(Get-CimInstance -ClassName Win32_ComputerSystemProduct).UUID"},
-				TimeoutSeconds: probeTimeoutSeconds,
-				MaxOutputBytes: probeMaxOutputBytes,
-			},
 		},
 		{
 			OSType: corev1.Device_Status_LINUX,
-
-			RequireElevation: true,
-			ReadFile: &devicemgrcommon.ReadFile{
-				Path:     "/sys/class/dmi/id/product_uuid",
-				MaxBytes: 128,
-			},
 		},
 	}
 }
@@ -161,9 +145,7 @@ func (m *Manager) Collect(ctx context.Context) (*devicemgrcommon.Fleet, error) {
 }
 
 type apiClient struct {
-	httpc *http.Client
-	base  string
-	token string
+	rc *resty.Client
 }
 
 type devicesResponse struct {
@@ -188,7 +170,7 @@ func (c *apiClient) listDevices(ctx context.Context) ([]*kolideDevice, error) {
 		}
 
 		var page devicesResponse
-		if err := c.do(ctx, c.base+devicesPath+"?"+q.Encode(), &page); err != nil {
+		if err := c.get(ctx, devicesPath+"?"+q.Encode(), &page); err != nil {
 			return nil, err
 		}
 		out = append(out, page.Data...)
@@ -200,46 +182,19 @@ func (c *apiClient) listDevices(ctx context.Context) ([]*kolideDevice, error) {
 	return out, nil
 }
 
-func (c *apiClient) do(ctx context.Context, u string, out any) error {
-	var lastErr error
-	for attempt := 0; attempt < opMaxRetries; attempt++ {
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
-		if err != nil {
-			return errors.Wrap(err, "OnePassword build request")
-		}
-		req.Header.Set("Authorization", "Bearer "+c.token)
-		req.Header.Set("Accept", "application/json")
-
-		resp, err := c.httpc.Do(req)
-		if err != nil {
-			lastErr = errors.Wrap(err, "OnePassword request")
-			if !sleepBackoff(ctx, attempt, nil) {
-				return lastErr
-			}
-			continue
-		}
-
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, opMaxRespByte))
-		resp.Body.Close()
-
-		switch {
-		case resp.StatusCode == http.StatusOK:
-			if err := json.Unmarshal(body, out); err != nil {
-				return errors.Wrap(err, "OnePassword decode")
-			}
-			return nil
-		case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
-			return errors.Errorf("OnePassword status %d (check API token scope): %s", resp.StatusCode, snippet(body))
-		case resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500:
-			lastErr = errors.Errorf("OnePassword status %d: %s", resp.StatusCode, snippet(body))
-			if !sleepBackoff(ctx, attempt, resp) {
-				return lastErr
-			}
-		default:
-			return errors.Errorf("OnePassword status %d: %s", resp.StatusCode, snippet(body))
-		}
+func (c *apiClient) get(ctx context.Context, u string, out any) error {
+	resp, err := c.rc.R().SetContext(ctx).SetResult(out).Get(u)
+	if err != nil {
+		return errors.Wrap(err, "OnePassword request")
 	}
-	return lastErr
+	if resp.IsError() {
+		if resp.StatusCode() == http.StatusUnauthorized || resp.StatusCode() == http.StatusForbidden {
+			return errors.Errorf("OnePassword status %d (check API token scope): %s",
+				resp.StatusCode(), snippet(resp.Body()))
+		}
+		return errors.Errorf("OnePassword status %d: %s", resp.StatusCode(), snippet(resp.Body()))
+	}
+	return nil
 }
 
 type kolideDevice struct {
@@ -276,27 +231,32 @@ func toEntry(d *kolideDevice) *devicemgrcommon.Entry {
 	}
 
 	p := &corev1.Device_Status_Posture{
-		ExternalID: strings.ToLower(d.HardwareUUID),
-		RiskLevel:  riskBand(score),
-		Compliant:  passFail(compliant),
-		Attrs:      kolideAttrs(d),
+		RiskLevel:      riskBand(score),
+		DiskEncryption: corev1.Device_Status_Posture_NOT_APPLICABLE,
+		Compliant:      passFail(compliant),
+		ThreatFree:     corev1.Device_Status_Posture_NOT_APPLICABLE,
+		Signals: map[string]corev1.Device_Status_Posture_SignalState{
+			"checksPassing": passFail(compliant),
+		},
+		Attrs: kolideAttrs(d),
 	}
 	if t, ok := parseTime(d.LastSeenAt); ok {
 		p.LastSeenAt = timestamppb.New(t)
 	}
 
-	return &devicemgrcommon.Entry{
-		ExternalID: strings.ToLower(d.HardwareUUID),
-		Serial:     d.Serial,
-		Posture:    p,
+	var emails []string
+	if d.AssignedOwner != nil {
+		if email := strings.TrimSpace(d.AssignedOwner.Email); strings.Contains(email, "@") {
+			emails = []string{email}
+		}
 	}
-}
 
-func kolideOwnerEmail(d *kolideDevice) string {
-	if d.AssignedOwner != nil && d.AssignedOwner.Email != "" {
-		return d.AssignedOwner.Email
+	return &devicemgrcommon.Entry{
+		ExternalID:  strings.ToLower(strings.TrimSpace(d.HardwareUUID)),
+		Serial:      d.Serial,
+		OwnerEmails: emails,
+		Posture:     p,
 	}
-	return d.PrimaryUserName
 }
 
 func kolideAttrs(d *kolideDevice) *structpb.Struct {
@@ -311,8 +271,12 @@ func kolideAttrs(d *kolideDevice) *structpb.Struct {
 	put("operatingSystem", d.OperatingSystem)
 	put("osVersion", d.OSVersion)
 	put("authState", d.AuthState)
-	put("ownerEmail", kolideOwnerEmail(d))
+	put("primaryUserName", d.PrimaryUserName)
 	put("note", d.Note)
+	if d.AssignedOwner != nil {
+		put("ownerEmail", d.AssignedOwner.Email)
+		put("ownerName", d.AssignedOwner.Name)
+	}
 	fields["failureCount"] = float64(d.FailureCount)
 	fields["resolvedFailureCount"] = float64(d.ResolvedFailureCount)
 	if len(fields) == 0 {
@@ -357,26 +321,22 @@ func parseTime(s string) (time.Time, bool) {
 	return time.Time{}, false
 }
 
-func sleepBackoff(ctx context.Context, attempt int, resp *http.Response) bool {
-	d := time.Duration(1<<uint(attempt)) * time.Second
-	if d > 30*time.Second {
-		d = 30 * time.Second
+func retryCondition(r *resty.Response, err error) bool {
+	if err != nil {
+		return true
 	}
-	if resp != nil {
-		if ra := resp.Header.Get("Retry-After"); ra != "" {
-			if secs, err := strconv.Atoi(strings.TrimSpace(ra)); err == nil && secs >= 0 {
-				d = time.Duration(secs) * time.Second
+	return r.StatusCode() == http.StatusTooManyRequests || r.StatusCode() >= 500
+}
+
+func retryAfter(c *resty.Client, r *resty.Response) (time.Duration, error) {
+	if r != nil {
+		if ra := r.Header().Get("Retry-After"); ra != "" {
+			if secs, err := strconv.Atoi(strings.TrimSpace(ra)); err == nil && secs >= 0 && secs <= 300 {
+				return time.Duration(secs) * time.Second, nil
 			}
 		}
 	}
-	t := time.NewTimer(d)
-	defer t.Stop()
-	select {
-	case <-ctx.Done():
-		return false
-	case <-t.C:
-		return true
-	}
+	return 0, nil
 }
 
 func snippet(b []byte) string {
