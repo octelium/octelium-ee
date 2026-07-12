@@ -164,7 +164,7 @@ func (w *Watcher) doCheckPendingRequest(ctx context.Context, req *accessv1.Reque
 
 	switch step.OnTimeout {
 	case accessv1.Policy_Spec_Rule_Action_Review_Step_ON_TIMEOUT_GOTO_NEXT_STEP:
-		gotoNextReviewStepOrApprove(next, review)
+		gotoNextReviewStepOrExpire(next, review)
 
 	case accessv1.Policy_Spec_Rule_Action_Review_Step_ON_TIMEOUT_REJECT:
 		setRequestState(next, accessv1.Request_Status_State_REJECTED)
@@ -224,12 +224,12 @@ func getCurrentReviewStepStartedAt(req *accessv1.Request) *timestamppb.Timestamp
 	return nil
 }
 
-func gotoNextReviewStepOrApprove(
+func gotoNextReviewStepOrExpire(
 	req *accessv1.Request,
 	review *accessv1.Policy_Spec_Rule_Action_Review,
 ) {
 	if int(req.Status.Review.CurrentStep)+1 >= len(review.Steps) {
-		setRequestState(req, accessv1.Request_Status_State_APPROVED)
+		setRequestState(req, accessv1.Request_Status_State_EXPIRED)
 		return
 	}
 
