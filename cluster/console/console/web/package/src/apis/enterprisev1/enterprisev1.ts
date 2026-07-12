@@ -4214,10 +4214,6 @@ export interface DeviceManager {
  */
 export interface DeviceManager_Spec {
     /**
-     * Condition scopes which Devices this DeviceManager applies to. It is
-     * evaluated server-side (at RunDeviceProbeBegin and by the Device
-     * controller) against the stored Device and is never sent to clients.
-     *
      * @generated from protobuf field: octelium.api.main.core.v1.Condition condition = 12
      */
     condition?: Condition$;
@@ -4305,17 +4301,10 @@ export interface DeviceManager_Spec_CrowdStrike {
      */
     memberCID: string;
     /**
-     * HostFilter is an FQL filter applied to host listing. It scopes
-     * provider API collection only and never influences probe content.
-     *
      * @generated from protobuf field: string hostFilter = 6
      */
     hostFilter: string;
     /**
-     * DisableZeroTrustAssessment skips the ZTA score collection. The API
-     * client credential otherwise requires the Zero Trust Assessment Read
-     * scope in addition to Hosts Read.
-     *
      * @generated from protobuf field: bool disableZeroTrustAssessment = 7
      */
     disableZeroTrustAssessment: boolean;
@@ -4387,10 +4376,6 @@ export interface DeviceManager_Spec_SentinelOne {
      */
     accountIDs: string;
     /**
-     * AgentQuery is an urlencoded set of extra query parameters appended to
-     * the agents listing request. Invalid encodings fail collection rather
-     * than being silently ignored.
-     *
      * @generated from protobuf field: string agentQuery = 5
      */
     agentQuery: string;
@@ -4433,8 +4418,6 @@ export interface DeviceManager_Spec_MicrosoftIntune {
      */
     cloud: DeviceManager_Spec_MicrosoftIntune_Cloud;
     /**
-     * Filter is an OData $filter expression for the managedDevices listing.
-     *
      * @generated from protobuf field: string filter = 5
      */
     filter: string;
@@ -4494,9 +4477,6 @@ export interface DeviceManager_Spec_Jamf {
      */
     clientSecret?: DeviceManager_Spec_Jamf_ClientSecret;
     /**
-     * Filter is an RSQL filter expression for the computers-inventory
-     * listing.
-     *
      * @generated from protobuf field: string filter = 4
      */
     filter: string;
@@ -4519,9 +4499,6 @@ export interface DeviceManager_Spec_Jamf_ClientSecret {
     };
 }
 /**
- * OnePassword integrates 1Password Extended Device Trust (Kolide).
- * BaseURL defaults to https://k2.kolide.com when unset.
- *
  * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword
  */
 export interface DeviceManager_Spec_OnePassword {
@@ -4594,10 +4571,6 @@ export interface DeviceManager_Spec_Huntress {
      */
     baseURL: string;
     /**
-     * APIKey is the public half of the Huntress API keypair. It is
-     * deliberately a plaintext field, unlike APISecret; this is not a
-     * mistake.
-     *
      * @generated from protobuf field: string apiKey = 2
      */
     apiKey: string;
@@ -4624,12 +4597,6 @@ export interface DeviceManager_Spec_Huntress_APISecret {
     };
 }
 /**
- * Iru device identifiers are provider-assigned and cannot be derived on
- * the endpoint, so probe-based linking is unsupported: the adapter
- * declares no identity probes and Devices link through identity
- * attributes (serial number). Configure Linking.strategy IDENTITY_ONLY;
- * PROBE_ONLY renders the DeviceManager unable to bind anything.
- *
  * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru
  */
 export interface DeviceManager_Spec_Iru {
@@ -4664,26 +4631,14 @@ export interface DeviceManager_Spec_Iru_APIToken {
  */
 export interface DeviceManager_Spec_Polling {
     /**
-     * Interval between provider inventory collections. Defaults to 5m,
-     * floored at 30s.
-     *
      * @generated from protobuf field: octelium.api.main.meta.v1.Duration interval = 1
      */
     interval?: Duration;
     /**
-     * Timeout bounds a single provider collection. Defaults to 2m. It no
-     * longer bounds any Device-side work, which belongs to the Device
-     * watcher.
-     *
      * @generated from protobuf field: octelium.api.main.meta.v1.Duration timeout = 2
      */
     timeout?: Duration;
     /**
-     * StaleAfter is how long a collected inventory snapshot remains usable
-     * for binding decisions and posture refresh. Defaults to 1h. Posture
-     * materialized from a snapshot expires at collection time plus this
-     * value, and the PDP treats expired posture as absent.
-     *
      * @generated from protobuf field: octelium.api.main.meta.v1.Duration staleAfter = 3
      */
     staleAfter?: Duration;
@@ -4705,23 +4660,10 @@ export interface DeviceManager_Spec_Linking {
      */
     approvalMode: DeviceManager_Spec_Linking_ApprovalMode;
     /**
-     * RequireAgreement hardens AUTOMATIC mode against self-reported
-     * identifier spoofing: acceptance requires that identity attributes
-     * and the probe external ID independently resolve to the same
-     * inventory entry. Only meaningful with IDENTITY_AND_PROBE.
-     *
      * @generated from protobuf field: bool requireAgreement = 3
      */
     requireAgreement: boolean;
     /**
-     * Priority resolves overlap deterministically when the Conditions of
-     * multiple DeviceManagers match the same Device and more than one
-     * produces a unique candidate. Higher wins. Equal priorities leave the
-     * Device AMBIGUOUS with the tied DeviceManagers named in
-     * Device.Status.Binding.message. Overlapping Conditions without
-     * distinct priorities is a misconfiguration that status surfaces
-     * rather than silently resolves.
-     *
      * @generated from protobuf field: uint32 priority = 4
      */
     priority: number;
@@ -4735,12 +4677,6 @@ export interface DeviceManager_Spec_Linking {
  */
 export interface DeviceManager_Spec_Linking_Verification {
     /**
-     * Interval between re-probes of the ACCEPTED Binding. Unset disables
-     * re-verification. Verification is flag-only: failures increment
-     * Device.Status.Binding.verificationFailures and never unbind.
-     * "Bound forever" and "posture trusted forever" are different
-     * claims; this mechanism keeps the second one false.
-     *
      * @generated from protobuf field: octelium.api.main.meta.v1.Duration interval = 1
      */
     interval?: Duration;
@@ -4791,27 +4727,14 @@ export enum DeviceManager_Spec_Linking_ApprovalMode {
      */
     APPROVAL_MODE_UNSET = 0,
     /**
-     * Automatically accept a candidate binding once the provider-side
-     * external Device resolves uniquely in the DeviceManager inventory.
-     *
      * @generated from protobuf enum value: AUTOMATIC = 1;
      */
     AUTOMATIC = 1,
     /**
-     * Automatically accept a candidate binding only when a provider-side
-     * owner email matches the canonical email of the Octelium User that
-     * owns the Device.
-     *
      * @generated from protobuf enum value: EMAIL = 2;
      */
     EMAIL = 2,
     /**
-     * Require explicit Cluster administrator approval before accepting
-     * the candidate binding. This is the default and the recommended
-     * mode: all binding identifiers (serial, MAC, probe output)
-     * originate from the endpoint and are spoofable, and under
-     * quasi-permanence a spoofed binding persists until reset.
-     *
      * @generated from protobuf enum value: MANUAL = 3;
      */
     MANUAL = 3
@@ -4838,10 +4761,6 @@ export interface DeviceManager_Status {
     linking?: DeviceManager_Status_Linking;
 }
 /**
- * Collection is written exclusively by the DeviceManager worker after
- * each provider poll. It carries no Device-side counts: the worker never
- * touches Devices.
- *
  * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceManager.Status.Collection
  */
 export interface DeviceManager_Status_Collection {
@@ -4863,11 +4782,6 @@ export interface DeviceManager_Status_Collection {
     lastError: string;
 }
 /**
- * Linking is written exclusively by the Device watcher after each sweep.
- * Separate message, separate writer, so the two status writers never
- * read-modify-write each other's fields. Counts are eventually
- * consistent snapshots of the last completed sweep.
- *
  * @generated from protobuf message octelium.api.main.enterprise.v1.DeviceManager.Status.Linking
  */
 export interface DeviceManager_Status_Linking {

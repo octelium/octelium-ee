@@ -1367,19 +1367,9 @@ type DeviceManager_Spec_Linking_ApprovalMode int32
 
 const (
 	DeviceManager_Spec_Linking_APPROVAL_MODE_UNSET DeviceManager_Spec_Linking_ApprovalMode = 0
-	// Automatically accept a candidate binding once the provider-side
-	// external Device resolves uniquely in the DeviceManager inventory.
-	DeviceManager_Spec_Linking_AUTOMATIC DeviceManager_Spec_Linking_ApprovalMode = 1
-	// Automatically accept a candidate binding only when a provider-side
-	// owner email matches the canonical email of the Octelium User that
-	// owns the Device.
-	DeviceManager_Spec_Linking_EMAIL DeviceManager_Spec_Linking_ApprovalMode = 2
-	// Require explicit Cluster administrator approval before accepting
-	// the candidate binding. This is the default and the recommended
-	// mode: all binding identifiers (serial, MAC, probe output)
-	// originate from the endpoint and are spoofable, and under
-	// quasi-permanence a spoofed binding persists until reset.
-	DeviceManager_Spec_Linking_MANUAL DeviceManager_Spec_Linking_ApprovalMode = 3
+	DeviceManager_Spec_Linking_AUTOMATIC           DeviceManager_Spec_Linking_ApprovalMode = 1
+	DeviceManager_Spec_Linking_EMAIL               DeviceManager_Spec_Linking_ApprovalMode = 2
+	DeviceManager_Spec_Linking_MANUAL              DeviceManager_Spec_Linking_ApprovalMode = 3
 )
 
 // Enum value maps for DeviceManager_Spec_Linking_ApprovalMode.
@@ -14686,10 +14676,7 @@ func (x *AuditLog_Entry) GetMethod() string {
 }
 
 type DeviceManager_Spec struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Condition scopes which Devices this DeviceManager applies to. It is
-	// evaluated server-side (at RunDeviceProbeBegin and by the Device
-	// controller) against the stored Device and is never sent to clients.
+	state     protoimpl.MessageState      `protogen:"open.v1"`
 	Condition *corev1.Condition           `protobuf:"bytes,12,opt,name=condition,proto3" json:"condition,omitempty"`
 	Polling   *DeviceManager_Spec_Polling `protobuf:"bytes,10,opt,name=polling,proto3" json:"polling,omitempty"`
 	Linking   *DeviceManager_Spec_Linking `protobuf:"bytes,11,opt,name=linking,proto3" json:"linking,omitempty"`
@@ -14959,18 +14946,13 @@ func (x *DeviceManager_Status) GetLinking() *DeviceManager_Status_Linking {
 }
 
 type DeviceManager_Spec_CrowdStrike struct {
-	state        protoimpl.MessageState                       `protogen:"open.v1"`
-	Region       DeviceManager_Spec_CrowdStrike_Region        `protobuf:"varint,1,opt,name=region,proto3,enum=octelium.api.main.enterprise.v1.DeviceManager_Spec_CrowdStrike_Region" json:"region,omitempty"`
-	ClientID     string                                       `protobuf:"bytes,2,opt,name=clientID,proto3" json:"clientID,omitempty"`
-	ClientSecret *DeviceManager_Spec_CrowdStrike_ClientSecret `protobuf:"bytes,4,opt,name=clientSecret,proto3" json:"clientSecret,omitempty"`
-	MemberCID    string                                       `protobuf:"bytes,5,opt,name=memberCID,proto3" json:"memberCID,omitempty"`
-	// HostFilter is an FQL filter applied to host listing. It scopes
-	// provider API collection only and never influences probe content.
-	HostFilter string `protobuf:"bytes,6,opt,name=hostFilter,proto3" json:"hostFilter,omitempty"`
-	// DisableZeroTrustAssessment skips the ZTA score collection. The API
-	// client credential otherwise requires the Zero Trust Assessment Read
-	// scope in addition to Hosts Read.
-	DisableZeroTrustAssessment bool `protobuf:"varint,7,opt,name=disableZeroTrustAssessment,proto3" json:"disableZeroTrustAssessment,omitempty"`
+	state                      protoimpl.MessageState                       `protogen:"open.v1"`
+	Region                     DeviceManager_Spec_CrowdStrike_Region        `protobuf:"varint,1,opt,name=region,proto3,enum=octelium.api.main.enterprise.v1.DeviceManager_Spec_CrowdStrike_Region" json:"region,omitempty"`
+	ClientID                   string                                       `protobuf:"bytes,2,opt,name=clientID,proto3" json:"clientID,omitempty"`
+	ClientSecret               *DeviceManager_Spec_CrowdStrike_ClientSecret `protobuf:"bytes,4,opt,name=clientSecret,proto3" json:"clientSecret,omitempty"`
+	MemberCID                  string                                       `protobuf:"bytes,5,opt,name=memberCID,proto3" json:"memberCID,omitempty"`
+	HostFilter                 string                                       `protobuf:"bytes,6,opt,name=hostFilter,proto3" json:"hostFilter,omitempty"`
+	DisableZeroTrustAssessment bool                                         `protobuf:"varint,7,opt,name=disableZeroTrustAssessment,proto3" json:"disableZeroTrustAssessment,omitempty"`
 	unknownFields              protoimpl.UnknownFields
 	sizeCache                  protoimpl.SizeCache
 }
@@ -15053,10 +15035,7 @@ type DeviceManager_Spec_SentinelOne struct {
 	ApiToken      *DeviceManager_Spec_SentinelOne_APIToken `protobuf:"bytes,2,opt,name=apiToken,proto3" json:"apiToken,omitempty"`
 	SiteIDs       string                                   `protobuf:"bytes,3,opt,name=siteIDs,proto3" json:"siteIDs,omitempty"`
 	AccountIDs    string                                   `protobuf:"bytes,4,opt,name=accountIDs,proto3" json:"accountIDs,omitempty"`
-	// AgentQuery is an urlencoded set of extra query parameters appended to
-	// the agents listing request. Invalid encodings fail collection rather
-	// than being silently ignored.
-	AgentQuery    string `protobuf:"bytes,5,opt,name=agentQuery,proto3" json:"agentQuery,omitempty"`
+	AgentQuery    string                                   `protobuf:"bytes,5,opt,name=agentQuery,proto3" json:"agentQuery,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -15127,13 +15106,12 @@ func (x *DeviceManager_Spec_SentinelOne) GetAgentQuery() string {
 }
 
 type DeviceManager_Spec_MicrosoftIntune struct {
-	state        protoimpl.MessageState                           `protogen:"open.v1"`
-	TenantID     string                                           `protobuf:"bytes,1,opt,name=tenantID,proto3" json:"tenantID,omitempty"`
-	ClientID     string                                           `protobuf:"bytes,2,opt,name=clientID,proto3" json:"clientID,omitempty"`
-	ClientSecret *DeviceManager_Spec_MicrosoftIntune_ClientSecret `protobuf:"bytes,3,opt,name=clientSecret,proto3" json:"clientSecret,omitempty"`
-	Cloud        DeviceManager_Spec_MicrosoftIntune_Cloud         `protobuf:"varint,4,opt,name=cloud,proto3,enum=octelium.api.main.enterprise.v1.DeviceManager_Spec_MicrosoftIntune_Cloud" json:"cloud,omitempty"`
-	// Filter is an OData $filter expression for the managedDevices listing.
-	Filter        string `protobuf:"bytes,5,opt,name=filter,proto3" json:"filter,omitempty"`
+	state         protoimpl.MessageState                           `protogen:"open.v1"`
+	TenantID      string                                           `protobuf:"bytes,1,opt,name=tenantID,proto3" json:"tenantID,omitempty"`
+	ClientID      string                                           `protobuf:"bytes,2,opt,name=clientID,proto3" json:"clientID,omitempty"`
+	ClientSecret  *DeviceManager_Spec_MicrosoftIntune_ClientSecret `protobuf:"bytes,3,opt,name=clientSecret,proto3" json:"clientSecret,omitempty"`
+	Cloud         DeviceManager_Spec_MicrosoftIntune_Cloud         `protobuf:"varint,4,opt,name=cloud,proto3,enum=octelium.api.main.enterprise.v1.DeviceManager_Spec_MicrosoftIntune_Cloud" json:"cloud,omitempty"`
+	Filter        string                                           `protobuf:"bytes,5,opt,name=filter,proto3" json:"filter,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -15204,13 +15182,11 @@ func (x *DeviceManager_Spec_MicrosoftIntune) GetFilter() string {
 }
 
 type DeviceManager_Spec_Jamf struct {
-	state        protoimpl.MessageState                `protogen:"open.v1"`
-	BaseURL      string                                `protobuf:"bytes,1,opt,name=baseURL,proto3" json:"baseURL,omitempty"`
-	ClientID     string                                `protobuf:"bytes,2,opt,name=clientID,proto3" json:"clientID,omitempty"`
-	ClientSecret *DeviceManager_Spec_Jamf_ClientSecret `protobuf:"bytes,3,opt,name=clientSecret,proto3" json:"clientSecret,omitempty"`
-	// Filter is an RSQL filter expression for the computers-inventory
-	// listing.
-	Filter        string `protobuf:"bytes,4,opt,name=filter,proto3" json:"filter,omitempty"`
+	state         protoimpl.MessageState                `protogen:"open.v1"`
+	BaseURL       string                                `protobuf:"bytes,1,opt,name=baseURL,proto3" json:"baseURL,omitempty"`
+	ClientID      string                                `protobuf:"bytes,2,opt,name=clientID,proto3" json:"clientID,omitempty"`
+	ClientSecret  *DeviceManager_Spec_Jamf_ClientSecret `protobuf:"bytes,3,opt,name=clientSecret,proto3" json:"clientSecret,omitempty"`
+	Filter        string                                `protobuf:"bytes,4,opt,name=filter,proto3" json:"filter,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -15273,8 +15249,6 @@ func (x *DeviceManager_Spec_Jamf) GetFilter() string {
 	return ""
 }
 
-// OnePassword integrates 1Password Extended Device Trust (Kolide).
-// BaseURL defaults to https://k2.kolide.com when unset.
 type DeviceManager_Spec_OnePassword struct {
 	state         protoimpl.MessageState                   `protogen:"open.v1"`
 	BaseURL       string                                   `protobuf:"bytes,1,opt,name=baseURL,proto3" json:"baseURL,omitempty"`
@@ -15388,11 +15362,8 @@ func (x *DeviceManager_Spec_FleetDM) GetTeamID() uint32 {
 }
 
 type DeviceManager_Spec_Huntress struct {
-	state   protoimpl.MessageState `protogen:"open.v1"`
-	BaseURL string                 `protobuf:"bytes,1,opt,name=baseURL,proto3" json:"baseURL,omitempty"`
-	// APIKey is the public half of the Huntress API keypair. It is
-	// deliberately a plaintext field, unlike APISecret; this is not a
-	// mistake.
+	state         protoimpl.MessageState                 `protogen:"open.v1"`
+	BaseURL       string                                 `protobuf:"bytes,1,opt,name=baseURL,proto3" json:"baseURL,omitempty"`
 	ApiKey        string                                 `protobuf:"bytes,2,opt,name=apiKey,proto3" json:"apiKey,omitempty"`
 	ApiSecret     *DeviceManager_Spec_Huntress_APISecret `protobuf:"bytes,3,opt,name=apiSecret,proto3" json:"apiSecret,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -15450,11 +15421,6 @@ func (x *DeviceManager_Spec_Huntress) GetApiSecret() *DeviceManager_Spec_Huntres
 	return nil
 }
 
-// Iru device identifiers are provider-assigned and cannot be derived on
-// the endpoint, so probe-based linking is unsupported: the adapter
-// declares no identity probes and Devices link through identity
-// attributes (serial number). Configure Linking.strategy IDENTITY_ONLY;
-// PROBE_ONLY renders the DeviceManager unable to bind anything.
 type DeviceManager_Spec_Iru struct {
 	state         protoimpl.MessageState           `protogen:"open.v1"`
 	BaseURL       string                           `protobuf:"bytes,1,opt,name=baseURL,proto3" json:"baseURL,omitempty"`
@@ -15508,20 +15474,11 @@ func (x *DeviceManager_Spec_Iru) GetApiToken() *DeviceManager_Spec_Iru_APIToken 
 }
 
 type DeviceManager_Spec_Polling struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Interval between provider inventory collections. Defaults to 5m,
-	// floored at 30s.
-	Interval *metav1.Duration `protobuf:"bytes,1,opt,name=interval,proto3" json:"interval,omitempty"`
-	// Timeout bounds a single provider collection. Defaults to 2m. It no
-	// longer bounds any Device-side work, which belongs to the Device
-	// watcher.
-	Timeout *metav1.Duration `protobuf:"bytes,2,opt,name=timeout,proto3" json:"timeout,omitempty"`
-	// StaleAfter is how long a collected inventory snapshot remains usable
-	// for binding decisions and posture refresh. Defaults to 1h. Posture
-	// materialized from a snapshot expires at collection time plus this
-	// value, and the PDP treats expired posture as absent.
-	StaleAfter    *metav1.Duration `protobuf:"bytes,3,opt,name=staleAfter,proto3" json:"staleAfter,omitempty"`
-	IsDisabled    bool             `protobuf:"varint,4,opt,name=isDisabled,proto3" json:"isDisabled,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Interval      *metav1.Duration       `protobuf:"bytes,1,opt,name=interval,proto3" json:"interval,omitempty"`
+	Timeout       *metav1.Duration       `protobuf:"bytes,2,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	StaleAfter    *metav1.Duration       `protobuf:"bytes,3,opt,name=staleAfter,proto3" json:"staleAfter,omitempty"`
+	IsDisabled    bool                   `protobuf:"varint,4,opt,name=isDisabled,proto3" json:"isDisabled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -15585,25 +15542,14 @@ func (x *DeviceManager_Spec_Polling) GetIsDisabled() bool {
 }
 
 type DeviceManager_Spec_Linking struct {
-	state        protoimpl.MessageState                  `protogen:"open.v1"`
-	Strategy     DeviceManager_Spec_Linking_Strategy     `protobuf:"varint,1,opt,name=strategy,proto3,enum=octelium.api.main.enterprise.v1.DeviceManager_Spec_Linking_Strategy" json:"strategy,omitempty"`
-	ApprovalMode DeviceManager_Spec_Linking_ApprovalMode `protobuf:"varint,2,opt,name=approvalMode,proto3,enum=octelium.api.main.enterprise.v1.DeviceManager_Spec_Linking_ApprovalMode" json:"approvalMode,omitempty"`
-	// RequireAgreement hardens AUTOMATIC mode against self-reported
-	// identifier spoofing: acceptance requires that identity attributes
-	// and the probe external ID independently resolve to the same
-	// inventory entry. Only meaningful with IDENTITY_AND_PROBE.
-	RequireAgreement bool `protobuf:"varint,3,opt,name=requireAgreement,proto3" json:"requireAgreement,omitempty"`
-	// Priority resolves overlap deterministically when the Conditions of
-	// multiple DeviceManagers match the same Device and more than one
-	// produces a unique candidate. Higher wins. Equal priorities leave the
-	// Device AMBIGUOUS with the tied DeviceManagers named in
-	// Device.Status.Binding.message. Overlapping Conditions without
-	// distinct priorities is a misconfiguration that status surfaces
-	// rather than silently resolves.
-	Priority      uint32                                   `protobuf:"varint,4,opt,name=priority,proto3" json:"priority,omitempty"`
-	Verification  *DeviceManager_Spec_Linking_Verification `protobuf:"bytes,5,opt,name=verification,proto3" json:"verification,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState                   `protogen:"open.v1"`
+	Strategy         DeviceManager_Spec_Linking_Strategy      `protobuf:"varint,1,opt,name=strategy,proto3,enum=octelium.api.main.enterprise.v1.DeviceManager_Spec_Linking_Strategy" json:"strategy,omitempty"`
+	ApprovalMode     DeviceManager_Spec_Linking_ApprovalMode  `protobuf:"varint,2,opt,name=approvalMode,proto3,enum=octelium.api.main.enterprise.v1.DeviceManager_Spec_Linking_ApprovalMode" json:"approvalMode,omitempty"`
+	RequireAgreement bool                                     `protobuf:"varint,3,opt,name=requireAgreement,proto3" json:"requireAgreement,omitempty"`
+	Priority         uint32                                   `protobuf:"varint,4,opt,name=priority,proto3" json:"priority,omitempty"`
+	Verification     *DeviceManager_Spec_Linking_Verification `protobuf:"bytes,5,opt,name=verification,proto3" json:"verification,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *DeviceManager_Spec_Linking) Reset() {
@@ -16206,13 +16152,8 @@ type DeviceManager_Spec_Iru_APIToken_FromSecret struct {
 func (*DeviceManager_Spec_Iru_APIToken_FromSecret) isDeviceManager_Spec_Iru_APIToken_Type() {}
 
 type DeviceManager_Spec_Linking_Verification struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Interval between re-probes of the ACCEPTED Binding. Unset disables
-	// re-verification. Verification is flag-only: failures increment
-	// Device.Status.Binding.verificationFailures and never unbind.
-	// "Bound forever" and "posture trusted forever" are different
-	// claims; this mechanism keeps the second one false.
-	Interval      *metav1.Duration `protobuf:"bytes,1,opt,name=interval,proto3" json:"interval,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Interval      *metav1.Duration       `protobuf:"bytes,1,opt,name=interval,proto3" json:"interval,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -16254,9 +16195,6 @@ func (x *DeviceManager_Spec_Linking_Verification) GetInterval() *metav1.Duration
 	return nil
 }
 
-// Collection is written exclusively by the DeviceManager worker after
-// each provider poll. It carries no Device-side counts: the worker never
-// touches Devices.
 type DeviceManager_Status_Collection struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	LastAttemptAt  *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=lastAttemptAt,proto3" json:"lastAttemptAt,omitempty"`
@@ -16325,10 +16263,6 @@ func (x *DeviceManager_Status_Collection) GetLastError() string {
 	return ""
 }
 
-// Linking is written exclusively by the Device watcher after each sweep.
-// Separate message, separate writer, so the two status writers never
-// read-modify-write each other's fields. Counts are eventually
-// consistent snapshots of the last completed sweep.
 type DeviceManager_Status_Linking struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	LastSweepAt     *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=lastSweepAt,proto3" json:"lastSweepAt,omitempty"`

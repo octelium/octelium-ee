@@ -5297,6 +5297,275 @@ const Config = (props: {
             );
           },
         )
+        .when(
+          (x) => x.oneofKind === "socks5",
+          (socks5) => (
+            <div>
+              <Group grow>
+                <Switch
+                  label="Embedded mode"
+                  description="Run the SOCKS5 proxy in embedded mode"
+                  checked={socks5.socks5.isEmbeddedMode}
+                  onChange={(v) => {
+                    socks5.socks5.isEmbeddedMode = v.target.checked;
+                    updateReq();
+                  }}
+                />
+              </Group>
+
+              <EditItem
+                title="Authentication"
+                description="Set the SOCKS5 upstream server authentication method"
+                onUnset={() => {
+                  socks5.socks5.auth = undefined;
+                  updateReq();
+                }}
+                obj={socks5.socks5.auth}
+                onSet={() => {
+                  socks5.socks5.auth =
+                    CoreP.Service_Spec_Config_SOCKS5_Auth.create({
+                      type: { oneofKind: "noAuth", noAuth: true },
+                    });
+                  updateReq();
+                }}
+              >
+                {socks5.socks5.auth && (
+                  <Tabs
+                    defaultValue={socks5.socks5.auth.type.oneofKind ?? "noAuth"}
+                    onChange={(v) => {
+                      match(v)
+                        .with("noAuth", () => {
+                          socks5.socks5.auth!.type = {
+                            oneofKind: "noAuth",
+                            noAuth: true,
+                          };
+                        })
+                        .with("usernamePassword", () => {
+                          socks5.socks5.auth!.type = {
+                            oneofKind: "usernamePassword",
+                            usernamePassword:
+                              CoreP.Service_Spec_Config_SOCKS5_Auth_UsernamePassword.create(
+                                {
+                                  password: {
+                                    type: {
+                                      oneofKind: "fromSecret",
+                                      fromSecret: "",
+                                    },
+                                  },
+                                },
+                              ),
+                          };
+                        })
+                        .otherwise(() => {});
+                      updateReq();
+                    }}
+                  >
+                    <Tabs.List>
+                      <Tabs.Tab value="noAuth">No Auth</Tabs.Tab>
+                      <Tabs.Tab value="usernamePassword">
+                        Username & Password
+                      </Tabs.Tab>
+                    </Tabs.List>
+
+                    <Tabs.Panel value="noAuth">
+                      <p className="text-[0.8rem] text-slate-500 mt-2">
+                        The upstream does not require authentication.
+                      </p>
+                    </Tabs.Panel>
+
+                    <Tabs.Panel value="usernamePassword">
+                      {match(socks5.socks5.auth.type)
+                        .when(
+                          (x) => x.oneofKind === "usernamePassword",
+                          (up) => (
+                            <Group grow>
+                              <TextInput
+                                label="Username"
+                                placeholder="user1234"
+                                value={up.usernamePassword.username}
+                                onChange={(v) => {
+                                  up.usernamePassword.username = v.target.value;
+                                  updateReq();
+                                }}
+                              />
+                              {match(up.usernamePassword.password?.type)
+                                .when(
+                                  (x) => x?.oneofKind === "fromSecret",
+                                  (x) => (
+                                    <SelectSecret
+                                      api="core"
+                                      label="Password Secret"
+                                      description="Select the Secret holding the password"
+                                      defaultValue={x.fromSecret}
+                                      onChange={(val) => {
+                                        x.fromSecret = val ?? "";
+                                        updateReq();
+                                      }}
+                                    />
+                                  ),
+                                )
+                                .otherwise(() => (
+                                  <></>
+                                ))}
+                            </Group>
+                          ),
+                        )
+                        .otherwise(() => (
+                          <></>
+                        ))}
+                    </Tabs.Panel>
+                  </Tabs>
+                )}
+              </EditItem>
+            </div>
+          ),
+        )
+        .when(
+          (x) => x.oneofKind === "rdp",
+          (rdp) => (
+            <div>
+              <EditItem
+                title="Authentication"
+                description="Set the upstream RDP server authentication credentials"
+                onUnset={() => {
+                  rdp.rdp.auth = undefined;
+                  updateReq();
+                }}
+                obj={rdp.rdp.auth}
+                onSet={() => {
+                  rdp.rdp.auth = CoreP.Service_Spec_Config_RDP_Auth.create({
+                    password: {
+                      type: { oneofKind: "fromSecret", fromSecret: "" },
+                    },
+                  });
+                  updateReq();
+                }}
+              >
+                {rdp.rdp.auth && (
+                  <div>
+                    <Group grow>
+                      <TextInput
+                        label="User"
+                        placeholder="administrator"
+                        value={rdp.rdp.auth.user}
+                        onChange={(v) => {
+                          rdp.rdp.auth!.user = v.target.value;
+                          updateReq();
+                        }}
+                      />
+                      <TextInput
+                        label="Domain"
+                        placeholder="CORP"
+                        value={rdp.rdp.auth.domain}
+                        onChange={(v) => {
+                          rdp.rdp.auth!.domain = v.target.value;
+                          updateReq();
+                        }}
+                      />
+                    </Group>
+
+                    {match(rdp.rdp.auth.password?.type)
+                      .when(
+                        (x) => x?.oneofKind === "fromSecret",
+                        (x) => (
+                          <SelectSecret
+                            api="core"
+                            label="Password Secret"
+                            description="Select the Secret holding the upstream RDP password"
+                            defaultValue={x.fromSecret}
+                            onChange={(val) => {
+                              x.fromSecret = val ?? "";
+                              updateReq();
+                            }}
+                          />
+                        ),
+                      )
+                      .otherwise(() => (
+                        <></>
+                      ))}
+                  </div>
+                )}
+              </EditItem>
+
+              <EditItem
+                title="Upstream TLS"
+                description="Set the upstream RDP TLS verification options"
+                onUnset={() => {
+                  rdp.rdp.upstreamTLS = undefined;
+                  updateReq();
+                }}
+                obj={rdp.rdp.upstreamTLS}
+                onSet={() => {
+                  rdp.rdp.upstreamTLS =
+                    CoreP.Service_Spec_Config_RDP_UpstreamTLS.create();
+                  updateReq();
+                }}
+              >
+                {rdp.rdp.upstreamTLS && (
+                  <div>
+                    <Group grow>
+                      <Switch
+                        label="Allow any certificate"
+                        description="Skip upstream certificate verification (insecure)"
+                        checked={rdp.rdp.upstreamTLS.allowAnyCert}
+                        onChange={(v) => {
+                          rdp.rdp.upstreamTLS!.allowAnyCert = v.target.checked;
+                          updateReq();
+                        }}
+                      />
+                    </Group>
+
+                    <ItemMessage
+                      title="Pinned Certificate SHA256"
+                      obj={
+                        rdp.rdp.upstreamTLS.pinnedCertSHA256.length > 0
+                          ? rdp.rdp.upstreamTLS.pinnedCertSHA256
+                          : undefined
+                      }
+                      isList
+                      onSet={() => {
+                        rdp.rdp.upstreamTLS!.pinnedCertSHA256 = [""];
+                        updateReq();
+                      }}
+                      onAddListItem={() => {
+                        rdp.rdp.upstreamTLS!.pinnedCertSHA256.push("");
+                        updateReq();
+                      }}
+                    >
+                      {rdp.rdp.upstreamTLS.pinnedCertSHA256.map((x, idx) => (
+                        <div className="w-full flex mb-3" key={idx}>
+                          <CloseButton
+                            size="sm"
+                            variant="subtle"
+                            onClick={() => {
+                              rdp.rdp.upstreamTLS!.pinnedCertSHA256.splice(
+                                idx,
+                                1,
+                              );
+                              updateReq();
+                            }}
+                          />
+                          <TextInput
+                            required
+                            label="SHA256 fingerprint"
+                            placeholder="ab:cd:ef:12:34:..."
+                            className="flex-1"
+                            value={rdp.rdp.upstreamTLS!.pinnedCertSHA256[idx]}
+                            onChange={(v) => {
+                              rdp.rdp.upstreamTLS!.pinnedCertSHA256[idx] =
+                                v.target.value;
+                              updateReq();
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </ItemMessage>
+                  </div>
+                )}
+              </EditItem>
+            </div>
+          ),
+        )
         .otherwise(() => (
           <></>
         ))}
@@ -5489,6 +5758,14 @@ const Edit = (props: {
               label: "DNS",
               value: CoreP.Service_Spec_Mode[CoreP.Service_Spec_Mode.DNS],
             },
+            {
+              label: "SOCKS5",
+              value: CoreP.Service_Spec_Mode[CoreP.Service_Spec_Mode.SOCKS5],
+            },
+            {
+              label: "RDP Web",
+              value: CoreP.Service_Spec_Mode[CoreP.Service_Spec_Mode.RDP_WEB],
+            },
           ]}
           value={CoreP.Service_Spec_Mode[req.spec!.mode]}
           onChange={(v) => {
@@ -5666,6 +5943,45 @@ const Edit = (props: {
                 });
                 updateReq();
               })
+              .with(CoreP.Service_Spec_Mode.SOCKS5, () => {
+                req.spec!.config = CoreP.Service_Spec_Config.create({
+                  upstream: {
+                    type: {
+                      oneofKind: "url",
+                      url: "",
+                    },
+                  },
+                  type: {
+                    oneofKind: "socks5",
+                    socks5: {
+                      auth: { type: { oneofKind: "noAuth", noAuth: true } },
+                    } as CoreP.Service_Spec_Config_SOCKS5,
+                  },
+                });
+                updateReq();
+              })
+              .with(CoreP.Service_Spec_Mode.RDP_WEB, () => {
+                req.spec!.config = CoreP.Service_Spec_Config.create({
+                  upstream: {
+                    type: {
+                      oneofKind: "url",
+                      url: "",
+                    },
+                  },
+                  type: {
+                    oneofKind: "rdp",
+                    rdp: {
+                      auth: {
+                        password: {
+                          type: { oneofKind: "fromSecret", fromSecret: "" },
+                        },
+                      },
+                    } as CoreP.Service_Spec_Config_RDP,
+                  },
+                });
+                updateReq();
+              })
+
               .when(
                 (x) =>
                   x === CoreP.Service_Spec_Mode.TCP ||
