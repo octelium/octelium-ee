@@ -39,6 +39,9 @@ const (
 	tokenHTTPTimeout = 30 * time.Second
 	jamfMaxRetries   = 4
 	jamfMaxRespByte  = 64 << 20
+
+	probeTimeoutSeconds = 15
+	probeMaxOutputBytes = 16384
 )
 
 var inventorySections = []string{
@@ -116,6 +119,12 @@ func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 	return []*devicemgrcommon.Probe{
 		{
 			OSType: corev1.Device_Status_MAC,
+			RunCommand: &devicemgrcommon.RunCommand{
+				Command:        "/usr/sbin/ioreg",
+				Args:           []string{"-rd1", "-c", "IOPlatformExpertDevice"},
+				TimeoutSeconds: probeTimeoutSeconds,
+				MaxOutputBytes: probeMaxOutputBytes,
+			},
 		},
 	}
 }

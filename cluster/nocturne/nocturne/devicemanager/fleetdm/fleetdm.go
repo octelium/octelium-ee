@@ -30,13 +30,14 @@ import (
 )
 
 const (
-	catalogRefHardwareUUID = "octelium/hardware-uuid/v1"
-
 	hostsPath        = "/api/v1/fleet/hosts"
 	fleetPageSize    = 100
 	fleetHTTPTimeout = 60 * time.Second
 	fleetMaxRetries  = 4
 	fleetMaxRespByte = 64 << 20
+
+	probeTimeoutSeconds = 15
+	probeMaxOutputBytes = 16384
 )
 
 var (
@@ -101,12 +102,32 @@ func (m *Manager) IdentityProbes() []*devicemgrcommon.Probe {
 	return []*devicemgrcommon.Probe{
 		{
 			OSType: corev1.Device_Status_MAC,
+			RunCommand: &devicemgrcommon.RunCommand{
+				Command:        "/usr/sbin/ioreg",
+				Args:           []string{"-rd1", "-c", "IOPlatformExpertDevice"},
+				TimeoutSeconds: probeTimeoutSeconds,
+				MaxOutputBytes: probeMaxOutputBytes,
+			},
 		},
 		{
 			OSType: corev1.Device_Status_WINDOWS,
+			RunCommand: &devicemgrcommon.RunCommand{
+				Command: `C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe`,
+				Args: []string{
+					"-NoProfile", "-NonInteractive", "-Command",
+					"(Get-CimInstance -ClassName Win32_ComputerSystemProduct).UUID",
+				},
+				TimeoutSeconds: probeTimeoutSeconds,
+				MaxOutputBytes: probeMaxOutputBytes,
+			},
 		},
 		{
-			OSType: corev1.Device_Status_LINUX,
+			OSType:           corev1.Device_Status_LINUX,
+			RequireElevation: true,
+			ReadFile: &devicemgrcommon.ReadFile{
+				Path:     "/sys/class/dmi/id/product_uuid",
+				MaxBytes: 128,
+			},
 		},
 	}
 }

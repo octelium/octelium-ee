@@ -4916,20 +4916,15 @@ export interface Device_Status {
      */
     macAddresses: string[];
     /**
-     * Posture originates from binding.ownerRef and is valid only while
-     * binding.state == ACCEPTED. Materialized at acceptance time from the
-     * same inventory snapshot the acceptance decision was based on, then
-     * refreshed by the device watcher. Cleared on reset and on expiry.
-     *
      * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture posture = 9
      */
     posture?: Device_Status_Posture;
     /**
-     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Binding binding = 11
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Binding binding = 10
      */
     binding?: Device_Status_Binding;
     /**
-     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.ProbeAttempt probeAttempt = 12
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.ProbeAttempt probeAttempt = 11
      */
     probeAttempt?: Device_Status_ProbeAttempt;
 }
@@ -5074,19 +5069,10 @@ export interface Device_Status_Binding {
      */
     acceptedAt?: Timestamp;
     /**
-     * ExpiresAt applies only to WAITING_APPROVAL.
-     *
      * @generated from protobuf field: google.protobuf.Timestamp expiresAt = 7
      */
     expiresAt?: Timestamp;
     /**
-     * Re-verification is flag-only under quasi-permanence: verification
-     * failure never clears an ACCEPTED Binding, it increments
-     * verificationFailures and surfaces for administrators. "Bound
-     * forever" and "posture trusted forever" are different claims; this
-     * field keeps the second one false. Posture freshness is enforced
-     * independently via Posture.expiresAt.
-     *
      * @generated from protobuf field: google.protobuf.Timestamp lastVerifiedAt = 8
      */
     lastVerifiedAt?: Timestamp;
@@ -5165,35 +5151,10 @@ export enum Device_Status_Binding_AcceptanceMethod {
     MANUAL = 3
 }
 /**
- * ProbeAttempt is the persisted record of one Begin/Finish exchange.
- *
- * Lifecycle contract (enforced by the AuthServer and Device controller,
- * recorded here because this message is the interface between them):
- * - Begin returns the existing attempt untouched while it is unexpired
- *   and has no results, so a device cannot re-arm the TTL by looping
- *   Begin. Expiry is startedAt plus probeAttemptTTL, a constant that
- *   MUST be identical in the AuthServer and the Device controller.
- * - Probes is the issued set, persisted with Conditions stripped. It is
- *   the uid-to-owner correlation store: the wire probeID of an issued
- *   probe is its decimal index into this list.
- * - Finish is one-shot: the AuthServer rejects a Finish whose attemptUID
- *   does not match uid, rejects it if results is already non-empty,
- *   rejects an incomplete or duplicated result set (exactly one result
- *   per issued probe), rejects unknown probeIDs, and enforces per-probe
- *   output caps from the persisted issued set, hard-ceilinged
- *   server-side, regardless of any client-claimed limits.
- * - Non-empty results is the finished marker. The Device controller
- *   consumes the results during reconciliation and clears the whole
- *   attempt once they produce a binding decision; unconsumed attempts
- *   are cleared at expiry.
- *
  * @generated from protobuf message octelium.api.main.core.v1.Device.Status.ProbeAttempt
  */
 export interface Device_Status_ProbeAttempt {
     /**
-     * Uid is the attemptUID echoed in RunDeviceProbeBeginResponse and
-     * required in RunDeviceProbeFinishRequest.
-     *
      * @generated from protobuf field: string uid = 1
      */
     uid: string;
@@ -5215,9 +5176,6 @@ export interface Device_Status_ProbeAttempt {
  */
 export interface Device_Status_ProbeAttempt_Result {
     /**
-     * ProbeID is the decimal index of the corresponding issued probe in
-     * probes.
-     *
      * @generated from protobuf field: string probeID = 1
      */
     probeID: string;
@@ -21742,8 +21700,8 @@ class Device_Status$Type extends MessageType<Device_Status> {
             { no: 7, name: "isLocked", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 8, name: "macAddresses", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
             { no: 9, name: "posture", kind: "message", T: () => Device_Status_Posture },
-            { no: 11, name: "binding", kind: "message", T: () => Device_Status_Binding },
-            { no: 12, name: "probeAttempt", kind: "message", T: () => Device_Status_ProbeAttempt }
+            { no: 10, name: "binding", kind: "message", T: () => Device_Status_Binding },
+            { no: 11, name: "probeAttempt", kind: "message", T: () => Device_Status_ProbeAttempt }
         ]);
     }
     create(value?: PartialMessage<Device_Status>): Device_Status {
@@ -21791,10 +21749,10 @@ class Device_Status$Type extends MessageType<Device_Status> {
                 case /* octelium.api.main.core.v1.Device.Status.Posture posture */ 9:
                     message.posture = Device_Status_Posture.internalBinaryRead(reader, reader.uint32(), options, message.posture);
                     break;
-                case /* octelium.api.main.core.v1.Device.Status.Binding binding */ 11:
+                case /* octelium.api.main.core.v1.Device.Status.Binding binding */ 10:
                     message.binding = Device_Status_Binding.internalBinaryRead(reader, reader.uint32(), options, message.binding);
                     break;
-                case /* octelium.api.main.core.v1.Device.Status.ProbeAttempt probeAttempt */ 12:
+                case /* octelium.api.main.core.v1.Device.Status.ProbeAttempt probeAttempt */ 11:
                     message.probeAttempt = Device_Status_ProbeAttempt.internalBinaryRead(reader, reader.uint32(), options, message.probeAttempt);
                     break;
                 default:
@@ -21856,12 +21814,12 @@ class Device_Status$Type extends MessageType<Device_Status> {
         /* octelium.api.main.core.v1.Device.Status.Posture posture = 9; */
         if (message.posture)
             Device_Status_Posture.internalBinaryWrite(message.posture, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
-        /* octelium.api.main.core.v1.Device.Status.Binding binding = 11; */
+        /* octelium.api.main.core.v1.Device.Status.Binding binding = 10; */
         if (message.binding)
-            Device_Status_Binding.internalBinaryWrite(message.binding, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
-        /* octelium.api.main.core.v1.Device.Status.ProbeAttempt probeAttempt = 12; */
+            Device_Status_Binding.internalBinaryWrite(message.binding, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.Device.Status.ProbeAttempt probeAttempt = 11; */
         if (message.probeAttempt)
-            Device_Status_ProbeAttempt.internalBinaryWrite(message.probeAttempt, writer.tag(12, WireType.LengthDelimited).fork(), options).join();
+            Device_Status_ProbeAttempt.internalBinaryWrite(message.probeAttempt, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

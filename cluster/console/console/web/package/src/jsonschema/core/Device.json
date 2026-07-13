@@ -451,8 +451,7 @@
                 },
                 "posture": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Device.Status.Posture",
-                    "additionalProperties": false,
-                    "description": "Posture originates from binding.ownerRef and is valid only while binding.state == ACCEPTED. Materialized at acceptance time from the same inventory snapshot the acceptance decision was based on, then refreshed by the device watcher. Cleared on reset and on expiry."
+                    "additionalProperties": false
                 },
                 "binding": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Device.Status.Binding",
@@ -506,12 +505,10 @@
                 },
                 "expiresAt": {
                     "type": "string",
-                    "description": "ExpiresAt applies only to WAITING_APPROVAL.",
                     "format": "date-time"
                 },
                 "lastVerifiedAt": {
                     "type": "string",
-                    "description": "Re-verification is flag-only under quasi-permanence: verification failure never clears an ACCEPTED Binding, it increments verificationFailures and surfaces for administrators. \"Bound forever\" and \"posture trusted forever\" are different claims; this field keeps the second one false. Posture freshness is enforced independently via Posture.expiresAt.",
                     "format": "date-time"
                 },
                 "verificationFailures": {
@@ -612,8 +609,7 @@
         "octelium.api.main.core.v1.Device.Status.ProbeAttempt": {
             "properties": {
                 "uid": {
-                    "type": "string",
-                    "description": "Uid is the attemptUID echoed in RunDeviceProbeBeginResponse and required in RunDeviceProbeFinishRequest."
+                    "type": "string"
                 },
                 "startedAt": {
                     "type": "string",
@@ -636,14 +632,12 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Probe Attempt",
-            "description": "ProbeAttempt is the persisted record of one Begin/Finish exchange. Lifecycle contract (enforced by the AuthServer and Device controller, recorded here because this message is the interface between them): - Begin returns the existing attempt untouched while it is unexpired   and has no results, so a device cannot re-arm the TTL by looping   Begin. Expiry is startedAt plus probeAttemptTTL, a constant that   MUST be identical in the AuthServer and the Device controller. - Probes is the issued set, persisted with Conditions stripped. It is   the uid-to-owner correlation store: the wire probeID of an issued   probe is its decimal index into this list. - Finish is one-shot: the AuthServer rejects a Finish whose attemptUID   does not match uid, rejects it if results is already non-empty,   rejects an incomplete or duplicated result set (exactly one result   per issued probe), rejects unknown probeIDs, and enforces per-probe   output caps from the persisted issued set, hard-ceilinged   server-side, regardless of any client-claimed limits. - Non-empty results is the finished marker. The Device controller   consumes the results during reconciliation and clears the whole   attempt once they produce a binding decision; unconsumed attempts   are cleared at expiry."
+            "title": "Probe Attempt"
         },
         "octelium.api.main.core.v1.Device.Status.ProbeAttempt.Result": {
             "properties": {
                 "probeID": {
-                    "type": "string",
-                    "description": "ProbeID is the decimal index of the corresponding issued probe in probes."
+                    "type": "string"
                 },
                 "output": {
                     "type": "string",
