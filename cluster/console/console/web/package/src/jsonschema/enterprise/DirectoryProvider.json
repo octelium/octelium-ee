@@ -44,6 +44,10 @@
                 "googleWorkspace": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace",
                     "additionalProperties": false
+                },
+                "keycloak": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak",
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false,
@@ -63,6 +67,11 @@
                                         "required": [
                                             "googleWorkspace"
                                         ]
+                                    },
+                                    {
+                                        "required": [
+                                            "keycloak"
+                                        ]
                                     }
                                 ]
                             }
@@ -76,6 +85,11 @@
                             "required": [
                                 "googleWorkspace"
                             ]
+                        },
+                        {
+                            "required": [
+                                "keycloak"
+                            ]
                         }
                     ]
                 }
@@ -86,11 +100,135 @@
             "properties": {
                 "customer": {
                     "type": "string"
+                },
+                "serviceAccount": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.ServiceAccount",
+                    "additionalProperties": false
+                },
+                "impersonateSubject": {
+                    "type": "string"
+                },
+                "polling": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.Polling",
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false,
             "type": "object",
             "title": "Google Workspace"
+        },
+        "octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.Polling": {
+            "properties": {
+                "interval": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Polling"
+        },
+        "octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.ServiceAccount": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Service Account"
+        },
+        "octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak": {
+            "properties": {
+                "url": {
+                    "type": "string"
+                },
+                "realm": {
+                    "type": "string"
+                },
+                "clientID": {
+                    "type": "string"
+                },
+                "clientSecret": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.ClientSecret",
+                    "additionalProperties": false
+                },
+                "insecureSkipVerify": {
+                    "type": "boolean"
+                },
+                "polling": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.Polling",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Keycloak"
+        },
+        "octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.ClientSecret": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Client Secret"
+        },
+        "octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.Polling": {
+            "properties": {
+                "interval": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Polling"
         },
         "octelium.api.main.enterprise.v1.DirectoryProvider.Spec.SCIM": {
             "additionalProperties": false,
@@ -151,6 +289,123 @@
             "additionalProperties": false,
             "type": "object",
             "title": "Synchronization"
+        },
+        "octelium.api.main.meta.v1.Duration": {
+            "properties": {
+                "milliseconds": {
+                    "type": "integer",
+                    "description": "Milliseconds is the duration set in milliseconds"
+                },
+                "seconds": {
+                    "type": "integer",
+                    "description": "Seconds is the duration set in seconds"
+                },
+                "minutes": {
+                    "type": "integer",
+                    "description": "Minutes is the duration set in minutes"
+                },
+                "hours": {
+                    "type": "integer",
+                    "description": "Hours is the duration set in hours"
+                },
+                "days": {
+                    "type": "integer",
+                    "description": "Days is the duration set in days"
+                },
+                "weeks": {
+                    "type": "integer",
+                    "description": "Weeks is the duration set in weeks"
+                },
+                "months": {
+                    "type": "integer",
+                    "description": "Months is the duration set in months"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "milliseconds"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "seconds"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "minutes"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "hours"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "days"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "weeks"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "months"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "milliseconds"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "seconds"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "minutes"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "hours"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "days"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "weeks"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "months"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Duration"
         },
         "octelium.api.main.meta.v1.Metadata": {
             "properties": {

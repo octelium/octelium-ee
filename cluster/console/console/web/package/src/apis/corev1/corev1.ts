@@ -5080,14 +5080,6 @@ export interface Device_Status_Binding {
      * @generated from protobuf field: uint32 verificationFailures = 9
      */
     verificationFailures: number;
-    /**
-     * Message is a human-readable reason for the current state: which
-     * identifiers were ambiguous, which DeviceManagers tied on priority,
-     * or why a candidate was rejected.
-     *
-     * @generated from protobuf field: string message = 10
-     */
-    message: string;
 }
 /**
  * @generated from protobuf enum octelium.api.main.core.v1.Device.Status.Binding.State
@@ -21965,8 +21957,7 @@ class Device_Status_Binding$Type extends MessageType<Device_Status_Binding> {
             { no: 6, name: "acceptedAt", kind: "message", T: () => Timestamp },
             { no: 7, name: "expiresAt", kind: "message", T: () => Timestamp },
             { no: 8, name: "lastVerifiedAt", kind: "message", T: () => Timestamp },
-            { no: 9, name: "verificationFailures", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 10, name: "message", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 9, name: "verificationFailures", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<Device_Status_Binding>): Device_Status_Binding {
@@ -21976,7 +21967,6 @@ class Device_Status_Binding$Type extends MessageType<Device_Status_Binding> {
         message.state = 0;
         message.acceptanceMethod = 0;
         message.verificationFailures = 0;
-        message.message = "";
         if (value !== undefined)
             reflectionMergePartial<Device_Status_Binding>(this, message, value);
         return message;
@@ -22012,9 +22002,6 @@ class Device_Status_Binding$Type extends MessageType<Device_Status_Binding> {
                     break;
                 case /* uint32 verificationFailures */ 9:
                     message.verificationFailures = reader.uint32();
-                    break;
-                case /* string message */ 10:
-                    message.message = reader.string();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -22055,9 +22042,6 @@ class Device_Status_Binding$Type extends MessageType<Device_Status_Binding> {
         /* uint32 verificationFailures = 9; */
         if (message.verificationFailures !== 0)
             writer.tag(9, WireType.Varint).uint32(message.verificationFailures);
-        /* string message = 10; */
-        if (message.message !== "")
-            writer.tag(10, WireType.LengthDelimited).string(message.message);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

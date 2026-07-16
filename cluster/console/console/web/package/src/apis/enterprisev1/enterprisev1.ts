@@ -3002,6 +3002,12 @@ export interface DirectoryProvider_Spec {
          */
         googleWorkspace: DirectoryProvider_Spec_GoogleWorkspace;
     } | {
+        oneofKind: "keycloak";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak keycloak = 4
+         */
+        keycloak: DirectoryProvider_Spec_Keycloak;
+    } | {
         oneofKind: undefined;
     };
 }
@@ -3018,6 +3024,99 @@ export interface DirectoryProvider_Spec_GoogleWorkspace {
      * @generated from protobuf field: string customer = 1
      */
     customer: string;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.ServiceAccount serviceAccount = 2
+     */
+    serviceAccount?: DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount;
+    /**
+     * @generated from protobuf field: string impersonateSubject = 3
+     */
+    impersonateSubject: string;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.Polling polling = 4
+     */
+    polling?: DirectoryProvider_Spec_GoogleWorkspace_Polling;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.ServiceAccount
+ */
+export interface DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount {
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "fromSecret";
+        /**
+         * @generated from protobuf field: string fromSecret = 1
+         */
+        fromSecret: string;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.Polling
+ */
+export interface DirectoryProvider_Spec_GoogleWorkspace_Polling {
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration interval = 1
+     */
+    interval?: Duration;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak
+ */
+export interface DirectoryProvider_Spec_Keycloak {
+    /**
+     * @generated from protobuf field: string url = 1
+     */
+    url: string;
+    /**
+     * @generated from protobuf field: string realm = 2
+     */
+    realm: string;
+    /**
+     * @generated from protobuf field: string clientID = 3
+     */
+    clientID: string;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.ClientSecret clientSecret = 4
+     */
+    clientSecret?: DirectoryProvider_Spec_Keycloak_ClientSecret;
+    /**
+     * @generated from protobuf field: bool insecureSkipVerify = 5
+     */
+    insecureSkipVerify: boolean;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.Polling polling = 6
+     */
+    polling?: DirectoryProvider_Spec_Keycloak_Polling;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.ClientSecret
+ */
+export interface DirectoryProvider_Spec_Keycloak_ClientSecret {
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "fromSecret";
+        /**
+         * @generated from protobuf field: string fromSecret = 1
+         */
+        fromSecret: string;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.Polling
+ */
+export interface DirectoryProvider_Spec_Keycloak_Polling {
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration interval = 1
+     */
+    interval?: Duration;
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.DirectoryProvider.Status
@@ -13815,7 +13914,8 @@ class DirectoryProvider_Spec$Type extends MessageType<DirectoryProvider_Spec> {
         super("octelium.api.main.enterprise.v1.DirectoryProvider.Spec", [
             { no: 1, name: "isDisabled", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 2, name: "scim", kind: "message", oneof: "type", T: () => DirectoryProvider_Spec_SCIM },
-            { no: 3, name: "googleWorkspace", kind: "message", oneof: "type", T: () => DirectoryProvider_Spec_GoogleWorkspace }
+            { no: 3, name: "googleWorkspace", kind: "message", oneof: "type", T: () => DirectoryProvider_Spec_GoogleWorkspace },
+            { no: 4, name: "keycloak", kind: "message", oneof: "type", T: () => DirectoryProvider_Spec_Keycloak }
         ]);
     }
     create(value?: PartialMessage<DirectoryProvider_Spec>): DirectoryProvider_Spec {
@@ -13846,6 +13946,12 @@ class DirectoryProvider_Spec$Type extends MessageType<DirectoryProvider_Spec> {
                         googleWorkspace: DirectoryProvider_Spec_GoogleWorkspace.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).googleWorkspace)
                     };
                     break;
+                case /* octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak keycloak */ 4:
+                    message.type = {
+                        oneofKind: "keycloak",
+                        keycloak: DirectoryProvider_Spec_Keycloak.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).keycloak)
+                    };
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -13867,6 +13973,9 @@ class DirectoryProvider_Spec$Type extends MessageType<DirectoryProvider_Spec> {
         /* octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace googleWorkspace = 3; */
         if (message.type.oneofKind === "googleWorkspace")
             DirectoryProvider_Spec_GoogleWorkspace.internalBinaryWrite(message.type.googleWorkspace, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak keycloak = 4; */
+        if (message.type.oneofKind === "keycloak")
+            DirectoryProvider_Spec_Keycloak.internalBinaryWrite(message.type.keycloak, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -13919,12 +14028,16 @@ export const DirectoryProvider_Spec_SCIM = new DirectoryProvider_Spec_SCIM$Type(
 class DirectoryProvider_Spec_GoogleWorkspace$Type extends MessageType<DirectoryProvider_Spec_GoogleWorkspace> {
     constructor() {
         super("octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace", [
-            { no: 1, name: "customer", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 1, name: "customer", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "serviceAccount", kind: "message", T: () => DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount },
+            { no: 3, name: "impersonateSubject", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "polling", kind: "message", T: () => DirectoryProvider_Spec_GoogleWorkspace_Polling }
         ]);
     }
     create(value?: PartialMessage<DirectoryProvider_Spec_GoogleWorkspace>): DirectoryProvider_Spec_GoogleWorkspace {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.customer = "";
+        message.impersonateSubject = "";
         if (value !== undefined)
             reflectionMergePartial<DirectoryProvider_Spec_GoogleWorkspace>(this, message, value);
         return message;
@@ -13936,6 +14049,15 @@ class DirectoryProvider_Spec_GoogleWorkspace$Type extends MessageType<DirectoryP
             switch (fieldNo) {
                 case /* string customer */ 1:
                     message.customer = reader.string();
+                    break;
+                case /* octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.ServiceAccount serviceAccount */ 2:
+                    message.serviceAccount = DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount.internalBinaryRead(reader, reader.uint32(), options, message.serviceAccount);
+                    break;
+                case /* string impersonateSubject */ 3:
+                    message.impersonateSubject = reader.string();
+                    break;
+                case /* octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.Polling polling */ 4:
+                    message.polling = DirectoryProvider_Spec_GoogleWorkspace_Polling.internalBinaryRead(reader, reader.uint32(), options, message.polling);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -13952,6 +14074,15 @@ class DirectoryProvider_Spec_GoogleWorkspace$Type extends MessageType<DirectoryP
         /* string customer = 1; */
         if (message.customer !== "")
             writer.tag(1, WireType.LengthDelimited).string(message.customer);
+        /* octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.ServiceAccount serviceAccount = 2; */
+        if (message.serviceAccount)
+            DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount.internalBinaryWrite(message.serviceAccount, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* string impersonateSubject = 3; */
+        if (message.impersonateSubject !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.impersonateSubject);
+        /* octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.Polling polling = 4; */
+        if (message.polling)
+            DirectoryProvider_Spec_GoogleWorkspace_Polling.internalBinaryWrite(message.polling, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -13962,6 +14093,283 @@ class DirectoryProvider_Spec_GoogleWorkspace$Type extends MessageType<DirectoryP
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace
  */
 export const DirectoryProvider_Spec_GoogleWorkspace = new DirectoryProvider_Spec_GoogleWorkspace$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount$Type extends MessageType<DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.ServiceAccount", [
+            { no: 1, name: "fromSecret", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount>): DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount): DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string fromSecret */ 1:
+                    message.type = {
+                        oneofKind: "fromSecret",
+                        fromSecret: reader.string()
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string fromSecret = 1; */
+        if (message.type.oneofKind === "fromSecret")
+            writer.tag(1, WireType.LengthDelimited).string(message.type.fromSecret);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.ServiceAccount
+ */
+export const DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount = new DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class DirectoryProvider_Spec_GoogleWorkspace_Polling$Type extends MessageType<DirectoryProvider_Spec_GoogleWorkspace_Polling> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.Polling", [
+            { no: 1, name: "interval", kind: "message", T: () => Duration }
+        ]);
+    }
+    create(value?: PartialMessage<DirectoryProvider_Spec_GoogleWorkspace_Polling>): DirectoryProvider_Spec_GoogleWorkspace_Polling {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<DirectoryProvider_Spec_GoogleWorkspace_Polling>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DirectoryProvider_Spec_GoogleWorkspace_Polling): DirectoryProvider_Spec_GoogleWorkspace_Polling {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.Duration interval */ 1:
+                    message.interval = Duration.internalBinaryRead(reader, reader.uint32(), options, message.interval);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: DirectoryProvider_Spec_GoogleWorkspace_Polling, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.Duration interval = 1; */
+        if (message.interval)
+            Duration.internalBinaryWrite(message.interval, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.Polling
+ */
+export const DirectoryProvider_Spec_GoogleWorkspace_Polling = new DirectoryProvider_Spec_GoogleWorkspace_Polling$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class DirectoryProvider_Spec_Keycloak$Type extends MessageType<DirectoryProvider_Spec_Keycloak> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak", [
+            { no: 1, name: "url", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "realm", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "clientID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "clientSecret", kind: "message", T: () => DirectoryProvider_Spec_Keycloak_ClientSecret },
+            { no: 5, name: "insecureSkipVerify", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 6, name: "polling", kind: "message", T: () => DirectoryProvider_Spec_Keycloak_Polling }
+        ]);
+    }
+    create(value?: PartialMessage<DirectoryProvider_Spec_Keycloak>): DirectoryProvider_Spec_Keycloak {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.url = "";
+        message.realm = "";
+        message.clientID = "";
+        message.insecureSkipVerify = false;
+        if (value !== undefined)
+            reflectionMergePartial<DirectoryProvider_Spec_Keycloak>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DirectoryProvider_Spec_Keycloak): DirectoryProvider_Spec_Keycloak {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string url */ 1:
+                    message.url = reader.string();
+                    break;
+                case /* string realm */ 2:
+                    message.realm = reader.string();
+                    break;
+                case /* string clientID */ 3:
+                    message.clientID = reader.string();
+                    break;
+                case /* octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.ClientSecret clientSecret */ 4:
+                    message.clientSecret = DirectoryProvider_Spec_Keycloak_ClientSecret.internalBinaryRead(reader, reader.uint32(), options, message.clientSecret);
+                    break;
+                case /* bool insecureSkipVerify */ 5:
+                    message.insecureSkipVerify = reader.bool();
+                    break;
+                case /* octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.Polling polling */ 6:
+                    message.polling = DirectoryProvider_Spec_Keycloak_Polling.internalBinaryRead(reader, reader.uint32(), options, message.polling);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: DirectoryProvider_Spec_Keycloak, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string url = 1; */
+        if (message.url !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.url);
+        /* string realm = 2; */
+        if (message.realm !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.realm);
+        /* string clientID = 3; */
+        if (message.clientID !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.clientID);
+        /* octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.ClientSecret clientSecret = 4; */
+        if (message.clientSecret)
+            DirectoryProvider_Spec_Keycloak_ClientSecret.internalBinaryWrite(message.clientSecret, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* bool insecureSkipVerify = 5; */
+        if (message.insecureSkipVerify !== false)
+            writer.tag(5, WireType.Varint).bool(message.insecureSkipVerify);
+        /* octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.Polling polling = 6; */
+        if (message.polling)
+            DirectoryProvider_Spec_Keycloak_Polling.internalBinaryWrite(message.polling, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak
+ */
+export const DirectoryProvider_Spec_Keycloak = new DirectoryProvider_Spec_Keycloak$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class DirectoryProvider_Spec_Keycloak_ClientSecret$Type extends MessageType<DirectoryProvider_Spec_Keycloak_ClientSecret> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.ClientSecret", [
+            { no: 1, name: "fromSecret", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<DirectoryProvider_Spec_Keycloak_ClientSecret>): DirectoryProvider_Spec_Keycloak_ClientSecret {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<DirectoryProvider_Spec_Keycloak_ClientSecret>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DirectoryProvider_Spec_Keycloak_ClientSecret): DirectoryProvider_Spec_Keycloak_ClientSecret {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string fromSecret */ 1:
+                    message.type = {
+                        oneofKind: "fromSecret",
+                        fromSecret: reader.string()
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: DirectoryProvider_Spec_Keycloak_ClientSecret, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string fromSecret = 1; */
+        if (message.type.oneofKind === "fromSecret")
+            writer.tag(1, WireType.LengthDelimited).string(message.type.fromSecret);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.ClientSecret
+ */
+export const DirectoryProvider_Spec_Keycloak_ClientSecret = new DirectoryProvider_Spec_Keycloak_ClientSecret$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class DirectoryProvider_Spec_Keycloak_Polling$Type extends MessageType<DirectoryProvider_Spec_Keycloak_Polling> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.Polling", [
+            { no: 1, name: "interval", kind: "message", T: () => Duration }
+        ]);
+    }
+    create(value?: PartialMessage<DirectoryProvider_Spec_Keycloak_Polling>): DirectoryProvider_Spec_Keycloak_Polling {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<DirectoryProvider_Spec_Keycloak_Polling>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DirectoryProvider_Spec_Keycloak_Polling): DirectoryProvider_Spec_Keycloak_Polling {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.Duration interval */ 1:
+                    message.interval = Duration.internalBinaryRead(reader, reader.uint32(), options, message.interval);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: DirectoryProvider_Spec_Keycloak_Polling, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.Duration interval = 1; */
+        if (message.interval)
+            Duration.internalBinaryWrite(message.interval, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.Polling
+ */
+export const DirectoryProvider_Spec_Keycloak_Polling = new DirectoryProvider_Spec_Keycloak_Polling$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class DirectoryProvider_Status$Type extends MessageType<DirectoryProvider_Status> {
     constructor() {

@@ -547,8 +547,6 @@ func (c *Controller) rejectTaken(dev *corev1.Device, selected *ownerCandidate) b
 		OwnerRef:   selected.owner.OwnerRef(),
 		ExternalID: selected.entry.ExternalID,
 		State:      corev1.Device_Status_Binding_REJECTED,
-		Message: fmt.Sprintf(
-			"External ID is already bound to another Device (%s)", holder),
 	}
 	dev.Status.Posture = nil
 	dev.Status.ProbeAttempt = nil
@@ -565,15 +563,13 @@ func (c *Controller) rejectTaken(dev *corev1.Device, selected *ownerCandidate) b
 func setAmbiguous(dev *corev1.Device, message string) bool {
 	binding := dev.Status.Binding
 	if binding != nil &&
-		binding.State == corev1.Device_Status_Binding_AMBIGUOUS &&
-		binding.Message == message {
+		binding.State == corev1.Device_Status_Binding_AMBIGUOUS {
 		return false
 	}
 
 	dev.Status.Binding = &corev1.Device_Status_Binding{
-		Uid:     newBindingUID(),
-		State:   corev1.Device_Status_Binding_AMBIGUOUS,
-		Message: message,
+		Uid:   newBindingUID(),
+		State: corev1.Device_Status_Binding_AMBIGUOUS,
 	}
 	dev.Status.Posture = nil
 
@@ -644,7 +640,6 @@ func (c *Controller) ApproveBinding(ctx context.Context, deviceUID, bindingUID s
 	binding.AcceptanceMethod = corev1.Device_Status_Binding_MANUAL
 	binding.AcceptedAt = pbutils.Now()
 	binding.ExpiresAt = nil
-	binding.Message = ""
 
 	dev.Status.Posture = devicemgrcommon.MaterializePosture(owner, match.Entry)
 	dev.Status.ProbeAttempt = nil
@@ -681,7 +676,6 @@ func (c *Controller) RejectBinding(ctx context.Context, deviceUID, bindingUID st
 	binding.State = corev1.Device_Status_Binding_REJECTED
 	binding.AcceptanceMethod = corev1.Device_Status_Binding_ACCEPTANCE_METHOD_UNKNOWN
 	binding.ExpiresAt = nil
-	binding.Message = "Rejected by administrator"
 
 	dev.Status.Posture = nil
 	dev.Status.ProbeAttempt = nil
