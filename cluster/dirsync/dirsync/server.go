@@ -20,17 +20,23 @@ import (
 	"time"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
+	"github.com/octelium/octelium-ee/cluster/common/watchers"
+	dpctl "github.com/octelium/octelium-ee/cluster/dirsync/dirsync/controllers/directoryproviders"
 	"github.com/octelium/octelium-ee/cluster/dirsync/dirsync/googleworkspace"
+	"github.com/octelium/octelium-ee/cluster/dirsync/dirsync/keycloak"
 	"github.com/octelium/octelium-ee/cluster/dirsync/dirsync/middlewares"
 	"github.com/octelium/octelium-ee/cluster/dirsync/dirsync/middlewares/auth"
+	dpwatcher "github.com/octelium/octelium-ee/cluster/dirsync/dirsync/watcher"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
+	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/cluster/apiserver/apiserver/admin"
 	"github.com/octelium/octelium/cluster/common/commoninit"
 	"github.com/octelium/octelium/cluster/common/healthcheck"
 	"github.com/octelium/octelium/cluster/common/httputils"
 	"github.com/octelium/octelium/cluster/common/vutils"
-	"github.com/octelium/octelium/pkg/apiutils/umetav1"
+	"github.com/octelium/octelium/pkg/common/pbutils"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type server struct {
@@ -477,6 +483,15 @@ func Run(ctx context.Context) error {
 		return err
 	}
 
+	ctl := dpctl.NewController(octeliumC, s)
+
+	watcher := watchers.NewEnterpriseV1(octeliumC)
+	if err := watcher.DirectoryProvider(ctx, nil, ctl.OnAdd, ctl.OnUpdate, ctl.OnDelete); err != nil {
+		return err
+	}
+
+	dpwatcher.New(octeliumC).Run(ctx)
+
 	healthcheck.Run(vutils.HealthCheckPortManagedService)
 	zap.L().Info("SCIM server is now running...")
 
@@ -624,21 +639,92 @@ const prefixScim = "/scim"
 const prefixUser = "/Users"
 const prefixGroup = "/Groups"
 
-func (s *server) Synchronize(ctx context.Context, dp *enterprisev1.DirectoryProvider) error {
-
+func (s *server) doSynchronize(ctx context.Context, dp *enterprisev1.DirectoryProvider) error {
 	switch dp.Spec.Type.(type) {
 	case *enterprisev1.DirectoryProvider_Spec_GoogleWorkspace_:
-		p, err := googleworkspace.NewProvider(ctx, s.octeliumC, &googleworkspace.Opts{
-			DirectorProviderRef: umetav1.GetObjectReference(dp),
-		})
+		p, err := googleworkspace.NewProvider(ctx, s.octeliumC, dp)
 		if err != nil {
 			return err
 		}
-
+		return p.Synchronize(ctx)
+	case *enterprisev1.DirectoryProvider_Spec_Keycloak_:
+		p, err := keycloak.NewProvider(ctx, s.octeliumC, dp)
+		if err != nil {
+			return err
+		}
 		return p.Synchronize(ctx)
 	}
-
 	return nil
+}
+
+func (s *server) Synchronize(ctx context.Context, dp *enterprisev1.DirectoryProvider) error {
+	if err := s.markSyncStarted(ctx, dp.Metadata.Uid); err != nil {
+		return err
+	}
+
+	syncErr := s.doSynchronize(ctx, dp)
+
+	if err := s.markSyncFinished(ctx, dp.Metadata.Uid, syncErr); err != nil {
+		zap.L().Warn("Could not record directoryProvider sync result",
+			zap.String("directoryProvider", dp.Metadata.Name), zap.Error(err))
+	}
+
+	return syncErr
+}
+
+func (s *server) markSyncStarted(ctx context.Context, dpUID string) error {
+	cur, err := s.octeliumC.EnterpriseC().GetDirectoryProvider(ctx, &rmetav1.GetOptions{Uid: dpUID})
+	if err != nil {
+		return err
+	}
+	if cur.Status == nil {
+		cur.Status = &enterprisev1.DirectoryProvider_Status{}
+	}
+	cur.Status.Synchronization = &enterprisev1.DirectoryProvider_Status_Synchronization{
+		State:     enterprisev1.DirectoryProvider_Status_Synchronization_SYNCING,
+		CreatedAt: pbutils.Now(),
+	}
+	_, err = s.octeliumC.EnterpriseC().UpdateDirectoryProvider(ctx, cur)
+	return err
+}
+
+func (s *server) markSyncFinished(ctx context.Context, dpUID string, syncErr error) error {
+	cur, err := s.octeliumC.EnterpriseC().GetDirectoryProvider(ctx, &rmetav1.GetOptions{Uid: dpUID})
+	if err != nil {
+		return err
+	}
+
+	sync := cur.Status.Synchronization
+	if sync == nil {
+		sync = &enterprisev1.DirectoryProvider_Status_Synchronization{}
+		cur.Status.Synchronization = sync
+	}
+
+	sync.State = enterprisev1.DirectoryProvider_Status_Synchronization_SUCCESS
+	sync.CompletedAt = timestamppb.Now()
+
+	cur.Status.LastSynchronizations = appendLastSync(cur.Status.LastSynchronizations, sync)
+
+	_, err = s.octeliumC.EnterpriseC().UpdateDirectoryProvider(ctx, cur)
+	return err
+}
+
+const maxLastSynchronizations = 100
+
+func appendLastSync(
+	history []*enterprisev1.DirectoryProvider_Status_Synchronization,
+	rec *enterprisev1.DirectoryProvider_Status_Synchronization,
+) []*enterprisev1.DirectoryProvider_Status_Synchronization {
+	entry := &enterprisev1.DirectoryProvider_Status_Synchronization{
+		State:       rec.State,
+		CreatedAt:   rec.CreatedAt,
+		CompletedAt: rec.CompletedAt,
+	}
+	history = append([]*enterprisev1.DirectoryProvider_Status_Synchronization{entry}, history...)
+	if len(history) > maxLastSynchronizations {
+		history = history[:maxLastSynchronizations]
+	}
+	return history
 }
 
 func getItemsPerPage(r *http.Request) uint32 {
