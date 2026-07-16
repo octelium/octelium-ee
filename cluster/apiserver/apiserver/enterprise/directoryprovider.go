@@ -302,7 +302,7 @@ func (s *Server) GenerateDirectoryProviderCredential(ctx context.Context,
 		}
 	}
 
-	jwkCtl, err := jwkctl.NewJWKController(ctx, s.octeliumC)
+	jwkCtl, err := jwkctl.NewJWKController(ctx, s.octeliumC, nil)
 	if err != nil {
 		return nil, err
 	}

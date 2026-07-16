@@ -67,7 +67,7 @@ func TestDirectoryProvider(t *testing.T) {
 			})
 			assert.Nil(t, err)
 
-			jwkCtl, err := jwkctl.NewJWKController(ctx, srv.octeliumC)
+			jwkCtl, err := jwkctl.NewJWKController(ctx, srv.octeliumC, nil)
 			assert.Nil(t, err)
 
 			tkn, err := jwkCtl.VerifyAccessToken(resp.GetBearer().AccessToken)
@@ -105,7 +105,7 @@ func TestDirectoryProvider(t *testing.T) {
 			})
 			assert.Nil(t, err)
 
-			jwkCtl, err := jwkctl.NewJWKController(ctx, srv.octeliumC)
+			jwkCtl, err := jwkctl.NewJWKController(ctx, srv.octeliumC, nil)
 			assert.Nil(t, err)
 
 			tkn, err := jwkCtl.VerifyAccessToken(resp.GetBearer().AccessToken)
