@@ -14,8 +14,14 @@ import { match } from "ts-pattern";
 export const getType = (svc: DirectoryProvider): string => {
   return match(svc.spec?.type.oneofKind)
     .with("scim", () => "SCIM")
+    .with("googleWorkspace", () => "Google Workspace")
+    .with("keycloak", () => "Keycloak")
     .otherwise(() => "");
 };
+
+export const isSyncable = (item: DirectoryProvider): boolean =>
+  item.spec?.type.oneofKind === "googleWorkspace" ||
+  item.spec?.type.oneofKind === "keycloak";
 
 const ItemDetails = (props: { item: DirectoryProvider; domain: string }) => {
   const { item } = props;

@@ -3,6 +3,7 @@ import CopyText from "@/components/CopyText";
 import InfoItem from "@/components/InfoItem";
 import Label from "@/components/Label";
 import EditItemWrap from "@/components/ResourceLayout/EditItemWrap";
+import TimeAgo from "@/components/TimeAgo";
 import { useUpdateResource } from "@/pages/utils/resource";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { getDomain, onError } from "@/utils";
@@ -17,8 +18,32 @@ import { useDisclosure } from "@mantine/hooks";
 import { useMutation } from "@tanstack/react-query";
 import { RefreshCcw, RefreshCw } from "lucide-react";
 import * as React from "react";
+import { toast } from "sonner";
 import { twMerge } from "tailwind-merge";
-import { getType } from "./List";
+import { match } from "ts-pattern";
+import { getType, isSyncable } from "./List";
+
+const getSyncStateMeta = (
+  state?: EnterpriseC.DirectoryProvider_Status_Synchronization_State,
+): { label: string; className: string } =>
+  match(state)
+    .with(
+      EnterpriseC.DirectoryProvider_Status_Synchronization_State.SYNC_REQUESTED,
+      () => ({ label: "Sync Requested", className: "text-amber-500" }),
+    )
+    .with(
+      EnterpriseC.DirectoryProvider_Status_Synchronization_State.SYNCING,
+      () => ({ label: "Syncing", className: "text-amber-500" }),
+    )
+    .with(
+      EnterpriseC.DirectoryProvider_Status_Synchronization_State.SUCCESS,
+      () => ({ label: "Success", className: "text-emerald-600" }),
+    )
+    .with(
+      EnterpriseC.DirectoryProvider_Status_Synchronization_State.FAILED,
+      () => ({ label: "Failed", className: "text-red-500" }),
+    )
+    .otherwise(() => ({ label: "", className: "text-slate-500" }));
 
 const GenerateC = (props: { item: EnterpriseC.DirectoryProvider }) => {
   const { item } = props;
@@ -90,10 +115,53 @@ const GenerateC = (props: { item: EnterpriseC.DirectoryProvider }) => {
   );
 };
 
+const SynchronizeButton = (props: {
+  item: EnterpriseC.DirectoryProvider;
+  variant?: string;
+}) => {
+  const { item } = props;
+
+  const mutationSync = useMutation({
+    mutationFn: async () => {
+      const { response } =
+        await getClientEnterprise().synchronizeDirectoryProvider({
+          directoryProviderRef: getResourceRef(item),
+        });
+      return response;
+    },
+    onSuccess: () => {
+      toast.success("Synchronization requested");
+      invalidateResource(item);
+      invalidateResourceList(item);
+    },
+    onError: onError,
+  });
+
+  const isSyncing =
+    item.status?.synchronization?.state ===
+      EnterpriseC.DirectoryProvider_Status_Synchronization_State.SYNCING ||
+    item.status?.synchronization?.state ===
+      EnterpriseC.DirectoryProvider_Status_Synchronization_State.SYNC_REQUESTED;
+
+  return (
+    <Button
+      variant={props.variant ?? "default"}
+      size="sm"
+      leftSection={<RefreshCw size={13} strokeWidth={2.5} />}
+      loading={mutationSync.isPending || isSyncing}
+      onClick={() => mutationSync.mutate()}
+    >
+      Synchronize
+    </Button>
+  );
+};
+
 export const ItemInfo = (props: { item: EnterpriseC.DirectoryProvider }) => {
   let { item } = props;
   const [opened, { open, close }] = useDisclosure(false);
   const mutationUpdate = useUpdateResource();
+
+  const isScim = item.spec?.type.oneofKind === "scim";
 
   return (
     <>
@@ -122,7 +190,7 @@ export const ItemInfo = (props: { item: EnterpriseC.DirectoryProvider }) => {
       <InfoItem title="Short ID">
         <CopyText value={item.status?.id} />
       </InfoItem>
-      {item.spec?.type.oneofKind === `scim` && (
+      {isScim && (
         <InfoItem title="SCIM Endpoint">
           <CopyText
             value={`https://dirsync.octelium.${getDomain()}/scim/${item.status?.id}`}
@@ -130,11 +198,29 @@ export const ItemInfo = (props: { item: EnterpriseC.DirectoryProvider }) => {
         </InfoItem>
       )}
 
-      <InfoItem title="Generate">
-        <Button size={`xs`} onClick={open}>
-          Generate Access Token
-        </Button>
-      </InfoItem>
+      {item.status?.synchronization?.state && (
+        <InfoItem title="Synchronization">
+          <span
+            className={
+              getSyncStateMeta(item.status.synchronization.state).className
+            }
+          >
+            {getSyncStateMeta(item.status.synchronization.state).label}
+          </span>
+        </InfoItem>
+      )}
+
+      {isScim ? (
+        <InfoItem title="Generate">
+          <Button size={`xs`} onClick={open}>
+            Generate Access Token
+          </Button>
+        </InfoItem>
+      ) : isSyncable(item) ? (
+        <InfoItem title="Synchronize">
+          <SynchronizeButton item={item} />
+        </InfoItem>
+      ) : null}
 
       <Modal opened={opened} onClose={close} size={"xl"} centered>
         <GenerateC item={item} />
@@ -159,6 +245,9 @@ export const MainInfo = (props: {
   const { item } = props;
   const mutationUpdate = useUpdateResource();
   const [opened, { open, close }] = useDisclosure(false);
+
+  const isScim = item.spec?.type.oneofKind === "scim";
+  const sync = item.status?.synchronization;
 
   return {
     items: [
@@ -205,7 +294,7 @@ export const MainInfo = (props: {
           ]
         : []),
 
-      ...(item.spec?.type.oneofKind === "scim" && item.status?.id
+      ...(isScim && item.status?.id
         ? [
             {
               label: "SCIM endpoint",
@@ -219,24 +308,54 @@ export const MainInfo = (props: {
           ]
         : []),
 
-      {
-        label: "Access token",
-        value: (
-          <>
-            <Button
-              variant="default"
-              size="sm"
-              leftSection={<RefreshCw size={13} strokeWidth={2.5} />}
-              onClick={open}
-            >
-              Generate access token
-            </Button>
-            <Modal opened={opened} onClose={close} size="xl" centered>
-              <GenerateC item={item} />
-            </Modal>
-          </>
-        ),
-      },
+      ...(sync?.state
+        ? [
+            {
+              label: "Synchronization",
+              value: (
+                <span className="flex items-center gap-2">
+                  <span
+                    className={twMerge(
+                      "text-sm font-semibold",
+                      getSyncStateMeta(sync.state).className,
+                    )}
+                  >
+                    {getSyncStateMeta(sync.state).label}
+                  </span>
+                  {sync.completedAt && (
+                    <span className="text-[0.68rem] font-semibold text-slate-400">
+                      <TimeAgo rfc3339={sync.completedAt} />
+                    </span>
+                  )}
+                </span>
+              ),
+            },
+          ]
+        : []),
+
+      isScim
+        ? {
+            label: "Access token",
+            value: (
+              <>
+                <Button
+                  variant="default"
+                  size="sm"
+                  leftSection={<RefreshCw size={13} strokeWidth={2.5} />}
+                  onClick={open}
+                >
+                  Generate access token
+                </Button>
+                <Modal opened={opened} onClose={close} size="xl" centered>
+                  <GenerateC item={item} />
+                </Modal>
+              </>
+            ),
+          }
+        : {
+            label: "Synchronize",
+            value: <SynchronizeButton item={item} />,
+          },
     ],
   };
 };
