@@ -10,7 +10,10 @@ package syncprovider
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"strings"
 
 	"github.com/gosimple/slug"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
@@ -20,6 +23,7 @@ import (
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/cluster/apiserver/apiserver/admin"
+	"github.com/octelium/octelium/cluster/common/apivalidation"
 	"github.com/octelium/octelium/cluster/common/urscsrv"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/grpcerr"
@@ -28,6 +32,10 @@ import (
 )
 
 const listPageSize = 300
+
+const maxNameLen = 40
+
+const userTagLen = 8
 
 type User struct {
 	ExternalID  string
@@ -68,12 +76,66 @@ func NewReconciler(octeliumC octeliumc.ClientInterface, dp *enterprisev1.Directo
 	}
 }
 
-func (r *Reconciler) genUserName(externalID string) string {
-	return fmt.Sprintf("%s-%s", r.dp.Status.Id, slug.Make(externalID))
+func (r *Reconciler) genUserName(u *User) string {
+	if u.Email == "" {
+		return r.genName(u.ExternalID)
+	}
+
+	tag := externalIDTag(u.ExternalID)
+	suffixBudget := maxNameLen - len(r.dp.Status.Id) - 1
+	emailBudget := suffixBudget - len(tag) - 1
+	if emailBudget < 0 {
+		emailBudget = 0
+	}
+
+	emailSlug := slug.Make(u.Email)
+	if len(emailSlug) > emailBudget {
+		emailSlug = emailSlug[:emailBudget]
+	}
+	emailSlug = strings.Trim(emailSlug, "-")
+
+	suffix := tag
+	if emailSlug != "" {
+		suffix = fmt.Sprintf("%s-%s", emailSlug, tag)
+	}
+
+	name := fmt.Sprintf("%s-%s", r.dp.Status.Id, suffix)
+	if apivalidation.ValidateName(name, 0, 0) == nil {
+		return name
+	}
+
+	return r.genName(u.ExternalID)
 }
 
 func (r *Reconciler) genGroupName(externalID string) string {
-	return fmt.Sprintf("%s-%s", r.dp.Status.Id, slug.Make(externalID))
+	return r.genName(externalID)
+}
+
+func (r *Reconciler) genName(externalID string) string {
+	name := fmt.Sprintf("%s-%s", r.dp.Status.Id, slug.Make(externalID))
+	if apivalidation.ValidateName(name, 0, 0) == nil {
+		return name
+	}
+
+	sum := sha256.Sum256([]byte(externalID))
+	h := hex.EncodeToString(sum[:])
+
+	avail := maxNameLen - len(r.dp.Status.Id) - 1
+	if avail > len(h) {
+		avail = len(h)
+	}
+
+	return fmt.Sprintf("%s-%s", r.dp.Status.Id, h[:avail])
+}
+
+func externalIDTag(externalID string) string {
+	s := strings.ReplaceAll(slug.Make(externalID), "-", "")
+	if len(s) >= userTagLen {
+		return s[:userTagLen]
+	}
+
+	sum := sha256.Sum256([]byte(externalID))
+	return hex.EncodeToString(sum[:])[:userTagLen]
 }
 
 func (r *Reconciler) Sync(ctx context.Context, src Source) error {
@@ -92,7 +154,7 @@ func (r *Reconciler) Sync(ctx context.Context, src Source) error {
 		if u == nil || u.ExternalID == "" {
 			continue
 		}
-		desiredUserNames[r.genUserName(u.ExternalID)] = struct{}{}
+		desiredUserNames[r.genUserName(u)] = struct{}{}
 	}
 
 	desiredGroupNames := make(map[string]struct{}, len(groups))
@@ -167,7 +229,7 @@ func (r *Reconciler) Sync(ctx context.Context, src Source) error {
 }
 
 func (r *Reconciler) upsertUser(ctx context.Context, u *User) (*corev1.User, error) {
-	name := r.genUserName(u.ExternalID)
+	name := r.genUserName(u)
 
 	dpUsr, err := r.octeliumC.EnterpriseC().GetDirectoryProviderUser(ctx, &rmetav1.GetOptions{Name: name})
 	if err == nil {
