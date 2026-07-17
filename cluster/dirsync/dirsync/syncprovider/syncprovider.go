@@ -77,26 +77,34 @@ func NewReconciler(octeliumC octeliumc.ClientInterface, dp *enterprisev1.Directo
 }
 
 func (r *Reconciler) genUserName(u *User) string {
-	if u.Email == "" {
-		return r.genName(u.ExternalID)
+	return r.genReadableName(u.Email, u.ExternalID)
+}
+
+func (r *Reconciler) genGroupName(g *Group) string {
+	return r.genReadableName(g.DisplayName, g.ExternalID)
+}
+
+func (r *Reconciler) genReadableName(readable, externalID string) string {
+	if readable == "" {
+		return r.genName(externalID)
 	}
 
-	tag := externalIDTag(u.ExternalID)
+	tag := externalIDTag(externalID)
 	suffixBudget := maxNameLen - len(r.dp.Status.Id) - 1
-	emailBudget := suffixBudget - len(tag) - 1
-	if emailBudget < 0 {
-		emailBudget = 0
+	labelBudget := suffixBudget - len(tag) - 1
+	if labelBudget < 0 {
+		labelBudget = 0
 	}
 
-	emailSlug := slug.Make(u.Email)
-	if len(emailSlug) > emailBudget {
-		emailSlug = emailSlug[:emailBudget]
+	label := slug.Make(readable)
+	if len(label) > labelBudget {
+		label = label[:labelBudget]
 	}
-	emailSlug = strings.Trim(emailSlug, "-")
+	label = strings.Trim(label, "-")
 
 	suffix := tag
-	if emailSlug != "" {
-		suffix = fmt.Sprintf("%s-%s", emailSlug, tag)
+	if label != "" {
+		suffix = fmt.Sprintf("%s-%s", label, tag)
 	}
 
 	name := fmt.Sprintf("%s-%s", r.dp.Status.Id, suffix)
@@ -104,10 +112,6 @@ func (r *Reconciler) genUserName(u *User) string {
 		return name
 	}
 
-	return r.genName(u.ExternalID)
-}
-
-func (r *Reconciler) genGroupName(externalID string) string {
 	return r.genName(externalID)
 }
 
@@ -162,7 +166,7 @@ func (r *Reconciler) Sync(ctx context.Context, src Source) error {
 		if g == nil || g.ExternalID == "" {
 			continue
 		}
-		desiredGroupNames[r.genGroupName(g.ExternalID)] = struct{}{}
+		desiredGroupNames[r.genGroupName(g)] = struct{}{}
 	}
 
 	userNameByExternalID := make(map[string]string, len(users))
@@ -313,7 +317,7 @@ func (r *Reconciler) applyUserSpec(usr *corev1.User, u *User) {
 }
 
 func (r *Reconciler) upsertGroup(ctx context.Context, g *Group) (*corev1.Group, error) {
-	name := r.genGroupName(g.ExternalID)
+	name := r.genGroupName(g)
 
 	dpGrp, err := r.octeliumC.EnterpriseC().GetDirectoryProviderGroup(ctx, &rmetav1.GetOptions{Name: name})
 	if err == nil {
