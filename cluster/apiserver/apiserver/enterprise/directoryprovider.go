@@ -12,6 +12,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/asaskevich/govalidator"
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
 	"github.com/octelium/octelium/apis/main/corev1"
@@ -331,22 +332,6 @@ func (s *Server) GenerateDirectoryProviderCredential(ctx context.Context,
 	}, nil
 }
 
-func (s *Server) validateDirectoryProvider(ctx context.Context, req *enterprisev1.DirectoryProvider) error {
-
-	if req.Spec == nil {
-		return grpcutils.InvalidArg("Nil Spec")
-	}
-
-	switch req.Spec.Type.(type) {
-	case *enterprisev1.DirectoryProvider_Spec_Scim:
-	case *enterprisev1.DirectoryProvider_Spec_GoogleWorkspace_:
-	default:
-		return grpcutils.InvalidArg("Invalid DirectoryProvider type")
-	}
-
-	return nil
-}
-
 func (s *Server) ListDirectoryProviderUser(ctx context.Context, req *enterprisev1.ListDirectoryProviderUserOptions) (*enterprisev1.DirectoryProviderUserList, error) {
 
 	var listOpts []*rmetav1.ListOptions_Filter
@@ -408,7 +393,8 @@ func (s *Server) SynchronizeDirectoryProvider(ctx context.Context,
 	}
 
 	switch item.Spec.Type.(type) {
-	case *enterprisev1.DirectoryProvider_Spec_GoogleWorkspace_:
+	case *enterprisev1.DirectoryProvider_Spec_GoogleWorkspace_,
+		*enterprisev1.DirectoryProvider_Spec_Keycloak_:
 	default:
 		return nil, grpcutils.InvalidArg("This type does not supprot synchronizations")
 	}
@@ -423,4 +409,68 @@ func (s *Server) SynchronizeDirectoryProvider(ctx context.Context,
 	}
 
 	return &enterprisev1.SynchronizeDirectoryProviderResponse{}, nil
+}
+
+func (s *Server) validateDirectoryProvider(ctx context.Context, req *enterprisev1.DirectoryProvider) error {
+	spec := req.Spec
+	if spec == nil {
+		return grpcutils.InvalidArg("Nil spec")
+	}
+
+	switch spec.Type.(type) {
+	case *enterprisev1.DirectoryProvider_Spec_Scim:
+
+	case *enterprisev1.DirectoryProvider_Spec_GoogleWorkspace_:
+		typ := spec.GetGoogleWorkspace()
+
+		if err := apivalidation.ValidateGenASCII(typ.GetCustomer()); err != nil {
+			return err
+		}
+
+		if err := s.validateSecretOwner(ctx, typ.GetServiceAccount()); err != nil {
+			return err
+		}
+
+		if typ.GetImpersonateSubject() != "" {
+			if err := apivalidation.CheckEmail(typ.GetImpersonateSubject()); err != nil {
+				return err
+			}
+		}
+
+		if typ.GetPolling() != nil {
+			if err := apivalidation.ValidateDuration(typ.GetPolling().GetInterval()); err != nil {
+				return err
+			}
+		}
+
+	case *enterprisev1.DirectoryProvider_Spec_Keycloak_:
+		typ := spec.GetKeycloak()
+
+		if !govalidator.IsURL(typ.GetUrl()) {
+			return grpcutils.InvalidArg("Invalid URL")
+		}
+
+		if err := apivalidation.ValidateGenASCII(typ.GetRealm()); err != nil {
+			return err
+		}
+
+		if err := apivalidation.ValidateGenASCII(typ.GetClientID()); err != nil {
+			return err
+		}
+
+		if err := s.validateSecretOwner(ctx, typ.GetClientSecret()); err != nil {
+			return err
+		}
+
+		if typ.GetPolling() != nil {
+			if err := apivalidation.ValidateDuration(typ.GetPolling().GetInterval()); err != nil {
+				return err
+			}
+		}
+
+	default:
+		return grpcutils.InvalidArg("Must specify a type for the DirectoryProvider")
+	}
+
+	return nil
 }
