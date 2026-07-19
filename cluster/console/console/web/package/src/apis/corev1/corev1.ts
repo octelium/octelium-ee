@@ -7984,6 +7984,10 @@ export interface Gateway_Status {
      * @generated from protobuf field: string hostname = 8
      */
     hostname: string;
+    /**
+     * @generated from protobuf field: optional int32 index = 9
+     */
+    index?: number;
 }
 /**
  * @generated from protobuf message octelium.api.main.core.v1.Gateway.Status.WireGuard
@@ -27829,7 +27833,8 @@ class Gateway_Status$Type extends MessageType<Gateway_Status> {
             { no: 5, name: "wireguard", kind: "message", T: () => Gateway_Status_WireGuard },
             { no: 6, name: "quicv0", kind: "message", T: () => Gateway_Status_QUICV0 },
             { no: 7, name: "publicIPs", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
-            { no: 8, name: "hostname", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 8, name: "hostname", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 9, name: "index", kind: "scalar", opt: true, T: 5 /*ScalarType.INT32*/ }
         ]);
     }
     create(value?: PartialMessage<Gateway_Status>): Gateway_Status {
@@ -27870,6 +27875,9 @@ class Gateway_Status$Type extends MessageType<Gateway_Status> {
                 case /* string hostname */ 8:
                     message.hostname = reader.string();
                     break;
+                case /* optional int32 index */ 9:
+                    message.index = reader.int32();
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -27906,6 +27914,9 @@ class Gateway_Status$Type extends MessageType<Gateway_Status> {
         /* string hostname = 8; */
         if (message.hostname !== "")
             writer.tag(8, WireType.LengthDelimited).string(message.hostname);
+        /* optional int32 index = 9; */
+        if (message.index !== undefined)
+            writer.tag(9, WireType.Varint).int32(message.index);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

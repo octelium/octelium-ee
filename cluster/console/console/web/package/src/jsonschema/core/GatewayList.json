@@ -106,6 +106,9 @@
                 "hostname": {
                     "type": "string",
                     "description": "Hostname is the public hostname of the Gateway when connected to by the User clients. Currently sed by QUICv0 Gateways."
+                },
+                "index": {
+                    "type": "integer"
                 }
             },
             "additionalProperties": false,

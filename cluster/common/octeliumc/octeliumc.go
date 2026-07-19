@@ -20,6 +20,7 @@ import (
 	"github.com/octelium/octelium/apis/rsc/rcachev1"
 	"github.com/octelium/octelium/apis/rsc/rcorev1"
 	"github.com/octelium/octelium/apis/rsc/renterprisev1"
+	"github.com/octelium/octelium/apis/rsc/rlockv1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/apis/rsc/rratelimitv1"
 	"github.com/octelium/octelium/cluster/common/octeliumc"
@@ -32,6 +33,7 @@ type Client struct {
 	coreC       rcorev1.ResourceServiceClient
 	cacheC      rcachev1.MainServiceClient
 	rateLimitC  rratelimitv1.MainServiceClient
+	lockC       rlockv1.MainServiceClient
 	enterpriseC renterprisev1.ResourceServiceClient
 
 	coreV1UtilsC       *coreV1UtilsC
@@ -113,6 +115,10 @@ func (c *Client) CacheC() rcachev1.MainServiceClient {
 
 func (c *Client) RateLimitC() rratelimitv1.MainServiceClient {
 	return c.rateLimitC
+}
+
+func (c *Client) LockC() rlockv1.MainServiceClient {
+	return c.lockC
 }
 
 func (c *Client) EnterpriseC() renterprisev1.ResourceServiceClient {
