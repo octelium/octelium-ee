@@ -457,7 +457,7 @@ func (s *Server) getExpression(in *enterprisev1.Condition_Expression) string {
 		return fmt.Sprintf(`ctx.%s.metadata.name == %s`, ctxField, celString(ref.Name))
 	}
 
-	isAPIServer := `ctx.service.systemLabels["octelium-apiserver"] == "true" && ctx.service.status.namespaceRef.name == "octelium-api"`
+	isAPIServer := `ctx.service.status.namespaceRef.name == "octelium-api" && ctx.service.spec.mode == "GRPC"`
 	isAPServerWithAPI := func(arg string) string {
 		return fmt.Sprintf(`ctx.request.grpc.package == %s`, celString(fmt.Sprintf("octelium.api.main.%s.v1", arg)))
 	}
@@ -549,15 +549,15 @@ func (s *Server) getExpression(in *enterprisev1.Condition_Expression) string {
 
 	case *enterprisev1.Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserPresent_:
 		if in.GetSessionAuthenticationCredAuthenticatorFIDOUserPresent().IsUserPresent {
-			return `ctx.session.status.authentication.info.authenticator.info.fido.isUserPresent`
+			return `ctx.session.status.authentication.info.authenticator.info.fido.userPresent`
 		}
-		return `!ctx.session.status.authentication.info.authenticator.info.fido.isUserPresent`
+		return `!ctx.session.status.authentication.info.authenticator.info.fido.userPresent`
 
 	case *enterprisev1.Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserVerified_:
 		if in.GetSessionAuthenticationCredAuthenticatorFIDOUserVerified().IsUserVerified {
-			return `ctx.session.status.authentication.info.authenticator.info.fido.isUserVerified`
+			return `ctx.session.status.authentication.info.authenticator.info.fido.userVerified`
 		}
-		return `!ctx.session.status.authentication.info.authenticator.info.fido.isUserVerified`
+		return `!ctx.session.status.authentication.info.authenticator.info.fido.userVerified`
 
 	case *enterprisev1.Condition_Expression_SessionAuthenticationCredentialType_:
 		return fmt.Sprintf(`ctx.session.status.authentication.info.credential.type == %s`,
