@@ -9,7 +9,14 @@ import TimeAgo from "@/components/TimeAgo";
 import { onError } from "@/utils";
 import { getClientCluster, getClientEnterprise } from "@/utils/client";
 import { invalidateKey } from "@/utils/pb";
-import { Modal, Switch, TextInput } from "@mantine/core";
+import {
+  ActionIcon,
+  Button,
+  Checkbox,
+  Modal,
+  Switch,
+  TextInput,
+} from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
@@ -101,54 +108,97 @@ const PackageRow = ({
   version: string;
   onToggle: (checked: boolean) => void;
   onVersionChange: (v: string) => void;
-}) => (
-  <div
-    className={twMerge(
-      "rounded-lg border transition-[border-color,background] duration-150",
-      enabled ? "border-slate-300 bg-slate-50/60" : "border-slate-200 bg-white",
-    )}
-  >
-    <div className="flex items-start justify-between px-4 py-3 gap-4">
-      <div className="flex flex-col gap-0.5 min-w-0">
-        <span className="text-[0.78rem] font-bold text-slate-800">{label}</span>
-        <span className="text-[0.7rem] font-semibold text-slate-400">
-          {description}
-        </span>
-      </div>
-      <Switch
-        checked={enabled}
-        onChange={(e) => onToggle(e.currentTarget.checked)}
-        size="sm"
-      />
-    </div>
+}) => {
+  const [customVersion, setCustomVersion] = React.useState(false);
 
-    <AnimatePresence initial={false}>
-      {enabled && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          exit={{ opacity: 0, height: 0 }}
-          transition={{ duration: 0.18 }}
-          className="overflow-hidden"
-        >
-          <div className="px-4 pb-4 border-t border-slate-200 pt-3">
-            <TextInput
-              label="Version"
-              placeholder="e.g. 1.2.3 — leave empty for latest"
-              value={version}
-              onChange={(e) => onVersionChange(e.target.value)}
-              styles={{
-                input: {
-                  fontSize: "0.78rem",
-                },
-              }}
-            />
-          </div>
-        </motion.div>
+  React.useEffect(() => {
+    if (!enabled && customVersion) {
+      setCustomVersion(false);
+    }
+  }, [enabled]);
+
+  return (
+    <div
+      className={twMerge(
+        "rounded-lg border transition-[border-color,background] duration-150",
+        enabled
+          ? "border-slate-300 bg-slate-50/60"
+          : "border-slate-200 bg-white",
       )}
-    </AnimatePresence>
-  </div>
-);
+    >
+      <div className="flex items-start justify-between px-4 py-3 gap-4">
+        <div className="flex flex-col gap-0.5 min-w-0">
+          <span className="text-[0.78rem] font-bold text-slate-800">
+            {label}
+          </span>
+          <span className="text-[0.7rem] font-semibold text-slate-400">
+            {description}
+          </span>
+        </div>
+        <Switch
+          checked={enabled}
+          onChange={(e) => onToggle(e.currentTarget.checked)}
+          size="sm"
+        />
+      </div>
+
+      <AnimatePresence initial={false}>
+        {enabled && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.18 }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 pb-4 border-t border-slate-200 pt-3 flex flex-col gap-3">
+              <Checkbox
+                size="xs"
+                checked={customVersion}
+                onChange={(e) => {
+                  const checked = e.currentTarget.checked;
+                  setCustomVersion(checked);
+                  if (!checked) {
+                    onVersionChange("");
+                  }
+                }}
+                label={
+                  <span className="text-[0.74rem] font-semibold text-slate-600">
+                    Override the default latest version
+                  </span>
+                }
+              />
+
+              <AnimatePresence initial={false}>
+                {customVersion && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="overflow-hidden"
+                  >
+                    <TextInput
+                      label="Version"
+                      placeholder="e.g. 1.2.3"
+                      value={version}
+                      onChange={(e) => onVersionChange(e.target.value)}
+                      styles={{
+                        input: {
+                          fontSize: "0.78rem",
+                        },
+                      }}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
 
 const UpgradeCluster = () => {
   const [opened, { open, close }] = useDisclosure(false);
@@ -190,13 +240,14 @@ const UpgradeCluster = () => {
 
   return (
     <>
-      <button
+      <Button
+        variant="filled"
+        color="dark"
+        leftSection={<ArrowUpCircle size={15} strokeWidth={2.5} />}
         onClick={open}
-        className="flex items-center gap-2 px-4 py-2 rounded-lg text-[0.82rem] font-bold bg-slate-900 text-white border border-slate-900 hover:bg-slate-800 transition-colors duration-150 shadow-[0_2px_8px_rgba(15,23,42,0.18)] cursor-pointer"
       >
-        <ArrowUpCircle size={15} strokeWidth={2.5} />
         Upgrade cluster
-      </button>
+      </Button>
 
       <Modal
         opened={opened}
@@ -234,12 +285,14 @@ const UpgradeCluster = () => {
                 Upgrade cluster
               </span>
             </div>
-            <button
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size="sm"
               onClick={handleClose}
-              className="flex items-center justify-center w-6 h-6 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors duration-150 cursor-pointer"
             >
               <X size={13} strokeWidth={2.5} />
-            </button>
+            </ActionIcon>
           </div>
 
           <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3">
@@ -251,6 +304,8 @@ const UpgradeCluster = () => {
               />
               <p className="text-[0.72rem] font-semibold text-amber-700">
                 Select the components you want to upgrade and confirm below.
+                Each component upgrades to the latest version unless you
+                override it.
               </p>
             </div>
 
@@ -359,42 +414,27 @@ const UpgradeCluster = () => {
           </div>
 
           <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-slate-200 bg-slate-50/60 shrink-0">
-            <button
+            <Button
+              variant="default"
+              size="sm"
+              leftSection={<X size={13} strokeWidth={2.5} />}
+              disabled={mutationUpgrade.isPending}
               onClick={handleClose}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[0.78rem] font-bold text-slate-600 border border-slate-200 bg-white hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 transition-colors duration-150 cursor-pointer"
             >
               Cancel
-            </button>
+            </Button>
 
-            <button
-              disabled={
-                !confirmed || !hasSelection || mutationUpgrade.isPending
-              }
+            <Button
+              variant="filled"
+              color="dark"
+              size="sm"
+              leftSection={<ArrowUpCircle size={13} strokeWidth={2.5} />}
+              disabled={!confirmed || !hasSelection}
+              loading={mutationUpgrade.isPending}
               onClick={() => mutationUpgrade.mutate()}
-              className={twMerge(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[0.78rem] font-bold",
-                "border transition-colors duration-150",
-                "disabled:opacity-40 disabled:cursor-not-allowed",
-                confirmed && hasSelection
-                  ? "bg-slate-900 text-white border-slate-900 hover:bg-slate-800 shadow-[0_2px_8px_rgba(15,23,42,0.2)]"
-                  : "bg-slate-100 text-slate-400 border-slate-200",
-              )}
             >
-              {mutationUpgrade.isPending ? (
-                <>
-                  <Loader2
-                    size={12}
-                    className="animate-spin"
-                    strokeWidth={2.5}
-                  />{" "}
-                  Upgrading…
-                </>
-              ) : (
-                <>
-                  <ArrowUpCircle size={12} strokeWidth={2.5} /> Upgrade cluster
-                </>
-              )}
-            </button>
+              {mutationUpgrade.isPending ? "Upgrading..." : "Upgrade cluster"}
+            </Button>
           </div>
         </div>
       </Modal>
