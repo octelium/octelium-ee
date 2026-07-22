@@ -11,6 +11,8 @@ package enterprise
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"strings"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
@@ -31,6 +33,11 @@ import (
 	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"google.golang.org/protobuf/types/known/structpb"
+)
+
+const (
+	maxDirectoryProviderStringBytes = 512
+	maxDirectoryProviderURLBytes    = 2048
 )
 
 func (s *Server) CreateDirectoryProvider(ctx context.Context, req *enterprisev1.DirectoryProvider) (*enterprisev1.DirectoryProvider, error) {
@@ -172,6 +179,9 @@ func (s *Server) GetDirectoryProvider(ctx context.Context, req *metav1.GetOption
 }
 
 func (s *Server) ListDirectoryProvider(ctx context.Context, req *enterprisev1.ListDirectoryProviderOptions) (*enterprisev1.DirectoryProviderList, error) {
+	if req == nil {
+		req = &enterprisev1.ListDirectoryProviderOptions{}
+	}
 
 	itemList, err := s.octeliumC.EnterpriseC().ListDirectoryProvider(ctx, urscsrv.GetPublicListOptions(req))
 	if err != nil {
@@ -185,7 +195,7 @@ func (s *Server) DeleteDirectoryProvider(ctx context.Context, req *metav1.Delete
 
 	g, err := s.octeliumC.EnterpriseC().GetDirectoryProvider(ctx, apivalidation.DeleteOptionsToRGetOptions(req))
 	if err != nil {
-		return nil, err
+		return nil, serr.K8sNotFoundOrInternalWithErr(err)
 	}
 
 	if err := apivalidation.CheckIsSystem(g); err != nil {
@@ -212,7 +222,7 @@ func (s *Server) UpdateDirectoryProvider(ctx context.Context, req *enterprisev1.
 
 	item, err := s.octeliumC.EnterpriseC().GetDirectoryProvider(ctx, apivalidation.ObjectToRGetOptions(req))
 	if err != nil {
-		return nil, err
+		return nil, serr.K8sNotFoundOrInternalWithErr(err)
 	}
 
 	if err := apivalidation.CheckIsSystem(item); err != nil {
@@ -236,21 +246,40 @@ func (s *Server) UpdateDirectoryProvider(ctx context.Context, req *enterprisev1.
 
 func (s *Server) GenerateDirectoryProviderCredential(ctx context.Context,
 	req *enterprisev1.GenerateDirectoryProviderCredentialRequest) (*enterprisev1.GenerateDirectoryProviderCredentialResponse, error) {
+	if req == nil {
+		return nil, grpcutils.InvalidArg("Nil request")
+	}
 
 	if err := apivalidation.CheckObjectRef(req.DirectoryProviderRef, &apivalidation.CheckGetOptionsOpts{}); err != nil {
 		return nil, err
 	}
 
+	switch req.Mode {
+	case enterprisev1.GenerateDirectoryProviderCredentialRequest_BEARER:
+	case enterprisev1.GenerateDirectoryProviderCredentialRequest_MODE_UNSET:
+		return nil, grpcutils.InvalidArg("Credential mode must be set")
+	default:
+		return nil, grpcutils.InvalidArg("Invalid credential mode")
+	}
+
 	item, err := s.octeliumC.EnterpriseC().GetDirectoryProvider(ctx,
 		apivalidation.ObjectReferenceToRGetOptions(req.DirectoryProviderRef))
 	if err != nil {
+		return nil, serr.K8sNotFoundOrInternalWithErr(err)
+	}
+
+	if _, ok := item.Spec.Type.(*enterprisev1.DirectoryProvider_Spec_Scim); !ok {
+		return nil, grpcutils.InvalidArg("DirectoryProvider type does not support generated credentials")
+	}
+
+	if err := apivalidation.CheckObjectRef(item.Status.UserRef, &apivalidation.CheckGetOptionsOpts{}); err != nil {
 		return nil, err
 	}
 
 	usr, err := s.octeliumC.CoreC().GetUser(ctx,
 		apivalidation.ObjectReferenceToRGetOptions(item.Status.UserRef))
 	if err != nil {
-		return nil, err
+		return nil, serr.K8sNotFoundOrInternalWithErr(err)
 	}
 
 	var sess *corev1.Session
@@ -333,6 +362,9 @@ func (s *Server) GenerateDirectoryProviderCredential(ctx context.Context,
 }
 
 func (s *Server) ListDirectoryProviderUser(ctx context.Context, req *enterprisev1.ListDirectoryProviderUserOptions) (*enterprisev1.DirectoryProviderUserList, error) {
+	if req == nil {
+		req = &enterprisev1.ListDirectoryProviderUserOptions{}
+	}
 
 	var listOpts []*rmetav1.ListOptions_Filter
 	if req.DirectoryProviderRef != nil {
@@ -343,7 +375,7 @@ func (s *Server) ListDirectoryProviderUser(ctx context.Context, req *enterprisev
 		dp, err := s.octeliumC.EnterpriseC().GetDirectoryProvider(ctx,
 			apivalidation.ObjectReferenceToRGetOptions(req.DirectoryProviderRef))
 		if err != nil {
-			return nil, err
+			return nil, serr.K8sNotFoundOrInternalWithErr(err)
 		}
 		listOpts = append(listOpts, urscsrv.FilterFieldEQValStr("status.directoryProviderRef.uid", dp.Metadata.Uid))
 	}
@@ -356,6 +388,9 @@ func (s *Server) ListDirectoryProviderUser(ctx context.Context, req *enterprisev
 }
 
 func (s *Server) ListDirectoryProviderGroup(ctx context.Context, req *enterprisev1.ListDirectoryProviderGroupOptions) (*enterprisev1.DirectoryProviderGroupList, error) {
+	if req == nil {
+		req = &enterprisev1.ListDirectoryProviderGroupOptions{}
+	}
 
 	var listOpts []*rmetav1.ListOptions_Filter
 	if req.DirectoryProviderRef != nil {
@@ -366,7 +401,7 @@ func (s *Server) ListDirectoryProviderGroup(ctx context.Context, req *enterprise
 		dp, err := s.octeliumC.EnterpriseC().GetDirectoryProvider(ctx,
 			apivalidation.ObjectReferenceToRGetOptions(req.DirectoryProviderRef))
 		if err != nil {
-			return nil, err
+			return nil, serr.K8sNotFoundOrInternalWithErr(err)
 		}
 		listOpts = append(listOpts, urscsrv.FilterFieldEQValStr("status.directoryProviderRef.uid", dp.Metadata.Uid))
 	}
@@ -381,6 +416,9 @@ func (s *Server) ListDirectoryProviderGroup(ctx context.Context, req *enterprise
 
 func (s *Server) SynchronizeDirectoryProvider(ctx context.Context,
 	req *enterprisev1.SynchronizeDirectoryProviderRequest) (*enterprisev1.SynchronizeDirectoryProviderResponse, error) {
+	if req == nil {
+		return nil, grpcutils.InvalidArg("Nil request")
+	}
 
 	if err := apivalidation.CheckObjectRef(req.DirectoryProviderRef, &apivalidation.CheckGetOptionsOpts{}); err != nil {
 		return nil, err
@@ -389,14 +427,19 @@ func (s *Server) SynchronizeDirectoryProvider(ctx context.Context,
 	item, err := s.octeliumC.EnterpriseC().GetDirectoryProvider(ctx,
 		apivalidation.ObjectReferenceToRGetOptions(req.DirectoryProviderRef))
 	if err != nil {
-		return nil, err
+		return nil, serr.K8sNotFoundOrInternalWithErr(err)
 	}
 
 	switch item.Spec.Type.(type) {
 	case *enterprisev1.DirectoryProvider_Spec_GoogleWorkspace_,
 		*enterprisev1.DirectoryProvider_Spec_Keycloak_:
 	default:
-		return nil, grpcutils.InvalidArg("This type does not supprot synchronizations")
+		return nil, grpcutils.InvalidArg("DirectoryProvider type does not support synchronization")
+	}
+
+	if item.Status.Synchronization != nil &&
+		item.Status.Synchronization.State == enterprisev1.DirectoryProvider_Status_Synchronization_SYNCING {
+		return nil, grpcutils.InvalidArg("DirectoryProvider is already SYNCING")
 	}
 
 	item.Status.Synchronization = &enterprisev1.DirectoryProvider_Status_Synchronization{
@@ -412,6 +455,10 @@ func (s *Server) SynchronizeDirectoryProvider(ctx context.Context,
 }
 
 func (s *Server) validateDirectoryProvider(ctx context.Context, req *enterprisev1.DirectoryProvider) error {
+	if req == nil {
+		return grpcutils.InvalidArg("Nil DirectoryProvider")
+	}
+
 	spec := req.Spec
 	if spec == nil {
 		return grpcutils.InvalidArg("Nil spec")
@@ -423,7 +470,7 @@ func (s *Server) validateDirectoryProvider(ctx context.Context, req *enterprisev
 	case *enterprisev1.DirectoryProvider_Spec_GoogleWorkspace_:
 		typ := spec.GetGoogleWorkspace()
 
-		if err := apivalidation.ValidateGenASCII(typ.GetCustomer()); err != nil {
+		if err := validateDirectoryProviderASCII(typ.GetCustomer(), "GoogleWorkspace customer"); err != nil {
 			return err
 		}
 
@@ -432,6 +479,9 @@ func (s *Server) validateDirectoryProvider(ctx context.Context, req *enterprisev
 		}
 
 		if typ.GetImpersonateSubject() != "" {
+			if len(typ.GetImpersonateSubject()) > maxDirectoryProviderStringBytes {
+				return grpcutils.InvalidArg("GoogleWorkspace impersonate subject is too long")
+			}
 			if err := apivalidation.CheckEmail(typ.GetImpersonateSubject()); err != nil {
 				return err
 			}
@@ -446,15 +496,15 @@ func (s *Server) validateDirectoryProvider(ctx context.Context, req *enterprisev
 	case *enterprisev1.DirectoryProvider_Spec_Keycloak_:
 		typ := spec.GetKeycloak()
 
-		if !govalidator.IsURL(typ.GetUrl()) {
-			return grpcutils.InvalidArg("Invalid URL")
-		}
-
-		if err := apivalidation.ValidateGenASCII(typ.GetRealm()); err != nil {
+		if err := validateDirectoryProviderURL(typ.GetUrl()); err != nil {
 			return err
 		}
 
-		if err := apivalidation.ValidateGenASCII(typ.GetClientID()); err != nil {
+		if err := validateDirectoryProviderASCII(typ.GetRealm(), "Keycloak realm"); err != nil {
+			return err
+		}
+
+		if err := validateDirectoryProviderASCII(typ.GetClientID(), "Keycloak client ID"); err != nil {
 			return err
 		}
 
@@ -470,6 +520,49 @@ func (s *Server) validateDirectoryProvider(ctx context.Context, req *enterprisev
 
 	default:
 		return grpcutils.InvalidArg("Must specify a type for the DirectoryProvider")
+	}
+
+	return nil
+}
+
+func validateDirectoryProviderASCII(v string, field string) error {
+	if strings.TrimSpace(v) == "" {
+		return grpcutils.InvalidArg("%s is required", field)
+	}
+
+	if len(v) > maxDirectoryProviderStringBytes {
+		return grpcutils.InvalidArg("%s is too long", field)
+	}
+
+	if err := apivalidation.ValidateGenASCII(v); err != nil {
+		return grpcutils.InvalidArg("%s", err.Error())
+	}
+
+	return nil
+}
+
+func validateDirectoryProviderURL(v string) error {
+	if strings.TrimSpace(v) == "" {
+		return grpcutils.InvalidArg("URL is required")
+	}
+
+	if len(v) > maxDirectoryProviderURLBytes {
+		return grpcutils.InvalidArg("URL is too long")
+	}
+
+	if !govalidator.IsURL(v) {
+		return grpcutils.InvalidArg("Invalid URL")
+	}
+
+	u, err := url.Parse(v)
+	if err != nil || u.Host == "" {
+		return grpcutils.InvalidArg("Invalid URL")
+	}
+
+	switch u.Scheme {
+	case "http", "https":
+	default:
+		return grpcutils.InvalidArg("URL scheme must be http or https")
 	}
 
 	return nil
