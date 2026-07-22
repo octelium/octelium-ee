@@ -86,6 +86,9 @@ func (s *Server) GetCertificate(ctx context.Context, req *metav1.GetOptions) (*e
 }
 
 func (s *Server) ListCertificate(ctx context.Context, req *enterprisev1.ListCertificateOptions) (*enterprisev1.CertificateList, error) {
+	if req == nil {
+		req = &enterprisev1.ListCertificateOptions{}
+	}
 
 	itemList, err := s.octeliumC.EnterpriseC().ListCertificate(ctx, urscsrv.GetPublicListOptions(req))
 	if err != nil {
@@ -96,18 +99,17 @@ func (s *Server) ListCertificate(ctx context.Context, req *enterprisev1.ListCert
 }
 
 func (s *Server) DeleteCertificate(ctx context.Context, req *metav1.DeleteOptions) (*metav1.OperationResult, error) {
-
-	g, err := s.octeliumC.EnterpriseC().GetCertificate(ctx, apivalidation.DeleteOptionsToRGetOptions(req))
-	if err != nil {
+	if err := apisrvcommon.CheckGetOrDeleteOptions(req); err != nil {
 		return nil, err
 	}
 
-	if g.Metadata.IsSystem {
-		return nil, serr.InvalidArg("Cannot delete the system group: %s", req.Name)
+	g, err := s.octeliumC.EnterpriseC().GetCertificate(ctx, apivalidation.DeleteOptionsToRGetOptions(req))
+	if err != nil {
+		return nil, serr.K8sNotFoundOrInternalWithErr(err)
 	}
 
-	if err != nil {
-		return nil, serr.K8sInternal(err)
+	if err := apivalidation.CheckIsSystem(g); err != nil {
+		return nil, err
 	}
 
 	_, err = s.octeliumC.EnterpriseC().DeleteCertificate(ctx, &rmetav1.DeleteOptions{Uid: g.Metadata.Uid})
@@ -134,6 +136,10 @@ func (s *Server) UpdateCertificate(ctx context.Context, req *enterprisev1.Certif
 
 	item, err := s.octeliumC.EnterpriseC().GetCertificate(ctx, apivalidation.ObjectToRGetOptions(req))
 	if err != nil {
+		return nil, serr.K8sNotFoundOrInternalWithErr(err)
+	}
+
+	if err := apivalidation.CheckIsSystem(item); err != nil {
 		return nil, err
 	}
 
@@ -146,7 +152,7 @@ func (s *Server) UpdateCertificate(ctx context.Context, req *enterprisev1.Certif
 			Name: "default",
 		})
 		if err != nil {
-			return nil, err
+			return nil, serr.K8sNotFoundOrInternalWithErr(err)
 		}
 		item.Status.CertificateIssuerRef = umetav1.GetObjectReference(iss)
 	case enterprisev1.Certificate_Spec_MANUAL:
@@ -168,14 +174,21 @@ func (s *Server) validateCertificate(ctx context.Context, req *enterprisev1.Cert
 	}
 
 	switch spec.Mode {
+	case enterprisev1.Certificate_Spec_MANUAL,
+		enterprisev1.Certificate_Spec_MANAGED:
+		return nil
 	case enterprisev1.Certificate_Spec_MODE_UNSET:
 		return grpcutils.InvalidArg("Mode must be set")
+	default:
+		return grpcutils.InvalidArg("Invalid Certificate mode")
 	}
-
-	return nil
 }
 
 func (s *Server) IssueCertificate(ctx context.Context, req *enterprisev1.IssueCertificateRequest) (*enterprisev1.IssueCertificateResponse, error) {
+	if req == nil {
+		return nil, grpcutils.InvalidArg("Nil request")
+	}
+
 	if err := apivalidation.CheckObjectRef(req.CertificateRef, &apivalidation.CheckGetOptionsOpts{}); err != nil {
 		return nil, err
 	}
@@ -274,7 +287,7 @@ func (s *Server) SetCertificate(ctx context.Context, req *enterprisev1.SetCertif
 		return nil, serr.K8sNotFoundOrInternalWithErr(err)
 	}
 
-	if crt.Metadata != nil && crt.Metadata.IsSystem {
+	if crt.Metadata.IsSystem {
 		return nil, serr.InvalidArg("Cannot set a system Certificate")
 	}
 
