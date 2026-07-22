@@ -11,6 +11,7 @@ package enterprise
 import (
 	"context"
 
+	"github.com/asaskevich/govalidator"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	apisrvcommon "github.com/octelium/octelium/cluster/apiserver/apiserver/common"
@@ -20,45 +21,10 @@ import (
 	"github.com/octelium/octelium/cluster/common/urscsrv"
 )
 
-/*
-func (s *Server) CreateCertificateIssuer(ctx context.Context, req *enterprisev1.CertificateIssuer) (*enterprisev1.CertificateIssuer, error) {
-
-	if err := apivalidation.ValidateCommon(req, &apivalidation.ValidateCommonOpts{
-		ValidateMetadataOpts: apivalidation.ValidateMetadataOpts{
-			RequireName: true,
-		},
-	}); err != nil {
-		return nil, err
-	}
-
-	{
-		_, err := s.octeliumC.EnterpriseC().GetCertificateIssuer(ctx, apivalidation.ObjectToRGetOptions(req))
-		if err == nil {
-			return nil, grpcutils.AlreadyExists("The CertificateIssuer %s already exists", req.Metadata.Name)
-		}
-		if !grpcerr.IsNotFound(err) {
-			return nil, grpcutils.InternalWithErr(err)
-		}
-	}
-
-	if err := s.validateCertificateIssuer(ctx, req); err != nil {
-		return nil, err
-	}
-
-	item := &enterprisev1.CertificateIssuer{
-		Metadata: apisrvcommon.MetadataFrom(req.Metadata),
-		Spec:     req.Spec,
-		Status:   &enterprisev1.CertificateIssuer_Status{},
-	}
-
-	item, err := s.octeliumC.EnterpriseC().CreateCertificateIssuer(ctx, item)
-	if err != nil {
-		return nil, serr.InternalWithErr(err)
-	}
-
-	return item, nil
-}
-*/
+const (
+	maxCertificateIssuerServerURLBytes = 2048
+	maxCertificateIssuerEmailBytes     = 254
+)
 
 func (s *Server) GetCertificateIssuer(ctx context.Context, req *metav1.GetOptions) (*enterprisev1.CertificateIssuer, error) {
 	if err := apisrvcommon.CheckGetOrDeleteOptions(req); err != nil {
@@ -83,32 +49,6 @@ func (s *Server) ListCertificateIssuer(ctx context.Context, req *enterprisev1.Li
 	return itemList, nil
 }
 
-/*
-func (s *Server) DeleteCertificateIssuer(ctx context.Context, req *metav1.DeleteOptions) (*metav1.OperationResult, error) {
-
-	g, err := s.octeliumC.EnterpriseC().GetCertificateIssuer(ctx, apivalidation.DeleteOptionsToRGetOptions(req))
-	if err != nil {
-		return nil, err
-	}
-
-	if g.Metadata.IsSystem {
-		return nil, serr.InvalidArg("Cannot delete the system group: %s", req.Name)
-	}
-
-	if err != nil {
-		return nil, serr.K8sInternal(err)
-	}
-
-	_, err = s.octeliumC.EnterpriseC().DeleteCertificateIssuer(ctx, &rmetav1.DeleteOptions{Uid: g.Metadata.Uid})
-	if err != nil {
-		return nil, serr.K8sInternal(err)
-	}
-
-	return &metav1.OperationResult{}, nil
-}
-
-*/
-
 func (s *Server) UpdateCertificateIssuer(ctx context.Context, req *enterprisev1.CertificateIssuer) (*enterprisev1.CertificateIssuer, error) {
 
 	if err := apivalidation.ValidateCommon(req, &apivalidation.ValidateCommonOpts{
@@ -125,7 +65,7 @@ func (s *Server) UpdateCertificateIssuer(ctx context.Context, req *enterprisev1.
 
 	item, err := s.octeliumC.EnterpriseC().GetCertificateIssuer(ctx, apivalidation.ObjectToRGetOptions(req))
 	if err != nil {
-		return nil, err
+		return nil, serr.K8sNotFoundOrInternalWithErr(err)
 	}
 
 	apisrvcommon.MetadataUpdate(item.Metadata, req.Metadata)
@@ -140,9 +80,59 @@ func (s *Server) UpdateCertificateIssuer(ctx context.Context, req *enterprisev1.
 }
 
 func (s *Server) validateCertificateIssuer(ctx context.Context, req *enterprisev1.CertificateIssuer) error {
+	if req == nil {
+		return grpcutils.InvalidArg("Nil CertificateIssuer")
+	}
+
 	spec := req.Spec
 	if spec == nil {
 		return grpcutils.InvalidArg("Nil spec")
+	}
+
+	switch spec.Type.(type) {
+	case *enterprisev1.CertificateIssuer_Spec_Acme:
+		return validateCertificateIssuerACME(spec.GetAcme())
+	default:
+		return grpcutils.InvalidArg("You must set CertificateIssuer type")
+	}
+}
+
+func validateCertificateIssuerACME(acme *enterprisev1.CertificateIssuer_Spec_ACME) error {
+	if acme == nil {
+		return grpcutils.InvalidArg("Nil ACME spec")
+	}
+
+	if acme.GetServer() == "" {
+		return grpcutils.InvalidArg("ACME server is required")
+	}
+	if len(acme.GetServer()) > maxCertificateIssuerServerURLBytes {
+		return grpcutils.InvalidArg("ACME server URL is too long")
+	}
+	if !govalidator.IsURL(acme.GetServer()) {
+		return grpcutils.InvalidArg("Invalid ACME server URL")
+	}
+
+	if acme.GetEmail() == "" {
+		return grpcutils.InvalidArg("ACME email is required")
+	}
+	if len(acme.GetEmail()) > maxCertificateIssuerEmailBytes {
+		return grpcutils.InvalidArg("ACME email is too long")
+	}
+	if !govalidator.IsEmail(acme.GetEmail()) {
+		return grpcutils.InvalidArg("Invalid ACME email")
+	}
+
+	if acme.GetSolver() == nil {
+		return grpcutils.InvalidArg("ACME solver is required")
+	}
+
+	switch acme.GetSolver().Type.(type) {
+	case *enterprisev1.CertificateIssuer_Spec_ACME_Solver_Dns:
+		if acme.GetSolver().GetDns() == nil {
+			return grpcutils.InvalidArg("Nil ACME DNS solver")
+		}
+	default:
+		return grpcutils.InvalidArg("You must set ACME solver type")
 	}
 
 	return nil
