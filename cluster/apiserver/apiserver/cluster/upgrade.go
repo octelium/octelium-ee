@@ -18,7 +18,6 @@ import (
 	"github.com/octelium/octelium/cluster/common/apivalidation"
 	"github.com/octelium/octelium/cluster/common/grpcutils"
 	"github.com/octelium/octelium/pkg/common/pbutils"
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 
@@ -155,7 +154,7 @@ func validateUpgradeVersion(ver string, field string) (string, error) {
 		return ver, nil
 	}
 
-	return "", errors.Errorf("Could not verify upgrade version: %s", ver)
+	return "", grpcutils.InvalidArg("Could not verify upgrade version: %s", ver)
 }
 
 func isActiveUpgradeRequest(req *enterprisev1.ClusterConfig_Status_UpgradeRequest) bool {

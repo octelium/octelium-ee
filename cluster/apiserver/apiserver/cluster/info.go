@@ -18,11 +18,17 @@ import (
 	"github.com/hashicorp/go-version"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
+	"github.com/octelium/octelium/cluster/common/grpcutils"
 	"github.com/octelium/octelium/pkg/utils/ldflags"
 	"github.com/pkg/errors"
 )
 
+var getLatestVersionFunc = getLatestVersion
+
 func (s *Server) GetClusterInfo(ctx context.Context, req *enterprisev1.GetClusterInfoRequest) (*enterprisev1.GetClusterInfoResponse, error) {
+	if req == nil {
+		return nil, grpcutils.InvalidArg("Nil request")
+	}
 
 	ret := &enterprisev1.GetClusterInfoResponse{}
 
@@ -33,47 +39,59 @@ func (s *Server) GetClusterInfo(ctx context.Context, req *enterprisev1.GetCluste
 		return nil, err
 	}
 
-	latestCore, _ := getLatestVersion(ctx, "octelium")
-	latestEE, _ := getLatestVersion(ctx, "octelium-ee")
-	latestCordium, _ := getLatestVersion(ctx, "cordium")
+	latestCore, _ := getLatestVersionFunc(ctx, "octelium")
+	latestEE, _ := getLatestVersionFunc(ctx, "octelium-ee")
+	latestCordium, _ := getLatestVersionFunc(ctx, "cordium")
 
-	canUpgrade := func(cur, latest string) bool {
-		if cur, err := version.NewSemver(cur); err == nil {
-			if latest, err := version.NewSemver(latest); err == nil {
-				return latest.GreaterThan(cur)
-			}
-		}
-		return false
-	}
-
-	if info, ok := rgn.Status.VersionInfoMap["octelium"]; ok {
+	if info, ok := rgn.Status.VersionInfoMap["octelium"]; ok && info != nil {
 		ret.Core = &enterprisev1.GetClusterInfoResponse_Core{
 			CurrentVersion: info.Version,
 			SetAt:          info.SetAt,
 			LatestVersion:  latestCore,
-			CanUpgrade:     canUpgrade(info.Version, latestCore),
+			CanUpgrade:     canUpgradeVersion(info.Version, latestCore),
 		}
 	}
 
-	if info, ok := rgn.Status.VersionInfoMap["octeliumee"]; ok {
+	if info, ok := rgn.Status.VersionInfoMap["octeliumee"]; ok && info != nil {
 		ret.PackageEnterprise = &enterprisev1.GetClusterInfoResponse_PackageEnterprise{
 			CurrentVersion: info.Version,
 			SetAt:          info.SetAt,
 			LatestVersion:  latestEE,
-			CanUpgrade:     canUpgrade(info.Version, latestEE),
+			CanUpgrade:     canUpgradeVersion(info.Version, latestEE),
 		}
 	}
 
-	if info, ok := rgn.Status.VersionInfoMap["cordium"]; ok {
+	if info, ok := rgn.Status.VersionInfoMap["cordium"]; ok && info != nil {
 		ret.PackageCordium = &enterprisev1.GetClusterInfoResponse_PackageCordium{
 			CurrentVersion: info.Version,
 			SetAt:          info.SetAt,
 			LatestVersion:  latestCordium,
-			CanUpgrade:     canUpgrade(info.Version, latestCordium),
+			CanUpgrade:     canUpgradeVersion(info.Version, latestCordium),
 		}
 	}
 
 	return ret, nil
+}
+
+func canUpgradeVersion(cur string, latest string) bool {
+	cur = strings.TrimSpace(cur)
+	latest = strings.TrimSpace(latest)
+
+	if cur == "" || latest == "" {
+		return false
+	}
+
+	curSemver, err := version.NewSemver(cur)
+	if err != nil {
+		return false
+	}
+
+	latestSemver, err := version.NewSemver(latest)
+	if err != nil {
+		return false
+	}
+
+	return latestSemver.GreaterThan(curSemver)
 }
 
 func getLatestVersion(ctx context.Context, pkg string) (string, error) {
@@ -94,5 +112,5 @@ func getLatestVersion(ctx context.Context, pkg string) (string, error) {
 		return "", errors.Errorf("Could not get latest version release for package: %s", pkg)
 	}
 
-	return (strings.TrimSpace(string(resp.Body()))), nil
+	return strings.TrimSpace(string(resp.Body())), nil
 }
