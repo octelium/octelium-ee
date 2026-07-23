@@ -24,7 +24,7 @@ import (
 )
 
 func (s *Server) GetDNSProvider(ctx context.Context, req *metav1.GetOptions) (*enterprisev1.DNSProvider, error) {
-	if err := apisrvcommon.CheckGetOrDeleteOptions(req); err != nil {
+	if err := apivalidation.CheckGetOptions(req, &apivalidation.CheckGetOptionsOpts{}); err != nil {
 		return nil, err
 	}
 

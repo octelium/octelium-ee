@@ -67,7 +67,7 @@ func (s *Server) CreateCollectorExporter(ctx context.Context, req *enterprisev1.
 }
 
 func (s *Server) GetCollectorExporter(ctx context.Context, req *metav1.GetOptions) (*enterprisev1.CollectorExporter, error) {
-	if err := apisrvcommon.CheckGetOrDeleteOptions(req); err != nil {
+	if err := apivalidation.CheckGetOptions(req, &apivalidation.CheckGetOptionsOpts{}); err != nil {
 		return nil, err
 	}
 

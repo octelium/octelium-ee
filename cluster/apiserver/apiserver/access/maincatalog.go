@@ -58,7 +58,7 @@ func (s *ServerMain) CreateCatalog(ctx context.Context, req *accessv1.Catalog) (
 }
 
 func (s *ServerMain) GetCatalog(ctx context.Context, req *metav1.GetOptions) (*accessv1.Catalog, error) {
-	if err := apisrvcommon.CheckGetOrDeleteOptions(req); err != nil {
+	if err := apivalidation.CheckGetOptions(req, &apivalidation.CheckGetOptionsOpts{}); err != nil {
 		return nil, err
 	}
 

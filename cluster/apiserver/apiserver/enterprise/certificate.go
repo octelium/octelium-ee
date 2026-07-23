@@ -73,7 +73,7 @@ func (s *Server) CreateCertificate(ctx context.Context, req *enterprisev1.Certif
 }
 
 func (s *Server) GetCertificate(ctx context.Context, req *metav1.GetOptions) (*enterprisev1.Certificate, error) {
-	if err := apisrvcommon.CheckGetOrDeleteOptions(req); err != nil {
+	if err := apivalidation.CheckGetOptions(req, &apivalidation.CheckGetOptionsOpts{}); err != nil {
 		return nil, err
 	}
 
@@ -99,7 +99,7 @@ func (s *Server) ListCertificate(ctx context.Context, req *enterprisev1.ListCert
 }
 
 func (s *Server) DeleteCertificate(ctx context.Context, req *metav1.DeleteOptions) (*metav1.OperationResult, error) {
-	if err := apisrvcommon.CheckGetOrDeleteOptions(req); err != nil {
+	if err := apivalidation.CheckDeleteOptions(req, &apivalidation.CheckGetOptionsOpts{}); err != nil {
 		return nil, err
 	}
 

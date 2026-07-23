@@ -102,7 +102,9 @@ func (s *ServerReviewer) GetReview(ctx context.Context, req *metav1.GetOptions) 
 		return nil, err
 	}
 
-	if err := apisrvcommon.CheckGetOrDeleteOptions(req); err != nil {
+	if err := apivalidation.CheckGetOptions(req, &apivalidation.CheckGetOptionsOpts{
+		ParentsMust: 1,
+	}); err != nil {
 		return nil, err
 	}
 

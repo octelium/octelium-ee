@@ -26,7 +26,7 @@ import (
 const maxSecretStoreStringBytes = 512
 
 func (s *Server) GetSecretStore(ctx context.Context, req *metav1.GetOptions) (*enterprisev1.SecretStore, error) {
-	if err := apisrvcommon.CheckGetOrDeleteOptions(req); err != nil {
+	if err := apivalidation.CheckGetOptions(req, &apivalidation.CheckGetOptionsOpts{}); err != nil {
 		return nil, err
 	}
 

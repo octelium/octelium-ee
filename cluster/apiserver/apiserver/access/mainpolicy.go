@@ -59,7 +59,7 @@ func (s *ServerMain) CreatePolicy(ctx context.Context, req *accessv1.Policy) (*a
 }
 
 func (s *ServerMain) GetPolicy(ctx context.Context, req *metav1.GetOptions) (*accessv1.Policy, error) {
-	if err := apisrvcommon.CheckGetOrDeleteOptions(req); err != nil {
+	if err := apivalidation.CheckGetOptions(req, &apivalidation.CheckGetOptionsOpts{}); err != nil {
 		return nil, err
 	}
 
