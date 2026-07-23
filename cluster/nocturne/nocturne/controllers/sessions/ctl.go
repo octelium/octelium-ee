@@ -25,7 +25,6 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/plog/plogotlp"
-	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
 
@@ -108,7 +107,7 @@ func (c *Controller) doAuthenticationLog(ctx context.Context, sess *corev1.Sessi
 		},
 	}
 
-	zap.L().Debug("Created authenticationLog", zap.Any("log", lg))
+	// zap.L().Debug("Created authenticationLog", zap.Any("log", lg))
 
 	lgs := plog.NewLogs()
 	lgs.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty()
