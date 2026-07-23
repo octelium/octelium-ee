@@ -483,7 +483,7 @@ func (s *Server) validateDirectoryProvider(ctx context.Context, req *enterprisev
 				return grpcutils.InvalidArg("GoogleWorkspace impersonate subject is too long")
 			}
 			if err := apivalidation.CheckEmail(typ.GetImpersonateSubject()); err != nil {
-				return err
+				return serr.InvalidArg("Invalid email: %s", typ.GetImpersonateSubject())
 			}
 		}
 

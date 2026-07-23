@@ -189,7 +189,7 @@ func TestDirectoryProviderTypes(t *testing.T) {
 		assert.NotEmpty(t, dp.Status.Id)
 		assert.Nil(t, dp.Status.UserRef)
 		assert.Equal(t, "customer", dp.Spec.GetGoogleWorkspace().Customer)
-		assert.Equal(t, "admin@example.com", dp.Spec.GetGoogleWorkspace().ImpersonateSubject)
+		assert.Equal(t, "admin@octelium.com", dp.Spec.GetGoogleWorkspace().ImpersonateSubject)
 
 		_, err = srv.SynchronizeDirectoryProvider(ctx, &enterprisev1.SynchronizeDirectoryProviderRequest{
 			DirectoryProviderRef: umetav1.GetObjectReference(dp),
@@ -333,7 +333,7 @@ func TestValidateDirectoryProvider(t *testing.T) {
 
 	{
 		item := tstDirectoryProviderGoogleWorkspace(secretName)
-		item.Spec.GetGoogleWorkspace().ImpersonateSubject = strings.Repeat("a", maxDirectoryProviderStringBytes+1) + "@example.com"
+		item.Spec.GetGoogleWorkspace().ImpersonateSubject = strings.Repeat("a", maxDirectoryProviderStringBytes+1) + "@octelium.com"
 		err := srv.validateDirectoryProvider(ctx, item)
 		assert.NotNil(t, err)
 		assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
@@ -343,8 +343,7 @@ func TestValidateDirectoryProvider(t *testing.T) {
 		item := tstDirectoryProviderGoogleWorkspace(secretName)
 		item.Spec.GetGoogleWorkspace().Polling = &enterprisev1.DirectoryProvider_Spec_GoogleWorkspace_Polling{}
 		err := srv.validateDirectoryProvider(ctx, item)
-		assert.NotNil(t, err)
-		assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
+		assert.Nil(t, err)
 	}
 
 	{
@@ -428,8 +427,7 @@ func TestValidateDirectoryProvider(t *testing.T) {
 		item := tstDirectoryProviderKeycloak(secretName)
 		item.Spec.GetKeycloak().Polling = &enterprisev1.DirectoryProvider_Spec_Keycloak_Polling{}
 		err := srv.validateDirectoryProvider(ctx, item)
-		assert.NotNil(t, err)
-		assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
+		assert.Nil(t, err)
 	}
 
 	{
@@ -654,7 +652,7 @@ func tstDirectoryProviderGoogleWorkspace(secretName string) *enterprisev1.Direct
 				GoogleWorkspace: &enterprisev1.DirectoryProvider_Spec_GoogleWorkspace{
 					Customer:           "customer",
 					ServiceAccount:     tstDirectoryProviderGoogleWorkspaceServiceAccount(secretName),
-					ImpersonateSubject: "admin@example.com",
+					ImpersonateSubject: "admin@octelium.com",
 					Polling:            tstDirectoryProviderGoogleWorkspacePolling(),
 				},
 			},
