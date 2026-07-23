@@ -4,6 +4,7 @@ import {
   Boxes,
   Building2,
   ChevronDown,
+  ClipboardCheck,
   Cpu,
   Crown,
   DoorClosed,
@@ -12,8 +13,10 @@ import {
   Folder,
   Globe,
   Globe2,
+  Inbox,
   KeyRound,
   LaptopMinimal,
+  Layers,
   Library,
   LockKeyhole,
   LockOpen,
@@ -28,6 +31,7 @@ import {
   Telescope,
   Terminal,
   User,
+  UserCheck,
   Users,
 } from "lucide-react";
 
@@ -35,7 +39,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import * as React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
-import { match } from "ts-pattern";
 
 const itemsCore = [
   { title: "Services", url: "/core/services", icon: PanelTop },
@@ -82,6 +85,13 @@ const itemsEnterprise = [
   { title: "Policy Tester", url: "/enterprise/policytester", icon: BadgeCheck },
 ];
 
+const itemsAccess = [
+  { title: "Catalogs", url: "/access/catalogs", icon: Layers },
+  { title: "Requests", url: "/access/requests", icon: Inbox },
+  { title: "Reviews", url: "/access/reviews", icon: ClipboardCheck },
+  { title: "Policies", url: "/access/policies", icon: Shield },
+];
+
 const itemsVisibility = [
   { title: "Access Logs", url: "/visibility/accesslogs", icon: ShieldEllipsis },
   {
@@ -98,49 +108,47 @@ export const IconAuthenticationLog = ShieldUser;
 export const IconAccessLog = ShieldEllipsis;
 
 const sections = [
-  { label: "Core", value: 0, prefix: "/core", icon: Cpu, items: itemsCore },
+  {
+    label: "Core",
+    prefix: "/core",
+    defaultPath: "/core",
+    icon: Cpu,
+    items: itemsCore,
+  },
   {
     label: "Enterprise",
-    value: 1,
     prefix: "/enterprise",
+    defaultPath: "/enterprise/certificates",
     icon: Building2,
     items: itemsEnterprise,
   },
   {
+    label: "Access",
+    prefix: "/access",
+    defaultPath: "/access/policies",
+    icon: UserCheck,
+    items: itemsAccess,
+  },
+  {
     label: "Cluster Management",
-    value: 2,
     prefix: "/clusterman",
+    defaultPath: "/clusterman",
     icon: Settings2,
     items: [],
   },
   {
     label: "Visibility",
-    value: 3,
     prefix: "/visibility",
+    defaultPath: "/visibility",
     icon: Eye,
     items: itemsVisibility,
   },
 ];
 
-const getBarIdx = (pathname: string) =>
-  match(pathname)
-    .when(
-      (v) => v.startsWith("/core"),
-      () => 0,
-    )
-    .when(
-      (v) => v.startsWith("/enterprise"),
-      () => 1,
-    )
-    .when(
-      (v) => v.startsWith("/clusterman"),
-      () => 2,
-    )
-    .when(
-      (v) => v.startsWith("/visibility"),
-      () => 3,
-    )
-    .otherwise(() => 0);
+const getBarIdx = (pathname: string) => {
+  const idx = sections.findIndex((s) => pathname.startsWith(s.prefix));
+  return idx >= 0 ? idx : 0;
+};
 
 export default function Sidebar() {
   const loc = useLocation();
@@ -166,7 +174,7 @@ export default function Sidebar() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const activeSection = sections[barIdx];
+  const activeSection = sections[barIdx] ?? sections[0];
   const ActiveIcon = activeSection.icon;
   const items = activeSection?.items ?? [];
 
@@ -218,35 +226,30 @@ export default function Sidebar() {
               className="absolute top-[calc(100%+5px)] left-0 right-0 z-50 bg-white border border-slate-200 rounded-lg shadow-[0_8px_24px_rgba(15,23,42,0.12)] overflow-hidden"
             >
               <div className="p-1">
-                {sections.map((s) => {
+                {sections.map((s, idx) => {
                   const Icon = s.icon;
-                  const isActive = s.value === barIdx;
+                  const isActive = idx === barIdx;
                   return (
                     <button
-                      key={s.value}
+                      key={s.prefix}
                       onClick={() => {
-                        setBarIdx(s.value);
+                        setBarIdx(idx);
                         setDropdownOpen(false);
-                        match(s.value)
-                          .with(0, () => navigate("/core"))
-                          .with(1, () => navigate("/enterprise/certificates"))
-                          .with(2, () => navigate("/clusterman"))
-                          .with(3, () => navigate("/visibility"))
-                          .otherwise(() => navigate("/core"));
+                        navigate(s.defaultPath);
                       }}
                       className={twMerge(
                         "w-full flex items-center gap-2.5 px-3 h-9 rounded-md cursor-pointer",
-                        "text-[0.78rem] font-bold transition-colors duration-100",
+                        "text-[0.78rem] transition-colors duration-100",
                         isActive
                           ? "bg-slate-900 text-white"
-                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+                          : "text-slate-800 hover:bg-slate-50 hover:text-slate-900",
                       )}
                     >
                       <Icon
                         size={13}
                         strokeWidth={2.5}
                         className={
-                          isActive ? "text-slate-300" : "text-slate-400"
+                          isActive ? "text-slate-300" : "text-slate-500"
                         }
                       />
                       {s.label}

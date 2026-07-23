@@ -1,4 +1,5 @@
 import {
+  ClusterConfig_Status_UpgradeRequest,
   ClusterConfig_Status_UpgradeRequest_State,
   UpgradeClusterRequest,
   UpgradeClusterRequest_Request_Core,
@@ -24,6 +25,7 @@ import {
   AlertTriangle,
   ArrowUpCircle,
   CheckCircle2,
+  ChevronDown,
   ChevronRight,
   Clock,
   Loader2,
@@ -35,6 +37,10 @@ import { toast } from "sonner";
 import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
 import ClusterVersionInfo from "./ClusterVersionInfo";
+
+const HISTORY_PREVIEW_COUNT = 3;
+
+type UpgradeRequestSpec = ClusterConfig_Status_UpgradeRequest["request"];
 
 const StatCard = ({
   label,
@@ -93,6 +99,108 @@ const UpgradeStateBadge = ({
       </span>
     ))
     .otherwise(() => null);
+
+const VersionChip = ({
+  label,
+  version,
+}: {
+  label: string;
+  version: string;
+}) => (
+  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-slate-200 bg-slate-50 text-[0.65rem] font-bold text-slate-600">
+    {label}
+    <span
+      className={twMerge(
+        "font-mono",
+        version ? "text-slate-800" : "text-slate-400",
+      )}
+    >
+      {version || "latest"}
+    </span>
+  </span>
+);
+
+const VersionChips = ({ request }: { request?: UpgradeRequestSpec }) => {
+  if (!request) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      {request.core && (
+        <VersionChip label="Core" version={request.core.version} />
+      )}
+      {request.packageEnterprise && (
+        <VersionChip
+          label="Enterprise"
+          version={request.packageEnterprise.version}
+        />
+      )}
+      {request.packageCordium && (
+        <VersionChip label="Cordium" version={request.packageCordium.version} />
+      )}
+    </div>
+  );
+};
+
+const UpgradeHistory = ({
+  items,
+}: {
+  items: ClusterConfig_Status_UpgradeRequest[];
+}) => {
+  const [expanded, setExpanded] = React.useState(false);
+
+  const hasMore = items.length > HISTORY_PREVIEW_COUNT;
+  const visible = expanded ? items : items.slice(0, HISTORY_PREVIEW_COUNT);
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50/60">
+        <span className="text-[0.72rem] font-bold uppercase tracking-[0.05em] text-slate-500">
+          Upgrade history
+        </span>
+        <span className="text-[0.65rem] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">
+          {items.length}
+        </span>
+      </div>
+
+      <div
+        className={twMerge(
+          "flex flex-col",
+          expanded && items.length > 6 && "max-h-[340px] overflow-y-auto",
+        )}
+      >
+        {visible.map((item, idx) => (
+          <div
+            key={idx}
+            className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-slate-100 last:border-b-0"
+          >
+            <div className="flex items-center gap-2 min-w-0 flex-wrap">
+              <UpgradeStateBadge state={item.state} />
+              <VersionChips request={item.request} />
+            </div>
+            <span className="text-[0.7rem] font-semibold text-slate-400 shrink-0">
+              <TimeAgo rfc3339={item.doneAt ?? item.createdAt} />
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {hasMore && (
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          className="w-full flex items-center justify-center gap-1.5 px-4 py-2 border-t border-slate-100 bg-slate-50/60 text-[0.72rem] font-bold text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors duration-150 cursor-pointer"
+        >
+          {expanded ? "Show less" : `Show all ${items.length}`}
+          <motion.span
+            animate={{ rotate: expanded ? 180 : 0 }}
+            transition={{ duration: 0.18, ease: "easeInOut" }}
+            className="flex items-center"
+          >
+            <ChevronDown size={12} strokeWidth={2.5} />
+          </motion.span>
+        </button>
+      )}
+    </div>
+  );
+};
 
 const PackageRow = ({
   label,
@@ -446,7 +554,7 @@ export default () => {
   const qry = useQuery({
     queryKey: ["clusterman", "main", "getCluster"],
     queryFn: async () => getClientEnterprise().getClusterConfig({} as any),
-    refetchInterval: 7000,
+    refetchInterval: 5000,
   });
 
   if (!qry.isSuccess || !qry.data) return null;
@@ -454,8 +562,9 @@ export default () => {
   const cluster = qry.data.response;
   const status = cluster.status!;
   const current = status.upgradeRequest;
-  const last = status.lastUpgradeRequests[0];
-  const isIdle = !current && status.lastUpgradeRequests.length === 0;
+  const history = status.lastUpgradeRequests;
+  const last = history[0];
+  const isIdle = !current && history.length === 0;
 
   return (
     <div className="w-full flex flex-col gap-6">
@@ -546,36 +655,7 @@ export default () => {
         </div>
       )}
 
-      {last && !current && (
-        <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50/60">
-            <span className="text-[0.72rem] font-bold uppercase tracking-[0.05em] text-slate-500">
-              Last upgrade
-            </span>
-            <UpgradeStateBadge state={last.state} />
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 px-4 py-3 text-[0.75rem]">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
-                Completed
-              </span>
-              <span className="font-semibold text-slate-700">
-                <TimeAgo rfc3339={last.doneAt} />
-              </span>
-            </div>
-            {last.request?.core?.version && (
-              <div className="flex flex-col gap-0.5">
-                <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
-                  Core version
-                </span>
-                <span className="font-semibold text-slate-700 font-mono">
-                  {last.request.core.version}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {history.length > 0 && <UpgradeHistory items={history} />}
 
       {isIdle && (
         <div className="flex items-center justify-center py-6">
