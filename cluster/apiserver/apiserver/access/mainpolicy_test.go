@@ -45,9 +45,7 @@ func TestMainPolicy(t *testing.T) {
 							MatchAny: true,
 						},
 					},
-					Authorization: &accessv1.Policy_Spec_Rule_Authorization{
-						Policies: []string{utilrand.GetRandomStringCanonical(6)},
-					},
+					Authorization: &accessv1.Policy_Spec_Rule_Authorization{},
 				},
 			},
 		},

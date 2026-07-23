@@ -446,6 +446,9 @@ func (s *ServerMain) validatePolicyAuthorization(ctx context.Context,
 		if _, err := s.octeliumC.CoreC().GetPolicy(ctx, &rmetav1.GetOptions{
 			Name: pol,
 		}); err != nil {
+			if grpcerr.IsNotFound(err) {
+				return serr.InvalidArg("Policy not found: %s", pol)
+			}
 			return serr.K8sNotFoundOrInternalWithErr(err)
 		}
 	}
