@@ -27,7 +27,6 @@ const resourceComponentInfo: ResourceComponentInfo = {
   // @ts-ignore
   infoItemsGetter: MainInfo,
   unCreatable: true,
-  unEditable: true,
 };
 
 export default resourceComponentInfo;

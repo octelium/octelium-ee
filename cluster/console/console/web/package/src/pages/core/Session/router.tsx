@@ -28,7 +28,6 @@ const resourceComponentInfo: ResourceComponentInfo = {
   infoItemsGetter: MainInfo,
 
   unCreatable: true,
-  unEditable: true,
 };
 
 export default resourceComponentInfo;

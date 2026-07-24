@@ -23,13 +23,16 @@ import * as React from "react";
 import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
 
-const GenerateC = (props: { item: CoreC.Credential }) => {
-  const { item } = props;
-  let [tkn, setTkn] = React.useState<CoreC.CredentialToken | undefined>(
+const GenerateC = (props: {
+  item: CoreC.Credential;
+  onGenerated?: () => void;
+}) => {
+  const { item, onGenerated } = props;
+  const [tkn, setTkn] = React.useState<CoreC.CredentialToken | undefined>(
     undefined,
   );
 
-  let [enabled, setEnabled] = React.useState(false);
+  const [enabled, setEnabled] = React.useState(false);
 
   const mutationGenerate = useMutation({
     mutationFn: async () => {
@@ -43,8 +46,8 @@ const GenerateC = (props: { item: CoreC.Credential }) => {
 
     onSuccess: (response) => {
       setTkn(response);
-      invalidateResource(item);
-      invalidateResourceList(item);
+      setEnabled(false);
+      onGenerated?.();
     },
     onError,
   });
@@ -121,6 +124,35 @@ const GenerateC = (props: { item: CoreC.Credential }) => {
   );
 };
 
+const GenerateTokenModal = (props: {
+  item: CoreC.Credential;
+  opened: boolean;
+  onClose: () => void;
+}) => {
+  const { item, opened, onClose } = props;
+  const generatedRef = React.useRef(false);
+
+  const handleClose = () => {
+    onClose();
+    if (generatedRef.current) {
+      generatedRef.current = false;
+      invalidateResource(item);
+      invalidateResourceList(item);
+    }
+  };
+
+  return (
+    <Modal opened={opened} onClose={handleClose} size="xl" centered>
+      <GenerateC
+        item={item}
+        onGenerated={() => {
+          generatedRef.current = true;
+        }}
+      />
+    </Modal>
+  );
+};
+
 export const ItemInfo = (props: { item: CoreC.Credential }) => {
   let { item } = props;
   const [opened, { open, close }] = useDisclosure(false);
@@ -140,6 +172,10 @@ export const ItemInfo = (props: { item: CoreC.Credential }) => {
                 .with(
                   CoreP.Credential_Spec_Type.OAUTH2,
                   () => "OAuth2 Client Credential",
+                )
+                .with(
+                  CoreP.Credential_Spec_Type.ACCESS_TOKEN,
+                  () => "Access Token",
                 )
                 .otherwise(() => "")}
             </span>
@@ -171,6 +207,7 @@ export const ItemInfo = (props: { item: CoreC.Credential }) => {
               ]}
               defaultValue={CoreP.Credential_Spec_Type[item.spec!.type]}
               onChange={(v) => {
+                if (!v) return;
                 item.spec!.type = CoreP.Credential_Spec_Type[v as "OAUTH2"];
                 mutationUpdate.mutate(item);
               }}
@@ -223,9 +260,9 @@ export const ItemInfo = (props: { item: CoreC.Credential }) => {
           </span>
           <Switch
             className="ml-2"
-            checked={item.spec!.isDisabled}
+            checked={!item.spec!.isDisabled}
             onChange={(v) => {
-              item.spec!.isDisabled = v.currentTarget.checked;
+              item.spec!.isDisabled = !v.currentTarget.checked;
               mutationUpdate.mutate(item);
             }}
           />
@@ -237,9 +274,7 @@ export const ItemInfo = (props: { item: CoreC.Credential }) => {
           Generate/Rotate Token
         </Button>
       </InfoItem>
-      <Modal opened={opened} onClose={close} size={"xl"} centered>
-        <GenerateC item={item} />
-      </Modal>
+      <GenerateTokenModal item={item} opened={opened} onClose={close} />
     </>
   );
 };
@@ -433,16 +468,15 @@ export const MainInfo = (props: {
         label: "Token",
         value: (
           <>
-            <button
+            <Button
+              variant="default"
+              size="xs"
+              leftSection={<RefreshCw size={11} strokeWidth={2.5} />}
               onClick={open}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[0.72rem] font-bold text-slate-600 border border-slate-200 bg-white hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 transition-colors duration-150 cursor-pointer shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
             >
-              <RefreshCw size={11} strokeWidth={2.5} />
               Generate / Rotate
-            </button>
-            <Modal opened={opened} onClose={close} size="xl" centered>
-              <GenerateC item={item} />
-            </Modal>
+            </Button>
+            <GenerateTokenModal item={item} opened={opened} onClose={close} />
           </>
         ),
         span: "full" as const,
