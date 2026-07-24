@@ -1,3 +1,4 @@
+import { getResourceComponentInfoFromResource } from "@/pages/utils/resourceRegistry";
 import { hasAccessLog, hasAuthenticationLog, Resource } from "@/utils/pb";
 import { SegmentedControl } from "@mantine/core";
 import {
@@ -20,7 +21,6 @@ interface Tab {
 
 const BASE_TABS: Tab[] = [
   { value: "main", label: "Overview", icon: LayoutDashboard, path: "" },
-  { value: "edit", label: "Configure", icon: Settings, path: "edit" },
 ];
 
 const ACCESS_LOG_TAB: Tab = {
@@ -49,6 +49,14 @@ const getActiveTab = (pathname: string): string => {
 
 const buildTabs = (resource: Resource): Tab[] => {
   const tabs = [...BASE_TABS];
+  if (!getResourceComponentInfoFromResource(resource)?.unEditable) {
+    tabs.push({
+      value: "edit",
+      label: "Configure",
+      icon: Settings,
+      path: "edit",
+    });
+  }
   if (hasAccessLog(resource)) tabs.push(ACCESS_LOG_TAB);
   if (hasAuthenticationLog(resource)) tabs.push(AUTH_LOG_TAB);
   return tabs;

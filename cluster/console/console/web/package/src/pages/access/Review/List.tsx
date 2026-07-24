@@ -26,6 +26,8 @@ export const LabelComponent = (props: { item: Review }) => {
       <ResourceListLabel>
         <span className={meta.className}>{meta.label}</span>
       </ResourceListLabel>
+      <ResourceListLabel itemRef={item.status!.requestRef}></ResourceListLabel>
+      <ResourceListLabel itemRef={item.status!.userRef}></ResourceListLabel>
     </ResourceListLabelWrap>
   );
 };

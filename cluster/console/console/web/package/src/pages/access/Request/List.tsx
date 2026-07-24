@@ -31,6 +31,7 @@ export const LabelComponent = (props: { item: Request }) => {
           {getUrgencyLabel(item.spec!.urgency)}
         </ResourceListLabel>
       )}
+      <ResourceListLabel itemRef={item.status!.userRef}></ResourceListLabel>
     </ResourceListLabelWrap>
   );
 };

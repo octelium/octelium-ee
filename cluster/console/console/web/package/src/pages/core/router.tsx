@@ -33,7 +33,7 @@ import ResourceItemMainPage from "@/components/ResourceLayout/ResourceItemMainPa
 import ResourceItemPage from "@/components/ResourceLayout/ResourceItemPage";
 import ServiceMetricsPage from "@/components/ResourceLayout/ServiceMetricsPage";
 
-const resourceList = [
+export const resourceList = [
   serviceRouter,
   userRouter,
   groupRouter,

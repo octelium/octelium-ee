@@ -16,7 +16,12 @@ import ResourceCreatePage from "@/components/ResourceLayout/ResourceCreate";
 import ResourceItemMainPage from "@/components/ResourceLayout/ResourceItemMainPage";
 import ResourceItemPage from "@/components/ResourceLayout/ResourceItemPage";
 
-const resourceList = [policyRouter, requestRouter, reviewRouter, catalogRouter];
+export const resourceList = [
+  policyRouter,
+  requestRouter,
+  reviewRouter,
+  catalogRouter,
+];
 
 export default (): RouteObject => {
   const ret = {

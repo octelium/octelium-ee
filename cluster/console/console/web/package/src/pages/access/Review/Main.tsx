@@ -1,5 +1,6 @@
 import * as AccessC from "@/apis/accessv1/accessv1";
 import InfoItem from "@/components/InfoItem";
+import { ResourceListLabel } from "@/components/ResourceList";
 import TimeAgo from "@/components/TimeAgo";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { twMerge } from "tailwind-merge";
@@ -67,7 +68,11 @@ export const MainInfo = (props: { item: AccessC.Review }): ResourceMainInfo => {
         ? [
             {
               label: "Request",
-              value: <RefText name={status.requestRef.name} />,
+              value: (
+                <ResourceListLabel
+                  itemRef={item.status!.requestRef}
+                ></ResourceListLabel>
+              ),
             },
           ]
         : []),
@@ -76,7 +81,11 @@ export const MainInfo = (props: { item: AccessC.Review }): ResourceMainInfo => {
         ? [
             {
               label: "Reviewer",
-              value: <RefText name={status.userRef.name} />,
+              value: (
+                <ResourceListLabel
+                  itemRef={item.status!.userRef}
+                ></ResourceListLabel>
+              ),
             },
           ]
         : []),

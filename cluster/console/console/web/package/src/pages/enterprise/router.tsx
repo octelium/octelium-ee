@@ -22,7 +22,7 @@ import ResourceItemPage from "@/components/ResourceLayout/ResourceItemPage";
 
 import PolicyTesterPage from "./PolicyTester";
 
-const resourceList = [
+export const resourceList = [
   secretRouter,
   dnsProviderRouter,
   collectorExporterRouter,
