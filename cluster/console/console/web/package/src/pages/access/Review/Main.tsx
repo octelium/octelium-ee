@@ -6,13 +6,6 @@ import { ResourceMainInfo } from "@/pages/utils/types";
 import { twMerge } from "tailwind-merge";
 import { getDecisionMeta } from "./utils";
 
-const RefText = (props: { name?: string }) =>
-  props.name ? (
-    <span className="text-[0.78rem] font-mono font-semibold text-slate-700">
-      {props.name}
-    </span>
-  ) : null;
-
 export const ItemInfo = (props: { item: AccessC.Review }) => {
   const { item } = props;
   const meta = getDecisionMeta(item.spec?.decision);

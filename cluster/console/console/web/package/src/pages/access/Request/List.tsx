@@ -32,6 +32,9 @@ export const LabelComponent = (props: { item: Request }) => {
         </ResourceListLabel>
       )}
       <ResourceListLabel itemRef={item.status!.userRef}></ResourceListLabel>
+      {item.status?.policyRef && (
+        <ResourceListLabel itemRef={item.status!.policyRef}></ResourceListLabel>
+      )}
     </ResourceListLabelWrap>
   );
 };

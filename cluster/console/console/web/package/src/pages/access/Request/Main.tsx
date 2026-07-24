@@ -1,16 +1,10 @@
 import * as AccessC from "@/apis/accessv1/accessv1";
 import InfoItem from "@/components/InfoItem";
+import { ResourceListLabel } from "@/components/ResourceList";
 import TimeAgo from "@/components/TimeAgo";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { twMerge } from "tailwind-merge";
 import { getStatusMeta, getUrgencyLabel } from "./utils";
-
-const RefText = (props: { name?: string }) =>
-  props.name ? (
-    <span className="text-[0.78rem] font-mono font-semibold text-slate-700">
-      {props.name}
-    </span>
-  ) : null;
 
 export const ItemInfo = (props: { item: AccessC.Request }) => {
   const { item } = props;
@@ -74,7 +68,11 @@ export const MainInfo = (props: {
         ? [
             {
               label: "Requester",
-              value: <RefText name={status.userRef.name} />,
+              value: (
+                <ResourceListLabel
+                  itemRef={item.status!.userRef}
+                ></ResourceListLabel>
+              ),
             },
           ]
         : []),
@@ -83,16 +81,11 @@ export const MainInfo = (props: {
         ? [
             {
               label: "Policy",
-              value: <RefText name={status.policyRef.name} />,
-            },
-          ]
-        : []),
-
-      ...(status?.policyTriggerRef
-        ? [
-            {
-              label: "Triggered by",
-              value: <RefText name={status.policyTriggerRef.name} />,
+              value: (
+                <ResourceListLabel
+                  itemRef={item.status!.policyRef}
+                ></ResourceListLabel>
+              ),
             },
           ]
         : []),
