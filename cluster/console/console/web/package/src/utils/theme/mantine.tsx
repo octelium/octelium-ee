@@ -11,6 +11,7 @@ import {
   Pagination,
   Popover,
   Radio,
+  rem,
   SegmentedControl,
   Select,
   Switch,
@@ -319,6 +320,7 @@ const theme = createTheme({
         panel: {
           fontFamily: FONT,
           fontWeight: 600,
+          marginTop: rem(16),
         },
       },
     }),
