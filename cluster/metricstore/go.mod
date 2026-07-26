@@ -6,12 +6,12 @@ require (
 	github.com/marcboeker/go-duckdb v1.8.4
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20260719082108-b9c16b89a300
+	github.com/octelium/octelium/cluster/common v0.0.0-20260726114558-a556a656b622
 	github.com/octelium/octelium/pkg v0.0.0-20260719082108-b9c16b89a300
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/pdata v1.55.0
 	go.uber.org/zap v1.28.0
-	google.golang.org/grpc v1.82.0
+	google.golang.org/grpc v1.82.1
 	google.golang.org/protobuf v1.36.11
 )
 

@@ -7,12 +7,12 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20260719082108-b9c16b89a300
+	github.com/octelium/octelium/cluster/common v0.0.0-20260726114558-a556a656b622
 	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260719082108-b9c16b89a300
 	github.com/octelium/octelium/pkg v0.0.0-20260719082108-b9c16b89a300
 	github.com/pkg/errors v0.9.1
 	go.uber.org/zap v1.28.0
-	google.golang.org/grpc v1.82.0
+	google.golang.org/grpc v1.82.1
 	google.golang.org/protobuf v1.36.11
 	k8s.io/client-go v0.35.3
 )

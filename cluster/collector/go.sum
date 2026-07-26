@@ -493,8 +493,8 @@ github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f/go.mod h1:qRW
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/nxadm/tail v1.4.8 h1:nPr65rt6Y5JFSKQO7qToXr7pePgD6Gwiw05lkbyAQTE=
 github.com/nxadm/tail v1.4.8/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
-github.com/octelium/octelium/cluster/common v0.0.0-20260719082108-b9c16b89a300 h1:qoCbjWzM/keGnUyUwPRODzQrBg1bGEH+QonHe+Ll0js=
-github.com/octelium/octelium/cluster/common v0.0.0-20260719082108-b9c16b89a300/go.mod h1:YNTlj7p5FTld4TbKJRcvFGGijxJWcOj2PWdB/NlTcVo=
+github.com/octelium/octelium/cluster/common v0.0.0-20260726114558-a556a656b622 h1:dsdal23/fF6Cl9kKJ9M7gK62NxxJMxkIyTWBDTe144o=
+github.com/octelium/octelium/cluster/common v0.0.0-20260726114558-a556a656b622/go.mod h1:rPJQphEI66+4IiC0mMt4lMgOXMoTiWsfzXuE7grPsWE=
 github.com/octelium/octelium/cluster/rscserver v0.0.0-20260719082108-b9c16b89a300 h1:c6YexjXddukdhOZJDSHkS3IPjTuGeV+VUaEdOYBTMNw=
 github.com/octelium/octelium/cluster/rscserver v0.0.0-20260719082108-b9c16b89a300/go.mod h1:8XyEZit7WDAKXD/+gGH/sUR5GTs5CDpkiIvi/n33sVM=
 github.com/octelium/octelium/pkg v0.0.0-20260719082108-b9c16b89a300 h1:cmatjRqZ15dXcZNt1a6X3bVnmPnzO+3W1mW9d4KBLLI=
@@ -1141,8 +1141,8 @@ google.golang.org/grpc v1.23.0/go.mod h1:Y5yQAOtifL1yxbo5wqy6BxZv8vAUGQwXBOALyac
 google.golang.org/grpc v1.25.1/go.mod h1:c3i+UQWmh7LiEpx4sFZnkU36qjEYZ0imhYfXVyQciAY=
 google.golang.org/grpc v1.27.0/go.mod h1:qbnxyOmOxrQa7FizSgH+ReBfzJrCY1pSN7KXBS8abTk=
 google.golang.org/grpc v1.29.1/go.mod h1:itym6AZVZYACWQqET3MqgPpjcuV5QH3BxFS3IjizoKk=
-google.golang.org/grpc v1.82.0 h1:vguDnZUPjE26w09A63VoxZPnvPjB5Riyc0mkXPFmAIU=
-google.golang.org/grpc v1.82.0/go.mod h1:yzTZ1TB1Z3SG+LIYaI+WiE8D5+PZ3ArnrSp8zF3+/ZA=
+google.golang.org/grpc v1.82.1 h1:NnAxzGRA0677vCa4BUkOAnO5+FfQqVl9iUXeD0IqcGE=
+google.golang.org/grpc v1.82.1/go.mod h1:yzTZ1TB1Z3SG+LIYaI+WiE8D5+PZ3ArnrSp8zF3+/ZA=
 google.golang.org/protobuf v1.26.0-rc.1/go.mod h1:jlhhOSvTdKEhbULTjvd4ARK9grFBp09yW+WbY/TyQbw=
 google.golang.org/protobuf v1.27.1/go.mod h1:9q0QmTI4eRPtz6boOQmLYwt+qCgq0jsYwAQnmE0givc=
 google.golang.org/protobuf v1.36.11 h1:fV6ZwhNocDyBLK0dj+fg8ektcVegBBuEolpbTQyBNVE=

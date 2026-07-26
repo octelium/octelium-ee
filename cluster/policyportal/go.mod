@@ -5,12 +5,12 @@ go 1.26.4
 require (
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20260719082108-b9c16b89a300
+	github.com/octelium/octelium/cluster/common v0.0.0-20260726114558-a556a656b622
 	github.com/octelium/octelium/cluster/octovigil v0.0.0-20260719082108-b9c16b89a300
 	github.com/octelium/octelium/pkg v0.0.0-20260719082108-b9c16b89a300
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/zap v1.28.0
-	google.golang.org/grpc v1.82.0
+	google.golang.org/grpc v1.82.1
 )
 
 require (

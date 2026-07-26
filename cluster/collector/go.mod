@@ -6,7 +6,7 @@ require (
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20260719082108-b9c16b89a300
+	github.com/octelium/octelium/cluster/common v0.0.0-20260726114558-a556a656b622
 	github.com/octelium/octelium/pkg v0.0.0-20260719082108-b9c16b89a300
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awss3exporter v0.153.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuredataexplorerexporter v0.153.0
@@ -51,7 +51,7 @@ require (
 	go.opentelemetry.io/collector/service v0.153.0
 	go.uber.org/zap v1.28.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260414002931-afd174a4e478
-	google.golang.org/grpc v1.82.0
+	google.golang.org/grpc v1.82.1
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 

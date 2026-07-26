@@ -8,7 +8,7 @@ require (
 	github.com/gosimple/slug v1.15.0
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/cluster/apiserver v0.0.0-20260719082108-b9c16b89a300
-	github.com/octelium/octelium/cluster/common v0.0.0-20260719082108-b9c16b89a300
+	github.com/octelium/octelium/cluster/common v0.0.0-20260726114558-a556a656b622
 	github.com/octelium/octelium/pkg v0.0.0-20260719082108-b9c16b89a300
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.11.1
@@ -128,7 +128,7 @@ require (
 	golang.org/x/time v0.15.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260414002931-afd174a4e478 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260414002931-afd174a4e478 // indirect
-	google.golang.org/grpc v1.82.0 // indirect
+	google.golang.org/grpc v1.82.1 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
