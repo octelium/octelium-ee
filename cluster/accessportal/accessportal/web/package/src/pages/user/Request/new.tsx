@@ -382,7 +382,7 @@ const NewRequest = () => {
               variant="filled"
               color="dark"
               leftSection={<Send size={14} strokeWidth={2.5} />}
-              disabled={!selection || justification.trim().length === 0}
+              disabled={!selection}
               loading={createMutation.isPending}
               onClick={() => createMutation.mutate()}
             >
