@@ -54,11 +54,7 @@ const Edit = (props: {
               <div>
                 <ItemMessage
                   title="Services"
-                  obj={
-                    req.spec!.resourceCollection.service.services.length > 0
-                      ? req.spec!.resourceCollection.service.services
-                      : undefined
-                  }
+                  obj={req.spec!.resourceCollection.service.services}
                   isList
                   onSet={() => {
                     req.spec!.resourceCollection!.service!.services = [""];
@@ -110,11 +106,7 @@ const Edit = (props: {
 
                 <ItemMessage
                   title="Namespaces"
-                  obj={
-                    req.spec!.resourceCollection.service.namespaces.length > 0
-                      ? req.spec!.resourceCollection.service.namespaces
-                      : undefined
-                  }
+                  obj={req.spec!.resourceCollection.service.namespaces}
                   isList
                   onSet={() => {
                     req.spec!.resourceCollection!.service!.namespaces = [""];

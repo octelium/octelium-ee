@@ -2,21 +2,35 @@ import * as AccessP from "@/apis/accessv1/accessv1";
 import * as MetaP from "@/apis/metav1/metav1";
 import * as React from "react";
 
+import { CELEditor } from "@/components/Condition/Editor";
 import DurationPicker from "@/components/DurationPicker";
 import EditItem from "@/components/EditItem";
 import ItemMessage from "@/components/ItemMessage";
 import SelectInlinePolicies from "@/components/ResourceLayout/SelectInlinePolicies";
 import SelectPolicies from "@/components/ResourceLayout/SelectPolicies";
 import SelectResource from "@/components/ResourceLayout/SelectResource";
-import TextAreaCustom from "@/components/TextAreaCustom";
 import { strToNum } from "@/utils/convert";
-import { getResourceRef } from "@/utils/pb";
-import { Group, NumberInput, Select, Switch, TextInput } from "@mantine/core";
+import {
+  Group,
+  Input,
+  NumberInput,
+  Select,
+  Switch,
+  TextInput,
+} from "@mantine/core";
 import { match } from "ts-pattern";
 
 const newCondition = (): AccessP.Policy_Spec_Rule_Condition =>
   AccessP.Policy_Spec_Rule_Condition.create({
-    type: { oneofKind: "match", match: "" },
+    type: {
+      oneofKind: "subject",
+      subject: AccessP.Policy_Spec_Rule_Condition_Subject.create({
+        type: {
+          oneofKind: "userRef",
+          userRef: MetaP.ObjectReference.create(),
+        },
+      }),
+    },
   });
 
 const ConditionEdit = (props: {
@@ -104,7 +118,7 @@ const ConditionEdit = (props: {
           .when(
             (x) => x.oneofKind === "subject",
             (subject) => (
-              <div>
+              <Group grow align="flex-start">
                 <Select
                   label="Subject type"
                   required
@@ -136,10 +150,8 @@ const ConditionEdit = (props: {
                     defaultValue={subject.subject.type.userRef.name}
                     onChange={(v) => {
                       if (subject.subject.type.oneofKind === "userRef") {
-                        if (!v) {
-                          return;
-                        }
-                        subject.subject.type.userRef = getResourceRef(v);
+                        subject.subject.type.userRef.name =
+                          v?.metadata?.name ?? "";
                         onUpdate();
                       }
                     }}
@@ -154,22 +166,20 @@ const ConditionEdit = (props: {
                     defaultValue={subject.subject.type.groupRef.name}
                     onChange={(v) => {
                       if (subject.subject.type.oneofKind === "groupRef") {
-                        if (!v) {
-                          return;
-                        }
-                        subject.subject.type.groupRef = getResourceRef(v);
+                        subject.subject.type.groupRef.name =
+                          v?.metadata?.name ?? "";
                         onUpdate();
                       }
                     }}
                   />
                 )}
-              </div>
+              </Group>
             ),
           )
           .when(
             (x) => x.oneofKind === "resource",
             (resource) => (
-              <div>
+              <Group grow align="flex-start">
                 <Select
                   label="Resource type"
                   required
@@ -201,10 +211,8 @@ const ConditionEdit = (props: {
                     defaultValue={resource.resource.type.serviceRef.name}
                     onChange={(v) => {
                       if (resource.resource.type.oneofKind === "serviceRef") {
-                        if (!v) {
-                          return;
-                        }
-                        resource.resource.type.serviceRef = getResourceRef(v);
+                        resource.resource.type.serviceRef.name =
+                          v?.metadata?.name ?? "";
                         onUpdate();
                       }
                     }}
@@ -219,16 +227,14 @@ const ConditionEdit = (props: {
                     defaultValue={resource.resource.type.catalogRef.name}
                     onChange={(v) => {
                       if (resource.resource.type.oneofKind === "catalogRef") {
-                        if (!v) {
-                          return;
-                        }
-                        resource.resource.type.catalogRef = getResourceRef(v);
+                        resource.resource.type.catalogRef.name =
+                          v?.metadata?.name ?? "";
                         onUpdate();
                       }
                     }}
                   />
                 )}
-              </div>
+              </Group>
             ),
           )
           .when(
@@ -303,10 +309,7 @@ const ConditionEdit = (props: {
                 description="Matches the requester against this User"
                 defaultValue={userRef.userRef.name}
                 onChange={(v) => {
-                  if (!v) {
-                    return;
-                  }
-                  userRef.userRef = getResourceRef(v);
+                  userRef.userRef.name = v?.metadata?.name ?? "";
                   onUpdate();
                 }}
               />
@@ -315,15 +318,18 @@ const ConditionEdit = (props: {
           .when(
             (x) => x.oneofKind === "match",
             (matchType) => (
-              <TextAreaCustom
+              <Input.Wrapper
                 label="CEL Expression"
-                placeholder='ctx.user.spec.type == "HUMAN"'
-                value={matchType.match}
-                onChange={(v) => {
-                  matchType.match = v ?? "";
-                  onUpdate();
-                }}
-              />
+                description="Write a CEL expression that must evaluate to true"
+              >
+                <CELEditor
+                  exp={matchType.match}
+                  onChange={(v: string) => {
+                    matchType.match = v ?? "";
+                    onUpdate();
+                  }}
+                />
+              </Input.Wrapper>
             ),
           )
           .otherwise(() => (
@@ -378,62 +384,67 @@ const ReviewStepEdit = (props: {
               onUpdate();
             }}
           >
-            <Select
-              label="Reviewer type"
-              required
-              description="Set the reviewer as a User or a Group"
-              data={[
-                { label: "User", value: "user" },
-                { label: "Group", value: "group" },
-              ]}
-              value={reviewer.type.oneofKind}
-              onChange={(v) => {
-                reviewer.type = match(v)
-                  .with("group", () => ({
-                    oneofKind: "group" as const,
-                    group: { groupRef: MetaP.ObjectReference.create() },
-                  }))
-                  .otherwise(() => ({
-                    oneofKind: "user" as const,
-                    user: { userRef: MetaP.ObjectReference.create() },
-                  }));
-                onUpdate();
-              }}
-            />
-            {reviewer.type.oneofKind === "user" && (
-              <SelectResource
-                api="core"
-                kind="User"
-                label="User"
-                description="Select the reviewer User"
-                defaultValue={reviewer.type.user.userRef?.name}
+            <Group grow align="flex-start">
+              <Select
+                label="Reviewer type"
+                required
+                description="Set the reviewer as a User or a Group"
+                data={[
+                  { label: "User", value: "user" },
+                  { label: "Group", value: "group" },
+                ]}
+                value={reviewer.type.oneofKind}
                 onChange={(v) => {
-                  if (reviewer.type.oneofKind === "user") {
-                    reviewer.type.user.userRef = v
-                      ? getResourceRef(v)
-                      : undefined;
-                    onUpdate();
-                  }
+                  reviewer.type = match(v)
+                    .with("group", () => ({
+                      oneofKind: "group" as const,
+                      group: { groupRef: MetaP.ObjectReference.create() },
+                    }))
+                    .otherwise(() => ({
+                      oneofKind: "user" as const,
+                      user: { userRef: MetaP.ObjectReference.create() },
+                    }));
+                  onUpdate();
                 }}
               />
-            )}
-            {reviewer.type.oneofKind === "group" && (
-              <SelectResource
-                api="core"
-                kind="Group"
-                label="Group"
-                description="Select the reviewer Group"
-                defaultValue={reviewer.type.group.groupRef?.name}
-                onChange={(v) => {
-                  if (reviewer.type.oneofKind === "group") {
-                    reviewer.type.group.groupRef = v
-                      ? getResourceRef(v)
-                      : undefined;
-                    onUpdate();
-                  }
-                }}
-              />
-            )}
+              {reviewer.type.oneofKind === "user" && (
+                <SelectResource
+                  api="core"
+                  kind="User"
+                  label="User"
+                  description="Select the reviewer User"
+                  defaultValue={reviewer.type.user.userRef?.name}
+                  onChange={(v) => {
+                    if (reviewer.type.oneofKind === "user") {
+                      reviewer.type.user.userRef = MetaP.ObjectReference.create(
+                        {
+                          name: v?.metadata?.name ?? "",
+                        },
+                      );
+                      onUpdate();
+                    }
+                  }}
+                />
+              )}
+              {reviewer.type.oneofKind === "group" && (
+                <SelectResource
+                  api="core"
+                  kind="Group"
+                  label="Group"
+                  description="Select the reviewer Group"
+                  defaultValue={reviewer.type.group.groupRef?.name}
+                  onChange={(v) => {
+                    if (reviewer.type.oneofKind === "group") {
+                      reviewer.type.group.groupRef =
+                        MetaP.ObjectReference.create({
+                          name: v?.metadata?.name ?? "",
+                        });
+                      onUpdate();
+                    }
+                  }}
+                />
+              )}
+            </Group>
           </EditItem>
         ))}
       </ItemMessage>
