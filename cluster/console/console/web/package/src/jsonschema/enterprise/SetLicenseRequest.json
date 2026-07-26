@@ -1,0 +1,19 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/SetLicenseRequest",
+    "definitions": {
+        "SetLicenseRequest": {
+            "properties": {
+                "jwt": {
+                    "type": "string"
+                },
+                "dryRun": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Set License Request"
+        }
+    }
+}

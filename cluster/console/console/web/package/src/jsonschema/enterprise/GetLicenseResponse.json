@@ -1,0 +1,92 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/GetLicenseResponse",
+    "definitions": {
+        "GetLicenseResponse": {
+            "properties": {
+                "license": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.License",
+                    "additionalProperties": false
+                },
+                "state": {
+                    "enum": [
+                        "STATE_UNKNOWN",
+                        "NONE",
+                        "ACTIVE",
+                        "NOT_YET_VALID",
+                        "EXPIRED",
+                        "INVALID"
+                    ],
+                    "type": "string",
+                    "title": "State"
+                },
+                "setAt": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Get License Response"
+        },
+        "octelium.api.main.enterprise.v1.License": {
+            "properties": {
+                "version": {
+                    "type": "integer"
+                },
+                "uid": {
+                    "type": "string"
+                },
+                "organization": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.License.Organization",
+                    "additionalProperties": false
+                },
+                "issuedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "notBefore": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "notAfter": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "type": {
+                    "enum": [
+                        "TYPE_UNKNOWN",
+                        "TRIAL",
+                        "SUBSCRIPTION",
+                        "PERPETUAL",
+                        "INTERNAL"
+                    ],
+                    "type": "string",
+                    "title": "Type"
+                },
+                "allowedClusterDomains": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "License"
+        },
+        "octelium.api.main.enterprise.v1.License.Organization": {
+            "properties": {
+                "uid": {
+                    "type": "string"
+                },
+                "displayName": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Organization"
+        }
+    }
+}

@@ -11,6 +11,12 @@
 // See the LICENSE file in the repository root for full license text.
 //
 import { ClusterService } from "./enterprisev1";
+import type { DeleteLicenseResponse } from "./enterprisev1";
+import type { DeleteLicenseRequest } from "./enterprisev1";
+import type { GetLicenseResponse } from "./enterprisev1";
+import type { GetLicenseRequest } from "./enterprisev1";
+import type { SetLicenseResponse } from "./enterprisev1";
+import type { SetLicenseRequest } from "./enterprisev1";
 import type { GetClusterInfoResponse } from "./enterprisev1";
 import type { GetClusterInfoRequest } from "./enterprisev1";
 import type { UpgradeClusterResponse } from "./enterprisev1";
@@ -604,6 +610,18 @@ export interface IClusterServiceClient {
      * @generated from protobuf rpc: GetClusterInfo
      */
     getClusterInfo(input: GetClusterInfoRequest, options?: RpcOptions): UnaryCall<GetClusterInfoRequest, GetClusterInfoResponse>;
+    /**
+     * @generated from protobuf rpc: SetLicense
+     */
+    setLicense(input: SetLicenseRequest, options?: RpcOptions): UnaryCall<SetLicenseRequest, SetLicenseResponse>;
+    /**
+     * @generated from protobuf rpc: GetLicense
+     */
+    getLicense(input: GetLicenseRequest, options?: RpcOptions): UnaryCall<GetLicenseRequest, GetLicenseResponse>;
+    /**
+     * @generated from protobuf rpc: DeleteLicense
+     */
+    deleteLicense(input: DeleteLicenseRequest, options?: RpcOptions): UnaryCall<DeleteLicenseRequest, DeleteLicenseResponse>;
 }
 /**
  * @generated from protobuf service octelium.api.main.enterprise.v1.ClusterService
@@ -627,5 +645,26 @@ export class ClusterServiceClient implements IClusterServiceClient, ServiceInfo 
     getClusterInfo(input: GetClusterInfoRequest, options?: RpcOptions): UnaryCall<GetClusterInfoRequest, GetClusterInfoResponse> {
         const method = this.methods[1], opt = this._transport.mergeOptions(options);
         return stackIntercept<GetClusterInfoRequest, GetClusterInfoResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * @generated from protobuf rpc: SetLicense
+     */
+    setLicense(input: SetLicenseRequest, options?: RpcOptions): UnaryCall<SetLicenseRequest, SetLicenseResponse> {
+        const method = this.methods[2], opt = this._transport.mergeOptions(options);
+        return stackIntercept<SetLicenseRequest, SetLicenseResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * @generated from protobuf rpc: GetLicense
+     */
+    getLicense(input: GetLicenseRequest, options?: RpcOptions): UnaryCall<GetLicenseRequest, GetLicenseResponse> {
+        const method = this.methods[3], opt = this._transport.mergeOptions(options);
+        return stackIntercept<GetLicenseRequest, GetLicenseResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * @generated from protobuf rpc: DeleteLicense
+     */
+    deleteLicense(input: DeleteLicenseRequest, options?: RpcOptions): UnaryCall<DeleteLicenseRequest, DeleteLicenseResponse> {
+        const method = this.methods[4], opt = this._transport.mergeOptions(options);
+        return stackIntercept<DeleteLicenseRequest, DeleteLicenseResponse>("unary", this._transport, method, opt, input);
     }
 }

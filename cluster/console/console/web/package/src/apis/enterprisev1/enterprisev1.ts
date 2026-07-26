@@ -36,8 +36,8 @@ import { InlinePolicy } from "../corev1/corev1";
 import { RequestContext_Request } from "../corev1/corev1";
 import { Condition as Condition$ } from "../corev1/corev1";
 import { LogMetadata } from "../metav1/metav1";
-import { ObjectReference } from "../metav1/metav1";
 import { Struct } from "../google/protobuf/struct";
+import { ObjectReference } from "../metav1/metav1";
 import { Timestamp } from "../google/protobuf/timestamp";
 import { ListResponseMeta } from "../metav1/metav1";
 import { Duration } from "../metav1/metav1";
@@ -2331,6 +2331,10 @@ export interface ClusterConfig_Status {
      * @generated from protobuf field: uint64 totalFailedUpgrades = 4
      */
     totalFailedUpgrades: number;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo licenseInfo = 5
+     */
+    licenseInfo?: ClusterConfig_Status_LicenseInfo;
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest
@@ -2377,6 +2381,56 @@ export enum ClusterConfig_Status_UpgradeRequest_State {
      * @generated from protobuf enum value: FAILED = 4;
      */
     FAILED = 4
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo
+ */
+export interface ClusterConfig_Status_LicenseInfo {
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference licenseSecretRef = 1
+     */
+    licenseSecretRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.State state = 2
+     */
+    state: ClusterConfig_Status_LicenseInfo_State;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp setAt = 3
+     */
+    setAt?: Timestamp;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp stateCheckedAt = 4
+     */
+    stateCheckedAt?: Timestamp;
+}
+/**
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.State
+ */
+export enum ClusterConfig_Status_LicenseInfo_State {
+    /**
+     * @generated from protobuf enum value: STATE_UNKNOWN = 0;
+     */
+    STATE_UNKNOWN = 0,
+    /**
+     * @generated from protobuf enum value: NONE = 1;
+     */
+    NONE = 1,
+    /**
+     * @generated from protobuf enum value: ACTIVE = 2;
+     */
+    ACTIVE = 2,
+    /**
+     * @generated from protobuf enum value: NOT_YET_VALID = 3;
+     */
+    NOT_YET_VALID = 3,
+    /**
+     * @generated from protobuf enum value: EXPIRED = 4;
+     */
+    EXPIRED = 4,
+    /**
+     * @generated from protobuf enum value: INVALID = 5;
+     */
+    INVALID = 5
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.Secret
@@ -6118,6 +6172,139 @@ export interface GetClusterInfoResponse_PackageCordium {
      * @generated from protobuf field: google.protobuf.Timestamp setAt = 4
      */
     setAt?: Timestamp;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.License
+ */
+export interface License {
+    /**
+     * @generated from protobuf field: uint32 version = 1
+     */
+    version: number;
+    /**
+     * @generated from protobuf field: string uid = 2
+     */
+    uid: string;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.License.Organization organization = 3
+     */
+    organization?: License_Organization;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp issuedAt = 4
+     */
+    issuedAt?: Timestamp;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp notBefore = 5
+     */
+    notBefore?: Timestamp;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp notAfter = 6
+     */
+    notAfter?: Timestamp;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.License.Type type = 7
+     */
+    type: License_Type;
+    /**
+     * @generated from protobuf field: repeated string allowedClusterDomains = 8
+     */
+    allowedClusterDomains: string[];
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.License.Organization
+ */
+export interface License_Organization {
+    /**
+     * @generated from protobuf field: string uid = 1
+     */
+    uid: string;
+    /**
+     * @generated from protobuf field: string displayName = 2
+     */
+    displayName: string;
+}
+/**
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.License.Type
+ */
+export enum License_Type {
+    /**
+     * @generated from protobuf enum value: TYPE_UNKNOWN = 0;
+     */
+    TYPE_UNKNOWN = 0,
+    /**
+     * @generated from protobuf enum value: TRIAL = 1;
+     */
+    TRIAL = 1,
+    /**
+     * @generated from protobuf enum value: SUBSCRIPTION = 2;
+     */
+    SUBSCRIPTION = 2,
+    /**
+     * @generated from protobuf enum value: PERPETUAL = 3;
+     */
+    PERPETUAL = 3,
+    /**
+     * @generated from protobuf enum value: INTERNAL = 4;
+     */
+    INTERNAL = 4
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.SetLicenseRequest
+ */
+export interface SetLicenseRequest {
+    /**
+     * @generated from protobuf field: string jwt = 1
+     */
+    jwt: string;
+    /**
+     * @generated from protobuf field: bool dryRun = 2
+     */
+    dryRun: boolean;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.SetLicenseResponse
+ */
+export interface SetLicenseResponse {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.License license = 1
+     */
+    license?: License;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.State state = 2
+     */
+    state: ClusterConfig_Status_LicenseInfo_State;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.GetLicenseRequest
+ */
+export interface GetLicenseRequest {
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.GetLicenseResponse
+ */
+export interface GetLicenseResponse {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.License license = 1
+     */
+    license?: License;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.State state = 2
+     */
+    state: ClusterConfig_Status_LicenseInfo_State;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp setAt = 3
+     */
+    setAt?: Timestamp;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.DeleteLicenseRequest
+ */
+export interface DeleteLicenseRequest {
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.DeleteLicenseResponse
+ */
+export interface DeleteLicenseResponse {
 }
 // @generated message type with reflection information, may provide speed optimized methods
 class GetClusterConfigRequest$Type extends MessageType<GetClusterConfigRequest> {
@@ -12268,7 +12455,8 @@ class ClusterConfig_Status$Type extends MessageType<ClusterConfig_Status> {
             { no: 1, name: "upgradeRequest", kind: "message", T: () => ClusterConfig_Status_UpgradeRequest },
             { no: 2, name: "lastUpgradeRequests", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ClusterConfig_Status_UpgradeRequest },
             { no: 3, name: "totalSuccessfulUpgrades", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 4, name: "totalFailedUpgrades", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
+            { no: 4, name: "totalFailedUpgrades", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 5, name: "licenseInfo", kind: "message", T: () => ClusterConfig_Status_LicenseInfo }
         ]);
     }
     create(value?: PartialMessage<ClusterConfig_Status>): ClusterConfig_Status {
@@ -12297,6 +12485,9 @@ class ClusterConfig_Status$Type extends MessageType<ClusterConfig_Status> {
                 case /* uint64 totalFailedUpgrades */ 4:
                     message.totalFailedUpgrades = reader.uint64().toNumber();
                     break;
+                case /* octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo licenseInfo */ 5:
+                    message.licenseInfo = ClusterConfig_Status_LicenseInfo.internalBinaryRead(reader, reader.uint32(), options, message.licenseInfo);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -12321,6 +12512,9 @@ class ClusterConfig_Status$Type extends MessageType<ClusterConfig_Status> {
         /* uint64 totalFailedUpgrades = 4; */
         if (message.totalFailedUpgrades !== 0)
             writer.tag(4, WireType.Varint).uint64(message.totalFailedUpgrades);
+        /* octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo licenseInfo = 5; */
+        if (message.licenseInfo)
+            ClusterConfig_Status_LicenseInfo.internalBinaryWrite(message.licenseInfo, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -12399,6 +12593,74 @@ class ClusterConfig_Status_UpgradeRequest$Type extends MessageType<ClusterConfig
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest
  */
 export const ClusterConfig_Status_UpgradeRequest = new ClusterConfig_Status_UpgradeRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ClusterConfig_Status_LicenseInfo$Type extends MessageType<ClusterConfig_Status_LicenseInfo> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo", [
+            { no: 1, name: "licenseSecretRef", kind: "message", T: () => ObjectReference },
+            { no: 2, name: "state", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.State", ClusterConfig_Status_LicenseInfo_State] },
+            { no: 3, name: "setAt", kind: "message", T: () => Timestamp },
+            { no: 4, name: "stateCheckedAt", kind: "message", T: () => Timestamp }
+        ]);
+    }
+    create(value?: PartialMessage<ClusterConfig_Status_LicenseInfo>): ClusterConfig_Status_LicenseInfo {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.state = 0;
+        if (value !== undefined)
+            reflectionMergePartial<ClusterConfig_Status_LicenseInfo>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ClusterConfig_Status_LicenseInfo): ClusterConfig_Status_LicenseInfo {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference licenseSecretRef */ 1:
+                    message.licenseSecretRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.licenseSecretRef);
+                    break;
+                case /* octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.State state */ 2:
+                    message.state = reader.int32();
+                    break;
+                case /* google.protobuf.Timestamp setAt */ 3:
+                    message.setAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.setAt);
+                    break;
+                case /* google.protobuf.Timestamp stateCheckedAt */ 4:
+                    message.stateCheckedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.stateCheckedAt);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ClusterConfig_Status_LicenseInfo, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.ObjectReference licenseSecretRef = 1; */
+        if (message.licenseSecretRef)
+            ObjectReference.internalBinaryWrite(message.licenseSecretRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.State state = 2; */
+        if (message.state !== 0)
+            writer.tag(2, WireType.Varint).int32(message.state);
+        /* google.protobuf.Timestamp setAt = 3; */
+        if (message.setAt)
+            Timestamp.internalBinaryWrite(message.setAt, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp stateCheckedAt = 4; */
+        if (message.stateCheckedAt)
+            Timestamp.internalBinaryWrite(message.stateCheckedAt, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo
+ */
+export const ClusterConfig_Status_LicenseInfo = new ClusterConfig_Status_LicenseInfo$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class Secret$Type extends MessageType<Secret> {
     constructor() {
@@ -23362,6 +23624,444 @@ class GetClusterInfoResponse_PackageCordium$Type extends MessageType<GetClusterI
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageCordium
  */
 export const GetClusterInfoResponse_PackageCordium = new GetClusterInfoResponse_PackageCordium$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class License$Type extends MessageType<License> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.License", [
+            { no: 1, name: "version", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 2, name: "uid", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "organization", kind: "message", T: () => License_Organization },
+            { no: 4, name: "issuedAt", kind: "message", T: () => Timestamp },
+            { no: 5, name: "notBefore", kind: "message", T: () => Timestamp },
+            { no: 6, name: "notAfter", kind: "message", T: () => Timestamp },
+            { no: 7, name: "type", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.License.Type", License_Type] },
+            { no: 8, name: "allowedClusterDomains", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<License>): License {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.version = 0;
+        message.uid = "";
+        message.type = 0;
+        message.allowedClusterDomains = [];
+        if (value !== undefined)
+            reflectionMergePartial<License>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: License): License {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* uint32 version */ 1:
+                    message.version = reader.uint32();
+                    break;
+                case /* string uid */ 2:
+                    message.uid = reader.string();
+                    break;
+                case /* octelium.api.main.enterprise.v1.License.Organization organization */ 3:
+                    message.organization = License_Organization.internalBinaryRead(reader, reader.uint32(), options, message.organization);
+                    break;
+                case /* google.protobuf.Timestamp issuedAt */ 4:
+                    message.issuedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.issuedAt);
+                    break;
+                case /* google.protobuf.Timestamp notBefore */ 5:
+                    message.notBefore = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.notBefore);
+                    break;
+                case /* google.protobuf.Timestamp notAfter */ 6:
+                    message.notAfter = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.notAfter);
+                    break;
+                case /* octelium.api.main.enterprise.v1.License.Type type */ 7:
+                    message.type = reader.int32();
+                    break;
+                case /* repeated string allowedClusterDomains */ 8:
+                    message.allowedClusterDomains.push(reader.string());
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: License, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* uint32 version = 1; */
+        if (message.version !== 0)
+            writer.tag(1, WireType.Varint).uint32(message.version);
+        /* string uid = 2; */
+        if (message.uid !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.uid);
+        /* octelium.api.main.enterprise.v1.License.Organization organization = 3; */
+        if (message.organization)
+            License_Organization.internalBinaryWrite(message.organization, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp issuedAt = 4; */
+        if (message.issuedAt)
+            Timestamp.internalBinaryWrite(message.issuedAt, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp notBefore = 5; */
+        if (message.notBefore)
+            Timestamp.internalBinaryWrite(message.notBefore, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp notAfter = 6; */
+        if (message.notAfter)
+            Timestamp.internalBinaryWrite(message.notAfter, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.License.Type type = 7; */
+        if (message.type !== 0)
+            writer.tag(7, WireType.Varint).int32(message.type);
+        /* repeated string allowedClusterDomains = 8; */
+        for (let i = 0; i < message.allowedClusterDomains.length; i++)
+            writer.tag(8, WireType.LengthDelimited).string(message.allowedClusterDomains[i]);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.License
+ */
+export const License = new License$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class License_Organization$Type extends MessageType<License_Organization> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.License.Organization", [
+            { no: 1, name: "uid", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "displayName", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<License_Organization>): License_Organization {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.uid = "";
+        message.displayName = "";
+        if (value !== undefined)
+            reflectionMergePartial<License_Organization>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: License_Organization): License_Organization {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string uid */ 1:
+                    message.uid = reader.string();
+                    break;
+                case /* string displayName */ 2:
+                    message.displayName = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: License_Organization, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string uid = 1; */
+        if (message.uid !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.uid);
+        /* string displayName = 2; */
+        if (message.displayName !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.displayName);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.License.Organization
+ */
+export const License_Organization = new License_Organization$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SetLicenseRequest$Type extends MessageType<SetLicenseRequest> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.SetLicenseRequest", [
+            { no: 1, name: "jwt", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "dryRun", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<SetLicenseRequest>): SetLicenseRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.jwt = "";
+        message.dryRun = false;
+        if (value !== undefined)
+            reflectionMergePartial<SetLicenseRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: SetLicenseRequest): SetLicenseRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string jwt */ 1:
+                    message.jwt = reader.string();
+                    break;
+                case /* bool dryRun */ 2:
+                    message.dryRun = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: SetLicenseRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string jwt = 1; */
+        if (message.jwt !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.jwt);
+        /* bool dryRun = 2; */
+        if (message.dryRun !== false)
+            writer.tag(2, WireType.Varint).bool(message.dryRun);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.SetLicenseRequest
+ */
+export const SetLicenseRequest = new SetLicenseRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SetLicenseResponse$Type extends MessageType<SetLicenseResponse> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.SetLicenseResponse", [
+            { no: 1, name: "license", kind: "message", T: () => License },
+            { no: 2, name: "state", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.State", ClusterConfig_Status_LicenseInfo_State] }
+        ]);
+    }
+    create(value?: PartialMessage<SetLicenseResponse>): SetLicenseResponse {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.state = 0;
+        if (value !== undefined)
+            reflectionMergePartial<SetLicenseResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: SetLicenseResponse): SetLicenseResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.License license */ 1:
+                    message.license = License.internalBinaryRead(reader, reader.uint32(), options, message.license);
+                    break;
+                case /* octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.State state */ 2:
+                    message.state = reader.int32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: SetLicenseResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.License license = 1; */
+        if (message.license)
+            License.internalBinaryWrite(message.license, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.State state = 2; */
+        if (message.state !== 0)
+            writer.tag(2, WireType.Varint).int32(message.state);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.SetLicenseResponse
+ */
+export const SetLicenseResponse = new SetLicenseResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetLicenseRequest$Type extends MessageType<GetLicenseRequest> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.GetLicenseRequest", []);
+    }
+    create(value?: PartialMessage<GetLicenseRequest>): GetLicenseRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<GetLicenseRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetLicenseRequest): GetLicenseRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetLicenseRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.GetLicenseRequest
+ */
+export const GetLicenseRequest = new GetLicenseRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class GetLicenseResponse$Type extends MessageType<GetLicenseResponse> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.GetLicenseResponse", [
+            { no: 1, name: "license", kind: "message", T: () => License },
+            { no: 2, name: "state", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.State", ClusterConfig_Status_LicenseInfo_State] },
+            { no: 3, name: "setAt", kind: "message", T: () => Timestamp }
+        ]);
+    }
+    create(value?: PartialMessage<GetLicenseResponse>): GetLicenseResponse {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.state = 0;
+        if (value !== undefined)
+            reflectionMergePartial<GetLicenseResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: GetLicenseResponse): GetLicenseResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.License license */ 1:
+                    message.license = License.internalBinaryRead(reader, reader.uint32(), options, message.license);
+                    break;
+                case /* octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.State state */ 2:
+                    message.state = reader.int32();
+                    break;
+                case /* google.protobuf.Timestamp setAt */ 3:
+                    message.setAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.setAt);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: GetLicenseResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.License license = 1; */
+        if (message.license)
+            License.internalBinaryWrite(message.license, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo.State state = 2; */
+        if (message.state !== 0)
+            writer.tag(2, WireType.Varint).int32(message.state);
+        /* google.protobuf.Timestamp setAt = 3; */
+        if (message.setAt)
+            Timestamp.internalBinaryWrite(message.setAt, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.GetLicenseResponse
+ */
+export const GetLicenseResponse = new GetLicenseResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class DeleteLicenseRequest$Type extends MessageType<DeleteLicenseRequest> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.DeleteLicenseRequest", []);
+    }
+    create(value?: PartialMessage<DeleteLicenseRequest>): DeleteLicenseRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<DeleteLicenseRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DeleteLicenseRequest): DeleteLicenseRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: DeleteLicenseRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.DeleteLicenseRequest
+ */
+export const DeleteLicenseRequest = new DeleteLicenseRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class DeleteLicenseResponse$Type extends MessageType<DeleteLicenseResponse> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.DeleteLicenseResponse", []);
+    }
+    create(value?: PartialMessage<DeleteLicenseResponse>): DeleteLicenseResponse {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<DeleteLicenseResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DeleteLicenseResponse): DeleteLicenseResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: DeleteLicenseResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.DeleteLicenseResponse
+ */
+export const DeleteLicenseResponse = new DeleteLicenseResponse$Type();
 /**
  * @generated ServiceType for protobuf service octelium.api.main.enterprise.v1.MainService
  */
@@ -23420,5 +24120,8 @@ export const PolicyPortalService = new ServiceType("octelium.api.main.enterprise
  */
 export const ClusterService = new ServiceType("octelium.api.main.enterprise.v1.ClusterService", [
     { name: "UpgradeCluster", options: {}, I: UpgradeClusterRequest, O: UpgradeClusterResponse },
-    { name: "GetClusterInfo", options: {}, I: GetClusterInfoRequest, O: GetClusterInfoResponse }
+    { name: "GetClusterInfo", options: {}, I: GetClusterInfoRequest, O: GetClusterInfoResponse },
+    { name: "SetLicense", options: {}, I: SetLicenseRequest, O: SetLicenseResponse },
+    { name: "GetLicense", options: {}, I: GetLicenseRequest, O: GetLicenseResponse },
+    { name: "DeleteLicense", options: {}, I: DeleteLicenseRequest, O: DeleteLicenseResponse }
 ]);

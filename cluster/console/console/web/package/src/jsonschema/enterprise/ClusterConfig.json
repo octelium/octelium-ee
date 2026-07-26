@@ -175,11 +175,46 @@
                 },
                 "totalFailedUpgrades": {
                     "type": "integer"
+                },
+                "licenseInfo": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo",
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false,
             "type": "object",
             "title": "Status"
+        },
+        "octelium.api.main.enterprise.v1.ClusterConfig.Status.LicenseInfo": {
+            "properties": {
+                "licenseSecretRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false
+                },
+                "state": {
+                    "enum": [
+                        "STATE_UNKNOWN",
+                        "NONE",
+                        "ACTIVE",
+                        "NOT_YET_VALID",
+                        "EXPIRED",
+                        "INVALID"
+                    ],
+                    "type": "string",
+                    "title": "State"
+                },
+                "setAt": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "stateCheckedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "License Info"
         },
         "octelium.api.main.enterprise.v1.ClusterConfig.Status.UpgradeRequest": {
             "properties": {

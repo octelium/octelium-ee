@@ -1803,6 +1803,9 @@ var PolicyPortalService_ServiceDesc = grpc.ServiceDesc{
 const (
 	ClusterService_UpgradeCluster_FullMethodName = "/octelium.api.main.enterprise.v1.ClusterService/UpgradeCluster"
 	ClusterService_GetClusterInfo_FullMethodName = "/octelium.api.main.enterprise.v1.ClusterService/GetClusterInfo"
+	ClusterService_SetLicense_FullMethodName     = "/octelium.api.main.enterprise.v1.ClusterService/SetLicense"
+	ClusterService_GetLicense_FullMethodName     = "/octelium.api.main.enterprise.v1.ClusterService/GetLicense"
+	ClusterService_DeleteLicense_FullMethodName  = "/octelium.api.main.enterprise.v1.ClusterService/DeleteLicense"
 )
 
 // ClusterServiceClient is the client API for ClusterService service.
@@ -1811,6 +1814,9 @@ const (
 type ClusterServiceClient interface {
 	UpgradeCluster(ctx context.Context, in *UpgradeClusterRequest, opts ...grpc.CallOption) (*UpgradeClusterResponse, error)
 	GetClusterInfo(ctx context.Context, in *GetClusterInfoRequest, opts ...grpc.CallOption) (*GetClusterInfoResponse, error)
+	SetLicense(ctx context.Context, in *SetLicenseRequest, opts ...grpc.CallOption) (*SetLicenseResponse, error)
+	GetLicense(ctx context.Context, in *GetLicenseRequest, opts ...grpc.CallOption) (*GetLicenseResponse, error)
+	DeleteLicense(ctx context.Context, in *DeleteLicenseRequest, opts ...grpc.CallOption) (*DeleteLicenseResponse, error)
 }
 
 type clusterServiceClient struct {
@@ -1841,12 +1847,45 @@ func (c *clusterServiceClient) GetClusterInfo(ctx context.Context, in *GetCluste
 	return out, nil
 }
 
+func (c *clusterServiceClient) SetLicense(ctx context.Context, in *SetLicenseRequest, opts ...grpc.CallOption) (*SetLicenseResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SetLicenseResponse)
+	err := c.cc.Invoke(ctx, ClusterService_SetLicense_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *clusterServiceClient) GetLicense(ctx context.Context, in *GetLicenseRequest, opts ...grpc.CallOption) (*GetLicenseResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetLicenseResponse)
+	err := c.cc.Invoke(ctx, ClusterService_GetLicense_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *clusterServiceClient) DeleteLicense(ctx context.Context, in *DeleteLicenseRequest, opts ...grpc.CallOption) (*DeleteLicenseResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteLicenseResponse)
+	err := c.cc.Invoke(ctx, ClusterService_DeleteLicense_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ClusterServiceServer is the server API for ClusterService service.
 // All implementations must embed UnimplementedClusterServiceServer
 // for forward compatibility.
 type ClusterServiceServer interface {
 	UpgradeCluster(context.Context, *UpgradeClusterRequest) (*UpgradeClusterResponse, error)
 	GetClusterInfo(context.Context, *GetClusterInfoRequest) (*GetClusterInfoResponse, error)
+	SetLicense(context.Context, *SetLicenseRequest) (*SetLicenseResponse, error)
+	GetLicense(context.Context, *GetLicenseRequest) (*GetLicenseResponse, error)
+	DeleteLicense(context.Context, *DeleteLicenseRequest) (*DeleteLicenseResponse, error)
 	mustEmbedUnimplementedClusterServiceServer()
 }
 
@@ -1862,6 +1901,15 @@ func (UnimplementedClusterServiceServer) UpgradeCluster(context.Context, *Upgrad
 }
 func (UnimplementedClusterServiceServer) GetClusterInfo(context.Context, *GetClusterInfoRequest) (*GetClusterInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetClusterInfo not implemented")
+}
+func (UnimplementedClusterServiceServer) SetLicense(context.Context, *SetLicenseRequest) (*SetLicenseResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetLicense not implemented")
+}
+func (UnimplementedClusterServiceServer) GetLicense(context.Context, *GetLicenseRequest) (*GetLicenseResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLicense not implemented")
+}
+func (UnimplementedClusterServiceServer) DeleteLicense(context.Context, *DeleteLicenseRequest) (*DeleteLicenseResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteLicense not implemented")
 }
 func (UnimplementedClusterServiceServer) mustEmbedUnimplementedClusterServiceServer() {}
 func (UnimplementedClusterServiceServer) testEmbeddedByValue()                        {}
@@ -1920,6 +1968,60 @@ func _ClusterService_GetClusterInfo_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ClusterService_SetLicense_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetLicenseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ClusterServiceServer).SetLicense(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ClusterService_SetLicense_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ClusterServiceServer).SetLicense(ctx, req.(*SetLicenseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ClusterService_GetLicense_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLicenseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ClusterServiceServer).GetLicense(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ClusterService_GetLicense_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ClusterServiceServer).GetLicense(ctx, req.(*GetLicenseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ClusterService_DeleteLicense_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteLicenseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ClusterServiceServer).DeleteLicense(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ClusterService_DeleteLicense_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ClusterServiceServer).DeleteLicense(ctx, req.(*DeleteLicenseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ClusterService_ServiceDesc is the grpc.ServiceDesc for ClusterService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1934,6 +2036,18 @@ var ClusterService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetClusterInfo",
 			Handler:    _ClusterService_GetClusterInfo_Handler,
+		},
+		{
+			MethodName: "SetLicense",
+			Handler:    _ClusterService_SetLicense_Handler,
+		},
+		{
+			MethodName: "GetLicense",
+			Handler:    _ClusterService_GetLicense_Handler,
+		},
+		{
+			MethodName: "DeleteLicense",
+			Handler:    _ClusterService_DeleteLicense_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
