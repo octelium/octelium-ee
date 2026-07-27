@@ -57,6 +57,7 @@ func (s *Server) getSummaryCoreUser(ctx context.Context, req *vcorev1.GetUserSum
 
 		return nil, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var countHuman int
@@ -73,6 +74,9 @@ func (s *Server) getSummaryCoreUser(ctx context.Context, req *vcorev1.GetUserSum
 		ret.TotalHuman = uint32(countHuman)
 		ret.TotalWorkload = uint32(countWorkload)
 		ret.TotalDisabled = uint32(countDeactivated)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, grpcutils.InternalWithErr(err)
 	}
 
 	return ret, nil
@@ -120,6 +124,7 @@ func (s *Server) getSummaryCoreSession(ctx context.Context, req *vcorev1.GetSess
 
 		return nil, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		err := rows.Scan(&ret.TotalNumber,
@@ -130,6 +135,9 @@ func (s *Server) getSummaryCoreSession(ctx context.Context, req *vcorev1.GetSess
 		if err != nil {
 			return nil, err
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, grpcutils.InternalWithErr(err)
 	}
 
 	return ret, nil
@@ -184,6 +192,7 @@ func (s *Server) getSummaryCoreService(ctx context.Context, req *vcorev1.GetServ
 
 		return nil, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 
@@ -198,6 +207,9 @@ func (s *Server) getSummaryCoreService(ctx context.Context, req *vcorev1.GetServ
 			return nil, err
 		}
 
+	}
+	if err := rows.Err(); err != nil {
+		return nil, grpcutils.InternalWithErr(err)
 	}
 
 	return ret, nil
@@ -221,8 +233,18 @@ func (s *Server) getSummaryCorePolicy(ctx context.Context, req *vcorev1.GetPolic
 			goqu.L(`COUNT(*) AS count_total`),
 			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.isDisabled') = true) AS count_disabled`),
 			goqu.L(`COALESCE(SUM(len(json_extract(rsc, '$.spec.rules'))), 0) AS count_rules`),
-			goqu.L(`COALESCE(SUM(len(json_extract(rsc, '$.spec.rules'))) FILTER (WHERE json_extract_string(json_extract(rsc, '$.spec.rules[0]'), '$.effect') = 'ALLOW'), 0) AS count_rules_allowed`),
-			goqu.L(`COALESCE(SUM(len(json_extract(rsc, '$.spec.rules'))) FILTER (WHERE json_extract_string(json_extract(rsc, '$.spec.rules[0]'), '$.effect') = 'DENY'), 0) AS count_rules_denied`),
+			goqu.L(`COALESCE(SUM(
+    len(list_filter(
+        CAST(json_extract(rsc, '$.spec.rules') AS JSON[]),
+        x -> json_extract_string(x, '$.effect') = 'ALLOW'
+    ))
+), 0) AS count_rules_allowed`),
+			goqu.L(`COALESCE(SUM(
+    len(list_filter(
+        CAST(json_extract(rsc, '$.spec.rules') AS JSON[]),
+        x -> json_extract_string(x, '$.effect') = 'DENY'
+    ))
+), 0) AS count_rules_denied`),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -238,6 +260,7 @@ func (s *Server) getSummaryCorePolicy(ctx context.Context, req *vcorev1.GetPolic
 
 		return nil, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 
@@ -248,6 +271,10 @@ func (s *Server) getSummaryCorePolicy(ctx context.Context, req *vcorev1.GetPolic
 		}
 
 	}
+	if err := rows.Err(); err != nil {
+		return nil, grpcutils.InternalWithErr(err)
+	}
+
 	return ret, nil
 }
 
@@ -287,6 +314,7 @@ func (s *Server) getSummaryCoreCredential(ctx context.Context, req *vcorev1.GetC
 
 		return nil, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		err := rows.Scan(&ret.TotalNumber,
@@ -295,6 +323,9 @@ func (s *Server) getSummaryCoreCredential(ctx context.Context, req *vcorev1.GetC
 		if err != nil {
 			return nil, err
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, grpcutils.InternalWithErr(err)
 	}
 
 	return ret, nil
@@ -337,6 +368,7 @@ func (s *Server) getSummaryCoreIdentityProvider(ctx context.Context, req *vcorev
 
 		return nil, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		err := rows.Scan(&ret.TotalNumber,
@@ -345,6 +377,9 @@ func (s *Server) getSummaryCoreIdentityProvider(ctx context.Context, req *vcorev
 		if err != nil {
 			return nil, err
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, grpcutils.InternalWithErr(err)
 	}
 
 	return ret, nil
@@ -391,6 +426,7 @@ func (s *Server) getSummaryCoreDevice(ctx context.Context, req *vcorev1.GetDevic
 
 		return nil, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		err := rows.Scan(&ret.TotalNumber,
@@ -400,6 +436,9 @@ func (s *Server) getSummaryCoreDevice(ctx context.Context, req *vcorev1.GetDevic
 		if err != nil {
 			return nil, err
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, grpcutils.InternalWithErr(err)
 	}
 
 	return ret, nil
@@ -449,6 +488,7 @@ func (s *Server) getSummaryCoreAuthenticator(ctx context.Context, req *vcorev1.G
 
 		return nil, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		err := rows.Scan(&ret.TotalNumber,
@@ -460,6 +500,9 @@ func (s *Server) getSummaryCoreAuthenticator(ctx context.Context, req *vcorev1.G
 		if err != nil {
 			return nil, err
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, grpcutils.InternalWithErr(err)
 	}
 
 	return ret, nil
@@ -496,12 +539,16 @@ func (s *Server) getSummaryCoreGroup(ctx context.Context, req *vcorev1.GetGroupS
 
 		return nil, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		err := rows.Scan(&ret.TotalNumber)
 		if err != nil {
 			return nil, err
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, grpcutils.InternalWithErr(err)
 	}
 
 	return ret, nil
@@ -537,12 +584,16 @@ func (s *Server) getSummaryCoreRegion(ctx context.Context, req *vcorev1.GetRegio
 
 		return nil, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		err := rows.Scan(&ret.TotalNumber)
 		if err != nil {
 			return nil, err
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, grpcutils.InternalWithErr(err)
 	}
 
 	return ret, nil
@@ -578,12 +629,16 @@ func (s *Server) getSummaryCoreGateway(ctx context.Context, req *vcorev1.GetGate
 
 		return nil, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		err := rows.Scan(&ret.TotalNumber)
 		if err != nil {
 			return nil, err
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, grpcutils.InternalWithErr(err)
 	}
 
 	return ret, nil
@@ -619,12 +674,16 @@ func (s *Server) getSummaryCoreSecret(ctx context.Context, req *vcorev1.GetSecre
 
 		return nil, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		err := rows.Scan(&ret.TotalNumber)
 		if err != nil {
 			return nil, err
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, grpcutils.InternalWithErr(err)
 	}
 
 	return ret, nil
@@ -660,12 +719,16 @@ func (s *Server) getSummaryCoreNamespace(ctx context.Context, req *vcorev1.GetNa
 
 		return nil, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		err := rows.Scan(&ret.TotalNumber)
 		if err != nil {
 			return nil, err
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, grpcutils.InternalWithErr(err)
 	}
 
 	return ret, nil
