@@ -48,6 +48,7 @@ func (s *server) doCreateDEK(ctx context.Context) error {
 	if err != nil {
 		return grpcutils.InternalWithErr(err)
 	}
+	defer kek.Close()
 
 	ciphertext, err := kek.Encrypt(ctx, uid, k)
 	if err != nil {

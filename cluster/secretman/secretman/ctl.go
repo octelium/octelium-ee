@@ -47,6 +47,7 @@ func (s *server) doSync(ctx context.Context, new *enterprisev1.SecretStore) erro
 	if err != nil {
 		return err
 	}
+	defer store.Close()
 
 	{
 		ss, err := s.octeliumC.EnterpriseC().GetSecretStore(ctx, &rmetav1.GetOptions{
