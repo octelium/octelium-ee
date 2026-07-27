@@ -189,6 +189,10 @@ func (s *server) doListDEK(ctx context.Context) ([]*dek, error) {
 		})
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, grpcutils.InternalWithErr(err)
+	}
+
 	return ret, nil
 }
 
