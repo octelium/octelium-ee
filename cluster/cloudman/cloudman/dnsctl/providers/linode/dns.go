@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/linode/linodego"
@@ -46,7 +47,9 @@ func NewProvider(ctx context.Context, octeliumC octeliumc.ClientInterface, p *en
 	linodeClient := linodego.NewClient(&http.Client{
 		Transport: &oauth2.Transport{
 			Source: tokenSource,
+			Base:   http.DefaultTransport,
 		},
+		Timeout: 30 * time.Second,
 	})
 
 	if ldflags.IsDev() {
@@ -62,9 +65,8 @@ func (p *Provider) SetCNAME(ctx context.Context, name, val string) error {
 		return err
 	}
 
-	nameTrimmed := strings.TrimSuffix(name, fmt.Sprintf(".%s", zoneID.Domain))
-
-	if err := p.setRecord(ctx, zoneID.ID, linodego.RecordTypeCNAME, nameTrimmed, val); err != nil {
+	if err := p.setRecords(ctx, zoneID.ID, linodego.RecordTypeCNAME,
+		trimDomain(name, zoneID.Domain), []string{val}); err != nil {
 		return err
 	}
 
@@ -77,46 +79,87 @@ func (p *Provider) Set(ctx context.Context, domain string, ipAddrs []string) err
 		return err
 	}
 
-	for _, ipAddr := range ipAddrs {
-		zap.S().Debugf("Setting DNS record for the IP:%s", ipAddr)
-		recordType := func() linodego.DomainRecordType {
-			if govalidator.IsIPv4(ipAddr) {
-				return linodego.RecordTypeA
-			}
-			return linodego.RecordTypeAAAA
-		}()
+	v4Addrs, v6Addrs, err := splitIPAddresses(ipAddrs)
+	if err != nil {
+		return err
+	}
 
-		if err := p.setRecord(ctx, zoneID.ID, recordType, domain, ipAddr); err != nil {
-			return err
-		}
+	name := trimDomain(domain, zoneID.Domain)
+
+	if err := p.setRecords(ctx, zoneID.ID, linodego.RecordTypeA, name, v4Addrs); err != nil {
+		return err
+	}
+
+	if err := p.setRecords(ctx, zoneID.ID, linodego.RecordTypeAAAA, name, v6Addrs); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func (p *Provider) setRecord(ctx context.Context, zoneID int, typ linodego.DomainRecordType, name, val string) error {
+func (p *Provider) setRecords(ctx context.Context, zoneID int, typ linodego.DomainRecordType, name string, vals []string) error {
 
 	records, err := p.c.ListDomainRecords(ctx, zoneID, &linodego.ListOptions{})
 	if err != nil {
 		return err
 	}
+
+	desired := uniqueValues(vals)
+	found := make(map[string]struct{}, len(desired))
+
 	for _, record := range records {
-		if record.Name == name && record.Type == typ && record.Target == val {
-			return nil
+		if record.Name != name || record.Type != typ {
+			continue
 		}
-		if record.Name == name && record.Type == typ && record.Target != val {
-			if err := p.c.DeleteDomainRecord(ctx, zoneID, record.ID); err != nil {
-				return err
+
+		if _, ok := desired[record.Target]; ok {
+			if _, ok := found[record.Target]; !ok {
+				found[record.Target] = struct{}{}
+				continue
 			}
+		}
+
+		if err := p.c.DeleteDomainRecord(ctx, zoneID, record.ID); err != nil {
+			return err
 		}
 	}
 
-	if _, err := p.c.CreateDomainRecord(ctx, zoneID, linodego.DomainRecordCreateOptions{
-		Type:   typ,
-		Name:   name,
-		Target: val,
-		TTLSec: 300,
-	}); err != nil {
+	for _, val := range vals {
+		if _, ok := found[val]; ok {
+			continue
+		}
+		if _, ok := desired[val]; !ok {
+			continue
+		}
+
+		if _, err := p.c.CreateDomainRecord(ctx, zoneID, linodego.DomainRecordCreateOptions{
+			Type:   typ,
+			Name:   name,
+			Target: val,
+			TTLSec: 300,
+		}); err != nil {
+			return err
+		}
+
+		found[val] = struct{}{}
+	}
+
+	return nil
+}
+
+func (p *Provider) Delete(ctx context.Context, domain string) error {
+	zoneID, err := p.getZoneID(ctx)
+	if err != nil {
+		return err
+	}
+
+	name := trimDomain(domain, zoneID.Domain)
+
+	if err := p.setRecords(ctx, zoneID.ID, linodego.RecordTypeA, name, nil); err != nil {
+		return err
+	}
+
+	if err := p.setRecords(ctx, zoneID.ID, linodego.RecordTypeAAAA, name, nil); err != nil {
 		return err
 	}
 
@@ -130,11 +173,68 @@ func (p *Provider) getZoneID(ctx context.Context) (*linodego.Domain, error) {
 		return nil, err
 	}
 
-	for _, zone := range zones {
-		if strings.HasSuffix(p.domain, zone.Domain) {
-			return &zone, nil
+	domain := normalizeDomain(p.domain)
+	var ret *linodego.Domain
+	var retName string
+
+	for idx := range zones {
+		name := normalizeDomain(zones[idx].Domain)
+		if !domainMatchesZone(domain, name) {
+			continue
+		}
+
+		if len(name) > len(retName) {
+			ret = &zones[idx]
+			retName = name
 		}
 	}
 
-	return nil, errors.Errorf("Could not find domain")
+	if ret == nil {
+		return nil, errors.Errorf("Could not find domain")
+	}
+
+	return ret, nil
+}
+
+func trimDomain(arg, zoneID string) string {
+	if normalizeDomain(arg) == normalizeDomain(zoneID) {
+		return ""
+	} else {
+		return strings.TrimSuffix(arg, fmt.Sprintf(".%s", zoneID))
+	}
+}
+
+func splitIPAddresses(ipAddrs []string) ([]string, []string, error) {
+	var v4Addrs []string
+	var v6Addrs []string
+
+	for _, ipAddr := range ipAddrs {
+		zap.S().Debugf("Setting DNS record for the IP:%s", ipAddr)
+		switch {
+		case govalidator.IsIPv4(ipAddr):
+			v4Addrs = append(v4Addrs, ipAddr)
+		case govalidator.IsIPv6(ipAddr):
+			v6Addrs = append(v6Addrs, ipAddr)
+		default:
+			return nil, nil, errors.Errorf("Invalid IP address: %s", ipAddr)
+		}
+	}
+
+	return v4Addrs, v6Addrs, nil
+}
+
+func uniqueValues(vals []string) map[string]struct{} {
+	ret := make(map[string]struct{}, len(vals))
+	for _, val := range vals {
+		ret[val] = struct{}{}
+	}
+	return ret
+}
+
+func normalizeDomain(arg string) string {
+	return strings.ToLower(strings.TrimSuffix(strings.TrimSpace(arg), "."))
+}
+
+func domainMatchesZone(domain, zone string) bool {
+	return domain == zone || strings.HasSuffix(domain, "."+zone)
 }
