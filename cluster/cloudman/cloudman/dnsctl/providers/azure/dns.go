@@ -11,25 +11,27 @@ package azure
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 
-	"github.com/Azure/azure-sdk-for-go/services/dns/mgmt/2018-05-01/dns"
-	"github.com/Azure/go-autorest/autorest"
-	"github.com/Azure/go-autorest/autorest/adal"
-	"github.com/Azure/go-autorest/autorest/azure"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/cloud"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/dns/armdns"
 	"github.com/asaskevich/govalidator"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
-	utils_types "github.com/octelium/octelium/pkg/utils/types"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 
 type Provider struct {
-	zoneC   *dns.ZonesClient
-	recordC *dns.RecordSetsClient
+	zoneC   *armdns.ZonesClient
+	recordC *armdns.RecordSetsClient
 	c       *enterprisev1.DNSProvider
 	domain  string
 }
@@ -38,27 +40,7 @@ func NewProvider(ctx context.Context, octeliumC octeliumc.ClientInterface, c *en
 
 	azureCfg := c.Spec.GetAzure()
 
-	recordC := dns.NewRecordSetsClient(azureCfg.SubscriptionID)
-	zoneC := dns.NewZonesClient(azureCfg.SubscriptionID)
-
-	var azureCloud string
-
-	switch azureCfg.Cloud {
-	case "public", "":
-		azureCloud = "AZUREPUBLICCLOUD"
-	case "china":
-		azureCloud = "AZURECHINACLOUD"
-	case "german":
-		azureCloud = "AZUREGERMANCLOUD"
-	case "usgovernment":
-		azureCloud = "AZUREUSGOVERNMENTCLOUD"
-	}
-
-	env, err := azure.EnvironmentFromName(azureCloud)
-	if err != nil {
-		return nil, err
-	}
-	oauthCfg, err := adal.NewOAuthConfig(env.ActiveDirectoryEndpoint, azureCfg.TenantID)
+	cloudCfg, err := getCloudConfig(azureCfg.Cloud)
 	if err != nil {
 		return nil, err
 	}
@@ -70,15 +52,39 @@ func NewProvider(ctx context.Context, octeliumC octeliumc.ClientInterface, c *en
 		return nil, err
 	}
 
-	token, err := adal.NewServicePrincipalToken(*oauthCfg, azureCfg.ClientID,
-		uenterprisev1.ToSecret(sec).GetValueStr(), env.ResourceManagerEndpoint)
+	clientOpts := azcore.ClientOptions{
+		Cloud: cloudCfg,
+	}
+
+	cred, err := azidentity.NewClientSecretCredential(
+		azureCfg.TenantID,
+		azureCfg.ClientID,
+		uenterprisev1.ToSecret(sec).GetValueStr(),
+		&azidentity.ClientSecretCredentialOptions{
+			ClientOptions: clientOpts,
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
-	recordC.Authorizer = autorest.NewBearerAuthorizer(token)
-	zoneC.Authorizer = autorest.NewBearerAuthorizer(token)
 
-	return &Provider{recordC: &recordC, zoneC: &zoneC, c: c, domain: domain}, nil
+	factory, err := armdns.NewClientFactory(
+		azureCfg.SubscriptionID,
+		cred,
+		&arm.ClientOptions{
+			ClientOptions: clientOpts,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Provider{
+		recordC: factory.NewRecordSetsClient(),
+		zoneC:   factory.NewZonesClient(),
+		c:       c,
+		domain:  domain,
+	}, nil
 }
 
 func (p *Provider) SetCNAME(ctx context.Context, name, val string) error {
@@ -87,7 +93,7 @@ func (p *Provider) SetCNAME(ctx context.Context, name, val string) error {
 		return err
 	}
 
-	if err := p.setRecord(ctx, dns.CNAME, zoneID, name, val); err != nil {
+	if err := p.setCNAME(ctx, zoneID, name, val); err != nil {
 		return err
 	}
 
@@ -100,64 +106,83 @@ func (p *Provider) Set(ctx context.Context, domain string, ipAddrs []string) err
 		return err
 	}
 
-	for _, ipAddr := range ipAddrs {
-		zap.S().Debugf("Setting DNS record for the IP:%s", ipAddr)
-		recordType := func() dns.RecordType {
-			if govalidator.IsIPv4(ipAddr) {
-				return dns.A
-			}
-			return dns.AAAA
-		}()
-		if err := p.setRecord(ctx, recordType, zoneID, domain, ipAddr); err != nil {
-			return err
-		}
+	v4Addrs, v6Addrs, err := splitIPAddresses(ipAddrs)
+	if err != nil {
+		return err
+	}
+
+	if err := p.setAddresses(ctx, armdns.RecordTypeA, zoneID, domain, v4Addrs); err != nil {
+		return err
+	}
+
+	if err := p.setAddresses(ctx, armdns.RecordTypeAAAA, zoneID, domain, v6Addrs); err != nil {
+		return err
 	}
 
 	return nil
 }
 
 func trimDomain(arg, zoneID string) string {
-	if arg == zoneID {
+	arg = strings.TrimSuffix(strings.TrimSpace(arg), ".")
+	zoneID = strings.TrimSuffix(strings.TrimSpace(zoneID), ".")
+
+	if strings.EqualFold(arg, zoneID) {
 		return "@"
-	} else {
-		return strings.TrimSuffix(arg, fmt.Sprintf(".%s", zoneID))
 	}
+
+	suffix := fmt.Sprintf(".%s", zoneID)
+	if len(arg) > len(suffix) && strings.EqualFold(arg[len(arg)-len(suffix):], suffix) {
+		return arg[:len(arg)-len(suffix)]
+	}
+
+	return arg
 }
 
-func (p *Provider) setRecord(ctx context.Context, typ dns.RecordType, zone *dns.Zone, name, val string) error {
+func (p *Provider) setAddresses(ctx context.Context, typ armdns.RecordType, zone *armdns.Zone, name string, vals []string) error {
 
-	rs := dns.RecordSet{
-		RecordSetProperties: &dns.RecordSetProperties{
-			TTL: utils_types.Int64ToPtr(300),
+	if zone.Name == nil {
+		return errors.Errorf("nil zone name")
+	}
+
+	if len(vals) == 0 {
+		return p.deleteRecord(ctx, typ, zone, name)
+	}
+
+	rs := armdns.RecordSet{
+		Properties: &armdns.RecordSetProperties{
+			TTL: to.Ptr[int64](300),
 		},
 	}
 
 	switch typ {
-	case dns.A:
-		records := []dns.ARecord{
-			{
-				Ipv4Address: &val,
-			},
+	case armdns.RecordTypeA:
+		records := make([]*armdns.ARecord, 0, len(vals))
+		for _, val := range vals {
+			records = append(records, &armdns.ARecord{
+				IPv4Address: to.Ptr(val),
+			})
 		}
-
-		rs.RecordSetProperties.ARecords = &records
-	case dns.AAAA:
-		records := []dns.AaaaRecord{
-			{
-				Ipv6Address: &val,
-			},
+		rs.Properties.ARecords = records
+	case armdns.RecordTypeAAAA:
+		records := make([]*armdns.AaaaRecord, 0, len(vals))
+		for _, val := range vals {
+			records = append(records, &armdns.AaaaRecord{
+				IPv6Address: to.Ptr(val),
+			})
 		}
-
-		rs.RecordSetProperties.AaaaRecords = &records
-	case dns.CNAME:
-		rs.RecordSetProperties.CnameRecord = &dns.CnameRecord{
-			Cname: utils_types.StrToPtr(val),
-		}
+		rs.Properties.AaaaRecords = records
+	default:
+		return errors.Errorf("Invalid record type: %s", typ)
 	}
 
 	_, err := p.recordC.CreateOrUpdate(ctx,
-		p.c.Spec.GetAzure().ResourceGroupName, *zone.Name, trimDomain(name, *zone.Name),
-		typ, rs, "", "")
+		p.c.Spec.GetAzure().ResourceGroupName,
+		*zone.Name,
+		trimDomain(name, *zone.Name),
+		typ,
+		rs,
+		nil,
+	)
 	if err != nil {
 		return err
 	}
@@ -165,21 +190,145 @@ func (p *Provider) setRecord(ctx context.Context, typ dns.RecordType, zone *dns.
 	return nil
 }
 
-func (p *Provider) getZoneID(ctx context.Context) (*dns.Zone, error) {
+func (p *Provider) setCNAME(ctx context.Context, zone *armdns.Zone, name, val string) error {
 
-	out, err := p.zoneC.ListByResourceGroup(ctx,
-		p.c.Spec.GetAzure().ResourceGroupName, utils_types.Int32ToPtr(300))
-	if err != nil {
-		return nil, err
+	if zone.Name == nil {
+		return errors.Errorf("nil zone name")
 	}
 
-	zones := out.Values()
+	rs := armdns.RecordSet{
+		Properties: &armdns.RecordSetProperties{
+			TTL: to.Ptr[int64](300),
+			CnameRecord: &armdns.CnameRecord{
+				Cname: to.Ptr(val),
+			},
+		},
+	}
 
-	for _, zone := range zones {
-		if strings.HasSuffix(p.domain, *zone.Name) {
-			return &zone, nil
+	_, err := p.recordC.CreateOrUpdate(ctx,
+		p.c.Spec.GetAzure().ResourceGroupName,
+		*zone.Name,
+		trimDomain(name, *zone.Name),
+		armdns.RecordTypeCNAME,
+		rs,
+		nil,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *Provider) deleteRecord(ctx context.Context, typ armdns.RecordType, zone *armdns.Zone, name string) error {
+
+	_, err := p.recordC.Delete(ctx,
+		p.c.Spec.GetAzure().ResourceGroupName,
+		*zone.Name,
+		trimDomain(name, *zone.Name),
+		typ,
+		nil,
+	)
+	if err != nil && !isNotFound(err) {
+		return err
+	}
+
+	return nil
+}
+
+func (p *Provider) getZoneID(ctx context.Context) (*armdns.Zone, error) {
+
+	pager := p.zoneC.NewListByResourceGroupPager(
+		p.c.Spec.GetAzure().ResourceGroupName,
+		nil,
+	)
+
+	domain := normalizeDomain(p.domain)
+	var ret *armdns.Zone
+	var retName string
+
+	for pager.More() {
+		page, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, zone := range page.Value {
+			if zone == nil || zone.Name == nil {
+				continue
+			}
+
+			name := normalizeDomain(*zone.Name)
+			if !domainMatchesZone(domain, name) {
+				continue
+			}
+
+			if len(name) > len(retName) {
+				ret = zone
+				retName = name
+			}
 		}
 	}
 
-	return nil, errors.Errorf("Could not find zone")
+	if ret == nil {
+		return nil, errors.Errorf("Could not find zone")
+	}
+
+	return ret, nil
+}
+
+func splitIPAddresses(ipAddrs []string) ([]string, []string, error) {
+	var v4Addrs []string
+	var v6Addrs []string
+
+	v4Set := make(map[string]struct{})
+	v6Set := make(map[string]struct{})
+
+	for _, ipAddr := range ipAddrs {
+		zap.S().Debugf("Setting DNS record for the IP:%s", ipAddr)
+		switch {
+		case govalidator.IsIPv4(ipAddr):
+			if _, ok := v4Set[ipAddr]; !ok {
+				v4Set[ipAddr] = struct{}{}
+				v4Addrs = append(v4Addrs, ipAddr)
+			}
+		case govalidator.IsIPv6(ipAddr):
+			if _, ok := v6Set[ipAddr]; !ok {
+				v6Set[ipAddr] = struct{}{}
+				v6Addrs = append(v6Addrs, ipAddr)
+			}
+		default:
+			return nil, nil, errors.Errorf("Invalid IP address: %s", ipAddr)
+		}
+	}
+
+	return v4Addrs, v6Addrs, nil
+}
+
+func isNotFound(err error) bool {
+	var responseErr *azcore.ResponseError
+	return errors.As(err, &responseErr) && responseErr.StatusCode == http.StatusNotFound
+}
+
+func getCloudConfig(name string) (cloud.Configuration, error) {
+	switch name {
+	case "public", "":
+		return cloud.AzurePublic, nil
+	case "china":
+		return cloud.AzureChina, nil
+	case "usgovernment":
+		return cloud.AzureGovernment, nil
+	case "german":
+		return cloud.Configuration{}, errors.Errorf("Azure Germany is no longer supported")
+	default:
+		return cloud.Configuration{}, errors.Errorf("Invalid azure cloud: %s", name)
+	}
+}
+
+func normalizeDomain(arg string) string {
+	return strings.ToLower(strings.TrimSuffix(strings.TrimSpace(arg), "."))
+}
+
+func domainMatchesZone(domain, zone string) bool {
+	return domain == zone || strings.HasSuffix(domain, "."+zone)
 }

@@ -3,9 +3,9 @@ module github.com/octelium/octelium-ee/cluster/cloudman
 go 1.26.4
 
 require (
-	github.com/Azure/azure-sdk-for-go v68.0.0+incompatible
+	github.com/Azure/azure-sdk-for-go v68.0.0+incompatible // indirect
 	github.com/Azure/go-autorest/autorest v0.11.30
-	github.com/Azure/go-autorest/autorest/adal v0.9.23
+	github.com/Azure/go-autorest/autorest/adal v0.9.23 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
 	github.com/aws/aws-sdk-go-v2/config v1.32.16
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.15
@@ -25,6 +25,9 @@ require (
 )
 
 require (
+	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.21.1
+	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.13.1
+	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/dns/armdns v1.2.0
 	github.com/aws/aws-sdk-go-v2 v1.41.6
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000
@@ -38,6 +41,7 @@ require (
 	cloud.google.com/go/auth v0.20.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
 	cloud.google.com/go/compute/metadata v0.9.0 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/internal v1.12.0 // indirect
 	github.com/Azure/go-autorest v14.2.0+incompatible // indirect
 	github.com/Azure/go-autorest/autorest/azure/auth v0.5.13 // indirect
 	github.com/Azure/go-autorest/autorest/azure/cli v0.4.6 // indirect
@@ -45,6 +49,7 @@ require (
 	github.com/Azure/go-autorest/autorest/to v0.4.1 // indirect
 	github.com/Azure/go-autorest/logger v0.2.1 // indirect
 	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
+	github.com/AzureAD/microsoft-authentication-library-for-go v1.6.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/agnivade/levenshtein v1.2.1 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
@@ -84,6 +89,7 @@ require (
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/goccy/go-yaml v1.19.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
+	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
 	github.com/google/cel-go v0.29.2 // indirect
 	github.com/google/gnostic-models v0.7.0 // indirect
 	github.com/google/go-querystring v1.2.0 // indirect
@@ -105,6 +111,7 @@ require (
 	github.com/kaptinlin/jsonpointer v0.4.8 // indirect
 	github.com/kaptinlin/jsonschema v0.6.5 // indirect
 	github.com/kaptinlin/messageformat-go v0.4.7 // indirect
+	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.4 // indirect
 	github.com/lestrrat-go/dsig v1.0.0 // indirect
 	github.com/lestrrat-go/dsig-secp256k1 v1.0.0 // indirect
@@ -126,6 +133,7 @@ require (
 	github.com/oschwald/geoip2-golang/v2 v2.1.0 // indirect
 	github.com/oschwald/maxminddb-golang/v2 v2.1.1 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
+	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20250401214520-65e299d6c5c9 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
