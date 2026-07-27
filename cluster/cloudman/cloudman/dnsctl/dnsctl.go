@@ -17,6 +17,7 @@ import (
 	"github.com/octelium/octelium-ee/cluster/cloudman/cloudman/dnsctl/providers/digitalocean"
 	"github.com/octelium/octelium-ee/cluster/cloudman/cloudman/dnsctl/providers/gcp"
 	"github.com/octelium/octelium-ee/cluster/cloudman/cloudman/dnsctl/providers/linode"
+	"github.com/octelium/octelium-ee/cluster/cloudman/cloudman/dnsctl/providers/ovh"
 	"github.com/octelium/octelium-ee/cluster/cloudman/cloudman/dnsctl/providers/route53"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium/apis/main/corev1"
@@ -143,6 +144,12 @@ func getProvider(ctx context.Context, octeliumC octeliumc.ClientInterface, provi
 			return nil, nil
 		}
 		return gcp.NewProvider(ctx, octeliumC, provider, domain)
+	case *enterprisev1.DNSProvider_Spec_Ovh:
+		if provider.Spec.GetOvh() == nil {
+			zap.S().Warnf("Cluster-config OVH DNS options not set. Nothing to be done")
+			return nil, nil
+		}
+		return ovh.NewProvider(ctx, octeliumC, provider, domain)
 	default:
 		zap.S().Warnf("DNS provider unsupported. Skipping...")
 		return nil, nil
