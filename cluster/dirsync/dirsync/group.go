@@ -123,7 +123,7 @@ func (s *server) handleCreateGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, member := range scimGroup.Members {
-		if err := s.addGroupToUser(ctx, member.Value, group); err != nil {
+		if err := s.addGroupToUser(ctx, member.Value, group, reqCtx.DirectoryProvider); err != nil {
 			zap.L().Warn("Could not addGroupToUser", zap.Error(err))
 		}
 	}
@@ -193,7 +193,7 @@ func (s *server) handleUpdateGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, member := range scimGroup.Members {
-		if err := s.addGroupToUser(ctx, member.Value, group); err != nil {
+		if err := s.addGroupToUser(ctx, member.Value, group, reqCtx.DirectoryProvider); err != nil {
 			zap.L().Warn("Could not addGroupToUser", zap.Error(err))
 		}
 	}
@@ -396,6 +396,7 @@ func (s *server) handleListGroup(w http.ResponseWriter, r *http.Request) {
 func (s *server) handlePatchGroup(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/scim+json")
 	ctx := r.Context()
+	reqCtx := middlewares.GetCtxRequestContext(ctx)
 
 	dpGroup, err := s.getDPGroupFromPath(r)
 	if err != nil {
@@ -484,7 +485,7 @@ func (s *server) handlePatchGroup(w http.ResponseWriter, r *http.Request) {
 						continue
 					}
 
-					if err := s.addGroupToUser(ctx, value, group); err != nil {
+					if err := s.addGroupToUser(ctx, value, group, reqCtx.DirectoryProvider); err != nil {
 						zap.L().Warn("Could not add Group to User",
 							zap.Any("member", mem), zap.String("groupUID", group.Metadata.Uid), zap.Error(err))
 					}
@@ -552,14 +553,22 @@ func (s *server) handlePatchGroup(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (s *server) addGroupToUser(ctx context.Context, userUID string, grp *corev1.Group) error {
+func (s *server) addGroupToUser(ctx context.Context, userUID string, grp *corev1.Group, dp *enterprisev1.DirectoryProvider) error {
+	if !govalidator.IsUUIDv4(userUID) {
+		return grpcutils.InvalidArg("Invalid UID")
+	}
+
 	dpUsr, err := s.octeliumC.EnterpriseC().GetDirectoryProviderUser(ctx, &rmetav1.GetOptions{Uid: userUID})
 	if err != nil {
 		return err
 	}
 
+	if dpUsr.Status.GetDirectoryProviderRef().GetUid() != dp.Metadata.Uid {
+		return grpcutils.NotFound("")
+	}
+
 	usr, err := s.octeliumC.CoreC().GetUser(ctx, &rmetav1.GetOptions{
-		Uid: dpUsr.Status.UserRef.Uid,
+		Uid: dpUsr.Status.GetUserRef().GetUid(),
 	})
 	if err != nil {
 		return err
@@ -677,7 +686,7 @@ func (s *server) getDPGroupFromPath(r *http.Request) (*enterprisev1.DirectoryPro
 		return nil, err
 	}
 
-	if ret.Status.DirectoryProviderRef.Uid != reqCtx.DirectoryProvider.Metadata.Uid {
+	if ret.Status.GetDirectoryProviderRef().GetUid() != reqCtx.DirectoryProvider.Metadata.Uid {
 		return nil, grpcutils.NotFound("")
 	}
 
