@@ -27,6 +27,7 @@ const (
 	pollInterval       = 30 * time.Second
 	minPollingInterval = 5 * time.Minute
 	maxBackoff         = 30 * time.Minute
+	syncStaleAfter     = 30 * time.Minute
 	pollListPageSize   = 200
 )
 
@@ -111,7 +112,10 @@ func (s *Watcher) reconcileOne(ctx context.Context, dp *enterprisev1.DirectoryPr
 	switch syncState(dp) {
 	case enterprisev1.DirectoryProvider_Status_Synchronization_SYNC_REQUESTED,
 		enterprisev1.DirectoryProvider_Status_Synchronization_SYNCING:
-		return
+		started := dp.Status.Synchronization.GetCreatedAt()
+		if started == nil || now.Sub(started.AsTime()) < syncStaleAfter {
+			return
+		}
 	}
 
 	s.mu.Lock()

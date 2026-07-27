@@ -662,7 +662,9 @@ func (s *server) Synchronize(ctx context.Context, dp *enterprisev1.DirectoryProv
 		return err
 	}
 
-	syncErr := s.doSynchronize(ctx, dp)
+	syncCtx, cancel := context.WithTimeout(ctx, 3*time.Minute)
+	defer cancel()
+	syncErr := s.doSynchronize(syncCtx, dp)
 
 	if err := s.markSyncFinished(ctx, dp.Metadata.Uid, syncErr); err != nil {
 		zap.L().Warn("Could not record directoryProvider sync result",
@@ -701,6 +703,9 @@ func (s *server) markSyncFinished(ctx context.Context, dpUID string, syncErr err
 	}
 
 	sync.State = enterprisev1.DirectoryProvider_Status_Synchronization_SUCCESS
+	if syncErr != nil {
+		sync.State = enterprisev1.DirectoryProvider_Status_Synchronization_FAILED
+	}
 	sync.CompletedAt = timestamppb.Now()
 
 	cur.Status.LastSynchronizations = appendLastSync(cur.Status.LastSynchronizations, sync)

@@ -55,7 +55,8 @@ func (c *Controller) OnUpdate(ctx context.Context, new, old *enterprisev1.Direct
 				old.Status.Synchronization == nil ||
 				old.Status.Synchronization.State != enterprisev1.DirectoryProvider_Status_Synchronization_SYNC_REQUESTED) {
 			if err := c.srvI.Synchronize(ctx, new); err != nil {
-				zap.L().Warn("Could not synchronize directoryProvider", zap.Any("dp", new))
+				zap.L().Warn("Could not synchronize directoryProvider",
+					zap.String("directoryProvider", new.Metadata.Name), zap.Error(err))
 			}
 		}
 	}
