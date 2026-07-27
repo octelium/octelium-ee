@@ -15,6 +15,7 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/digitalocean/godo"
+	"github.com/octelium/octelium-ee/cluster/cloudman/cloudman/cloudmanutils"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
@@ -156,7 +157,7 @@ func (p *Provider) getZoneID(ctx context.Context) (string, error) {
 	}
 
 	for _, zone := range zones {
-		if strings.HasSuffix(p.domain, zone.Name) {
+		if cloudmanutils.IsSameClusterDomain(p.domain, zone.Name) {
 			return zone.Name, nil
 		}
 	}

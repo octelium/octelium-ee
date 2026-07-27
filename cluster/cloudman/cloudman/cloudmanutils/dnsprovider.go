@@ -10,6 +10,7 @@ package cloudmanutils
 
 import (
 	"context"
+	"strings"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
@@ -23,4 +24,8 @@ func GetDefaultDNSProvider(ctx context.Context, octeliumC octeliumc.ClientInterf
 func GetDefaultCertificateIssuer(ctx context.Context, octeliumC octeliumc.ClientInterface) (*enterprisev1.CertificateIssuer, error) {
 
 	return octeliumC.EnterpriseC().GetCertificateIssuer(ctx, &rmetav1.GetOptions{Name: "default"})
+}
+
+func IsSameClusterDomain(cur, clusterDomain string) bool {
+	return cur == clusterDomain || strings.HasSuffix(cur, "."+clusterDomain)
 }
