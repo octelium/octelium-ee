@@ -24,6 +24,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuredataexplorerexporter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuremonitorexporter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/clickhouseexporter"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/datadogexporter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/elasticsearchexporter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/kafkaexporter"
@@ -107,7 +108,7 @@ func (s *Server) doRun(ctx context.Context) error {
 		otlphttpexporter.NewFactory(),
 
 		elasticsearchexporter.NewFactory(),
-		// datadogexporter.NewFactory(),
+		datadogexporter.NewFactory(),
 		prometheusremotewriteexporter.NewFactory(),
 		clickhouseexporter.NewFactory(),
 		// lokiexporter.NewFactory(),

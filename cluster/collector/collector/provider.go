@@ -1039,7 +1039,10 @@ func (c *provider) getConfig(ctx context.Context) (map[string]any, error) {
 		pipelinesMap[fmt.Sprintf("%s/%s", pipelineType, pipeline.Name)] = pipelineMap
 	}
 
-	zap.L().Debug("Successfully obtained provider config", zap.Any("cfg", ret))
+	zap.L().Debug("Successfully obtained provider config",
+		zap.Int("exporters", len(exporterInfoList)),
+		zap.Int("pipelines", len(pipelinesMap)),
+	)
 
 	return ret, nil
 }
