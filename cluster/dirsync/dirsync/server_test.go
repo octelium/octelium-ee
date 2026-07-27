@@ -12,7 +12,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net"
 	"net/http"
 	"testing"
 	"time"
@@ -20,7 +19,6 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/octelium/octelium-ee/cluster/apiserver/apiserver/enterprise"
 	otests "github.com/octelium/octelium-ee/cluster/common/tests"
-	"github.com/octelium/octelium-ee/cluster/dirsync/dirsync/middlewares"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
@@ -52,9 +50,6 @@ func TestServer(t *testing.T) {
 		Addr:         fmt.Sprintf("localhost:%d", tests.GetPort()),
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
-		ConnContext: func(ctx context.Context, c net.Conn) context.Context {
-			return middlewares.SetCtxRequestContext(ctx, &middlewares.RequestContext{})
-		},
 	}
 	go func() {
 		httpSrv.ListenAndServe()

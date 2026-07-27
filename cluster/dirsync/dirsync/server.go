@@ -12,7 +12,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -92,10 +91,6 @@ func (s *server) run(ctx context.Context) error {
 		Addr:         vutils.ManagedServiceAddr,
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
-		ConnContext: func(ctx context.Context, c net.Conn) context.Context {
-
-			return middlewares.SetCtxRequestContext(ctx, &middlewares.RequestContext{})
-		},
 	}
 
 	go func() {
@@ -608,6 +603,13 @@ func (s *server) serveGroup(w http.ResponseWriter, r *http.Request, dp *enterpri
 
 func (s *server) getHTTPHandler(ctx context.Context) (http.Handler, error) {
 	chain := httputils.New()
+
+	chain = chain.Append(func(next http.Handler) (http.Handler, error) {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := context.WithValue(r.Context(), middlewares.CtxRequestContext, &middlewares.RequestContext{})
+			next.ServeHTTP(w, r.WithContext(ctx))
+		}), nil
+	})
 
 	chain = chain.Append(func(next http.Handler) (http.Handler, error) {
 		return auth.New(ctx, next, s.octeliumC)
