@@ -593,12 +593,12 @@ func IssueCertificate(ctx context.Context, octeliumC octeliumc.ClientInterface, 
 
 		acmeC, err := NewACMEClient(ctx, octeliumC, crt)
 		if err != nil {
-			zap.L().Error("Could not create ACME client", zap.Error(err), zap.Any("crt", crt))
+			zap.L().Warn("Could not create ACME client", zap.Error(err), zap.Any("crt", crt))
 			return
 		}
 
 		if err := acmeC.IssueCertificate(ctx); err != nil {
-			zap.L().Error("Could not issue ACME certificate", zap.Error(err), zap.Any("crt", crt))
+			zap.L().Warn("Could not issue ACME certificate", zap.Error(err), zap.Any("crt", crt))
 		} else {
 			zap.L().Info("Successfully issued ACME certificate", zap.Any("crt", crt))
 		}

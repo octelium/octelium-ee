@@ -50,7 +50,7 @@ func (w *Watcher) doRunCertificates(ctx context.Context) error {
 
 	for _, crt := range crtList.Items {
 		if err := w.doCheckAndIssueCrt(ctx, crt); err != nil {
-			zap.L().Error("Could not issue Certificate", zap.Any("crt", crt), zap.Error(err))
+			zap.L().Warn("Could not issue Certificate", zap.Any("crt", crt), zap.Error(err))
 		}
 	}
 
