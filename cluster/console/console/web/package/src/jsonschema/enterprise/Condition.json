@@ -246,26 +246,6 @@
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPathPrefix",
                     "additionalProperties": false
                 },
-                "apiServer": {
-                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.APIServer",
-                    "additionalProperties": false
-                },
-                "apiServerCore": {
-                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.APIServerCore",
-                    "additionalProperties": false
-                },
-                "apiServerUser": {
-                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.APIServerUser",
-                    "additionalProperties": false
-                },
-                "apiServerEnterprise": {
-                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise",
-                    "additionalProperties": false
-                },
-                "apiServerCordium": {
-                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium",
-                    "additionalProperties": false
-                },
                 "requestHTTPMethod": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod",
                     "additionalProperties": false
@@ -284,6 +264,38 @@
                 },
                 "requestIPInRange": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestIPInRange",
+                    "additionalProperties": false
+                },
+                "apiServerReadOnlyMethods": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.APIServerReadOnlyMethods",
+                    "additionalProperties": false
+                },
+                "apiServerMethods": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.APIServerMethods",
+                    "additionalProperties": false
+                },
+                "apiServerServices": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.APIServerServices",
+                    "additionalProperties": false
+                },
+                "apiServerCore": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.APIServerCore",
+                    "additionalProperties": false
+                },
+                "apiServerUser": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.APIServerUser",
+                    "additionalProperties": false
+                },
+                "apiServerEnterprise": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise",
+                    "additionalProperties": false
+                },
+                "apiServerCordium": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium",
+                    "additionalProperties": false
+                },
+                "apiServerAccess": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess",
                     "additionalProperties": false
                 }
             },
@@ -437,7 +449,42 @@
                                     },
                                     {
                                         "required": [
-                                            "apiServer"
+                                            "requestHTTPMethod"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestHTTPHasHeader"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestHTTPHeaderValue"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestIP"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestIPInRange"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "apiServerReadOnlyMethods"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "apiServerMethods"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "apiServerServices"
                                         ]
                                     },
                                     {
@@ -462,27 +509,7 @@
                                     },
                                     {
                                         "required": [
-                                            "requestHTTPMethod"
-                                        ]
-                                    },
-                                    {
-                                        "required": [
-                                            "requestHTTPHasHeader"
-                                        ]
-                                    },
-                                    {
-                                        "required": [
-                                            "requestHTTPHeaderValue"
-                                        ]
-                                    },
-                                    {
-                                        "required": [
-                                            "requestIP"
-                                        ]
-                                    },
-                                    {
-                                        "required": [
-                                            "requestIPInRange"
+                                            "apiServerAccess"
                                         ]
                                     }
                                 ]
@@ -630,7 +657,42 @@
                         },
                         {
                             "required": [
-                                "apiServer"
+                                "requestHTTPMethod"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestHTTPHasHeader"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestHTTPHeaderValue"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestIP"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestIPInRange"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "apiServerReadOnlyMethods"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "apiServerMethods"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "apiServerServices"
                             ]
                         },
                         {
@@ -655,27 +717,7 @@
                         },
                         {
                             "required": [
-                                "requestHTTPMethod"
-                            ]
-                        },
-                        {
-                            "required": [
-                                "requestHTTPHasHeader"
-                            ]
-                        },
-                        {
-                            "required": [
-                                "requestHTTPHeaderValue"
-                            ]
-                        },
-                        {
-                            "required": [
-                                "requestIP"
-                            ]
-                        },
-                        {
-                            "required": [
-                                "requestIPInRange"
+                                "apiServerAccess"
                             ]
                         }
                     ]
@@ -683,20 +725,35 @@
             ],
             "title": "Expression"
         },
-        "octelium.api.main.enterprise.v1.Condition.Expression.APIServer": {
+        "octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess": {
             "properties": {
-                "isAPIServer": {
-                    "type": "boolean"
+                "service": {
+                    "enum": [
+                        "SERVICE_UNSET",
+                        "ANY",
+                        "MAIN",
+                        "USER",
+                        "REVIEWER"
+                    ],
+                    "type": "string",
+                    "title": "Service"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "API Server"
+            "title": "API Server Access"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium": {
             "properties": {
-                "isAPIServerCordium": {
-                    "type": "boolean"
+                "service": {
+                    "enum": [
+                        "SERVICE_UNSET",
+                        "MAIN",
+                        "MANAGEMENT",
+                        "WORKSPACE"
+                    ],
+                    "type": "string",
+                    "title": "Service"
                 }
             },
             "additionalProperties": false,
@@ -705,7 +762,7 @@
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.APIServerCore": {
             "properties": {
-                "isAPIServerCore": {
+                "readOnlyMethods": {
                     "type": "boolean"
                 }
             },
@@ -715,17 +772,56 @@
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise": {
             "properties": {
-                "isAPIServerEnterprise": {
-                    "type": "boolean"
+                "service": {
+                    "enum": [
+                        "SERVICE_UNSET",
+                        "ANY",
+                        "MAIN",
+                        "CLUSTER",
+                        "POLICY_PORTAL"
+                    ],
+                    "type": "string",
+                    "title": "Service"
                 }
             },
             "additionalProperties": false,
             "type": "object",
             "title": "API Server Enterprise"
         },
+        "octelium.api.main.enterprise.v1.Condition.Expression.APIServerMethods": {
+            "properties": {
+                "methods": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "API Server Methods"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.APIServerReadOnlyMethods": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "API Server Read Only Methods"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.APIServerServices": {
+            "properties": {
+                "services": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "API Server Services"
+        },
         "octelium.api.main.enterprise.v1.Condition.Expression.APIServerUser": {
             "properties": {
-                "isAPIServerUser": {
+                "readOnlyMethods": {
                     "type": "boolean"
                 }
             },
@@ -896,11 +992,6 @@
             "title": "Service Mode"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.ServicePublic": {
-            "properties": {
-                "isPublic": {
-                    "type": "boolean"
-                }
-            },
             "additionalProperties": false,
             "type": "object",
             "title": "Service Public"
@@ -944,51 +1035,26 @@
             "title": "Session Authentication Cred Authenticator AAGUID"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOAttestationVerified": {
-            "properties": {
-                "isAttestationVerified": {
-                    "type": "boolean"
-                }
-            },
             "additionalProperties": false,
             "type": "object",
             "title": "Session Authentication Cred Authenticator FIDO Attestation Verified"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOHardware": {
-            "properties": {
-                "isHardware": {
-                    "type": "boolean"
-                }
-            },
             "additionalProperties": false,
             "type": "object",
             "title": "Session Authentication Cred Authenticator FIDO Hardware"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOPasskey": {
-            "properties": {
-                "isPasskey": {
-                    "type": "boolean"
-                }
-            },
             "additionalProperties": false,
             "type": "object",
             "title": "Session Authentication Cred Authenticator FIDO Passkey"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserPresent": {
-            "properties": {
-                "isUserPresent": {
-                    "type": "boolean"
-                }
-            },
             "additionalProperties": false,
             "type": "object",
             "title": "Session Authentication Cred Authenticator FIDO User Present"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserVerified": {
-            "properties": {
-                "isUserVerified": {
-                    "type": "boolean"
-                }
-            },
             "additionalProperties": false,
             "type": "object",
             "title": "Session Authentication Cred Authenticator FIDO User Verified"
@@ -1063,11 +1129,6 @@
             "title": "Session Authentication Type"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.SessionBrowser": {
-            "properties": {
-                "isBrowser": {
-                    "type": "boolean"
-                }
-            },
             "additionalProperties": false,
             "type": "object",
             "title": "Session Browser"
@@ -1153,8 +1214,8 @@
         },
         "octelium.api.main.enterprise.v1.Condition.Not": {
             "properties": {
-                "condition": {
-                    "$ref": "#/definitions/Condition",
+                "expression": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression",
                     "additionalProperties": false
                 }
             },

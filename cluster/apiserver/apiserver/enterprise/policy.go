@@ -11,7 +11,6 @@ package enterprise
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"net/netip"
 	"strings"
 	"time"
@@ -99,10 +98,10 @@ func (s *Server) validateConditionDepth(ctx context.Context, c *enterprisev1.Con
 
 	case *enterprisev1.Condition_Not_:
 		cond := c.GetNot()
-		if cond == nil || cond.Condition == nil {
-			return grpcutils.InvalidArg("NOT condition must contain a child condition")
+		if cond == nil || cond.Expression == nil {
+			return grpcutils.InvalidArg("NOT condition must contain an expression")
 		}
-		if err := s.validateConditionDepth(ctx, cond.Condition, depth+1); err != nil {
+		if err := s.validateExpression(ctx, cond.Expression); err != nil {
 			return err
 		}
 
@@ -361,11 +360,75 @@ func (s *Server) validateExpression(ctx context.Context, p *enterprisev1.Conditi
 			return grpcutils.InvalidArg("Invalid IP range")
 		}
 
-	case *enterprisev1.Condition_Expression_ApiServer,
-		*enterprisev1.Condition_Expression_ApiServerCore,
-		*enterprisev1.Condition_Expression_ApiServerUser,
-		*enterprisev1.Condition_Expression_ApiServerEnterprise,
-		*enterprisev1.Condition_Expression_ApiServerCordium:
+	case *enterprisev1.Condition_Expression_ApiServerReadOnlyMethods:
+		if p.GetApiServerReadOnlyMethods() == nil {
+			return grpcutils.InvalidArg("Nil API server read-only methods expression")
+		}
+
+	case *enterprisev1.Condition_Expression_ApiServerMethods:
+		expr := p.GetApiServerMethods()
+		if expr == nil {
+			return grpcutils.InvalidArg("Nil API server methods expression")
+		}
+		if err := validateAPIServerStringList(expr.GetMethods(), "API server methods"); err != nil {
+			return err
+		}
+
+	case *enterprisev1.Condition_Expression_ApiServerServices:
+		expr := p.GetApiServerServices()
+		if expr == nil {
+			return grpcutils.InvalidArg("Nil API server services expression")
+		}
+		if err := validateAPIServerStringList(expr.GetServices(), "API server services"); err != nil {
+			return err
+		}
+
+	case *enterprisev1.Condition_Expression_ApiServerCore:
+		if p.GetApiServerCore() == nil {
+			return grpcutils.InvalidArg("Nil API server core expression")
+		}
+
+	case *enterprisev1.Condition_Expression_ApiServerUser:
+		if p.GetApiServerUser() == nil {
+			return grpcutils.InvalidArg("Nil API server user expression")
+		}
+
+	case *enterprisev1.Condition_Expression_ApiServerEnterprise:
+		expr := p.GetApiServerEnterprise()
+		if expr == nil {
+			return grpcutils.InvalidArg("Nil API server enterprise expression")
+		}
+		if expr.Service == 0 {
+			return grpcutils.InvalidArg("API server enterprise service must be set")
+		}
+		if expr.Service < 0 || expr.Service > 4 {
+			return grpcutils.InvalidArg("Invalid API server enterprise service")
+		}
+
+	case *enterprisev1.Condition_Expression_ApiServerCordium:
+		expr := p.GetApiServerCordium()
+		if expr == nil {
+			return grpcutils.InvalidArg("Nil API server cordium expression")
+		}
+		if expr.Service == 0 {
+			return grpcutils.InvalidArg("API server cordium service must be set")
+		}
+		if expr.Service < 0 || expr.Service > 3 {
+			return grpcutils.InvalidArg("Invalid API server cordium service")
+		}
+
+	case *enterprisev1.Condition_Expression_ApiServerAccess:
+		expr := p.GetApiServerAccess()
+		if expr == nil {
+			return grpcutils.InvalidArg("Nil API server access expression")
+		}
+		if expr.Service == 0 {
+			return grpcutils.InvalidArg("API server access service must be set")
+		}
+		if expr.Service < 0 || expr.Service > 4 {
+			return grpcutils.InvalidArg("Invalid API server access service")
+		}
+
 	default:
 		return grpcutils.InvalidArg("Unsupported Expression type")
 	}
@@ -427,16 +490,10 @@ func (s *Server) toCoreCondition(in *enterprisev1.Condition) *corev1.Condition {
 		}
 
 	case *enterprisev1.Condition_Not_:
-
-		switch in.GetNot().Condition.Type.(type) {
-		case *enterprisev1.Condition_Expression_:
-			return &corev1.Condition{
-				Type: &corev1.Condition_Not{
-					Not: s.getExpression(in.GetNot().GetCondition().GetExpression()),
-				},
-			}
-		default:
-			return nil
+		return &corev1.Condition{
+			Type: &corev1.Condition_Not{
+				Not: s.getExpression(in.GetNot().GetExpression()),
+			},
 		}
 
 	default:
@@ -458,8 +515,12 @@ func (s *Server) getExpression(in *enterprisev1.Condition_Expression) string {
 	}
 
 	isAPIServer := `ctx.service.status.namespaceRef.name == "octelium-api" && ctx.service.spec.mode == "GRPC"`
-	isAPServerWithAPI := func(arg string) string {
-		return fmt.Sprintf(`ctx.request.grpc.package == %s`, celString(fmt.Sprintf("octelium.api.main.%s.v1", arg)))
+	apiServerReadOnlyMethods := `["Get", "List"].exists(x, ctx.request.grpc.method.startsWith(x))`
+	isAPIServerWithAPI := func(arg string) string {
+		return andCEL(isAPIServer, fmt.Sprintf(`ctx.request.grpc.package == %s`, celString(fmt.Sprintf("octelium.api.main.%s.v1", arg))))
+	}
+	isAPIServerWithService := func(arg string) string {
+		return fmt.Sprintf(`ctx.request.grpc.service == %s`, celString(arg))
 	}
 
 	switch in.Type.(type) {
@@ -488,10 +549,7 @@ func (s *Server) getExpression(in *enterprisev1.Condition_Expression) string {
 		return fmt.Sprintf(`ctx.device.status.osType == %s`, celString(in.GetDeviceOSType().OsType.String()))
 
 	case *enterprisev1.Condition_Expression_ServicePublic_:
-		if in.GetServicePublic().IsPublic {
-			return `ctx.service.spec.isPublic`
-		}
-		return `!ctx.service.spec.isPublic`
+		return `ctx.service.spec.isPublic`
 
 	case *enterprisev1.Condition_Expression_SessionAuthenticationAAL_:
 		return fmt.Sprintf(`ctx.session.status.authentication.info.aal == %s`,
@@ -512,10 +570,7 @@ func (s *Server) getExpression(in *enterprisev1.Condition_Expression) string {
 			celString(in.GetSessionAuthenticationType().Type.String()))
 
 	case *enterprisev1.Condition_Expression_SessionBrowser_:
-		if in.GetSessionBrowser().IsBrowser {
-			return `ctx.session.status.isBrowser`
-		}
-		return `!ctx.session.status.isBrowser`
+		return `ctx.session.status.isBrowser`
 
 	case *enterprisev1.Condition_Expression_SessionType_:
 		return fmt.Sprintf(`ctx.session.status.type == %s`,
@@ -530,34 +585,19 @@ func (s *Server) getExpression(in *enterprisev1.Condition_Expression) string {
 			celString(in.GetSessionAuthenticationCredAuthenticatorAAGUID().Aaguid))
 
 	case *enterprisev1.Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOPasskey_:
-		if in.GetSessionAuthenticationCredAuthenticatorFIDOPasskey().IsPasskey {
-			return `ctx.session.status.authentication.info.authenticator.info.fido.isPasskey`
-		}
-		return `!ctx.session.status.authentication.info.authenticator.info.fido.isPasskey`
+		return `ctx.session.status.authentication.info.authenticator.info.fido.isPasskey`
 
 	case *enterprisev1.Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOAttestationVerified_:
-		if in.GetSessionAuthenticationCredAuthenticatorFIDOAttestationVerified().IsAttestationVerified {
-			return `ctx.session.status.authentication.info.authenticator.info.fido.isAttestationVerified`
-		}
-		return `!ctx.session.status.authentication.info.authenticator.info.fido.isAttestationVerified`
+		return `ctx.session.status.authentication.info.authenticator.info.fido.isAttestationVerified`
 
 	case *enterprisev1.Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOHardware_:
-		if in.GetSessionAuthenticationCredAuthenticatorFIDOHardware().IsHardware {
-			return `ctx.session.status.authentication.info.authenticator.info.fido.isHardware`
-		}
-		return `!ctx.session.status.authentication.info.authenticator.info.fido.isHardware`
+		return `ctx.session.status.authentication.info.authenticator.info.fido.isHardware`
 
 	case *enterprisev1.Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserPresent_:
-		if in.GetSessionAuthenticationCredAuthenticatorFIDOUserPresent().IsUserPresent {
-			return `ctx.session.status.authentication.info.authenticator.info.fido.userPresent`
-		}
-		return `!ctx.session.status.authentication.info.authenticator.info.fido.userPresent`
+		return `ctx.session.status.authentication.info.authenticator.info.fido.userPresent`
 
 	case *enterprisev1.Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserVerified_:
-		if in.GetSessionAuthenticationCredAuthenticatorFIDOUserVerified().IsUserVerified {
-			return `ctx.session.status.authentication.info.authenticator.info.fido.userVerified`
-		}
-		return `!ctx.session.status.authentication.info.authenticator.info.fido.userVerified`
+		return `ctx.session.status.authentication.info.authenticator.info.fido.userVerified`
 
 	case *enterprisev1.Condition_Expression_SessionAuthenticationCredentialType_:
 		return fmt.Sprintf(`ctx.session.status.authentication.info.credential.type == %s`,
@@ -581,28 +621,13 @@ func (s *Server) getExpression(in *enterprisev1.Condition_Expression) string {
 	case *enterprisev1.Condition_Expression_RequestHTTPPathPrefix_:
 		return fmt.Sprintf(`ctx.request.http.path.startsWith(%s)`, celString(in.GetRequestHTTPPathPrefix().Value))
 
-	case *enterprisev1.Condition_Expression_ApiServer:
-		return isAPIServer
-
-	case *enterprisev1.Condition_Expression_ApiServerCore:
-		return fmt.Sprintf("%s && %s", isAPIServer, isAPServerWithAPI("core"))
-
-	case *enterprisev1.Condition_Expression_ApiServerUser:
-		return fmt.Sprintf("%s && %s", isAPIServer, isAPServerWithAPI("user"))
-
-	case *enterprisev1.Condition_Expression_ApiServerEnterprise:
-		return fmt.Sprintf("%s && %s", isAPIServer, isAPServerWithAPI("enterprise"))
-
-	case *enterprisev1.Condition_Expression_ApiServerCordium:
-		return fmt.Sprintf("%s && %s", isAPIServer, isAPServerWithAPI("cordium"))
-
 	case *enterprisev1.Condition_Expression_RequestHTTPHasHeader_:
 		return fmt.Sprintf(`%s in ctx.request.http.headers`,
 			celString(strings.ToLower(in.GetRequestHTTPHasHeader().Value)))
 
 	case *enterprisev1.Condition_Expression_RequestHTTPHeaderValue_:
 		return fmt.Sprintf(`ctx.request.http.headers[%s] == %s`,
-			celString(http.CanonicalHeaderKey(in.GetRequestHTTPHeaderValue().Header)),
+			celString(strings.ToLower(in.GetRequestHTTPHeaderValue().Header)),
 			celString(in.GetRequestHTTPHeaderValue().Value))
 
 	case *enterprisev1.Condition_Expression_RequestHTTPMethod_:
@@ -614,6 +639,74 @@ func (s *Server) getExpression(in *enterprisev1.Condition_Expression) string {
 
 	case *enterprisev1.Condition_Expression_RequestIPInRange_:
 		return fmt.Sprintf(`net.isIPInRange(ctx.request.ip, %s)`, celString(in.GetRequestIPInRange().Value))
+
+	case *enterprisev1.Condition_Expression_ApiServerReadOnlyMethods:
+		return andCEL(isAPIServer, apiServerReadOnlyMethods)
+
+	case *enterprisev1.Condition_Expression_ApiServerMethods:
+		return andCEL(isAPIServer,
+			fmt.Sprintf(`ctx.request.grpc.method in %s`, celStringList(in.GetApiServerMethods().GetMethods())))
+
+	case *enterprisev1.Condition_Expression_ApiServerServices:
+		return andCEL(isAPIServer,
+			fmt.Sprintf(`ctx.request.grpc.service in %s`, celStringList(in.GetApiServerServices().GetServices())))
+
+	case *enterprisev1.Condition_Expression_ApiServerCore:
+		ret := isAPIServerWithAPI("core")
+		if in.GetApiServerCore().GetReadOnlyMethods() {
+			return andCEL(ret, apiServerReadOnlyMethods)
+		}
+		return ret
+
+	case *enterprisev1.Condition_Expression_ApiServerUser:
+		ret := isAPIServerWithAPI("user")
+		if in.GetApiServerUser().GetReadOnlyMethods() {
+			return andCEL(ret, apiServerReadOnlyMethods)
+		}
+		return ret
+
+	case *enterprisev1.Condition_Expression_ApiServerEnterprise:
+		ret := isAPIServerWithAPI("enterprise")
+		switch int32(in.GetApiServerEnterprise().Service) {
+		case 1:
+			return ret
+		case 2:
+			return andCEL(ret, isAPIServerWithService("MainService"))
+		case 3:
+			return andCEL(ret, isAPIServerWithService("ClusterService"))
+		case 4:
+			return andCEL(ret, isAPIServerWithService("PolicyPortalService"))
+		default:
+			return "false"
+		}
+
+	case *enterprisev1.Condition_Expression_ApiServerCordium:
+		ret := isAPIServerWithAPI("cordium")
+		switch int32(in.GetApiServerCordium().Service) {
+		case 1:
+			return andCEL(ret, isAPIServerWithService("MainService"))
+		case 2:
+			return andCEL(ret, isAPIServerWithService("ManagementService"))
+		case 3:
+			return andCEL(ret, isAPIServerWithService("WorkspaceService"))
+		default:
+			return "false"
+		}
+
+	case *enterprisev1.Condition_Expression_ApiServerAccess:
+		ret := isAPIServerWithAPI("access")
+		switch int32(in.GetApiServerAccess().Service) {
+		case 1:
+			return ret
+		case 2:
+			return andCEL(ret, isAPIServerWithService("MainService"))
+		case 3:
+			return andCEL(ret, isAPIServerWithService("UserService"))
+		case 4:
+			return andCEL(ret, isAPIServerWithService("ReviewerService"))
+		default:
+			return "false"
+		}
 
 	default:
 		return ""
@@ -698,6 +791,34 @@ func celString(v string) string {
 	return fmt.Sprintf("%q", v)
 }
 
+func celStringList(items []string) string {
+	ret := make([]string, 0, len(items))
+	for _, item := range items {
+		ret = append(ret, celString(item))
+	}
+	return fmt.Sprintf("[%s]", strings.Join(ret, ", "))
+}
+
+func andCEL(items ...string) string {
+	if len(items) == 0 {
+		return "true"
+	}
+
+	ret := make([]string, 0, len(items))
+	for _, item := range items {
+		if item == "" {
+			continue
+		}
+		ret = append(ret, fmt.Sprintf("(%s)", item))
+	}
+
+	if len(ret) == 0 {
+		return "true"
+	}
+
+	return strings.Join(ret, " && ")
+}
+
 func validateBoundedString(v string, required bool, field string) error {
 	if v == "" {
 		if required {
@@ -736,6 +857,53 @@ func validateHTTPHeaderName(v string) error {
 
 	if !isHTTPToken(v) {
 		return grpcutils.InvalidArg("Invalid HTTP header name")
+	}
+
+	return nil
+}
+
+func validateAPIServerStringList(items []string, field string) error {
+	if len(items) == 0 {
+		return grpcutils.InvalidArg("%s must contain at least one value", field)
+	}
+
+	if len(items) > maxConditionChildren {
+		return grpcutils.InvalidArg("%s has too many values", field)
+	}
+
+	seen := map[string]struct{}{}
+	for _, item := range items {
+		if err := validateAPIServerString(item, field); err != nil {
+			return err
+		}
+
+		if _, ok := seen[item]; ok {
+			return grpcutils.InvalidArg("Duplicate %s value: %s", field, item)
+		}
+		seen[item] = struct{}{}
+	}
+
+	return nil
+}
+
+func validateAPIServerString(v string, field string) error {
+	if err := validateBoundedString(v, true, field); err != nil {
+		return err
+	}
+
+	for _, r := range v {
+		if r > 127 {
+			return grpcutils.InvalidArg("%s contains invalid characters", field)
+		}
+
+		switch {
+		case r >= 'a' && r <= 'z':
+		case r >= 'A' && r <= 'Z':
+		case r >= '0' && r <= '9':
+		case r == '_' || r == '.' || r == '-':
+		default:
+			return grpcutils.InvalidArg("%s contains invalid characters", field)
+		}
 	}
 
 	return nil

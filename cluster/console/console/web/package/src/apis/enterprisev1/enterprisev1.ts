@@ -5359,9 +5359,9 @@ export interface Condition_None {
  */
 export interface Condition_Not {
     /**
-     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition condition = 1
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression expression = 1
      */
-    condition?: Condition;
+    expression?: Condition_Expression;
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression
@@ -5539,65 +5539,83 @@ export interface Condition_Expression {
          */
         requestHTTPPathPrefix: Condition_Expression_RequestHTTPPathPrefix;
     } | {
-        oneofKind: "apiServer";
-        /**
-         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.APIServer apiServer = 29
-         */
-        apiServer: Condition_Expression_APIServer;
-    } | {
-        oneofKind: "apiServerCore";
-        /**
-         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.APIServerCore apiServerCore = 30
-         */
-        apiServerCore: Condition_Expression_APIServerCore;
-    } | {
-        oneofKind: "apiServerUser";
-        /**
-         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.APIServerUser apiServerUser = 31
-         */
-        apiServerUser: Condition_Expression_APIServerUser;
-    } | {
-        oneofKind: "apiServerEnterprise";
-        /**
-         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise apiServerEnterprise = 32
-         */
-        apiServerEnterprise: Condition_Expression_APIServerEnterprise;
-    } | {
-        oneofKind: "apiServerCordium";
-        /**
-         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium apiServerCordium = 33
-         */
-        apiServerCordium: Condition_Expression_APIServerCordium;
-    } | {
         oneofKind: "requestHTTPMethod";
         /**
-         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod requestHTTPMethod = 34
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod requestHTTPMethod = 29
          */
         requestHTTPMethod: Condition_Expression_RequestHTTPMethod;
     } | {
         oneofKind: "requestHTTPHasHeader";
         /**
-         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader requestHTTPHasHeader = 35
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader requestHTTPHasHeader = 30
          */
         requestHTTPHasHeader: Condition_Expression_RequestHTTPHasHeader;
     } | {
         oneofKind: "requestHTTPHeaderValue";
         /**
-         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue requestHTTPHeaderValue = 36
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue requestHTTPHeaderValue = 31
          */
         requestHTTPHeaderValue: Condition_Expression_RequestHTTPHeaderValue;
     } | {
         oneofKind: "requestIP";
         /**
-         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestIP requestIP = 37
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestIP requestIP = 32
          */
         requestIP: Condition_Expression_RequestIP;
     } | {
         oneofKind: "requestIPInRange";
         /**
-         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestIPInRange requestIPInRange = 38
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestIPInRange requestIPInRange = 33
          */
         requestIPInRange: Condition_Expression_RequestIPInRange;
+    } | {
+        oneofKind: "apiServerReadOnlyMethods";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.APIServerReadOnlyMethods apiServerReadOnlyMethods = 34
+         */
+        apiServerReadOnlyMethods: Condition_Expression_APIServerReadOnlyMethods;
+    } | {
+        oneofKind: "apiServerMethods";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.APIServerMethods apiServerMethods = 35
+         */
+        apiServerMethods: Condition_Expression_APIServerMethods;
+    } | {
+        oneofKind: "apiServerServices";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.APIServerServices apiServerServices = 36
+         */
+        apiServerServices: Condition_Expression_APIServerServices;
+    } | {
+        oneofKind: "apiServerCore";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.APIServerCore apiServerCore = 37
+         */
+        apiServerCore: Condition_Expression_APIServerCore;
+    } | {
+        oneofKind: "apiServerUser";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.APIServerUser apiServerUser = 38
+         */
+        apiServerUser: Condition_Expression_APIServerUser;
+    } | {
+        oneofKind: "apiServerEnterprise";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise apiServerEnterprise = 39
+         */
+        apiServerEnterprise: Condition_Expression_APIServerEnterprise;
+    } | {
+        oneofKind: "apiServerCordium";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium apiServerCordium = 40
+         */
+        apiServerCordium: Condition_Expression_APIServerCordium;
+    } | {
+        oneofKind: "apiServerAccess";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess apiServerAccess = 41
+         */
+        apiServerAccess: Condition_Expression_APIServerAccess;
     } | {
         oneofKind: undefined;
     };
@@ -5687,10 +5705,6 @@ export interface Condition_Expression_ServiceMode {
  * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.ServicePublic
  */
 export interface Condition_Expression_ServicePublic {
-    /**
-     * @generated from protobuf field: bool isPublic = 1
-     */
-    isPublic: boolean;
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.SessionType
@@ -5741,46 +5755,26 @@ export interface Condition_Expression_SessionAuthenticationCredential {
  * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOPasskey
  */
 export interface Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOPasskey {
-    /**
-     * @generated from protobuf field: bool isPasskey = 1
-     */
-    isPasskey: boolean;
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOHardware
  */
 export interface Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOHardware {
-    /**
-     * @generated from protobuf field: bool isHardware = 1
-     */
-    isHardware: boolean;
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserVerified
  */
 export interface Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserVerified {
-    /**
-     * @generated from protobuf field: bool isUserVerified = 1
-     */
-    isUserVerified: boolean;
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserPresent
  */
 export interface Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserPresent {
-    /**
-     * @generated from protobuf field: bool isUserPresent = 1
-     */
-    isUserPresent: boolean;
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOAttestationVerified
  */
 export interface Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOAttestationVerified {
-    /**
-     * @generated from protobuf field: bool isAttestationVerified = 1
-     */
-    isAttestationVerified: boolean;
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorAAGUID
@@ -5795,10 +5789,6 @@ export interface Condition_Expression_SessionAuthenticationCredAuthenticatorAAGU
  * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.SessionBrowser
  */
 export interface Condition_Expression_SessionBrowser {
-    /**
-     * @generated from protobuf field: bool isBrowser = 1
-     */
-    isBrowser: boolean;
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.TimeBefore
@@ -5904,49 +5894,143 @@ export interface Condition_Expression_RequestIPInRange {
     value: string;
 }
 /**
- * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.APIServer
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.APIServerReadOnlyMethods
  */
-export interface Condition_Expression_APIServer {
+export interface Condition_Expression_APIServerReadOnlyMethods {
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.APIServerMethods
+ */
+export interface Condition_Expression_APIServerMethods {
     /**
-     * @generated from protobuf field: bool isAPIServer = 1
+     * @generated from protobuf field: repeated string methods = 1
      */
-    isAPIServer: boolean;
+    methods: string[];
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.APIServerServices
+ */
+export interface Condition_Expression_APIServerServices {
+    /**
+     * @generated from protobuf field: repeated string services = 1
+     */
+    services: string[];
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.APIServerCore
  */
 export interface Condition_Expression_APIServerCore {
     /**
-     * @generated from protobuf field: bool isAPIServerCore = 1
+     * @generated from protobuf field: bool readOnlyMethods = 1
      */
-    isAPIServerCore: boolean;
+    readOnlyMethods: boolean;
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.APIServerUser
  */
 export interface Condition_Expression_APIServerUser {
     /**
-     * @generated from protobuf field: bool isAPIServerUser = 1
+     * @generated from protobuf field: bool readOnlyMethods = 1
      */
-    isAPIServerUser: boolean;
+    readOnlyMethods: boolean;
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise
  */
 export interface Condition_Expression_APIServerEnterprise {
     /**
-     * @generated from protobuf field: bool isAPIServerEnterprise = 1
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise.Service service = 1
      */
-    isAPIServerEnterprise: boolean;
+    service: Condition_Expression_APIServerEnterprise_Service;
+}
+/**
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise.Service
+ */
+export enum Condition_Expression_APIServerEnterprise_Service {
+    /**
+     * @generated from protobuf enum value: SERVICE_UNSET = 0;
+     */
+    SERVICE_UNSET = 0,
+    /**
+     * @generated from protobuf enum value: ANY = 1;
+     */
+    ANY = 1,
+    /**
+     * @generated from protobuf enum value: MAIN = 2;
+     */
+    MAIN = 2,
+    /**
+     * @generated from protobuf enum value: CLUSTER = 3;
+     */
+    CLUSTER = 3,
+    /**
+     * @generated from protobuf enum value: POLICY_PORTAL = 4;
+     */
+    POLICY_PORTAL = 4
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium
  */
 export interface Condition_Expression_APIServerCordium {
     /**
-     * @generated from protobuf field: bool isAPIServerCordium = 1
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium.Service service = 1
      */
-    isAPIServerCordium: boolean;
+    service: Condition_Expression_APIServerCordium_Service;
+}
+/**
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium.Service
+ */
+export enum Condition_Expression_APIServerCordium_Service {
+    /**
+     * @generated from protobuf enum value: SERVICE_UNSET = 0;
+     */
+    SERVICE_UNSET = 0,
+    /**
+     * @generated from protobuf enum value: MAIN = 1;
+     */
+    MAIN = 1,
+    /**
+     * @generated from protobuf enum value: MANAGEMENT = 2;
+     */
+    MANAGEMENT = 2,
+    /**
+     * @generated from protobuf enum value: WORKSPACE = 3;
+     */
+    WORKSPACE = 3
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess
+ */
+export interface Condition_Expression_APIServerAccess {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess.Service service = 1
+     */
+    service: Condition_Expression_APIServerAccess_Service;
+}
+/**
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess.Service
+ */
+export enum Condition_Expression_APIServerAccess_Service {
+    /**
+     * @generated from protobuf enum value: SERVICE_UNSET = 0;
+     */
+    SERVICE_UNSET = 0,
+    /**
+     * @generated from protobuf enum value: ANY = 1;
+     */
+    ANY = 1,
+    /**
+     * @generated from protobuf enum value: MAIN = 2;
+     */
+    MAIN = 2,
+    /**
+     * @generated from protobuf enum value: USER = 3;
+     */
+    USER = 3,
+    /**
+     * @generated from protobuf enum value: REVIEWER = 4;
+     */
+    REVIEWER = 4
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.SynchronizeDirectoryProviderRequest
@@ -20473,7 +20557,7 @@ export const Condition_None = new Condition_None$Type();
 class Condition_Not$Type extends MessageType<Condition_Not> {
     constructor() {
         super("octelium.api.main.enterprise.v1.Condition.Not", [
-            { no: 1, name: "condition", kind: "message", T: () => Condition }
+            { no: 1, name: "expression", kind: "message", T: () => Condition_Expression }
         ]);
     }
     create(value?: PartialMessage<Condition_Not>): Condition_Not {
@@ -20487,8 +20571,8 @@ class Condition_Not$Type extends MessageType<Condition_Not> {
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* octelium.api.main.enterprise.v1.Condition condition */ 1:
-                    message.condition = Condition.internalBinaryRead(reader, reader.uint32(), options, message.condition);
+                case /* octelium.api.main.enterprise.v1.Condition.Expression expression */ 1:
+                    message.expression = Condition_Expression.internalBinaryRead(reader, reader.uint32(), options, message.expression);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -20502,9 +20586,9 @@ class Condition_Not$Type extends MessageType<Condition_Not> {
         return message;
     }
     internalBinaryWrite(message: Condition_Not, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* octelium.api.main.enterprise.v1.Condition condition = 1; */
-        if (message.condition)
-            Condition.internalBinaryWrite(message.condition, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression expression = 1; */
+        if (message.expression)
+            Condition_Expression.internalBinaryWrite(message.expression, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -20547,16 +20631,19 @@ class Condition_Expression$Type extends MessageType<Condition_Expression> {
             { no: 26, name: "sessionAuthenticationGeoipCountryCode", kind: "message", oneof: "type", T: () => Condition_Expression_SessionAuthenticationGeoipCountryCode },
             { no: 27, name: "requestHTTPPathExact", kind: "message", oneof: "type", T: () => Condition_Expression_RequestHTTPPathExact },
             { no: 28, name: "requestHTTPPathPrefix", kind: "message", oneof: "type", T: () => Condition_Expression_RequestHTTPPathPrefix },
-            { no: 29, name: "apiServer", kind: "message", oneof: "type", T: () => Condition_Expression_APIServer },
-            { no: 30, name: "apiServerCore", kind: "message", oneof: "type", T: () => Condition_Expression_APIServerCore },
-            { no: 31, name: "apiServerUser", kind: "message", oneof: "type", T: () => Condition_Expression_APIServerUser },
-            { no: 32, name: "apiServerEnterprise", kind: "message", oneof: "type", T: () => Condition_Expression_APIServerEnterprise },
-            { no: 33, name: "apiServerCordium", kind: "message", oneof: "type", T: () => Condition_Expression_APIServerCordium },
-            { no: 34, name: "requestHTTPMethod", kind: "message", oneof: "type", T: () => Condition_Expression_RequestHTTPMethod },
-            { no: 35, name: "requestHTTPHasHeader", kind: "message", oneof: "type", T: () => Condition_Expression_RequestHTTPHasHeader },
-            { no: 36, name: "requestHTTPHeaderValue", kind: "message", oneof: "type", T: () => Condition_Expression_RequestHTTPHeaderValue },
-            { no: 37, name: "requestIP", kind: "message", oneof: "type", T: () => Condition_Expression_RequestIP },
-            { no: 38, name: "requestIPInRange", kind: "message", oneof: "type", T: () => Condition_Expression_RequestIPInRange }
+            { no: 29, name: "requestHTTPMethod", kind: "message", oneof: "type", T: () => Condition_Expression_RequestHTTPMethod },
+            { no: 30, name: "requestHTTPHasHeader", kind: "message", oneof: "type", T: () => Condition_Expression_RequestHTTPHasHeader },
+            { no: 31, name: "requestHTTPHeaderValue", kind: "message", oneof: "type", T: () => Condition_Expression_RequestHTTPHeaderValue },
+            { no: 32, name: "requestIP", kind: "message", oneof: "type", T: () => Condition_Expression_RequestIP },
+            { no: 33, name: "requestIPInRange", kind: "message", oneof: "type", T: () => Condition_Expression_RequestIPInRange },
+            { no: 34, name: "apiServerReadOnlyMethods", kind: "message", oneof: "type", T: () => Condition_Expression_APIServerReadOnlyMethods },
+            { no: 35, name: "apiServerMethods", kind: "message", oneof: "type", T: () => Condition_Expression_APIServerMethods },
+            { no: 36, name: "apiServerServices", kind: "message", oneof: "type", T: () => Condition_Expression_APIServerServices },
+            { no: 37, name: "apiServerCore", kind: "message", oneof: "type", T: () => Condition_Expression_APIServerCore },
+            { no: 38, name: "apiServerUser", kind: "message", oneof: "type", T: () => Condition_Expression_APIServerUser },
+            { no: 39, name: "apiServerEnterprise", kind: "message", oneof: "type", T: () => Condition_Expression_APIServerEnterprise },
+            { no: 40, name: "apiServerCordium", kind: "message", oneof: "type", T: () => Condition_Expression_APIServerCordium },
+            { no: 41, name: "apiServerAccess", kind: "message", oneof: "type", T: () => Condition_Expression_APIServerAccess }
         ]);
     }
     create(value?: PartialMessage<Condition_Expression>): Condition_Expression {
@@ -20739,64 +20826,82 @@ class Condition_Expression$Type extends MessageType<Condition_Expression> {
                         requestHTTPPathPrefix: Condition_Expression_RequestHTTPPathPrefix.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestHTTPPathPrefix)
                     };
                     break;
-                case /* octelium.api.main.enterprise.v1.Condition.Expression.APIServer apiServer */ 29:
-                    message.type = {
-                        oneofKind: "apiServer",
-                        apiServer: Condition_Expression_APIServer.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).apiServer)
-                    };
-                    break;
-                case /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerCore apiServerCore */ 30:
-                    message.type = {
-                        oneofKind: "apiServerCore",
-                        apiServerCore: Condition_Expression_APIServerCore.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).apiServerCore)
-                    };
-                    break;
-                case /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerUser apiServerUser */ 31:
-                    message.type = {
-                        oneofKind: "apiServerUser",
-                        apiServerUser: Condition_Expression_APIServerUser.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).apiServerUser)
-                    };
-                    break;
-                case /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise apiServerEnterprise */ 32:
-                    message.type = {
-                        oneofKind: "apiServerEnterprise",
-                        apiServerEnterprise: Condition_Expression_APIServerEnterprise.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).apiServerEnterprise)
-                    };
-                    break;
-                case /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium apiServerCordium */ 33:
-                    message.type = {
-                        oneofKind: "apiServerCordium",
-                        apiServerCordium: Condition_Expression_APIServerCordium.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).apiServerCordium)
-                    };
-                    break;
-                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod requestHTTPMethod */ 34:
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod requestHTTPMethod */ 29:
                     message.type = {
                         oneofKind: "requestHTTPMethod",
                         requestHTTPMethod: Condition_Expression_RequestHTTPMethod.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestHTTPMethod)
                     };
                     break;
-                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader requestHTTPHasHeader */ 35:
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader requestHTTPHasHeader */ 30:
                     message.type = {
                         oneofKind: "requestHTTPHasHeader",
                         requestHTTPHasHeader: Condition_Expression_RequestHTTPHasHeader.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestHTTPHasHeader)
                     };
                     break;
-                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue requestHTTPHeaderValue */ 36:
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue requestHTTPHeaderValue */ 31:
                     message.type = {
                         oneofKind: "requestHTTPHeaderValue",
                         requestHTTPHeaderValue: Condition_Expression_RequestHTTPHeaderValue.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestHTTPHeaderValue)
                     };
                     break;
-                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestIP requestIP */ 37:
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestIP requestIP */ 32:
                     message.type = {
                         oneofKind: "requestIP",
                         requestIP: Condition_Expression_RequestIP.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestIP)
                     };
                     break;
-                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestIPInRange requestIPInRange */ 38:
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestIPInRange requestIPInRange */ 33:
                     message.type = {
                         oneofKind: "requestIPInRange",
                         requestIPInRange: Condition_Expression_RequestIPInRange.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestIPInRange)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerReadOnlyMethods apiServerReadOnlyMethods */ 34:
+                    message.type = {
+                        oneofKind: "apiServerReadOnlyMethods",
+                        apiServerReadOnlyMethods: Condition_Expression_APIServerReadOnlyMethods.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).apiServerReadOnlyMethods)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerMethods apiServerMethods */ 35:
+                    message.type = {
+                        oneofKind: "apiServerMethods",
+                        apiServerMethods: Condition_Expression_APIServerMethods.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).apiServerMethods)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerServices apiServerServices */ 36:
+                    message.type = {
+                        oneofKind: "apiServerServices",
+                        apiServerServices: Condition_Expression_APIServerServices.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).apiServerServices)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerCore apiServerCore */ 37:
+                    message.type = {
+                        oneofKind: "apiServerCore",
+                        apiServerCore: Condition_Expression_APIServerCore.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).apiServerCore)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerUser apiServerUser */ 38:
+                    message.type = {
+                        oneofKind: "apiServerUser",
+                        apiServerUser: Condition_Expression_APIServerUser.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).apiServerUser)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise apiServerEnterprise */ 39:
+                    message.type = {
+                        oneofKind: "apiServerEnterprise",
+                        apiServerEnterprise: Condition_Expression_APIServerEnterprise.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).apiServerEnterprise)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium apiServerCordium */ 40:
+                    message.type = {
+                        oneofKind: "apiServerCordium",
+                        apiServerCordium: Condition_Expression_APIServerCordium.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).apiServerCordium)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess apiServerAccess */ 41:
+                    message.type = {
+                        oneofKind: "apiServerAccess",
+                        apiServerAccess: Condition_Expression_APIServerAccess.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).apiServerAccess)
                     };
                     break;
                 default:
@@ -20895,36 +21000,45 @@ class Condition_Expression$Type extends MessageType<Condition_Expression> {
         /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPathPrefix requestHTTPPathPrefix = 28; */
         if (message.type.oneofKind === "requestHTTPPathPrefix")
             Condition_Expression_RequestHTTPPathPrefix.internalBinaryWrite(message.type.requestHTTPPathPrefix, writer.tag(28, WireType.LengthDelimited).fork(), options).join();
-        /* octelium.api.main.enterprise.v1.Condition.Expression.APIServer apiServer = 29; */
-        if (message.type.oneofKind === "apiServer")
-            Condition_Expression_APIServer.internalBinaryWrite(message.type.apiServer, writer.tag(29, WireType.LengthDelimited).fork(), options).join();
-        /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerCore apiServerCore = 30; */
-        if (message.type.oneofKind === "apiServerCore")
-            Condition_Expression_APIServerCore.internalBinaryWrite(message.type.apiServerCore, writer.tag(30, WireType.LengthDelimited).fork(), options).join();
-        /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerUser apiServerUser = 31; */
-        if (message.type.oneofKind === "apiServerUser")
-            Condition_Expression_APIServerUser.internalBinaryWrite(message.type.apiServerUser, writer.tag(31, WireType.LengthDelimited).fork(), options).join();
-        /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise apiServerEnterprise = 32; */
-        if (message.type.oneofKind === "apiServerEnterprise")
-            Condition_Expression_APIServerEnterprise.internalBinaryWrite(message.type.apiServerEnterprise, writer.tag(32, WireType.LengthDelimited).fork(), options).join();
-        /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium apiServerCordium = 33; */
-        if (message.type.oneofKind === "apiServerCordium")
-            Condition_Expression_APIServerCordium.internalBinaryWrite(message.type.apiServerCordium, writer.tag(33, WireType.LengthDelimited).fork(), options).join();
-        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod requestHTTPMethod = 34; */
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod requestHTTPMethod = 29; */
         if (message.type.oneofKind === "requestHTTPMethod")
-            Condition_Expression_RequestHTTPMethod.internalBinaryWrite(message.type.requestHTTPMethod, writer.tag(34, WireType.LengthDelimited).fork(), options).join();
-        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader requestHTTPHasHeader = 35; */
+            Condition_Expression_RequestHTTPMethod.internalBinaryWrite(message.type.requestHTTPMethod, writer.tag(29, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader requestHTTPHasHeader = 30; */
         if (message.type.oneofKind === "requestHTTPHasHeader")
-            Condition_Expression_RequestHTTPHasHeader.internalBinaryWrite(message.type.requestHTTPHasHeader, writer.tag(35, WireType.LengthDelimited).fork(), options).join();
-        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue requestHTTPHeaderValue = 36; */
+            Condition_Expression_RequestHTTPHasHeader.internalBinaryWrite(message.type.requestHTTPHasHeader, writer.tag(30, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue requestHTTPHeaderValue = 31; */
         if (message.type.oneofKind === "requestHTTPHeaderValue")
-            Condition_Expression_RequestHTTPHeaderValue.internalBinaryWrite(message.type.requestHTTPHeaderValue, writer.tag(36, WireType.LengthDelimited).fork(), options).join();
-        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestIP requestIP = 37; */
+            Condition_Expression_RequestHTTPHeaderValue.internalBinaryWrite(message.type.requestHTTPHeaderValue, writer.tag(31, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestIP requestIP = 32; */
         if (message.type.oneofKind === "requestIP")
-            Condition_Expression_RequestIP.internalBinaryWrite(message.type.requestIP, writer.tag(37, WireType.LengthDelimited).fork(), options).join();
-        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestIPInRange requestIPInRange = 38; */
+            Condition_Expression_RequestIP.internalBinaryWrite(message.type.requestIP, writer.tag(32, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestIPInRange requestIPInRange = 33; */
         if (message.type.oneofKind === "requestIPInRange")
-            Condition_Expression_RequestIPInRange.internalBinaryWrite(message.type.requestIPInRange, writer.tag(38, WireType.LengthDelimited).fork(), options).join();
+            Condition_Expression_RequestIPInRange.internalBinaryWrite(message.type.requestIPInRange, writer.tag(33, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerReadOnlyMethods apiServerReadOnlyMethods = 34; */
+        if (message.type.oneofKind === "apiServerReadOnlyMethods")
+            Condition_Expression_APIServerReadOnlyMethods.internalBinaryWrite(message.type.apiServerReadOnlyMethods, writer.tag(34, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerMethods apiServerMethods = 35; */
+        if (message.type.oneofKind === "apiServerMethods")
+            Condition_Expression_APIServerMethods.internalBinaryWrite(message.type.apiServerMethods, writer.tag(35, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerServices apiServerServices = 36; */
+        if (message.type.oneofKind === "apiServerServices")
+            Condition_Expression_APIServerServices.internalBinaryWrite(message.type.apiServerServices, writer.tag(36, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerCore apiServerCore = 37; */
+        if (message.type.oneofKind === "apiServerCore")
+            Condition_Expression_APIServerCore.internalBinaryWrite(message.type.apiServerCore, writer.tag(37, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerUser apiServerUser = 38; */
+        if (message.type.oneofKind === "apiServerUser")
+            Condition_Expression_APIServerUser.internalBinaryWrite(message.type.apiServerUser, writer.tag(38, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise apiServerEnterprise = 39; */
+        if (message.type.oneofKind === "apiServerEnterprise")
+            Condition_Expression_APIServerEnterprise.internalBinaryWrite(message.type.apiServerEnterprise, writer.tag(39, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium apiServerCordium = 40; */
+        if (message.type.oneofKind === "apiServerCordium")
+            Condition_Expression_APIServerCordium.internalBinaryWrite(message.type.apiServerCordium, writer.tag(40, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess apiServerAccess = 41; */
+        if (message.type.oneofKind === "apiServerAccess")
+            Condition_Expression_APIServerAccess.internalBinaryWrite(message.type.apiServerAccess, writer.tag(41, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -21355,13 +21469,10 @@ export const Condition_Expression_ServiceMode = new Condition_Expression_Service
 // @generated message type with reflection information, may provide speed optimized methods
 class Condition_Expression_ServicePublic$Type extends MessageType<Condition_Expression_ServicePublic> {
     constructor() {
-        super("octelium.api.main.enterprise.v1.Condition.Expression.ServicePublic", [
-            { no: 1, name: "isPublic", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
-        ]);
+        super("octelium.api.main.enterprise.v1.Condition.Expression.ServicePublic", []);
     }
     create(value?: PartialMessage<Condition_Expression_ServicePublic>): Condition_Expression_ServicePublic {
         const message = globalThis.Object.create((this.messagePrototype!));
-        message.isPublic = false;
         if (value !== undefined)
             reflectionMergePartial<Condition_Expression_ServicePublic>(this, message, value);
         return message;
@@ -21371,9 +21482,6 @@ class Condition_Expression_ServicePublic$Type extends MessageType<Condition_Expr
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* bool isPublic */ 1:
-                    message.isPublic = reader.bool();
-                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -21386,9 +21494,6 @@ class Condition_Expression_ServicePublic$Type extends MessageType<Condition_Expr
         return message;
     }
     internalBinaryWrite(message: Condition_Expression_ServicePublic, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* bool isPublic = 1; */
-        if (message.isPublic !== false)
-            writer.tag(1, WireType.Varint).bool(message.isPublic);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -21635,13 +21740,10 @@ export const Condition_Expression_SessionAuthenticationCredential = new Conditio
 // @generated message type with reflection information, may provide speed optimized methods
 class Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOPasskey$Type extends MessageType<Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOPasskey> {
     constructor() {
-        super("octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOPasskey", [
-            { no: 1, name: "isPasskey", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
-        ]);
+        super("octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOPasskey", []);
     }
     create(value?: PartialMessage<Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOPasskey>): Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOPasskey {
         const message = globalThis.Object.create((this.messagePrototype!));
-        message.isPasskey = false;
         if (value !== undefined)
             reflectionMergePartial<Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOPasskey>(this, message, value);
         return message;
@@ -21651,9 +21753,6 @@ class Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOPasskey$Typ
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* bool isPasskey */ 1:
-                    message.isPasskey = reader.bool();
-                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -21666,9 +21765,6 @@ class Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOPasskey$Typ
         return message;
     }
     internalBinaryWrite(message: Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOPasskey, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* bool isPasskey = 1; */
-        if (message.isPasskey !== false)
-            writer.tag(1, WireType.Varint).bool(message.isPasskey);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -21682,13 +21778,10 @@ export const Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOPass
 // @generated message type with reflection information, may provide speed optimized methods
 class Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOHardware$Type extends MessageType<Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOHardware> {
     constructor() {
-        super("octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOHardware", [
-            { no: 1, name: "isHardware", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
-        ]);
+        super("octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOHardware", []);
     }
     create(value?: PartialMessage<Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOHardware>): Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOHardware {
         const message = globalThis.Object.create((this.messagePrototype!));
-        message.isHardware = false;
         if (value !== undefined)
             reflectionMergePartial<Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOHardware>(this, message, value);
         return message;
@@ -21698,9 +21791,6 @@ class Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOHardware$Ty
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* bool isHardware */ 1:
-                    message.isHardware = reader.bool();
-                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -21713,9 +21803,6 @@ class Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOHardware$Ty
         return message;
     }
     internalBinaryWrite(message: Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOHardware, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* bool isHardware = 1; */
-        if (message.isHardware !== false)
-            writer.tag(1, WireType.Varint).bool(message.isHardware);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -21729,13 +21816,10 @@ export const Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOHard
 // @generated message type with reflection information, may provide speed optimized methods
 class Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserVerified$Type extends MessageType<Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserVerified> {
     constructor() {
-        super("octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserVerified", [
-            { no: 1, name: "isUserVerified", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
-        ]);
+        super("octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserVerified", []);
     }
     create(value?: PartialMessage<Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserVerified>): Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserVerified {
         const message = globalThis.Object.create((this.messagePrototype!));
-        message.isUserVerified = false;
         if (value !== undefined)
             reflectionMergePartial<Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserVerified>(this, message, value);
         return message;
@@ -21745,9 +21829,6 @@ class Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserVerifie
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* bool isUserVerified */ 1:
-                    message.isUserVerified = reader.bool();
-                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -21760,9 +21841,6 @@ class Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserVerifie
         return message;
     }
     internalBinaryWrite(message: Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserVerified, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* bool isUserVerified = 1; */
-        if (message.isUserVerified !== false)
-            writer.tag(1, WireType.Varint).bool(message.isUserVerified);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -21776,13 +21854,10 @@ export const Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUser
 // @generated message type with reflection information, may provide speed optimized methods
 class Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserPresent$Type extends MessageType<Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserPresent> {
     constructor() {
-        super("octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserPresent", [
-            { no: 1, name: "isUserPresent", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
-        ]);
+        super("octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserPresent", []);
     }
     create(value?: PartialMessage<Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserPresent>): Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserPresent {
         const message = globalThis.Object.create((this.messagePrototype!));
-        message.isUserPresent = false;
         if (value !== undefined)
             reflectionMergePartial<Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserPresent>(this, message, value);
         return message;
@@ -21792,9 +21867,6 @@ class Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserPresent
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* bool isUserPresent */ 1:
-                    message.isUserPresent = reader.bool();
-                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -21807,9 +21879,6 @@ class Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserPresent
         return message;
     }
     internalBinaryWrite(message: Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserPresent, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* bool isUserPresent = 1; */
-        if (message.isUserPresent !== false)
-            writer.tag(1, WireType.Varint).bool(message.isUserPresent);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -21823,13 +21892,10 @@ export const Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUser
 // @generated message type with reflection information, may provide speed optimized methods
 class Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOAttestationVerified$Type extends MessageType<Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOAttestationVerified> {
     constructor() {
-        super("octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOAttestationVerified", [
-            { no: 1, name: "isAttestationVerified", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
-        ]);
+        super("octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOAttestationVerified", []);
     }
     create(value?: PartialMessage<Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOAttestationVerified>): Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOAttestationVerified {
         const message = globalThis.Object.create((this.messagePrototype!));
-        message.isAttestationVerified = false;
         if (value !== undefined)
             reflectionMergePartial<Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOAttestationVerified>(this, message, value);
         return message;
@@ -21839,9 +21905,6 @@ class Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOAttestation
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* bool isAttestationVerified */ 1:
-                    message.isAttestationVerified = reader.bool();
-                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -21854,9 +21917,6 @@ class Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOAttestation
         return message;
     }
     internalBinaryWrite(message: Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOAttestationVerified, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* bool isAttestationVerified = 1; */
-        if (message.isAttestationVerified !== false)
-            writer.tag(1, WireType.Varint).bool(message.isAttestationVerified);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -21917,13 +21977,10 @@ export const Condition_Expression_SessionAuthenticationCredAuthenticatorAAGUID =
 // @generated message type with reflection information, may provide speed optimized methods
 class Condition_Expression_SessionBrowser$Type extends MessageType<Condition_Expression_SessionBrowser> {
     constructor() {
-        super("octelium.api.main.enterprise.v1.Condition.Expression.SessionBrowser", [
-            { no: 1, name: "isBrowser", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
-        ]);
+        super("octelium.api.main.enterprise.v1.Condition.Expression.SessionBrowser", []);
     }
     create(value?: PartialMessage<Condition_Expression_SessionBrowser>): Condition_Expression_SessionBrowser {
         const message = globalThis.Object.create((this.messagePrototype!));
-        message.isBrowser = false;
         if (value !== undefined)
             reflectionMergePartial<Condition_Expression_SessionBrowser>(this, message, value);
         return message;
@@ -21933,9 +21990,6 @@ class Condition_Expression_SessionBrowser$Type extends MessageType<Condition_Exp
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* bool isBrowser */ 1:
-                    message.isBrowser = reader.bool();
-                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -21948,9 +22002,6 @@ class Condition_Expression_SessionBrowser$Type extends MessageType<Condition_Exp
         return message;
     }
     internalBinaryWrite(message: Condition_Expression_SessionBrowser, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* bool isBrowser = 1; */
-        if (message.isBrowser !== false)
-            writer.tag(1, WireType.Varint).bool(message.isBrowser);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -22485,26 +22536,64 @@ class Condition_Expression_RequestIPInRange$Type extends MessageType<Condition_E
  */
 export const Condition_Expression_RequestIPInRange = new Condition_Expression_RequestIPInRange$Type();
 // @generated message type with reflection information, may provide speed optimized methods
-class Condition_Expression_APIServer$Type extends MessageType<Condition_Expression_APIServer> {
+class Condition_Expression_APIServerReadOnlyMethods$Type extends MessageType<Condition_Expression_APIServerReadOnlyMethods> {
     constructor() {
-        super("octelium.api.main.enterprise.v1.Condition.Expression.APIServer", [
-            { no: 1, name: "isAPIServer", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
-        ]);
+        super("octelium.api.main.enterprise.v1.Condition.Expression.APIServerReadOnlyMethods", []);
     }
-    create(value?: PartialMessage<Condition_Expression_APIServer>): Condition_Expression_APIServer {
+    create(value?: PartialMessage<Condition_Expression_APIServerReadOnlyMethods>): Condition_Expression_APIServerReadOnlyMethods {
         const message = globalThis.Object.create((this.messagePrototype!));
-        message.isAPIServer = false;
         if (value !== undefined)
-            reflectionMergePartial<Condition_Expression_APIServer>(this, message, value);
+            reflectionMergePartial<Condition_Expression_APIServerReadOnlyMethods>(this, message, value);
         return message;
     }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_APIServer): Condition_Expression_APIServer {
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_APIServerReadOnlyMethods): Condition_Expression_APIServerReadOnlyMethods {
         let message = target ?? this.create(), end = reader.pos + length;
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* bool isAPIServer */ 1:
-                    message.isAPIServer = reader.bool();
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_APIServerReadOnlyMethods, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.APIServerReadOnlyMethods
+ */
+export const Condition_Expression_APIServerReadOnlyMethods = new Condition_Expression_APIServerReadOnlyMethods$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_APIServerMethods$Type extends MessageType<Condition_Expression_APIServerMethods> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.APIServerMethods", [
+            { no: 1, name: "methods", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_APIServerMethods>): Condition_Expression_APIServerMethods {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.methods = [];
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_APIServerMethods>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_APIServerMethods): Condition_Expression_APIServerMethods {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated string methods */ 1:
+                    message.methods.push(reader.string());
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -22517,10 +22606,10 @@ class Condition_Expression_APIServer$Type extends MessageType<Condition_Expressi
         }
         return message;
     }
-    internalBinaryWrite(message: Condition_Expression_APIServer, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* bool isAPIServer = 1; */
-        if (message.isAPIServer !== false)
-            writer.tag(1, WireType.Varint).bool(message.isAPIServer);
+    internalBinaryWrite(message: Condition_Expression_APIServerMethods, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated string methods = 1; */
+        for (let i = 0; i < message.methods.length; i++)
+            writer.tag(1, WireType.LengthDelimited).string(message.methods[i]);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -22528,19 +22617,66 @@ class Condition_Expression_APIServer$Type extends MessageType<Condition_Expressi
     }
 }
 /**
- * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.APIServer
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.APIServerMethods
  */
-export const Condition_Expression_APIServer = new Condition_Expression_APIServer$Type();
+export const Condition_Expression_APIServerMethods = new Condition_Expression_APIServerMethods$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_APIServerServices$Type extends MessageType<Condition_Expression_APIServerServices> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.APIServerServices", [
+            { no: 1, name: "services", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_APIServerServices>): Condition_Expression_APIServerServices {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.services = [];
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_APIServerServices>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_APIServerServices): Condition_Expression_APIServerServices {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated string services */ 1:
+                    message.services.push(reader.string());
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_APIServerServices, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated string services = 1; */
+        for (let i = 0; i < message.services.length; i++)
+            writer.tag(1, WireType.LengthDelimited).string(message.services[i]);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.APIServerServices
+ */
+export const Condition_Expression_APIServerServices = new Condition_Expression_APIServerServices$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class Condition_Expression_APIServerCore$Type extends MessageType<Condition_Expression_APIServerCore> {
     constructor() {
         super("octelium.api.main.enterprise.v1.Condition.Expression.APIServerCore", [
-            { no: 1, name: "isAPIServerCore", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 1, name: "readOnlyMethods", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<Condition_Expression_APIServerCore>): Condition_Expression_APIServerCore {
         const message = globalThis.Object.create((this.messagePrototype!));
-        message.isAPIServerCore = false;
+        message.readOnlyMethods = false;
         if (value !== undefined)
             reflectionMergePartial<Condition_Expression_APIServerCore>(this, message, value);
         return message;
@@ -22550,8 +22686,8 @@ class Condition_Expression_APIServerCore$Type extends MessageType<Condition_Expr
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* bool isAPIServerCore */ 1:
-                    message.isAPIServerCore = reader.bool();
+                case /* bool readOnlyMethods */ 1:
+                    message.readOnlyMethods = reader.bool();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -22565,9 +22701,9 @@ class Condition_Expression_APIServerCore$Type extends MessageType<Condition_Expr
         return message;
     }
     internalBinaryWrite(message: Condition_Expression_APIServerCore, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* bool isAPIServerCore = 1; */
-        if (message.isAPIServerCore !== false)
-            writer.tag(1, WireType.Varint).bool(message.isAPIServerCore);
+        /* bool readOnlyMethods = 1; */
+        if (message.readOnlyMethods !== false)
+            writer.tag(1, WireType.Varint).bool(message.readOnlyMethods);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -22582,12 +22718,12 @@ export const Condition_Expression_APIServerCore = new Condition_Expression_APISe
 class Condition_Expression_APIServerUser$Type extends MessageType<Condition_Expression_APIServerUser> {
     constructor() {
         super("octelium.api.main.enterprise.v1.Condition.Expression.APIServerUser", [
-            { no: 1, name: "isAPIServerUser", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 1, name: "readOnlyMethods", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<Condition_Expression_APIServerUser>): Condition_Expression_APIServerUser {
         const message = globalThis.Object.create((this.messagePrototype!));
-        message.isAPIServerUser = false;
+        message.readOnlyMethods = false;
         if (value !== undefined)
             reflectionMergePartial<Condition_Expression_APIServerUser>(this, message, value);
         return message;
@@ -22597,8 +22733,8 @@ class Condition_Expression_APIServerUser$Type extends MessageType<Condition_Expr
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* bool isAPIServerUser */ 1:
-                    message.isAPIServerUser = reader.bool();
+                case /* bool readOnlyMethods */ 1:
+                    message.readOnlyMethods = reader.bool();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -22612,9 +22748,9 @@ class Condition_Expression_APIServerUser$Type extends MessageType<Condition_Expr
         return message;
     }
     internalBinaryWrite(message: Condition_Expression_APIServerUser, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* bool isAPIServerUser = 1; */
-        if (message.isAPIServerUser !== false)
-            writer.tag(1, WireType.Varint).bool(message.isAPIServerUser);
+        /* bool readOnlyMethods = 1; */
+        if (message.readOnlyMethods !== false)
+            writer.tag(1, WireType.Varint).bool(message.readOnlyMethods);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -22629,12 +22765,12 @@ export const Condition_Expression_APIServerUser = new Condition_Expression_APISe
 class Condition_Expression_APIServerEnterprise$Type extends MessageType<Condition_Expression_APIServerEnterprise> {
     constructor() {
         super("octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise", [
-            { no: 1, name: "isAPIServerEnterprise", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 1, name: "service", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise.Service", Condition_Expression_APIServerEnterprise_Service] }
         ]);
     }
     create(value?: PartialMessage<Condition_Expression_APIServerEnterprise>): Condition_Expression_APIServerEnterprise {
         const message = globalThis.Object.create((this.messagePrototype!));
-        message.isAPIServerEnterprise = false;
+        message.service = 0;
         if (value !== undefined)
             reflectionMergePartial<Condition_Expression_APIServerEnterprise>(this, message, value);
         return message;
@@ -22644,8 +22780,8 @@ class Condition_Expression_APIServerEnterprise$Type extends MessageType<Conditio
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* bool isAPIServerEnterprise */ 1:
-                    message.isAPIServerEnterprise = reader.bool();
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise.Service service */ 1:
+                    message.service = reader.int32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -22659,9 +22795,9 @@ class Condition_Expression_APIServerEnterprise$Type extends MessageType<Conditio
         return message;
     }
     internalBinaryWrite(message: Condition_Expression_APIServerEnterprise, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* bool isAPIServerEnterprise = 1; */
-        if (message.isAPIServerEnterprise !== false)
-            writer.tag(1, WireType.Varint).bool(message.isAPIServerEnterprise);
+        /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise.Service service = 1; */
+        if (message.service !== 0)
+            writer.tag(1, WireType.Varint).int32(message.service);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -22676,12 +22812,12 @@ export const Condition_Expression_APIServerEnterprise = new Condition_Expression
 class Condition_Expression_APIServerCordium$Type extends MessageType<Condition_Expression_APIServerCordium> {
     constructor() {
         super("octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium", [
-            { no: 1, name: "isAPIServerCordium", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 1, name: "service", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium.Service", Condition_Expression_APIServerCordium_Service] }
         ]);
     }
     create(value?: PartialMessage<Condition_Expression_APIServerCordium>): Condition_Expression_APIServerCordium {
         const message = globalThis.Object.create((this.messagePrototype!));
-        message.isAPIServerCordium = false;
+        message.service = 0;
         if (value !== undefined)
             reflectionMergePartial<Condition_Expression_APIServerCordium>(this, message, value);
         return message;
@@ -22691,8 +22827,8 @@ class Condition_Expression_APIServerCordium$Type extends MessageType<Condition_E
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* bool isAPIServerCordium */ 1:
-                    message.isAPIServerCordium = reader.bool();
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium.Service service */ 1:
+                    message.service = reader.int32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -22706,9 +22842,9 @@ class Condition_Expression_APIServerCordium$Type extends MessageType<Condition_E
         return message;
     }
     internalBinaryWrite(message: Condition_Expression_APIServerCordium, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* bool isAPIServerCordium = 1; */
-        if (message.isAPIServerCordium !== false)
-            writer.tag(1, WireType.Varint).bool(message.isAPIServerCordium);
+        /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium.Service service = 1; */
+        if (message.service !== 0)
+            writer.tag(1, WireType.Varint).int32(message.service);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -22719,6 +22855,53 @@ class Condition_Expression_APIServerCordium$Type extends MessageType<Condition_E
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium
  */
 export const Condition_Expression_APIServerCordium = new Condition_Expression_APIServerCordium$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_APIServerAccess$Type extends MessageType<Condition_Expression_APIServerAccess> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess", [
+            { no: 1, name: "service", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess.Service", Condition_Expression_APIServerAccess_Service] }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_APIServerAccess>): Condition_Expression_APIServerAccess {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.service = 0;
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_APIServerAccess>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_APIServerAccess): Condition_Expression_APIServerAccess {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess.Service service */ 1:
+                    message.service = reader.int32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_APIServerAccess, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess.Service service = 1; */
+        if (message.service !== 0)
+            writer.tag(1, WireType.Varint).int32(message.service);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess
+ */
+export const Condition_Expression_APIServerAccess = new Condition_Expression_APIServerAccess$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class SynchronizeDirectoryProviderRequest$Type extends MessageType<SynchronizeDirectoryProviderRequest> {
     constructor() {
