@@ -1,5 +1,10 @@
 import * as CoreP from "@/apis/corev1/corev1";
-import { Condition_Expression as Expression } from "@/apis/enterprisev1/enterprisev1";
+import {
+  Condition_Expression_APIServerAccess_Service as AccessService,
+  Condition_Expression_APIServerCordium_Service as CordiumService,
+  Condition_Expression_APIServerEnterprise_Service as EnterpriseService,
+  Condition_Expression as Expression,
+} from "@/apis/enterprisev1/enterprisev1";
 import { ObjectReference } from "@/apis/metav1/metav1";
 import { getOSTypeStr } from "@/pages/core/Device/Main";
 import {
@@ -7,7 +12,7 @@ import {
   printResourceNameWithDisplay,
   printServiceMode,
 } from "@/utils/pb";
-import { Group, Select, Switch, TextInput } from "@mantine/core";
+import { Group, Select, Switch, TagsInput, TextInput } from "@mantine/core";
 import type { ReactNode } from "react";
 import { match } from "ts-pattern";
 import SelectResource from "../ResourceLayout/SelectResource";
@@ -88,40 +93,58 @@ const makeResourceItem = (
   },
 });
 
-const makeBoolItem = (
+const makeMarkerItem = (
   type: string,
   title: string,
   tags: string[],
-  boolKey: string,
+  note?: string,
 ): ItemDef => ({
   type,
   title,
   tags,
   makeDefault: () =>
     Expression.create({
-      type: { oneofKind: type, [type]: { [boolKey]: true } } as any,
+      type: { oneofKind: type, [type]: {} } as any,
+    }),
+  components: {
+    Value: () => null,
+    Edit: () => (
+      <p className="text-[0.75rem] font-semibold text-slate-500 leading-relaxed">
+        {note ??
+          "This condition matches on presence. No further configuration is required."}
+      </p>
+    ),
+  },
+});
+
+const makeBoolItem = (
+  type: string,
+  title: string,
+  tags: string[],
+  boolKey: string,
+  switchLabel: string,
+  defaultValue = false,
+): ItemDef => ({
+  type,
+  title,
+  tags,
+  makeDefault: () =>
+    Expression.create({
+      type: { oneofKind: type, [type]: { [boolKey]: defaultValue } } as any,
     }),
   components: {
     Value: ({ item }) => {
       if (item.type.oneofKind !== type) return null;
-      return <>{(item.type as any)[type][boolKey] ? "Enabled" : "Disabled"}</>;
+      return <>{(item.type as any)[type][boolKey] ? switchLabel : "Any"}</>;
     },
     Edit: ({ item, onUpdate }) => (
       <Switch
         size="md"
-        label={
-          (
-            item?.type.oneofKind === type
-              ? (item.type as any)[type][boolKey]
-              : true
-          )
-            ? "Enabled"
-            : "Disabled"
-        }
+        label={switchLabel}
         checked={
           item?.type.oneofKind === type
             ? (item.type as any)[type][boolKey]
-            : true
+            : defaultValue
         }
         onChange={(e) =>
           onUpdate(
@@ -179,6 +202,102 @@ const makeTextItem = (
         }
       />
     ),
+  },
+});
+
+const makeStringListItem = (
+  type: string,
+  title: string,
+  tags: string[],
+  listKey: string,
+  label: string,
+  placeholder: string,
+): ItemDef => ({
+  type,
+  title,
+  tags,
+  makeDefault: () =>
+    Expression.create({
+      type: { oneofKind: type, [type]: { [listKey]: [] } } as any,
+    }),
+  components: {
+    Value: ({ item }) => {
+      if (item.type.oneofKind !== type) return null;
+      const arr = ((item.type as any)[type][listKey] as string[]) ?? [];
+      return <>{arr.join(", ")}</>;
+    },
+    Edit: ({ item, onUpdate }) => {
+      const arr =
+        item?.type.oneofKind === type
+          ? ((item.type as any)[type][listKey] as string[])
+          : [];
+      return (
+        <TagsInput
+          label={label}
+          placeholder={placeholder}
+          value={arr}
+          onChange={(vals) =>
+            onUpdate(
+              Expression.create({
+                type: {
+                  oneofKind: type,
+                  [type]: { [listKey]: vals },
+                } as any,
+              }),
+            )
+          }
+        />
+      );
+    },
+  },
+});
+
+const makeApiServiceItem = (
+  type: string,
+  title: string,
+  tags: string[],
+  enumObj: any,
+  values: number[],
+  labels: Record<number, string>,
+  defaultValue: number,
+): ItemDef => ({
+  type,
+  title,
+  tags,
+  makeDefault: () =>
+    Expression.create({
+      type: { oneofKind: type, [type]: { service: defaultValue } } as any,
+    }),
+  components: {
+    Value: ({ item }) => {
+      if (item.type.oneofKind !== type) return null;
+      const s = (item.type as any)[type].service as number;
+      return <>{labels[s] ?? ""}</>;
+    },
+    Edit: ({ item, onUpdate }) => {
+      const cur =
+        item?.type.oneofKind === type
+          ? ((item.type as any)[type].service as number)
+          : defaultValue;
+      return (
+        <Select
+          label="API service"
+          data={values.map((v) => ({ value: enumObj[v], label: labels[v] }))}
+          value={enumObj[cur]}
+          onChange={(v) => {
+            if (!v) return;
+            onUpdate(
+              Expression.create({
+                type: {
+                  oneofKind: type,
+                  [type]: { service: enumObj[v] },
+                } as any,
+              }),
+            );
+          }}
+        />
+      );
+    },
   },
 });
 
@@ -411,6 +530,13 @@ export const itemList: ItemDef[] = [
     },
   },
 
+  makeMarkerItem(
+    "servicePublic",
+    "Public Service",
+    ["service", "public", "beyondcorp"],
+    "Matches when the target Service is public. No further configuration is required.",
+  ),
+
   {
     type: "sessionType",
     title: "Session type",
@@ -471,6 +597,13 @@ export const itemList: ItemDef[] = [
       ),
     },
   },
+
+  makeMarkerItem(
+    "sessionBrowser",
+    "Browser session",
+    ["session", "browser", "web"],
+    "Matches when the session originates from a browser. No further configuration is required.",
+  ),
 
   {
     type: "sessionAuthenticationAAL",
@@ -838,59 +971,43 @@ export const itemList: ItemDef[] = [
     },
   },
 
-  makeBoolItem(
+  makeMarkerItem(
+    "sessionAuthenticationCredAuthenticatorFIDOPasskey",
+    "FIDO passkey",
+    ["fido", "passkey", "authenticator", "webauthn"],
+    "Matches when the authenticator is a FIDO passkey. No further configuration is required.",
+  ),
+  makeMarkerItem(
     "sessionAuthenticationCredAuthenticatorFIDOHardware",
     "Hardware-based FIDO",
     ["fido", "hardware", "authenticator", "webauthn"],
-    "isHardware",
+    "Matches when the FIDO authenticator is hardware-based. No further configuration is required.",
   ),
-  makeBoolItem(
+  makeMarkerItem(
     "sessionAuthenticationCredAuthenticatorFIDOAttestationVerified",
     "FIDO verified attestation",
     ["fido", "attestation", "webauthn", "security"],
-    "isAttestationVerified",
+    "Matches when FIDO attestation is verified. No further configuration is required.",
   ),
-  makeBoolItem(
+  makeMarkerItem(
     "sessionAuthenticationCredAuthenticatorFIDOUserVerified",
     "FIDO user verified",
     ["fido", "user", "verification", "webauthn"],
-    "isUserVerified",
+    "Matches when the FIDO user was verified. No further configuration is required.",
   ),
-  makeBoolItem(
+  makeMarkerItem(
     "sessionAuthenticationCredAuthenticatorFIDOUserPresent",
     "FIDO user present",
     ["fido", "user", "presence", "webauthn"],
-    "isUserPresent",
+    "Matches when the FIDO user was present. No further configuration is required.",
   ),
-  makeBoolItem(
-    "apiServer",
-    "Request to API server",
-    ["api", "server", "request"],
-    "isAPIServer",
-  ),
-  makeBoolItem(
-    "apiServerCore",
-    "Request to core API",
-    ["api", "server", "core"],
-    "isAPIServerCore",
-  ),
-  makeBoolItem(
-    "apiServerUser",
-    "Request to user API",
-    ["api", "server", "user"],
-    "isAPIServerUser",
-  ),
-  makeBoolItem(
-    "apiServerEnterprise",
-    "Request to enterprise API",
-    ["api", "server", "enterprise"],
-    "isAPIServerEnterprise",
-  ),
-  makeBoolItem(
-    "apiServerCordium",
-    "Request to Coredium API",
-    ["api", "server", "coredium"],
-    "isAPIServerCordium",
+  makeTextItem(
+    "sessionAuthenticationCredAuthenticatorAAGUID",
+    "FIDO authenticator AAGUID",
+    ["fido", "aaguid", "authenticator", "webauthn"],
+    "aaguid",
+    "AAGUID",
+    "00000000-0000-0000-0000-000000000000",
   ),
 
   makeTextItem(
@@ -908,6 +1025,14 @@ export const itemList: ItemDef[] = [
     "value",
     "Path prefix",
     "/api/v1",
+  ),
+  makeTextItem(
+    "requestHTTPMethod",
+    "Request HTTP method",
+    ["http", "request", "method", "verb"],
+    "value",
+    "HTTP method",
+    "GET",
   ),
   makeTextItem(
     "requestHTTPHasHeader",
@@ -987,6 +1112,94 @@ export const itemList: ItemDef[] = [
       },
     },
   },
+
+  makeMarkerItem(
+    "apiServerReadOnlyMethods",
+    "Request to read-only API methods",
+    ["api", "server", "readonly", "methods"],
+    "Matches requests to read-only API methods. No further configuration is required.",
+  ),
+  makeStringListItem(
+    "apiServerMethods",
+    "Request to API methods",
+    ["api", "server", "methods"],
+    "methods",
+    "Full methods",
+    "/octelium.api.main.core.v1.MainService/CreateService",
+  ),
+  makeStringListItem(
+    "apiServerServices",
+    "Request to API services",
+    ["api", "server", "services"],
+    "services",
+    "Services",
+    "MainService",
+  ),
+  makeBoolItem(
+    "apiServerCore",
+    "Request to core API",
+    ["api", "server", "core"],
+    "readOnlyMethods",
+    "Read-only methods only",
+  ),
+  makeBoolItem(
+    "apiServerUser",
+    "Request to user API",
+    ["api", "server", "user"],
+    "readOnlyMethods",
+    "Read-only methods only",
+  ),
+  makeApiServiceItem(
+    "apiServerEnterprise",
+    "Request to enterprise API",
+    ["api", "server", "enterprise"],
+    EnterpriseService,
+    [
+      EnterpriseService.ANY,
+      EnterpriseService.MAIN,
+      EnterpriseService.CLUSTER,
+      EnterpriseService.POLICY_PORTAL,
+    ],
+    {
+      [EnterpriseService.ANY]: "Any",
+      [EnterpriseService.MAIN]: "Main",
+      [EnterpriseService.CLUSTER]: "Cluster",
+      [EnterpriseService.POLICY_PORTAL]: "Policy Portal",
+    },
+    EnterpriseService.ANY,
+  ),
+  makeApiServiceItem(
+    "apiServerCordium",
+    "Request to Cordium API",
+    ["api", "server", "cordium"],
+    CordiumService,
+    [CordiumService.MAIN, CordiumService.MANAGEMENT, CordiumService.WORKSPACE],
+    {
+      [CordiumService.MAIN]: "Main",
+      [CordiumService.MANAGEMENT]: "Management",
+      [CordiumService.WORKSPACE]: "Workspace",
+    },
+    CordiumService.MAIN,
+  ),
+  makeApiServiceItem(
+    "apiServerAccess",
+    "Request to access API",
+    ["api", "server", "access"],
+    AccessService,
+    [
+      AccessService.ANY,
+      AccessService.MAIN,
+      AccessService.USER,
+      AccessService.REVIEWER,
+    ],
+    {
+      [AccessService.ANY]: "Any",
+      [AccessService.MAIN]: "Main",
+      [AccessService.USER]: "User",
+      [AccessService.REVIEWER]: "Reviewer",
+    },
+    AccessService.ANY,
+  ),
 ];
 
 export default itemList;

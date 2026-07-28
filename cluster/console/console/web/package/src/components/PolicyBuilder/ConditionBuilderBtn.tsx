@@ -2,13 +2,13 @@ import { Condition } from "@/apis/corev1/corev1";
 import { Condition as Policy_Spec_Condition } from "@/apis/enterprisev1/enterprisev1";
 import { onError } from "@/utils";
 import { getClientEnterprise } from "@/utils/client";
-import { Button, Modal, ScrollArea } from "@mantine/core";
+import { Modal, ScrollArea } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useMutation } from "@tanstack/react-query";
+import { SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 import ConditionC from "./Condition";
 import PrintCond from "./PrintCondition";
-import { SlidersHorizontal } from "lucide-react";
 
 const ConditionBuilderBtn = (props: {
   onChange: (condition?: Condition) => void;

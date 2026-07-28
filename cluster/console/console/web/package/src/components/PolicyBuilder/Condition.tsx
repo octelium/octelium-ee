@@ -3,7 +3,7 @@ import {
   Condition,
   Condition_Expression as Expression,
 } from "@/apis/enterprisev1/enterprisev1";
-import { Drawer, Select, Tooltip } from "@mantine/core";
+import { Button, Drawer, Select, Tooltip } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { Edit2, Plus, Search, Trash2 } from "lucide-react";
 import * as React from "react";
@@ -71,6 +71,13 @@ const Cond = (props: {
     const childrenToKeep =
       existingChildren.length > 0 ? existingChildren : [fallbackChild];
 
+    const reuseExpression =
+      (currentItem.type.oneofKind === "expression"
+        ? currentItem.type.expression
+        : currentItem.type.oneofKind === "not"
+          ? currentItem.type.not.expression
+          : getNewExpression()) ?? getNewExpression();
+
     switch (newType) {
       case "all":
         next.type = { oneofKind: "all", all: { of: childrenToKeep } };
@@ -84,16 +91,13 @@ const Cond = (props: {
       case "not":
         next.type = {
           oneofKind: "not",
-          not: { condition: childrenToKeep[0] },
+          not: { expression: reuseExpression },
         };
         break;
       case "expression":
         next.type = {
           oneofKind: "expression",
-          expression:
-            currentItem.type.oneofKind === "expression"
-              ? currentItem.type.expression
-              : getNewExpression(),
+          expression: reuseExpression,
         };
         break;
       case "matchAny":
@@ -187,14 +191,15 @@ const Cond = (props: {
           ))
           .with({ oneofKind: "not" }, (t) => (
             <div className="pl-3 border-l-2 border-red-200">
-              <Cond
-                item={t.not.condition}
-                depth={depth + 1}
-                onChange={(v) => {
-                  if (!v) return;
+              <p className="text-[0.65rem] font-bold uppercase tracking-[0.05em] text-red-400 mb-2">
+                Negated expression
+              </p>
+              <ExpressionC
+                item={t.not.expression}
+                onUpdate={(v) => {
                   const next = Condition.clone(currentItem);
                   if (next.type.oneofKind === "not")
-                    next.type.not.condition = v;
+                    next.type.not.expression = v ?? getNewExpression();
                   updateItem(next);
                 }}
               />
@@ -272,13 +277,17 @@ const LogicalGroup = (props: {
         ))}
       </div>
 
-      <button
+      <Button
+        variant="default"
+        size="compact-xs"
+        color="dark"
+        radius="md"
+        leftSection={<Plus size={11} strokeWidth={2.5} />}
         onClick={handleAdd}
-        className="flex items-center gap-1.5 mt-1 mb-1 px-2.5 py-1 rounded-md text-[0.7rem] font-bold text-slate-500 border border-slate-200 bg-white hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 transition-colors duration-150 cursor-pointer shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
+        className="mt-1 mb-1"
       >
-        <Plus size={11} strokeWidth={2.5} />
         Add condition
-      </button>
+      </Button>
     </div>
   );
 };
@@ -294,13 +303,17 @@ const ExpressionC = (props: {
     <>
       <div className="flex items-center justify-between gap-2 p-2 rounded-lg border border-slate-200 bg-slate-50/50">
         <ExprChip item={props.item} />
-        <button
+        <Button
+          variant="default"
+          size="compact-xs"
+          color="dark"
+          radius="md"
+          leftSection={<Edit2 size={11} strokeWidth={2.5} />}
           onClick={open}
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[0.7rem] font-bold text-slate-500 border border-slate-200 bg-white hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 transition-colors duration-150 cursor-pointer shadow-[0_1px_2px_rgba(15,23,42,0.05)] shrink-0"
+          className="shrink-0"
         >
-          <Edit2 size={11} strokeWidth={2.5} />
           Edit
-        </button>
+        </Button>
       </div>
 
       <Drawer
@@ -380,31 +393,31 @@ const ExpressionEditC = (props: {
             />
           </div>
 
-          <div className="flex flex-wrap gap-1.5">
-            <button
+          <div className="flex flex-wrap gap-1.5 max-h-[108px] overflow-y-auto pr-1">
+            <Button
+              variant={activeTag === null ? "filled" : "default"}
+              color="dark"
+              size="compact-xs"
+              radius="md"
+              tt="uppercase"
+              fw={700}
               onClick={() => setActiveTag(null)}
-              className={twMerge(
-                "px-2 py-0.5 rounded-md text-[0.65rem] font-bold uppercase tracking-[0.05em] border transition-colors duration-150 cursor-pointer",
-                activeTag === null
-                  ? "bg-slate-900 text-white border-slate-900"
-                  : "bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-800",
-              )}
             >
               All
-            </button>
+            </Button>
             {ALL_TAGS.map((tag) => (
-              <button
+              <Button
                 key={tag}
+                variant={activeTag === tag ? "filled" : "default"}
+                color="dark"
+                size="compact-xs"
+                radius="md"
+                tt="uppercase"
+                fw={700}
                 onClick={() => setActiveTag(activeTag === tag ? null : tag)}
-                className={twMerge(
-                  "px-2 py-0.5 rounded-md text-[0.65rem] font-bold uppercase tracking-[0.05em] border transition-colors duration-150 cursor-pointer",
-                  activeTag === tag
-                    ? "bg-slate-900 text-white border-slate-900"
-                    : "bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-800",
-                )}
               >
                 {tag}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -439,35 +452,32 @@ const ExpressionEditC = (props: {
               {filtered.map((x) => {
                 const isSelected = selectedType === x.type;
                 return (
-                  <button
+                  <Button
                     key={x.type}
+                    variant={isSelected ? "filled" : "default"}
+                    color="dark"
+                    size="xs"
+                    radius="md"
+                    fullWidth
+                    justify="flex-start"
                     onClick={() => selectType(x)}
-                    className={twMerge(
-                      "flex flex-col items-start text-left rounded-lg border px-3 py-2 transition-[border-color,box-shadow,background-color] duration-150 cursor-pointer",
-                      isSelected
-                        ? "border-slate-900 bg-slate-50 shadow-[0_2px_8px_rgba(15,23,42,0.10)]"
-                        : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 hover:shadow-[0_1px_4px_rgba(15,23,42,0.06)]",
-                    )}
+                    styles={{
+                      root: {
+                        height: "auto",
+                        paddingTop: "7px",
+                        paddingBottom: "7px",
+                      },
+                      label: {
+                        whiteSpace: "normal",
+                        textAlign: "left",
+                        lineHeight: 1.2,
+                        fontSize: "0.72rem",
+                        fontWeight: 700,
+                      },
+                    }}
                   >
-                    <span
-                      className={twMerge(
-                        "text-[0.75rem] font-bold",
-                        isSelected ? "text-slate-900" : "text-slate-700",
-                      )}
-                    >
-                      {x.title}
-                    </span>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {x.tags.slice(0, 3).map((t) => (
-                        <span
-                          key={t}
-                          className="text-[0.6rem] font-bold uppercase tracking-[0.04em] text-slate-400"
-                        >
-                          {t}
-                        </span>
-                      ))}
-                    </div>
-                  </button>
+                    {x.title}
+                  </Button>
                 );
               })}
             </div>
