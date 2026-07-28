@@ -11,6 +11,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      VAULT_ADDR: http://127.0.0.1:8200
     services:
       postgres:
         image: postgres
@@ -38,29 +40,34 @@ jobs:
           VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
     steps:
       - name: Set up go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
-          go-version: "1.21"
+          go-version: "${{env.GO_VERSION}}"
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install psql
         run: |
           sudo apt-get update
           sudo apt-get install --yes postgresql-client
       - name: Set ENV variables
-        env:
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
-        run: for v in `cat .github/workflows/env` ; do echo "::set-env name=${v%%=*}::${v##*=}" ; done
+        run: cat .github/workflows/env >> "$GITHUB_ENV"
       - name: Create database
         run: psql -h localhost -U postgres -c 'CREATE DATABASE octelium;'
         env:
           PGPASSWORD: postgres
+      - name: Wait for Vault
+        run: |
+          for i in $(seq 1 60); do
+            if curl -sfo /dev/null "${VAULT_ADDR}/v1/sys/health"; then
+              echo "Vault is ready at ${VAULT_ADDR}"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Vault did not become ready at ${VAULT_ADDR}" >&2
+          exit 1
       - name: Run tests
         run: |
-          if [ "$OCTELIUM_PRIVATE_REPO" == "true" ]; then
-            git config --global url."https://${{ secrets.OCT_MAIN }}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
-            go env -w GOPRIVATE="github.com/octelium/*"
-          fi
           go version
           which go
           gocmd=$(which go)

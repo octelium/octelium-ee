@@ -11,6 +11,8 @@ package hashicorpvault
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
 	"testing"
 
 	vault "github.com/hashicorp/vault/api"
@@ -24,6 +26,16 @@ import (
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
 )
+
+const defaultTestVaultAddr = "http://127.0.0.1:8200"
+
+func testVaultAddr() string {
+	if addr := strings.TrimSpace(os.Getenv("VAULT_ADDR")); addr != "" {
+		return addr
+	}
+
+	return defaultTestVaultAddr
+}
 
 func TestServer(t *testing.T) {
 	ctx := context.Background()
@@ -55,6 +67,8 @@ func TestServer(t *testing.T) {
 		return
 	}
 
+	vaultAddr := testVaultAddr()
+
 	vaultCfg := vault.DefaultConfig()
 	assert.NotNil(t, vaultCfg)
 	if vaultCfg == nil {
@@ -65,6 +79,8 @@ func TestServer(t *testing.T) {
 	if vaultCfg.Error != nil {
 		return
 	}
+
+	vaultCfg.Address = vaultAddr
 
 	vaultC, err := vault.NewClient(vaultCfg)
 	assert.Nil(t, err, "%+v", err)
@@ -146,7 +162,7 @@ func TestServer(t *testing.T) {
 			Spec: &enterprisev1.SecretStore_Spec{
 				Type: &enterprisev1.SecretStore_Spec_HashicorpVault_{
 					HashicorpVault: &enterprisev1.SecretStore_Spec_HashicorpVault{
-						Address: vaultCfg.Address,
+						Address: vaultAddr,
 						Role:    "octelium-test",
 						Key:     keyName,
 					},
