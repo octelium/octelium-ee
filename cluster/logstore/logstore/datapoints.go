@@ -401,7 +401,7 @@ func fillGaps(dataPoints []DataPoint, from, to time.Time, interval *intervalData
 	var result []DataPoint
 	current := alignTimeToBucket(from, interval)
 
-	for current.Before(to) || current.Equal(to) {
+	for current.Before(to) {
 		timestamp := current.Format(time.RFC3339)
 		count := pointMap[timestamp]
 
