@@ -10,7 +10,9 @@ package secretman
 
 import (
 	"context"
+	"fmt"
 	"testing"
+	"time"
 
 	otests "github.com/octelium/octelium-ee/cluster/common/tests"
 	"github.com/octelium/octelium-ee/cluster/secretman/secretman/migrations"
@@ -18,6 +20,7 @@ import (
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/cluster/common/postgresutils"
+	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/grpcerr"
@@ -172,5 +175,281 @@ func TestServer(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, 1, len(itmList.Items))
 		assert.Equal(t, sec2.Metadata.Uid, itmList.Items[0].SecretRef.Uid)
+	}
+}
+
+func TestSetDEKMap(t *testing.T) {
+	srv := &server{}
+	srv.deks.dekMap = make(map[string]*dek)
+
+	now := time.Now()
+
+	dek1 := &dek{
+		uid:       vutils.UUIDv4(),
+		key:       utilrand.GetRandomBytesMust(32),
+		createdAt: now.Add(-2 * time.Hour),
+	}
+	dek2 := &dek{
+		uid:       vutils.UUIDv4(),
+		key:       utilrand.GetRandomBytesMust(32),
+		createdAt: now.Add(-1 * time.Hour),
+	}
+	dek3 := &dek{
+		uid:       vutils.UUIDv4(),
+		key:       utilrand.GetRandomBytesMust(32),
+		createdAt: now,
+	}
+
+	srv.doSetDEKMap([]*dek{dek2, dek3, dek1})
+
+	assert.Equal(t, 3, len(srv.deks.dekMap))
+	assert.Equal(t, dek3.uid, srv.deks.cur.uid)
+
+	for _, itm := range []*dek{dek1, dek2, dek3} {
+		got, err := srv.getDEKByUID(itm.uid)
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, itm.uid, got.uid)
+		assert.Equal(t, itm.key, got.key)
+	}
+
+	{
+		cur, err := srv.chooseDEK(context.Background())
+		assert.Nil(t, err)
+		assert.Equal(t, dek3.uid, cur.uid)
+	}
+
+	srv.doSetDEKMap([]*dek{dek1})
+
+	assert.Equal(t, 1, len(srv.deks.dekMap))
+	assert.Equal(t, dek1.uid, srv.deks.cur.uid)
+
+	{
+		_, err := srv.getDEKByUID(dek3.uid)
+		assert.NotNil(t, err)
+	}
+
+	srv.doSetDEKMap(nil)
+
+	assert.Equal(t, 0, len(srv.deks.dekMap))
+	assert.Equal(t, dek1.uid, srv.deks.cur.uid)
+}
+
+func TestInitRootDEKIdempotency(t *testing.T) {
+	ctx := context.Background()
+	tst, err := otests.Initialize(nil)
+	assert.Nil(t, err, "%+v", err)
+	t.Cleanup(func() {
+		tst.Destroy()
+	})
+	fakeC := tst.C
+	db, err := postgresutils.NewDB()
+	assert.Nil(t, err)
+	err = migrations.Migrate(ctx, db)
+	assert.Nil(t, err)
+
+	srv, err := newServer(ctx, fakeC.OcteliumC, db)
+	assert.Nil(t, err)
+
+	err = srv.initRootDEK(ctx)
+	assert.Nil(t, err, "%+v", err)
+
+	deks, err := srv.doListDEK(ctx)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(deks))
+
+	for range 3 {
+		err = srv.initRootDEK(ctx)
+		assert.Nil(t, err, "%+v", err)
+	}
+
+	deks2, err := srv.doListDEK(ctx)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(deks2))
+	assert.Equal(t, deks[0].uid, deks2[0].uid)
+	assert.Equal(t, deks[0].key, deks2[0].key)
+
+	srv2, err := newServer(ctx, fakeC.OcteliumC, db)
+	assert.Nil(t, err)
+
+	err = srv2.initRootDEK(ctx)
+	assert.Nil(t, err)
+
+	err = srv2.setDEKMap(ctx)
+	assert.Nil(t, err)
+
+	assert.Equal(t, 1, len(srv2.deks.dekMap))
+	assert.Equal(t, deks[0].uid, srv2.deks.cur.uid)
+}
+
+func TestAPIRequestValidation(t *testing.T) {
+	ctx := context.Background()
+	tst, err := otests.Initialize(nil)
+	assert.Nil(t, err, "%+v", err)
+	t.Cleanup(func() {
+		tst.Destroy()
+	})
+	fakeC := tst.C
+	db, err := postgresutils.NewDB()
+	assert.Nil(t, err)
+	err = migrations.Migrate(ctx, db)
+	assert.Nil(t, err)
+
+	srv, err := newServer(ctx, fakeC.OcteliumC, db)
+	assert.Nil(t, err)
+
+	err = srv.initRootDEK(ctx)
+	assert.Nil(t, err)
+
+	err = srv.setDEKMap(ctx)
+	assert.Nil(t, err)
+
+	validRef := &metav1.ObjectReference{
+		Uid:             vutils.UUIDv4(),
+		ResourceVersion: vutils.UUIDv7(),
+	}
+
+	{
+		_, err := srv.GetSecret(ctx, nil)
+		assert.NotNil(t, err)
+
+		_, err = srv.GetSecret(ctx, &csecretmanv1.GetSecretRequest{})
+		assert.NotNil(t, err)
+
+		_, err = srv.GetSecret(ctx, &csecretmanv1.GetSecretRequest{
+			SecretRef: &metav1.ObjectReference{Uid: validRef.Uid},
+		})
+		assert.NotNil(t, err)
+	}
+	{
+		_, err := srv.SetSecret(ctx, nil)
+		assert.NotNil(t, err)
+
+		_, err = srv.SetSecret(ctx, &csecretmanv1.SetSecretRequest{})
+		assert.NotNil(t, err)
+
+		_, err = srv.SetSecret(ctx, &csecretmanv1.SetSecretRequest{
+			SecretRef: validRef,
+		})
+		assert.NotNil(t, err)
+	}
+	{
+		_, err := srv.DeleteSecret(ctx, nil)
+		assert.NotNil(t, err)
+
+		_, err = srv.DeleteSecret(ctx, &csecretmanv1.DeleteSecretRequest{})
+		assert.NotNil(t, err)
+
+		_, err = srv.DeleteSecret(ctx, &csecretmanv1.DeleteSecretRequest{
+			SecretRef: &metav1.ObjectReference{ResourceVersion: validRef.ResourceVersion},
+		})
+		assert.NotNil(t, err)
+	}
+	{
+		_, err := srv.ListSecret(ctx, nil)
+		assert.NotNil(t, err)
+
+		res, err := srv.ListSecret(ctx, &csecretmanv1.ListSecretRequest{})
+		assert.Nil(t, err)
+		assert.Equal(t, 0, len(res.Items))
+	}
+	{
+		_, err := srv.SetSecret(ctx, &csecretmanv1.SetSecretRequest{
+			SecretRef: validRef,
+			Data:      utilrand.GetRandomBytesMust(32),
+		})
+		assert.Nil(t, err, "%+v", err)
+
+		_, err = srv.DeleteSecret(ctx, &csecretmanv1.DeleteSecretRequest{
+			SecretRef: validRef,
+		})
+		assert.Nil(t, err)
+
+		_, err = srv.DeleteSecret(ctx, &csecretmanv1.DeleteSecretRequest{
+			SecretRef: validRef,
+		})
+		assert.Nil(t, err)
+	}
+}
+
+func TestMigrations(t *testing.T) {
+	ctx := context.Background()
+	tst, err := otests.Initialize(nil)
+	assert.Nil(t, err, "%+v", err)
+	t.Cleanup(func() {
+		tst.Destroy()
+	})
+
+	db, err := postgresutils.NewDB()
+	assert.Nil(t, err)
+
+	for range 3 {
+		err = migrations.Migrate(ctx, db)
+		assert.Nil(t, err, "%+v", err)
+	}
+
+	uid := vutils.UUIDv4()
+	now := pbutils.Now().AsTime()
+
+	_, err = db.ExecContext(ctx,
+		`DROP INDEX IF EXISTS idx_octelium_encrypted_resources_uid_unique`)
+	assert.Nil(t, err, "%+v", err)
+
+	for i := range 3 {
+		_, err = db.ExecContext(ctx, `
+INSERT INTO octelium_encrypted_resources
+    (uid, resource_version, created_at, updated_at, key_uid, ciphertext, aead_version)
+VALUES
+    ($1, $2, $3, $4, $5, $6, $7)
+`,
+			uid,
+			fmt.Sprintf("rv-%d", i),
+			now.Add(time.Duration(i)*time.Second),
+			now.Add(time.Duration(i)*time.Second),
+			"kek",
+			utilrand.GetRandomBytesMust(32),
+			dataSecretAEADVersionV1,
+		)
+		assert.Nil(t, err, "%+v", err)
+	}
+
+	{
+		var count int
+		err := db.QueryRowContext(ctx,
+			`SELECT count(*) FROM octelium_encrypted_resources WHERE uid = $1`, uid).Scan(&count)
+		assert.Nil(t, err)
+		assert.Equal(t, 3, count)
+	}
+
+	err = migrations.Migrate(ctx, db)
+	assert.Nil(t, err, "%+v", err)
+
+	{
+		var count int
+		var resourceVersion string
+
+		err := db.QueryRowContext(ctx,
+			`SELECT count(*), max(resource_version) FROM octelium_encrypted_resources WHERE uid = $1`,
+			uid).Scan(&count, &resourceVersion)
+		assert.Nil(t, err)
+		assert.Equal(t, 1, count)
+		assert.Equal(t, "rv-2", resourceVersion)
+	}
+
+	{
+		_, err := db.ExecContext(ctx, `
+INSERT INTO octelium_encrypted_resources
+    (uid, resource_version, created_at, updated_at, key_uid, ciphertext, aead_version)
+VALUES
+    ($1, $2, $3, $4, $5, $6, $7)
+`,
+			uid,
+			"rv-3",
+			now,
+			now,
+			"kek",
+			utilrand.GetRandomBytesMust(32),
+			dataSecretAEADVersionV1,
+		)
+		assert.NotNil(t, err)
 	}
 }
