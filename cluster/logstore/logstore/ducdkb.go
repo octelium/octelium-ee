@@ -11,9 +11,10 @@ package logstore
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
@@ -30,6 +31,72 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
+
+func getLogInsertQuery(table logTable) (string, error) {
+	switch table {
+	case logTableAccess:
+		return `INSERT INTO access_logs VALUES ($1)`, nil
+	case logTableComponent:
+		return `INSERT INTO component_logs VALUES ($1)`, nil
+	case logTableAuthentication:
+		return `INSERT INTO authentication_logs VALUES ($1)`, nil
+	case logTableAudit:
+		return `INSERT INTO audit_logs VALUES ($1)`, nil
+	default:
+		return "", errors.Errorf("Invalid log table: %d", table)
+	}
+}
+
+func (s *Server) insertLogBatches(ctx context.Context, batches []*pendingLogBatch) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	committed := false
+	defer func() {
+		if !committed {
+			_ = tx.Rollback()
+		}
+	}()
+
+	statements := make(map[logTable]*sql.Stmt)
+	defer func() {
+		for _, stmt := range statements {
+			_ = stmt.Close()
+		}
+	}()
+
+	for _, batch := range batches {
+		for _, item := range batch.items {
+			stmt := statements[item.table]
+			if stmt == nil {
+				query, err := getLogInsertQuery(item.table)
+				if err != nil {
+					return err
+				}
+
+				stmt, err = tx.PrepareContext(ctx, query)
+				if err != nil {
+					return err
+				}
+
+				statements[item.table] = stmt
+			}
+
+			if _, err := stmt.ExecContext(ctx, string(item.data)); err != nil {
+				return err
+			}
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	committed = true
+	return nil
+}
 
 func (s *Server) insertAccessLog(accessLogJSON []byte) error {
 	if len(accessLogJSON) < 1 {

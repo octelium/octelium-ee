@@ -22,36 +22,162 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	logQueueSize       = 256
+	logBatchSize       = 500
+	logBatchWait       = 100 * time.Millisecond
+	logEnqueueTimeout  = 2 * time.Second
+	logShutdownTimeout = 10 * time.Second
+	maxLogsPerExport   = 5000
+	maxLogRecordSize   = 256 * 1024
+	maxAccessLogSize   = 25000
+)
+
+type logTable uint8
+
+const (
+	logTableUnknown logTable = iota
+	logTableAccess
+	logTableComponent
+	logTableAuthentication
+	logTableAudit
+)
+
+type pendingLog struct {
+	table logTable
+	data  []byte
+}
+
+type pendingLogBatch struct {
+	items []pendingLog
+	done  chan error
+}
+
 type srvLog struct {
 	plogotlp.UnimplementedGRPCServer
-	s      *Server
-	itemCh chan plog.LogRecord
+	s       *Server
+	batchCh chan *pendingLogBatch
+}
+
+func parseLogRecord(lr plog.LogRecord) (*pendingLog, error) {
+	var body []byte
+
+	switch lr.Body().Type() {
+	case pcommon.ValueTypeStr:
+		body = []byte(lr.Body().AsString())
+
+	case pcommon.ValueTypeMap:
+		var err error
+		body, err = json.Marshal(lr.Body().Map().AsRaw())
+		if err != nil {
+			return nil, errors.Wrap(err, "Could not marshal OTLP map log body")
+		}
+
+	default:
+		return nil, errors.Errorf("Unsupported OTLP log body type: %s", lr.Body().Type())
+	}
+
+	if len(body) == 0 {
+		return nil, errors.Errorf("Empty OTLP log body")
+	}
+
+	if len(body) > maxLogRecordSize {
+		return nil, errors.Errorf("OTLP log body is too large: %d", len(body))
+	}
+
+	var envelope struct {
+		Kind string `json:"kind"`
+	}
+
+	if err := json.Unmarshal(body, &envelope); err != nil {
+		return nil, errors.Wrap(
+			err,
+			"Could not unmarshal OTLP log body",
+		)
+	}
+
+	ret := &pendingLog{
+		data: append([]byte(nil), body...),
+	}
+
+	switch envelope.Kind {
+	case ucorev1.KindAccessLog:
+		if len(body) > maxAccessLogSize {
+			return nil, errors.Errorf("AccessLog is too large: %d", len(body))
+		}
+		ret.table = logTableAccess
+
+	case ucorev1.KindComponentLog:
+		ret.table = logTableComponent
+
+	case uenterprisev1.KindAuthenticationLog:
+		ret.table = logTableAuthentication
+
+	case uenterprisev1.KindAuditLog:
+		ret.table = logTableAudit
+
+	default:
+		return nil, errors.Errorf("Unsupported log kind: %s", envelope.Kind)
+	}
+
+	return ret, nil
 }
 
 func (s *srvLog) Export(ctx context.Context, req plogotlp.ExportRequest) (plogotlp.ExportResponse, error) {
+	var items []pendingLog
 
 	for i := range req.Logs().ResourceLogs().Len() {
 		scopeLogs := req.Logs().ResourceLogs().At(i).ScopeLogs()
 		for j := range scopeLogs.Len() {
 			logRecords := scopeLogs.At(j).LogRecords()
 			for k := range logRecords.Len() {
-				lr := logRecords.At(k)
-				destLr := plog.NewLogRecord()
-				lr.CopyTo(destLr)
-				select {
-				case s.itemCh <- destLr:
-				case <-ctx.Done():
-					return plogotlp.NewExportResponse(), ctx.Err()
-				case <-time.After(2 * time.Second):
-					return plogotlp.NewExportResponse(), errors.Errorf("Logstore itemCh queue is full")
+				if len(items) >= maxLogsPerExport {
+					return plogotlp.NewExportResponse(), errors.Errorf("Too many logs in one export request")
 				}
+
+				item, err := parseLogRecord(logRecords.At(k))
+				if err != nil {
+					return plogotlp.NewExportResponse(), err
+				}
+
+				items = append(items, *item)
 			}
 		}
 	}
 
-	return plogotlp.NewExportResponse(), nil
+	if len(items) == 0 {
+		return plogotlp.NewExportResponse(), nil
+	}
+
+	batch := &pendingLogBatch{
+		items: items,
+		done:  make(chan error, 1),
+	}
+
+	timer := time.NewTimer(logEnqueueTimeout)
+	defer timer.Stop()
+
+	select {
+	case s.batchCh <- batch:
+	case <-ctx.Done():
+		return plogotlp.NewExportResponse(), ctx.Err()
+	case <-timer.C:
+		return plogotlp.NewExportResponse(), errors.Errorf("LogStore queue is full")
+	}
+
+	select {
+	case err := <-batch.done:
+		if err != nil {
+			return plogotlp.NewExportResponse(), err
+		}
+		return plogotlp.NewExportResponse(), nil
+
+	case <-ctx.Done():
+		return plogotlp.NewExportResponse(), ctx.Err()
+	}
 }
 
+/*
 func (s *srvLog) processLogRecord(lr plog.LogRecord) {
 
 	bodyJSONMap := make(map[string]any)
@@ -115,23 +241,58 @@ func (s *srvLog) processLogRecord(lr plog.LogRecord) {
 	}
 
 }
+*/
 
 func (s *srvLog) startProcessLoop(ctx context.Context) {
-	defer zap.L().Debug("Exiting process loop")
+	defer zap.L().Debug("Exiting LogStore process loop")
+
+	ticker := time.NewTicker(logBatchWait)
+	defer ticker.Stop()
+
+	var pending []*pendingLogBatch
+	var itemCount int
+
+	flush := func(flushCtx context.Context) {
+		if len(pending) == 0 {
+			return
+		}
+
+		batches := pending
+		pending = nil
+		itemCount = 0
+
+		err := s.s.insertLogBatches(flushCtx, batches)
+
+		for _, batch := range batches {
+			batch.done <- err
+		}
+	}
 
 	for {
 		select {
 		case <-ctx.Done():
+			flushCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), logShutdownTimeout)
+			flush(flushCtx)
+			cancel()
 			return
-		case lr := <-s.itemCh:
-			s.processLogRecord(lr)
+
+		case batch := <-s.batchCh:
+			pending = append(pending, batch)
+			itemCount += len(batch.items)
+
+			if itemCount >= logBatchSize {
+				flush(ctx)
+			}
+
+		case <-ticker.C:
+			flush(ctx)
 		}
 	}
 }
 
 func (s *Server) newSrvLog() *srvLog {
 	return &srvLog{
-		s:      s,
-		itemCh: make(chan plog.LogRecord, 10000),
+		s:       s,
+		batchCh: make(chan *pendingLogBatch, logQueueSize),
 	}
 }

@@ -15,6 +15,7 @@ import (
 	"time"
 
 	otests "github.com/octelium/octelium-ee/cluster/common/tests"
+	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
@@ -30,7 +31,311 @@ import (
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
 )
+
+type testServer struct {
+	ctx     context.Context
+	srv     *Server
+	coreSrv *admin.Server
+}
+
+func newTestServer(t *testing.T) *testServer {
+	t.Helper()
+
+	ctx := context.Background()
+	tst, err := otests.Initialize(nil)
+	assert.Nil(t, err, "%+v", err)
+	if err != nil {
+		return nil
+	}
+
+	srv, err := newServer(ctx, tst.C.OcteliumC)
+	assert.Nil(t, err, "%+v", err)
+	if err != nil {
+		_ = tst.Destroy()
+		return nil
+	}
+
+	err = srv.initDB(ctx)
+	assert.Nil(t, err, "%+v", err)
+	if err != nil {
+		_ = srv.db.Close()
+		_ = tst.Destroy()
+		return nil
+	}
+
+	t.Cleanup(func() {
+		assert.Nil(t, srv.db.Close())
+		tst.Destroy()
+	})
+
+	return &testServer{
+		ctx: ctx,
+		srv: srv,
+		coreSrv: admin.NewServer(&admin.Opts{
+			IsEmbedded: true,
+			OcteliumC:  srv.octeliumC,
+		}),
+	}
+}
+
+func marshalLog(t *testing.T, msg proto.Message) []byte {
+	t.Helper()
+
+	ret, err := pbutils.MarshalJSON(msg, false)
+	assert.Nil(t, err, "%+v", err)
+	return ret
+}
+
+func insertLogJSON(t *testing.T, srv *Server, table string, data []byte) {
+	t.Helper()
+
+	_, err := srv.db.Exec(fmt.Sprintf("INSERT INTO %s VALUES ($1)", table), string(data))
+	assert.Nil(t, err, "%+v", err)
+}
+
+func getTableCount(t *testing.T, srv *Server, table string) int {
+	t.Helper()
+
+	var ret int
+	err := srv.db.QueryRow(fmt.Sprintf("SELECT COUNT(*) FROM %s", table)).Scan(&ret)
+	assert.Nil(t, err, "%+v", err)
+	return ret
+}
+
+type accessLogOptions struct {
+	CreatedAt     time.Time
+	Status        corev1.AccessLog_Entry_Common_Status
+	UserRef       *metav1.ObjectReference
+	DeviceRef     *metav1.ObjectReference
+	SessionRef    *metav1.ObjectReference
+	ServiceRef    *metav1.ObjectReference
+	NamespaceRef  *metav1.ObjectReference
+	RegionRef     *metav1.ObjectReference
+	PolicyRef     *metav1.ObjectReference
+	ConnectionID  string
+	SessionID     string
+	Sequence      int64
+	SSHType       corev1.AccessLog_Entry_Info_SSH_Type
+	RecordingType corev1.AccessLog_Entry_Info_SSH_SessionRecording_Type
+	RecordingData []byte
+}
+
+func newAccessLog(opts *accessLogOptions) *corev1.AccessLog {
+	if opts == nil {
+		opts = &accessLogOptions{}
+	}
+	if opts.CreatedAt.IsZero() {
+		opts.CreatedAt = time.Now()
+	}
+
+	common := &corev1.AccessLog_Entry_Common{
+		StartedAt:    pbutils.Timestamp(opts.CreatedAt.Add(-time.Second)),
+		EndedAt:      pbutils.Timestamp(opts.CreatedAt),
+		Status:       opts.Status,
+		UserRef:      opts.UserRef,
+		DeviceRef:    opts.DeviceRef,
+		SessionRef:   opts.SessionRef,
+		ServiceRef:   opts.ServiceRef,
+		NamespaceRef: opts.NamespaceRef,
+		RegionRef:    opts.RegionRef,
+		ConnectionID: opts.ConnectionID,
+		SessionID:    opts.SessionID,
+		Sequence:     opts.Sequence,
+	}
+
+	if common.Status == corev1.AccessLog_Entry_Common_STATUS_UNSET {
+		common.Status = corev1.AccessLog_Entry_Common_ALLOWED
+	}
+
+	if opts.PolicyRef != nil {
+		common.Reason = &corev1.AccessLog_Entry_Common_Reason{
+			Type: corev1.AccessLog_Entry_Common_Reason_POLICY_MATCH,
+			Details: &corev1.AccessLog_Entry_Common_Reason_Details{
+				Type: &corev1.AccessLog_Entry_Common_Reason_Details_PolicyMatch_{
+					PolicyMatch: &corev1.AccessLog_Entry_Common_Reason_Details_PolicyMatch{
+						Type: &corev1.AccessLog_Entry_Common_Reason_Details_PolicyMatch_Policy_{
+							Policy: &corev1.AccessLog_Entry_Common_Reason_Details_PolicyMatch_Policy{
+								PolicyRef: opts.PolicyRef,
+							},
+						},
+					},
+				},
+			},
+		}
+	}
+
+	ret := &corev1.AccessLog{
+		ApiVersion: ucorev1.APIVersion,
+		Kind:       ucorev1.KindAccessLog,
+		Metadata: &metav1.LogMetadata{
+			Id:        vutils.GenerateLogID(),
+			CreatedAt: pbutils.Timestamp(opts.CreatedAt),
+		},
+		Entry: &corev1.AccessLog_Entry{
+			Common: common,
+		},
+	}
+
+	if opts.SSHType != corev1.AccessLog_Entry_Info_SSH_TYPE_UNKNOWN {
+		ssh := &corev1.AccessLog_Entry_Info_SSH{
+			Type: opts.SSHType,
+		}
+
+		if opts.SSHType == corev1.AccessLog_Entry_Info_SSH_SESSION_RECORDING {
+			ssh.Details = &corev1.AccessLog_Entry_Info_SSH_SessionRecording_{
+				SessionRecording: &corev1.AccessLog_Entry_Info_SSH_SessionRecording{
+					Type: opts.RecordingType,
+					Data: append([]byte(nil), opts.RecordingData...),
+				},
+			}
+		}
+
+		ret.Entry.Info = &corev1.AccessLog_Entry_Info{
+			Type: &corev1.AccessLog_Entry_Info_Ssh{
+				Ssh: ssh,
+			},
+		}
+	}
+
+	return ret
+}
+
+type authenticationLogOptions struct {
+	CreatedAt           time.Time
+	UserRef             *metav1.ObjectReference
+	DeviceRef           *metav1.ObjectReference
+	SessionRef          *metav1.ObjectReference
+	Type                corev1.Session_Status_Authentication_Info_Type
+	AAL                 corev1.Session_Status_Authentication_Info_AAL
+	AuthenticationIndex uint32
+	CredentialRef       *metav1.ObjectReference
+	IdentityProviderRef *metav1.ObjectReference
+}
+
+func newAuthenticationLog(opts *authenticationLogOptions) *enterprisev1.AuthenticationLog {
+	if opts == nil {
+		opts = &authenticationLogOptions{}
+	}
+	if opts.CreatedAt.IsZero() {
+		opts.CreatedAt = time.Now()
+	}
+
+	info := &corev1.Session_Status_Authentication_Info{
+		Type: opts.Type,
+		Aal:  opts.AAL,
+	}
+
+	if opts.CredentialRef != nil {
+		info.Details = &corev1.Session_Status_Authentication_Info_Credential_{
+			Credential: &corev1.Session_Status_Authentication_Info_Credential{
+				CredentialRef: opts.CredentialRef,
+			},
+		}
+	}
+
+	if opts.IdentityProviderRef != nil {
+		info.Details = &corev1.Session_Status_Authentication_Info_IdentityProvider_{
+			IdentityProvider: &corev1.Session_Status_Authentication_Info_IdentityProvider{
+				IdentityProviderRef: opts.IdentityProviderRef,
+			},
+		}
+	}
+
+	return &enterprisev1.AuthenticationLog{
+		ApiVersion: uenterprisev1.APIVersion,
+		Kind:       uenterprisev1.KindAuthenticationLog,
+		Metadata: &metav1.LogMetadata{
+			Id:        vutils.GenerateLogID(),
+			CreatedAt: pbutils.Timestamp(opts.CreatedAt),
+		},
+		Entry: &enterprisev1.AuthenticationLog_Entry{
+			UserRef:             opts.UserRef,
+			DeviceRef:           opts.DeviceRef,
+			SessionRef:          opts.SessionRef,
+			Authentication:      &corev1.Session_Status_Authentication{Info: info},
+			AuthenticationIndex: opts.AuthenticationIndex,
+		},
+	}
+}
+
+type auditLogOptions struct {
+	CreatedAt   time.Time
+	UserRef     *metav1.ObjectReference
+	DeviceRef   *metav1.ObjectReference
+	SessionRef  *metav1.ObjectReference
+	ResourceRef *metav1.ObjectReference
+	Operation   string
+}
+
+func newAuditLog(opts *auditLogOptions) *enterprisev1.AuditLog {
+	if opts == nil {
+		opts = &auditLogOptions{}
+	}
+	if opts.CreatedAt.IsZero() {
+		opts.CreatedAt = time.Now()
+	}
+
+	return &enterprisev1.AuditLog{
+		ApiVersion: uenterprisev1.APIVersion,
+		Kind:       uenterprisev1.KindAuditLog,
+		Metadata: &metav1.LogMetadata{
+			Id:        vutils.GenerateLogID(),
+			CreatedAt: pbutils.Timestamp(opts.CreatedAt),
+		},
+		Entry: &enterprisev1.AuditLog_Entry{
+			UserRef:     opts.UserRef,
+			DeviceRef:   opts.DeviceRef,
+			SessionRef:  opts.SessionRef,
+			ResourceRef: opts.ResourceRef,
+			Operation:   opts.Operation,
+		},
+	}
+}
+
+func newComponentLog(createdAt time.Time, level corev1.ComponentLog_Entry_Level, message string) *corev1.ComponentLog {
+	if createdAt.IsZero() {
+		createdAt = time.Now()
+	}
+
+	return &corev1.ComponentLog{
+		ApiVersion: ucorev1.APIVersion,
+		Kind:       ucorev1.KindComponentLog,
+		Metadata: &metav1.LogMetadata{
+			Id:        vutils.GenerateLogID(),
+			CreatedAt: pbutils.Timestamp(createdAt),
+		},
+		Entry: &corev1.ComponentLog_Entry{
+			Level:   level,
+			Message: message,
+			Time:    pbutils.Timestamp(createdAt),
+		},
+	}
+}
+
+func createTestUser(t *testing.T, ts *testServer) *corev1.User {
+	t.Helper()
+
+	ret, err := ts.coreSrv.CreateUser(ts.ctx, tests.GenUser(nil))
+	assert.Nil(t, err, "%+v", err)
+	return ret
+}
+
+func createTestService(t *testing.T, ts *testServer) *corev1.Service {
+	t.Helper()
+
+	ret, err := ts.coreSrv.CreateService(ts.ctx, tests.GenService(""))
+	assert.Nil(t, err, "%+v", err)
+	return ret
+}
+
+func randomObjectReference() *metav1.ObjectReference {
+	return &metav1.ObjectReference{
+		Uid:  vutils.UUIDv4(),
+		Name: fmt.Sprintf("rsc-%s", utilrand.GetRandomStringLowercase(6)),
+	}
+}
 
 func TestServer(t *testing.T) {
 	ctx := context.Background()
