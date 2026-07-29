@@ -110,76 +110,6 @@ func (s *Server) listAccessLog(ctx context.Context, req *visibilityv1.ListAccess
 	if err != nil {
 		return nil, err
 	}
-	/*
-		if req.UserRef != nil {
-			if err := apivalidation.CheckObjectRef(req.UserRef, &apivalidation.CheckGetOptionsOpts{}); err != nil {
-				return nil, err
-			}
-
-			if req.UserRef.Uid != "" {
-				filters = append(filters, goqu.L(`rsc->>'$.entry.common.userRef.uid'`).Eq(req.UserRef.Uid))
-			}
-
-		}
-
-		if req.DeviceRef != nil {
-			if err := apivalidation.CheckObjectRef(req.DeviceRef, &apivalidation.CheckGetOptionsOpts{}); err != nil {
-				return nil, err
-			}
-			filters = append(filters, goqu.L(`rsc->>'$.entry.common.deviceRef.uid'`).Eq(req.DeviceRef.Uid))
-		}
-
-		if req.SessionRef != nil {
-			if err := apivalidation.CheckObjectRef(req.SessionRef, &apivalidation.CheckGetOptionsOpts{}); err != nil {
-				return nil, err
-			}
-			filters = append(filters, goqu.L(`rsc->>'$.entry.common.sessionRef.uid'`).Eq(req.SessionRef.Uid))
-		}
-
-		if req.ServiceRef != nil {
-			if err := apivalidation.CheckObjectRef(req.ServiceRef, &apivalidation.CheckGetOptionsOpts{
-				ParentsMust: 1,
-			}); err != nil {
-				return nil, err
-			}
-			filters = append(filters, goqu.L(`rsc->>'$.entry.common.serviceRef.uid'`).Eq(req.ServiceRef.Uid))
-		}
-
-		if req.NamespaceRef != nil {
-			if err := apivalidation.CheckObjectRef(req.NamespaceRef, &apivalidation.CheckGetOptionsOpts{}); err != nil {
-				return nil, err
-			}
-			filters = append(filters, goqu.L(`rsc->>'$.entry.common.namespaceRef.uid'`).Eq(req.NamespaceRef.Uid))
-		}
-
-		if req.RegionRef != nil {
-			if err := apivalidation.CheckObjectRef(req.RegionRef, &apivalidation.CheckGetOptionsOpts{}); err != nil {
-				return nil, err
-			}
-			filters = append(filters, goqu.L(`rsc->>'$.entry.common.regionRef.uid'`).Eq(req.RegionRef.Uid))
-		}
-
-		if req.PolicyRef != nil {
-			if err := apivalidation.CheckObjectRef(req.PolicyRef, &apivalidation.CheckGetOptionsOpts{
-				ParentsMax: 8,
-			}); err != nil {
-				return nil, err
-			}
-			filters = append(filters,
-				goqu.L(`rsc->>'$.entry.common.reason.details.policyMatch.policy.policyRef.uid'`).Eq(req.PolicyRef.Uid))
-		}
-
-		if req.MatchInlinePolicyRef != nil {
-			if err := apivalidation.CheckObjectRef(req.MatchInlinePolicyRef, &apivalidation.CheckGetOptionsOpts{
-				ParentsMax: 8,
-			}); err != nil {
-				return nil, err
-			}
-			filters = append(filters,
-				goqu.L(`rsc->>'$.entry.common.reason.details.policyMatch.inlinePolicy.resourceRef.uid'`).
-					Eq(req.MatchInlinePolicyRef.Uid))
-		}
-	*/
 
 	if req.Status != corev1.AccessLog_Entry_Common_STATUS_UNSET {
 		switch req.Status {
@@ -309,28 +239,6 @@ func (s *Server) listSSHSession(ctx context.Context, req *visibilityv1.ListSSHSe
 	if err != nil {
 		return nil, err
 	}
-
-	/*
-		if req.UserRef != nil {
-			filters = append(filters, goqu.L(`rsc->>'$.entry.common.userRef.uid'`).Eq(req.UserRef.Uid))
-		}
-
-		if req.DeviceRef != nil {
-			filters = append(filters, goqu.L(`rsc->>'$.entry.common.deviceRef.uid'`).Eq(req.DeviceRef.Uid))
-		}
-
-		if req.SessionRef != nil {
-			filters = append(filters, goqu.L(`rsc->>'$.entry.common.sessionRef.uid'`).Eq(req.SessionRef.Uid))
-		}
-
-		if req.ServiceRef != nil {
-			filters = append(filters, goqu.L(`rsc->>'$.entry.common.serviceRef.uid'`).Eq(req.ServiceRef.Uid))
-		}
-
-		if req.NamespaceRef != nil {
-			filters = append(filters, goqu.L(`rsc->>'$.entry.common.namespaceRef.uid'`).Eq(req.NamespaceRef.Uid))
-		}
-	*/
 
 	if req.From != nil {
 		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Gte(req.From.AsTime().UTC().Format(time.RFC3339Nano)))

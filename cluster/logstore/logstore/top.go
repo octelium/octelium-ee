@@ -356,7 +356,7 @@ func (s *Server) listAuthenticationLogTopCredential(ctx context.Context, req *vi
 		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
 	}
 
-	res, err := s.getTop(ctx, "authentication_logs", 10, "entry.credentialRef", filters)
+	res, err := s.getTop(ctx, "authentication_logs", 10, "entry.authentication.info.credential.credentialRef", filters)
 	if err != nil {
 		return nil, err
 	}

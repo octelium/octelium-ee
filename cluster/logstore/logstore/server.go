@@ -241,7 +241,7 @@ func (s *Server) doCleanup(ctx context.Context) error {
 	{
 
 		getQry := func(table string, limit int) string {
-			return fmt.Sprintf(`DELETE FROM %s WHERE rsc->'metadata'->>'uid' NOT IN (SELECT rsc->'metadata'->>'uid' FROM %s ORDER BY rsc->'metadata'->>'createdAt' DESC LIMIT %d)`,
+			return fmt.Sprintf(`DELETE FROM %s WHERE rsc->'metadata'->>'id' NOT IN (SELECT rsc->'metadata'->>'id' FROM %s ORDER BY rsc->'metadata'->>'createdAt' DESC LIMIT %d)`,
 				table, table, limit)
 		}
 
