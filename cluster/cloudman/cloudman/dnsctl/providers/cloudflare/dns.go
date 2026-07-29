@@ -23,6 +23,12 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	recordTTL    = 300
+	listPageSize = 100
+	maxListPages = 100
+)
+
 type Provider struct {
 	c      *cloudflare.API
 	p      *enterprisev1.DNSProvider
@@ -42,7 +48,9 @@ func NewProvider(ctx context.Context, octeliumC octeliumc.ClientInterface, p *en
 	if err != nil {
 		return nil, err
 	}
+
 	zap.S().Debugf("Successfully obtained Cloudflare client")
+
 	return &Provider{c: client, domain: domain, p: p}, nil
 }
 
@@ -51,8 +59,6 @@ func (p *Provider) Set(ctx context.Context, domain string, ipAddrs []string) err
 	if err != nil {
 		return err
 	}
-
-	zap.S().Debugf("Got zone ID: %s", zoneID)
 
 	v4Addrs, v6Addrs, err := splitIPAddresses(ipAddrs)
 	if err != nil {
@@ -63,11 +69,7 @@ func (p *Provider) Set(ctx context.Context, domain string, ipAddrs []string) err
 		return err
 	}
 
-	if err := p.setRecords(ctx, "AAAA", zoneID, domain, v6Addrs); err != nil {
-		return err
-	}
-
-	return nil
+	return p.setRecords(ctx, "AAAA", zoneID, domain, v6Addrs)
 }
 
 func (p *Provider) SetCNAME(ctx context.Context, name, val string) error {
@@ -76,18 +78,25 @@ func (p *Provider) SetCNAME(ctx context.Context, name, val string) error {
 		return err
 	}
 
-	zap.S().Debugf("Got zone ID: %s", zoneID)
+	return p.setRecords(ctx, "CNAME", zoneID, name, []string{val})
+}
 
-	if err := p.setRecords(ctx, "CNAME", zoneID, name, []string{val}); err != nil {
+func (p *Provider) Delete(ctx context.Context, domain string) error {
+	zoneID, err := p.getZoneID(ctx)
+	if err != nil {
 		return err
 	}
 
-	return nil
+	if err := p.setRecords(ctx, "A", zoneID, domain, nil); err != nil {
+		return err
+	}
+
+	return p.setRecords(ctx, "AAAA", zoneID, domain, nil)
 }
 
 func (p *Provider) setRecords(ctx context.Context, typ, zoneID, name string, vals []string) error {
 
-	records, _, err := p.c.ListDNSRecords(ctx, cloudflare.ZoneIdentifier(zoneID), cloudflare.ListDNSRecordsParams{})
+	records, err := p.listRecords(ctx, zoneID, typ, name)
 	if err != nil {
 		return err
 	}
@@ -96,10 +105,6 @@ func (p *Provider) setRecords(ctx context.Context, typ, zoneID, name string, val
 	found := make(map[string]struct{}, len(desired))
 
 	for _, record := range records {
-		if !strings.EqualFold(record.Name, name) || record.ZoneID != zoneID || record.Type != typ {
-			continue
-		}
-
 		if _, ok := desired[record.Content]; ok {
 			if _, ok := found[record.Content]; !ok {
 				found[record.Content] = struct{}{}
@@ -124,6 +129,7 @@ func (p *Provider) setRecords(ctx context.Context, typ, zoneID, name string, val
 			Type:    typ,
 			Name:    name,
 			Content: val,
+			TTL:     recordTTL,
 			ZoneID:  zoneID,
 			Proxied: utils_types.BoolToPtr(false),
 		}); err != nil {
@@ -136,21 +142,38 @@ func (p *Provider) setRecords(ctx context.Context, typ, zoneID, name string, val
 	return nil
 }
 
-func (p *Provider) Delete(ctx context.Context, domain string) error {
-	zoneID, err := p.getZoneID(ctx)
-	if err != nil {
-		return err
+func (p *Provider) listRecords(ctx context.Context, zoneID, typ, name string) ([]cloudflare.DNSRecord, error) {
+
+	var ret []cloudflare.DNSRecord
+
+	params := cloudflare.ListDNSRecordsParams{
+		Type: typ,
+		Name: name,
+	}
+	params.Page = 1
+	params.PerPage = listPageSize
+
+	for range maxListPages {
+		batch, info, err := p.c.ListDNSRecords(ctx, cloudflare.ZoneIdentifier(zoneID), params)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, record := range batch {
+			if record.Type != typ || !strings.EqualFold(record.Name, name) {
+				continue
+			}
+			ret = append(ret, record)
+		}
+
+		if info == nil || len(batch) == 0 || info.Page >= info.TotalPages {
+			return ret, nil
+		}
+
+		params.Page = info.Page + 1
 	}
 
-	if err := p.setRecords(ctx, "A", zoneID, domain, nil); err != nil {
-		return err
-	}
-
-	if err := p.setRecords(ctx, "AAAA", zoneID, domain, nil); err != nil {
-		return err
-	}
-
-	return nil
+	return nil, errors.Errorf("Too many Cloudflare DNS record pages for the name: %s", name)
 }
 
 func (p *Provider) getZoneID(ctx context.Context) (string, error) {
@@ -176,8 +199,10 @@ func (p *Provider) getZoneID(ctx context.Context) (string, error) {
 	}
 
 	if zoneID == "" {
-		return "", errors.Errorf("Could not find zone ID")
+		return "", errors.Errorf("Could not find a Cloudflare zone for the domain: %s", p.domain)
 	}
+
+	zap.S().Debugf("Got Cloudflare zone ID %s for the domain %s", zoneID, p.domain)
 
 	return zoneID, nil
 }
@@ -203,6 +228,9 @@ func splitIPAddresses(ipAddrs []string) ([]string, []string, error) {
 func uniqueValues(vals []string) map[string]struct{} {
 	ret := make(map[string]struct{}, len(vals))
 	for _, val := range vals {
+		if val == "" {
+			continue
+		}
 		ret[val] = struct{}{}
 	}
 	return ret
