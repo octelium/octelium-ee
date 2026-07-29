@@ -24,6 +24,8 @@ import (
 	"google.golang.org/api/option"
 )
 
+const recordTTL = 300
+
 type Provider struct {
 	c      *gcpdns.Service
 	p      *enterprisev1.DNSProvider
@@ -45,25 +47,22 @@ func NewProvider(ctx context.Context, octeliumC octeliumc.ClientInterface, p *en
 		return nil, err
 	}
 
-	zap.S().Debugf("Created client")
+	zap.S().Debugf("Successfully obtained Google Cloud DNS client")
+
 	return &Provider{c: client, domain: domain, p: p}, nil
 }
 
 func (p *Provider) SetCNAME(ctx context.Context, name, val string) error {
-	zoneID, err := p.getZoneID(ctx)
+	zone, err := p.getZoneID(ctx)
 	if err != nil {
 		return err
 	}
 
-	if err := p.setRecords(ctx, zoneID, "CNAME", normalizeFQDN(name), []string{normalizeFQDN(val)}); err != nil {
-		return err
-	}
-
-	return nil
+	return p.setRecords(ctx, zone, "CNAME", normalizeFQDN(name), []string{normalizeFQDN(val)})
 }
 
 func (p *Provider) Set(ctx context.Context, domain string, ipAddrs []string) error {
-	zoneID, err := p.getZoneID(ctx)
+	zone, err := p.getZoneID(ctx)
 	if err != nil {
 		return err
 	}
@@ -73,35 +72,39 @@ func (p *Provider) Set(ctx context.Context, domain string, ipAddrs []string) err
 		return err
 	}
 
-	if err := p.setRecords(ctx, zoneID, "A", normalizeFQDN(domain), v4Addrs); err != nil {
+	if err := p.setRecords(ctx, zone, "A", normalizeFQDN(domain), v4Addrs); err != nil {
 		return err
 	}
 
-	if err := p.setRecords(ctx, zoneID, "AAAA", normalizeFQDN(domain), v6Addrs); err != nil {
+	return p.setRecords(ctx, zone, "AAAA", normalizeFQDN(domain), v6Addrs)
+}
+
+func (p *Provider) Delete(ctx context.Context, domain string) error {
+	zone, err := p.getZoneID(ctx)
+	if err != nil {
 		return err
 	}
 
-	return nil
+	name := normalizeFQDN(domain)
+
+	if err := p.setRecords(ctx, zone, "A", name, nil); err != nil {
+		return err
+	}
+
+	return p.setRecords(ctx, zone, "AAAA", name, nil)
 }
 
 func (p *Provider) setRecords(ctx context.Context, zone *gcpdns.ManagedZone, typ, name string, vals []string) error {
 
-	out, err := p.c.ResourceRecordSets.List(p.p.Spec.GetGoogle().Project, zone.Name).Context(ctx).Do()
+	existing, err := p.listRecords(ctx, zone, typ, name)
 	if err != nil {
 		return err
 	}
 
 	desired := normalizeValues(vals)
-	var existing []*gcpdns.ResourceRecordSet
-
-	for _, record := range out.Rrsets {
-		if record.Name == name && record.Type == typ {
-			existing = append(existing, record)
-		}
-	}
 
 	if len(existing) == 1 &&
-		existing[0].Ttl == 300 &&
+		existing[0].Ttl == recordTTL &&
 		equalValues(normalizeValues(existing[0].Rrdatas), desired) {
 		return nil
 	}
@@ -114,7 +117,7 @@ func (p *Provider) setRecords(ctx context.Context, zone *gcpdns.ManagedZone, typ
 		change.Additions = []*gcpdns.ResourceRecordSet{
 			{
 				Name:    name,
-				Ttl:     300,
+				Ttl:     recordTTL,
 				Rrdatas: desired,
 				Type:    typ,
 			},
@@ -125,59 +128,66 @@ func (p *Provider) setRecords(ctx context.Context, zone *gcpdns.ManagedZone, typ
 		return nil
 	}
 
-	_, err = p.c.Changes.Create(p.p.Spec.GetGoogle().Project, zone.Name, change).Context(ctx).Do()
-	if err != nil {
-		return err
-	}
+	zap.S().Debugf("Applying Google Cloud DNS change for the %s record %s", typ, name)
 
-	return nil
+	_, err = p.c.Changes.Create(p.p.Spec.GetGoogle().Project, zone.Name, change).Context(ctx).Do()
+
+	return err
 }
 
-func (p *Provider) Delete(ctx context.Context, domain string) error {
-	zoneID, err := p.getZoneID(ctx)
-	if err != nil {
-		return err
+func (p *Provider) listRecords(ctx context.Context, zone *gcpdns.ManagedZone, typ, name string) ([]*gcpdns.ResourceRecordSet, error) {
+
+	var ret []*gcpdns.ResourceRecordSet
+
+	call := p.c.ResourceRecordSets.List(p.p.Spec.GetGoogle().Project, zone.Name).
+		Name(name).
+		Type(typ)
+
+	if err := call.Pages(ctx, func(page *gcpdns.ResourceRecordSetsListResponse) error {
+		for _, record := range page.Rrsets {
+			if record.Name != name || record.Type != typ {
+				continue
+			}
+			ret = append(ret, record)
+		}
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 
-	name := normalizeFQDN(domain)
-
-	if err := p.setRecords(ctx, zoneID, "A", name, nil); err != nil {
-		return err
-	}
-
-	if err := p.setRecords(ctx, zoneID, "AAAA", name, nil); err != nil {
-		return err
-	}
-
-	return nil
+	return ret, nil
 }
 
 func (p *Provider) getZoneID(ctx context.Context) (*gcpdns.ManagedZone, error) {
 
-	out, err := p.c.ManagedZones.List(p.p.Spec.GetGoogle().Project).Context(ctx).Do()
-	if err != nil {
-		return nil, err
-	}
-
 	domain := normalizeDomain(p.domain)
+
 	var ret *gcpdns.ManagedZone
 	var retName string
 
-	for _, zone := range out.ManagedZones {
-		name := normalizeDomain(zone.DnsName)
-		if !domainMatchesZone(domain, name) {
-			continue
-		}
+	if err := p.c.ManagedZones.List(p.p.Spec.GetGoogle().Project).
+		Pages(ctx, func(page *gcpdns.ManagedZonesListResponse) error {
+			for _, zone := range page.ManagedZones {
+				name := normalizeDomain(zone.DnsName)
+				if !domainMatchesZone(domain, name) {
+					continue
+				}
 
-		if len(name) > len(retName) {
-			ret = zone
-			retName = name
-		}
+				if len(name) > len(retName) {
+					ret = zone
+					retName = name
+				}
+			}
+			return nil
+		}); err != nil {
+		return nil, err
 	}
 
 	if ret == nil {
-		return nil, errors.Errorf("Could not find zone ID")
+		return nil, errors.Errorf("Could not find a Google Cloud DNS managed zone for the domain: %s", p.domain)
 	}
+
+	zap.S().Debugf("Got Google Cloud DNS managed zone %s for the domain %s", ret.Name, p.domain)
 
 	return ret, nil
 }
@@ -203,6 +213,9 @@ func splitIPAddresses(ipAddrs []string) ([]string, []string, error) {
 func normalizeValues(vals []string) []string {
 	set := make(map[string]struct{}, len(vals))
 	for _, val := range vals {
+		if val == "" {
+			continue
+		}
 		set[val] = struct{}{}
 	}
 
@@ -230,7 +243,7 @@ func equalValues(a, b []string) bool {
 }
 
 func normalizeFQDN(arg string) string {
-	return strings.TrimSuffix(strings.TrimSpace(arg), ".") + "."
+	return normalizeDomain(arg) + "."
 }
 
 func normalizeDomain(arg string) string {
