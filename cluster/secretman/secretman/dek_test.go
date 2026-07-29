@@ -15,8 +15,11 @@ import (
 
 	otests "github.com/octelium/octelium-ee/cluster/common/tests"
 	"github.com/octelium/octelium-ee/cluster/secretman/secretman/migrations"
+	"github.com/octelium/octelium/apis/main/enterprisev1"
+	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/cluster/common/postgresutils"
 	"github.com/octelium/octelium/cluster/common/vutils"
+	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
 )
@@ -120,113 +123,174 @@ func TestDEK(t *testing.T) {
 	}
 }
 
-func TestDEKAAD(t *testing.T) {
-	k := &dek{
-		uid: vutils.UUIDv4(),
-	}
-
-	key, err := utilrand.GetRandomBytes(32)
-	assert.Nil(t, err)
-	k.key = key
-
-	plaintext, err := utilrand.GetRandomBytes(64)
-	assert.Nil(t, err)
-
-	aad := []byte("octelium-test-aad")
-
-	res, err := k.encryptWithAAD(plaintext, aad)
+func TestDEKStoreOperations(t *testing.T) {
+	ctx := context.Background()
+	tst, err := otests.Initialize(nil)
 	assert.Nil(t, err, "%+v", err)
-	assert.Equal(t, k.uid, res.KeyUID)
-	assert.NotEqual(t, plaintext, res.Ciphertext)
+	t.Cleanup(func() {
+		tst.Destroy()
+	})
+	fakeC := tst.C
+	db, err := postgresutils.NewDB()
+	assert.Nil(t, err)
+	err = migrations.Migrate(ctx, db)
+	assert.Nil(t, err)
 
-	out, err := k.decryptWithAAD(res.Ciphertext, aad)
+	srv, err := newServer(ctx, fakeC.OcteliumC, db)
+	assert.Nil(t, err)
+
+	err = srv.initRootDEK(ctx)
+	assert.Nil(t, err)
+
+	deks, err := srv.doListDEK(ctx)
 	assert.Nil(t, err, "%+v", err)
-	assert.Equal(t, plaintext, out)
+	assert.Equal(t, 1, len(deks))
+
+	dek1 := deks[0]
+	assert.NotEmpty(t, dek1.uid)
+	assert.Equal(t, 32, len(dek1.key))
+	assert.False(t, dek1.createdAt.IsZero())
 
 	{
-		_, err := k.decryptWithAAD(res.Ciphertext, []byte("octelium-test-aa"))
-		assert.NotNil(t, err)
-	}
-	{
-		_, err := k.decryptWithAAD(res.Ciphertext, nil)
-		assert.NotNil(t, err)
-	}
-	{
-		res2, err := k.encrypt(plaintext)
-		assert.Nil(t, err)
-
-		_, err = k.decryptWithAAD(res2.Ciphertext, aad)
-		assert.NotNil(t, err)
-
-		out2, err := k.decryptWithAAD(res2.Ciphertext, nil)
+		got, err := srv.doGetDEK(ctx, dek1.uid)
 		assert.Nil(t, err, "%+v", err)
-		assert.Equal(t, plaintext, out2)
+		assert.Equal(t, dek1.uid, got.uid)
+		assert.Equal(t, dek1.key, got.key)
 	}
 	{
-		res2, err := k.encryptWithAAD(plaintext, aad)
+		_, err := srv.doGetDEK(ctx, vutils.UUIDv4())
+		assert.NotNil(t, err)
+		assert.True(t, grpcerr.IsNotFound(err), "%+v", err)
+	}
+
+	{
+		kek, err := srv.chooseKEK(ctx)
+		assert.Nil(t, err, "%+v", err)
+
+		enc, err := kek.Encrypt(ctx, dek1.uid, dek1.key)
+		assert.Nil(t, err, "%+v", err)
+
+		err = srv.doUpdateDEK(ctx, dek1.uid, enc, "", kek.UID())
+		assert.Nil(t, err, "%+v", err)
+
+		assert.Nil(t, kek.Close())
+
+		got, err := srv.doGetDEK(ctx, dek1.uid)
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, dek1.key, got.key)
+	}
+
+	{
+		err := srv.doUpdateDEK(ctx, vutils.UUIDv4(), []byte("octelium"), "", "kek")
 		assert.Nil(t, err)
-		assert.NotEqual(t, res.Ciphertext, res2.Ciphertext)
 
-		out2, err := k.decryptWithAAD(res2.Ciphertext, aad)
+		deks, err := srv.doListDEK(ctx)
 		assert.Nil(t, err)
-		assert.Equal(t, plaintext, out2)
+		assert.Equal(t, 1, len(deks))
 	}
-	{
-		tampered := append([]byte(nil), res.Ciphertext...)
-		tampered[len(tampered)-1] ^= 0x01
 
-		_, err := k.decryptWithAAD(tampered, aad)
-		assert.NotNil(t, err)
-	}
 	{
-		tampered := append([]byte(nil), res.Ciphertext...)
-		tampered[0] ^= 0x01
+		err := srv.doCreateDEK(ctx)
+		assert.Nil(t, err)
 
-		_, err := k.decryptWithAAD(tampered, aad)
-		assert.NotNil(t, err)
-	}
-	{
-		_, err := k.decryptWithAAD(nil, aad)
-		assert.NotNil(t, err)
-	}
-	{
-		_, err := k.decryptWithAAD([]byte("short"), aad)
-		assert.NotNil(t, err)
-	}
-	{
-		_, err := k.decryptWithAAD(make([]byte, 16), aad)
-		assert.NotNil(t, err)
+		err = srv.doCreateDEK(ctx)
+		assert.Nil(t, err)
+
+		deks, err := srv.doListDEK(ctx)
+		assert.Nil(t, err)
+		assert.Equal(t, 3, len(deks))
+
+		seen := make(map[string]struct{})
+		for idx, itm := range deks {
+			assert.NotEmpty(t, itm.uid)
+			assert.Equal(t, 32, len(itm.key))
+
+			_, ok := seen[itm.uid]
+			assert.False(t, ok)
+			seen[itm.uid] = struct{}{}
+
+			if idx > 0 {
+				assert.False(t, itm.createdAt.Before(deks[idx-1].createdAt))
+			}
+		}
+
+		err = srv.setDEKMap(ctx)
+		assert.Nil(t, err)
+
+		assert.Equal(t, 3, len(srv.deks.dekMap))
+		assert.Equal(t, deks[len(deks)-1].uid, srv.deks.cur.uid)
 	}
 }
 
-func TestDEKInvalidKey(t *testing.T) {
-	for _, size := range []int{0, 1, 15, 17, 31, 33, 64} {
-		k := &dek{
-			uid: vutils.UUIDv4(),
-			key: make([]byte, size),
-		}
+func TestKEKSelection(t *testing.T) {
+	ctx := context.Background()
+	tst, err := otests.Initialize(nil)
+	assert.Nil(t, err, "%+v", err)
+	t.Cleanup(func() {
+		tst.Destroy()
+	})
+	fakeC := tst.C
+	db, err := postgresutils.NewDB()
+	assert.Nil(t, err)
+	err = migrations.Migrate(ctx, db)
+	assert.Nil(t, err)
 
-		_, err := k.encrypt([]byte("octelium"))
-		assert.NotNil(t, err)
+	srv, err := newServer(ctx, fakeC.OcteliumC, db)
+	assert.Nil(t, err)
 
-		_, err = k.decrypt(make([]byte, 64))
+	kek, err := srv.chooseKEK(ctx)
+	assert.Nil(t, err, "%+v", err)
+	assert.NotEmpty(t, kek.UID())
+
+	{
+		kek2, err := srv.getKEKByUID(ctx, kek.UID())
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, kek.UID(), kek2.UID())
+		assert.Nil(t, kek2.Close())
+	}
+	{
+		_, err := srv.getKEKByUID(ctx, vutils.UUIDv4())
 		assert.NotNil(t, err)
 	}
 
-	for _, size := range []int{16, 24, 32} {
-		key, err := utilrand.GetRandomBytes(size)
-		assert.Nil(t, err)
+	assert.Nil(t, kek.Close())
 
-		k := &dek{
-			uid: vutils.UUIDv4(),
-			key: key,
-		}
-
-		res, err := k.encrypt([]byte("octelium"))
+	{
+		store, err := srv.getKEKFromSecretStore(ctx, &enterprisev1.SecretStore{
+			Metadata: &metav1.Metadata{
+				Uid: vutils.UUIDv4(),
+			},
+			Spec: &enterprisev1.SecretStore_Spec{
+				Type: &enterprisev1.SecretStore_Spec_Kubernetes_{
+					Kubernetes: &enterprisev1.SecretStore_Spec_Kubernetes{},
+				},
+			},
+		})
 		assert.Nil(t, err, "%+v", err)
 
-		out, err := k.decrypt(res.Ciphertext)
+		err = store.Initialize(ctx)
 		assert.Nil(t, err, "%+v", err)
-		assert.Equal(t, []byte("octelium"), out)
+
+		assert.Nil(t, store.Close())
+	}
+	{
+		_, err := srv.getKEKFromSecretStore(ctx, &enterprisev1.SecretStore{
+			Metadata: &metav1.Metadata{
+				Uid: vutils.UUIDv4(),
+			},
+			Spec: &enterprisev1.SecretStore_Spec{},
+		})
+		assert.NotNil(t, err)
+	}
+	{
+		_, err := srv.getKEKFromSecretStore(ctx, &enterprisev1.SecretStore{
+			Metadata: &metav1.Metadata{},
+			Spec: &enterprisev1.SecretStore_Spec{
+				Type: &enterprisev1.SecretStore_Spec_Kubernetes_{
+					Kubernetes: &enterprisev1.SecretStore_Spec_Kubernetes{},
+				},
+			},
+		})
+		assert.NotNil(t, err)
 	}
 }
