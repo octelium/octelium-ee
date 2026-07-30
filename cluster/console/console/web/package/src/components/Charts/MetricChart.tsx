@@ -4,6 +4,7 @@ import {
   Attribute,
   AttributeFilter,
   AttributeFilter_Operator,
+  AttributeValue,
   ComponentSelector,
   CounterOperation_Function,
   GaugeOperation_Function,
@@ -12,6 +13,8 @@ import {
   MetricSelector,
   NumberPoint,
   QueryMetricsRequest,
+  QueryMetricsRequest_LimitBehavior,
+  QueryMetricsRequest_SeriesAggregation,
   QueryOperation,
   TimeRange,
   TimeSeries,
@@ -54,6 +57,10 @@ const LINE_COLORS = [
   "#dc2626",
 ];
 
+const DEFAULT_STEP = Duration.create({
+  type: { oneofKind: "minutes", minutes: 1 },
+});
+
 export const counterOp = (fn: CounterOperation_Function): QueryOperation =>
   QueryOperation.create({
     type: { oneofKind: "counter", counter: { function: fn } },
@@ -76,7 +83,9 @@ export const eqFilter = (key: string, value: string): AttributeFilter =>
   AttributeFilter.create({
     key,
     operator: AttributeFilter_Operator.EQ,
-    value,
+    value: AttributeValue.create({
+      value: { oneofKind: "stringValue", stringValue: value },
+    }),
   });
 
 type ChartSeries = {
@@ -149,31 +158,93 @@ const filtersKey = (filters?: AttributeFilter[]): string | undefined =>
 const groupByKey = (groupBy?: string[]): string | undefined =>
   groupBy ? JSON.stringify(groupBy) : undefined;
 
-const labelPart = (label: Attribute): string => {
-  if (label.key === "quantile") {
-    const q = Number.parseFloat(label.value);
-    if (Number.isFinite(q)) {
-      return `p${Math.round(q * 100)}`;
-    }
-  }
+const attributeValue = (value?: AttributeValue): string => {
+  if (!value?.value) return "";
 
+  switch (value.value.oneofKind) {
+    case "stringValue":
+      return value.value.stringValue;
+    case "boolValue":
+      return String(value.value.boolValue);
+    case "intValue":
+      return String(value.value.intValue);
+    case "doubleValue":
+      return String(value.value.doubleValue);
+    default:
+      return "";
+  }
+};
+
+const attributeSortKey = (value?: AttributeValue): string => {
+  if (!value?.value) return "";
+
+  return `${value.value.oneofKind}:${attributeValue(value)}`;
+};
+
+const quantilePart = (quantile: number): string =>
+  `p${Math.round(quantile * 100)}`;
+
+const labelPart = (label: Attribute): string => {
   const shortKey = label.key.split(".").at(-1) || label.key;
-  return `${shortKey}=${label.value}`;
+  return `${shortKey}=${attributeValue(label.value)}`;
 };
 
 const seriesLabel = (
   labels: Attribute[] | undefined,
   fallback: string,
+  quantile?: number,
 ): string => {
-  if (!labels || labels.length === 0) return fallback;
-
-  return [...labels]
+  const parts = [...(labels ?? [])]
     .sort((a, b) => {
-      if (a.key === b.key) return a.value.localeCompare(b.value);
+      if (a.key === b.key) {
+        return attributeSortKey(a.value).localeCompare(
+          attributeSortKey(b.value),
+        );
+      }
       return a.key.localeCompare(b.key);
     })
-    .map(labelPart)
-    .join(" · ");
+    .map(labelPart);
+
+  if (quantile !== undefined) {
+    parts.push(quantilePart(quantile));
+  }
+
+  return parts.length > 0 ? parts.join(" · ") : fallback;
+};
+
+const isRawCounterOperation = (operation: QueryOperation): boolean =>
+  operation.type?.oneofKind === "counter" &&
+  operation.type.counter.function === CounterOperation_Function.RAW;
+
+const seriesAggregation = (
+  operation: QueryOperation,
+): QueryMetricsRequest_SeriesAggregation => {
+  switch (operation.type?.oneofKind) {
+    case "counter":
+      return operation.type.counter.function === CounterOperation_Function.RAW
+        ? QueryMetricsRequest_SeriesAggregation.NONE
+        : QueryMetricsRequest_SeriesAggregation.SUM;
+
+    case "gauge":
+      switch (operation.type.gauge.function) {
+        case GaugeOperation_Function.AVG:
+          return QueryMetricsRequest_SeriesAggregation.AVG;
+        case GaugeOperation_Function.MIN:
+          return QueryMetricsRequest_SeriesAggregation.MIN;
+        case GaugeOperation_Function.MAX:
+          return QueryMetricsRequest_SeriesAggregation.MAX;
+        case GaugeOperation_Function.LAST:
+        case GaugeOperation_Function.SUM:
+        default:
+          return QueryMetricsRequest_SeriesAggregation.SUM;
+      }
+
+    case "histogram":
+      return QueryMetricsRequest_SeriesAggregation.MERGE;
+
+    default:
+      return QueryMetricsRequest_SeriesAggregation.SERIES_AGGREGATION_UNSET;
+  }
 };
 
 const formatBytes = (v: number): string => {
@@ -261,7 +332,7 @@ const extractSeries = (
       }
 
       return {
-        name: seriesLabel(s.labels, fallback),
+        name: seriesLabel(s.labels, fallback, s.quantile),
         data,
       };
     })
@@ -289,6 +360,10 @@ const MetricChart = (props: MetricChartProps) => {
     setStep(props.step);
   }, [durationKey(props.step)]);
 
+  const effectiveStep = isRawCounterOperation(operation)
+    ? undefined
+    : (step ?? DEFAULT_STEP);
+
   const queryKey = useMemo(
     () => [
       "visibility",
@@ -299,7 +374,7 @@ const MetricChart = (props: MetricChartProps) => {
       componentKey(component),
       filtersKey(filters),
       groupByKey(groupBy),
-      durationKey(step),
+      durationKey(effectiveStep),
       timestampKey(props.from),
       timestampKey(props.to),
       props.lookbackSeconds ?? 6 * 3600,
@@ -313,7 +388,7 @@ const MetricChart = (props: MetricChartProps) => {
       component,
       filters,
       groupBy,
-      step,
+      effectiveStep,
       props.from,
       props.to,
       props.lookbackSeconds,
@@ -338,17 +413,19 @@ const MetricChart = (props: MetricChartProps) => {
 
       const req = QueryMetricsRequest.create({
         metric: MetricSelector.create({
-          name: metric,
+          selector: { oneofKind: "name", name: metric },
           kind: kind ?? MetricDescriptor_Kind.KIND_UNSET,
         }),
         timeRange: TimeRange.create({ from, to }),
-        step,
+        step: effectiveStep,
         component,
         filters,
         groupBy,
         operation,
-        limitSeries,
+        seriesPageSize: limitSeries,
         limitPointsPerSeries,
+        seriesAggregation: seriesAggregation(operation),
+        limitBehavior: QueryMetricsRequest_LimitBehavior.TRUNCATE,
       });
 
       const { response } = await getClientVisibilityMetrics().queryMetrics(req);
@@ -358,7 +435,8 @@ const MetricChart = (props: MetricChartProps) => {
     refetchInterval: refetchIntervalChart,
   });
 
-  const effectiveUnit = unit ?? qry.data?.descriptor?.unit;
+  const effectiveUnit =
+    unit ?? qry.data?.result?.unit ?? qry.data?.sourceDescriptor?.unit;
 
   const series = useMemo(
     () => extractSeries(qry.data?.series, title ?? metric),
@@ -520,7 +598,9 @@ const MetricChart = (props: MetricChartProps) => {
           </p>
         )}
 
-        {qry.data?.truncated && (
+        {(qry.data?.truncation?.seriesTruncated ||
+          qry.data?.truncation?.pointsTruncated ||
+          Boolean(qry.data?.nextSeriesPageToken)) && (
           <span className="mr-2 rounded-full bg-amber-50 px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-[0.04em] text-amber-700">
             Truncated
           </span>
