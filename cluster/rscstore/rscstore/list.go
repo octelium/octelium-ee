@@ -87,45 +87,28 @@ func (s *Server) doList(ctx context.Context, req *doListReq) (proto.Message, err
 	}
 
 	if hasQuery {
-		queryLike := "%" + query + "%"
-		queryPrefixStart := query + "%"
-		queryPrefixWord := "% " + query + "%"
+		normalizedQuery := strings.ToLower(query)
+		queryAtWordBoundary := " " + normalizedQuery
+
+		filters = append(filters, goqu.L(`contains(rsc_str, ?)`, normalizedQuery))
+
+		textRank := goqu.L(`
+		CASE
+			WHEN rsc_str = ? THEN 4
+			WHEN starts_with(rsc_str, ?) OR contains(rsc_str, ?) THEN 3
+			ELSE 2
+		END
+	`, normalizedQuery, normalizedQuery, queryAtWordBoundary).As("text_rank")
 
 		if useFTS {
-			filters = append(filters,
-				goqu.Or(
-					goqu.L(`fts_main_resources.match_bm25(uid, ?) IS NOT NULL`, query),
-					goqu.L(`rsc_str ILIKE ?`, queryLike),
-				),
-			)
-
 			selects = append(selects,
-				goqu.L(`fts_main_resources.match_bm25(uid, ?)`, query).As("score"),
-				goqu.L(`
-					CASE
-						WHEN rsc_str ILIKE ? THEN 4
-						WHEN rsc_str ILIKE ? OR rsc_str ILIKE ? THEN 3
-						WHEN rsc_str ILIKE ? THEN 2
-						WHEN fts_main_resources.match_bm25(uid, ?) IS NOT NULL THEN 1
-						ELSE 0
-					END
-				`, query, queryPrefixStart, queryPrefixWord, queryLike, query).As("text_rank"),
+				goqu.L(`fts_main_resources.match_bm25(uid, ?)`, normalizedQuery).As("score"),
+				textRank,
 			)
 		} else {
-			filters = append(filters,
-				goqu.L(`rsc_str ILIKE ?`, queryLike),
-			)
-
 			selects = append(selects,
 				goqu.L(`CAST(NULL AS DOUBLE)`).As("score"),
-				goqu.L(`
-					CASE
-						WHEN rsc_str ILIKE ? THEN 4
-						WHEN rsc_str ILIKE ? OR rsc_str ILIKE ? THEN 3
-						WHEN rsc_str ILIKE ? THEN 2
-						ELSE 0
-					END
-				`, query, queryPrefixStart, queryPrefixWord, queryLike).As("text_rank"),
+				textRank,
 			)
 		}
 	}
