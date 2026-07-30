@@ -51,6 +51,10 @@ func (s *Server) doList(ctx context.Context, req *doListReq) (proto.Message, err
 		req.common = &vmetav1.CommonListOptions{}
 	}
 
+	if err := validateCommonListOptions(req.common); err != nil {
+		return nil, err
+	}
+
 	query := strings.TrimSpace(req.common.Query)
 	hasQuery := query != ""
 	if len(query) > 100 {
@@ -309,4 +313,28 @@ func (s *Server) toResourceList(lst []umetav1.ResourceObjectI, listMeta *metav1.
 	}
 
 	return objList, nil
+}
+
+func validateCommonListOptions(opts *vmetav1.CommonListOptions) error {
+	if opts == nil {
+		return nil
+	}
+
+	if opts.From != nil {
+		if err := opts.From.CheckValid(); err != nil {
+			return grpcutils.InvalidArg("Invalid from timestamp: %s", err.Error())
+		}
+	}
+
+	if opts.To != nil {
+		if err := opts.To.CheckValid(); err != nil {
+			return grpcutils.InvalidArg("Invalid to timestamp: %s", err.Error())
+		}
+	}
+
+	if opts.From != nil && opts.To != nil && opts.From.AsTime().After(opts.To.AsTime()) {
+		return grpcutils.InvalidArg("The from timestamp must not be after the to timestamp")
+	}
+
+	return nil
 }
