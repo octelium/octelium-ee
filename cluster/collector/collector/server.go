@@ -260,6 +260,29 @@ func Run(ctx context.Context) error {
 		return err
 	}
 
+	if err := watcher.Secret(ctx, nil,
+		func(ctx context.Context, item *enterprisev1.Secret) error {
+			if item.Metadata.IsSystem {
+				return nil
+			}
+			srv.p.sendUpdate()
+			return nil
+		}, func(ctx context.Context, new, old *enterprisev1.Secret) error {
+			if new.Metadata.IsSystem {
+				return nil
+			}
+			srv.p.sendUpdate()
+			return nil
+		}, func(ctx context.Context, item *enterprisev1.Secret) error {
+			if item.Metadata.IsSystem {
+				return nil
+			}
+			srv.p.sendUpdate()
+			return nil
+		}); err != nil {
+		return err
+	}
+
 	healthcheck.Run(vutils.HealthCheckPortMain)
 	zap.L().Debug("Collector is now running...")
 
