@@ -70,7 +70,7 @@ func (s *Server) processAuditLog(ctx context.Context, rsc umetav1.ResourceObject
 		fullSvc := opArgs[0]
 
 		idx := strings.LastIndex(fullSvc, ".")
-		if idx < len(fullSvc) {
+		if idx > 0 && idx < len(fullSvc)-1 {
 			pkg = fullSvc[:idx]
 			svc = fullSvc[idx+1:]
 		}
