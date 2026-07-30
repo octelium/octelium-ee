@@ -10,6 +10,7 @@ package rscstore
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -256,4 +257,264 @@ func TestCorePolicy(t *testing.T) {
 
 func getRandomBool() bool {
 	return utilrand.GetRandomRangeMath(1, 500)%2 == 0
+}
+
+func TestCoreSummaryCountsComprehensive(t *testing.T) {
+	env := newRscStoreTestEnv(t)
+	if env == nil {
+		return
+	}
+
+	user1 := "user-1"
+	user2 := "user-2"
+	device1 := "device-1"
+
+	insertRawRscStoreResource(t, env, ucorev1.KindUser, newRawRscStoreResource(ucorev1.KindUser, "human-enabled", false,
+		map[string]any{"type": "HUMAN", "isDisabled": false}, nil))
+	insertRawRscStoreResource(t, env, ucorev1.KindUser, newRawRscStoreResource(ucorev1.KindUser, "human-disabled", false,
+		map[string]any{"type": "HUMAN", "isDisabled": true}, nil))
+	insertRawRscStoreResource(t, env, ucorev1.KindUser, newRawRscStoreResource(ucorev1.KindUser, "workload", false,
+		map[string]any{"type": "WORKLOAD", "isDisabled": false}, nil))
+	insertRawRscStoreResource(t, env, ucorev1.KindUser, newRawRscStoreResource(ucorev1.KindUser, "hidden-user", true,
+		map[string]any{"type": "HUMAN", "isDisabled": true}, nil))
+
+	insertRawRscStoreResource(t, env, ucorev1.KindSession, newRawRscStoreResource(ucorev1.KindSession, "client-active", false,
+		map[string]any{"state": "ACTIVE"},
+		map[string]any{"type": "CLIENT", "isConnected": true, "userRef": map[string]any{"uid": user1}, "deviceRef": map[string]any{"uid": device1}}))
+	insertRawRscStoreResource(t, env, ucorev1.KindSession, newRawRscStoreResource(ucorev1.KindSession, "browser-active", false,
+		map[string]any{"state": "ACTIVE"},
+		map[string]any{"type": "CLIENTLESS", "isBrowser": true, "userRef": map[string]any{"uid": user1}}))
+	insertRawRscStoreResource(t, env, ucorev1.KindSession, newRawRscStoreResource(ucorev1.KindSession, "clientless-pending", false,
+		map[string]any{"state": "PENDING"},
+		map[string]any{"type": "CLIENTLESS", "userRef": map[string]any{"uid": user2}}))
+	insertRawRscStoreResource(t, env, ucorev1.KindSession, newRawRscStoreResource(ucorev1.KindSession, "client-rejected", false,
+		map[string]any{"state": "REJECTED"},
+		map[string]any{"type": "CLIENT", "userRef": map[string]any{"uid": user2}}))
+
+	serviceModes := []string{"TCP", "UDP", "HTTP", "SSH", "KUBERNETES", "POSTGRES", "MYSQL", "DNS", "GRPC", "WEB", "SOCKS5", "RDP_WEB"}
+	for idx, mode := range serviceModes {
+		insertRawRscStoreResource(t, env, ucorev1.KindService, newRawRscStoreResource(ucorev1.KindService,
+			fmt.Sprintf("service-%02d", idx), false,
+			map[string]any{"mode": mode, "isPublic": idx < 3, "isAnonymous": idx == 0}, nil))
+	}
+	insertRawRscStoreResource(t, env, ucorev1.KindService, newRawRscStoreResource(ucorev1.KindService, "hidden-service", true,
+		map[string]any{"mode": "HTTP", "isPublic": true, "isAnonymous": true}, nil))
+
+	insertRawRscStoreResource(t, env, ucorev1.KindPolicy, newRawRscStoreResource(ucorev1.KindPolicy, "policy-one", false,
+		map[string]any{
+			"isDisabled": false,
+			"rules": []any{
+				map[string]any{"effect": "ALLOW"},
+				map[string]any{"effect": "ALLOW"},
+				map[string]any{"effect": "DENY"},
+			},
+		}, nil))
+	insertRawRscStoreResource(t, env, ucorev1.KindPolicy, newRawRscStoreResource(ucorev1.KindPolicy, "policy-two", false,
+		map[string]any{
+			"isDisabled": true,
+			"rules": []any{
+				map[string]any{"effect": "DENY"},
+			},
+		}, nil))
+
+	credentialTypes := []string{"AUTH_TOKEN", "OAUTH2", "ACCESS_TOKEN"}
+	for idx, credentialType := range credentialTypes {
+		userUID := user1
+		if idx == 2 {
+			userUID = user2
+		}
+		insertRawRscStoreResource(t, env, ucorev1.KindCredential, newRawRscStoreResource(ucorev1.KindCredential,
+			fmt.Sprintf("credential-%d", idx), false,
+			map[string]any{"type": credentialType, "isDisabled": idx == 1},
+			map[string]any{"userRef": map[string]any{"uid": userUID}}))
+	}
+
+	idpTypes := []string{"GITHUB", "OIDC", "SAML", "OIDC_IDENTITY_TOKEN"}
+	for idx, idpType := range idpTypes {
+		insertRawRscStoreResource(t, env, ucorev1.KindIdentityProvider, newRawRscStoreResource(ucorev1.KindIdentityProvider,
+			fmt.Sprintf("idp-%d", idx), false,
+			map[string]any{"isDisabled": idx == 2},
+			map[string]any{"type": idpType}))
+	}
+
+	deviceOSTypes := []string{"LINUX", "WINDOWS", "MAC", "ANDROID", "IOS"}
+	deviceStates := []string{"ACTIVE", "PENDING", "REJECTED", "ACTIVE", "ACTIVE"}
+	for idx, osType := range deviceOSTypes {
+		userUID := user1
+		if idx >= 3 {
+			userUID = user2
+		}
+		insertRawRscStoreResource(t, env, ucorev1.KindDevice, newRawRscStoreResource(ucorev1.KindDevice,
+			fmt.Sprintf("device-%d", idx), false,
+			map[string]any{"state": deviceStates[idx]},
+			map[string]any{"osType": osType, "userRef": map[string]any{"uid": userUID}}))
+	}
+
+	insertRawRscStoreResource(t, env, ucorev1.KindAuthenticator, newRawRscStoreResource(ucorev1.KindAuthenticator, "fido-platform", false,
+		map[string]any{"state": "ACTIVE"},
+		map[string]any{
+			"type":      "FIDO",
+			"userRef":   map[string]any{"uid": user1},
+			"deviceRef": map[string]any{"uid": device1},
+			"info": map[string]any{
+				"fido": map[string]any{"type": "PLATFORM", "isPasskey": true, "isHardware": true},
+			},
+		}))
+	insertRawRscStoreResource(t, env, ucorev1.KindAuthenticator, newRawRscStoreResource(ucorev1.KindAuthenticator, "fido-roaming", false,
+		map[string]any{"state": "PENDING"},
+		map[string]any{
+			"type":    "FIDO",
+			"userRef": map[string]any{"uid": user2},
+			"info": map[string]any{
+				"fido": map[string]any{"type": "ROAMING"},
+			},
+		}))
+	insertRawRscStoreResource(t, env, ucorev1.KindAuthenticator, newRawRscStoreResource(ucorev1.KindAuthenticator, "totp", false,
+		map[string]any{"state": "REJECTED"}, map[string]any{"type": "TOTP", "userRef": map[string]any{"uid": user2}}))
+	insertRawRscStoreResource(t, env, ucorev1.KindAuthenticator, newRawRscStoreResource(ucorev1.KindAuthenticator, "tpm", false,
+		map[string]any{"state": "ACTIVE"}, map[string]any{"type": "TPM", "userRef": map[string]any{"uid": user1}}))
+
+	for _, kind := range []string{ucorev1.KindGroup, ucorev1.KindGateway, ucorev1.KindRegion, ucorev1.KindSecret, ucorev1.KindNamespace} {
+		insertRawRscStoreResource(t, env, kind, newRawRscStoreResource(kind, kind+"-visible", false, nil, nil))
+		insertRawRscStoreResource(t, env, kind, newRawRscStoreResource(kind, kind+"-hidden", true, nil, nil))
+	}
+
+	{
+		resp, err := env.srv.getSummaryCoreUser(env.ctx, &vcorev1.GetUserSummaryRequest{})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, uint32(3), resp.TotalNumber)
+		assert.Equal(t, uint32(2), resp.TotalHuman)
+		assert.Equal(t, uint32(1), resp.TotalWorkload)
+		assert.Equal(t, uint32(1), resp.TotalDisabled)
+	}
+
+	{
+		resp, err := env.srv.getSummaryCoreSession(env.ctx, &vcorev1.GetSessionSummaryRequest{})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, uint32(4), resp.TotalNumber)
+		assert.Equal(t, uint32(2), resp.TotalClient)
+		assert.Equal(t, uint32(2), resp.TotalClientless)
+		assert.Equal(t, uint32(1), resp.TotalConnected)
+		assert.Equal(t, uint32(2), resp.TotalUser)
+		assert.Equal(t, uint32(1), resp.TotalDevice)
+		assert.Equal(t, uint32(1), resp.TotalClientlessBrowser)
+		assert.Equal(t, uint32(2), resp.TotalActive)
+		assert.Equal(t, uint32(1), resp.TotalPending)
+		assert.Equal(t, uint32(1), resp.TotalRejected)
+	}
+
+	{
+		resp, err := env.srv.getSummaryCoreService(env.ctx, &vcorev1.GetServiceSummaryRequest{})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, uint32(12), resp.TotalNumber)
+		assert.Equal(t, uint32(3), resp.TotalPublic)
+		assert.Equal(t, uint32(1), resp.TotalAnonymous)
+		assert.Equal(t, uint32(1), resp.TotalTCP)
+		assert.Equal(t, uint32(1), resp.TotalUDP)
+		assert.Equal(t, uint32(1), resp.TotalHTTP)
+		assert.Equal(t, uint32(1), resp.TotalSSH)
+		assert.Equal(t, uint32(1), resp.TotalKubernetes)
+		assert.Equal(t, uint32(1), resp.TotalPostgres)
+		assert.Equal(t, uint32(1), resp.TotalMysql)
+		assert.Equal(t, uint32(1), resp.TotalDNS)
+		assert.Equal(t, uint32(1), resp.TotalGRPC)
+		assert.Equal(t, uint32(1), resp.TotalWeb)
+		assert.Equal(t, uint32(1), resp.TotalSOCKS5)
+		assert.Equal(t, uint32(1), resp.TotalRDPWeb)
+	}
+
+	{
+		resp, err := env.srv.getSummaryCorePolicy(env.ctx, &vcorev1.GetPolicySummaryRequest{})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, uint32(2), resp.TotalNumber)
+		assert.Equal(t, uint32(1), resp.TotalDisabled)
+		assert.Equal(t, uint32(4), resp.TotalRule)
+		assert.Equal(t, uint32(2), resp.TotalRuleAllow)
+		assert.Equal(t, uint32(2), resp.TotalRuleDenied)
+	}
+
+	{
+		resp, err := env.srv.getSummaryCoreCredential(env.ctx, &vcorev1.GetCredentialSummaryRequest{})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, uint32(3), resp.TotalNumber)
+		assert.Equal(t, uint32(2), resp.TotalUser)
+		assert.Equal(t, uint32(1), resp.TotalDisabled)
+		assert.Equal(t, uint32(1), resp.TotalAuthenticationToken)
+		assert.Equal(t, uint32(1), resp.TotalOAuth2)
+		assert.Equal(t, uint32(1), resp.TotalAccessToken)
+	}
+
+	{
+		resp, err := env.srv.getSummaryCoreIdentityProvider(env.ctx, &vcorev1.GetIdentityProviderSummaryRequest{})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, uint32(4), resp.TotalNumber)
+		assert.Equal(t, uint32(1), resp.TotalDisabled)
+		assert.Equal(t, uint32(1), resp.TotalGithub)
+		assert.Equal(t, uint32(1), resp.TotalOIDC)
+		assert.Equal(t, uint32(1), resp.TotalSAML)
+		assert.Equal(t, uint32(1), resp.TotalOIDCIdentityToken)
+	}
+
+	{
+		resp, err := env.srv.getSummaryCoreDevice(env.ctx, &vcorev1.GetDeviceSummaryRequest{})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, uint32(5), resp.TotalNumber)
+		assert.Equal(t, uint32(2), resp.TotalUser)
+		assert.Equal(t, uint32(3), resp.TotalActive)
+		assert.Equal(t, uint32(1), resp.TotalPending)
+		assert.Equal(t, uint32(1), resp.TotalRejected)
+		assert.Equal(t, uint32(1), resp.TotalLinux)
+		assert.Equal(t, uint32(1), resp.TotalWindows)
+		assert.Equal(t, uint32(1), resp.TotalMac)
+		assert.Equal(t, uint32(1), resp.TotalAndroid)
+		assert.Equal(t, uint32(1), resp.TotalIOS)
+	}
+
+	{
+		resp, err := env.srv.getSummaryCoreAuthenticator(env.ctx, &vcorev1.GetAuthenticatorSummaryRequest{})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, uint32(4), resp.TotalNumber)
+		assert.Equal(t, uint32(2), resp.TotalFIDO)
+		assert.Equal(t, uint32(1), resp.TotalTOTP)
+		assert.Equal(t, uint32(1), resp.TotalTPM)
+		assert.Equal(t, uint32(2), resp.TotalUser)
+		assert.Equal(t, uint32(1), resp.TotalDevice)
+		assert.Equal(t, uint32(2), resp.TotalActive)
+		assert.Equal(t, uint32(1), resp.TotalPending)
+		assert.Equal(t, uint32(1), resp.TotalRejected)
+		assert.Equal(t, uint32(1), resp.TotalFIDOPlatform)
+		assert.Equal(t, uint32(1), resp.TotalFIDORoaming)
+		assert.Equal(t, uint32(1), resp.TotalFIDOIsPasskey)
+		assert.Equal(t, uint32(1), resp.TotalFIDOIsHardware)
+	}
+
+	{
+		resp, err := env.srv.getSummaryCoreGroup(env.ctx, &vcorev1.GetGroupSummaryRequest{})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, uint64(1), resp.TotalNumber)
+	}
+
+	{
+		resp, err := env.srv.getSummaryCoreGateway(env.ctx, &vcorev1.GetGatewaySummaryRequest{})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, uint64(1), resp.TotalNumber)
+	}
+
+	{
+		resp, err := env.srv.getSummaryCoreRegion(env.ctx, &vcorev1.GetRegionSummaryRequest{})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, uint64(1), resp.TotalNumber)
+	}
+
+	{
+		resp, err := env.srv.getSummaryCoreSecret(env.ctx, &vcorev1.GetSecretSummaryRequest{})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, uint64(1), resp.TotalNumber)
+	}
+
+	{
+		resp, err := env.srv.getSummaryCoreNamespace(env.ctx, &vcorev1.GetNamespaceSummaryRequest{})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, uint64(1), resp.TotalNumber)
+	}
 }

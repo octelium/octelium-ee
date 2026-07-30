@@ -103,9 +103,8 @@ func (s *Server) getSummaryCoreSession(ctx context.Context, req *vcorev1.GetSess
 			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.status.isConnected') = true) AS count_connected`),
 			goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.status.userRef.uid')) AS count_user`),
 			goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.status.deviceRef.uid')) AS count_device`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.clientlessType' = 'BROWSER') AS count_browser`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.clientlessType' = 'SDK') AS count_sdk`),
-			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.clientlessType' = 'OAUTH2') AS count_oauth2`),
+			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.status.isBrowser') = true) AS count_browser`),
+			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.authentication.info.credential.type' = 'OAUTH2') AS count_oauth2`),
 			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.spec.state' = 'ACTIVE') AS count_active`),
 			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.spec.state' = 'REJECTED') AS count_rejected`),
 			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.spec.state' = 'PENDING') AS count_pending`),
@@ -130,7 +129,7 @@ func (s *Server) getSummaryCoreSession(ctx context.Context, req *vcorev1.GetSess
 		err := rows.Scan(&ret.TotalNumber,
 			&ret.TotalClient, &ret.TotalClientless, &ret.TotalConnected,
 			&ret.TotalUser, &ret.TotalDevice,
-			&ret.TotalClientlessBrowser, &ret.TotalClientlessSDK, &ret.TotalClientlessOAuth2,
+			&ret.TotalClientlessBrowser, &ret.TotalClientlessOAuth2,
 			&ret.TotalActive, &ret.TotalRejected, &ret.TotalPending)
 		if err != nil {
 			return nil, err
@@ -232,19 +231,19 @@ func (s *Server) getSummaryCorePolicy(ctx context.Context, req *vcorev1.GetPolic
 		Select(
 			goqu.L(`COUNT(*) AS count_total`),
 			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.isDisabled') = true) AS count_disabled`),
-			goqu.L(`COALESCE(SUM(len(json_extract(rsc, '$.spec.rules'))), 0) AS count_rules`),
+			goqu.L(`COALESCE(SUM(json_array_length(rsc, '$.spec.rules')), 0) AS count_rules`),
 			goqu.L(`COALESCE(SUM(
-    len(list_filter(
-        CAST(json_extract(rsc, '$.spec.rules') AS JSON[]),
-        x -> json_extract_string(x, '$.effect') = 'ALLOW'
-    ))
-), 0) AS count_rules_allowed`),
+			len(list_filter(
+				CAST(json_extract(rsc, '$.spec.rules') AS JSON[]),
+				x -> json_extract_string(x, '$.effect') = 'ALLOW'
+			))
+		), 0) AS count_rules_allowed`),
 			goqu.L(`COALESCE(SUM(
-    len(list_filter(
-        CAST(json_extract(rsc, '$.spec.rules') AS JSON[]),
-        x -> json_extract_string(x, '$.effect') = 'DENY'
-    ))
-), 0) AS count_rules_denied`),
+			len(list_filter(
+				CAST(json_extract(rsc, '$.spec.rules') AS JSON[]),
+				x -> json_extract_string(x, '$.effect') = 'DENY'
+			))
+		), 0) AS count_rules_denied`),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -411,6 +410,8 @@ func (s *Server) getSummaryCoreDevice(ctx context.Context, req *vcorev1.GetDevic
 			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.osType' = 'LINUX') AS count_linux`),
 			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.osType' = 'WINDOWS') AS count_windows`),
 			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.osType' = 'MAC') AS count_mac`),
+			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.osType' = 'ANDROID') AS count_android`),
+			goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.status.osType' = 'IOS') AS count_ios`),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -432,7 +433,7 @@ func (s *Server) getSummaryCoreDevice(ctx context.Context, req *vcorev1.GetDevic
 		err := rows.Scan(&ret.TotalNumber,
 			&ret.TotalUser,
 			&ret.TotalActive, &ret.TotalRejected, &ret.TotalPending,
-			&ret.TotalLinux, &ret.TotalWindows, &ret.TotalMac)
+			&ret.TotalLinux, &ret.TotalWindows, &ret.TotalMac, &ret.TotalAndroid, &ret.TotalIOS)
 		if err != nil {
 			return nil, err
 		}
