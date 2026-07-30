@@ -10,112 +10,113 @@ package metricstore
 
 import (
 	"context"
-	"sort"
+	"database/sql"
+	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
 
-	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetricsv1"
+	"github.com/octelium/octelium/pkg/common/pbutils"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-const descriptorAttributeKeyLookback = 24 * time.Hour
+const (
+	maxDescriptorPageSize     = 1000
+	defaultDescriptorPageSize = 100
+	attributeEstimateLookback = rawMetricRetention
+)
 
-func (s *srvMetric) QueryMetrics(
-	ctx context.Context,
-	req *vmetricsv1.QueryMetricsRequest,
-) (*vmetricsv1.QueryMetricsResponse, error) {
-	q, err := s.validateQueryRequest(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	desc, err := s.resolveDescriptor(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := validateOperationForKind(desc.Kind, req.Operation); err != nil {
-		return nil, err
-	}
-
-	if req.Metric.Kind != vmetricsv1.MetricDescriptor_KIND_UNSET && req.Metric.Kind != desc.Kind {
-		return nil, status.Error(codes.InvalidArgument, "metric kind does not match descriptor")
-	}
-
-	switch desc.Kind {
-	case vmetricsv1.MetricDescriptor_COUNTER:
-		return s.queryCounter(ctx, q, desc)
-
-	case vmetricsv1.MetricDescriptor_UP_DOWN_COUNTER,
-		vmetricsv1.MetricDescriptor_GAUGE:
-		return s.queryGauge(ctx, q, desc)
-
-	case vmetricsv1.MetricDescriptor_HISTOGRAM:
-		return s.queryExplicitHistogram(ctx, q, desc)
-
-	case vmetricsv1.MetricDescriptor_EXPONENTIAL_HISTOGRAM:
-		return nil, status.Error(codes.Unimplemented, "exponential histogram queries are not implemented")
-
-	default:
-		return nil, status.Error(codes.InvalidArgument, "unsupported metric kind")
-	}
-}
-
-func (s *srvMetric) ListMetricDescriptors(
-	ctx context.Context,
-	req *vmetricsv1.ListMetricDescriptorsRequest,
-) (*vmetricsv1.ListMetricDescriptorsResponse, error) {
+func (s *srvMetric) ListMetricDescriptors(ctx context.Context,
+	req *vmetricsv1.ListMetricDescriptorsRequest) (*vmetricsv1.ListMetricDescriptorsResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "nil request")
 	}
 
-	limit := int(req.Limit)
-	if limit <= 0 || limit > maxDescriptorLimit {
-		limit = maxDescriptorLimit
+	req.NamePrefix = strings.TrimSpace(req.NamePrefix)
+	if len(req.NamePrefix) > maxMetricNameLength {
+		return nil, status.Error(codes.InvalidArgument, "descriptor name prefix is too long")
+	}
+	if err := normalizeComponentSelector(req.Component); err != nil {
+		return nil, err
 	}
 
-	where := []string{"1 = 1"}
-	args := []any{}
+	limit := int(req.Limit)
+	if limit <= 0 {
+		limit = defaultDescriptorPageSize
+	}
+	if limit > maxDescriptorPageSize {
+		limit = maxDescriptorPageSize
+	}
+
+	fingerprint, err := descriptorRequestFingerprint(req)
+	if err != nil {
+		return nil, err
+	}
+	cursor := ""
+	snapshot := time.Now().UTC()
+	if req.PageToken != "" {
+		payload, err := s.s.decodePageToken(req.PageToken, "descriptor", fingerprint)
+		if err != nil {
+			return nil, err
+		}
+		cursor = payload.Cursor
+		snapshot = time.Unix(0, payload.SnapshotNS).UTC()
+	}
+
+	where := []string{"d.created_at <= ?"}
+	args := []any{metricTimeToDB(snapshot)}
 
 	if req.NamePrefix != "" {
-		where = append(where, "name LIKE ?")
-		args = append(args, req.NamePrefix+"%")
+		where = append(where, "starts_with(d.name, ?)")
+		args = append(args, req.NamePrefix)
+	}
+	if len(req.Kinds) > 0 {
+		placeholders := make([]string, 0, len(req.Kinds))
+		for _, kind := range req.Kinds {
+			if kind == vmetricsv1.MetricDescriptor_KIND_UNSET {
+				return nil, status.Error(codes.InvalidArgument, "descriptor kind filter cannot contain KIND_UNSET")
+			}
+			placeholders = append(placeholders, "?")
+			args = append(args, kindToString(kind))
+		}
+		where = append(where, "d.kind IN ("+strings.Join(placeholders, ",")+")")
 	}
 
-	if req.Component != nil {
-		if req.Component.Type != "" {
-			where = append(where, "component_type = ?")
-			args = append(args, req.Component.Type)
-		}
-		if req.Component.Namespace != "" {
-			where = append(where, "component_namespace = ?")
-			args = append(args, req.Component.Namespace)
-		}
-		if req.Component.Name != "" {
-			where = append(where, "component_name = ?")
-			args = append(args, req.Component.Name)
-		}
-	}
+	componentWhere, componentArgs := descriptorComponentSQL(req.Component, snapshot)
+	where = append(where, componentWhere...)
+	args = append(args, componentArgs...)
 
-	if req.PageToken != "" {
-		where = append(where, "name > ?")
-		args = append(args, req.PageToken)
+	if cursor != "" {
+		name, id, ok := splitDescriptorCursor(cursor)
+		if !ok {
+			return nil, status.Error(codes.InvalidArgument, "invalid descriptor page cursor")
+		}
+		where = append(where, "(d.name > ? OR (d.name = ? AND d.id > ?))")
+		args = append(args, name, name, id)
 	}
 
 	query := `
 SELECT
-    name,
-    any_value(kind) AS kind,
-    any_value(value_type) AS value_type,
-    any_value(unit) AS unit,
-    any_value(description) AS description,
-    any_value(temporality) AS temporality
-FROM metrics
+	d.id,
+	d.name,
+	d.kind,
+	d.number_value_type,
+	d.unit,
+	d.description,
+	d.temporality,
+	d.scope_name,
+	d.scope_version,
+	d.scope_schema_url,
+	CAST(d.explicit_bounds AS VARCHAR),
+	d.exp_min_scale,
+	d.exp_max_scale,
+	d.exp_zero_threshold_min,
+	d.exp_zero_threshold_max
+FROM metric_descriptors d
 WHERE ` + strings.Join(where, " AND ") + `
-GROUP BY name
-ORDER BY name ASC
+ORDER BY d.name ASC, d.id ASC
 LIMIT ?
 `
 	args = append(args, limit+1)
@@ -126,82 +127,191 @@ LIMIT ?
 	}
 	defer rows.Close()
 
-	var descs []*vmetricsv1.MetricDescriptor
-
+	items := make([]*vmetricsv1.MetricDescriptor, 0, limit+1)
 	for rows.Next() {
-		var name, kind, valueType, unit, description, temporality string
-
-		if err := rows.Scan(&name, &kind, &valueType, &unit, &description, &temporality); err != nil {
+		descriptor, err := scanMetricDescriptor(rows)
+		if err != nil {
 			return nil, err
 		}
-
-		descs = append(descs, &vmetricsv1.MetricDescriptor{
-			Name:        name,
-			Kind:        kindFromString(kind),
-			ValueType:   valueTypeFromString(valueType),
-			Unit:        unit,
-			Description: description,
-			Temporality: temporalityFromString(temporality),
-		})
+		items = append(items, descriptor)
 	}
-
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
-	truncated := false
-	if len(descs) > limit {
-		truncated = true
-		descs = descs[:limit]
+	hasMore := len(items) > limit
+	if hasMore {
+		items = items[:limit]
+	}
+	if err := s.populateDescriptorAttributes(ctx, items, req.Component); err != nil {
+		return nil, err
 	}
 
-	if len(descs) > 0 {
-		if err := s.populateDescriptorAttributeKeys(ctx, descs); err != nil {
+	response := &vmetricsv1.ListMetricDescriptorsResponse{Items: items}
+	if hasMore {
+		last := items[len(items)-1]
+		response.NextPageToken, err = s.s.encodePageToken(newPageTokenPayload(
+			"descriptor",
+			fingerprint,
+			descriptorCursor(last.Name, last.Id),
+			snapshot,
+		))
+		if err != nil {
 			return nil, err
 		}
 	}
 
-	resp := &vmetricsv1.ListMetricDescriptorsResponse{
-		Items: descs,
-	}
-
-	if truncated {
-		resp.NextPageToken = descs[len(descs)-1].Name
-	}
-
-	return resp, nil
+	return response, nil
 }
 
-func (s *srvMetric) populateDescriptorAttributeKeys(
-	ctx context.Context,
-	descs []*vmetricsv1.MetricDescriptor,
-) error {
-	if len(descs) == 0 {
+func descriptorComponentSQL(component *vmetricsv1.ComponentSelector, snapshot time.Time) ([]string, []any) {
+	if component == nil || (component.Type == "" && component.Namespace == "" && component.Name == "") {
+		return nil, nil
+	}
+
+	where := []string{"EXISTS (SELECT 1 FROM metric_series s WHERE s.descriptor_id = d.id AND s.created_at <= ?"}
+	args := []any{metricTimeToDB(snapshot)}
+	if component.Type != "" {
+		where[0] += " AND s.component_type = ?"
+		args = append(args, component.Type)
+	}
+	if component.Namespace != "" {
+		where[0] += " AND s.component_namespace = ?"
+		args = append(args, component.Namespace)
+	}
+	if component.Name != "" {
+		where[0] += " AND s.component_name = ?"
+		args = append(args, component.Name)
+	}
+	where[0] += ")"
+	return where, args
+}
+
+func descriptorCursor(name, id string) string {
+	return name + "\x00" + id
+}
+
+func splitDescriptorCursor(cursor string) (string, string, bool) {
+	idx := strings.IndexByte(cursor, 0)
+	if idx < 0 {
+		return "", "", false
+	}
+	return cursor[:idx], cursor[idx+1:], true
+}
+
+func scanMetricDescriptor(scanner interface{ Scan(...any) error }) (*vmetricsv1.MetricDescriptor, error) {
+	var id, name, kind, numberValueType, unit, description, temporality string
+	var scopeName, scopeVersion, scopeSchemaURL string
+	var boundsJSON sql.NullString
+	var expMinScale, expMaxScale sql.NullInt64
+	var expZeroMin, expZeroMax sql.NullFloat64
+
+	if err := scanner.Scan(&id, &name, &kind, &numberValueType, &unit, &description, &temporality,
+		&scopeName, &scopeVersion, &scopeSchemaURL, &boundsJSON, &expMinScale, &expMaxScale,
+		&expZeroMin, &expZeroMax); err != nil {
+		return nil, err
+	}
+
+	ret := &vmetricsv1.MetricDescriptor{
+		Id:              id,
+		Name:            name,
+		Kind:            kindFromString(kind),
+		NumberValueType: numberValueTypeFromString(numberValueType),
+		Unit:            unit,
+		Description:     description,
+		Temporality:     temporalityFromString(temporality),
+		InstrumentationScope: &vmetricsv1.InstrumentationScope{
+			Name:      scopeName,
+			Version:   scopeVersion,
+			SchemaURL: scopeSchemaURL,
+		},
+	}
+
+	switch ret.Kind {
+	case vmetricsv1.MetricDescriptor_HISTOGRAM:
+		var bounds []float64
+		if boundsJSON.Valid && boundsJSON.String != "" {
+			if err := json.Unmarshal([]byte(boundsJSON.String), &bounds); err != nil {
+				return nil, err
+			}
+		}
+		ret.Histogram = &vmetricsv1.MetricDescriptor_ExplicitHistogram{
+			ExplicitHistogram: &vmetricsv1.ExplicitHistogramDescriptor{
+				Bounds:         bounds,
+				MergeSupported: true,
+			},
+		}
+
+	case vmetricsv1.MetricDescriptor_EXPONENTIAL_HISTOGRAM:
+		mergeSupported := expMinScale.Valid && expMaxScale.Valid && expMinScale.Int64 == expMaxScale.Int64 &&
+			expZeroMin.Valid && expZeroMax.Valid && expZeroMin.Float64 == expZeroMax.Float64
+		reason := ""
+		if !mergeSupported {
+			reason = "exponential histogram series use incompatible scales or zero thresholds"
+		}
+		explicit := &vmetricsv1.ExponentialHistogramDescriptor{
+			MergeSupported:         mergeSupported,
+			MergeUnsupportedReason: reason,
+		}
+		if expMinScale.Valid {
+			explicit.MinimumObservedScale = int32(expMinScale.Int64)
+		}
+		if expMaxScale.Valid {
+			explicit.MaximumObservedScale = int32(expMaxScale.Int64)
+		}
+		ret.Histogram = &vmetricsv1.MetricDescriptor_ExponentialHistogram{
+			ExponentialHistogram: explicit,
+		}
+	}
+
+	return ret, nil
+}
+
+func (s *srvMetric) populateDescriptorAttributes(ctx context.Context,
+	descriptors []*vmetricsv1.MetricDescriptor, component *vmetricsv1.ComponentSelector) error {
+	if len(descriptors) == 0 {
 		return nil
 	}
 
-	names := make([]string, 0, len(descs))
-	byName := make(map[string]*vmetricsv1.MetricDescriptor, len(descs))
-
-	for _, d := range descs {
-		names = append(names, d.Name)
-		byName[d.Name] = d
-	}
-
-	placeholders := make([]string, 0, len(names))
-	args := make([]any, 0, len(names)+1)
-	for _, name := range names {
+	byID := make(map[string]*vmetricsv1.MetricDescriptor, len(descriptors))
+	placeholders := make([]string, 0, len(descriptors))
+	args := []any{}
+	for _, descriptor := range descriptors {
+		byID[descriptor.Id] = descriptor
 		placeholders = append(placeholders, "?")
-		args = append(args, name)
+		args = append(args, descriptor.Id)
 	}
 
-	args = append(args, time.Now().UTC().Add(-descriptorAttributeKeyLookback))
+	where := []string{
+		"a.descriptor_id IN (" + strings.Join(placeholders, ",") + ")",
+	}
+	if component != nil {
+		if component.Type != "" {
+			where = append(where, "s.component_type = ?")
+			args = append(args, component.Type)
+		}
+		if component.Namespace != "" {
+			where = append(where, "s.component_namespace = ?")
+			args = append(args, component.Namespace)
+		}
+		if component.Name != "" {
+			where = append(where, "s.component_name = ?")
+			args = append(args, component.Name)
+		}
+	}
 
 	query := `
-SELECT DISTINCT name, unnest(json_keys(attributes)) AS attr_key
-FROM metrics
-WHERE name IN (` + strings.Join(placeholders, ",") + `)
-  AND timestamp >= ?
+SELECT
+	a.descriptor_id,
+	a.key,
+	any_value(a.value_kind) AS value_kind,
+	bit_or(a.source_mask) AS source_mask,
+	approx_count_distinct(a.value_key) AS distinct_values
+FROM metric_series_attributes a
+JOIN metric_series s ON s.id = a.series_id
+WHERE ` + strings.Join(where, " AND ") + `
+GROUP BY a.descriptor_id, a.key
+ORDER BY a.descriptor_id, a.key
 `
 
 	rows, err := s.s.db.QueryContext(ctx, query, args...)
@@ -210,88 +320,232 @@ WHERE name IN (` + strings.Join(placeholders, ",") + `)
 	}
 	defer rows.Close()
 
-	keysByName := map[string]map[string]struct{}{}
-
+	now := time.Now().UTC()
 	for rows.Next() {
-		var name string
-		var key string
-
-		if err := rows.Scan(&name, &key); err != nil {
+		var descriptorID, key, valueKind string
+		var sourceMask int
+		var distinct uint64
+		if err := rows.Scan(&descriptorID, &key, &valueKind, &sourceMask, &distinct); err != nil {
 			return err
 		}
 
-		if key == "" {
+		descriptor := byID[descriptorID]
+		if descriptor == nil {
 			continue
 		}
 
-		if keysByName[name] == nil {
-			keysByName[name] = map[string]struct{}{}
-		}
-
-		keysByName[name][key] = struct{}{}
+		filterable, filterReason := metricAttributeFilterCapability(key)
+		groupable, groupReason := metricAttributeGroupCapability(key, distinct)
+		distinctCopy := distinct
+		descriptor.Attributes = append(descriptor.Attributes, &vmetricsv1.MetricAttributeDescriptor{
+			Key:                     key,
+			ValueKind:               attributeKindToProto(valueKind),
+			Sources:                 attributeSources(sourceMask),
+			Filterable:              filterable,
+			FilterUnsupportedReason: filterReason,
+			Groupable:               groupable,
+			GroupUnsupportedReason:  groupReason,
+			EstimatedDistinctValues: &distinctCopy,
+			EstimateAsOf:            pbutils.Timestamp(now),
+			EstimateLookback:        durationPB(attributeEstimateLookback),
+		})
 	}
-
-	if err := rows.Err(); err != nil {
-		return err
-	}
-
-	for name, keySet := range keysByName {
-		desc := byName[name]
-		if desc == nil {
-			continue
-		}
-
-		for k := range keySet {
-			desc.AttributeKeys = append(desc.AttributeKeys, k)
-		}
-		sort.Strings(desc.AttributeKeys)
-	}
-
-	return nil
+	return rows.Err()
 }
 
-func (s *srvMetric) ListMetricCatalog(
-	ctx context.Context,
-	req *vmetricsv1.ListMetricCatalogRequest,
-) (*vmetricsv1.ListMetricCatalogResponse, error) {
+func attributeSources(mask int) []vmetricsv1.MetricAttributeDescriptor_Source {
+	var ret []vmetricsv1.MetricAttributeDescriptor_Source
+	if mask&attributeSourceResource != 0 {
+		ret = append(ret, vmetricsv1.MetricAttributeDescriptor_RESOURCE)
+	}
+	if mask&attributeSourceScope != 0 {
+		ret = append(ret, vmetricsv1.MetricAttributeDescriptor_SCOPE)
+	}
+	if mask&attributeSourceDataPoint != 0 {
+		ret = append(ret, vmetricsv1.MetricAttributeDescriptor_DATA_POINT)
+	}
+	return ret
+}
+
+func metricAttributeFilterCapability(key string) (bool, string) {
+	if key == "octelium.component.type" || key == "octelium.component.namespace" || key == "octelium.component.name" {
+		return true, ""
+	}
+	for _, prefix := range []string{"octelium.vigil.svc.", "service.", "deployment.", "http.", "rpc.", "net."} {
+		if strings.HasPrefix(key, prefix) {
+			return true, ""
+		}
+	}
+	return false, "attribute key is not in the metric filter allowlist"
+}
+
+func metricAttributeGroupCapability(key string, estimatedDistinct uint64) (bool, string) {
+	allowed := map[string]struct{}{
+		"octelium.component.type":      {},
+		"octelium.component.namespace": {},
+		"octelium.component.name":      {},
+		"http.method":                  {},
+		"http.request.method":          {},
+		"http.response.status_code":    {},
+		"rpc.system":                   {},
+		"rpc.service":                  {},
+		"rpc.method":                   {},
+		"net.transport":                {},
+		"service.name":                 {},
+		"service.namespace":            {},
+		"deployment.environment":       {},
+	}
+	if _, ok := allowed[key]; !ok {
+		return false, "attribute key is not in the low-cardinality groupBy allowlist"
+	}
+	if estimatedDistinct > maxSeriesPerPage*10 {
+		return false, "observed attribute cardinality exceeds the groupBy safety threshold"
+	}
+	return true, ""
+}
+
+func (s *srvMetric) resolveDescriptor(ctx context.Context, q *querySpec) (*vmetricsv1.MetricDescriptor, error) {
+	where := []string{"1 = 1"}
+	args := []any{}
+
+	if descriptorID := strings.TrimSpace(q.req.Metric.GetDescriptorID()); descriptorID != "" {
+		where = append(where, "d.id = ?")
+		args = append(args, descriptorID)
+	} else {
+		where = append(where, "d.name = ?")
+		args = append(args, strings.TrimSpace(q.req.Metric.GetName()))
+	}
+
+	activeSQL, activeArgs := descriptorActiveSeriesSQL("d", q.req.Component, q.from, q.to, q.snapshot)
+	where = append(where, activeSQL)
+	args = append(args, activeArgs...)
+
+	query := `
+SELECT
+	d.id, d.name, d.kind, d.number_value_type, d.unit, d.description, d.temporality,
+	d.scope_name, d.scope_version, d.scope_schema_url, CAST(d.explicit_bounds AS VARCHAR),
+	d.exp_min_scale, d.exp_max_scale, d.exp_zero_threshold_min, d.exp_zero_threshold_max
+FROM metric_descriptors d
+WHERE ` + strings.Join(where, " AND ") + `
+ORDER BY d.id
+LIMIT 2
+`
+
+	rows, err := s.s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var descriptors []*vmetricsv1.MetricDescriptor
+	for rows.Next() {
+		descriptor, err := scanMetricDescriptor(rows)
+		if err != nil {
+			return nil, err
+		}
+		descriptors = append(descriptors, descriptor)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if len(descriptors) == 0 {
+		return nil, status.Error(codes.NotFound, "metric descriptor not found")
+	}
+	if len(descriptors) > 1 {
+		return nil, status.Error(codes.FailedPrecondition,
+			"metric name resolves to multiple incompatible descriptors; query by descriptorID")
+	}
+	if err := s.populateDescriptorAttributes(ctx, descriptors, q.req.Component); err != nil {
+		return nil, err
+	}
+	return descriptors[0], nil
+}
+
+func descriptorActiveSeriesSQL(alias string, component *vmetricsv1.ComponentSelector,
+	from, to, snapshot time.Time) (string, []any) {
+	componentSQL := ""
+	args := []any{}
+	if component != nil {
+		if component.Type != "" {
+			componentSQL += " AND s.component_type = ?"
+			args = append(args, component.Type)
+		}
+		if component.Namespace != "" {
+			componentSQL += " AND s.component_namespace = ?"
+			args = append(args, component.Namespace)
+		}
+		if component.Name != "" {
+			componentSQL += " AND s.component_name = ?"
+			args = append(args, component.Name)
+		}
+	}
+
+	query := fmt.Sprintf(`EXISTS (
+	SELECT 1
+	FROM metric_series s
+	WHERE s.descriptor_id = %[1]s.id%[2]s
+	  AND (
+		(%[1]s.kind IN ('COUNTER', 'UP_DOWN_COUNTER', 'GAUGE') AND EXISTS (
+			SELECT 1 FROM metric_number_points p
+			WHERE p.series_id = s.id AND p.timestamp >= ? AND p.timestamp < ? AND p.ingested_at <= ?
+		)) OR
+		(%[1]s.kind = 'HISTOGRAM' AND EXISTS (
+			SELECT 1 FROM metric_histogram_points p
+			WHERE p.series_id = s.id AND p.timestamp >= ? AND p.timestamp < ? AND p.ingested_at <= ?
+		)) OR
+		(%[1]s.kind = 'EXPONENTIAL_HISTOGRAM' AND EXISTS (
+			SELECT 1 FROM metric_exponential_histogram_points p
+			WHERE p.series_id = s.id AND p.timestamp >= ? AND p.timestamp < ? AND p.ingested_at <= ?
+		))
+	  )
+)`, alias, componentSQL)
+	args = append(args, metricTimeToDB(from), metricTimeToDB(to), metricTimeToDB(snapshot),
+		metricTimeToDB(from), metricTimeToDB(to), metricTimeToDB(snapshot),
+		metricTimeToDB(from), metricTimeToDB(to), metricTimeToDB(snapshot))
+	return query, args
+}
+
+func (s *srvMetric) ListMetricCatalog(ctx context.Context,
+	req *vmetricsv1.ListMetricCatalogRequest) (*vmetricsv1.ListMetricCatalogResponse, error) {
+	_ = ctx
 	var items []*vmetricsv1.MetricCatalogItem
 
 	items = append(items,
 		&vmetricsv1.MetricCatalogItem{
 			Id:          "process_goroutines",
 			DisplayName: "Goroutines",
-			Description: "Number of goroutines",
+			Description: "Current number of goroutines across selected components",
 			Metric: &vmetricsv1.MetricSelector{
-				Name: "process.goroutines",
-				Kind: vmetricsv1.MetricDescriptor_UP_DOWN_COUNTER,
+				Selector: &vmetricsv1.MetricSelector_Name{Name: "process.goroutines"},
+				Kind:     vmetricsv1.MetricDescriptor_UP_DOWN_COUNTER,
 			},
 			DefaultOperation: &vmetricsv1.QueryOperation{
-				Type: &vmetricsv1.QueryOperation_Gauge{
-					Gauge: &vmetricsv1.GaugeOperation{
-						Function: vmetricsv1.GaugeOperation_LAST,
-					},
-				},
+				Type: &vmetricsv1.QueryOperation_Gauge{Gauge: &vmetricsv1.GaugeOperation{
+					Function: vmetricsv1.GaugeOperation_LAST,
+				}},
 			},
-			DefaultGroupBy: []string{"octelium.component.type", "octelium.component.namespace"},
-			Unit:           "goroutines",
+			DefaultGroupBy:           []string{"octelium.component.type", "octelium.component.namespace"},
+			Unit:                     "goroutines",
+			DefaultSeriesAggregation: vmetricsv1.QueryMetricsRequest_SUM,
+			DefaultStep:              durationPB(time.Minute),
 		},
 		&vmetricsv1.MetricCatalogItem{
 			Id:          "process_heap_alloc",
 			DisplayName: "Heap allocation",
-			Description: "Bytes allocated by heap",
+			Description: "Current heap allocation across selected components",
 			Metric: &vmetricsv1.MetricSelector{
-				Name: "process.mem.heap_alloc",
-				Kind: vmetricsv1.MetricDescriptor_UP_DOWN_COUNTER,
+				Selector: &vmetricsv1.MetricSelector_Name{Name: "process.mem.heap_alloc"},
+				Kind:     vmetricsv1.MetricDescriptor_UP_DOWN_COUNTER,
 			},
 			DefaultOperation: &vmetricsv1.QueryOperation{
-				Type: &vmetricsv1.QueryOperation_Gauge{
-					Gauge: &vmetricsv1.GaugeOperation{
-						Function: vmetricsv1.GaugeOperation_LAST,
-					},
-				},
+				Type: &vmetricsv1.QueryOperation_Gauge{Gauge: &vmetricsv1.GaugeOperation{
+					Function: vmetricsv1.GaugeOperation_LAST,
+				}},
 			},
-			DefaultGroupBy: []string{"octelium.component.type", "octelium.component.namespace"},
-			Unit:           "bytes",
+			DefaultGroupBy:           []string{"octelium.component.type", "octelium.component.namespace"},
+			Unit:                     "bytes",
+			DefaultSeriesAggregation: vmetricsv1.QueryMetricsRequest_SUM,
+			DefaultStep:              durationPB(time.Minute),
 		},
 	)
 
@@ -302,102 +556,185 @@ func (s *srvMetric) ListMetricCatalog(
 				DisplayName: "Requests rate",
 				Description: "Per-second request rate",
 				Metric: &vmetricsv1.MetricSelector{
-					Name: "req.total",
-					Kind: vmetricsv1.MetricDescriptor_COUNTER,
+					Selector: &vmetricsv1.MetricSelector_Name{Name: "req.total"},
+					Kind:     vmetricsv1.MetricDescriptor_COUNTER,
 				},
 				DefaultOperation: &vmetricsv1.QueryOperation{
-					Type: &vmetricsv1.QueryOperation_Counter{
-						Counter: &vmetricsv1.CounterOperation{
-							Function: vmetricsv1.CounterOperation_RATE,
-						},
-					},
+					Type: &vmetricsv1.QueryOperation_Counter{Counter: &vmetricsv1.CounterOperation{
+						Function: vmetricsv1.CounterOperation_RATE,
+					}},
 				},
-				DefaultGroupBy: []string{"octelium.component.type", "octelium.component.namespace"},
-				Unit:           "requests/s",
+				DefaultGroupBy:           []string{"octelium.component.type", "octelium.component.namespace"},
+				Unit:                     "requests/s",
+				DefaultSeriesAggregation: vmetricsv1.QueryMetricsRequest_SUM,
+				DefaultStep:              durationPB(time.Minute),
 			},
 			&vmetricsv1.MetricCatalogItem{
 				Id:          "active_requests",
 				DisplayName: "Active requests",
 				Description: "Current active requests",
 				Metric: &vmetricsv1.MetricSelector{
-					Name: "req.active",
-					Kind: vmetricsv1.MetricDescriptor_UP_DOWN_COUNTER,
+					Selector: &vmetricsv1.MetricSelector_Name{Name: "req.active"},
+					Kind:     vmetricsv1.MetricDescriptor_UP_DOWN_COUNTER,
 				},
 				DefaultOperation: &vmetricsv1.QueryOperation{
-					Type: &vmetricsv1.QueryOperation_Gauge{
-						Gauge: &vmetricsv1.GaugeOperation{
-							Function: vmetricsv1.GaugeOperation_LAST,
-						},
-					},
+					Type: &vmetricsv1.QueryOperation_Gauge{Gauge: &vmetricsv1.GaugeOperation{
+						Function: vmetricsv1.GaugeOperation_LAST,
+					}},
 				},
-				DefaultGroupBy: []string{"octelium.component.type", "octelium.component.namespace"},
-				Unit:           "requests",
+				DefaultGroupBy:           []string{"octelium.component.type", "octelium.component.namespace"},
+				Unit:                     "requests",
+				DefaultSeriesAggregation: vmetricsv1.QueryMetricsRequest_SUM,
+				DefaultStep:              durationPB(time.Minute),
 			},
 			&vmetricsv1.MetricCatalogItem{
 				Id:          "request_p95_latency",
 				DisplayName: "Request p95 latency",
 				Description: "p95 request duration",
 				Metric: &vmetricsv1.MetricSelector{
-					Name: "req.duration",
-					Kind: vmetricsv1.MetricDescriptor_HISTOGRAM,
+					Selector: &vmetricsv1.MetricSelector_Name{Name: "req.duration"},
+					Kind:     vmetricsv1.MetricDescriptor_HISTOGRAM,
 				},
 				DefaultOperation: &vmetricsv1.QueryOperation{
-					Type: &vmetricsv1.QueryOperation_Histogram{
-						Histogram: &vmetricsv1.HistogramOperation{
-							Function:  vmetricsv1.HistogramOperation_QUANTILE,
-							Quantiles: []float64{0.95},
-						},
-					},
+					Type: &vmetricsv1.QueryOperation_Histogram{Histogram: &vmetricsv1.HistogramOperation{
+						Function:  vmetricsv1.HistogramOperation_QUANTILE,
+						Quantiles: []float64{0.95},
+					}},
 				},
-				DefaultGroupBy: []string{"octelium.component.type", "octelium.component.namespace"},
-				Unit:           "ms",
+				DefaultGroupBy:           []string{"octelium.component.type", "octelium.component.namespace"},
+				Unit:                     "ms",
+				DefaultSeriesAggregation: vmetricsv1.QueryMetricsRequest_MERGE,
+				DefaultStep:              durationPB(time.Minute),
 			},
 		)
 	}
 
-	return &vmetricsv1.ListMetricCatalogResponse{
-		Items: items,
-	}, nil
+	return &vmetricsv1.ListMetricCatalogResponse{Items: items}, nil
 }
 
 func catalogMatchesComponent(req *vmetricsv1.ListMetricCatalogRequest, componentTypes ...string) bool {
 	if req == nil || req.Component == nil || req.Component.Type == "" {
 		return true
 	}
-
-	for _, typ := range componentTypes {
-		if req.Component.Type == typ {
+	for _, componentType := range componentTypes {
+		if req.Component.Type == componentType {
 			return true
 		}
 	}
-
 	return false
 }
 
-func buildResponse(
-	q *querySpec,
-	desc *vmetricsv1.MetricDescriptor,
-	series []*vmetricsv1.TimeSeries,
-	totalSeries uint32,
-	truncated bool,
-) *vmetricsv1.QueryMetricsResponse {
-	return &vmetricsv1.QueryMetricsResponse{
-		Descriptor_: desc,
-		Operation:   q.req.Operation,
-		Step:        durationPB(q.step),
-		Series:      series,
-		Truncated:   truncated,
-		TotalSeries: totalSeries,
+func (s *srvMetric) GetMetricsCapabilities(ctx context.Context,
+	req *vmetricsv1.GetMetricsCapabilitiesRequest) (*vmetricsv1.GetMetricsCapabilitiesResponse, error) {
+	_ = ctx
+	_ = req
+
+	return &vmetricsv1.GetMetricsCapabilitiesResponse{
+		QueryLimits: &vmetricsv1.QueryLimits{
+			MaximumTimeRange:         durationPB(rawMetricRetention),
+			MinimumStep:              durationPB(minimumQueryStep),
+			MaximumSeriesPerPage:     maxSeriesPerPage,
+			MaximumPointsPerSeries:   maxPointsPerSeries,
+			MaximumTotalPoints:       maxTotalPoints,
+			MaximumGroupByAttributes: maxGroupByAttributes,
+			MaximumFilters:           maxFilters,
+			MaximumFilterValues:      maxFilterValues,
+			MaximumSourceSeries:      maximumSourceSeries,
+			MaximumRawHistogramRows:  maximumRawHistogramRowsPerQuery,
+			MaximumRawNumberRows:     maximumRawNumberRowsPerQuery,
+		},
+		RetentionTiers: []*vmetricsv1.MetricRetentionTier{
+			{
+				Name:      "raw",
+				Retention: durationPB(rawMetricRetention),
+				Raw:       true,
+			},
+		},
+		SeriesPageTokenTTL: durationPB(seriesPageTokenTTL),
+		ServerTime:         pbutils.Now(),
+		IngestionLimits: &vmetricsv1.MetricIngestionLimits{
+			MaximumDataPointsPerExport:          maxDataPointsPerExport,
+			MaximumEffectiveAttributesPerSeries: maxAttributesPerPoint,
+			MaximumAttributeKeyBytes:            maxAttributeKeyBytes,
+			MaximumAttributeValueBytes:          maxAttributeValueBytes,
+			MaximumSeriesLabelsBytes:            maxSeriesLabelsBytes,
+			MaximumHistogramBuckets:             maxHistogramBuckets,
+			MaximumQueuedExports:                maxQueuedExports,
+			MaximumQueuedDataPoints:             uint64(maxQueuedDataPoints),
+			MaximumQueuedEstimatedBytes:         uint64(maxQueuedEstimatedBytes),
+			MaximumGRPCMessageBytes:             8 << 20,
+			MaximumFutureSkew:                   durationPB(maximumFutureSkew),
+			AcceptedPastWindow:                  durationPB(maximumPastSkew),
+		},
+		MetricKinds: []*vmetricsv1.MetricKindCapability{
+			{
+				Kind: vmetricsv1.MetricDescriptor_COUNTER,
+				CounterFunctions: []vmetricsv1.CounterOperation_Function{
+					vmetricsv1.CounterOperation_RAW,
+					vmetricsv1.CounterOperation_RATE,
+					vmetricsv1.CounterOperation_INCREASE,
+				},
+				SeriesAggregations: numberSeriesAggregations(),
+			},
+			{
+				Kind:               vmetricsv1.MetricDescriptor_UP_DOWN_COUNTER,
+				GaugeFunctions:     gaugeFunctions(),
+				SeriesAggregations: numberSeriesAggregations(),
+			},
+			{
+				Kind:               vmetricsv1.MetricDescriptor_GAUGE,
+				GaugeFunctions:     gaugeFunctions(),
+				SeriesAggregations: numberSeriesAggregations(),
+			},
+			{
+				Kind:               vmetricsv1.MetricDescriptor_HISTOGRAM,
+				HistogramFunctions: histogramFunctions(),
+				SeriesAggregations: []vmetricsv1.QueryMetricsRequest_SeriesAggregation{
+					vmetricsv1.QueryMetricsRequest_NONE,
+					vmetricsv1.QueryMetricsRequest_MERGE,
+				},
+			},
+			{
+				Kind:               vmetricsv1.MetricDescriptor_EXPONENTIAL_HISTOGRAM,
+				HistogramFunctions: histogramFunctions(),
+				SeriesAggregations: []vmetricsv1.QueryMetricsRequest_SeriesAggregation{
+					vmetricsv1.QueryMetricsRequest_NONE,
+					vmetricsv1.QueryMetricsRequest_MERGE,
+				},
+			},
+		},
+	}, nil
+}
+
+func numberSeriesAggregations() []vmetricsv1.QueryMetricsRequest_SeriesAggregation {
+	return []vmetricsv1.QueryMetricsRequest_SeriesAggregation{
+		vmetricsv1.QueryMetricsRequest_NONE,
+		vmetricsv1.QueryMetricsRequest_SUM,
+		vmetricsv1.QueryMetricsRequest_AVG,
+		vmetricsv1.QueryMetricsRequest_MIN,
+		vmetricsv1.QueryMetricsRequest_MAX,
+		vmetricsv1.QueryMetricsRequest_LAST,
 	}
 }
 
-func durationPB(d time.Duration) *metav1.Duration {
-	if d%time.Second == 0 {
-		return &metav1.Duration{
-			Type: &metav1.Duration_Seconds{Seconds: uint32(d / time.Second)},
-		}
+func gaugeFunctions() []vmetricsv1.GaugeOperation_Function {
+	return []vmetricsv1.GaugeOperation_Function{
+		vmetricsv1.GaugeOperation_LAST,
+		vmetricsv1.GaugeOperation_AVG,
+		vmetricsv1.GaugeOperation_MIN,
+		vmetricsv1.GaugeOperation_MAX,
+		vmetricsv1.GaugeOperation_SUM,
 	}
-	return &metav1.Duration{
-		Type: &metav1.Duration_Milliseconds{Milliseconds: uint32(d / time.Millisecond)},
+}
+
+func histogramFunctions() []vmetricsv1.HistogramOperation_Function {
+	return []vmetricsv1.HistogramOperation_Function{
+		vmetricsv1.HistogramOperation_BUCKETS,
+		vmetricsv1.HistogramOperation_QUANTILE,
+		vmetricsv1.HistogramOperation_AVG,
+		vmetricsv1.HistogramOperation_COUNT,
+		vmetricsv1.HistogramOperation_SUM,
+		vmetricsv1.HistogramOperation_MIN,
+		vmetricsv1.HistogramOperation_MAX,
 	}
 }

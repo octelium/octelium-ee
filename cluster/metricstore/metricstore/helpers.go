@@ -9,175 +9,33 @@
 package metricstore
 
 import (
-	"encoding/json"
-	"fmt"
+	"math"
 	"sort"
 	"strconv"
-	"strings"
+	"time"
 
+	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetricsv1"
-	"go.opentelemetry.io/collector/pdata/pmetric"
+	"github.com/octelium/octelium/pkg/common/pbutils"
 )
 
-func mergeAttrs(maps ...map[string]any) map[string]any {
-	ret := map[string]any{}
-
-	for _, m := range maps {
-		for k, v := range m {
-			ret[k] = v
-		}
-	}
-
-	return ret
+func normalizeMetricTime(value time.Time) time.Time {
+	return value.UTC()
 }
 
-func decodeStringMap(raw string) (map[string]any, error) {
-	if strings.TrimSpace(raw) == "" {
-		return map[string]any{}, nil
-	}
-
-	ret := map[string]any{}
-	if err := json.Unmarshal([]byte(raw), &ret); err != nil {
-		return nil, err
-	}
-
-	return ret, nil
+func metricTimeToDB(value time.Time) int64 {
+	return normalizeMetricTime(value).UnixNano()
 }
 
-func anyMapToStringMap(in map[string]any) map[string]string {
-	ret := map[string]string{}
-
-	for k, v := range in {
-		switch t := v.(type) {
-		case string:
-			ret[k] = t
-		case float64:
-			ret[k] = strconv.FormatFloat(t, 'f', -1, 64)
-		case bool:
-			ret[k] = strconv.FormatBool(t)
-		case nil:
-		default:
-			ret[k] = fmt.Sprintf("%v", t)
-		}
-	}
-
-	return ret
+func metricTimeFromDB(value int64) time.Time {
+	return time.Unix(0, value).UTC()
 }
 
-func pickLabels(labels map[string]string, keys []string) map[string]string {
-	if len(keys) == 0 {
-		return map[string]string{}
+func nullableMetricTimeToDB(value *time.Time) any {
+	if value == nil {
+		return nil
 	}
-
-	ret := map[string]string{}
-	for _, key := range keys {
-		if val, ok := labels[key]; ok {
-			ret[key] = val
-		}
-	}
-
-	return ret
-}
-
-func labelsToProto(labels map[string]string) []*vmetricsv1.Attribute {
-	keys := sortedKeys(labels)
-	ret := make([]*vmetricsv1.Attribute, 0, len(keys))
-
-	for _, key := range keys {
-		ret = append(ret, &vmetricsv1.Attribute{
-			Key:   key,
-			Value: labels[key],
-		})
-	}
-
-	return ret
-}
-
-func sortLabels(labels []*vmetricsv1.Attribute) {
-	sort.Slice(labels, func(i, j int) bool {
-		if labels[i].Key == labels[j].Key {
-			return labels[i].Value < labels[j].Value
-		}
-		return labels[i].Key < labels[j].Key
-	})
-}
-
-func labelsKey(labels map[string]string, keys []string) string {
-	if len(keys) == 0 {
-		return ""
-	}
-
-	var parts []string
-	for _, key := range keys {
-		parts = append(parts, key+"="+labels[key])
-	}
-
-	return strings.Join(parts, "\xff")
-}
-
-func labelsKeyFromProto(labels []*vmetricsv1.Attribute) string {
-	if len(labels) == 0 {
-		return ""
-	}
-
-	cp := append([]*vmetricsv1.Attribute{}, labels...)
-	sortLabels(cp)
-
-	var parts []string
-	for _, l := range cp {
-		parts = append(parts, l.Key+"="+l.Value)
-	}
-
-	return strings.Join(parts, "\xff")
-}
-
-func sortedKeys(m map[string]string) []string {
-	ret := make([]string, 0, len(m))
-	for k := range m {
-		ret = append(ret, k)
-	}
-	sort.Strings(ret)
-	return ret
-}
-
-func sortedIntKeys[T any](m map[int]T) []int {
-	ret := make([]int, 0, len(m))
-	for k := range m {
-		ret = append(ret, k)
-	}
-	sort.Ints(ret)
-	return ret
-}
-
-func sameFloatSlice(a, b []float64) bool {
-	if len(a) != len(b) {
-		return false
-	}
-
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-
-	return true
-}
-
-func kindFromString(kind string) vmetricsv1.MetricDescriptor_Kind {
-	switch kind {
-	case "COUNTER":
-		return vmetricsv1.MetricDescriptor_COUNTER
-	case "UP_DOWN_COUNTER":
-		return vmetricsv1.MetricDescriptor_UP_DOWN_COUNTER
-	case "GAUGE":
-		return vmetricsv1.MetricDescriptor_GAUGE
-	case "HISTOGRAM":
-		return vmetricsv1.MetricDescriptor_HISTOGRAM
-	case "EXPONENTIAL_HISTOGRAM":
-		return vmetricsv1.MetricDescriptor_EXPONENTIAL_HISTOGRAM
-	default:
-		return vmetricsv1.MetricDescriptor_KIND_UNSET
-	}
+	return metricTimeToDB(*value)
 }
 
 func kindToString(kind vmetricsv1.MetricDescriptor_Kind) string {
@@ -197,41 +55,47 @@ func kindToString(kind vmetricsv1.MetricDescriptor_Kind) string {
 	}
 }
 
-func valueTypeFromString(valueType string) vmetricsv1.MetricDescriptor_ValueType {
+func kindFromString(kind string) vmetricsv1.MetricDescriptor_Kind {
+	switch kind {
+	case "COUNTER":
+		return vmetricsv1.MetricDescriptor_COUNTER
+	case "UP_DOWN_COUNTER":
+		return vmetricsv1.MetricDescriptor_UP_DOWN_COUNTER
+	case "GAUGE":
+		return vmetricsv1.MetricDescriptor_GAUGE
+	case "HISTOGRAM":
+		return vmetricsv1.MetricDescriptor_HISTOGRAM
+	case "EXPONENTIAL_HISTOGRAM":
+		return vmetricsv1.MetricDescriptor_EXPONENTIAL_HISTOGRAM
+	default:
+		return vmetricsv1.MetricDescriptor_KIND_UNSET
+	}
+}
+
+func numberValueTypeToString(valueType vmetricsv1.MetricDescriptor_NumberValueType) string {
+	switch valueType {
+	case vmetricsv1.MetricDescriptor_INT64:
+		return "INT64"
+	case vmetricsv1.MetricDescriptor_DOUBLE:
+		return "DOUBLE"
+	default:
+		return ""
+	}
+}
+
+func numberValueTypeFromString(valueType string) vmetricsv1.MetricDescriptor_NumberValueType {
 	switch valueType {
 	case "INT64":
 		return vmetricsv1.MetricDescriptor_INT64
 	case "DOUBLE":
 		return vmetricsv1.MetricDescriptor_DOUBLE
 	default:
-		return vmetricsv1.MetricDescriptor_VALUE_TYPE_UNSET
+		return vmetricsv1.MetricDescriptor_NUMBER_VALUE_TYPE_UNSET
 	}
 }
 
-func temporalityToString(t pmetric.AggregationTemporality) string {
-	switch t {
-	case pmetric.AggregationTemporalityDelta:
-		return "DELTA"
-	case pmetric.AggregationTemporalityCumulative:
-		return "CUMULATIVE"
-	default:
-		return ""
-	}
-}
-
-func temporalityFromString(t string) vmetricsv1.MetricDescriptor_Temporality {
-	switch t {
-	case "DELTA":
-		return vmetricsv1.MetricDescriptor_DELTA
-	case "CUMULATIVE":
-		return vmetricsv1.MetricDescriptor_CUMULATIVE
-	default:
-		return vmetricsv1.MetricDescriptor_TEMPORALITY_UNSET
-	}
-}
-
-func temporalityEnumToString(t vmetricsv1.MetricDescriptor_Temporality) string {
-	switch t {
+func temporalityToString(temporality vmetricsv1.MetricDescriptor_Temporality) string {
+	switch temporality {
 	case vmetricsv1.MetricDescriptor_DELTA:
 		return "DELTA"
 	case vmetricsv1.MetricDescriptor_CUMULATIVE:
@@ -241,6 +105,252 @@ func temporalityEnumToString(t vmetricsv1.MetricDescriptor_Temporality) string {
 	}
 }
 
-func formatQuantile(q float64) string {
-	return strconv.FormatFloat(q, 'f', -1, 64)
+func temporalityFromString(temporality string) vmetricsv1.MetricDescriptor_Temporality {
+	switch temporality {
+	case "DELTA":
+		return vmetricsv1.MetricDescriptor_DELTA
+	case "CUMULATIVE":
+		return vmetricsv1.MetricDescriptor_CUMULATIVE
+	default:
+		return vmetricsv1.MetricDescriptor_TEMPORALITY_UNSET
+	}
+}
+
+func attributeKindToProto(kind string) vmetricsv1.AttributeValue_Kind {
+	switch kind {
+	case "STRING":
+		return vmetricsv1.AttributeValue_STRING
+	case "BOOL":
+		return vmetricsv1.AttributeValue_BOOL
+	case "INT64":
+		return vmetricsv1.AttributeValue_INT64
+	case "DOUBLE":
+		return vmetricsv1.AttributeValue_DOUBLE
+	default:
+		return vmetricsv1.AttributeValue_KIND_UNSET
+	}
+}
+
+func storedAttributeToProto(attr storedAttribute) *vmetricsv1.Attribute {
+	value := &vmetricsv1.AttributeValue{}
+
+	switch attr.Kind {
+	case "STRING":
+		value.Value = &vmetricsv1.AttributeValue_StringValue{StringValue: attr.StringValue}
+	case "BOOL":
+		if attr.BoolValue != nil {
+			value.Value = &vmetricsv1.AttributeValue_BoolValue{BoolValue: *attr.BoolValue}
+		}
+	case "INT64":
+		if attr.IntValue != nil {
+			value.Value = &vmetricsv1.AttributeValue_IntValue{IntValue: *attr.IntValue}
+		}
+	case "DOUBLE":
+		if attr.DoubleValue != nil {
+			value.Value = &vmetricsv1.AttributeValue_DoubleValue{DoubleValue: *attr.DoubleValue}
+		}
+	}
+
+	return &vmetricsv1.Attribute{
+		Key:   attr.Key,
+		Value: value,
+	}
+}
+
+func storedAttributesToProto(attrs []storedAttribute) []*vmetricsv1.Attribute {
+	ret := make([]*vmetricsv1.Attribute, 0, len(attrs))
+	for _, attr := range attrs {
+		ret = append(ret, storedAttributeToProto(attr))
+	}
+	return ret
+}
+
+func protoAttributeCanonicalValue(value *vmetricsv1.AttributeValue) string {
+	if value == nil {
+		return ""
+	}
+
+	switch val := value.Value.(type) {
+	case *vmetricsv1.AttributeValue_StringValue:
+		return val.StringValue
+	case *vmetricsv1.AttributeValue_BoolValue:
+		return strconv.FormatBool(val.BoolValue)
+	case *vmetricsv1.AttributeValue_IntValue:
+		return strconv.FormatInt(val.IntValue, 10)
+	case *vmetricsv1.AttributeValue_DoubleValue:
+		return strconv.FormatUint(math.Float64bits(val.DoubleValue), 16)
+	default:
+		return ""
+	}
+}
+
+func protoAttributeKind(value *vmetricsv1.AttributeValue) string {
+	if value == nil {
+		return ""
+	}
+
+	switch value.Value.(type) {
+	case *vmetricsv1.AttributeValue_StringValue:
+		return "STRING"
+	case *vmetricsv1.AttributeValue_BoolValue:
+		return "BOOL"
+	case *vmetricsv1.AttributeValue_IntValue:
+		return "INT64"
+	case *vmetricsv1.AttributeValue_DoubleValue:
+		return "DOUBLE"
+	default:
+		return ""
+	}
+}
+
+func protoAttributeValueKey(value *vmetricsv1.AttributeValue) string {
+	return protoAttributeKind(value) + ":" + protoAttributeCanonicalValue(value)
+}
+
+func durationPB(duration time.Duration) *metav1.Duration {
+	if duration <= 0 {
+		return nil
+	}
+	if duration%time.Hour == 0 {
+		return &metav1.Duration{Type: &metav1.Duration_Hours{Hours: uint32(duration / time.Hour)}}
+	}
+	if duration%time.Minute == 0 {
+		return &metav1.Duration{Type: &metav1.Duration_Minutes{Minutes: uint32(duration / time.Minute)}}
+	}
+	if duration%time.Second == 0 {
+		return &metav1.Duration{Type: &metav1.Duration_Seconds{Seconds: uint32(duration / time.Second)}}
+	}
+	return &metav1.Duration{Type: &metav1.Duration_Milliseconds{Milliseconds: uint32(duration / time.Millisecond)}}
+}
+
+func numberPointDouble(timestamp time.Time, startTimestamp *time.Time, value float64) *vmetricsv1.NumberPoint {
+	ret := &vmetricsv1.NumberPoint{
+		Timestamp: pbutils.Timestamp(timestamp),
+		Value: &vmetricsv1.NumberPoint_AsDouble{
+			AsDouble: value,
+		},
+	}
+	if startTimestamp != nil {
+		ret.StartTimestamp = pbutils.Timestamp(*startTimestamp)
+	}
+	return ret
+}
+
+func numberPointInt(timestamp time.Time, startTimestamp *time.Time, value int64) *vmetricsv1.NumberPoint {
+	ret := &vmetricsv1.NumberPoint{
+		Timestamp: pbutils.Timestamp(timestamp),
+		Value: &vmetricsv1.NumberPoint_AsInt{
+			AsInt: value,
+		},
+	}
+	if startTimestamp != nil {
+		ret.StartTimestamp = pbutils.Timestamp(*startTimestamp)
+	}
+	return ret
+}
+
+func cumulativeExplicitBuckets(bounds []float64, counts []uint64) []*vmetricsv1.HistogramBucket {
+	ret := make([]*vmetricsv1.HistogramBucket, 0, len(counts))
+	var cumulative uint64
+
+	for i, count := range counts {
+		if math.MaxUint64-cumulative < count {
+			return nil
+		}
+		cumulative += count
+
+		if i < len(bounds) {
+			ret = append(ret, &vmetricsv1.HistogramBucket{
+				Le:    bounds[i],
+				Count: cumulative,
+			})
+		} else {
+			ret = append(ret, &vmetricsv1.HistogramBucket{
+				Count: cumulative,
+				IsInf: true,
+			})
+		}
+	}
+
+	return ret
+}
+
+func explicitHistogramQuantile(quantile float64, bounds []float64, counts []uint64, count uint64) (float64, bool) {
+	if count == 0 || len(counts) == 0 || len(counts) != len(bounds)+1 {
+		return 0, false
+	}
+
+	target := quantile * float64(count)
+	if quantile == 0 {
+		target = 1
+	}
+
+	var cumulative uint64
+	var previousCumulative uint64
+	lower := math.Inf(-1)
+	if len(bounds) > 0 && bounds[0] > 0 {
+		lower = 0
+	}
+
+	for i, bucketCount := range counts {
+		if math.MaxUint64-cumulative < bucketCount {
+			return 0, false
+		}
+		cumulative += bucketCount
+		if float64(cumulative) < target {
+			previousCumulative = cumulative
+			if i < len(bounds) {
+				lower = bounds[i]
+			}
+			continue
+		}
+
+		if i >= len(bounds) {
+			if math.IsInf(lower, -1) {
+				return 0, false
+			}
+			return lower, true
+		}
+
+		upper := bounds[i]
+		if math.IsInf(lower, -1) {
+			return upper, true
+		}
+
+		inside := cumulative - previousCumulative
+		if inside == 0 {
+			return upper, true
+		}
+
+		position := (target - float64(previousCumulative)) / float64(inside)
+		return lower + position*(upper-lower), true
+	}
+
+	return 0, false
+}
+
+func sortTimeSeries(series []*vmetricsv1.TimeSeries) {
+	sort.Slice(series, func(i, j int) bool {
+		return series[i].Id < series[j].Id
+	})
+}
+
+func uniqueTruncationReasons(reasons []vmetricsv1.TruncationInfo_Reason) []vmetricsv1.TruncationInfo_Reason {
+	seen := map[vmetricsv1.TruncationInfo_Reason]struct{}{}
+	ret := make([]vmetricsv1.TruncationInfo_Reason, 0, len(reasons))
+	for _, reason := range reasons {
+		if _, ok := seen[reason]; ok {
+			continue
+		}
+		seen[reason] = struct{}{}
+		ret = append(ret, reason)
+	}
+	sort.Slice(ret, func(i, j int) bool {
+		return ret[i] < ret[j]
+	})
+	return ret
+}
+
+func formatQuantile(value float64) string {
+	return strconv.FormatFloat(value, 'f', -1, 64)
 }

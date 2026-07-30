@@ -10,8 +10,6 @@ package metricstore
 
 import (
 	"context"
-	"database/sql"
-	"math"
 	"sort"
 	"strings"
 	"time"
@@ -22,603 +20,476 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type numberRow struct {
-	ts        time.Time
-	labels    map[string]string
-	fullKey   string
-	groupKey  string
-	intVal    *int64
-	doubleVal *float64
+const metricQueryTimeout = 30 * time.Second
+
+type sourceSeries struct {
+	id        string
+	labels    []storedAttribute
+	labelsKey string
 }
 
-type gaugeBucket struct {
-	ts       time.Time
-	count    int
-	sum      float64
-	min      float64
-	max      float64
-	last     float64
-	lastTS   time.Time
-	hasValue bool
+type outputSeriesSpec struct {
+	id           string
+	canonicalKey string
+	labels       []storedAttribute
+	sourceIDs    []string
+	quantile     *float64
 }
 
-func (s *srvMetric) resolveDescriptor(ctx context.Context, q *querySpec) (*vmetricsv1.MetricDescriptor, error) {
-	row := s.s.db.QueryRowContext(ctx, `
-SELECT name, kind, value_type, unit, description, temporality
-FROM metrics
-WHERE name = ?
-ORDER BY timestamp DESC
-LIMIT 1
-`, q.name)
-
-	var name, kind, valueType, unit, description, temporality string
-	if err := row.Scan(&name, &kind, &valueType, &unit, &description, &temporality); err != nil {
-		if err == sql.ErrNoRows {
-			return nil, status.Errorf(codes.NotFound, "metric not found: %s", q.name)
-		}
-		return nil, err
-	}
-
-	return &vmetricsv1.MetricDescriptor{
-		Name:        name,
-		Kind:        kindFromString(kind),
-		ValueType:   valueTypeFromString(valueType),
-		Unit:        unit,
-		Description: description,
-		Temporality: temporalityFromString(temporality),
-	}, nil
+type seriesSelection struct {
+	items           []*outputSeriesSpec
+	total           uint32
+	nextCursor      string
+	seriesTruncated bool
 }
 
-func (s *srvMetric) queryGauge(
-	ctx context.Context,
-	q *querySpec,
-	desc *vmetricsv1.MetricDescriptor,
-) (*vmetricsv1.QueryMetricsResponse, error) {
-	rows, err := s.loadNumberRows(ctx, q, desc, false)
+func (s *srvMetric) QueryMetrics(ctx context.Context,
+	req *vmetricsv1.QueryMetricsRequest) (*vmetricsv1.QueryMetricsResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, metricQueryTimeout)
+	defer cancel()
+
+	query, err := s.validateQueryRequest(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 
-	type fullSeries struct {
-		groupKey    string
-		groupLabels []*vmetricsv1.Attribute
-		fullLabels  map[string]string
-		buckets     map[int]*gaugeBucket
+	descriptor, err := s.resolveDescriptor(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	if err := validateQueryForDescriptor(query, descriptor); err != nil {
+		return nil, err
 	}
 
-	type groupedBucket struct {
-		ts       time.Time
-		count    int
-		sum      float64
-		min      float64
-		max      float64
-		hasValue bool
-	}
-
-	funcKind := q.req.Operation.GetGauge().Function
-
-	byFullSeries := map[string]*fullSeries{}
-
-	for _, r := range rows {
-		if r.ts.Before(q.from) || !r.ts.Before(q.to) {
-			continue
-		}
-
-		idx := int(r.ts.Sub(q.from) / q.step)
-		if idx < 0 {
-			continue
-		}
-
-		fs := byFullSeries[r.fullKey]
-		if fs == nil {
-			fs = &fullSeries{
-				groupKey:    r.groupKey,
-				groupLabels: labelsToProto(pickLabels(r.labels, q.groupBy)),
-				fullLabels:  r.labels,
-				buckets:     map[int]*gaugeBucket{},
-			}
-			byFullSeries[r.fullKey] = fs
-		}
-
-		val := r.numberValue()
-
-		b := fs.buckets[idx]
-		if b == nil {
-			b = &gaugeBucket{
-				ts:  q.from.Add(time.Duration(idx+1) * q.step),
-				min: val,
-				max: val,
-			}
-			fs.buckets[idx] = b
-		}
-
-		b.count++
-		b.sum += val
-
-		if val < b.min {
-			b.min = val
-		}
-		if val > b.max {
-			b.max = val
-		}
-		if !b.hasValue || r.ts.After(b.lastTS) {
-			b.last = val
-			b.lastTS = r.ts
-			b.hasValue = true
-		}
-	}
-
-	grouped := map[string]map[int]*groupedBucket{}
-	labelsByGroup := map[string][]*vmetricsv1.Attribute{}
-
-	for _, fs := range byFullSeries {
-		if grouped[fs.groupKey] == nil {
-			grouped[fs.groupKey] = map[int]*groupedBucket{}
-			labelsByGroup[fs.groupKey] = fs.groupLabels
-		}
-
-		for idx, b := range fs.buckets {
-			var val float64
-
-			switch funcKind {
-			case vmetricsv1.GaugeOperation_LAST:
-				val = b.last
-			case vmetricsv1.GaugeOperation_AVG:
-				val = b.sum / float64(b.count)
-			case vmetricsv1.GaugeOperation_MIN:
-				val = b.min
-			case vmetricsv1.GaugeOperation_MAX:
-				val = b.max
-			case vmetricsv1.GaugeOperation_SUM:
-				val = b.sum
-			default:
-				return nil, status.Error(codes.InvalidArgument, "invalid gauge function")
-			}
-
-			gb := grouped[fs.groupKey][idx]
-			if gb == nil {
-				gb = &groupedBucket{
-					ts:  b.ts,
-					min: val,
-					max: val,
-				}
-				grouped[fs.groupKey][idx] = gb
-			}
-
-			gb.count++
-			gb.sum += val
-
-			if val < gb.min {
-				gb.min = val
-			}
-			if val > gb.max {
-				gb.max = val
-			}
-
-			gb.hasValue = true
-		}
-	}
-
-	out := make([]*vmetricsv1.TimeSeries, 0, len(grouped))
-
-	for groupKey, buckets := range grouped {
-		idxs := make([]int, 0, len(buckets))
-		for idx := range buckets {
-			idxs = append(idxs, idx)
-		}
-		sort.Ints(idxs)
-
-		pts := &vmetricsv1.NumberPointSeries{}
-
-		for _, idx := range idxs {
-			b := buckets[idx]
-			if !b.hasValue {
-				continue
-			}
-
-			var val float64
-
-			switch funcKind {
-			case vmetricsv1.GaugeOperation_LAST:
-				val = b.sum
-
-			case vmetricsv1.GaugeOperation_AVG:
-				val = b.sum / float64(b.count)
-
-			case vmetricsv1.GaugeOperation_MIN:
-				val = b.min
-
-			case vmetricsv1.GaugeOperation_MAX:
-				val = b.max
-
-			case vmetricsv1.GaugeOperation_SUM:
-				val = b.sum
-
-			default:
-				return nil, status.Error(codes.InvalidArgument, "invalid gauge function")
-			}
-
-			pts.Points = append(pts.Points, numberPointDouble(b.ts, val))
-		}
-
-		if len(pts.Points) == 0 {
-			continue
-		}
-
-		out = append(out, &vmetricsv1.TimeSeries{
-			Labels: labelsByGroup[groupKey],
-			Points: &vmetricsv1.TimeSeries_Number{
-				Number: pts,
-			},
-		})
-	}
-
-	out, total, truncated := limitAndSortSeries(out, q.limitSeries)
-	return buildResponse(q, desc, out, total, truncated), nil
-}
-
-func (s *srvMetric) queryCounter(
-	ctx context.Context,
-	q *querySpec,
-	desc *vmetricsv1.MetricDescriptor,
-) (*vmetricsv1.QueryMetricsResponse, error) {
-	includeLookback := q.req.Operation.GetCounter().Function != vmetricsv1.CounterOperation_RAW
-
-	rows, err := s.loadNumberRows(ctx, q, desc, includeLookback)
+	selection, err := s.selectOutputSeries(ctx, query, descriptor)
 	if err != nil {
 		return nil, err
 	}
 
-	byFullSeries := map[string][]numberRow{}
-	groupLabels := map[string][]*vmetricsv1.Attribute{}
-
-	for _, r := range rows {
-		byFullSeries[r.fullKey] = append(byFullSeries[r.fullKey], r)
-		groupLabels[r.groupKey] = labelsToProto(pickLabels(r.labels, q.groupBy))
+	var response *vmetricsv1.QueryMetricsResponse
+	switch descriptor.Kind {
+	case vmetricsv1.MetricDescriptor_COUNTER:
+		response, err = s.queryCounter(ctx, query, descriptor, selection)
+	case vmetricsv1.MetricDescriptor_UP_DOWN_COUNTER, vmetricsv1.MetricDescriptor_GAUGE:
+		response, err = s.queryGauge(ctx, query, descriptor, selection)
+	case vmetricsv1.MetricDescriptor_HISTOGRAM:
+		response, err = s.queryExplicitHistogram(ctx, query, descriptor, selection)
+	case vmetricsv1.MetricDescriptor_EXPONENTIAL_HISTOGRAM:
+		response, err = s.queryExponentialHistogram(ctx, query, descriptor, selection)
+	default:
+		err = status.Error(codes.InvalidArgument, "unsupported metric kind")
 	}
-
-	for k := range byFullSeries {
-		sort.Slice(byFullSeries[k], func(i, j int) bool {
-			return byFullSeries[k][i].ts.Before(byFullSeries[k][j].ts)
-		})
-	}
-
-	fn := q.req.Operation.GetCounter().Function
-	if fn == vmetricsv1.CounterOperation_RAW {
-		return s.queryCounterRaw(q, desc, byFullSeries)
-	}
-
-	bucketsByGroup := map[string]map[int]float64{}
-
-	for _, seriesRows := range byFullSeries {
-		if len(seriesRows) == 0 {
-			continue
-		}
-
-		for i := 0; i < len(seriesRows); i++ {
-			cur := seriesRows[i]
-			if cur.ts.Before(q.from) || !cur.ts.Before(q.to) {
-				continue
-			}
-
-			idx := int(cur.ts.Sub(q.from) / q.step)
-			if idx < 0 {
-				continue
-			}
-
-			var inc float64
-
-			if desc.Temporality == vmetricsv1.MetricDescriptor_DELTA {
-				inc = cur.numberValue()
-			} else {
-				if i == 0 {
-					continue
-				}
-				prev := seriesRows[i-1]
-				inc = cur.numberValue() - prev.numberValue()
-				if inc < 0 {
-					inc = cur.numberValue()
-				}
-			}
-
-			if inc < 0 {
-				continue
-			}
-
-			if fn == vmetricsv1.CounterOperation_RATE {
-				inc = inc / q.step.Seconds()
-			}
-
-			if _, ok := bucketsByGroup[cur.groupKey]; !ok {
-				bucketsByGroup[cur.groupKey] = map[int]float64{}
-			}
-			bucketsByGroup[cur.groupKey][idx] += inc
-		}
-	}
-
-	out := make([]*vmetricsv1.TimeSeries, 0, len(bucketsByGroup))
-	for groupKey, buckets := range bucketsByGroup {
-		idxs := make([]int, 0, len(buckets))
-		for idx := range buckets {
-			idxs = append(idxs, idx)
-		}
-		sort.Ints(idxs)
-
-		pts := &vmetricsv1.NumberPointSeries{}
-		for _, idx := range idxs {
-			pts.Points = append(pts.Points, numberPointDouble(q.from.Add(time.Duration(idx+1)*q.step), buckets[idx]))
-		}
-
-		out = append(out, &vmetricsv1.TimeSeries{
-			Labels: groupLabels[groupKey],
-			Points: &vmetricsv1.TimeSeries_Number{
-				Number: pts,
-			},
-		})
-	}
-
-	out, total, truncated := limitAndSortSeries(out, q.limitSeries)
-	return buildResponse(q, desc, out, total, truncated), nil
-}
-
-func (s *srvMetric) queryCounterRaw(
-	q *querySpec,
-	desc *vmetricsv1.MetricDescriptor,
-	byFullSeries map[string][]numberRow,
-) (*vmetricsv1.QueryMetricsResponse, error) {
-	out := make([]*vmetricsv1.TimeSeries, 0, len(byFullSeries))
-	pointsTruncated := false
-
-	for _, rows := range byFullSeries {
-		if len(rows) == 0 {
-			continue
-		}
-
-		filtered := make([]numberRow, 0, len(rows))
-		for _, r := range rows {
-			if r.ts.Before(q.from) || !r.ts.Before(q.to) {
-				continue
-			}
-			filtered = append(filtered, r)
-		}
-
-		if len(filtered) == 0 {
-			continue
-		}
-
-		sort.Slice(filtered, func(i, j int) bool {
-			return filtered[i].ts.Before(filtered[j].ts)
-		})
-
-		if len(filtered) > q.limitPointsPerSeries {
-			pointsTruncated = true
-			filtered = filtered[len(filtered)-q.limitPointsPerSeries:]
-		}
-
-		pts := &vmetricsv1.NumberPointSeries{}
-
-		for _, r := range filtered {
-			if r.intVal != nil {
-				pts.Points = append(pts.Points, numberPointInt(r.ts, *r.intVal))
-			} else {
-				pts.Points = append(pts.Points, numberPointDouble(r.ts, r.numberValue()))
-			}
-		}
-
-		out = append(out, &vmetricsv1.TimeSeries{
-			Labels: labelsToProto(filtered[0].labels),
-			Points: &vmetricsv1.TimeSeries_Number{
-				Number: pts,
-			},
-		})
-	}
-
-	out, total, seriesTruncated := limitAndSortSeries(out, q.limitSeries)
-	return buildResponse(q, desc, out, total, seriesTruncated || pointsTruncated), nil
-}
-
-func (s *srvMetric) loadNumberRows(
-	ctx context.Context,
-	q *querySpec,
-	desc *vmetricsv1.MetricDescriptor,
-	includeLookback bool,
-) ([]numberRow, error) {
-	from := q.from
-	if includeLookback {
-		from = from.Add(-q.step)
-	}
-
-	where := []string{
-		"name = ?",
-		"timestamp >= ?",
-		"timestamp < ?",
-		"kind = ?",
-	}
-	args := []any{q.name, from, q.to, kindToString(desc.Kind)}
-
-	if desc.Temporality != vmetricsv1.MetricDescriptor_TEMPORALITY_UNSET {
-		where = append(where, "temporality = ?")
-		args = append(args, temporalityEnumToString(desc.Temporality))
-	}
-
-	appendFilterSQL(&where, &args, q.filters)
-
-	query := `
-SELECT timestamp, CAST(attributes AS VARCHAR), number_int, number_double
-FROM metrics
-WHERE ` + strings.Join(where, " AND ") + `
-ORDER BY timestamp ASC
-`
-
-	rows, err := s.s.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
-	var ret []numberRow
+	response.SourceDescriptor = descriptor
+	response.Operation = req.Operation
+	if query.step > 0 {
+		response.Step = durationPB(query.step)
+	}
+	response.SnapshotTime = pbutils.Timestamp(query.snapshot)
+	if req.IncludeTotalSeries {
+		total := selection.total
+		response.TotalSeries = &total
+	}
 
-	for rows.Next() {
-		var ts time.Time
-		var attrsJSON string
-		var intNull sql.NullInt64
-		var doubleNull sql.NullFloat64
+	if response.Truncation == nil {
+		response.Truncation = &vmetricsv1.TruncationInfo{}
+	}
+	if selection.seriesTruncated {
+		response.Truncation.SeriesTruncated = true
+		response.Truncation.Reasons = append(response.Truncation.Reasons, vmetricsv1.TruncationInfo_CARDINALITY_LIMIT)
+	}
 
-		if err := rows.Scan(&ts, &attrsJSON, &intNull, &doubleNull); err != nil {
-			return nil, err
-		}
-
-		attrs, err := decodeStringMap(attrsJSON)
+	if selection.nextCursor != "" {
+		response.NextSeriesPageToken, err = s.s.encodePageToken(newPageTokenPayload(
+			"series",
+			query.fingerprint,
+			selection.nextCursor,
+			query.snapshot,
+		))
 		if err != nil {
 			return nil, err
 		}
-
-		labels := anyMapToStringMap(attrs)
-		fullKey := labelsKey(labels, sortedKeys(labels))
-		groupKey := labelsKey(labels, q.groupBy)
-
-		r := numberRow{
-			ts:       ts.UTC(),
-			labels:   labels,
-			fullKey:  fullKey,
-			groupKey: groupKey,
-		}
-
-		if intNull.Valid {
-			v := intNull.Int64
-			r.intVal = &v
-		}
-		if doubleNull.Valid {
-			v := doubleNull.Float64
-			r.doubleVal = &v
-		}
-
-		ret = append(ret, r)
 	}
 
-	if err := rows.Err(); err != nil {
+	if err := enforceResponseLimits(query, response); err != nil {
+		return nil, err
+	}
+	response.Truncation.ReturnedSeries = uint32(len(response.Series))
+	response.Truncation.ReturnedPoints = uint32(countResponsePoints(response.Series))
+	response.Truncation.Reasons = uniqueTruncationReasons(response.Truncation.Reasons)
+
+	return response, nil
+}
+
+func (s *srvMetric) selectOutputSeries(ctx context.Context, query *querySpec,
+	descriptor *vmetricsv1.MetricDescriptor) (*seriesSelection, error) {
+	source, truncated, err := s.loadSourceSeries(ctx, query, descriptor)
+	if err != nil {
 		return nil, err
 	}
 
-	return ret, nil
-}
+	grouped := map[string]*outputSeriesSpec{}
+	for _, item := range source {
+		labels := item.labels
+		if query.req.SeriesAggregation != vmetricsv1.QueryMetricsRequest_NONE {
+			labels = pickStoredAttributes(item.labels, query.groupBy)
+		}
+		labelsKey := storedAttributesKey(labels)
+		key := labelsKey
 
-func (r numberRow) numberValue() float64 {
-	if r.doubleVal != nil {
-		return *r.doubleVal
+		output := grouped[key]
+		if output == nil {
+			output = &outputSeriesSpec{
+				labels:    labels,
+				sourceIDs: []string{},
+			}
+			grouped[key] = output
+		}
+		output.sourceIDs = append(output.sourceIDs, item.id)
 	}
-	if r.intVal != nil {
-		return float64(*r.intVal)
-	}
-	return 0
-}
 
-func numberPointDouble(ts time.Time, val float64) *vmetricsv1.NumberPoint {
-	return &vmetricsv1.NumberPoint{
-		Timestamp: pbutils.Timestamp(ts),
-		Value: &vmetricsv1.NumberPoint_AsDouble{
-			AsDouble: val,
-		},
+	var outputs []*outputSeriesSpec
+	operation := query.req.Operation.GetHistogram()
+	for _, output := range grouped {
+		labelsKey := storedAttributesKey(output.labels)
+		if operation != nil && operation.Function == vmetricsv1.HistogramOperation_QUANTILE {
+			for _, quantile := range operation.Quantiles {
+				q := quantile
+				item := &outputSeriesSpec{
+					labels:    output.labels,
+					sourceIDs: append([]string(nil), output.sourceIDs...),
+					quantile:  &q,
+				}
+				item.id = outputSeriesID(descriptor.Id, labelsKey, item.quantile)
+				item.canonicalKey = item.id
+				outputs = append(outputs, item)
+			}
+		} else {
+			output.id = outputSeriesID(descriptor.Id, labelsKey, nil)
+			output.canonicalKey = output.id
+			outputs = append(outputs, output)
+		}
 	}
-}
 
-func numberPointInt(ts time.Time, val int64) *vmetricsv1.NumberPoint {
-	return &vmetricsv1.NumberPoint{
-		Timestamp: pbutils.Timestamp(ts),
-		Value: &vmetricsv1.NumberPoint_AsInt{
-			AsInt: val,
-		},
-	}
-}
-
-func limitAndSortSeries(in []*vmetricsv1.TimeSeries, limit int) ([]*vmetricsv1.TimeSeries, uint32, bool) {
-	sort.Slice(in, func(i, j int) bool {
-		return labelsKeyFromProto(in[i].Labels) < labelsKeyFromProto(in[j].Labels)
+	sort.Slice(outputs, func(i, j int) bool {
+		return outputs[i].canonicalKey < outputs[j].canonicalKey
 	})
 
-	total := uint32(len(in))
-	if len(in) > limit {
-		return in[:limit], total, true
+	total := uint32(len(outputs))
+	start := 0
+	if query.cursor != "" {
+		start = sort.Search(len(outputs), func(i int) bool {
+			return outputs[i].canonicalKey > query.cursor
+		})
+	}
+	if start > len(outputs) {
+		start = len(outputs)
 	}
 
-	return in, total, false
+	end := start + query.seriesPageSize
+	if end > len(outputs) {
+		end = len(outputs)
+	}
+	page := outputs[start:end]
+
+	nextCursor := ""
+	if end < len(outputs) && len(page) > 0 {
+		nextCursor = page[len(page)-1].canonicalKey
+	}
+
+	return &seriesSelection{
+		items:           page,
+		total:           total,
+		nextCursor:      nextCursor,
+		seriesTruncated: truncated,
+	}, nil
 }
 
-func appendFilterSQL(where *[]string, args *[]any, filters map[string]attributeFilter) {
-	keys := make([]string, 0, len(filters))
-	for k := range filters {
-		keys = append(keys, k)
+func (s *srvMetric) loadSourceSeries(ctx context.Context, query *querySpec,
+	descriptor *vmetricsv1.MetricDescriptor) ([]sourceSeries, bool, error) {
+	pointTable := pointTableForKind(descriptor.Kind)
+	if pointTable == "" {
+		return nil, false, status.Error(codes.InvalidArgument, "unsupported metric kind")
 	}
-	sort.Strings(keys)
 
-	for _, key := range keys {
-		f := filters[key]
-		path := jsonPathForKey(key)
+	where := []string{"s.descriptor_id = ?"}
+	args := []any{metricTimeToDB(query.from), metricTimeToDB(query.to), metricTimeToDB(query.snapshot), descriptor.Id}
 
-		switch f.op {
+	if component := query.req.Component; component != nil {
+		if component.Type != "" {
+			where = append(where, "s.component_type = ?")
+			args = append(args, component.Type)
+		}
+		if component.Namespace != "" {
+			where = append(where, "s.component_namespace = ?")
+			args = append(args, component.Namespace)
+		}
+		if component.Name != "" {
+			where = append(where, "s.component_name = ?")
+			args = append(args, component.Name)
+		}
+	}
+
+	appendSeriesFilterSQL(&where, &args, query.filters)
+
+	querySQL := `
+WITH active_series AS (
+	SELECT DISTINCT series_id
+	FROM ` + pointTable + `
+	WHERE timestamp >= ? AND timestamp < ? AND ingested_at <= ?
+)
+SELECT s.id, CAST(s.labels AS VARCHAR), s.labels_key
+FROM metric_series s
+JOIN active_series a ON a.series_id = s.id
+WHERE ` + strings.Join(where, " AND ") + `
+ORDER BY s.labels_key ASC, s.id ASC
+LIMIT ?
+`
+	args = append(args, maximumSourceSeries+1)
+
+	rows, err := s.s.db.QueryContext(ctx, querySQL, args...)
+	if err != nil {
+		return nil, false, err
+	}
+	defer rows.Close()
+
+	ret := make([]sourceSeries, 0)
+	for rows.Next() {
+		var id, labelsJSON, labelsKey string
+		if err := rows.Scan(&id, &labelsJSON, &labelsKey); err != nil {
+			return nil, false, err
+		}
+		labels, err := decodeStoredAttributes(labelsJSON)
+		if err != nil {
+			return nil, false, err
+		}
+		ret = append(ret, sourceSeries{id: id, labels: labels, labelsKey: labelsKey})
+	}
+	if err := rows.Err(); err != nil {
+		return nil, false, err
+	}
+
+	if len(ret) > maximumSourceSeries {
+		return nil, false, status.Error(codes.ResourceExhausted,
+			"metric query exceeds the source-series cardinality limit")
+	}
+	return ret, false, nil
+}
+
+func appendSeriesFilterSQL(where *[]string, args *[]any, filters []*vmetricsv1.AttributeFilter) {
+	for _, filter := range filters {
+		switch filter.Operator {
 		case vmetricsv1.AttributeFilter_EQ:
-			*where = append(*where, "json_extract_string(attributes, ?) = ?")
-			*args = append(*args, path, f.value)
+			*where = append(*where, `EXISTS (
+				SELECT 1 FROM metric_series_attributes a
+				WHERE a.series_id = s.id AND a.key = ? AND a.value_key = ?
+			)`)
+			*args = append(*args, filter.Key, protoAttributeValueKey(filter.Value))
 
 		case vmetricsv1.AttributeFilter_NOT_EQ:
-			*where = append(*where, "(json_extract_string(attributes, ?) IS NULL OR json_extract_string(attributes, ?) != ?)")
-			*args = append(*args, path, path, f.value)
+			*where = append(*where, `EXISTS (
+				SELECT 1 FROM metric_series_attributes a
+				WHERE a.series_id = s.id AND a.key = ? AND a.value_key != ?
+			)`)
+			*args = append(*args, filter.Key, protoAttributeValueKey(filter.Value))
 
 		case vmetricsv1.AttributeFilter_EXISTS:
-			*where = append(*where, "json_extract_string(attributes, ?) IS NOT NULL")
-			*args = append(*args, path)
+			*where = append(*where, `EXISTS (
+				SELECT 1 FROM metric_series_attributes a
+				WHERE a.series_id = s.id AND a.key = ?
+			)`)
+			*args = append(*args, filter.Key)
 
 		case vmetricsv1.AttributeFilter_NOT_EXISTS:
-			*where = append(*where, "json_extract_string(attributes, ?) IS NULL")
-			*args = append(*args, path)
+			*where = append(*where, `NOT EXISTS (
+				SELECT 1 FROM metric_series_attributes a
+				WHERE a.series_id = s.id AND a.key = ?
+			)`)
+			*args = append(*args, filter.Key)
 
 		case vmetricsv1.AttributeFilter_IN:
-			var placeholders []string
-			*args = append(*args, path)
-			for _, v := range f.values {
+			placeholders := make([]string, 0, len(filter.Values))
+			*args = append(*args, filter.Key)
+			for _, value := range filter.Values {
 				placeholders = append(placeholders, "?")
-				*args = append(*args, v)
+				*args = append(*args, protoAttributeValueKey(value))
 			}
-			*where = append(*where, "json_extract_string(attributes, ?) IN ("+strings.Join(placeholders, ",")+")")
+			*where = append(*where, `EXISTS (
+				SELECT 1 FROM metric_series_attributes a
+				WHERE a.series_id = s.id AND a.key = ? AND a.value_key IN (`+strings.Join(placeholders, ",")+`)
+			)`)
 		}
 	}
 }
 
-func jsonPathForKey(key string) string {
-	return `$."` + strings.ReplaceAll(key, `"`, `\"`) + `"`
+func pointTableForKind(kind vmetricsv1.MetricDescriptor_Kind) string {
+	switch kind {
+	case vmetricsv1.MetricDescriptor_COUNTER,
+		vmetricsv1.MetricDescriptor_UP_DOWN_COUNTER,
+		vmetricsv1.MetricDescriptor_GAUGE:
+		return "metric_number_points"
+	case vmetricsv1.MetricDescriptor_HISTOGRAM:
+		return "metric_histogram_points"
+	case vmetricsv1.MetricDescriptor_EXPONENTIAL_HISTOGRAM:
+		return "metric_exponential_histogram_points"
+	default:
+		return ""
+	}
 }
 
-func histogramQuantile(q float64, buckets []*vmetricsv1.HistogramBucket, count uint64) float64 {
-	if count == 0 || len(buckets) == 0 {
+func buildResponse(query *querySpec, selection *seriesSelection,
+	series []*vmetricsv1.TimeSeries, result *vmetricsv1.QueryResultDescriptor) *vmetricsv1.QueryMetricsResponse {
+	byID := make(map[string]*vmetricsv1.TimeSeries, len(series))
+	for _, item := range series {
+		byID[item.Id] = item
+	}
+
+	ordered := make([]*vmetricsv1.TimeSeries, 0, len(series))
+	for _, selected := range selection.items {
+		if item := byID[selected.id]; item != nil {
+			ordered = append(ordered, item)
+		}
+	}
+
+	return &vmetricsv1.QueryMetricsResponse{
+		Series:     ordered,
+		Result:     result,
+		Truncation: &vmetricsv1.TruncationInfo{},
+	}
+}
+
+func enforceResponseLimits(query *querySpec, response *vmetricsv1.QueryMetricsResponse) error {
+	if response.Truncation == nil {
+		response.Truncation = &vmetricsv1.TruncationInfo{}
+	}
+
+	for _, series := range response.Series {
+		count := timeSeriesPointCount(series)
+		if count <= query.limitPointsPerSeries {
+			continue
+		}
+		if query.limitBehavior == vmetricsv1.QueryMetricsRequest_ERROR {
+			return status.Error(codes.ResourceExhausted, "metric series exceeds limitPointsPerSeries")
+		}
+		trimTimeSeriesToNewest(series, query.limitPointsPerSeries)
+		response.Truncation.PointsTruncated = true
+		response.Truncation.Reasons = append(response.Truncation.Reasons,
+			vmetricsv1.TruncationInfo_POINTS_PER_SERIES_LIMIT)
+	}
+
+	total := countResponsePoints(response.Series)
+	if total <= query.limitTotalPoints {
+		return nil
+	}
+	if query.limitBehavior == vmetricsv1.QueryMetricsRequest_ERROR {
+		return status.Error(codes.ResourceExhausted, "metric response exceeds limitTotalPoints")
+	}
+
+	remaining := query.limitTotalPoints
+	for _, series := range response.Series {
+		count := timeSeriesPointCount(series)
+		if remaining <= 0 {
+			clearTimeSeriesPoints(series)
+			continue
+		}
+		if count > remaining {
+			trimTimeSeriesToNewest(series, remaining)
+			remaining = 0
+		} else {
+			remaining -= count
+		}
+	}
+	response.Truncation.PointsTruncated = true
+	response.Truncation.Reasons = append(response.Truncation.Reasons, vmetricsv1.TruncationInfo_TOTAL_POINTS_LIMIT)
+	return nil
+}
+
+func countResponsePoints(series []*vmetricsv1.TimeSeries) int {
+	ret := 0
+	for _, item := range series {
+		ret += timeSeriesPointCount(item)
+	}
+	return ret
+}
+
+func timeSeriesPointCount(series *vmetricsv1.TimeSeries) int {
+	switch points := series.Points.(type) {
+	case *vmetricsv1.TimeSeries_Number:
+		return len(points.Number.Points)
+	case *vmetricsv1.TimeSeries_Histogram:
+		return len(points.Histogram.Points)
+	case *vmetricsv1.TimeSeries_ExponentialHistogram:
+		return len(points.ExponentialHistogram.Points)
+	default:
 		return 0
 	}
+}
 
-	target := q * float64(count)
-
-	var prevCount uint64
-	var prevLe float64
-
-	for _, b := range buckets {
-		c := b.Count
-		if float64(c) >= target {
-			if b.IsInf {
-				return prevLe
-			}
-
-			bucketCount := c - prevCount
-			if bucketCount == 0 {
-				return b.Le
-			}
-
-			pos := (target - float64(prevCount)) / float64(bucketCount)
-			return prevLe + pos*(b.Le-prevLe)
+func trimTimeSeriesToNewest(series *vmetricsv1.TimeSeries, limit int) {
+	if limit < 0 {
+		limit = 0
+	}
+	switch points := series.Points.(type) {
+	case *vmetricsv1.TimeSeries_Number:
+		if len(points.Number.Points) > limit {
+			points.Number.Points = points.Number.Points[len(points.Number.Points)-limit:]
 		}
+	case *vmetricsv1.TimeSeries_Histogram:
+		if len(points.Histogram.Points) > limit {
+			points.Histogram.Points = points.Histogram.Points[len(points.Histogram.Points)-limit:]
+		}
+	case *vmetricsv1.TimeSeries_ExponentialHistogram:
+		if len(points.ExponentialHistogram.Points) > limit {
+			points.ExponentialHistogram.Points = points.ExponentialHistogram.Points[len(points.ExponentialHistogram.Points)-limit:]
+		}
+	}
+}
 
-		prevCount = c
-		if !b.IsInf {
-			prevLe = b.Le
+func clearTimeSeriesPoints(series *vmetricsv1.TimeSeries) {
+	switch points := series.Points.(type) {
+	case *vmetricsv1.TimeSeries_Number:
+		points.Number.Points = nil
+	case *vmetricsv1.TimeSeries_Histogram:
+		points.Histogram.Points = nil
+	case *vmetricsv1.TimeSeries_ExponentialHistogram:
+		points.ExponentialHistogram.Points = nil
+	}
+}
+
+func selectedSourceSeries(selection *seriesSelection) ([]string, map[string]*outputSeriesSpec) {
+	ids := map[string]struct{}{}
+	bySource := map[string]*outputSeriesSpec{}
+	for _, output := range selection.items {
+		for _, sourceID := range output.sourceIDs {
+			ids[sourceID] = struct{}{}
+			if output.quantile == nil {
+				bySource[sourceID] = output
+			}
 		}
 	}
 
-	return math.NaN()
+	ret := make([]string, 0, len(ids))
+	for id := range ids {
+		ret = append(ret, id)
+	}
+	sort.Strings(ret)
+	return ret, bySource
+}
+
+func placeholders(count int) string {
+	if count <= 0 {
+		return ""
+	}
+	return strings.TrimRight(strings.Repeat("?,", count), ",")
+}
+
+func bucketIndexExpression() string {
+	return `CAST(FLOOR((timestamp - ?) / CAST(? AS DOUBLE)) AS BIGINT)`
+}
+
+func bucketEnd(from time.Time, step time.Duration, index int64) time.Time {
+	return from.Add(time.Duration(index+1) * step)
 }

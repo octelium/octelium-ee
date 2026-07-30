@@ -10,12 +10,15 @@ package metricstore
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
 	"errors"
 	"net"
+	"os"
+	"strings"
+	"sync"
 	"time"
 
-	_ "github.com/marcboeker/go-duckdb"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetricsv1"
@@ -35,59 +38,236 @@ type Server struct {
 	octeliumC octeliumc.ClientInterface
 
 	clusterDomain string
+	db            *sql.DB
+	dbConfig      *metricStoreDBConfig
 
-	db *sql.DB
+	grpcSrv   *grpc.Server
+	listener  net.Listener
+	metricSrv *srvMetric
 
-	grpcStopped chan struct{}
+	pageTokenKey []byte
+
+	workerCtx    context.Context
+	workerCancel context.CancelFunc
+	workerWG     sync.WaitGroup
+
+	shutdownOnce sync.Once
+	shutdownDone chan struct{}
 }
 
 func newServer(ctx context.Context, octeliumC octeliumc.ClientInterface) (*Server, error) {
-	ret := &Server{
-		octeliumC:   octeliumC,
-		grpcStopped: make(chan struct{}),
-	}
-
 	cc, err := octeliumC.CoreV1Utils().GetClusterConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	ret.clusterDomain = cc.Status.Domain
-
-	dsn := ovutils.GetDuckDBDSN()
-
-	ret.db, err = sql.Open("duckdb", dsn)
+	dbConfig, err := getMetricStoreDBConfig()
 	if err != nil {
 		return nil, err
 	}
 
-	ret.db.SetMaxOpenConns(5)
-	ret.db.SetMaxIdleConns(5)
-	ret.db.SetConnMaxLifetime(0)
+	db, err := sql.Open("duckdb", dbConfig.dsn)
+	if err != nil {
+		if dbConfig.cleanupFn != nil {
+			dbConfig.cleanupFn()
+		}
+		return nil, err
+	}
 
+	db.SetMaxOpenConns(4)
+	db.SetMaxIdleConns(0)
+	db.SetConnMaxLifetime(0)
+
+	workerCtx, workerCancel := context.WithCancel(context.Background())
+
+	pageTokenKey, err := getPageTokenKey()
+	if err != nil {
+		_ = db.Close()
+		if dbConfig.cleanupFn != nil {
+			dbConfig.cleanupFn()
+		}
+		return nil, err
+	}
+
+	ret := &Server{
+		octeliumC:     octeliumC,
+		clusterDomain: cc.Status.Domain,
+		db:            db,
+		dbConfig:      dbConfig,
+		pageTokenKey:  pageTokenKey,
+		workerCtx:     workerCtx,
+		workerCancel:  workerCancel,
+		shutdownDone:  make(chan struct{}),
+	}
+
+	return ret, nil
+}
+
+func getPageTokenKey() ([]byte, error) {
+	if val := strings.TrimSpace(os.Getenv("OCTELIUM_METRICSTORE_PAGE_TOKEN_SECRET")); val != "" {
+		if len(val) < 32 {
+			return nil, errors.New("OCTELIUM_METRICSTORE_PAGE_TOKEN_SECRET must contain at least 32 bytes")
+		}
+		return []byte(val), nil
+	}
+
+	if !ldflags.IsTest() {
+		return nil, errors.New("OCTELIUM_METRICSTORE_PAGE_TOKEN_SECRET must be set")
+	}
+
+	ret := make([]byte, 32)
+	if _, err := rand.Read(ret); err != nil {
+		return nil, err
+	}
 	return ret, nil
 }
 
 func (s *Server) Run(ctx context.Context) error {
 	if err := s.initDB(ctx); err != nil {
+		s.closeStorage()
+		return err
+	}
+
+	if err := s.applyRetention(ctx); err != nil {
+		s.closeStorage()
 		return err
 	}
 
 	if err := s.initGRPC(ctx); err != nil {
+		s.workerCancel()
+		if s.metricSrv != nil {
+			s.metricSrv.stopAccepting()
+			s.metricSrv.closeQueue()
+		}
+		s.workerWG.Wait()
+		s.closeStorage()
 		return err
 	}
 
-	go s.runRetentionLoop(ctx)
+	s.workerWG.Add(1)
+	go func() {
+		defer s.workerWG.Done()
+		s.runRetentionLoop(s.workerCtx)
+	}()
+
+	s.workerWG.Add(1)
+	go func() {
+		defer s.workerWG.Done()
+		s.runDiagnosticsLoop(s.workerCtx)
+	}()
 
 	go func() {
-		<-s.grpcStopped
+		<-ctx.Done()
+		s.shutdown()
+	}()
 
-		if s.db != nil {
-			_ = s.db.Close()
+	return nil
+}
+
+func (s *Server) initGRPC(ctx context.Context) error {
+	cred, err := spiffec.GetGRPCServerCred(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	s.grpcSrv = grpc.NewServer(
+		cred,
+		grpc.ReadBufferSize(64*1024),
+		grpc.WriteBufferSize(64*1024),
+		grpc.MaxRecvMsgSize(8<<20),
+		grpc.MaxSendMsgSize(32<<20),
+		grpc.MaxConcurrentStreams(128),
+	)
+
+	s.metricSrv = s.newSrvMetric()
+	s.workerWG.Add(1)
+	go func() {
+		defer s.workerWG.Done()
+		s.metricSrv.startProcessLoop(s.workerCtx)
+	}()
+
+	pmetricotlp.RegisterGRPCServer(s.grpcSrv, s.metricSrv)
+	vmetricsv1.RegisterMetricsServiceServer(s.grpcSrv, s.metricSrv)
+
+	addr := func() string {
+		if ovutils.IsMockMode() {
+			return "localhost:40001"
+		}
+		if ldflags.IsTest() {
+			return tstAddr
+		}
+		return ":8080"
+	}()
+
+	s.listener, err = net.Listen("tcp", addr)
+	if err != nil {
+		return err
+	}
+
+	zap.L().Debug("Starting MetricStore gRPC server",
+		zap.String("addr", addr),
+		zap.Bool("mockMode", ovutils.IsMockMode()),
+		zap.Bool("testMode", ldflags.IsTest()))
+
+	go func() {
+		if err := s.grpcSrv.Serve(s.listener); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
+			zap.L().Error("MetricStore gRPC server exited", zap.Error(err))
 		}
 	}()
 
 	return nil
+}
+
+func (s *Server) closeStorage() {
+	if s.db != nil {
+		_ = s.db.Close()
+		s.db = nil
+	}
+	if s.dbConfig != nil && s.dbConfig.cleanupFn != nil {
+		s.dbConfig.cleanupFn()
+		s.dbConfig.cleanupFn = nil
+	}
+}
+
+func (s *Server) shutdown() {
+	s.shutdownOnce.Do(func() {
+		defer close(s.shutdownDone)
+
+		if s.metricSrv != nil {
+			s.metricSrv.stopAccepting()
+		}
+
+		if s.grpcSrv != nil {
+			done := make(chan struct{})
+			go func() {
+				s.grpcSrv.GracefulStop()
+				close(done)
+			}()
+
+			select {
+			case <-done:
+			case <-time.After(10 * time.Second):
+				s.grpcSrv.Stop()
+				<-done
+			}
+		}
+
+		if s.metricSrv != nil {
+			s.metricSrv.closeQueue()
+		}
+
+		s.workerCancel()
+		s.workerWG.Wait()
+
+		if s.listener != nil {
+			_ = s.listener.Close()
+		}
+		s.closeStorage()
+	})
+}
+
+func (s *Server) WaitForShutdown() {
+	<-s.shutdownDone
 }
 
 func DoRun(ctx context.Context, octeliumC octeliumc.ClientInterface) error {
@@ -105,7 +285,12 @@ func Run(ctx context.Context) error {
 		return err
 	}
 
-	if err := DoRun(ctx, octeliumC); err != nil {
+	s, err := newServer(ctx, octeliumC)
+	if err != nil {
+		return err
+	}
+
+	if err := s.Run(ctx); err != nil {
 		return err
 	}
 
@@ -113,73 +298,7 @@ func Run(ctx context.Context) error {
 	zap.L().Info("MetricStore is running")
 
 	<-ctx.Done()
-	return nil
-}
-
-func (s *Server) initGRPC(ctx context.Context) error {
-	cred, err := spiffec.GetGRPCServerCred(ctx, nil)
-	if err != nil {
-		return err
-	}
-
-	grpcSrv := grpc.NewServer(
-		cred,
-		grpc.ReadBufferSize(512*1024),
-		grpc.WriteBufferSize(512*1024),
-		grpc.MaxRecvMsgSize(16<<20),
-		grpc.MaxConcurrentStreams(1024),
-	)
-
-	srv := s.newSrvMetric()
-	go srv.startProcessLoop(ctx)
-
-	pmetricotlp.RegisterGRPCServer(grpcSrv, srv)
-	vmetricsv1.RegisterMetricsServiceServer(grpcSrv, srv)
-
-	addr := func() string {
-		if ovutils.IsMockMode() {
-			return "localhost:40001"
-		}
-		if ldflags.IsTest() {
-			return tstAddr
-		}
-		return ":8080"
-	}()
-
-	lis, err := net.Listen("tcp", addr)
-	if err != nil {
-		return err
-	}
-
-	zap.L().Debug("Starting MetricStore gRPC server",
-		zap.String("addr", addr),
-		zap.Bool("mockMode", ovutils.IsMockMode()),
-		zap.Bool("testMode", ldflags.IsTest()))
-
-	go func() {
-		if err := grpcSrv.Serve(lis); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
-			zap.L().Fatal("MetricStore gRPC server exited", zap.Error(err))
-		}
-	}()
-
-	go func() {
-		defer close(s.grpcStopped)
-
-		<-ctx.Done()
-
-		done := make(chan struct{})
-		go func() {
-			grpcSrv.GracefulStop()
-			close(done)
-		}()
-
-		select {
-		case <-done:
-		case <-time.After(10 * time.Second):
-			grpcSrv.Stop()
-			<-done
-		}
-	}()
+	s.WaitForShutdown()
 
 	return nil
 }
