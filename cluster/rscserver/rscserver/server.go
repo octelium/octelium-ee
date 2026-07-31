@@ -66,17 +66,6 @@ func NewServer(ctx context.Context) (*Server, error) {
 	return ret, nil
 }
 
-func (s *Server) getClusterConfig(ctx context.Context) (*enterprisev1.ClusterConfig, error) {
-	ccI, err := s.inner.GetResource(ctx, &rmetav1.GetOptions{
-		Name: "default",
-	}, uenterprisev1.API, uenterprisev1.Version, uenterprisev1.KindClusterConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	return ccI.(*enterprisev1.ClusterConfig), nil
-}
-
 func (s *Server) CreateResource(ctx context.Context, req umetav1.ResourceObjectI, api, version, kind string) (umetav1.ResourceObjectI, error) {
 	return s.inner.CreateResource(ctx, req, api, version, kind)
 }
@@ -135,7 +124,7 @@ func Run(ctx context.Context) error {
 	}
 
 	healthcheck.Run(vutils.HealthCheckPortMain)
-	zap.S().Infof("Resource Server is now running...")
+	zap.S().Info("Enterprise Resource Server is now running...")
 
 	<-ctx.Done()
 
