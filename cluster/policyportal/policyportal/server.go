@@ -34,6 +34,7 @@ import (
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -149,6 +150,10 @@ func (s *Server) startWatchers(ctx context.Context) error {
 
 func (s *Server) IsAuthorized(ctx context.Context,
 	req *enterprisev1.IsAuthorizedRequest) (*enterprisev1.IsAuthorizedResponse, error) {
+	if req == nil {
+		return nil, grpcutils.InvalidArg("Nil request")
+	}
+
 	ctx, cancel := context.WithTimeout(ctx, isAuthorizedTimeout)
 	defer cancel()
 
@@ -195,17 +200,19 @@ func (s *Server) IsAuthorized(ctx context.Context,
 			grp, err := s.octeliumC.CoreC().GetGroup(ctx, &rmetav1.GetOptions{
 				Name: g,
 			})
-			if err == nil {
-				reqCtx.Groups = append(reqCtx.Groups, grp)
+			if err != nil {
+				return nil, err
 			}
+			reqCtx.Groups = append(reqCtx.Groups, grp)
 		}
 
 		if sess.Status.DeviceRef != nil {
 			dev, err := s.octeliumC.CoreC().GetDevice(ctx,
 				apivalidation.ObjectReferenceToRGetOptions(sess.Status.DeviceRef))
-			if err == nil {
-				reqCtx.Device = dev
+			if err != nil {
+				return nil, err
 			}
+			reqCtx.Device = dev
 		}
 
 	case *enterprisev1.IsAuthorizedRequest_DeviceRef:
@@ -231,13 +238,15 @@ func (s *Server) IsAuthorized(ctx context.Context,
 			grp, err := s.octeliumC.CoreC().GetGroup(ctx, &rmetav1.GetOptions{
 				Name: g,
 			})
-			if err == nil {
-				reqCtx.Groups = append(reqCtx.Groups, grp)
+			if err != nil {
+				return nil, err
 			}
+			reqCtx.Groups = append(reqCtx.Groups, grp)
 		}
 
 		sess, err := sessionc.NewSession(ctx, &sessionc.CreateSessionOpts{
 			Usr:           usr,
+			Device:        dev,
 			ClusterConfig: cc,
 			SessType:      corev1.Session_Status_CLIENT,
 		})
@@ -261,9 +270,10 @@ func (s *Server) IsAuthorized(ctx context.Context,
 			grp, err := s.octeliumC.CoreC().GetGroup(ctx, &rmetav1.GetOptions{
 				Name: g,
 			})
-			if err == nil {
-				reqCtx.Groups = append(reqCtx.Groups, grp)
+			if err != nil {
+				return nil, err
 			}
+			reqCtx.Groups = append(reqCtx.Groups, grp)
 		}
 
 		sess, err := sessionc.NewSession(ctx, &sessionc.CreateSessionOpts{
@@ -351,13 +361,7 @@ func (s *Server) IsAuthorized(ctx context.Context,
 		return nil, grpcutils.InvalidArg("Unsupported upstream")
 	}
 
-	var additional *coctovigilv1.Authorization
-	if req.Additional != nil {
-		additional = &coctovigilv1.Authorization{
-			Policies:       req.Additional.Policies,
-			InlinePolicies: req.Additional.InlinePolicies,
-		}
-	}
+	additional := cloneAdditionalAuthorization(req.Additional)
 
 	res, err := s.s.DoAuthorize(ctx, reqCtx, additional)
 	if err != nil {
@@ -381,7 +385,7 @@ func validateAdditional(req *enterprisev1.IsAuthorizedRequest) error {
 
 	for _, pol := range req.Additional.Policies {
 		if err := apivalidation.ValidateName(pol, 0, 7); err != nil {
-			return err
+			return grpcutils.InvalidArg("Invalid Policy name")
 		}
 	}
 
@@ -390,4 +394,34 @@ func validateAdditional(req *enterprisev1.IsAuthorizedRequest) error {
 	}
 
 	return nil
+}
+
+func cloneAdditionalAuthorization(
+	in *enterprisev1.IsAuthorizedRequest_Additional,
+) *coctovigilv1.Authorization {
+	if in == nil {
+		return nil
+	}
+
+	ret := &coctovigilv1.Authorization{
+		Policies: make([]string, len(in.Policies)),
+	}
+	copy(ret.Policies, in.Policies)
+
+	if len(in.InlinePolicies) > 0 {
+		ret.InlinePolicies = make([]*corev1.InlinePolicy, 0, len(in.InlinePolicies))
+		for _, pol := range in.InlinePolicies {
+			if pol == nil {
+				ret.InlinePolicies = append(ret.InlinePolicies, nil)
+				continue
+			}
+
+			ret.InlinePolicies = append(
+				ret.InlinePolicies,
+				proto.Clone(pol).(*corev1.InlinePolicy),
+			)
+		}
+	}
+
+	return ret
 }
