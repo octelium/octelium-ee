@@ -422,7 +422,7 @@ const MetricChart = (props: MetricChartProps) => {
         filters,
         groupBy,
         operation,
-        seriesPageSize: limitSeries,
+        limitSeries,
         limitPointsPerSeries,
         seriesAggregation: seriesAggregation(operation),
         limitBehavior: QueryMetricsRequest_LimitBehavior.TRUNCATE,
@@ -599,8 +599,7 @@ const MetricChart = (props: MetricChartProps) => {
         )}
 
         {(qry.data?.truncation?.seriesTruncated ||
-          qry.data?.truncation?.pointsTruncated ||
-          Boolean(qry.data?.nextSeriesPageToken)) && (
+          qry.data?.truncation?.pointsTruncated) && (
           <span className="mr-2 rounded-full bg-amber-50 px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-[0.04em] text-amber-700">
             Truncated
           </span>
