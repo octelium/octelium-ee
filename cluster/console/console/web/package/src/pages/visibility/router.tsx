@@ -1,6 +1,7 @@
 import LogViewer from "@/components/LogViewer";
 import { Outlet, RouteObject } from "react-router-dom";
 import MainPage from "./Main";
+import MetricsPage from "./Metrics";
 import sshRouter from "./ssh/router";
 
 export default (): RouteObject => {
@@ -15,6 +16,10 @@ export default (): RouteObject => {
       {
         path: "",
         element: <MainPage />,
+      },
+      {
+        path: "metrics",
+        element: <MetricsPage />,
       },
       {
         path: "accesslogs",
