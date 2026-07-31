@@ -22,8 +22,8 @@ import (
 )
 
 const (
-	maxSeriesPerPage                = 200
-	defaultSeriesPageSize           = 50
+	maxSeriesPerQuery               = 200
+	defaultSeriesPerQuery           = 50
 	maxPointsPerSeries              = 5000
 	defaultPointsPerSeries          = 1000
 	maxTotalPoints                  = 50000
@@ -45,16 +45,13 @@ type querySpec struct {
 	step     time.Duration
 	snapshot time.Time
 
-	seriesPageSize       int
+	limitSeries          int
 	limitPointsPerSeries int
 	limitTotalPoints     int
 	limitBehavior        vmetricsv1.QueryMetricsRequest_LimitBehavior
 
 	groupBy []string
 	filters []*vmetricsv1.AttributeFilter
-
-	fingerprint string
-	cursor      string
 }
 
 func (s *srvMetric) validateQueryRequest(ctx context.Context,
@@ -130,12 +127,12 @@ func (s *srvMetric) validateQueryRequest(ctx context.Context,
 		}
 	}
 
-	seriesPageSize := int(req.SeriesPageSize)
-	if seriesPageSize <= 0 {
-		seriesPageSize = defaultSeriesPageSize
+	limitSeries := int(req.LimitSeries)
+	if limitSeries <= 0 {
+		limitSeries = defaultSeriesPerQuery
 	}
-	if seriesPageSize > maxSeriesPerPage {
-		seriesPageSize = maxSeriesPerPage
+	if limitSeries > maxSeriesPerQuery {
+		limitSeries = maxSeriesPerQuery
 	}
 
 	limitPoints := int(req.LimitPointsPerSeries)
@@ -171,21 +168,7 @@ func (s *srvMetric) validateQueryRequest(ctx context.Context,
 		return nil, err
 	}
 
-	fingerprint, err := queryRequestFingerprint(req)
-	if err != nil {
-		return nil, err
-	}
-
-	snapshot := normalizeMetricTime(time.Now())
-	cursor := ""
-	if req.SeriesPageToken != "" {
-		payload, err := s.s.decodePageToken(req.SeriesPageToken, "series", fingerprint)
-		if err != nil {
-			return nil, err
-		}
-		snapshot = normalizeMetricTime(time.Unix(0, payload.SnapshotNS))
-		cursor = payload.Cursor
-	}
+	snapshot := normalizeMetricTime(time.Now().UTC())
 	if snapshot.After(time.Now().UTC().Add(maximumFutureSkew)) {
 		return nil, status.Error(codes.InvalidArgument, "invalid query snapshot")
 	}
@@ -199,14 +182,12 @@ func (s *srvMetric) validateQueryRequest(ctx context.Context,
 		to:                   to,
 		step:                 step,
 		snapshot:             snapshot,
-		seriesPageSize:       seriesPageSize,
+		limitSeries:          limitSeries,
 		limitPointsPerSeries: limitPoints,
 		limitTotalPoints:     limitTotal,
 		limitBehavior:        limitBehavior,
 		groupBy:              groupBy,
 		filters:              filters,
-		fingerprint:          fingerprint,
-		cursor:               cursor,
 	}, nil
 }
 

@@ -441,18 +441,6 @@ export interface ListMetricDescriptorsRequest {
      */
     component?: ComponentSelector;
     /**
-     * Requested page size. The server must enforce its own maximum.
-     *
-     * @generated from protobuf field: uint32 limit = 3
-     */
-    limit: number;
-    /**
-     * Opaque token returned by a previous request.
-     *
-     * @generated from protobuf field: string pageToken = 4
-     */
-    pageToken: string;
-    /**
      * Optional descriptor-kind filter.
      *
      * @generated from protobuf field: repeated octelium.api.main.visibility.metrics.v1.MetricDescriptor.Kind kinds = 5
@@ -467,10 +455,6 @@ export interface ListMetricDescriptorsResponse {
      * @generated from protobuf field: repeated octelium.api.main.visibility.metrics.v1.MetricDescriptor items = 1
      */
     items: MetricDescriptor[];
-    /**
-     * @generated from protobuf field: string nextPageToken = 2
-     */
-    nextPageToken: string;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.metrics.v1.QueryMetricsRequest
@@ -528,14 +512,14 @@ export interface QueryMetricsRequest {
      */
     operation?: QueryOperation;
     /**
-     * Requested number of series in this page. The server enforces its own
-     * maximum. Series pagination is independent from truncation: a non-empty
-     * nextSeriesPageToken means more deterministically ordered series can be
-     * retrieved without loss.
+     * Requested maximum number of output series returned by this query.
      *
-     * @generated from protobuf field: uint32 seriesPageSize = 8
+     * The server enforces its own maximum. When the complete output exceeds this
+     * limit, behavior is controlled by limitBehavior.
+     *
+     * @generated from protobuf field: uint32 limitSeries = 8
      */
-    seriesPageSize: number;
+    limitSeries: number;
     /**
      * Requested cap on returned points per series. The server enforces its own
      * maximum.
@@ -551,40 +535,27 @@ export interface QueryMetricsRequest {
      */
     seriesAggregation: QueryMetricsRequest_SeriesAggregation;
     /**
-     * Controls whether an over-limit response-point result is rejected or
-     * truncated. Source-series cardinality limits always return ResourceExhausted
-     * because truncating source series would produce mathematically incomplete
-     * aggregations. Normal series pagination does not count as truncation.
+     * Controls whether an over-limit output-series or response-point result is
+     * rejected or truncated. Source-series cardinality limits always return
+     * ResourceExhausted because truncating source series would produce
+     * mathematically incomplete aggregations.
      *
      * @generated from protobuf field: octelium.api.main.visibility.metrics.v1.QueryMetricsRequest.LimitBehavior limitBehavior = 11
      */
     limitBehavior: QueryMetricsRequest_LimitBehavior;
     /**
-     * Requests the pre-pagination series count. The server may reject this option
-     * when the count would be prohibitively expensive.
+     * Requests the complete output-series count before output limiting.
      *
      * @generated from protobuf field: bool includeTotalSeries = 12
      */
     includeTotalSeries: boolean;
     /**
-     * Requested cap on the total number of returned points across all series in
-     * this page. The server enforces its own maximum.
+     * Requested cap on the total number of returned points across all series.
+     * The server enforces its own maximum.
      *
      * @generated from protobuf field: uint32 limitTotalPoints = 13
      */
     limitTotalPoints: number;
-    /**
-     * Opaque token returned by a previous QueryMetrics response.
-     *
-     * The token binds to the normalized query, canonical series ordering, and an
-     * immutable query snapshot. All request fields other than seriesPageSize and
-     * this token must match the first-page request. The server returns
-     * InvalidArgument for a mismatched token and FailedPrecondition for an expired
-     * token.
-     *
-     * @generated from protobuf field: string seriesPageToken = 14
-     */
-    seriesPageToken: string;
 }
 /**
  * @generated from protobuf enum octelium.api.main.visibility.metrics.v1.QueryMetricsRequest.SeriesAggregation
@@ -1018,8 +989,8 @@ export interface QueryMetricsResponse {
     step?: Duration;
     /**
      * Series are ordered by TimeSeries.id in ascending bytewise order. IDs are
-     * stable content-derived values, so ordering and pagination are reproducible
-     * for identical requests against the same query snapshot.
+     * stable content-derived values, so output limiting is deterministic for
+     * identical requests against the same query snapshot.
      *
      * @generated from protobuf field: repeated octelium.api.main.visibility.metrics.v1.TimeSeries series = 4
      */
@@ -1029,7 +1000,8 @@ export interface QueryMetricsResponse {
      */
     truncation?: TruncationInfo;
     /**
-     * Pre-pagination series count. Present only when requested and computed.
+     * Complete output-series count before output limiting. Present only when
+     * requested and computed.
      *
      * @generated from protobuf field: optional uint32 totalSeries = 6
      */
@@ -1041,16 +1013,7 @@ export interface QueryMetricsResponse {
      */
     result?: QueryResultDescriptor;
     /**
-     * Opaque token for the next deterministically ordered series page. Empty when
-     * the current page is the last page.
-     *
-     * @generated from protobuf field: string nextSeriesPageToken = 8
-     */
-    nextSeriesPageToken: string;
-    /**
-     * Immutable point and source-series membership snapshot bound to this
-     * response and its page token. Descriptive descriptor metadata can reflect
-     * newer observations when subsequent pages are requested.
+     * Point and source-series membership snapshot used to produce this response.
      *
      * @generated from protobuf field: google.protobuf.Timestamp snapshotTime = 9
      */
@@ -1102,8 +1065,8 @@ export enum QueryResultDescriptor_PointKind {
  */
 export interface TruncationInfo {
     /**
-     * True only when series were irrecoverably omitted because of an internal
-     * cardinality or server limit. Normal series pagination does not set this.
+     * True when output series were omitted because the query exceeded the
+     * requested or server-enforced output-series limit.
      *
      * @generated from protobuf field: bool seriesTruncated = 1
      */
@@ -1163,7 +1126,7 @@ export interface TimeSeries {
      *
      * The ID format is v1:sha256:<digest>. The digest covers the resolved
      * descriptor ID, the complete canonical sorted output labels, and quantile
-     * presence/value. It is stable across pages, restarts, and replicas while
+     * presence/value. It is stable across requests, restarts, and replicas while
      * those inputs remain unchanged.
      *
      * @generated from protobuf field: string id = 1
@@ -1500,12 +1463,6 @@ export interface GetMetricsCapabilitiesResponse {
      */
     retentionTiers: MetricRetentionTier[];
     /**
-     * Lifetime of a QueryMetrics seriesPageToken.
-     *
-     * @generated from protobuf field: octelium.api.main.meta.v1.Duration seriesPageTokenTTL = 3
-     */
-    seriesPageTokenTTL?: Duration;
-    /**
      * @generated from protobuf field: google.protobuf.Timestamp serverTime = 4
      */
     serverTime?: Timestamp;
@@ -1531,9 +1488,9 @@ export interface QueryLimits {
      */
     minimumStep?: Duration;
     /**
-     * @generated from protobuf field: uint32 maximumSeriesPerPage = 3
+     * @generated from protobuf field: uint32 maximumSeries = 3
      */
-    maximumSeriesPerPage: number;
+    maximumSeries: number;
     /**
      * @generated from protobuf field: uint32 maximumPointsPerSeries = 4
      */
@@ -2284,16 +2241,12 @@ class ListMetricDescriptorsRequest$Type extends MessageType<ListMetricDescriptor
         super("octelium.api.main.visibility.metrics.v1.ListMetricDescriptorsRequest", [
             { no: 1, name: "namePrefix", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "component", kind: "message", T: () => ComponentSelector },
-            { no: 3, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 4, name: "pageToken", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 5, name: "kinds", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.visibility.metrics.v1.MetricDescriptor.Kind", MetricDescriptor_Kind] }
         ]);
     }
     create(value?: PartialMessage<ListMetricDescriptorsRequest>): ListMetricDescriptorsRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.namePrefix = "";
-        message.limit = 0;
-        message.pageToken = "";
         message.kinds = [];
         if (value !== undefined)
             reflectionMergePartial<ListMetricDescriptorsRequest>(this, message, value);
@@ -2309,12 +2262,6 @@ class ListMetricDescriptorsRequest$Type extends MessageType<ListMetricDescriptor
                     break;
                 case /* octelium.api.main.visibility.metrics.v1.ComponentSelector component */ 2:
                     message.component = ComponentSelector.internalBinaryRead(reader, reader.uint32(), options, message.component);
-                    break;
-                case /* uint32 limit */ 3:
-                    message.limit = reader.uint32();
-                    break;
-                case /* string pageToken */ 4:
-                    message.pageToken = reader.string();
                     break;
                 case /* repeated octelium.api.main.visibility.metrics.v1.MetricDescriptor.Kind kinds */ 5:
                     if (wireType === WireType.LengthDelimited)
@@ -2341,12 +2288,6 @@ class ListMetricDescriptorsRequest$Type extends MessageType<ListMetricDescriptor
         /* octelium.api.main.visibility.metrics.v1.ComponentSelector component = 2; */
         if (message.component)
             ComponentSelector.internalBinaryWrite(message.component, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
-        /* uint32 limit = 3; */
-        if (message.limit !== 0)
-            writer.tag(3, WireType.Varint).uint32(message.limit);
-        /* string pageToken = 4; */
-        if (message.pageToken !== "")
-            writer.tag(4, WireType.LengthDelimited).string(message.pageToken);
         /* repeated octelium.api.main.visibility.metrics.v1.MetricDescriptor.Kind kinds = 5; */
         if (message.kinds.length) {
             writer.tag(5, WireType.LengthDelimited).fork();
@@ -2368,14 +2309,12 @@ export const ListMetricDescriptorsRequest = new ListMetricDescriptorsRequest$Typ
 class ListMetricDescriptorsResponse$Type extends MessageType<ListMetricDescriptorsResponse> {
     constructor() {
         super("octelium.api.main.visibility.metrics.v1.ListMetricDescriptorsResponse", [
-            { no: 1, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => MetricDescriptor },
-            { no: 2, name: "nextPageToken", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 1, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => MetricDescriptor }
         ]);
     }
     create(value?: PartialMessage<ListMetricDescriptorsResponse>): ListMetricDescriptorsResponse {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.items = [];
-        message.nextPageToken = "";
         if (value !== undefined)
             reflectionMergePartial<ListMetricDescriptorsResponse>(this, message, value);
         return message;
@@ -2387,9 +2326,6 @@ class ListMetricDescriptorsResponse$Type extends MessageType<ListMetricDescripto
             switch (fieldNo) {
                 case /* repeated octelium.api.main.visibility.metrics.v1.MetricDescriptor items */ 1:
                     message.items.push(MetricDescriptor.internalBinaryRead(reader, reader.uint32(), options));
-                    break;
-                case /* string nextPageToken */ 2:
-                    message.nextPageToken = reader.string();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2406,9 +2342,6 @@ class ListMetricDescriptorsResponse$Type extends MessageType<ListMetricDescripto
         /* repeated octelium.api.main.visibility.metrics.v1.MetricDescriptor items = 1; */
         for (let i = 0; i < message.items.length; i++)
             MetricDescriptor.internalBinaryWrite(message.items[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
-        /* string nextPageToken = 2; */
-        if (message.nextPageToken !== "")
-            writer.tag(2, WireType.LengthDelimited).string(message.nextPageToken);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -2430,26 +2363,24 @@ class QueryMetricsRequest$Type extends MessageType<QueryMetricsRequest> {
             { no: 5, name: "filters", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => AttributeFilter },
             { no: 6, name: "groupBy", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
             { no: 7, name: "operation", kind: "message", T: () => QueryOperation },
-            { no: 8, name: "seriesPageSize", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 8, name: "limitSeries", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
             { no: 9, name: "limitPointsPerSeries", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
             { no: 10, name: "seriesAggregation", kind: "enum", T: () => ["octelium.api.main.visibility.metrics.v1.QueryMetricsRequest.SeriesAggregation", QueryMetricsRequest_SeriesAggregation] },
             { no: 11, name: "limitBehavior", kind: "enum", T: () => ["octelium.api.main.visibility.metrics.v1.QueryMetricsRequest.LimitBehavior", QueryMetricsRequest_LimitBehavior] },
             { no: 12, name: "includeTotalSeries", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
-            { no: 13, name: "limitTotalPoints", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 14, name: "seriesPageToken", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 13, name: "limitTotalPoints", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<QueryMetricsRequest>): QueryMetricsRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.filters = [];
         message.groupBy = [];
-        message.seriesPageSize = 0;
+        message.limitSeries = 0;
         message.limitPointsPerSeries = 0;
         message.seriesAggregation = 0;
         message.limitBehavior = 0;
         message.includeTotalSeries = false;
         message.limitTotalPoints = 0;
-        message.seriesPageToken = "";
         if (value !== undefined)
             reflectionMergePartial<QueryMetricsRequest>(this, message, value);
         return message;
@@ -2480,8 +2411,8 @@ class QueryMetricsRequest$Type extends MessageType<QueryMetricsRequest> {
                 case /* octelium.api.main.visibility.metrics.v1.QueryOperation operation */ 7:
                     message.operation = QueryOperation.internalBinaryRead(reader, reader.uint32(), options, message.operation);
                     break;
-                case /* uint32 seriesPageSize */ 8:
-                    message.seriesPageSize = reader.uint32();
+                case /* uint32 limitSeries */ 8:
+                    message.limitSeries = reader.uint32();
                     break;
                 case /* uint32 limitPointsPerSeries */ 9:
                     message.limitPointsPerSeries = reader.uint32();
@@ -2497,9 +2428,6 @@ class QueryMetricsRequest$Type extends MessageType<QueryMetricsRequest> {
                     break;
                 case /* uint32 limitTotalPoints */ 13:
                     message.limitTotalPoints = reader.uint32();
-                    break;
-                case /* string seriesPageToken */ 14:
-                    message.seriesPageToken = reader.string();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2534,9 +2462,9 @@ class QueryMetricsRequest$Type extends MessageType<QueryMetricsRequest> {
         /* octelium.api.main.visibility.metrics.v1.QueryOperation operation = 7; */
         if (message.operation)
             QueryOperation.internalBinaryWrite(message.operation, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
-        /* uint32 seriesPageSize = 8; */
-        if (message.seriesPageSize !== 0)
-            writer.tag(8, WireType.Varint).uint32(message.seriesPageSize);
+        /* uint32 limitSeries = 8; */
+        if (message.limitSeries !== 0)
+            writer.tag(8, WireType.Varint).uint32(message.limitSeries);
         /* uint32 limitPointsPerSeries = 9; */
         if (message.limitPointsPerSeries !== 0)
             writer.tag(9, WireType.Varint).uint32(message.limitPointsPerSeries);
@@ -2552,9 +2480,6 @@ class QueryMetricsRequest$Type extends MessageType<QueryMetricsRequest> {
         /* uint32 limitTotalPoints = 13; */
         if (message.limitTotalPoints !== 0)
             writer.tag(13, WireType.Varint).uint32(message.limitTotalPoints);
-        /* string seriesPageToken = 14; */
-        if (message.seriesPageToken !== "")
-            writer.tag(14, WireType.LengthDelimited).string(message.seriesPageToken);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -3057,14 +2982,12 @@ class QueryMetricsResponse$Type extends MessageType<QueryMetricsResponse> {
             { no: 5, name: "truncation", kind: "message", T: () => TruncationInfo },
             { no: 6, name: "totalSeries", kind: "scalar", opt: true, T: 13 /*ScalarType.UINT32*/ },
             { no: 7, name: "result", kind: "message", T: () => QueryResultDescriptor },
-            { no: 8, name: "nextSeriesPageToken", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 9, name: "snapshotTime", kind: "message", T: () => Timestamp }
         ]);
     }
     create(value?: PartialMessage<QueryMetricsResponse>): QueryMetricsResponse {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.series = [];
-        message.nextSeriesPageToken = "";
         if (value !== undefined)
             reflectionMergePartial<QueryMetricsResponse>(this, message, value);
         return message;
@@ -3094,9 +3017,6 @@ class QueryMetricsResponse$Type extends MessageType<QueryMetricsResponse> {
                     break;
                 case /* octelium.api.main.visibility.metrics.v1.QueryResultDescriptor result */ 7:
                     message.result = QueryResultDescriptor.internalBinaryRead(reader, reader.uint32(), options, message.result);
-                    break;
-                case /* string nextSeriesPageToken */ 8:
-                    message.nextSeriesPageToken = reader.string();
                     break;
                 case /* google.protobuf.Timestamp snapshotTime */ 9:
                     message.snapshotTime = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.snapshotTime);
@@ -3134,9 +3054,6 @@ class QueryMetricsResponse$Type extends MessageType<QueryMetricsResponse> {
         /* octelium.api.main.visibility.metrics.v1.QueryResultDescriptor result = 7; */
         if (message.result)
             QueryResultDescriptor.internalBinaryWrite(message.result, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
-        /* string nextSeriesPageToken = 8; */
-        if (message.nextSeriesPageToken !== "")
-            writer.tag(8, WireType.LengthDelimited).string(message.nextSeriesPageToken);
         /* google.protobuf.Timestamp snapshotTime = 9; */
         if (message.snapshotTime)
             Timestamp.internalBinaryWrite(message.snapshotTime, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
@@ -4197,7 +4114,6 @@ class GetMetricsCapabilitiesResponse$Type extends MessageType<GetMetricsCapabili
         super("octelium.api.main.visibility.metrics.v1.GetMetricsCapabilitiesResponse", [
             { no: 1, name: "queryLimits", kind: "message", T: () => QueryLimits },
             { no: 2, name: "retentionTiers", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => MetricRetentionTier },
-            { no: 3, name: "seriesPageTokenTTL", kind: "message", T: () => Duration },
             { no: 4, name: "serverTime", kind: "message", T: () => Timestamp },
             { no: 5, name: "metricKinds", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => MetricKindCapability },
             { no: 6, name: "ingestionLimits", kind: "message", T: () => MetricIngestionLimits }
@@ -4221,9 +4137,6 @@ class GetMetricsCapabilitiesResponse$Type extends MessageType<GetMetricsCapabili
                     break;
                 case /* repeated octelium.api.main.visibility.metrics.v1.MetricRetentionTier retentionTiers */ 2:
                     message.retentionTiers.push(MetricRetentionTier.internalBinaryRead(reader, reader.uint32(), options));
-                    break;
-                case /* octelium.api.main.meta.v1.Duration seriesPageTokenTTL */ 3:
-                    message.seriesPageTokenTTL = Duration.internalBinaryRead(reader, reader.uint32(), options, message.seriesPageTokenTTL);
                     break;
                 case /* google.protobuf.Timestamp serverTime */ 4:
                     message.serverTime = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.serverTime);
@@ -4252,9 +4165,6 @@ class GetMetricsCapabilitiesResponse$Type extends MessageType<GetMetricsCapabili
         /* repeated octelium.api.main.visibility.metrics.v1.MetricRetentionTier retentionTiers = 2; */
         for (let i = 0; i < message.retentionTiers.length; i++)
             MetricRetentionTier.internalBinaryWrite(message.retentionTiers[i], writer.tag(2, WireType.LengthDelimited).fork(), options).join();
-        /* octelium.api.main.meta.v1.Duration seriesPageTokenTTL = 3; */
-        if (message.seriesPageTokenTTL)
-            Duration.internalBinaryWrite(message.seriesPageTokenTTL, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
         /* google.protobuf.Timestamp serverTime = 4; */
         if (message.serverTime)
             Timestamp.internalBinaryWrite(message.serverTime, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
@@ -4280,7 +4190,7 @@ class QueryLimits$Type extends MessageType<QueryLimits> {
         super("octelium.api.main.visibility.metrics.v1.QueryLimits", [
             { no: 1, name: "maximumTimeRange", kind: "message", T: () => Duration },
             { no: 2, name: "minimumStep", kind: "message", T: () => Duration },
-            { no: 3, name: "maximumSeriesPerPage", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 3, name: "maximumSeries", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
             { no: 4, name: "maximumPointsPerSeries", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
             { no: 5, name: "maximumTotalPoints", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
             { no: 6, name: "maximumGroupByAttributes", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
@@ -4293,7 +4203,7 @@ class QueryLimits$Type extends MessageType<QueryLimits> {
     }
     create(value?: PartialMessage<QueryLimits>): QueryLimits {
         const message = globalThis.Object.create((this.messagePrototype!));
-        message.maximumSeriesPerPage = 0;
+        message.maximumSeries = 0;
         message.maximumPointsPerSeries = 0;
         message.maximumTotalPoints = 0;
         message.maximumGroupByAttributes = 0;
@@ -4317,8 +4227,8 @@ class QueryLimits$Type extends MessageType<QueryLimits> {
                 case /* octelium.api.main.meta.v1.Duration minimumStep */ 2:
                     message.minimumStep = Duration.internalBinaryRead(reader, reader.uint32(), options, message.minimumStep);
                     break;
-                case /* uint32 maximumSeriesPerPage */ 3:
-                    message.maximumSeriesPerPage = reader.uint32();
+                case /* uint32 maximumSeries */ 3:
+                    message.maximumSeries = reader.uint32();
                     break;
                 case /* uint32 maximumPointsPerSeries */ 4:
                     message.maximumPointsPerSeries = reader.uint32();
@@ -4362,9 +4272,9 @@ class QueryLimits$Type extends MessageType<QueryLimits> {
         /* octelium.api.main.meta.v1.Duration minimumStep = 2; */
         if (message.minimumStep)
             Duration.internalBinaryWrite(message.minimumStep, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
-        /* uint32 maximumSeriesPerPage = 3; */
-        if (message.maximumSeriesPerPage !== 0)
-            writer.tag(3, WireType.Varint).uint32(message.maximumSeriesPerPage);
+        /* uint32 maximumSeries = 3; */
+        if (message.maximumSeries !== 0)
+            writer.tag(3, WireType.Varint).uint32(message.maximumSeries);
         /* uint32 maximumPointsPerSeries = 4; */
         if (message.maximumPointsPerSeries !== 0)
             writer.tag(4, WireType.Varint).uint32(message.maximumPointsPerSeries);

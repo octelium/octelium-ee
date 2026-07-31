@@ -229,9 +229,9 @@ func (s *Server) runRetentionLoop(ctx context.Context) {
 }
 
 func (s *Server) applyRetention(ctx context.Context) error {
-	// Keep enough extra ingestion history for an already-issued snapshot token to
-	// remain usable until it expires, including one retention-loop scheduling gap.
-	cutoff := time.Now().UTC().Add(-(rawMetricRetention + seriesPageTokenTTL + retentionInterval))
+	// Keep one extra retention-loop interval so periodic cleanup cannot shorten
+	// the effective retention window.
+	cutoff := time.Now().UTC().Add(-(rawMetricRetention + retentionInterval))
 	pointTables := []string{
 		"metric_number_points",
 		"metric_histogram_points",

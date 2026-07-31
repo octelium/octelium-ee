@@ -10,12 +10,9 @@ package metricstore
 
 import (
 	"context"
-	"crypto/rand"
 	"database/sql"
 	"errors"
 	"net"
-	"os"
-	"strings"
 	"sync"
 	"time"
 
@@ -44,8 +41,6 @@ type Server struct {
 	grpcSrv   *grpc.Server
 	listener  net.Listener
 	metricSrv *srvMetric
-
-	pageTokenKey []byte
 
 	workerCtx    context.Context
 	workerCancel context.CancelFunc
@@ -80,45 +75,16 @@ func newServer(ctx context.Context, octeliumC octeliumc.ClientInterface) (*Serve
 
 	workerCtx, workerCancel := context.WithCancel(context.Background())
 
-	pageTokenKey, err := getPageTokenKey()
-	if err != nil {
-		_ = db.Close()
-		if dbConfig.cleanupFn != nil {
-			dbConfig.cleanupFn()
-		}
-		return nil, err
-	}
-
 	ret := &Server{
 		octeliumC:     octeliumC,
 		clusterDomain: cc.Status.Domain,
 		db:            db,
 		dbConfig:      dbConfig,
-		pageTokenKey:  pageTokenKey,
 		workerCtx:     workerCtx,
 		workerCancel:  workerCancel,
 		shutdownDone:  make(chan struct{}),
 	}
 
-	return ret, nil
-}
-
-func getPageTokenKey() ([]byte, error) {
-	if val := strings.TrimSpace(os.Getenv("OCTELIUM_METRICSTORE_PAGE_TOKEN_SECRET")); val != "" {
-		if len(val) < 32 {
-			return nil, errors.New("OCTELIUM_METRICSTORE_PAGE_TOKEN_SECRET must contain at least 32 bytes")
-		}
-		return []byte(val), nil
-	}
-
-	if !ldflags.IsTest() {
-		return nil, errors.New("OCTELIUM_METRICSTORE_PAGE_TOKEN_SECRET must be set")
-	}
-
-	ret := make([]byte, 32)
-	if _, err := rand.Read(ret); err != nil {
-		return nil, err
-	}
 	return ret, nil
 }
 

@@ -12,10 +12,8 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
-	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"hash/fnv"
 	"math"
@@ -34,9 +32,8 @@ import (
 const (
 	mockRawMetricRetention      = 48 * time.Hour
 	mockMinimumQueryStep        = time.Second
-	mockSeriesPageTokenTTL      = 5 * time.Minute
-	mockMaxSeriesPerPage        = 200
-	mockDefaultSeriesPageSize   = 50
+	mockMaxSeriesPerQuery       = 200
+	mockDefaultSeriesPerQuery   = 50
 	mockMaxPointsPerSeries      = 5000
 	mockDefaultPointsPerSeries  = 1000
 	mockMaxTotalPoints          = 50000
@@ -82,15 +79,6 @@ type mockSeries struct {
 	labels   []*vmetricsv1.Attribute
 	quantile *float64
 	phase    float64
-}
-
-type mockPageToken struct {
-	Version     uint32 `json:"version"`
-	Kind        string `json:"kind"`
-	Fingerprint string `json:"fingerprint"`
-	Cursor      string `json:"cursor"`
-	SnapshotNS  int64  `json:"snapshotNS"`
-	ExpiresNS   int64  `json:"expiresNS"`
 }
 
 var mockComponentKeys = []string{
@@ -388,17 +376,7 @@ func (s *tstMetricsService) QueryMetrics(
 		return nil, status.Error(codes.InvalidArgument, "MERGE is only valid for histogram metrics")
 	}
 
-	fingerprint := mockQueryFingerprint(req)
 	snapshot := time.Now().UTC()
-	cursor := ""
-	if req.SeriesPageToken != "" {
-		token, err := mockDecodePageToken(req.SeriesPageToken, "series", fingerprint)
-		if err != nil {
-			return nil, err
-		}
-		snapshot = time.Unix(0, token.SnapshotNS).UTC()
-		cursor = token.Cursor
-	}
 
 	descriptor := mockDescriptor(name, info)
 	allSeries := mockBuildSeries(req, descriptor, info, aggregation)
@@ -407,22 +385,37 @@ func (s *tstMetricsService) QueryMetrics(
 	})
 
 	totalSeries := uint32(len(allSeries))
-	start := sort.Search(len(allSeries), func(i int) bool {
-		return allSeries[i].id > cursor
-	})
+	limitSeries := int(req.LimitSeries)
+	if limitSeries <= 0 {
+		limitSeries = mockDefaultSeriesPerQuery
+	}
+	if limitSeries > mockMaxSeriesPerQuery {
+		limitSeries = mockMaxSeriesPerQuery
+	}
 
-	pageSize := int(req.SeriesPageSize)
-	if pageSize <= 0 {
-		pageSize = mockDefaultSeriesPageSize
+	seriesTruncated := false
+	if len(allSeries) > limitSeries {
+		behavior := req.LimitBehavior
+		if behavior == vmetricsv1.QueryMetricsRequest_LIMIT_BEHAVIOR_UNSET {
+			behavior = vmetricsv1.QueryMetricsRequest_ERROR
+		}
+
+		switch behavior {
+		case vmetricsv1.QueryMetricsRequest_ERROR:
+			return nil, status.Error(
+				codes.ResourceExhausted,
+				"metric query exceeds the output-series limit",
+			)
+
+		case vmetricsv1.QueryMetricsRequest_TRUNCATE:
+			allSeries = allSeries[:limitSeries]
+			seriesTruncated = true
+
+		default:
+			return nil, status.Error(codes.InvalidArgument, "invalid limit behavior")
+		}
 	}
-	if pageSize > mockMaxSeriesPerPage {
-		pageSize = mockMaxSeriesPerPage
-	}
-	end := start + pageSize
-	if end > len(allSeries) {
-		end = len(allSeries)
-	}
-	page := allSeries[start:end]
+	page := allSeries
 
 	generationStep := step
 	if isRaw {
@@ -468,6 +461,13 @@ func (s *tstMetricsService) QueryMetrics(
 	if req.IncludeTotalSeries {
 		response.TotalSeries = &totalSeries
 	}
+	if seriesTruncated {
+		response.Truncation.SeriesTruncated = true
+		response.Truncation.Reasons = append(
+			response.Truncation.Reasons,
+			vmetricsv1.TruncationInfo_SERVER_LIMIT,
+		)
+	}
 
 	for _, item := range page {
 		var output *vmetricsv1.TimeSeries
@@ -506,20 +506,6 @@ func (s *tstMetricsService) QueryMetrics(
 		response.Series = append(response.Series, output)
 	}
 
-	if end < len(allSeries) && len(page) > 0 {
-		response.NextSeriesPageToken, err = mockEncodePageToken(&mockPageToken{
-			Version:     1,
-			Kind:        "series",
-			Fingerprint: fingerprint,
-			Cursor:      page[len(page)-1].id,
-			SnapshotNS:  snapshot.UnixNano(),
-			ExpiresNS:   snapshot.Add(mockSeriesPageTokenTTL).UnixNano(),
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	if err := mockEnforcePointLimits(response, limitPoints, limitTotal, limitBehavior); err != nil {
 		return nil, err
 	}
@@ -541,37 +527,28 @@ func (s *tstMetricsService) ListMetricDescriptors(
 		return nil, status.Error(codes.InvalidArgument, "nil request")
 	}
 
-	limit := int(req.Limit)
-	if limit <= 0 {
-		limit = 100
-	}
-	if limit > 1000 {
-		limit = 1000
-	}
-
-	fingerprint := mockDescriptorFingerprint(req)
-	cursor := ""
-	snapshot := time.Now().UTC()
-	if req.PageToken != "" {
-		token, err := mockDecodePageToken(req.PageToken, "descriptor", fingerprint)
-		if err != nil {
-			return nil, err
-		}
-		cursor = token.Cursor
-		snapshot = time.Unix(0, token.SnapshotNS).UTC()
-	}
-
 	kindSet := map[vmetricsv1.MetricDescriptor_Kind]struct{}{}
 	for _, kind := range req.Kinds {
 		if kind == vmetricsv1.MetricDescriptor_KIND_UNSET {
-			return nil, status.Error(codes.InvalidArgument, "descriptor kind filter cannot contain KIND_UNSET")
+			return nil, status.Error(
+				codes.InvalidArgument,
+				"descriptor kind filter cannot contain KIND_UNSET",
+			)
+		}
+		if _, ok := kindSet[kind]; ok {
+			return nil, status.Errorf(
+				codes.InvalidArgument,
+				"duplicate descriptor kind filter: %s",
+				kind.String(),
+			)
 		}
 		kindSet[kind] = struct{}{}
 	}
 
 	items := make([]*vmetricsv1.MetricDescriptor, 0, len(mockMetricMeta))
+	namePrefix := strings.TrimSpace(req.NamePrefix)
 	for name, info := range mockMetricMeta {
-		if req.NamePrefix != "" && !strings.HasPrefix(name, strings.TrimSpace(req.NamePrefix)) {
+		if namePrefix != "" && !strings.HasPrefix(name, namePrefix) {
 			continue
 		}
 		if len(kindSet) > 0 {
@@ -593,34 +570,9 @@ func (s *tstMetricsService) ListMetricDescriptors(
 		return items[i].Name < items[j].Name
 	})
 
-	start := sort.Search(len(items), func(i int) bool {
-		return mockDescriptorCursor(items[i]) > cursor
-	})
-	end := start + limit
-	if end > len(items) {
-		end = len(items)
-	}
-
-	resp := &vmetricsv1.ListMetricDescriptorsResponse{
-		Items: items[start:end],
-	}
-
-	if end < len(items) && len(resp.Items) > 0 {
-		var err error
-		resp.NextPageToken, err = mockEncodePageToken(&mockPageToken{
-			Version:     1,
-			Kind:        "descriptor",
-			Fingerprint: fingerprint,
-			Cursor:      mockDescriptorCursor(resp.Items[len(resp.Items)-1]),
-			SnapshotNS:  snapshot.UnixNano(),
-			ExpiresNS:   snapshot.Add(mockSeriesPageTokenTTL).UnixNano(),
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return resp, nil
+	return &vmetricsv1.ListMetricDescriptorsResponse{
+		Items: items,
+	}, nil
 }
 
 func (s *tstMetricsService) ListMetricCatalog(
@@ -753,7 +705,7 @@ func (s *tstMetricsService) GetMetricsCapabilities(
 		QueryLimits: &vmetricsv1.QueryLimits{
 			MaximumTimeRange:         mockDurationPB(mockRawMetricRetention),
 			MinimumStep:              mockDurationPB(mockMinimumQueryStep),
-			MaximumSeriesPerPage:     mockMaxSeriesPerPage,
+			MaximumSeries:            mockMaxSeriesPerQuery,
 			MaximumPointsPerSeries:   mockMaxPointsPerSeries,
 			MaximumTotalPoints:       mockMaxTotalPoints,
 			MaximumGroupByAttributes: mockMaxGroupByAttributes,
@@ -770,8 +722,7 @@ func (s *tstMetricsService) GetMetricsCapabilities(
 				Raw:       true,
 			},
 		},
-		SeriesPageTokenTTL: mockDurationPB(mockSeriesPageTokenTTL),
-		ServerTime:         pbutils.Now(),
+		ServerTime: pbutils.Now(),
 		MetricKinds: []*vmetricsv1.MetricKindCapability{
 			{
 				Kind: vmetricsv1.MetricDescriptor_COUNTER,
@@ -1416,10 +1367,6 @@ func mockContentID(value string) string {
 	return "v1:sha256:" + hex.EncodeToString(sum[:])
 }
 
-func mockDescriptorCursor(descriptor *vmetricsv1.MetricDescriptor) string {
-	return descriptor.Name + "\x00" + descriptor.Id
-}
-
 func mockStringAttribute(key, value string) *vmetricsv1.Attribute {
 	return &vmetricsv1.Attribute{
 		Key: key,
@@ -1641,163 +1588,6 @@ func mockUniqueTruncationReasons(
 		ret = append(ret, reason)
 	}
 	return ret
-}
-
-func mockEncodePageToken(token *mockPageToken) (string, error) {
-	data, err := json.Marshal(token)
-	if err != nil {
-		return "", err
-	}
-	return base64.RawURLEncoding.EncodeToString(data), nil
-}
-
-func mockDecodePageToken(
-	value string,
-	kind string,
-	fingerprint string,
-) (*mockPageToken, error) {
-	data, err := base64.RawURLEncoding.DecodeString(value)
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, "invalid page token")
-	}
-
-	token := &mockPageToken{}
-	if err := json.Unmarshal(data, token); err != nil {
-		return nil, status.Error(codes.InvalidArgument, "invalid page token")
-	}
-	if token.Version != 1 || token.Kind != kind || token.Fingerprint != fingerprint ||
-		token.SnapshotNS <= 0 || token.ExpiresNS-token.SnapshotNS != mockSeriesPageTokenTTL.Nanoseconds() {
-		return nil, status.Error(codes.InvalidArgument, "invalid page token")
-	}
-	if time.Now().UTC().UnixNano() > token.ExpiresNS {
-		return nil, status.Error(codes.FailedPrecondition, "page token has expired")
-	}
-
-	return token, nil
-}
-
-func mockDescriptorFingerprint(req *vmetricsv1.ListMetricDescriptorsRequest) string {
-	kinds := append([]vmetricsv1.MetricDescriptor_Kind(nil), req.Kinds...)
-	sort.Slice(kinds, func(i, j int) bool {
-		return kinds[i] < kinds[j]
-	})
-
-	var builder strings.Builder
-	builder.WriteString(strings.TrimSpace(req.NamePrefix))
-	builder.WriteByte(0)
-	if req.Component != nil {
-		builder.WriteString(strings.TrimSpace(req.Component.Type))
-		builder.WriteByte(0)
-		builder.WriteString(strings.TrimSpace(req.Component.Namespace))
-		builder.WriteByte(0)
-		builder.WriteString(strings.TrimSpace(req.Component.Name))
-	}
-	for _, kind := range kinds {
-		builder.WriteString(strconv.FormatInt(int64(kind), 10))
-		builder.WriteByte(0)
-	}
-
-	return mockContentID(builder.String())
-}
-
-func mockQueryFingerprint(req *vmetricsv1.QueryMetricsRequest) string {
-	var builder strings.Builder
-
-	if req.Metric != nil {
-		builder.WriteString(strings.TrimSpace(req.Metric.GetName()))
-		builder.WriteByte(0)
-		builder.WriteString(strings.TrimSpace(req.Metric.GetDescriptorID()))
-		builder.WriteByte(0)
-		builder.WriteString(strconv.FormatInt(int64(req.Metric.Kind), 10))
-		builder.WriteByte(0)
-	}
-	if req.TimeRange != nil {
-		if req.TimeRange.From != nil {
-			builder.WriteString(strconv.FormatInt(req.TimeRange.From.AsTime().UnixNano(), 10))
-		}
-		builder.WriteByte(0)
-		if req.TimeRange.To != nil {
-			builder.WriteString(strconv.FormatInt(req.TimeRange.To.AsTime().UnixNano(), 10))
-		}
-		builder.WriteByte(0)
-	}
-	builder.WriteString(strconv.FormatInt(mockDurationToTime(req.Step).Nanoseconds(), 10))
-	builder.WriteByte(0)
-
-	if req.Component != nil {
-		builder.WriteString(strings.TrimSpace(req.Component.Type))
-		builder.WriteByte(0)
-		builder.WriteString(strings.TrimSpace(req.Component.Namespace))
-		builder.WriteByte(0)
-		builder.WriteString(strings.TrimSpace(req.Component.Name))
-		builder.WriteByte(0)
-	}
-
-	groupBy := append([]string(nil), req.GroupBy...)
-	for idx := range groupBy {
-		groupBy[idx] = strings.TrimSpace(groupBy[idx])
-	}
-	sort.Strings(groupBy)
-	for _, key := range groupBy {
-		builder.WriteString(key)
-		builder.WriteByte(0)
-	}
-
-	filterKeys := make([]string, 0, len(req.Filters))
-	for _, filter := range req.Filters {
-		if filter == nil {
-			continue
-		}
-		values := make([]string, 0, len(filter.Values))
-		for _, value := range filter.Values {
-			values = append(values, mockAttributeValueKey(value))
-		}
-		sort.Strings(values)
-		filterKeys = append(filterKeys, strings.Join([]string{
-			strings.TrimSpace(filter.Key),
-			strconv.FormatInt(int64(filter.Operator), 10),
-			mockAttributeValueKey(filter.Value),
-			strings.Join(values, ","),
-		}, "\x00"))
-	}
-	sort.Strings(filterKeys)
-	for _, filter := range filterKeys {
-		builder.WriteString(filter)
-		builder.WriteByte(0)
-	}
-
-	if req.Operation != nil {
-		switch {
-		case req.Operation.GetCounter() != nil:
-			builder.WriteString("counter:")
-			builder.WriteString(strconv.FormatInt(int64(req.Operation.GetCounter().Function), 10))
-		case req.Operation.GetGauge() != nil:
-			builder.WriteString("gauge:")
-			builder.WriteString(strconv.FormatInt(int64(req.Operation.GetGauge().Function), 10))
-		case req.Operation.GetHistogram() != nil:
-			builder.WriteString("histogram:")
-			builder.WriteString(strconv.FormatInt(int64(req.Operation.GetHistogram().Function), 10))
-			quantiles := append([]float64(nil), req.Operation.GetHistogram().Quantiles...)
-			sort.Float64s(quantiles)
-			for _, quantile := range quantiles {
-				builder.WriteByte(0)
-				builder.WriteString(strconv.FormatUint(math.Float64bits(quantile), 16))
-			}
-		}
-	}
-
-	builder.WriteByte(0)
-	builder.WriteString(strconv.FormatInt(int64(req.SeriesAggregation), 10))
-	builder.WriteByte(0)
-	builder.WriteString(strconv.FormatInt(int64(req.LimitBehavior), 10))
-	builder.WriteByte(0)
-	builder.WriteString(strconv.FormatUint(uint64(req.LimitPointsPerSeries), 10))
-	builder.WriteByte(0)
-	builder.WriteString(strconv.FormatUint(uint64(req.LimitTotalPoints), 10))
-	builder.WriteByte(0)
-	builder.WriteString(strconv.FormatBool(req.IncludeTotalSeries))
-
-	return mockContentID(builder.String())
 }
 
 func mockCatalogItem(

@@ -23,8 +23,7 @@ import (
 )
 
 const (
-	maxDescriptorPageSize     = 1000
-	defaultDescriptorPageSize = 100
+	maxDescriptorResults      = 5000
 	attributeEstimateLookback = rawMetricRetention
 )
 
@@ -42,29 +41,7 @@ func (s *srvMetric) ListMetricDescriptors(ctx context.Context,
 		return nil, err
 	}
 
-	limit := int(req.Limit)
-	if limit <= 0 {
-		limit = defaultDescriptorPageSize
-	}
-	if limit > maxDescriptorPageSize {
-		limit = maxDescriptorPageSize
-	}
-
-	fingerprint, err := descriptorRequestFingerprint(req)
-	if err != nil {
-		return nil, err
-	}
-	cursor := ""
-	snapshot := time.Now().UTC()
-	if req.PageToken != "" {
-		payload, err := s.s.decodePageToken(req.PageToken, "descriptor", fingerprint)
-		if err != nil {
-			return nil, err
-		}
-		cursor = payload.Cursor
-		snapshot = time.Unix(0, payload.SnapshotNS).UTC()
-	}
-
+	snapshot := normalizeMetricTime(time.Now().UTC())
 	where := []string{"d.created_at <= ?"}
 	args := []any{metricTimeToDB(snapshot)}
 
@@ -74,28 +51,37 @@ func (s *srvMetric) ListMetricDescriptors(ctx context.Context,
 	}
 	if len(req.Kinds) > 0 {
 		placeholders := make([]string, 0, len(req.Kinds))
+		seenKinds := make(map[vmetricsv1.MetricDescriptor_Kind]struct{}, len(req.Kinds))
 		for _, kind := range req.Kinds {
 			if kind == vmetricsv1.MetricDescriptor_KIND_UNSET {
-				return nil, status.Error(codes.InvalidArgument, "descriptor kind filter cannot contain KIND_UNSET")
+				return nil, status.Error(
+					codes.InvalidArgument,
+					"descriptor kind filter cannot contain KIND_UNSET",
+				)
 			}
+			if _, ok := seenKinds[kind]; ok {
+				return nil, status.Errorf(
+					codes.InvalidArgument,
+					"duplicate descriptor kind filter: %s",
+					kind.String(),
+				)
+			}
+			seenKinds[kind] = struct{}{}
 			placeholders = append(placeholders, "?")
 			args = append(args, kindToString(kind))
 		}
-		where = append(where, "d.kind IN ("+strings.Join(placeholders, ",")+")")
+		where = append(
+			where,
+			"d.kind IN ("+strings.Join(placeholders, ",")+")",
+		)
 	}
 
-	componentWhere, componentArgs := descriptorComponentSQL(req.Component, snapshot)
+	componentWhere, componentArgs := descriptorComponentSQL(
+		req.Component,
+		snapshot,
+	)
 	where = append(where, componentWhere...)
 	args = append(args, componentArgs...)
-
-	if cursor != "" {
-		name, id, ok := splitDescriptorCursor(cursor)
-		if !ok {
-			return nil, status.Error(codes.InvalidArgument, "invalid descriptor page cursor")
-		}
-		where = append(where, "(d.name > ? OR (d.name = ? AND d.id > ?))")
-		args = append(args, name, name, id)
-	}
 
 	query := `
 SELECT
@@ -119,7 +105,7 @@ WHERE ` + strings.Join(where, " AND ") + `
 ORDER BY d.name ASC, d.id ASC
 LIMIT ?
 `
-	args = append(args, limit+1)
+	args = append(args, maxDescriptorResults+1)
 
 	rows, err := s.s.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -127,7 +113,7 @@ LIMIT ?
 	}
 	defer rows.Close()
 
-	items := make([]*vmetricsv1.MetricDescriptor, 0, limit+1)
+	items := make([]*vmetricsv1.MetricDescriptor, 0)
 	for rows.Next() {
 		descriptor, err := scanMetricDescriptor(rows)
 		if err != nil {
@@ -139,29 +125,24 @@ LIMIT ?
 		return nil, err
 	}
 
-	hasMore := len(items) > limit
-	if hasMore {
-		items = items[:limit]
+	if len(items) > maxDescriptorResults {
+		return nil, status.Error(
+			codes.ResourceExhausted,
+			"too many metric descriptors; narrow the request",
+		)
 	}
-	if err := s.populateDescriptorAttributes(ctx, items, req.Component); err != nil {
+
+	if err := s.populateDescriptorAttributes(
+		ctx,
+		items,
+		req.Component,
+	); err != nil {
 		return nil, err
 	}
 
-	response := &vmetricsv1.ListMetricDescriptorsResponse{Items: items}
-	if hasMore {
-		last := items[len(items)-1]
-		response.NextPageToken, err = s.s.encodePageToken(newPageTokenPayload(
-			"descriptor",
-			fingerprint,
-			descriptorCursor(last.Name, last.Id),
-			snapshot,
-		))
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return response, nil
+	return &vmetricsv1.ListMetricDescriptorsResponse{
+		Items: items,
+	}, nil
 }
 
 func descriptorComponentSQL(component *vmetricsv1.ComponentSelector, snapshot time.Time) ([]string, []any) {
@@ -185,18 +166,6 @@ func descriptorComponentSQL(component *vmetricsv1.ComponentSelector, snapshot ti
 	}
 	where[0] += ")"
 	return where, args
-}
-
-func descriptorCursor(name, id string) string {
-	return name + "\x00" + id
-}
-
-func splitDescriptorCursor(cursor string) (string, string, bool) {
-	idx := strings.IndexByte(cursor, 0)
-	if idx < 0 {
-		return "", "", false
-	}
-	return cursor[:idx], cursor[idx+1:], true
 }
 
 func scanMetricDescriptor(scanner interface{ Scan(...any) error }) (*vmetricsv1.MetricDescriptor, error) {
@@ -398,7 +367,7 @@ func metricAttributeGroupCapability(key string, estimatedDistinct uint64) (bool,
 	if _, ok := allowed[key]; !ok {
 		return false, "attribute key is not in the low-cardinality groupBy allowlist"
 	}
-	if estimatedDistinct > maxSeriesPerPage*10 {
+	if estimatedDistinct > maxSeriesPerQuery*10 {
 		return false, "observed attribute cardinality exceeds the groupBy safety threshold"
 	}
 	return true, ""
@@ -633,7 +602,7 @@ func (s *srvMetric) GetMetricsCapabilities(ctx context.Context,
 		QueryLimits: &vmetricsv1.QueryLimits{
 			MaximumTimeRange:         durationPB(rawMetricRetention),
 			MinimumStep:              durationPB(minimumQueryStep),
-			MaximumSeriesPerPage:     maxSeriesPerPage,
+			MaximumSeries:            maxSeriesPerQuery,
 			MaximumPointsPerSeries:   maxPointsPerSeries,
 			MaximumTotalPoints:       maxTotalPoints,
 			MaximumGroupByAttributes: maxGroupByAttributes,
@@ -650,8 +619,7 @@ func (s *srvMetric) GetMetricsCapabilities(ctx context.Context,
 				Raw:       true,
 			},
 		},
-		SeriesPageTokenTTL: durationPB(seriesPageTokenTTL),
-		ServerTime:         pbutils.Now(),
+		ServerTime: pbutils.Now(),
 		IngestionLimits: &vmetricsv1.MetricIngestionLimits{
 			MaximumDataPointsPerExport:          maxDataPointsPerExport,
 			MaximumEffectiveAttributesPerSeries: maxAttributesPerPoint,

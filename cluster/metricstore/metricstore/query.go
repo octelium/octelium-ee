@@ -39,7 +39,6 @@ type outputSeriesSpec struct {
 type seriesSelection struct {
 	items           []*outputSeriesSpec
 	total           uint32
-	nextCursor      string
 	seriesTruncated bool
 }
 
@@ -99,19 +98,7 @@ func (s *srvMetric) QueryMetrics(ctx context.Context,
 	}
 	if selection.seriesTruncated {
 		response.Truncation.SeriesTruncated = true
-		response.Truncation.Reasons = append(response.Truncation.Reasons, vmetricsv1.TruncationInfo_CARDINALITY_LIMIT)
-	}
-
-	if selection.nextCursor != "" {
-		response.NextSeriesPageToken, err = s.s.encodePageToken(newPageTokenPayload(
-			"series",
-			query.fingerprint,
-			selection.nextCursor,
-			query.snapshot,
-		))
-		if err != nil {
-			return nil, err
-		}
+		response.Truncation.Reasons = append(response.Truncation.Reasons, vmetricsv1.TruncationInfo_SERVER_LIMIT)
 	}
 
 	if err := enforceResponseLimits(query, response); err != nil {
@@ -126,7 +113,7 @@ func (s *srvMetric) QueryMetrics(ctx context.Context,
 
 func (s *srvMetric) selectOutputSeries(ctx context.Context, query *querySpec,
 	descriptor *vmetricsv1.MetricDescriptor) (*seriesSelection, error) {
-	source, truncated, err := s.loadSourceSeries(ctx, query, descriptor)
+	source, err := s.loadSourceSeries(ctx, query, descriptor)
 	if err != nil {
 		return nil, err
 	}
@@ -179,40 +166,57 @@ func (s *srvMetric) selectOutputSeries(ctx context.Context, query *querySpec,
 	})
 
 	total := uint32(len(outputs))
-	start := 0
-	if query.cursor != "" {
-		start = sort.Search(len(outputs), func(i int) bool {
-			return outputs[i].canonicalKey > query.cursor
-		})
-	}
-	if start > len(outputs) {
-		start = len(outputs)
-	}
-
-	end := start + query.seriesPageSize
-	if end > len(outputs) {
-		end = len(outputs)
-	}
-	page := outputs[start:end]
-
-	nextCursor := ""
-	if end < len(outputs) && len(page) > 0 {
-		nextCursor = page[len(page)-1].canonicalKey
+	outputs, truncated, err := limitOutputSeries(
+		outputs,
+		query.limitSeries,
+		query.limitBehavior,
+	)
+	if err != nil {
+		return nil, err
 	}
 
 	return &seriesSelection{
-		items:           page,
+		items:           outputs,
 		total:           total,
-		nextCursor:      nextCursor,
 		seriesTruncated: truncated,
 	}, nil
 }
 
+func limitOutputSeries(
+	items []*outputSeriesSpec,
+	limit int,
+	behavior vmetricsv1.QueryMetricsRequest_LimitBehavior,
+) ([]*outputSeriesSpec, bool, error) {
+	if limit < 0 {
+		limit = 0
+	}
+	if len(items) <= limit {
+		return items, false, nil
+	}
+
+	if behavior == vmetricsv1.QueryMetricsRequest_ERROR ||
+		behavior == vmetricsv1.QueryMetricsRequest_LIMIT_BEHAVIOR_UNSET {
+		return nil, false, status.Error(
+			codes.ResourceExhausted,
+			"metric query exceeds the output-series limit",
+		)
+	}
+
+	if behavior != vmetricsv1.QueryMetricsRequest_TRUNCATE {
+		return nil, false, status.Error(
+			codes.InvalidArgument,
+			"invalid limit behavior",
+		)
+	}
+
+	return items[:limit], true, nil
+}
+
 func (s *srvMetric) loadSourceSeries(ctx context.Context, query *querySpec,
-	descriptor *vmetricsv1.MetricDescriptor) ([]sourceSeries, bool, error) {
+	descriptor *vmetricsv1.MetricDescriptor) ([]sourceSeries, error) {
 	pointTable := pointTableForKind(descriptor.Kind)
 	if pointTable == "" {
-		return nil, false, status.Error(codes.InvalidArgument, "unsupported metric kind")
+		return nil, status.Error(codes.InvalidArgument, "unsupported metric kind")
 	}
 
 	where := []string{"s.descriptor_id = ?"}
@@ -252,7 +256,7 @@ LIMIT ?
 
 	rows, err := s.s.db.QueryContext(ctx, querySQL, args...)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -260,23 +264,23 @@ LIMIT ?
 	for rows.Next() {
 		var id, labelsJSON, labelsKey string
 		if err := rows.Scan(&id, &labelsJSON, &labelsKey); err != nil {
-			return nil, false, err
+			return nil, err
 		}
 		labels, err := decodeStoredAttributes(labelsJSON)
 		if err != nil {
-			return nil, false, err
+			return nil, err
 		}
 		ret = append(ret, sourceSeries{id: id, labels: labels, labelsKey: labelsKey})
 	}
 	if err := rows.Err(); err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	if len(ret) > maximumSourceSeries {
-		return nil, false, status.Error(codes.ResourceExhausted,
+		return nil, status.Error(codes.ResourceExhausted,
 			"metric query exceeds the source-series cardinality limit")
 	}
-	return ret, false, nil
+	return ret, nil
 }
 
 func appendSeriesFilterSQL(where *[]string, args *[]any, filters []*vmetricsv1.AttributeFilter) {
