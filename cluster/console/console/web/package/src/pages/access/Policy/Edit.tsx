@@ -10,6 +10,7 @@ import SelectInlinePolicies from "@/components/ResourceLayout/SelectInlinePolici
 import SelectPolicies from "@/components/ResourceLayout/SelectPolicies";
 import SelectResource from "@/components/ResourceLayout/SelectResource";
 import { strToNum } from "@/utils/convert";
+import { getResourceRef } from "@/utils/pb";
 import {
   Group,
   Input,
@@ -150,8 +151,10 @@ const ConditionEdit = (props: {
                     defaultValue={subject.subject.type.userRef.name}
                     onChange={(v) => {
                       if (subject.subject.type.oneofKind === "userRef") {
-                        subject.subject.type.userRef.name =
-                          v?.metadata?.name ?? "";
+                        v
+                          ? (subject.subject.type.userRef = getResourceRef(v))
+                          : (subject.subject.type.userRef =
+                              MetaP.ObjectReference.create());
                         onUpdate();
                       }
                     }}
@@ -166,8 +169,9 @@ const ConditionEdit = (props: {
                     defaultValue={subject.subject.type.groupRef.name}
                     onChange={(v) => {
                       if (subject.subject.type.oneofKind === "groupRef") {
-                        subject.subject.type.groupRef.name =
-                          v?.metadata?.name ?? "";
+                        subject.subject.type.groupRef = v
+                          ? getResourceRef(v)
+                          : MetaP.ObjectReference.create();
                         onUpdate();
                       }
                     }}
@@ -211,8 +215,9 @@ const ConditionEdit = (props: {
                     defaultValue={resource.resource.type.serviceRef.name}
                     onChange={(v) => {
                       if (resource.resource.type.oneofKind === "serviceRef") {
-                        resource.resource.type.serviceRef.name =
-                          v?.metadata?.name ?? "";
+                        resource.resource.type.serviceRef = v
+                          ? getResourceRef(v)
+                          : MetaP.ObjectReference.create();
                         onUpdate();
                       }
                     }}
@@ -227,8 +232,9 @@ const ConditionEdit = (props: {
                     defaultValue={resource.resource.type.catalogRef.name}
                     onChange={(v) => {
                       if (resource.resource.type.oneofKind === "catalogRef") {
-                        resource.resource.type.catalogRef.name =
-                          v?.metadata?.name ?? "";
+                        resource.resource.type.catalogRef = v
+                          ? getResourceRef(v)
+                          : MetaP.ObjectReference.create();
                         onUpdate();
                       }
                     }}
@@ -309,7 +315,9 @@ const ConditionEdit = (props: {
                 description="Matches the requester against this User"
                 defaultValue={userRef.userRef.name}
                 onChange={(v) => {
-                  userRef.userRef.name = v?.metadata?.name ?? "";
+                  userRef.userRef = v
+                    ? getResourceRef(v)
+                    : MetaP.ObjectReference.create();
                   onUpdate();
                 }}
               />
@@ -416,11 +424,9 @@ const ReviewStepEdit = (props: {
                   defaultValue={reviewer.type.user.userRef?.name}
                   onChange={(v) => {
                     if (reviewer.type.oneofKind === "user") {
-                      reviewer.type.user.userRef = MetaP.ObjectReference.create(
-                        {
-                          name: v?.metadata?.name ?? "",
-                        },
-                      );
+                      v
+                        ? (reviewer.type.user.userRef = getResourceRef(v))
+                        : (reviewer.type.user.userRef = undefined);
                       onUpdate();
                     }
                   }}
@@ -435,10 +441,9 @@ const ReviewStepEdit = (props: {
                   defaultValue={reviewer.type.group.groupRef?.name}
                   onChange={(v) => {
                     if (reviewer.type.oneofKind === "group") {
-                      reviewer.type.group.groupRef =
-                        MetaP.ObjectReference.create({
-                          name: v?.metadata?.name ?? "",
-                        });
+                      v
+                        ? (reviewer.type.group.groupRef = getResourceRef(v))
+                        : (reviewer.type.group.groupRef = undefined);
                       onUpdate();
                     }
                   }}
