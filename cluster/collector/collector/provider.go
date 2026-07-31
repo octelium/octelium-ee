@@ -13,7 +13,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 
@@ -30,10 +29,18 @@ import (
 
 type provider struct {
 	schemeName string
-	waitFn     confmap.WatcherFunc
 	octeliumC  octeliumc.ClientInterface
 	port       int
-	mu         sync.RWMutex
+
+	mu                   sync.RWMutex
+	watchers             map[uint64]*providerWatcher
+	nextWatcherID        uint64
+	updateCh             chan struct{}
+	updateStopCh         chan struct{}
+	updateDoneCh         chan struct{}
+	updateLoopGeneration uint64
+	updateLoopRunning    bool
+	updateDebounce       time.Duration
 
 	internalLogstoreEndpoint    string
 	internalMetricstoreEndpoint string
@@ -43,32 +50,8 @@ type mt = map[string]any
 
 func (c *provider) newFactory() confmap.ProviderFactory {
 	return confmap.NewProviderFactory(func(_ confmap.ProviderSettings) confmap.Provider {
-		return c
+		return newProviderInstance(c)
 	})
-}
-
-func (p *provider) Retrieve(ctx context.Context, uri string, waitFn confmap.WatcherFunc) (*confmap.Retrieved, error) {
-	if !strings.HasPrefix(uri, p.schemeName+":") {
-		return nil, fmt.Errorf("%q uri is not supported by %q provider", uri, p.schemeName)
-	}
-
-	zap.L().Debug("Retrieving provider config")
-	p.setWaitFn(waitFn)
-
-	cfg, err := p.getConfig(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return confmap.NewRetrieved(cfg)
-}
-
-func (p *provider) Scheme() string {
-	return p.schemeName
-}
-
-func (*provider) Shutdown(context.Context) error {
-	return nil
 }
 
 func (p *provider) getExporter(ctx context.Context, exp *enterprisev1.CollectorExporter) (*exporterInfo, error) {
@@ -395,13 +378,12 @@ func (p *provider) getExporter(ctx context.Context, exp *enterprisev1.CollectorE
 		}
 
 	case *enterprisev1.CollectorExporter_Spec_Kafka_:
-		ret.HasLogs = true
-		ret.HasMetrics = true
-
 		spec := exp.Spec.GetKafka()
 		if spec == nil {
 			return nil, errors.Errorf("nil Kafka exporter spec")
 		}
+
+		ret.HasLogs, ret.HasMetrics = kafkaExporterSignalCapabilities(spec)
 
 		timeout, err := durationToCollectorString(spec.Timeout)
 		if err != nil {
@@ -1047,24 +1029,73 @@ func (c *provider) getConfig(ctx context.Context) (map[string]any, error) {
 	return ret, nil
 }
 
+const (
+	internalExporterTimeout              = "10s"
+	internalExporterRetryInitialInterval = "1s"
+	internalExporterRetryMaxInterval     = "15s"
+	internalExporterRetryMaxElapsedTime  = "2m"
+	internalExporterQueueSizeBytes       = 32 << 20
+	internalExporterBatchMinSizeBytes    = 256 << 10
+	internalExporterBatchMaxSizeBytes    = 4 << 20
+	internalExporterBatchFlushTimeout    = "200ms"
+	internalExporterConsumers            = 1
+	internalExporterMaxRecvMessageMiB    = 4
+	internalLogstoreMaxSendMessageMiB    = 16
+	internalMetricstoreMaxSendMessageMiB = 8
+)
+
+func (c *provider) getInternalExporterConfig(
+	endpoint string,
+	maxSendMessageMiB int,
+) map[string]any {
+	return mt{
+		"endpoint":                   endpoint,
+		"compression":                "gzip",
+		"wait_for_ready":             true,
+		"timeout":                    internalExporterTimeout,
+		"max_call_recv_msg_size_mib": internalExporterMaxRecvMessageMiB,
+		"max_call_send_msg_size_mib": maxSendMessageMiB,
+		"sending_queue": mt{
+			"enabled":           true,
+			"num_consumers":     internalExporterConsumers,
+			"wait_for_result":   false,
+			"block_on_overflow": false,
+			"sizer":             "bytes",
+			"queue_size":        internalExporterQueueSizeBytes,
+			"batch": mt{
+				"flush_timeout": internalExporterBatchFlushTimeout,
+				"min_size":      internalExporterBatchMinSizeBytes,
+				"max_size":      internalExporterBatchMaxSizeBytes,
+				"sizer":         "bytes",
+			},
+		},
+		"retry_on_failure": mt{
+			"enabled":          true,
+			"initial_interval": internalExporterRetryInitialInterval,
+			"max_interval":     internalExporterRetryMaxInterval,
+			"max_elapsed_time": internalExporterRetryMaxElapsedTime,
+		},
+	}
+}
+
+func kafkaExporterSignalCapabilities(
+	_ *enterprisev1.CollectorExporter_Spec_Kafka,
+) (bool, bool) {
+	return true, true
+}
+
 func (c *provider) getInitConfig(ctx context.Context) (map[string]any, error) {
 
 	return mt{
 		"exporters": mt{
-			"octelium_otlp/logstore": mt{
-				"endpoint":                   c.getInternalLogstoreEndpoint(),
-				"compression":                "gzip",
-				"wait_for_ready":             true,
-				"max_call_recv_msg_size_mib": 16,
-				"max_call_send_msg_size_mib": 16,
-			},
-			"octelium_otlp/metricstore": mt{
-				"endpoint":                   c.getInternalMetricstoreEndpoint(),
-				"compression":                "gzip",
-				"wait_for_ready":             true,
-				"max_call_recv_msg_size_mib": 8,
-				"max_call_send_msg_size_mib": 8,
-			},
+			"octelium_otlp/logstore": c.getInternalExporterConfig(
+				c.getInternalLogstoreEndpoint(),
+				internalLogstoreMaxSendMessageMiB,
+			),
+			"octelium_otlp/metricstore": c.getInternalExporterConfig(
+				c.getInternalMetricstoreEndpoint(),
+				internalMetricstoreMaxSendMessageMiB,
+			),
 		},
 		"extensions": mt{},
 		"receivers": mt{
@@ -1107,23 +1138,6 @@ type exporterInfo struct {
 	HasMetrics   bool
 	exporterMap  map[string]any
 	extensionMap map[string]any
-}
-
-func (p *provider) setWaitFn(fn confmap.WatcherFunc) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	p.waitFn = fn
-}
-
-func (p *provider) sendUpdate() {
-	p.mu.RLock()
-	fn := p.waitFn
-	p.mu.RUnlock()
-
-	if fn != nil {
-		zap.L().Debug("Config provider sending update...")
-		fn(&confmap.ChangeEvent{})
-	}
 }
 
 func (p *provider) getInternalLogstoreEndpoint() string {

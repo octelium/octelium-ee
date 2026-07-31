@@ -379,29 +379,39 @@ func exportTestMetric(ctx context.Context, port int) error {
 	return err
 }
 
-func requireEventuallyExportLog(ctx context.Context, t *testing.T, port int) {
+func requireEventuallyExportLogToSink(
+	ctx context.Context,
+	t *testing.T,
+	port int,
+	sink *otlpSink,
+) {
 	t.Helper()
 
 	require.Eventually(t, func() bool {
-		err := exportTestLog(ctx, port)
-		if err != nil {
+		if err := exportTestLog(ctx, port); err != nil {
 			zap.L().Debug("Could not export test log yet", zap.Error(err))
 			return false
 		}
-		return true
+
+		return sink.logRecordCount() >= 1
 	}, 15*time.Second, 200*time.Millisecond)
 }
 
-func requireEventuallyExportMetric(ctx context.Context, t *testing.T, port int) {
+func requireEventuallyExportMetricToSink(
+	ctx context.Context,
+	t *testing.T,
+	port int,
+	sink *otlpSink,
+) {
 	t.Helper()
 
 	require.Eventually(t, func() bool {
-		err := exportTestMetric(ctx, port)
-		if err != nil {
+		if err := exportTestMetric(ctx, port); err != nil {
 			zap.L().Debug("Could not export test metric yet", zap.Error(err))
 			return false
 		}
-		return true
+
+		return sink.metricPointCount() >= 1
 	}, 15*time.Second, 200*time.Millisecond)
 }
 
@@ -500,16 +510,8 @@ func TestServerExportsLogsAndMetricsThroughSameReceiver(t *testing.T) {
 
 	srv.p.sendUpdate()
 
-	requireEventuallyExportLog(ctx, t, srv.p.port)
-	requireEventuallyExportMetric(ctx, t, srv.p.port)
-
-	require.Eventually(t, func() bool {
-		return sink.logRecordCount() >= 1
-	}, 15*time.Second, 200*time.Millisecond)
-
-	require.Eventually(t, func() bool {
-		return sink.metricPointCount() >= 1
-	}, 15*time.Second, 200*time.Millisecond)
+	requireEventuallyExportLogToSink(ctx, t, srv.p.port, sink)
+	requireEventuallyExportMetricToSink(ctx, t, srv.p.port, sink)
 
 	assert.Equal(t, basicAuthHeader(username, password), sink.logAuthHeader())
 	assert.Equal(t, basicAuthHeader(username, password), sink.metricAuthHeader())
@@ -568,10 +570,7 @@ func TestServerReloadRoutesToUpdatedExporter(t *testing.T) {
 
 	srv.p.sendUpdate()
 
-	requireEventuallyExportLog(ctx, t, srv.p.port)
-	require.Eventually(t, func() bool {
-		return sinkA.logRecordCount() >= 1
-	}, 15*time.Second, 200*time.Millisecond)
+	requireEventuallyExportLogToSink(ctx, t, srv.p.port, sinkA)
 
 	sinkABefore := sinkA.logRecordCount()
 
