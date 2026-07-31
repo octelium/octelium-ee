@@ -5,6 +5,7 @@ import * as React from "react";
 import DurationPicker from "@/components/DurationPicker";
 import EditItem from "@/components/EditItem";
 import SelectResource from "@/components/ResourceLayout/SelectResource";
+import { getResourceRef } from "@/utils/pb";
 import { Group, Select, Textarea } from "@mantine/core";
 import { match } from "ts-pattern";
 
@@ -151,8 +152,9 @@ const Edit = (props: {
                 defaultValue={req.spec!.resource.type.serviceRef.name}
                 onChange={(v) => {
                   if (req.spec!.resource!.type.oneofKind === "serviceRef") {
-                    req.spec!.resource!.type.serviceRef.name =
-                      v?.metadata?.name ?? "";
+                    req.spec!.resource!.type.serviceRef = v
+                      ? getResourceRef(v)
+                      : MetaP.ObjectReference.create();
                     updateReq();
                   }
                 }}
@@ -168,10 +170,9 @@ const Edit = (props: {
                 defaultValue={req.spec!.resource.type.catalog.catalogRef?.name}
                 onChange={(v) => {
                   if (req.spec!.resource!.type.oneofKind === "catalog") {
-                    req.spec!.resource!.type.catalog.catalogRef =
-                      MetaP.ObjectReference.create({
-                        name: v?.metadata?.name ?? "",
-                      });
+                    req.spec!.resource!.type.catalog.catalogRef = v
+                      ? getResourceRef(v)
+                      : MetaP.ObjectReference.create();
                     updateReq();
                   }
                 }}
@@ -209,8 +210,9 @@ const Edit = (props: {
               defaultValue={req.spec!.subject.type.userRef.name}
               onChange={(v) => {
                 if (req.spec!.subject!.type.oneofKind === "userRef") {
-                  req.spec!.subject!.type.userRef.name =
-                    v?.metadata?.name ?? "";
+                  req.spec!.subject!.type.userRef = v
+                    ? getResourceRef(v)
+                    : MetaP.ObjectReference.create();
                   updateReq();
                 }
               }}
