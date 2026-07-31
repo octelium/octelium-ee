@@ -11,238 +11,688 @@ package keycloak
 import (
 	"context"
 	"crypto/tls"
-	"encoding/json"
+	stderrors "errors"
 	"fmt"
-	"io"
+	"net"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/dirsync/dirsync/syncprovider"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 )
 
-const pageSize = 100
-const maxResponseBytes = 64 << 20
+const (
+	pageSize = 100
+
+	requestTimeout         = 30 * time.Second
+	dialTimeout            = 10 * time.Second
+	tlsHandshakeTimeout    = 10 * time.Second
+	responseHeaderTimeout  = 30 * time.Second
+	idleConnTimeout        = 90 * time.Second
+	expectContinueTimeout  = time.Second
+	retryCount             = 4
+	retryWaitTime          = 500 * time.Millisecond
+	retryMaxWaitTime       = 10 * time.Second
+	maxResponseBytes       = 16 << 20
+	maxTokenResponseBytes  = 1 << 20
+	maxErrorResponseBytes  = 4 << 10
+	maxPaginationPages     = 100000
+	maxUsers               = 1000000
+	maxGroups              = 100000
+	maxGroupMembers        = 1000000
+	maxGroupDepth          = 64
+	groupMemberWorkerCount = 8
+)
 
 type Provider struct {
 	octeliumC octeliumc.ClientInterface
 	dp        *enterprisev1.DirectoryProvider
-	hc        *http.Client
+
+	client    *resty.Client
+	transport *http.Transport
 	baseURL   string
 	realm     string
 	tokenSrc  *tokenSource
+
+	closeOnce sync.Once
 }
 
-func NewProvider(ctx context.Context,
+func NewProvider(
+	ctx context.Context,
 	octeliumC octeliumc.ClientInterface,
-	dp *enterprisev1.DirectoryProvider) (*Provider, error) {
+	dp *enterprisev1.DirectoryProvider,
+) (*Provider, error) {
+	if octeliumC == nil {
+		return nil, errors.Errorf("Nil Octelium client")
+	}
+	if dp == nil || dp.Spec == nil {
+		return nil, errors.Errorf("Nil DirectoryProvider")
+	}
 
 	spec := dp.Spec.GetKeycloak()
 	if spec == nil {
 		return nil, errors.Errorf("DirectoryProvider is not of type Keycloak")
 	}
-	if spec.GetUrl() == "" || spec.GetRealm() == "" || spec.GetClientID() == "" {
-		return nil, errors.Errorf("Keycloak requires url, realm and clientID")
-	}
 
-	clientSecret, err := syncprovider.GetSecretValue(ctx, octeliumC, spec.GetClientSecret().GetFromSecret())
+	baseURL, err := normalizeBaseURL(spec.GetUrl())
 	if err != nil {
 		return nil, err
 	}
 
-	baseURL := strings.TrimRight(spec.GetUrl(), "/")
-	realm := spec.GetRealm()
+	realm := strings.TrimSpace(spec.GetRealm())
+	clientID := strings.TrimSpace(spec.GetClientID())
+	if realm == "" {
+		return nil, errors.Errorf("Keycloak requires realm")
+	}
+	if clientID == "" {
+		return nil, errors.Errorf("Keycloak requires clientID")
+	}
 
-	hc := &http.Client{
-		Timeout: 60 * time.Second,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: spec.GetInsecureSkipVerify(),
-			},
-		},
+	clientSecret, err := syncprovider.GetSecretValue(
+		ctx,
+		octeliumC,
+		spec.GetClientSecret().GetFromSecret(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	if clientSecret == "" {
+		return nil, errors.Errorf("Keycloak client Secret is empty")
+	}
+
+	parsedURL, err := url.Parse(baseURL)
+	if err != nil {
+		return nil, err
+	}
+
+	if spec.GetInsecureSkipVerify() {
+		zap.L().Warn("Keycloak TLS certificate verification is disabled",
+			zap.String("directoryProvider", dp.GetMetadata().GetName()),
+			zap.String("host", parsedURL.Host),
+		)
+	}
+
+	transport := newTransport(spec.GetInsecureSkipVerify())
+	client := newRestyClient(transport, parsedURL.Hostname())
+
+	tokenSrc := &tokenSource{
+		client:       client,
+		tokenURL:     fmt.Sprintf("%s/realms/%s/protocol/openid-connect/token", baseURL, url.PathEscape(realm)),
+		clientID:     clientID,
+		clientSecret: clientSecret,
 	}
 
 	return &Provider{
 		octeliumC: octeliumC,
 		dp:        dp,
-		hc:        hc,
+		client:    client,
+		transport: transport,
 		baseURL:   baseURL,
 		realm:     realm,
-		tokenSrc: &tokenSource{
-			hc:           hc,
-			tokenURL:     fmt.Sprintf("%s/realms/%s/protocol/openid-connect/token", baseURL, realm),
-			clientID:     spec.GetClientID(),
-			clientSecret: clientSecret,
-		},
+		tokenSrc:  tokenSrc,
 	}, nil
 }
 
+func normalizeBaseURL(value string) (string, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return "", errors.Errorf("Keycloak requires url")
+	}
+
+	parsed, err := url.Parse(value)
+	if err != nil {
+		return "", errors.Wrap(err, "Could not parse Keycloak URL")
+	}
+
+	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+		return "", errors.Errorf("Keycloak URL scheme must be http or https")
+	}
+	if parsed.Host == "" {
+		return "", errors.Errorf("Keycloak URL has no host")
+	}
+	if parsed.User != nil {
+		return "", errors.Errorf("Keycloak URL must not contain user information")
+	}
+	if parsed.RawQuery != "" || parsed.Fragment != "" {
+		return "", errors.Errorf("Keycloak URL must not contain a query or fragment")
+	}
+
+	parsed.Path = strings.TrimRight(parsed.Path, "/")
+	return parsed.String(), nil
+}
+
+func newTransport(insecureSkipVerify bool) *http.Transport {
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.Proxy = http.ProxyFromEnvironment
+	transport.DialContext = (&net.Dialer{
+		Timeout:   dialTimeout,
+		KeepAlive: 30 * time.Second,
+	}).DialContext
+	transport.ForceAttemptHTTP2 = true
+	transport.MaxIdleConns = 32
+	transport.MaxIdleConnsPerHost = 16
+	transport.MaxConnsPerHost = 32
+	transport.IdleConnTimeout = idleConnTimeout
+	transport.TLSHandshakeTimeout = tlsHandshakeTimeout
+	transport.ResponseHeaderTimeout = responseHeaderTimeout
+	transport.ExpectContinueTimeout = expectContinueTimeout
+	transport.TLSClientConfig = &tls.Config{
+		MinVersion:         tls.VersionTLS12,
+		InsecureSkipVerify: insecureSkipVerify,
+	}
+
+	return transport
+}
+
+func newRestyClient(transport *http.Transport, hostname string) *resty.Client {
+	client := resty.New().
+		SetTransport(transport).
+		SetTimeout(requestTimeout).
+		SetHeader("Accept", "application/json").
+		SetResponseBodyLimit(maxResponseBytes).
+		SetRetryCount(retryCount).
+		SetRetryWaitTime(retryWaitTime).
+		SetRetryMaxWaitTime(retryMaxWaitTime).
+		SetRetryAfter(keycloakRetryAfter)
+
+	if hostname != "" {
+		client.SetRedirectPolicy(resty.DomainCheckRedirectPolicy(hostname))
+	}
+
+	client.AddRetryCondition(func(resp *resty.Response, err error) bool {
+		if err != nil {
+			if stderrors.Is(err, context.Canceled) ||
+				stderrors.Is(err, context.DeadlineExceeded) {
+				return false
+			}
+			if resp != nil &&
+				resp.Request != nil &&
+				resp.Request.Context() != nil &&
+				resp.Request.Context().Err() != nil {
+				return false
+			}
+			return true
+		}
+		if resp == nil {
+			return false
+		}
+
+		switch resp.StatusCode() {
+		case http.StatusRequestTimeout,
+			http.StatusTooEarly,
+			http.StatusTooManyRequests,
+			http.StatusInternalServerError,
+			http.StatusBadGateway,
+			http.StatusServiceUnavailable,
+			http.StatusGatewayTimeout:
+			return true
+		default:
+			return false
+		}
+	})
+
+	return client
+}
+
+func keycloakRetryAfter(_ *resty.Client, resp *resty.Response) (time.Duration, error) {
+	if resp == nil {
+		return 0, nil
+	}
+
+	value := strings.TrimSpace(resp.Header().Get("Retry-After"))
+	if value == "" {
+		return 0, nil
+	}
+
+	if seconds, err := strconv.ParseInt(value, 10, 64); err == nil {
+		if seconds <= 0 {
+			return 0, nil
+		}
+
+		delay := time.Duration(seconds) * time.Second
+		if delay > retryMaxWaitTime {
+			delay = retryMaxWaitTime
+		}
+		return delay, nil
+	}
+
+	retryAt, err := http.ParseTime(value)
+	if err != nil {
+		return 0, nil
+	}
+
+	delay := time.Until(retryAt)
+	if delay <= 0 {
+		return 0, nil
+	}
+	if delay > retryMaxWaitTime {
+		delay = retryMaxWaitTime
+	}
+
+	return delay, nil
+}
+
 func (p *Provider) Synchronize(ctx context.Context) error {
+	defer p.Close()
+
 	return syncprovider.NewReconciler(p.octeliumC, p.dp).Sync(ctx, p)
 }
 
-func (p *Provider) ListUsers(ctx context.Context) ([]*syncprovider.User, error) {
-	var ret []*syncprovider.User
-	first := 0
-	for {
-		q := url.Values{}
-		q.Set("first", strconv.Itoa(first))
-		q.Set("max", strconv.Itoa(pageSize))
-
-		var batch []kcUser
-		if err := p.doGET(ctx, fmt.Sprintf("/admin/realms/%s/users", p.realm), q, &batch); err != nil {
-			return nil, err
-		}
-
-		for i := range batch {
-			u := batch[i]
-			if u.ID == "" {
-				continue
-			}
-			ret = append(ret, &syncprovider.User{
-				ExternalID:  u.ID,
-				Email:       u.Email,
-				DisplayName: userDisplayName(u),
-				FirstName:   u.FirstName,
-				LastName:    u.LastName,
-				IsDisabled:  !u.Enabled,
-			})
-		}
-
-		if len(batch) < pageSize {
-			break
-		}
-		first += len(batch)
+func (p *Provider) Close() {
+	if p == nil {
+		return
 	}
-	return ret, nil
+
+	p.closeOnce.Do(func() {
+		if p.transport != nil {
+			p.transport.CloseIdleConnections()
+		}
+	})
 }
 
-func (p *Provider) ListGroups(ctx context.Context) ([]*syncprovider.Group, error) {
-	top, err := p.listTopGroups(ctx)
+func (p *Provider) ListUsers(ctx context.Context) ([]*syncprovider.User, error) {
+	users, err := p.listUsers(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	var flat []kcGroup
-	if err := p.flattenGroups(ctx, top, &flat); err != nil {
-		return nil, err
+	ret := make([]*syncprovider.User, 0, len(users))
+	for _, user := range users {
+		ret = append(ret, &syncprovider.User{
+			ExternalID:  user.ID,
+			Email:       user.Email,
+			DisplayName: userDisplayName(user),
+			FirstName:   user.FirstName,
+			LastName:    user.LastName,
+			IsDisabled:  !user.Enabled,
+		})
 	}
 
-	var ret []*syncprovider.Group
-	for _, g := range flat {
-		if g.ID == "" {
-			continue
-		}
-		members, err := p.listGroupMembers(ctx, g.ID)
+	return ret, nil
+}
+
+func (p *Provider) listUsers(ctx context.Context) ([]kcUser, error) {
+	ret := make([]kcUser, 0)
+	seen := make(map[string]struct{})
+	first := 0
+
+	for page := 0; page < maxPaginationPages; page++ {
+		var batch []kcUser
+		err := p.doGET(
+			ctx,
+			fmt.Sprintf("/admin/realms/%s/users", url.PathEscape(p.realm)),
+			url.Values{
+				"first":               []string{strconv.Itoa(first)},
+				"max":                 []string{strconv.Itoa(pageSize)},
+				"briefRepresentation": []string{"true"},
+			},
+			&batch,
+		)
 		if err != nil {
 			return nil, err
 		}
-		ret = append(ret, &syncprovider.Group{
-			ExternalID:        g.ID,
-			DisplayName:       groupDisplayName(g),
-			MemberExternalIDs: members,
+
+		if len(batch) == 0 {
+			sort.Slice(ret, func(i, j int) bool {
+				return ret[i].ID < ret[j].ID
+			})
+			return ret, nil
+		}
+
+		added := 0
+		for _, user := range batch {
+			if user.ID == "" {
+				return nil, errors.Errorf("Keycloak users page at offset %d contains a User with no ID", first)
+			}
+			if _, ok := seen[user.ID]; ok {
+				continue
+			}
+
+			seen[user.ID] = struct{}{}
+			ret = append(ret, user)
+			added++
+		}
+
+		if added == 0 {
+			return nil, errors.Errorf("Keycloak users pagination did not advance at offset %d", first)
+		}
+		if len(ret) > maxUsers {
+			return nil, errors.Errorf("Keycloak returned more than %d Users", maxUsers)
+		}
+
+		first += len(batch)
+	}
+
+	return nil, errors.Errorf("Keycloak users pagination exceeded %d pages", maxPaginationPages)
+}
+
+func (p *Provider) ListGroups(ctx context.Context) ([]*syncprovider.Group, error) {
+	groups, err := p.listAllGroups(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*syncprovider.Group, len(groups))
+
+	memberCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	jobs := make(chan int)
+	var wg sync.WaitGroup
+	var errOnce sync.Once
+	var workerErr error
+
+	workerCount := groupMemberWorkerCount
+	if len(groups) < workerCount {
+		workerCount = len(groups)
+	}
+
+	for idx := 0; idx < workerCount; idx++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			for groupIdx := range jobs {
+				if memberCtx.Err() != nil {
+					return
+				}
+
+				group := groups[groupIdx]
+				members, err := p.listGroupMembers(memberCtx, group.ID)
+				if err != nil {
+					errOnce.Do(func() {
+						workerErr = err
+						cancel()
+					})
+					return
+				}
+
+				ret[groupIdx] = &syncprovider.Group{
+					ExternalID:        group.ID,
+					DisplayName:       groupDisplayName(group),
+					MemberExternalIDs: members,
+				}
+			}
+		}()
+	}
+
+sendLoop:
+	for idx := range groups {
+		select {
+		case jobs <- idx:
+		case <-memberCtx.Done():
+			break sendLoop
+		}
+	}
+	close(jobs)
+	wg.Wait()
+
+	if workerErr != nil {
+		return nil, workerErr
+	}
+	if err := memberCtx.Err(); err != nil && !stderrors.Is(err, context.Canceled) {
+		return nil, err
+	}
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+
+	return ret, nil
+}
+
+type groupQueueItem struct {
+	group kcGroup
+	depth int
+}
+
+func (p *Provider) listAllGroups(ctx context.Context) ([]kcGroup, error) {
+	topGroups, err := p.listTopGroups(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	queue := make([]groupQueueItem, 0, len(topGroups))
+	for _, group := range topGroups {
+		queue = append(queue, groupQueueItem{
+			group: group,
+			depth: 0,
 		})
 	}
+
+	ret := make([]kcGroup, 0, len(topGroups))
+	seen := make(map[string]struct{})
+
+	for len(queue) > 0 {
+		item := queue[0]
+		queue = queue[1:]
+
+		group := item.group
+		if group.ID == "" {
+			return nil, errors.Errorf("Keycloak returned a Group with no ID")
+		}
+		if _, ok := seen[group.ID]; ok {
+			return nil, errors.Errorf("Keycloak Group hierarchy contains duplicate or cyclic Group ID: %s", group.ID)
+		}
+
+		seen[group.ID] = struct{}{}
+		ret = append(ret, group)
+
+		if len(ret) > maxGroups {
+			return nil, errors.Errorf("Keycloak returned more than %d Groups", maxGroups)
+		}
+
+		hasChildren := group.SubGroupCount > 0 || len(group.SubGroups) > 0
+		if !hasChildren {
+			continue
+		}
+		if item.depth >= maxGroupDepth {
+			return nil, errors.Errorf("Keycloak Group hierarchy exceeds maximum depth %d at Group %s", maxGroupDepth, group.ID)
+		}
+
+		var children []kcGroup
+		if group.SubGroupCount > 0 {
+			children, err = p.listChildGroups(ctx, group.ID)
+			if err != nil {
+				return nil, err
+			}
+			if len(children) == 0 {
+				return nil, errors.Errorf(
+					"Keycloak Group %s reports child Groups but returned none",
+					group.ID,
+				)
+			}
+		} else {
+			children = append(children, group.SubGroups...)
+		}
+
+		for _, child := range children {
+			queue = append(queue, groupQueueItem{
+				group: child,
+				depth: item.depth + 1,
+			})
+		}
+	}
+
+	sort.Slice(ret, func(i, j int) bool {
+		return ret[i].ID < ret[j].ID
+	})
+
 	return ret, nil
 }
 
 func (p *Provider) listTopGroups(ctx context.Context) ([]kcGroup, error) {
-	var ret []kcGroup
-	first := 0
-	for {
-		q := url.Values{}
-		q.Set("first", strconv.Itoa(first))
-		q.Set("max", strconv.Itoa(pageSize))
-		q.Set("briefRepresentation", "false")
-
-		var batch []kcGroup
-		if err := p.doGET(ctx, fmt.Sprintf("/admin/realms/%s/groups", p.realm), q, &batch); err != nil {
-			return nil, err
-		}
-		ret = append(ret, batch...)
-		if len(batch) < pageSize {
-			break
-		}
-		first += len(batch)
-	}
-	return ret, nil
+	return p.listGroupsPageByPage(
+		ctx,
+		fmt.Sprintf("/admin/realms/%s/groups", url.PathEscape(p.realm)),
+		url.Values{
+			"briefRepresentation": []string{"false"},
+			"populateHierarchy":   []string{"false"},
+			"subGroupsCount":      []string{"true"},
+		},
+	)
 }
 
 func (p *Provider) listChildGroups(ctx context.Context, groupID string) ([]kcGroup, error) {
-	var ret []kcGroup
-	first := 0
-	for {
-		q := url.Values{}
-		q.Set("first", strconv.Itoa(first))
-		q.Set("max", strconv.Itoa(pageSize))
-		q.Set("briefRepresentation", "false")
-
-		var batch []kcGroup
-		if err := p.doGET(ctx, fmt.Sprintf("/admin/realms/%s/groups/%s/children", p.realm, groupID), q, &batch); err != nil {
-			return nil, err
-		}
-		ret = append(ret, batch...)
-		if len(batch) < pageSize {
-			break
-		}
-		first += len(batch)
-	}
-	return ret, nil
+	return p.listGroupsPageByPage(
+		ctx,
+		fmt.Sprintf(
+			"/admin/realms/%s/groups/%s/children",
+			url.PathEscape(p.realm),
+			url.PathEscape(groupID),
+		),
+		url.Values{
+			"briefRepresentation": []string{"false"},
+			"subGroupsCount":      []string{"true"},
+		},
+	)
 }
 
-func (p *Provider) flattenGroups(ctx context.Context, groups []kcGroup, out *[]kcGroup) error {
-	for _, g := range groups {
-		if g.ID == "" {
-			continue
-		}
-		*out = append(*out, g)
+func (p *Provider) listGroupsPageByPage(ctx context.Context, path string, baseQuery url.Values) ([]kcGroup, error) {
+	ret := make([]kcGroup, 0)
+	seen := make(map[string]struct{})
+	first := 0
 
-		children := g.SubGroups
-		if len(children) == 0 && g.SubGroupCount > 0 {
-			c, err := p.listChildGroups(ctx, g.ID)
-			if err != nil {
-				return err
-			}
-			children = c
+	for page := 0; page < maxPaginationPages; page++ {
+		query := cloneValues(baseQuery)
+		query.Set("first", strconv.Itoa(first))
+		query.Set("max", strconv.Itoa(pageSize))
+
+		var batch []kcGroup
+		if err := p.doGET(ctx, path, query, &batch); err != nil {
+			return nil, err
 		}
-		if len(children) > 0 {
-			if err := p.flattenGroups(ctx, children, out); err != nil {
-				return err
-			}
+
+		if len(batch) == 0 {
+			return ret, nil
 		}
+
+		added := 0
+		for _, group := range batch {
+			if group.ID == "" {
+				return nil, errors.Errorf(
+					"Keycloak Groups page at offset %d contains a Group with no ID",
+					first,
+				)
+			}
+			if _, ok := seen[group.ID]; ok {
+				continue
+			}
+
+			seen[group.ID] = struct{}{}
+			ret = append(ret, group)
+			added++
+		}
+
+		if added == 0 {
+			return nil, errors.Errorf(
+				"Keycloak Groups pagination did not advance at offset %d",
+				first,
+			)
+		}
+		if len(ret) > maxGroups {
+			return nil, errors.Errorf(
+				"Keycloak returned more than %d Groups in one hierarchy level",
+				maxGroups,
+			)
+		}
+
+		first += len(batch)
 	}
-	return nil
+
+	return nil, errors.Errorf(
+		"Keycloak Groups pagination exceeded %d pages",
+		maxPaginationPages,
+	)
 }
 
 func (p *Provider) listGroupMembers(ctx context.Context, groupID string) ([]string, error) {
-	var ret []string
+	ret := make([]string, 0)
+	seen := make(map[string]struct{})
 	first := 0
-	for {
-		q := url.Values{}
-		q.Set("first", strconv.Itoa(first))
-		q.Set("max", strconv.Itoa(pageSize))
+	path := fmt.Sprintf(
+		"/admin/realms/%s/groups/%s/members",
+		url.PathEscape(p.realm),
+		url.PathEscape(groupID),
+	)
 
+	for page := 0; page < maxPaginationPages; page++ {
 		var batch []kcMember
-		if err := p.doGET(ctx, fmt.Sprintf("/admin/realms/%s/groups/%s/members", p.realm, groupID), q, &batch); err != nil {
+		if err := p.doGET(ctx, path, url.Values{
+			"first":               []string{strconv.Itoa(first)},
+			"max":                 []string{strconv.Itoa(pageSize)},
+			"briefRepresentation": []string{"true"},
+		}, &batch); err != nil {
 			return nil, err
 		}
-		for _, m := range batch {
-			if m.ID != "" {
-				ret = append(ret, m.ID)
+
+		if len(batch) == 0 {
+			sort.Strings(ret)
+			return ret, nil
+		}
+
+		added := 0
+		for _, member := range batch {
+			if member.ID == "" {
+				return nil, errors.Errorf(
+					"Keycloak Group %s members page at offset %d contains a User with no ID",
+					groupID,
+					first,
+				)
 			}
+			if _, ok := seen[member.ID]; ok {
+				continue
+			}
+
+			seen[member.ID] = struct{}{}
+			ret = append(ret, member.ID)
+			added++
 		}
-		if len(batch) < pageSize {
-			break
+
+		if added == 0 {
+			return nil, errors.Errorf(
+				"Keycloak Group %s member pagination did not advance at offset %d",
+				groupID,
+				first,
+			)
 		}
+		if len(ret) > maxGroupMembers {
+			return nil, errors.Errorf(
+				"Keycloak Group %s has more than %d members",
+				groupID,
+				maxGroupMembers,
+			)
+		}
+
 		first += len(batch)
 	}
-	return ret, nil
+
+	return nil, errors.Errorf(
+		"Keycloak Group %s member pagination exceeded %d pages",
+		groupID,
+		maxPaginationPages,
+	)
+}
+
+func cloneValues(in url.Values) url.Values {
+	if in == nil {
+		return url.Values{}
+	}
+
+	ret := make(url.Values, len(in))
+	for key, values := range in {
+		ret[key] = append([]string(nil), values...)
+	}
+
+	return ret
 }
 
 func (p *Provider) doGET(ctx context.Context, path string, query url.Values, out any) error {
@@ -251,99 +701,189 @@ func (p *Provider) doGET(ctx context.Context, path string, query url.Values, out
 		return err
 	}
 
-	u := fmt.Sprintf("%s%s", p.baseURL, path)
-	if len(query) > 0 {
-		u = fmt.Sprintf("%s?%s", u, query.Encode())
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	resp, err := p.executeGET(ctx, path, query, token, out)
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-	req.Header.Set("Accept", "application/json")
 
-	resp, err := p.hc.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
+	if resp.StatusCode() == http.StatusUnauthorized {
+		p.tokenSrc.invalidate(token)
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes))
+		token, err = p.tokenSrc.get(ctx)
+		if err != nil {
+			return err
+		}
+
+		resp, err = p.executeGET(ctx, path, query, token, out)
+		if err != nil {
+			return err
+		}
+	}
+
+	if !resp.IsSuccess() {
+		return keycloakResponseError(http.MethodGet, path, resp)
+	}
+
+	return nil
+}
+
+func (p *Provider) executeGET(ctx context.Context, path string, query url.Values, token string, out any) (*resty.Response, error) {
+	req := p.client.R().
+		SetContext(ctx).
+		SetAuthToken(token).
+		SetQueryParamsFromValues(query).
+		SetResponseBodyLimit(maxResponseBytes)
+
+	if out != nil {
+		req.SetResult(out)
+	}
+
+	resp, err := req.Get(p.baseURL + path)
 	if err != nil {
-		return err
+		return resp, errors.Wrapf(err, "Could not execute Keycloak GET %s", path)
 	}
-	if resp.StatusCode != http.StatusOK {
-		return errors.Errorf("Keycloak GET %s returned %d: %s", path, resp.StatusCode, string(body))
+
+	return resp, nil
+}
+
+func keycloakResponseError(method string, path string, resp *resty.Response) error {
+	if resp == nil {
+		return errors.Errorf("Keycloak %s %s returned no response", method, path)
 	}
-	if out == nil {
-		return nil
+
+	detail := responseBodySnippet(resp.Body())
+	if detail == "" {
+		return errors.Errorf(
+			"Keycloak %s %s returned HTTP %d",
+			method,
+			path,
+			resp.StatusCode(),
+		)
 	}
-	return json.Unmarshal(body, out)
+
+	return errors.Errorf(
+		"Keycloak %s %s returned HTTP %d: %s",
+		method,
+		path,
+		resp.StatusCode(),
+		detail,
+	)
+}
+
+func responseBodySnippet(body []byte) string {
+	if len(body) == 0 {
+		return ""
+	}
+
+	truncated := len(body) > maxErrorResponseBytes
+	if truncated {
+		body = body[:maxErrorResponseBytes]
+	}
+
+	value := strings.Join(strings.Fields(string(body)), " ")
+	if truncated {
+		value += "..."
+	}
+
+	return value
 }
 
 type tokenSource struct {
-	hc           *http.Client
+	client       *resty.Client
 	tokenURL     string
 	clientID     string
 	clientSecret string
 
-	mu        sync.Mutex
+	mu        sync.RWMutex
+	refreshMu sync.Mutex
 	token     string
 	expiresAt time.Time
 }
 
 func (t *tokenSource) get(ctx context.Context) (string, error) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	if t.token != "" && time.Now().Before(t.expiresAt.Add(-10*time.Second)) {
-		return t.token, nil
+	if token := t.cachedToken(); token != "" {
+		return token, nil
 	}
 
-	form := url.Values{}
-	form.Set("grant_type", "client_credentials")
-	form.Set("client_id", t.clientID)
-	form.Set("client_secret", t.clientSecret)
+	t.refreshMu.Lock()
+	defer t.refreshMu.Unlock()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, t.tokenURL, strings.NewReader(form.Encode()))
+	if token := t.cachedToken(); token != "" {
+		return token, nil
+	}
+
+	return t.refresh(ctx)
+}
+
+func (t *tokenSource) cachedToken() string {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	if t.token == "" || !time.Now().Before(t.expiresAt) {
+		return ""
+	}
+
+	return t.token
+}
+
+func (t *tokenSource) refresh(ctx context.Context) (string, error) {
+	result := &tokenResponse{}
+
+	resp, err := t.client.R().
+		SetContext(ctx).
+		SetHeader("Accept", "application/json").
+		SetFormData(map[string]string{
+			"grant_type":    "client_credentials",
+			"client_id":     t.clientID,
+			"client_secret": t.clientSecret,
+		}).
+		SetResult(result).
+		SetResponseBodyLimit(maxTokenResponseBytes).
+		Post(t.tokenURL)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "Could not request Keycloak access token")
 	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := t.hc.Do(req)
-	if err != nil {
-		return "", err
+	if !resp.IsSuccess() {
+		return "", keycloakResponseError(http.MethodPost, "token endpoint", resp)
 	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return "", err
-	}
-	if resp.StatusCode != http.StatusOK {
-		return "", errors.Errorf("Keycloak token endpoint returned %d: %s", resp.StatusCode, string(body))
-	}
-
-	var tr tokenResponse
-	if err := json.Unmarshal(body, &tr); err != nil {
-		return "", err
-	}
-	if tr.AccessToken == "" {
+	if result.AccessToken == "" {
 		return "", errors.Errorf("Keycloak token endpoint returned an empty access token")
 	}
 
-	ttl := time.Duration(tr.ExpiresIn) * time.Second
+	ttl := time.Duration(result.ExpiresIn) * time.Second
 	if ttl <= 0 {
 		ttl = 60 * time.Second
 	}
 
-	t.token = tr.AccessToken
-	t.expiresAt = time.Now().Add(ttl)
+	skew := ttl / 10
+	if skew < time.Second {
+		skew = time.Second
+	}
+	if skew > 30*time.Second {
+		skew = 30 * time.Second
+	}
+	if skew >= ttl {
+		skew = ttl / 2
+	}
 
-	return t.token, nil
+	t.mu.Lock()
+	t.token = result.AccessToken
+	t.expiresAt = time.Now().Add(ttl - skew)
+	t.mu.Unlock()
+
+	return result.AccessToken, nil
+}
+
+func (t *tokenSource) invalidate(token string) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	if token != "" && t.token != token {
+		return
+	}
+
+	t.token = ""
+	t.expiresAt = time.Time{}
 }
 
 type tokenResponse struct {
@@ -372,19 +912,23 @@ type kcMember struct {
 	ID string `json:"id,omitempty"`
 }
 
-func userDisplayName(u kcUser) string {
-	if name := strings.TrimSpace(fmt.Sprintf("%s %s", u.FirstName, u.LastName)); name != "" {
+func userDisplayName(user kcUser) string {
+	if name := strings.TrimSpace(
+		fmt.Sprintf("%s %s", user.FirstName, user.LastName),
+	); name != "" {
 		return name
 	}
-	if u.Username != "" {
-		return u.Username
+	if user.Username != "" {
+		return user.Username
 	}
-	return u.Email
+
+	return user.Email
 }
 
-func groupDisplayName(g kcGroup) string {
-	if g.Name != "" {
-		return g.Name
+func groupDisplayName(group kcGroup) string {
+	if group.Name != "" {
+		return group.Name
 	}
-	return g.Path
+
+	return group.Path
 }
