@@ -25,6 +25,7 @@ import { Shield } from "lucide-react";
 import { BsFillTerminalFill } from "react-icons/bs";
 import { IoBrowsers } from "react-icons/io5";
 import { useSearchParams } from "react-router-dom";
+import { SessionCompactSecurityInfo } from "./Info";
 
 export const getType = (svc: Session) => {
   return match(svc.status?.type)
@@ -76,6 +77,7 @@ export const LabelComponent = (props: { item: Session }) => {
 
   return (
     <ResourceListLabelWrap>
+      <SessionCompactSecurityInfo item={item} />
       {item.spec?.expiresAt && (
         <ResourceListLabel>
           <span className="mr-1">

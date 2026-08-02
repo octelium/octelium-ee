@@ -14,6 +14,7 @@ import { Select } from "@mantine/core";
 import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
 import { getType } from "./List";
+import { SessionOperationalDetails } from "./Info";
 
 export const ItemInfo = (props: { item: CoreC.Session }) => {
   let { item } = props;
@@ -269,7 +270,6 @@ const SessionExpirationControl = (props: { item: CoreC.Session }) => {
 
 export const MainInfo = (props: { item: CoreC.Session }): ResourceMainInfo => {
   const { item } = props;
-  const downstream = item.status?.authentication?.info?.downstream;
 
   return {
     items: [
@@ -323,58 +323,11 @@ export const MainInfo = (props: { item: CoreC.Session }): ResourceMainInfo => {
         value: <SessionExpirationControl item={item} />,
       },
 
-      ...(item.status?.authentication?.setAt
-        ? [
-            {
-              label: "Last auth",
-              value: (
-                <span className="text-[0.75rem] font-semibold text-slate-600">
-                  <TimeAgo rfc3339={item.status.authentication.setAt} />
-                </span>
-              ),
-            },
-          ]
-        : []),
-
-      ...(downstream?.ipAddress
-        ? [
-            {
-              label: "IP address",
-              value: (
-                <span className="font-mono text-[0.72rem]">
-                  {downstream.ipAddress}
-                </span>
-              ),
-            },
-          ]
-        : []),
-
-      ...(downstream?.clientVersion
-        ? [
-            {
-              label: "Client version",
-              value: (
-                <span className="font-mono text-[0.72rem]">
-                  {downstream.clientVersion}
-                </span>
-              ),
-            },
-          ]
-        : []),
-
-      ...(downstream?.userAgent
-        ? [
-            {
-              label: "User agent",
-              value: (
-                <span className="text-[0.72rem] text-slate-500 break-all">
-                  {downstream.userAgent}
-                </span>
-              ),
-              span: "full" as const,
-            },
-          ]
-        : []),
+      {
+        label: "Session investigation",
+        value: <SessionOperationalDetails item={item} />,
+        span: "full",
+      },
     ],
   };
 };
