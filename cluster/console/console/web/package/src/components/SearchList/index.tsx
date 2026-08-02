@@ -69,12 +69,12 @@ const SearchList = () => {
         value={query}
         onChange={(event) => setQuery(event.currentTarget.value)}
         aria-label="Search resources"
-        placeholder="Search resources by name…"
+        placeholder="Search…"
         size="md"
         radius="md"
         leftSection={<Search size={17} strokeWidth={2.2} />}
         leftSectionPointerEvents="none"
-        rightSectionWidth={query ? 42 : 48}
+        rightSectionWidth={query ? 40 : 32}
         rightSection={
           query ? (
             <button

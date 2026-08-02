@@ -33,39 +33,44 @@ const TopBar = () => {
   }, [location.pathname, dispatch]);
 
   return (
-    <nav className="w-full h-[60px] flex items-center px-4 gap-4">
+    <nav className="flex h-[60px] min-w-0 w-full items-center gap-2 overflow-hidden px-2 sm:gap-3 sm:px-4 lg:gap-5">
       <Link
         to="/"
-        className="flex-none flex items-center"
+        className={twMerge(
+          "flex-none items-center",
+          settings.useListSearch ? "hidden min-[390px]:flex" : "flex",
+        )}
         aria-label="Go to home"
       >
-        <Logo className="w-[120px] md:w-[160px] h-auto" />
+        <Logo className="h-auto w-[92px] sm:w-[120px] lg:w-[152px]" />
       </Link>
 
-      <div className="flex-1 flex items-center">
+      <div className="flex min-w-0 flex-1 items-center justify-center sm:justify-start">
         {settings.useListSearch && (
-          <div className="w-full max-w-xl">
+          <div className="min-w-0 w-full max-w-xl">
             <SearchList />
           </div>
         )}
       </div>
 
       <button
+        type="button"
         onClick={() => navigate("/settings")}
-        className="flex-none flex items-center gap-2 group cursor-pointer"
+        className="group flex h-10 flex-none cursor-pointer items-center gap-2 rounded-lg px-1 transition-colors duration-500 hover:bg-white/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 sm:px-2"
         title={displayName ? `Settings — ${displayName}` : "Settings"}
+        aria-label={displayName ? `Open settings for ${displayName}` : "Open settings"}
       >
         {displayName && (
-          <span className="text-[0.72rem] font-semibold text-slate-500 group-hover:text-slate-800 transition-colors duration-150 hidden md:block">
+          <span className="hidden max-w-36 truncate text-[0.72rem] font-semibold text-slate-500 transition-colors duration-500 group-hover:text-slate-800 lg:block">
             {displayName}
           </span>
         )}
 
         <div
           className={twMerge(
-            "w-8 h-8 rounded-full shrink-0 overflow-hidden",
+            "w-7 h-7 sm:w-8 sm:h-8 rounded-full shrink-0 overflow-hidden",
             "ring-2 ring-white ring-offset-1 ring-offset-slate-100",
-            "transition-[ring] duration-150",
+            "transition-[ring] duration-500",
             "group-hover:ring-slate-300",
           )}
         >
