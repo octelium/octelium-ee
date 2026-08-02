@@ -2,7 +2,6 @@ import PageWrap from "@/components/PageWrap";
 import { onError } from "@/utils";
 import {
   cloneResource,
-  getAPI,
   getResourceClient,
   getResourcePath,
   invalidateResource,
@@ -11,12 +10,12 @@ import {
   resourceFromYAML,
   resourceToYAML,
 } from "@/utils/pb";
-import { Button, Tabs } from "@mantine/core";
+import { Button, SegmentedControl } from "@mantine/core";
 import { useMutation } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { FileCode, Loader2, Save, Settings, X } from "lucide-react";
 import * as React from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import ContainerGen from "../ContainerGen";
 import MetadataEdit from "../MetadataEdit";
@@ -49,7 +48,7 @@ export const ResourceEdit = (props: {
 
   const data = props.item;
   const navigate = useNavigate();
-  const api = getAPI(req);
+  const location = useLocation();
 
   React.useEffect(() => {
     if (data) {
@@ -59,8 +58,6 @@ export const ResourceEdit = (props: {
       setYamlParseError(null);
     }
   }, [data]);
-
-  if (!api || !req) return null;
 
   const mutationUpdate = useMutation({
     mutationFn: async (req: Resource) => {
@@ -86,7 +83,10 @@ export const ResourceEdit = (props: {
       invalidateResource(response);
       invalidateResourceList(response);
       if (!props.noPostUpdateNavigation) {
-        navigate(getResourcePath(response));
+        navigate(getResourcePath(response), {
+          state: location.state,
+          preventScrollReset: true,
+        });
       }
       if (!props.noPostUpdateToast) {
         toast.success(
@@ -94,112 +94,157 @@ export const ResourceEdit = (props: {
         );
       }
     },
-    onError: (err: unknown) => {
-      if (err instanceof Error) {
-        toast.error(err.message);
-      }
-      // @ts-ignore
-      onError(err);
-    },
+    onError: (err: unknown) => onError(err as any),
   });
 
   const handleYAMLChange = (v: string) => {
     setCurYAML(v);
     const parsed = resourceFromYAML(v);
     setYamlParseError(parsed ? null : "Invalid YAML — cannot parse resource");
+    if (parsed) setReq(cloneResource(parsed));
+  };
+
+  const handleTabChange = (value: string) => {
+    const nextTab = value as "main" | "yaml";
+    if (nextTab === "yaml") {
+      setCurYAML(resourceToYAML(req));
+      setYamlParseError(null);
+    } else {
+      const parsed = resourceFromYAML(curYAML);
+      if (!parsed) {
+        setYamlParseError("Invalid YAML — cannot parse resource");
+        return;
+      }
+      setReq(cloneResource(parsed));
+    }
+    setActiveTab(nextTab);
+  };
+
+  const handleCancel = () => {
+    if (location.pathname.endsWith("/edit")) {
+      navigate("..", {
+        relative: "path",
+        state: location.state,
+        preventScrollReset: true,
+      });
+      return;
+    }
+    navigate(-1);
   };
 
   const canSubmit = activeTab === "yaml" ? yamlParseError === null : true;
+  const isDirty = resourceToYAML(req) !== resourceToYAML(data);
 
   return (
     <div className="w-full flex flex-col gap-6">
-      <Tabs
-        value={activeTab}
-        onChange={(v) => setActiveTab(v as "main" | "yaml")}
-      >
-        <Tabs.List mb="lg">
-          <Tabs.Tab
-            value="main"
-            leftSection={<Settings size={13} strokeWidth={2.5} />}
-          >
-            Configuration
-          </Tabs.Tab>
-          <Tabs.Tab
-            value="yaml"
-            leftSection={<FileCode size={13} strokeWidth={2.5} />}
-          >
-            YAML
-          </Tabs.Tab>
-        </Tabs.List>
+      <div className="flex items-center">
+        <SegmentedControl
+          value={activeTab}
+          onChange={handleTabChange}
+          data={[
+            {
+              value: "main",
+              label: (
+                <span className="flex items-center gap-1.5 px-1">
+                  <Settings size={13} strokeWidth={2.5} />
+                  Configuration
+                </span>
+              ),
+            },
+            {
+              value: "yaml",
+              label: (
+                <span className="flex items-center gap-1.5 px-1">
+                  <FileCode size={13} strokeWidth={2.5} />
+                  YAML
+                </span>
+              ),
+            },
+          ]}
+        />
+      </div>
 
-        <Tabs.Panel value="main">
-          <div className="flex flex-col gap-8">
-            {!props.noMetadata && (
-              <ContainerGen title="Metadata">
-                <MetadataEdit
-                  isUpdateMode
-                  item={data}
-                  onUpdate={(md) => {
-                    const next = cloneResource(req);
-                    next.metadata = md;
-                    setReq(next);
-                  }}
-                />
-              </ContainerGen>
+      {activeTab === "main" ? (
+        <div className="flex flex-col gap-8">
+          {!props.noMetadata && (
+            <ContainerGen title="Metadata">
+              <MetadataEdit
+                isUpdateMode
+                item={req}
+                onUpdate={(md) => {
+                  const next = cloneResource(req);
+                  next.metadata = md;
+                  setReq(next);
+                }}
+              />
+            </ContainerGen>
+          )}
+
+          {props.specComponent && (
+            <ContainerGen title="Spec">
+              {React.createElement(props.specComponent, {
+                item: req,
+                onUpdate: (item) => {
+                  const next = cloneResource(req);
+                  next.spec = item.spec;
+                  if (item.kind.endsWith("Secret")) {
+                    // @ts-ignore
+                    next["data"] = item["data"];
+                  }
+                  setReq(next);
+                },
+              })}
+            </ContainerGen>
+          )}
+
+          {props.dataComponent && (
+            <ContainerGen title="Data">
+              {React.createElement(props.dataComponent, {
+                item: req,
+                onUpdate: (item) => {
+                  const next = cloneResource(req);
+                  const nextWithData = next as Resource & { data?: unknown };
+                  const itemWithData = item as Resource & { data?: unknown };
+                  nextWithData.data = itemWithData.data;
+                  setReq(next);
+                },
+              })}
+            </ContainerGen>
+          )}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          <ResourceEditor
+            item={req}
+            value={curYAML}
+            onResourceChange={(item) => setReq(cloneResource(item))}
+            onChange={handleYAMLChange}
+          />
+
+          <AnimatePresence>
+            {yamlParseError && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.15 }}
+                className="overflow-hidden"
+              >
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-50 border border-red-200">
+                  <X
+                    size={12}
+                    className="text-red-500 shrink-0"
+                    strokeWidth={2.5}
+                  />
+                  <span className="text-[0.72rem] font-semibold text-red-700">
+                    {yamlParseError}
+                  </span>
+                </div>
+              </motion.div>
             )}
-
-            {props.specComponent && (
-              <ContainerGen title="Spec">
-                {props.specComponent({
-                  item: data,
-                  onUpdate: (item) => {
-                    const next = cloneResource(req);
-                    next.spec = item.spec;
-                    if (item.kind.endsWith("Secret")) {
-                      // @ts-ignore
-                      next["data"] = item["data"];
-                    }
-                    setReq(next);
-                  },
-                })}
-              </ContainerGen>
-            )}
-          </div>
-        </Tabs.Panel>
-
-        <Tabs.Panel value="yaml">
-          <div className="flex flex-col gap-3">
-            <ResourceEditor
-              item={req}
-              onResourceChange={(item) => setReq(cloneResource(item))}
-              onChange={handleYAMLChange}
-            />
-
-            <AnimatePresence>
-              {yamlParseError && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.15 }}
-                  className="overflow-hidden"
-                >
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-50 border border-red-200">
-                    <X
-                      size={12}
-                      className="text-red-500 shrink-0"
-                      strokeWidth={2.5}
-                    />
-                    <span className="text-[0.72rem] font-semibold text-red-700">
-                      {yamlParseError}
-                    </span>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </Tabs.Panel>
-      </Tabs>
+          </AnimatePresence>
+        </div>
+      )}
 
       <div className="flex items-center justify-between pt-4 border-t border-slate-200 mt-2">
         {mutationUpdate.isError && (
@@ -214,7 +259,7 @@ export const ResourceEdit = (props: {
             variant="default"
             leftSection={<X size={13} strokeWidth={2.5} />}
             disabled={mutationUpdate.isPending}
-            onClick={() => navigate(-1)}
+            onClick={handleCancel}
           >
             Cancel
           </Button>
@@ -229,7 +274,7 @@ export const ResourceEdit = (props: {
                 <Save size={13} strokeWidth={2.5} />
               )
             }
-            disabled={mutationUpdate.isPending || !canSubmit}
+            disabled={mutationUpdate.isPending || !canSubmit || !isDirty}
             loading={mutationUpdate.isPending}
             onClick={() => mutationUpdate.mutate(req)}
           >

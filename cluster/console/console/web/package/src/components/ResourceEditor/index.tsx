@@ -10,6 +10,7 @@ const ResourceEditor = (props: {
   readOnly?: boolean;
   mode?: "json" | "yaml" | undefined;
   onChange?: (arg: string) => void;
+  value?: string;
 }) => {
   const { item } = props;
 
@@ -20,13 +21,13 @@ const ResourceEditor = (props: {
           <Editor
             item={props.item}
             mode={"yaml"}
-            onResourceChange={(n) => {}}
+            onResourceChange={props.onResourceChange}
             onChange={(v) => {
               if (props.onChange) {
                 props.onChange(v);
               }
             }}
-            value={resourceToYAML(item)}
+            value={props.value ?? resourceToYAML(item)}
             readOnly={props.readOnly}
           />
         </div>
