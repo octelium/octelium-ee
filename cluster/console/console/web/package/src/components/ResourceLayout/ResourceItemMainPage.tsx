@@ -16,7 +16,8 @@ import {
   SquareTerminal,
   Tag,
 } from "lucide-react";
-import { Link, Navigate } from "react-router-dom";
+import * as React from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 import CopyText from "../CopyText";
 import DeleteResource from "../DeleteResource";
@@ -98,14 +99,84 @@ const ResourceVisibilityButtons = ({ item }: { item: Resource }) => {
   );
 };
 
+const ResourceNotFound = (props: { parentPath: string }) => {
+  const navigate = useNavigate();
+  const [seconds, setSeconds] = React.useState(5);
+
+  React.useEffect(() => {
+    const interval = window.setInterval(
+      () => setSeconds((value) => Math.max(0, value - 1)),
+      1000,
+    );
+    return () => window.clearInterval(interval);
+  }, []);
+
+  React.useEffect(() => {
+    if (seconds === 0) navigate(props.parentPath, { replace: true });
+  }, [navigate, props.parentPath, seconds]);
+
+  return (
+    <div className="flex min-h-[55vh] w-full flex-col items-center justify-center gap-3 text-center">
+      <p className="text-lg font-bold text-slate-800">
+        This resource does not exist.
+      </p>
+      <p className="text-sm font-semibold text-slate-500" role="status">
+        Returning to the resource list in {seconds} second
+        {seconds === 1 ? "" : "s"}.
+      </p>
+      <button
+        type="button"
+        className="text-sm font-bold text-slate-700 underline underline-offset-4 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500"
+        onClick={() => navigate(props.parentPath, { replace: true })}
+      >
+        Return now
+      </button>
+    </div>
+  );
+};
+
+const ResourceLoadError = (props: {
+  error: unknown;
+  retry: () => void;
+}) => (
+  <div className="flex min-h-[55vh] w-full flex-col items-center justify-center gap-3 text-center">
+    <p className="text-lg font-bold text-slate-800">
+      This resource could not be loaded.
+    </p>
+    <p className="max-w-xl text-sm font-semibold text-red-600" role="alert">
+      {props.error instanceof Error
+        ? props.error.message
+        : "An unexpected error occurred."}
+    </p>
+    <button
+      type="button"
+      className="text-sm font-bold text-slate-700 underline underline-offset-4 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500"
+      onClick={props.retry}
+    >
+      Try again
+    </button>
+  </div>
+);
+
 const ResourceItemMainPage = (props: {
   mainComponent?: (props: { item: Resource }) => React.ReactNode;
   mainItemsGetter?: (props: { item: Resource }) => ResourceMainInfo;
 }) => {
   const ctx = useContextResource();
+  const location = useLocation();
 
-  if (ctx?.isError) return <Navigate to="/" replace />;
+  const parentPath =
+    location.pathname.replace(/\/+$/, "").split("/").slice(0, -1).join("/") ||
+    "/";
+
   if (!ctx) return null;
+  if (ctx.isError) {
+    return (ctx.error as { code?: string })?.code === "NOT_FOUND" ? (
+      <ResourceNotFound parentPath={parentPath} />
+    ) : (
+      <ResourceLoadError error={ctx.error} retry={() => ctx.refetch()} />
+    );
+  }
 
   return (
     <PageWrap qry={ctx}>

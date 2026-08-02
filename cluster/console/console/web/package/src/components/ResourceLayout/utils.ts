@@ -20,7 +20,7 @@ export const useContextResource = () => {
     return undefined;
   }
 
-  const { isSuccess, isLoading, isError, data } = useQuery({
+  const { isSuccess, isLoading, isError, error, data, refetch } = useQuery({
     queryKey: [getGetKeyFromPath(loc.pathname), name],
     queryFn: () => {
       //@ts-ignore
@@ -28,12 +28,17 @@ export const useContextResource = () => {
         name,
       } as any);
     },
+    retry: (failureCount, error) =>
+      (error as { code?: string })?.code !== "NOT_FOUND" && failureCount < 3,
   });
 
   return {
     isSuccess,
     isLoading,
+    isPending: isLoading,
     isError,
+    error,
+    refetch,
     data: data?.response as Resource | undefined,
   };
 };
