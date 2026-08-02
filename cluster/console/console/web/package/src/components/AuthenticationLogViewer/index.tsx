@@ -42,13 +42,13 @@ const DetailField = ({
   children: React.ReactNode;
   mono?: boolean;
 }) => (
-  <div className="flex flex-col gap-0.5">
-    <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+  <div className="flex min-h-14 min-w-0 flex-col gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.025)]">
+    <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-500">
       {label}
     </span>
     <span
       className={twMerge(
-        "text-[0.75rem] font-semibold text-slate-700 break-all",
+        "min-w-0 break-words text-[0.74rem] font-semibold leading-5 text-slate-700",
         mono && "font-mono",
       )}
     >
@@ -149,39 +149,47 @@ const AuthenticationLogDetails = ({
   const info = entry?.authentication?.info;
 
   return (
-    <div className="px-4 py-3 border-t border-slate-100 bg-slate-50/40">
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-3">
-        <DetailField label="Log ID" mono>
-          <CopyText value={x.metadata!.id} />
-        </DetailField>
+    <div className="border-t border-slate-200 bg-slate-50/70 px-4 py-4 sm:px-5">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h4 className="text-[0.75rem] font-bold text-slate-700">
+          Log details
+        </h4>
+        <Editor item={x} />
+      </div>
+
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 
         {entry?.sessionRef && (
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+          <div className="col-span-full flex min-h-14 min-w-0 flex-col gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+            <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-500">
               Session
             </span>
             <CardSession itemRef={entry.sessionRef} />
           </div>
         )}
 
-        {entry?.userRef && (
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
-              User
+        {(entry?.userRef || entry?.deviceRef) && (
+          <div className="col-span-full flex min-h-14 min-w-0 flex-col gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+            <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-500">
+              Identity context
             </span>
-            <ResourceListLabel itemRef={entry.userRef} />
+            <div className="flex flex-wrap items-center gap-1.5">
+              {entry.userRef && (
+                <ResourceListLabel label="User" itemRef={entry.userRef} />
+              )}
+              {entry.deviceRef && (
+                <ResourceListLabel label="Device" itemRef={entry.deviceRef} />
+              )}
+            </div>
           </div>
         )}
 
-        {entry?.deviceRef && (
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
-              Device
+        {info && (
+          <div className="col-span-full flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-100/60 p-3">
+            <span className="text-[0.62rem] font-bold uppercase tracking-[0.07em] text-slate-600">
+              Authentication details
             </span>
-            <ResourceListLabel itemRef={entry.deviceRef} />
-          </div>
-        )}
-
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {info?.aal != null &&
           info.aal !== Session_Status_Authentication_Info_AAL.AAL_UNSET && (
             <DetailField label="AAL">{getAALName(info.aal)}</DetailField>
@@ -308,10 +316,9 @@ const AuthenticationLogDetails = ({
             )}
           </>
         )}
-
-        <div className="col-span-full flex justify-end pt-1">
-          <Editor item={x} />
-        </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -324,6 +331,7 @@ export const AuthenticationLogC = ({
 }) => {
   const x = authLog;
   const [expanded, setExpanded] = React.useState(false);
+  const detailsID = React.useId();
   const entry = x.entry;
   const info = entry?.authentication?.info;
 
@@ -335,79 +343,122 @@ export const AuthenticationLogC = ({
     info.aal !== Session_Status_Authentication_Info_AAL.AAL_UNSET
       ? getAALName(info.aal)
       : null;
+  const userName = entry.userRef?.name ?? entry.userRef?.uid;
+  const sessionName = entry.sessionRef?.name ?? entry.sessionRef?.uid;
 
   return (
     <div
       className={twMerge(
-        "bg-white border border-slate-200 border-l-[3px] border-l-sky-500 rounded-lg overflow-hidden mb-1.5",
-        "transition-[border-color,box-shadow] duration-150",
-        "hover:border-slate-300 hover:shadow-[0_2px_8px_rgba(15,23,42,0.06)]",
+        "mb-2 overflow-hidden rounded-xl border border-slate-200 bg-white",
+        "shadow-[0_1px_3px_rgba(15,23,42,0.04)] transition-[border-color,box-shadow] duration-500 ease-out",
+        "hover:border-slate-300 hover:shadow-[0_4px_14px_rgba(15,23,42,0.065)]",
+        expanded &&
+          "border-slate-300 shadow-[0_4px_16px_rgba(15,23,42,0.07)]",
       )}
     >
       <button
-        className="w-full flex items-center gap-2 px-3.5 py-2 text-left cursor-pointer"
+        type="button"
+        aria-expanded={expanded}
+        aria-controls={detailsID}
+        className="group flex w-full cursor-pointer items-start gap-3 px-3.5 py-3 text-left outline-none transition-colors duration-500 hover:bg-slate-50/50 focus-visible:bg-blue-50/40 sm:px-4"
         onClick={() => setExpanded((v) => !v)}
       >
-        <ShieldUser
-          size={13}
-          className="text-sky-500 shrink-0"
-          strokeWidth={2.5}
-        />
-
-        <span className="text-[0.68rem] font-semibold text-slate-400 font-mono shrink-0">
-          <TimeAgo rfc3339={x.metadata!.createdAt} />
+        <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-sky-200 bg-sky-50 text-sky-600">
+          <ShieldUser size={16} strokeWidth={2.4} />
         </span>
 
-        <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-hidden">
-          {entry.userRef && (
-            <span className="text-[0.72rem] font-semibold text-slate-600 bg-slate-100 border border-slate-200 rounded px-1.5 py-px truncate max-w-[160px] font-mono">
-              {entry.userRef.name ?? entry.userRef.uid}
+        <span className="flex min-w-0 flex-1 flex-col gap-2">
+          <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5">
+            <span className="rounded-md border border-sky-200 bg-sky-50 px-2 py-1 text-[0.65rem] font-bold text-sky-700">
+              Authentication
             </span>
-          )}
-          {entry.sessionRef && (
-            <>
-              <span className="text-slate-300 text-[0.7rem] shrink-0">·</span>
-              <span className="text-[0.68rem] font-semibold text-slate-400 truncate max-w-[120px] font-mono hidden sm:block">
-                {entry.sessionRef.name ?? entry.sessionRef.uid}
+
+            {userName ? (
+              <span className="flex min-w-0 items-center gap-1.5">
+                <span className="shrink-0 text-[0.62rem] font-bold uppercase tracking-[0.05em] text-slate-400">
+                  User
+                </span>
+                <span className="max-w-48 truncate font-mono text-[0.7rem] font-semibold text-slate-700">
+                  {userName}
+                </span>
               </span>
-            </>
-          )}
-        </div>
+            ) : (
+              <span className="text-[0.7rem] font-semibold text-slate-400">
+                Unknown user
+              </span>
+            )}
 
-        {authType != null &&
-          authType !== Session_Status_Authentication_Info_Type.TYPE_UNSET && (
-            <AuthTypeBadge type={authType} />
-          )}
-
-        {aal && (
-          <span className="text-[0.62rem] font-bold px-1.5 py-px rounded bg-slate-800 text-slate-200 font-mono shrink-0">
-            {aal}
+            {sessionName && (
+              <span className="hidden min-w-0 items-center gap-1.5 sm:flex">
+                <span className="text-slate-300">·</span>
+                <span className="shrink-0 text-[0.62rem] font-bold uppercase tracking-[0.05em] text-slate-400">
+                  Session
+                </span>
+                <span className="max-w-36 truncate font-mono text-[0.67rem] font-medium text-slate-500">
+                  {sessionName}
+                </span>
+              </span>
+            )}
           </span>
-        )}
 
-        {info?.downstream?.ipAddress && (
-          <span className="text-[0.68rem] font-semibold text-slate-400 font-mono shrink-0 hidden lg:block">
-            {info.downstream.ipAddress}
+          <span className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1.5">
+            {authType != null &&
+              authType !==
+                Session_Status_Authentication_Info_Type.TYPE_UNSET && (
+                <AuthTypeBadge type={authType} />
+              )}
+
+            {aal && (
+              <span className="shrink-0 rounded-md bg-slate-800 px-1.5 py-0.5 font-mono text-[0.62rem] font-bold text-slate-100">
+                {aal}
+              </span>
+            )}
+
+            {info?.downstream?.ipAddress && (
+              <span className="font-mono text-[0.67rem] font-semibold text-slate-500">
+                {info.downstream.ipAddress}
+              </span>
+            )}
+
+            {info?.downstream?.clientVersion && (
+              <span className="text-[0.67rem] font-medium text-slate-400">
+                Client {info.downstream.clientVersion}
+              </span>
+            )}
           </span>
-        )}
+        </span>
 
         <motion.span
           animate={{ rotate: expanded ? 180 : 0 }}
-          transition={{ duration: 0.18 }}
-          className="flex items-center shrink-0 text-slate-400"
+          transition={{ duration: 0.35, ease: "easeOut" }}
+          className="mt-2 flex shrink-0 text-slate-400 transition-colors duration-500 group-hover:text-slate-600"
         >
-          <ChevronDown size={13} strokeWidth={2.5} />
+          <ChevronDown size={15} strokeWidth={2.25} />
         </motion.span>
       </button>
+
+      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 border-t border-slate-100 bg-slate-50/40 px-4 py-1.5 pl-[60px] text-[0.6rem] font-semibold text-slate-400">
+        <TimeAgo rfc3339={x.metadata!.createdAt} />
+        <span aria-hidden="true" className="text-slate-300">
+          ·
+        </span>
+        <span className="flex min-w-0 items-center gap-1 font-mono">
+          <span className="shrink-0 uppercase tracking-[0.05em]">Log ID</span>
+          <span className="min-w-0 truncate text-slate-500">
+            <CopyText value={x.metadata!.id} />
+          </span>
+        </span>
+      </div>
 
       <AnimatePresence initial={false}>
         {expanded && (
           <motion.div
+            id={detailsID}
             key="details"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.18, ease: "easeInOut" }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className="overflow-hidden"
           >
             <AuthenticationLogDetails authLog={x} />
