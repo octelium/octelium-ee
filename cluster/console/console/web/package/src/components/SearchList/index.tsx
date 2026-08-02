@@ -1,111 +1,125 @@
-import { TextInput, Transition } from "@mantine/core";
-import { useClickOutside } from "@mantine/hooks";
+import { TextInput } from "@mantine/core";
 import { Search, X } from "lucide-react";
 import * as React from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { twMerge } from "tailwind-merge";
 
-const SearchList = (props: { btnSize?: "xs" | "small" }) => {
+const SearchList = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
-  const [qry, setQry] = React.useState(searchParams.get("common.query") ?? "");
-  const loc = useLocation();
-  const [enabled, setEnabled] = React.useState(false);
+  const currentQuery = searchParams.get("common.query") ?? "";
+  const [query, setQuery] = React.useState(currentQuery);
   const inputRef = React.useRef<HTMLInputElement>(null);
-  const ref = useClickOutside(() => setEnabled(false));
 
-  const handleToggle = () => {
-    setEnabled((v) => !v);
-    if (!enabled) {
-      setTimeout(() => inputRef.current?.focus(), 50);
-    }
-  };
+  React.useEffect(() => {
+    setQuery(currentQuery);
+  }, [currentQuery]);
 
-  const handleChange = (v: React.ChangeEvent<HTMLInputElement>) => {
-    setQry(v.target.value);
-    const next = new URLSearchParams(searchParams.toString());
-    if (v.target.value.length === 0) {
-      next.delete("common.query");
-    } else {
-      next.set("common.query", v.target.value);
-    }
-    navigate(`${loc.pathname}?${next.toString()}`);
-  };
+  React.useEffect(() => {
+    if (query === currentQuery) return;
 
-  const handleClear = () => {
-    setQry("");
-    const next = new URLSearchParams(searchParams.toString());
-    next.delete("common.query");
-    navigate(`${loc.pathname}?${next.toString()}`);
+    const timeout = window.setTimeout(() => {
+      const next = new URLSearchParams(location.search);
+      if (query.trim()) {
+        next.set("common.query", query);
+      } else {
+        next.delete("common.query");
+      }
+      const search = next.toString();
+      navigate(`${location.pathname}${search ? `?${search}` : ""}`, {
+        replace: true,
+      });
+    }, 250);
+
+    return () => window.clearTimeout(timeout);
+  }, [currentQuery, location.pathname, location.search, navigate, query]);
+
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const isTyping =
+        target?.tagName === "INPUT" ||
+        target?.tagName === "TEXTAREA" ||
+        target?.isContentEditable;
+
+      if (event.key === "/" && !isTyping) {
+        event.preventDefault();
+        inputRef.current?.focus();
+      }
+
+      const input = inputRef.current;
+      if (event.key === "Escape" && input && document.activeElement === input) {
+        input.blur();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  const clear = () => {
+    setQuery("");
     inputRef.current?.focus();
   };
 
   return (
-    <div className="flex items-center gap-2 my-4" ref={ref}>
-      <button
-        onClick={handleToggle}
-        className={twMerge(
-          "flex items-center justify-center w-7 h-7 rounded-md cursor-pointer",
-          "border transition-colors duration-150",
-          enabled
-            ? "border-slate-300 bg-slate-900 text-white hover:bg-slate-800"
-            : "border-slate-200 bg-white text-slate-500 hover:text-slate-900 hover:border-slate-300 shadow-[0_1px_3px_rgba(15,23,42,0.06)]",
-        )}
-        title={enabled ? "Close search" : "Search"}
-      >
-        <Search size={13} strokeWidth={2.5} />
-      </button>
-
-      <Transition
-        mounted={enabled}
-        transition="fade-right"
-        duration={200}
-        timingFunction="ease"
-      >
-        {(style) => (
-          <div style={style}>
-            <TextInput
-              ref={inputRef}
-              value={qry}
-              onChange={handleChange}
-              placeholder="Search…"
-              size="xs"
-              rightSection={
-                qry.length > 0 ? (
-                  <button
-                    onClick={handleClear}
-                    className="flex items-center justify-center text-slate-400 hover:text-slate-800 cursor-pointer transition-colors duration-150"
-                  >
-                    <X size={12} strokeWidth={2.5} />
-                  </button>
-                ) : null
-              }
-              styles={{
-                input: {
-                  width: "220px",
-                  height: "28px",
-                  minHeight: "28px",
-                  fontSize: "0.78rem",
-                  fontWeight: 600,
-                  backgroundColor: "#ffffff",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: "6px",
-                  color: "#1e293b",
-                  boxShadow: "0 1px 3px rgba(15,23,42,0.06)",
-                  "&:focus": {
-                    borderColor: "#94a3b8",
-                    boxShadow: "0 0 0 2px rgba(148,163,184,0.2)",
-                  },
-                  "::placeholder": {
-                    color: "#94a3b8",
-                    fontWeight: 600,
-                  },
-                },
-              }}
-            />
-          </div>
-        )}
-      </Transition>
+    <div className="w-full max-w-xl">
+      <TextInput
+        ref={inputRef}
+        value={query}
+        onChange={(event) => setQuery(event.currentTarget.value)}
+        aria-label="Search resources"
+        placeholder="Search resources by name…"
+        size="md"
+        radius="md"
+        leftSection={<Search size={17} strokeWidth={2.2} />}
+        leftSectionPointerEvents="none"
+        rightSectionWidth={query ? 42 : 48}
+        rightSection={
+          query ? (
+            <button
+              type="button"
+              onClick={clear}
+              aria-label="Clear search"
+              title="Clear search"
+              className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500"
+            >
+              <X size={15} strokeWidth={2.4} />
+            </button>
+          ) : (
+            <kbd className="hidden min-w-6 rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-center font-mono text-[0.68rem] font-bold text-slate-400 sm:inline-block">
+              /
+            </kbd>
+          )
+        }
+        styles={{
+          root: { width: "100%" },
+          input: {
+            height: "40px",
+            minHeight: "40px",
+            paddingLeft: "42px",
+            fontSize: "0.84rem",
+            fontWeight: 600,
+            backgroundColor: "rgba(255, 255, 255, 0.48)",
+            backdropFilter: "blur(6px)",
+            border: "1px solid rgba(203, 213, 225, 0.8)",
+            color: "#1e293b",
+            boxShadow: "0 1px 2px rgba(15, 23, 42, 0.04)",
+            transition:
+              "background-color 500ms, border-color 500ms, box-shadow 500ms",
+            "&:hover": {
+              backgroundColor: "rgba(255, 255, 255, 0.7)",
+              borderColor: "#cbd5e1",
+            },
+            "&:focus": {
+              backgroundColor: "#ffffff",
+              borderColor: "#0f172a",
+              boxShadow: "0 0 0 2px rgba(15, 23, 42, 0.12)",
+            },
+          },
+          section: { color: "#64748b" },
+        }}
+      />
     </div>
   );
 };

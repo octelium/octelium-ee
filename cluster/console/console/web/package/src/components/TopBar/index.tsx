@@ -44,7 +44,7 @@ const TopBar = () => {
 
       <div className="flex-1 flex items-center">
         {settings.useListSearch && (
-          <div className="max-w-sm w-full">
+          <div className="w-full max-w-xl">
             <SearchList />
           </div>
         )}
