@@ -27,6 +27,7 @@ import { useQuery } from "@tanstack/react-query";
 import ReactEChartsCore from "echarts-for-react";
 import { LineChart as LineChartC } from "echarts/charts";
 import {
+  AriaComponent,
   DataZoomComponent,
   GridComponent,
   LegendComponent,
@@ -39,6 +40,7 @@ import DurationPicker from "../DurationPicker";
 
 echarts.use([
   LineChartC,
+  AriaComponent,
   GridComponent,
   TooltipComponent,
   LegendComponent,
@@ -47,13 +49,15 @@ echarts.use([
 ]);
 
 const LINE_COLORS = [
-  "#1d4ed8",
+  "#2563eb",
+  "#0891b2",
+  "#4f46e5",
+  "#0d9488",
+  "#7c3aed",
   "#16a34a",
   "#d97706",
-  "#9333ea",
-  "#0891b2",
   "#db2777",
-  "#65a30d",
+  "#475569",
   "#dc2626",
 ];
 
@@ -249,7 +253,7 @@ const seriesAggregation = (
 
 const formatBytes = (v: number): string => {
   if (!Number.isFinite(v)) return "—";
-  if (v <= 0) return "0 B";
+  if (v === 0) return "0 B";
 
   const units = ["B", "KiB", "MiB", "GiB", "TiB"];
   let n = v;
@@ -262,6 +266,19 @@ const formatBytes = (v: number): string => {
 
   return `${n.toFixed(n < 10 && i > 0 ? 1 : 0)} ${units[i]}`;
 };
+
+const escapeHTML = (value: string) =>
+  value.replace(
+    /[&<>'"]/g,
+    (character) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "'": "&#39;",
+        '"': "&quot;",
+      })[character] ?? character,
+  );
 
 const formatValue = (v: number, unit?: string): string => {
   if (!Number.isFinite(v)) return "—";
@@ -360,9 +377,8 @@ const MetricChart = (props: MetricChartProps) => {
     setStep(props.step);
   }, [durationKey(props.step)]);
 
-  const effectiveStep = isRawCounterOperation(operation)
-    ? undefined
-    : (step ?? DEFAULT_STEP);
+  const supportsStep = !isRawCounterOperation(operation);
+  const effectiveStep = supportsStep ? (step ?? DEFAULT_STEP) : undefined;
 
   const queryKey = useMemo(
     () => [
@@ -443,31 +459,73 @@ const MetricChart = (props: MetricChartProps) => {
     [qry.data?.series, title, metric],
   );
 
+  const statistics = useMemo(() => {
+    const points = series.flatMap((item) => item.data);
+
+    if (points.length === 0) {
+      return { average: 0, latest: 0, peak: 0, pointCount: 0 };
+    }
+
+    const latestPoint = points.reduce((latest, point) =>
+      point[0] > latest[0] ? point : latest,
+    );
+    const values = points.map(([, value]) => value);
+
+    return {
+      average: values.reduce((sum, value) => sum + value, 0) / values.length,
+      latest: latestPoint[1],
+      peak: Math.max(...values),
+      pointCount: points.length,
+    };
+  }, [series]);
+
   const option = useMemo(() => {
     const multi = series.length > 1;
 
     return {
       color: LINE_COLORS,
 
+      animation: statistics.pointCount <= 1_000,
+      animationDuration: 650,
+      animationEasing: "cubicOut",
+
+      aria: {
+        enabled: true,
+        decal: { show: false },
+      },
+
       grid: {
-        left: 8,
-        right: 16,
-        top: 16,
-        bottom: multi ? 32 : 8,
+        left: 10,
+        right: 14,
+        top: 20,
+        bottom: multi ? 54 : 40,
         containLabel: true,
       },
 
       tooltip: {
         trigger: "axis",
-        backgroundColor: "#1e293b",
+        confine: true,
+        backgroundColor: "#0f172a",
         borderColor: "#334155",
         borderWidth: 1,
+        padding: [10, 12],
         textStyle: {
           color: "#f8fafc",
           fontSize: 12,
           fontFamily: "Ubuntu, sans-serif",
         },
-        extraCssText: "border-radius:6px; padding:8px 12px;",
+        extraCssText:
+          "border-radius:10px;box-shadow:0 10px 24px rgba(15,23,42,.18);max-width:320px;",
+        axisPointer: {
+          type: "line",
+          snap: true,
+          lineStyle: {
+            color: "#60a5fa",
+            width: 1,
+            type: "dashed",
+          },
+          label: { show: false },
+        },
         formatter: (params: unknown) => {
           const items = Array.isArray(params) ? params : [params];
 
@@ -484,7 +542,13 @@ const MetricChart = (props: MetricChartProps) => {
 
           const header =
             ts !== undefined
-              ? `<div style="margin-bottom:4px;color:#cbd5e1">${new Date(ts).toLocaleString()}</div>`
+              ? `<div style="margin-bottom:8px;color:#cbd5e1;font-size:11px;font-weight:700">${new Date(ts).toLocaleString([], {
+                  month: "short",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                })}</div>`
               : "";
 
           const body = items
@@ -501,7 +565,7 @@ const MetricChart = (props: MetricChartProps) => {
                   ? formatValue(rawValue, effectiveUnit)
                   : "—";
 
-              return `<div>${p.marker ?? ""}<span style="color:#f8fafc">${p.seriesName ?? ""}</span>: <b>${value}</b></div>`;
+              return `<div style="display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:5px"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#cbd5e1;font-size:11px;font-weight:600">${p.marker ?? ""}${escapeHTML(p.seriesName ?? "Metric")}</span><strong style="flex-shrink:0;color:#f8fafc;font-size:12px">${value}</strong></div>`;
             })
             .join("");
 
@@ -516,6 +580,13 @@ const MetricChart = (props: MetricChartProps) => {
             itemWidth: 8,
             itemHeight: 8,
             type: "scroll",
+            pageIconColor: "#64748b",
+            pageIconInactiveColor: "#cbd5e1",
+            pageTextStyle: {
+              color: "#94a3b8",
+              fontFamily: "Ubuntu, sans-serif",
+              fontSize: 10,
+            },
             textStyle: {
               color: "#64748b",
               fontSize: 11,
@@ -534,7 +605,12 @@ const MetricChart = (props: MetricChartProps) => {
           color: "#94a3b8",
           fontSize: 10,
           fontFamily: "Ubuntu, sans-serif",
+          fontWeight: 600,
+          lineHeight: 16,
+          margin: 12,
           hideOverlap: true,
+          formatter: (value: number) =>
+            echarts.format.formatTime("MM/dd\nHH:mm", value),
         },
       },
 
@@ -542,23 +618,44 @@ const MetricChart = (props: MetricChartProps) => {
         type: "value",
         axisLine: { show: false },
         axisTick: { show: false },
-        splitLine: { lineStyle: { color: "#f1f5f9" } },
+        splitLine: {
+          lineStyle: { color: "#e2e8f0", type: "dashed", opacity: 0.7 },
+        },
         axisLabel: {
           color: "#94a3b8",
           fontSize: 10,
           fontFamily: "Ubuntu, sans-serif",
+          fontWeight: 600,
+          margin: 12,
           formatter: (v: number) => formatValue(v, effectiveUnit),
         },
       },
 
-      dataZoom: [{ type: "inside" }],
+      dataZoom: [
+        {
+          type: "inside",
+          zoomOnMouseWheel: "shift",
+          moveOnMouseWheel: false,
+          moveOnMouseMove: true,
+        },
+      ],
 
       series: series.map((s, i) => ({
         name: s.name,
         type: "line",
-        showSymbol: false,
-        smooth: 0.2,
-        lineStyle: { width: 2 },
+        showSymbol: s.data.length <= 12,
+        symbol: "circle",
+        symbolSize: 6,
+        smooth: 0.28,
+        sampling: "lttb",
+        progressive: 400,
+        progressiveThreshold: 800,
+        lineStyle: {
+          color: LINE_COLORS[i % LINE_COLORS.length],
+          width: multi ? 2 : 2.5,
+          cap: "round",
+          join: "round",
+        },
         emphasis: { focus: "series" },
         connectNulls: false,
         areaStyle:
@@ -572,65 +669,168 @@ const MetricChart = (props: MetricChartProps) => {
                   x2: 0,
                   y2: 1,
                   colorStops: [
-                    { offset: 0, color: "rgba(29,78,216,0.18)" },
-                    { offset: 1, color: "rgba(29,78,216,0)" },
+                    { offset: 0, color: "rgba(37,99,235,0.20)" },
+                    { offset: 0.65, color: "rgba(37,99,235,0.05)" },
+                    { offset: 1, color: "rgba(37,99,235,0)" },
                   ],
                 },
               },
         data: s.data,
-        itemStyle: { color: LINE_COLORS[i % LINE_COLORS.length] },
+        itemStyle: {
+          color: LINE_COLORS[i % LINE_COLORS.length],
+          borderColor: "#ffffff",
+          borderWidth: 2,
+        },
       })),
     };
-  }, [series, effectiveUnit]);
+  }, [series, effectiveUnit, statistics.pointCount]);
 
-  const emptyMessage = useMemo(() => {
-    if (qry.isLoading) return "Loading…";
-    if (qry.isError) return "Failed to load metric";
-    return "No numeric data";
-  }, [qry.isLoading, qry.isError]);
+  const headerStatistics =
+    series.length > 1
+      ? [
+          { label: "Series", value: series.length.toLocaleString() },
+          { label: "Points", value: statistics.pointCount.toLocaleString() },
+          { label: "Peak", value: formatValue(statistics.peak, effectiveUnit) },
+        ]
+      : [
+          { label: "Latest", value: formatValue(statistics.latest, effectiveUnit) },
+          {
+            label: "Average",
+            value: formatValue(statistics.average, effectiveUnit),
+          },
+          { label: "Peak", value: formatValue(statistics.peak, effectiveUnit) },
+        ];
+
+  const errorMessage =
+    qry.error instanceof Error ? qry.error.message : "Unable to load this metric";
 
   return (
-    <div className="flex w-full flex-col">
-      <div className="mb-1 flex items-end px-1">
-        {title && (
-          <p className="flex-1 text-[0.78rem] font-bold uppercase tracking-[0.05em] text-slate-800">
-            {title}
-          </p>
-        )}
-
-        {(qry.data?.truncation?.seriesTruncated ||
-          qry.data?.truncation?.pointsTruncated) && (
-          <span className="mr-2 rounded-full bg-amber-50 px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-[0.04em] text-amber-700">
-            Truncated
-          </span>
-        )}
-
-        <div className="ml-auto">
-          <DurationPicker
-            value={step}
-            title="Resolution duration interval"
-            onChange={(v) => setStep(v)}
-          />
+    <section
+      className="my-3 flex w-full flex-col rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-4"
+      aria-label={title ?? metric}
+    >
+      <header className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-sm font-bold tracking-tight text-slate-800">
+              {title ?? metric}
+            </h3>
+            {(qry.data?.truncation?.seriesTruncated ||
+              qry.data?.truncation?.pointsTruncated) && (
+              <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.06em] text-amber-700">
+                Partial data
+              </span>
+            )}
+            {qry.isFetching && !qry.isLoading && (
+              <span className="flex items-center gap-1.5 text-[0.65rem] font-semibold text-slate-400">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500" />
+                Updating
+              </span>
+            )}
+          </div>
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-[0.65rem] font-semibold text-slate-400">
+            <span>{metric}</span>
+            {effectiveUnit && (
+              <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-slate-500">
+                {effectiveUnit}
+              </span>
+            )}
+          </div>
         </div>
-      </div>
 
-      {qry.isSuccess && series.length > 0 ? (
-        <ReactEChartsCore
-          echarts={echarts}
-          option={option}
-          style={{ height, width: "100%" }}
-          notMerge
-          lazyUpdate
-        />
-      ) : (
+        {supportsStep && (
+          <div className="w-36 shrink-0">
+            <span className="mb-1 block text-[0.58rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+              Resolution
+            </span>
+            <DurationPicker
+              value={effectiveStep}
+              placeholder="Resolution"
+              onChange={setStep}
+            />
+          </div>
+        )}
+      </header>
+
+      {series.length > 0 && (
+        <>
+          <dl className="flex flex-wrap items-center justify-end gap-4 px-1 py-3 sm:gap-6">
+            {headerStatistics.map((statistic) => (
+              <div key={statistic.label} className="text-right">
+                <dt className="text-[0.58rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+                  {statistic.label}
+                </dt>
+                <dd className="mt-0.5 text-xs font-bold tabular-nums text-slate-700">
+                  {statistic.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+
+          <div className="w-full rounded-xl border border-slate-200/80 bg-slate-50/60 px-1 pt-1 sm:px-2">
+            <ReactEChartsCore
+              echarts={echarts}
+              option={option}
+              style={{ height, width: "100%" }}
+              notMerge
+              lazyUpdate
+            />
+          </div>
+          <p className="mt-2 px-1 text-right text-[0.6rem] font-semibold text-slate-400">
+            Drag to pan · Shift + scroll to zoom
+          </p>
+        </>
+      )}
+
+      {qry.isLoading && series.length === 0 && (
         <div
           style={{ height }}
-          className="flex w-full items-center justify-center text-[0.72rem] font-semibold text-slate-300"
+          className="flex w-full flex-col items-center justify-center gap-3 text-center"
         >
-          {emptyMessage}
+          <span className="h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
+          <span className="text-xs font-semibold text-slate-400">
+            Loading metric data…
+          </span>
         </div>
       )}
-    </div>
+
+      {qry.isError && series.length === 0 && (
+        <div
+          style={{ height }}
+          className="flex w-full items-center justify-center px-4 text-center"
+        >
+          <div className="max-w-md">
+            <p className="text-sm font-bold text-slate-700">
+              Metric unavailable
+            </p>
+            <p className="mt-1 line-clamp-2 text-xs font-semibold text-slate-400">
+              {errorMessage}
+            </p>
+            <button
+              type="button"
+              onClick={() => qry.refetch()}
+              className="mt-3 rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold text-white transition-colors duration-500 hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"
+            >
+              Try again
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!qry.isLoading && !qry.isError && series.length === 0 && (
+        <div
+          style={{ height }}
+          className="flex w-full items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/60 px-4 text-center"
+        >
+          <div>
+            <p className="text-sm font-bold text-slate-600">No metric data</p>
+            <p className="mt-1 text-xs font-semibold text-slate-400">
+              No numeric samples were returned for this time range.
+            </p>
+          </div>
+        </div>
+      )}
+    </section>
   );
 };
 
