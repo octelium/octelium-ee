@@ -3,6 +3,7 @@ import { ObjectReference } from "@/apis/metav1/metav1";
 import PageWrap from "@/components/PageWrap";
 import { getResourceRef, Resource } from "@/utils/pb";
 import { match } from "ts-pattern";
+import { AccessLogList } from "../AccessLogViewer";
 import AccessLogHealthWidget from "../AccessLogViewer/AccessLogWidget";
 import { useContextResource } from "./utils";
 
@@ -54,21 +55,33 @@ export const ResourceAccessLogs = (props: {
   }
 
   return (
-    <div>
-      <div className="w-full">
-        <div className="w-full">
-          <div>
-            <AccessLogHealthWidget
-              userRef={userRef}
-              serviceRef={serviceRef}
-              namespaceRef={namespaceRef}
-              deviceRef={deviceRef}
-              sessionRef={sessionRef}
-              policyRef={policyRef}
-            />
-          </div>
+    <div className="flex w-full flex-col gap-8">
+      <AccessLogHealthWidget
+        userRef={userRef}
+        serviceRef={serviceRef}
+        namespaceRef={namespaceRef}
+        deviceRef={deviceRef}
+        sessionRef={sessionRef}
+        policyRef={policyRef}
+      />
+
+      <section className="flex w-full flex-col gap-4 border-t border-slate-200 pt-6">
+        <div>
+          <h2 className="text-sm font-bold text-slate-800">Access logs</h2>
+          <p className="mt-1 text-[0.72rem] font-medium text-slate-500">
+            Recent access activity for this resource
+          </p>
         </div>
-      </div>
+        <AccessLogList
+          userRef={userRef}
+          serviceRef={serviceRef}
+          namespaceRef={namespaceRef}
+          deviceRef={deviceRef}
+          sessionRef={sessionRef}
+          policyRef={policyRef}
+          itemsPerPage={props.itemsPerPage ?? 25}
+        />
+      </section>
     </div>
   );
 };

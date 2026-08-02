@@ -428,6 +428,21 @@ const DoAuthenticationLogViewer = (props: {
 }) => {
   const [page, setPage] = React.useState(0);
 
+  React.useEffect(() => {
+    setPage(0);
+  }, [
+    props.userRef?.uid,
+    props.userRef?.name,
+    props.sessionRef?.uid,
+    props.sessionRef?.name,
+    props.deviceRef?.uid,
+    props.deviceRef?.name,
+    props.identityProviderRef?.uid,
+    props.identityProviderRef?.name,
+    props.from?.seconds,
+    props.from?.nanos,
+  ]);
+
   const qry = useQuery({
     queryKey: [
       "visibility",
@@ -481,6 +496,7 @@ const DoAuthenticationLogViewer = (props: {
             userRef: props.userRef,
             sessionRef: props.sessionRef,
             deviceRef: props.deviceRef,
+            identityProviderRef: props.identityProviderRef,
             common: {
               page,
               itemsPerPage: props.itemsPerPage ?? 100,
@@ -531,8 +547,35 @@ const DoAuthenticationLogViewer = (props: {
       )}
 
       {qry.data?.listResponseMeta && (
-        <Paginator meta={qry.data.listResponseMeta} />
+        <Paginator
+          meta={qry.data.listResponseMeta}
+          onPageChange={setPage}
+        />
       )}
+    </div>
+  );
+};
+
+export const AuthenticationLogList = (props: {
+  userRef?: ObjectReference;
+  sessionRef?: ObjectReference;
+  deviceRef?: ObjectReference;
+  identityProviderRef?: ObjectReference;
+  itemsPerPage?: number;
+}) => {
+  const [from, setFrom] = React.useState<Timestamp>(
+    Timestamp.fromDate(dayjs().subtract(6, "hour").toDate()),
+  );
+
+  return (
+    <div className="flex w-full flex-col gap-4">
+      <div className="flex items-center gap-3">
+        <span className="shrink-0 text-[0.72rem] font-bold uppercase tracking-[0.05em] text-slate-500">
+          Since
+        </span>
+        <SelectFromTimestamp onUpdate={setFrom} />
+      </div>
+      <DoAuthenticationLogViewer {...props} from={from} />
     </div>
   );
 };

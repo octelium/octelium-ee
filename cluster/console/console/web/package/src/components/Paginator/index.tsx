@@ -182,8 +182,11 @@ const Paginator = (props: {
               ),
             }}
             onChange={(v) => {
-              setParam("common.page", `${v}`);
-              props.onPageChange?.(v);
+              if (props.onPageChange) {
+                props.onPageChange(v - 1);
+              } else {
+                setParam("common.page", `${v}`);
+              }
             }}
           />
         ) : (

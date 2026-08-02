@@ -584,8 +584,29 @@ const DoAccessLogViewer = (props: {
 }) => {
   const [page, setPage] = React.useState(0);
 
+  React.useEffect(() => {
+    setPage(0);
+  }, [
+    props.userRef?.uid,
+    props.userRef?.name,
+    props.sessionRef?.uid,
+    props.sessionRef?.name,
+    props.serviceRef?.uid,
+    props.serviceRef?.name,
+    props.namespaceRef?.uid,
+    props.namespaceRef?.name,
+    props.regionRef?.uid,
+    props.regionRef?.name,
+    props.deviceRef?.uid,
+    props.deviceRef?.name,
+    props.policyRef?.uid,
+    props.policyRef?.name,
+    props.from?.seconds,
+    props.from?.nanos,
+  ]);
+
   const qry = useQuery({
-    queryKey: ["visibility", "listAccessLog", { ...props }],
+    queryKey: ["visibility", "listAccessLog", { ...props, page }],
     queryFn: async () => {
       if (isDev()) return getListAccessLogResponseTest();
       const req = ListAccessLogRequest.create({
@@ -646,9 +667,39 @@ const DoAccessLogViewer = (props: {
 
       {qry.data?.listResponseMeta && (
         <div className="mt-4">
-          <Paginator meta={qry.data.listResponseMeta} />
+          <Paginator
+            meta={qry.data.listResponseMeta}
+            onPageChange={setPage}
+          />
         </div>
       )}
+    </div>
+  );
+};
+
+export const AccessLogList = (props: {
+  userRef?: ObjectReference;
+  sessionRef?: ObjectReference;
+  serviceRef?: ObjectReference;
+  namespaceRef?: ObjectReference;
+  regionRef?: ObjectReference;
+  deviceRef?: ObjectReference;
+  policyRef?: ObjectReference;
+  itemsPerPage?: number;
+}) => {
+  const [from, setFrom] = React.useState<Timestamp>(
+    Timestamp.fromDate(dayjs().subtract(6, "hour").toDate()),
+  );
+
+  return (
+    <div className="flex w-full flex-col gap-4">
+      <div className="flex items-center gap-3">
+        <span className="shrink-0 text-[0.72rem] font-bold uppercase tracking-[0.05em] text-slate-500">
+          Since
+        </span>
+        <SelectFromTimestamp onUpdate={setFrom} />
+      </div>
+      <DoAccessLogViewer {...props} from={from} />
     </div>
   );
 };

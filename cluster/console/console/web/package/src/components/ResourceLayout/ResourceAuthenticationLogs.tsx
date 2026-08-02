@@ -3,10 +3,14 @@ import { ObjectReference } from "@/apis/metav1/metav1";
 import PageWrap from "@/components/PageWrap";
 import { getResourceRef, Resource } from "@/utils/pb";
 import { match } from "ts-pattern";
+import { AuthenticationLogList } from "../AuthenticationLogViewer";
 import AuthenticationLogHealthWidget from "../AuthenticationLogViewer/AuthenticationLogWidget";
 import { useContextResource } from "./utils";
 
-export const ResourceAuthenticationLogs = (props: { resource: Resource }) => {
+export const ResourceAuthenticationLogs = (props: {
+  resource: Resource;
+  itemsPerPage?: number;
+}) => {
   const { resource } = props;
   if (resource.apiVersion !== `core/v1`) {
     return <></>;
@@ -41,19 +45,31 @@ export const ResourceAuthenticationLogs = (props: { resource: Resource }) => {
   }
 
   return (
-    <div>
-      <div className="w-full">
-        <div className="w-full">
-          <div>
-            <AuthenticationLogHealthWidget
-              userRef={userRef}
-              sessionRef={sessionRef}
-              deviceRef={deviceRef}
-              identityProviderRef={identityProviderRef}
-            />
-          </div>
+    <div className="flex w-full flex-col gap-8">
+      <AuthenticationLogHealthWidget
+        userRef={userRef}
+        sessionRef={sessionRef}
+        deviceRef={deviceRef}
+        identityProviderRef={identityProviderRef}
+      />
+
+      <section className="flex w-full flex-col gap-4 border-t border-slate-200 pt-6">
+        <div>
+          <h2 className="text-sm font-bold text-slate-800">
+            Authentication logs
+          </h2>
+          <p className="mt-1 text-[0.72rem] font-medium text-slate-500">
+            Recent authentication activity for this resource
+          </p>
         </div>
-      </div>
+        <AuthenticationLogList
+          userRef={userRef}
+          sessionRef={sessionRef}
+          deviceRef={deviceRef}
+          identityProviderRef={identityProviderRef}
+          itemsPerPage={props.itemsPerPage ?? 25}
+        />
+      </section>
     </div>
   );
 };

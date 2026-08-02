@@ -105,6 +105,7 @@ const ResourceItemActions = (props: {
         shadow="md"
         withinPortal
         transitionProps={{ transition: "pop-top-right", duration: 180 }}
+        styles={{ item: { fontWeight: 700 } }}
       >
         <Menu.Target>
           <ActionIcon
