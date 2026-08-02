@@ -18,6 +18,11 @@ import { getType } from "./List";
 export const ItemInfo = (props: { item: CoreC.Session }) => {
   let { item } = props;
   const mutationUpdate = useUpdateResource();
+  const updateItem = (update: (item: CoreC.Session) => void) => {
+    const clone = CoreC.Session.clone(item);
+    update(clone);
+    mutationUpdate.mutate(clone);
+  };
 
   return (
     <>
@@ -52,8 +57,9 @@ export const ItemInfo = (props: { item: CoreC.Session }) => {
                   isFuture
                   value={item.spec.expiresAt}
                   onChange={(v) => {
-                    item.spec!.expiresAt = v;
-                    mutationUpdate.mutate(item);
+                    updateItem((clone) => {
+                      clone.spec!.expiresAt = v;
+                    });
                   }}
                 />
               }
@@ -62,8 +68,6 @@ export const ItemInfo = (props: { item: CoreC.Session }) => {
         </InfoItem>
       )}
       {item.status?.authentication &&
-        item.status.lastAuthentications &&
-        item.status.lastAuthentications.length > 0 &&
         item.status.authentication.setAt && (
           <InfoItem title="Last Authentication">
             <TimeAgo rfc3339={item.status.authentication.setAt} />
@@ -139,8 +143,9 @@ export const ItemInfo = (props: { item: CoreC.Session }) => {
                 if (!v) {
                   return;
                 }
-                item.spec!.state = CoreP.Session_Spec_State[v as "ACTIVE"];
-                mutationUpdate.mutate(item);
+                updateItem((clone) => {
+                  clone.spec!.state = CoreP.Session_Spec_State[v as "ACTIVE"];
+                });
               }}
             />
           }
@@ -165,18 +170,118 @@ export default (props: { item: CoreC.Session }) => {
   );
 };
 
-export const MainInfo = (props: { item: CoreC.Session }): ResourceMainInfo => {
+const SessionStateControl = (props: { item: CoreC.Session }) => {
   const { item } = props;
   const mutationUpdate = useUpdateResource();
+
+  return (
+    <EditItemWrap
+      label="state"
+      showComponent={
+        <span
+          className={twMerge(
+            "text-[0.75rem] font-semibold",
+            match(item.spec!.state)
+              .with(
+                CoreP.Session_Spec_State.ACTIVE,
+                () => "text-emerald-600",
+              )
+              .with(
+                CoreP.Session_Spec_State.REJECTED,
+                () => "text-red-500",
+              )
+              .with(
+                CoreP.Session_Spec_State.PENDING,
+                () => "text-amber-500",
+              )
+              .otherwise(() => "text-slate-600"),
+          )}
+        >
+          {match(item.spec!.state)
+            .with(CoreP.Session_Spec_State.ACTIVE, () => "Active")
+            .with(CoreP.Session_Spec_State.REJECTED, () => "Rejected")
+            .with(CoreP.Session_Spec_State.PENDING, () => "Pending")
+            .otherwise(() => "")}
+        </span>
+      }
+      editComponent={
+        <Select
+          size="xs"
+          data={[
+            {
+              label: "Active",
+              value: CoreP.Session_Spec_State[CoreP.Session_Spec_State.ACTIVE],
+            },
+            {
+              label: "Pending",
+              value: CoreP.Session_Spec_State[CoreP.Session_Spec_State.PENDING],
+            },
+            {
+              label: "Rejected",
+              value: CoreP.Session_Spec_State[CoreP.Session_Spec_State.REJECTED],
+            },
+          ]}
+          value={CoreP.Session_Spec_State[item.spec!.state]}
+          onChange={(v) => {
+            if (!v) return;
+            const clone = CoreP.Session.clone(item);
+            clone.spec!.state = CoreP.Session_Spec_State[v as "ACTIVE"];
+            mutationUpdate.mutate(clone);
+          }}
+        />
+      }
+    />
+  );
+};
+
+const SessionExpirationControl = (props: { item: CoreC.Session }) => {
+  const { item } = props;
+  const mutationUpdate = useUpdateResource();
+
+  return (
+    <EditItemWrap
+      label="expiration"
+      showComponent={
+        <span className="text-[0.75rem] font-semibold text-slate-600">
+          {item.spec?.expiresAt ? (
+            <TimeAgo rfc3339={item.spec.expiresAt} />
+          ) : (
+            "Not set"
+          )}
+        </span>
+      }
+      editComponent={
+        <TimestampPicker
+          label="Expires at"
+          description="Set the expiration time for the Session"
+          isFuture
+          value={item.spec?.expiresAt}
+          onChange={(v) => {
+            const clone = CoreP.Session.clone(item);
+            clone.spec!.expiresAt = v;
+            mutationUpdate.mutate(clone);
+          }}
+        />
+      }
+    />
+  );
+};
+
+export const MainInfo = (props: { item: CoreC.Session }): ResourceMainInfo => {
+  const { item } = props;
   const downstream = item.status?.authentication?.info?.downstream;
 
   return {
     items: [
-      {
-        label: "User",
-        value: <ResourceListLabel itemRef={item.status!.userRef} />,
-      },
-      ...(!!item.status?.deviceRef
+      ...(item.status?.userRef?.name || item.status?.userRef?.uid
+        ? [
+            {
+              label: "User",
+              value: <ResourceListLabel itemRef={item.status.userRef} />,
+            },
+          ]
+        : []),
+      ...(item.status?.deviceRef?.name || item.status?.deviceRef?.uid
         ? [
             {
               label: "Device",
@@ -191,70 +296,7 @@ export const MainInfo = (props: { item: CoreC.Session }): ResourceMainInfo => {
 
       {
         label: "State",
-        value: (
-          <EditItemWrap
-            label="state"
-            showComponent={
-              <span
-                className={twMerge(
-                  "text-[0.75rem] font-semibold",
-                  match(item.spec!.state)
-                    .with(
-                      CoreP.Session_Spec_State.ACTIVE,
-                      () => "text-emerald-600",
-                    )
-                    .with(
-                      CoreP.Session_Spec_State.REJECTED,
-                      () => "text-red-500",
-                    )
-                    .with(
-                      CoreP.Session_Spec_State.PENDING,
-                      () => "text-amber-500",
-                    )
-                    .otherwise(() => "text-slate-600"),
-                )}
-              >
-                {match(item.spec!.state)
-                  .with(CoreP.Session_Spec_State.ACTIVE, () => "Active")
-                  .with(CoreP.Session_Spec_State.REJECTED, () => "Rejected")
-                  .with(CoreP.Session_Spec_State.PENDING, () => "Pending")
-                  .otherwise(() => "")}
-              </span>
-            }
-            editComponent={
-              <Select
-                size="xs"
-                data={[
-                  {
-                    label: "Active",
-                    value:
-                      CoreP.Session_Spec_State[CoreP.Session_Spec_State.ACTIVE],
-                  },
-                  {
-                    label: "Pending",
-                    value:
-                      CoreP.Session_Spec_State[
-                        CoreP.Session_Spec_State.PENDING
-                      ],
-                  },
-                  {
-                    label: "Rejected",
-                    value:
-                      CoreP.Session_Spec_State[
-                        CoreP.Session_Spec_State.REJECTED
-                      ],
-                  },
-                ]}
-                value={CoreP.Session_Spec_State[item.spec!.state]}
-                onChange={(v) => {
-                  if (!v) return;
-                  item.spec!.state = CoreP.Session_Spec_State[v as "ACTIVE"];
-                  mutationUpdate.mutate(item);
-                }}
-              />
-            }
-          />
-        ),
+        value: <SessionStateControl item={item} />,
       },
 
       ...(item.status?.isConnected
@@ -276,35 +318,10 @@ export const MainInfo = (props: { item: CoreC.Session }): ResourceMainInfo => {
           ]
         : []),
 
-      ...(item.spec?.expiresAt
-        ? [
-            {
-              label: "Expires",
-              value: (
-                <EditItemWrap
-                  label="expiration"
-                  showComponent={
-                    <span className="text-[0.75rem] font-semibold text-slate-600">
-                      <TimeAgo rfc3339={item.spec.expiresAt} />
-                    </span>
-                  }
-                  editComponent={
-                    <TimestampPicker
-                      label="Expires at"
-                      description="Set the expiration time for the Session"
-                      isFuture
-                      value={item.spec.expiresAt}
-                      onChange={(v) => {
-                        item.spec!.expiresAt = v;
-                        mutationUpdate.mutate(item);
-                      }}
-                    />
-                  }
-                />
-              ),
-            },
-          ]
-        : []),
+      {
+        label: "Expires",
+        value: <SessionExpirationControl item={item} />,
+      },
 
       ...(item.status?.authentication?.setAt
         ? [

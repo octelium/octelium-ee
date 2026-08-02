@@ -15,6 +15,11 @@ const Edit = (props: {
 }) => {
   const { item, onUpdate } = props;
   const [req, setReq] = React.useState(CoreP.Session.clone(item));
+
+  React.useEffect(() => {
+    setReq(CoreP.Session.clone(item));
+  }, [item]);
+
   const updateReq = () => {
     setReq(CoreP.Session.clone(req));
     onUpdate(req);

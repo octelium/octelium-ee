@@ -87,8 +87,6 @@ export const LabelComponent = (props: { item: Session }) => {
         </ResourceListLabel>
       )}
       {item.status?.authentication &&
-        item.status.lastAuthentications &&
-        item.status.lastAuthentications.length > 0 &&
         item.status.authentication.setAt && (
           <ResourceListLabel label="Last Authentication">
             <TimeAgo rfc3339={item.status.authentication.setAt} />
@@ -107,8 +105,10 @@ export const LabelComponent = (props: { item: Session }) => {
           </div>
         </ResourceListLabel>
       )}
-      <ResourceListLabel itemRef={item.status!.userRef}></ResourceListLabel>
-      {item.status?.deviceRef?.name && (
+      {(item.status?.userRef?.name || item.status?.userRef?.uid) && (
+        <ResourceListLabel itemRef={item.status.userRef} />
+      )}
+      {(item.status?.deviceRef?.name || item.status?.deviceRef?.uid) && (
         <ResourceListLabel itemRef={item.status!.deviceRef}></ResourceListLabel>
       )}
 
