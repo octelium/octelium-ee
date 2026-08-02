@@ -320,6 +320,7 @@ const Edit = (props: {
                 max={100000}
                 onChange={(v) => {
                   req.spec!.session!.maxPerUser = strToNum(v);
+                  updateReq();
                 }}
               />
 

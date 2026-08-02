@@ -1,4 +1,5 @@
 import {
+  ListAuthenticatorOptions,
   ListCredentialOptions,
   ListDeviceOptions,
   ListSessionOptions,
@@ -14,7 +15,6 @@ import {
 } from "@/components/ResourceList";
 
 import { GetUserSummaryResponse } from "@/apis/visibilityv1/core/vcorev1";
-import { ListAuthenticationLogRequest } from "@/apis/visibilityv1/visibilityv1";
 import PieChart from "@/components/Charts/PieChart";
 import {
   SummaryItemCount,
@@ -99,7 +99,7 @@ export const LabelComponent = (props: { item: User }) => {
     queryKey: ["core.listAuthenticator", "usr", item.metadata!.name],
     queryFn: async () => {
       return await getClientCore().listAuthenticator(
-        ListAuthenticationLogRequest.create({ userRef: getResourceRef(item) }),
+        ListAuthenticatorOptions.create({ userRef: getResourceRef(item) }),
       );
     },
   });
@@ -262,7 +262,7 @@ const DoSummary = (props: { resp: GetUserSummaryResponse }) => {
           to={toURLWithQry(`/core/users`, {
             isDisabled: "true",
           })}
-          active={searchParams.get(`isPublic`) === "true"}
+          active={searchParams.get(`isDisabled`) === "true"}
         >
           Disabled
         </SummaryItemCount>
