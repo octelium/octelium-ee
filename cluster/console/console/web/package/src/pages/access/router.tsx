@@ -47,6 +47,7 @@ const getResourceChildrenRouter = (arg: ResourceComponentInfo): RouteObject => {
         <ResourceItemMainPage
           mainComponent={arg.Item.Main}
           mainItemsGetter={arg.infoItemsGetter}
+          unDeletable={arg.unDeletable}
         />
       ) : null,
     },

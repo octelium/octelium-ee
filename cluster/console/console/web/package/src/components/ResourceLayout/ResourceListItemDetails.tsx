@@ -28,7 +28,7 @@ const CompactInfoCell = ({
   <div
     className={twMerge(
       "flex flex-col gap-0.5",
-      span === "full" ? "col-span-2" : "col-span-1",
+      span === "full" ? "sm:col-span-2" : "col-span-1",
     )}
   >
     <span className="text-[0.58rem] font-bold uppercase tracking-[0.07em] text-slate-400 leading-none">
@@ -41,7 +41,7 @@ const CompactInfoCell = ({
 );
 
 const SectionDivider = ({ label }: { label: string }) => (
-  <div className="col-span-2 flex items-center gap-2 pt-1">
+  <div className="flex items-center gap-2 pt-1 sm:col-span-2">
     <span className="text-[0.58rem] font-bold uppercase tracking-[0.07em] text-slate-400 shrink-0">
       {label}
     </span>
@@ -101,7 +101,7 @@ export const ResourceListItemDetails = (props: {
     hasSSHSessionLog(item);
 
   return (
-    <div className="border-t border-slate-100 px-5 py-4 flex flex-col gap-4">
+    <div className="border-t border-slate-100 px-4 py-4 sm:px-5 flex flex-col gap-4">
       {(md.isSystem || md.isUserHidden) && (
         <div className="flex items-center gap-1.5">
           {md.isSystem && (
@@ -119,9 +119,9 @@ export const ResourceListItemDetails = (props: {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-        {sharedItems.map((x, i) => (
-          <CompactInfoCell key={i} label={x.label} span={x.span}>
+      <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+        {sharedItems.map((x) => (
+          <CompactInfoCell key={x.label} label={x.label} span={x.span}>
             {x.value}
           </CompactInfoCell>
         ))}

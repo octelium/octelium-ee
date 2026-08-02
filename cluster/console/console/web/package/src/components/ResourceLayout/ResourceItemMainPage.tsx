@@ -38,8 +38,8 @@ const InfoCell = ({
 }) => (
   <div
     className={twMerge(
-      "flex flex-col gap-1 px-5 py-4 bg-white",
-      span === "full" ? "col-span-2" : "col-span-1",
+      "flex flex-col gap-1 px-4 py-3 sm:px-5 sm:py-4 bg-white",
+      span === "full" ? "sm:col-span-2" : "col-span-1",
     )}
   >
     <span className="text-[0.62rem] font-bold uppercase tracking-[0.07em] text-slate-400 leading-none">
@@ -161,6 +161,7 @@ const ResourceLoadError = (props: {
 const ResourceItemMainPage = (props: {
   mainComponent?: (props: { item: Resource }) => React.ReactNode;
   mainItemsGetter?: (props: { item: Resource }) => ResourceMainInfo;
+  unDeletable?: boolean;
 }) => {
   const ctx = useContextResource();
   const location = useLocation();
@@ -184,6 +185,7 @@ const ResourceItemMainPage = (props: {
         <ResourceMainContent
           resource={ctx.data}
           mainItemsGetter={props.mainItemsGetter}
+          unDeletable={props.unDeletable}
         />
       )}
     </PageWrap>
@@ -193,6 +195,7 @@ const ResourceItemMainPage = (props: {
 const ResourceMainContent = (props: {
   resource: Resource;
   mainItemsGetter?: (props: { item: Resource }) => ResourceMainInfo;
+  unDeletable?: boolean;
 }) => {
   const { resource: item } = props;
   const md = item.metadata!;
@@ -271,7 +274,7 @@ const ResourceMainContent = (props: {
 
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-[0_1px_4px_rgba(15,23,42,0.06)]">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-slate-50/60">
+        <div className="flex flex-col items-start gap-3 px-4 py-3 border-b border-slate-100 bg-slate-50/60 sm:flex-row sm:items-center sm:justify-between sm:px-5">
           <div className="flex items-center gap-2">
             <span className="text-[0.72rem] font-bold uppercase tracking-[0.05em] text-slate-600">
               {item.kind}
@@ -295,20 +298,22 @@ const ResourceMainContent = (props: {
           </div>
           <div className="flex items-center">
             <ResourceYAML item={item} size="xs" />
-            <div className="ml-2">
-              <DeleteResource
-                item={item}
-                btnSize={`compact-xs`}
-                btnVariant="outline"
-              />
-            </div>
+            {!props.unDeletable && (
+              <div className="ml-2">
+                <DeleteResource
+                  item={item}
+                  btnSize={`compact-xs`}
+                  btnVariant="outline"
+                />
+              </div>
+            )}
           </div>
         </div>
 
         {/* Shared metadata grid */}
-        <div className="grid grid-cols-2 gap-px bg-slate-100">
-          {sharedItems.map((x, i) => (
-            <InfoCell key={i} label={x.label} span={x.span}>
+        <div className="grid grid-cols-1 gap-px bg-slate-100 sm:grid-cols-2">
+          {sharedItems.map((x) => (
+            <InfoCell key={x.label} label={x.label} span={x.span}>
               {x.value}
             </InfoCell>
           ))}
@@ -326,7 +331,7 @@ const ResourceMainContent = (props: {
                     </span>
                     <div className="flex-1 h-px bg-slate-200" />
                   </div>
-                  <div className="grid grid-cols-2 gap-px bg-slate-100">
+                  <div className="grid grid-cols-1 gap-px bg-slate-100 sm:grid-cols-2">
                     {specificItems.map((x) => (
                       <InfoCell key={x.label} label={x.label} span={x.span}>
                         {x.value}
