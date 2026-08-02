@@ -17,6 +17,7 @@ import { getClientVisibilityCore } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { getType } from "./Main";
+import { match } from "ts-pattern";
 
 const ItemDetails = (props: { item: CoreP.Authenticator; domain: string }) => {
   const { item } = props;
@@ -32,7 +33,43 @@ export const LabelComponent = (props: { item: CoreP.Authenticator }) => {
     <ResourceListLabelWrap>
       <ResourceListLabel>{getType(item)}</ResourceListLabel>
 
+      <ResourceListLabel>
+        <span
+          className={
+            match(item.spec!.state)
+              .with(
+                CoreP.Authenticator_Spec_State.ACTIVE,
+                () => "text-emerald-600",
+              )
+              .with(
+                CoreP.Authenticator_Spec_State.REJECTED,
+                () => "text-red-500",
+              )
+              .with(
+                CoreP.Authenticator_Spec_State.PENDING,
+                () => "text-amber-500",
+              )
+              .otherwise(() => "text-slate-500")
+          }
+        >
+          {match(item.spec!.state)
+            .with(CoreP.Authenticator_Spec_State.ACTIVE, () => "Active")
+            .with(CoreP.Authenticator_Spec_State.REJECTED, () => "Rejected")
+            .with(CoreP.Authenticator_Spec_State.PENDING, () => "Pending")
+            .otherwise(() => "Unknown")}
+        </span>
+      </ResourceListLabel>
+
+      {!item.status!.isRegistered && (
+        <ResourceListLabel>
+          <span className="text-red-500">Not registered</span>
+        </ResourceListLabel>
+      )}
+
       <ResourceListLabel itemRef={item.status!.userRef}></ResourceListLabel>
+      {(item.status?.deviceRef?.name || item.status?.deviceRef?.uid) && (
+        <ResourceListLabel itemRef={item.status.deviceRef} />
+      )}
     </ResourceListLabelWrap>
   );
 };

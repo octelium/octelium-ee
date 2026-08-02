@@ -1,12 +1,13 @@
 import * as CoreP from "@/apis/corev1/corev1";
+import CopyText from "@/components/CopyText";
 import InfoItem from "@/components/InfoItem";
 import { useUpdateResource } from "@/pages/utils/resource";
 import { Select } from "@mantine/core";
 import { match } from "ts-pattern";
 
-import Label from "@/components/Label";
 import EditItemWrap from "@/components/ResourceLayout/EditItemWrap";
 import { ResourceListLabel } from "@/components/ResourceList";
+import TimeAgo from "@/components/TimeAgo";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { twMerge } from "tailwind-merge";
 
@@ -127,9 +128,10 @@ export const ItemInfo = (props: { item: CoreP.Authenticator }) => {
                 if (!v) {
                   return;
                 }
-                item.spec!.state =
+                const next = CoreP.Authenticator.clone(item);
+                next.spec!.state =
                   CoreP.Authenticator_Spec_State[v as "ACTIVE"];
-                mutationUpdate.mutate(item);
+                mutationUpdate.mutate(next);
               }}
             />
           }
@@ -141,7 +143,6 @@ export const ItemInfo = (props: { item: CoreP.Authenticator }) => {
 
 export default (props: { item: CoreP.Authenticator }) => {
   const { item } = props;
-  const mutationUpdate = useUpdateResource();
   return (
     <div className="w-full">
       <div className="w-full">
@@ -151,15 +152,76 @@ export default (props: { item: CoreP.Authenticator }) => {
   );
 };
 
+const AuthenticatorDetails = (props: { item: CoreP.Authenticator }) => {
+  const info = props.item.status?.info?.type;
+  if (!info?.oneofKind) return null;
+
+  if (info.oneofKind === "fido") {
+    const fido = info.fido;
+    return (
+      <div className="flex flex-wrap gap-1">
+        {fido.aaguid && (
+          <ResourceListLabel label="AAGUID">
+            <CopyText value={fido.aaguid} />
+          </ResourceListLabel>
+        )}
+        <ResourceListLabel label="Authenticator class">
+          {fido.type === CoreP.Authenticator_Status_Info_FIDO_Type.PLATFORM
+            ? "Platform"
+            : fido.type === CoreP.Authenticator_Status_Info_FIDO_Type.ROAMING
+              ? "Roaming"
+              : "Unknown"}
+        </ResourceListLabel>
+        {fido.isPasskey && <ResourceListLabel>Passkey</ResourceListLabel>}
+        {fido.isHardware && <ResourceListLabel>Hardware</ResourceListLabel>}
+        {fido.isSoftware && <ResourceListLabel>Software</ResourceListLabel>}
+        {fido.backupEligible && (
+          <ResourceListLabel>Backup eligible</ResourceListLabel>
+        )}
+        {fido.isAttestationVerified && (
+          <ResourceListLabel>
+            <span className="text-emerald-600">Attestation verified</span>
+          </ResourceListLabel>
+        )}
+        <ResourceListLabel label="Signature counter">
+          {fido.signCount.toLocaleString()}
+        </ResourceListLabel>
+      </div>
+    );
+  }
+
+  if (info.oneofKind === "totp") {
+    const totp = info.totp;
+    return (
+      <div className="flex flex-wrap gap-1">
+        <ResourceListLabel label="Algorithm">
+          {CoreP.Authenticator_Status_Info_TOTP_Algorithm[
+            totp.algorithm
+          ]?.replace("ALGORITHM_", "") || "Unknown"}
+        </ResourceListLabel>
+        <ResourceListLabel label="Digits">{totp.digits}</ResourceListLabel>
+        <ResourceListLabel label="Period">
+          {totp.periodSeconds} seconds
+        </ResourceListLabel>
+        {totp.lastAcceptedAt && (
+          <ResourceListLabel label="Last accepted">
+            <TimeAgo rfc3339={totp.lastAcceptedAt} />
+          </ResourceListLabel>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <ResourceListLabel>TPM attestation material configured</ResourceListLabel>
+  );
+};
+
 export const MainInfo = (props: {
   item: CoreP.Authenticator;
 }): ResourceMainInfo => {
   const { item } = props;
   const mutationUpdate = useUpdateResource();
-  const fido =
-    item.status?.info?.type.oneofKind === "fido"
-      ? item.status.info.type.fido
-      : null;
 
   return {
     items: [
@@ -167,6 +229,14 @@ export const MainInfo = (props: {
         label: "User",
         value: <ResourceListLabel itemRef={item.status!.userRef} />,
       },
+      ...(item.status?.deviceRef?.name || item.status?.deviceRef?.uid
+        ? [
+            {
+              label: "Device",
+              value: <ResourceListLabel itemRef={item.status.deviceRef} />,
+            },
+          ]
+        : []),
       {
         label: "Type",
         value: (
@@ -241,9 +311,10 @@ export const MainInfo = (props: {
                 value={CoreP.Authenticator_Spec_State[item.spec!.state]}
                 onChange={(v) => {
                   if (!v) return;
-                  item.spec!.state =
+                  const next = CoreP.Authenticator.clone(item);
+                  next.spec!.state =
                     CoreP.Authenticator_Spec_State[v as "ACTIVE"];
-                  mutationUpdate.mutate(item);
+                  mutationUpdate.mutate(next);
                 }}
               />
             }
@@ -265,36 +336,21 @@ export const MainInfo = (props: {
         ),
       },
 
-      ...(fido?.aaguid
+      ...(item.spec?.displayName
         ? [
             {
-              label: "AAGUID",
-              value: (
-                <span className="text-sm font-mono text-slate-700">
-                  {fido.aaguid}
-                </span>
-              ),
+              label: "Display name",
+              value: item.spec.displayName,
             },
           ]
         : []),
 
-      ...(fido
+      ...(item.status?.description
         ? [
             {
-              label: "FIDO flags",
-              value: (
-                <div className="flex flex-wrap gap-1">
-                  {fido.isPasskey && <Label>Passkey</Label>}
-                  {fido.isHardware && <Label>Hardware</Label>}
-                  {fido.isAttestationVerified && (
-                    <Label>
-                      <span className="text-emerald-400">
-                        Attestation verified
-                      </span>
-                    </Label>
-                  )}
-                </div>
-              ),
+              label: "Description",
+              value: item.status.description,
+              span: "full" as const,
             },
           ]
         : []),
@@ -306,13 +362,53 @@ export const MainInfo = (props: {
               value: (
                 <span className="text-sm font-semibold text-slate-700 tabular-nums">
                   {item.status!.totalAuthenticationAttempts}
-                  {item.status!.successfulAuthentications > 0 && (
-                    <span className="text-slate-400 font-medium ml-1.5">
-                      ({item.status!.successfulAuthentications} successful)
-                    </span>
-                  )}
+                  <span className="ml-1.5 font-medium text-emerald-600">
+                    {item.status!.successfulAuthentications} successful
+                  </span>
+                  <span className="ml-1.5 font-medium text-red-500">
+                    {item.status!.failedAuthentications} failed
+                  </span>
                 </span>
               ),
+            },
+          ]
+        : []),
+
+      {
+        label: "Authenticator details",
+        value: <AuthenticatorDetails item={item} />,
+        span: "full",
+      },
+
+      ...(item.status?.authenticationAttempt
+        ? [
+            {
+              label: "Current attempt",
+              value: (
+                <div className="flex flex-wrap gap-1">
+                  {(item.status.authenticationAttempt.sessionRef?.name ||
+                    item.status.authenticationAttempt.sessionRef?.uid) && (
+                    <ResourceListLabel
+                      itemRef={item.status.authenticationAttempt.sessionRef}
+                    />
+                  )}
+                  {item.status.authenticationAttempt.createdAt && (
+                    <ResourceListLabel label="Started">
+                      <TimeAgo
+                        rfc3339={item.status.authenticationAttempt.createdAt}
+                      />
+                    </ResourceListLabel>
+                  )}
+                  {item.status.authenticationAttempt.completedAt && (
+                    <ResourceListLabel label="Completed">
+                      <TimeAgo
+                        rfc3339={item.status.authenticationAttempt.completedAt}
+                      />
+                    </ResourceListLabel>
+                  )}
+                </div>
+              ),
+              span: "full" as const,
             },
           ]
         : []),
