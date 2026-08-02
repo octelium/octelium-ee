@@ -39,6 +39,7 @@ const DeleteResource = (props: {
   opened?: boolean;
   onClose?: () => void;
   hideTrigger?: boolean;
+  btnLabel?: string;
 }) => {
   const { item } = props;
   const [isDeletable, setIsDeletable] = React.useState(false);
@@ -84,6 +85,7 @@ const DeleteResource = (props: {
           variant={props.btnVariant}
         >
           <MdDelete />
+          {props.btnLabel}
         </Button>
       )}
 

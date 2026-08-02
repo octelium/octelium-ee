@@ -1,31 +1,17 @@
 import { ResourceInfoMainItem, ResourceMainInfo } from "@/pages/utils/types";
-import {
-  getRefNameQueryArgStr,
-  hasAccessLog,
-  hasAuditLog,
-  hasAuthenticationLog,
-  hasSSHSessionLog,
-  Resource,
-} from "@/utils/pb";
-import {
-  EyeOff,
-  Library,
-  ShieldAlert,
-  ShieldEllipsis,
-  ShieldUser,
-  SquareTerminal,
-  Tag,
-} from "lucide-react";
+import { Resource } from "@/utils/pb";
+import { EyeOff, ShieldAlert, Tag } from "lucide-react";
 import * as React from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 import CopyText from "../CopyText";
 import DeleteResource from "../DeleteResource";
 import PageWrap from "../PageWrap";
 import ResourceYAML from "../ResourceYAML";
 import TimeAgo from "../TimeAgo";
-import { useContextResource } from "./utils";
+import CloneResource from "./CloneResource";
 import ResourceInfoItems from "./ResourceInfoItems";
+import { useContextResource } from "./utils";
 
 const InfoCell = ({
   label,
@@ -38,66 +24,18 @@ const InfoCell = ({
 }) => (
   <div
     className={twMerge(
-      "flex flex-col gap-1 px-4 py-3 sm:px-5 sm:py-4 bg-white",
+      "flex min-w-0 items-start gap-3 bg-white px-3 py-2.5 sm:px-4",
       span === "full" ? "sm:col-span-2" : "col-span-1",
     )}
   >
-    <span className="text-[0.62rem] font-bold uppercase tracking-[0.07em] text-slate-400 leading-none">
+    <span className="w-24 shrink-0 pt-0.5 text-[0.61rem] font-bold uppercase leading-4 tracking-[0.06em] text-slate-500">
       {label}
     </span>
-    <div className="text-sm font-semibold text-slate-700 leading-snug">
+    <div className="min-w-0 flex-1 text-[0.76rem] font-semibold leading-5 text-slate-700">
       {children}
     </div>
   </div>
 );
-
-const ResourceVisibilityButtons = ({ item }: { item: Resource }) => {
-  const qryNameArg = getRefNameQueryArgStr(item);
-
-  const buttons = [
-    {
-      show: hasAccessLog(item),
-      to: `/visibility/accesslogs?${qryNameArg}`,
-      icon: ShieldEllipsis,
-      label: "Access logs",
-    },
-    {
-      show: hasAuthenticationLog(item),
-      to: `/visibility/authenticationlogs?${qryNameArg}`,
-      icon: ShieldUser,
-      label: "Auth logs",
-    },
-    {
-      show: hasAuditLog(item),
-      to: `/visibility/auditlogs?${qryNameArg}`,
-      icon: Library,
-      label: "Audit logs",
-    },
-    {
-      show: hasSSHSessionLog(item),
-      to: `/visibility/ssh?${qryNameArg}`,
-      icon: SquareTerminal,
-      label: "SSH sessions",
-    },
-  ].filter((b) => b.show);
-
-  if (buttons.length === 0) return null;
-
-  return (
-    <div className="flex items-center flex-wrap gap-1.5">
-      {buttons.map(({ to, icon: Icon, label }) => (
-        <Link
-          key={to}
-          to={to}
-          className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[0.72rem] font-bold text-slate-500 border border-slate-200 bg-white hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 transition-colors duration-150"
-        >
-          <Icon size={11} strokeWidth={2.5} />
-          {label}
-        </Link>
-      ))}
-    </div>
-  );
-};
 
 const ResourceNotFound = (props: { parentPath: string }) => {
   const navigate = useNavigate();
@@ -135,10 +73,7 @@ const ResourceNotFound = (props: { parentPath: string }) => {
   );
 };
 
-const ResourceLoadError = (props: {
-  error: unknown;
-  retry: () => void;
-}) => (
+const ResourceLoadError = (props: { error: unknown; retry: () => void }) => (
   <div className="flex min-h-[55vh] w-full flex-col items-center justify-center gap-3 text-center">
     <p className="text-lg font-bold text-slate-800">
       This resource could not be loaded.
@@ -159,9 +94,9 @@ const ResourceLoadError = (props: {
 );
 
 const ResourceItemMainPage = (props: {
-  mainComponent?: (props: { item: Resource }) => React.ReactNode;
   mainItemsGetter?: (props: { item: Resource }) => ResourceMainInfo;
   unDeletable?: boolean;
+  cloneable?: boolean;
 }) => {
   const ctx = useContextResource();
   const location = useLocation();
@@ -186,6 +121,7 @@ const ResourceItemMainPage = (props: {
           resource={ctx.data}
           mainItemsGetter={props.mainItemsGetter}
           unDeletable={props.unDeletable}
+          cloneable={props.cloneable}
         />
       )}
     </PageWrap>
@@ -196,44 +132,25 @@ const ResourceMainContent = (props: {
   resource: Resource;
   mainItemsGetter?: (props: { item: Resource }) => ResourceMainInfo;
   unDeletable?: boolean;
+  cloneable?: boolean;
 }) => {
   const { resource: item } = props;
   const md = item.metadata!;
 
   const sharedItems: ResourceInfoMainItem[] = [
     {
-      label: "Name",
-      value: (
-        <span className="font-mono text-sm">
-          <CopyText value={md.name} />
-        </span>
-      ),
-    },
-    {
       label: "UID",
       value: (
-        <span className="font-mono text-xs text-slate-500 break-all">
+        <span className="break-all text-[0.72rem] text-slate-500">
           <CopyText value={md.uid} />
         </span>
       ),
     },
-    ...(md.displayName
-      ? [
-          {
-            label: "Display name",
-            value: <span className="text-sm">{md.displayName}</span>,
-          },
-        ]
-      : []),
     ...(md.createdAt
       ? [
           {
             label: "Created",
-            value: (
-              <span className="text-sm">
-                <TimeAgo rfc3339={md.createdAt} />
-              </span>
-            ),
+            value: <TimeAgo rfc3339={md.createdAt} />,
           },
         ]
       : []),
@@ -241,11 +158,7 @@ const ResourceMainContent = (props: {
       ? [
           {
             label: "Updated",
-            value: (
-              <span className="text-sm">
-                <TimeAgo rfc3339={md.updatedAt} />
-              </span>
-            ),
+            value: <TimeAgo rfc3339={md.updatedAt} />,
           },
         ]
       : []),
@@ -253,9 +166,7 @@ const ResourceMainContent = (props: {
       ? [
           {
             label: "Description",
-            value: (
-              <span className="text-sm text-slate-500">{md.description}</span>
-            ),
+            value: <span className="text-slate-500">{md.description}</span>,
             span: "full" as const,
           },
         ]
@@ -263,55 +174,68 @@ const ResourceMainContent = (props: {
   ];
 
   return (
-    <div className="w-full flex flex-col gap-6">
-      {md.picURL?.length > 0 && (
-        <img
-          src={md.picURL}
-          className="w-14 h-14 rounded-full border border-slate-200 shadow-sm"
-          alt={md.displayName || md.name}
-        />
-      )}
+    <div className="flex w-full flex-col gap-4">
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_1px_4px_rgba(15,23,42,0.05)]">
+        <header className="flex flex-col gap-4 border-b border-slate-200 bg-slate-50/60 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            {md.picURL?.length > 0 && (
+              <img
+                src={md.picURL}
+                className="h-11 w-11 shrink-0 rounded-lg border border-slate-200 object-cover shadow-sm"
+                alt={md.displayName || md.name}
+                loading="lazy"
+              />
+            )}
 
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-[0_1px_4px_rgba(15,23,42,0.06)]">
-        {/* Header */}
-        <div className="flex flex-col items-start gap-3 px-4 py-3 border-b border-slate-100 bg-slate-50/60 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-          <div className="flex items-center gap-2">
-            <span className="text-[0.72rem] font-bold uppercase tracking-[0.05em] text-slate-600">
-              {item.kind}
-            </span>
-            {(md.isSystem || md.isUserHidden) && (
-              <div className="flex items-center gap-1.5">
+            <div className="flex min-w-0 flex-col gap-1">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <span className="truncate text-sm font-bold text-slate-800">
+                  <CopyText value={md.name} />
+                </span>
+                <span className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[0.61rem] font-bold uppercase tracking-[0.05em] text-slate-500">
+                  {item.kind}
+                </span>
                 {md.isSystem && (
-                  <span className="inline-flex items-center gap-1 px-1.5 py-px text-[0.62rem] font-bold rounded border border-blue-200 text-blue-600 bg-blue-50">
-                    <ShieldAlert size={9} strokeWidth={2.5} />
+                  <span className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[0.61rem] font-bold text-blue-700">
+                    <ShieldAlert size={10} strokeWidth={2.5} />
                     System
                   </span>
                 )}
                 {md.isUserHidden && (
-                  <span className="inline-flex items-center gap-1 px-1.5 py-px text-[0.62rem] font-bold rounded border border-slate-200 text-slate-500 bg-slate-50">
-                    <EyeOff size={9} strokeWidth={2.5} />
+                  <span className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[0.61rem] font-bold text-slate-600">
+                    <EyeOff size={10} strokeWidth={2.5} />
                     Hidden
                   </span>
                 )}
               </div>
-            )}
+              {md.displayName && (
+                <span className="truncate text-[0.76rem] font-medium text-slate-500">
+                  {md.displayName}
+                </span>
+              )}
+            </div>
           </div>
-          <div className="flex items-center">
-            <ResourceYAML item={item} size="xs" />
-            {!props.unDeletable && (
-              <div className="ml-2">
-                <DeleteResource
-                  item={item}
-                  btnSize={`compact-xs`}
-                  btnVariant="outline"
-                />
-              </div>
-            )}
-          </div>
-        </div>
 
-        {/* Shared metadata grid */}
-        <div className="grid grid-cols-1 gap-px bg-slate-100 sm:grid-cols-2">
+          <div
+            className="flex shrink-0 flex-wrap items-center gap-1.5"
+            role="toolbar"
+            aria-label={`Actions for ${md.name}`}
+          >
+            <ResourceYAML item={item} size="xs" />
+            {props.cloneable && <CloneResource item={item} />}
+            {!props.unDeletable && (
+              <DeleteResource
+                item={item}
+                btnSize="compact-xs"
+                btnVariant="outline"
+                btnColor="red.7"
+                btnLabel="Delete"
+              />
+            )}
+          </div>
+        </header>
+
+        <div className="grid grid-cols-1 gap-px bg-slate-200/70 sm:grid-cols-2">
           {sharedItems.map((x) => (
             <InfoCell key={x.label} label={x.label} span={x.span}>
               {x.value}
@@ -319,19 +243,18 @@ const ResourceMainContent = (props: {
           ))}
         </div>
 
-        {/* Resource-specific items */}
         {props.mainItemsGetter && (
           <ResourceInfoItems getter={props.mainItemsGetter} item={item}>
             {(specificItems) =>
               specificItems.length > 0 ? (
                 <>
-                  <div className="flex items-center gap-3 px-5 py-2 border-y border-slate-100 bg-slate-50/60">
-                    <span className="text-[0.62rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+                  <div className="flex items-center gap-3 border-y border-slate-200 bg-slate-50/70 px-4 py-2">
+                    <span className="text-[0.62rem] font-bold uppercase tracking-[0.07em] text-slate-500">
                       {item.kind} details
                     </span>
-                    <div className="flex-1 h-px bg-slate-200" />
+                    <div className="h-px flex-1 bg-slate-200" />
                   </div>
-                  <div className="grid grid-cols-1 gap-px bg-slate-100 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-px bg-slate-200/70 sm:grid-cols-2">
                     {specificItems.map((x) => (
                       <InfoCell key={x.label} label={x.label} span={x.span}>
                         {x.value}
@@ -344,17 +267,16 @@ const ResourceMainContent = (props: {
           </ResourceInfoItems>
         )}
 
-        {/* Tags */}
         {md.tags && md.tags.length > 0 && (
-          <div className="flex flex-col gap-2 px-5 py-4 border-t border-slate-100">
-            <span className="text-[0.62rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+          <div className="flex items-start gap-3 border-t border-slate-200 px-4 py-3">
+            <span className="w-24 shrink-0 pt-1 text-[0.61rem] font-bold uppercase tracking-[0.06em] text-slate-500">
               Tags
             </span>
             <div className="flex flex-wrap gap-1.5">
               {md.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="inline-flex items-center gap-1 h-[22px] px-2 rounded text-[0.7rem] font-bold bg-slate-800 text-slate-100 border border-slate-700 shadow-[0_1px_2px_rgba(15,23,42,0.08)]"
+                  className="inline-flex min-h-6 items-center gap-1 rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-[0.68rem] font-bold text-slate-600"
                 >
                   <Tag size={9} strokeWidth={2.5} />
                   {tag}
@@ -364,16 +286,7 @@ const ResourceMainContent = (props: {
           </div>
         )}
 
-        {/* Visibility footer */}
-        {(hasAccessLog(item) ||
-          hasAuthenticationLog(item) ||
-          hasAuditLog(item) ||
-          hasSSHSessionLog(item)) && (
-          <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/60">
-            <ResourceVisibilityButtons item={item} />
-          </div>
-        )}
-      </div>
+      </section>
     </div>
   );
 };
