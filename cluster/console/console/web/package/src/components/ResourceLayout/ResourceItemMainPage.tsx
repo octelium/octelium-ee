@@ -24,6 +24,7 @@ import PageWrap from "../PageWrap";
 import ResourceYAML from "../ResourceYAML";
 import TimeAgo from "../TimeAgo";
 import { useContextResource } from "./utils";
+import ResourceInfoItems from "./ResourceInfoItems";
 
 const InfoCell = ({
   label,
@@ -187,9 +188,6 @@ const ResourceMainContent = (props: {
       : []),
   ];
 
-  const specificItems: ResourceInfoMainItem[] =
-    props.mainItemsGetter?.({ item })?.items ?? [];
-
   return (
     <div className="w-full flex flex-col gap-6">
       {md.picURL?.length > 0 && (
@@ -246,22 +244,28 @@ const ResourceMainContent = (props: {
         </div>
 
         {/* Resource-specific items */}
-        {specificItems.length > 0 && (
-          <>
-            <div className="flex items-center gap-3 px-5 py-2 border-y border-slate-100 bg-slate-50/60">
-              <span className="text-[0.62rem] font-bold uppercase tracking-[0.07em] text-slate-400">
-                {item.kind} details
-              </span>
-              <div className="flex-1 h-px bg-slate-200" />
-            </div>
-            <div className="grid grid-cols-2 gap-px bg-slate-100">
-              {specificItems.map((x, i) => (
-                <InfoCell key={i} label={x.label} span={x.span}>
-                  {x.value}
-                </InfoCell>
-              ))}
-            </div>
-          </>
+        {props.mainItemsGetter && (
+          <ResourceInfoItems getter={props.mainItemsGetter} item={item}>
+            {(specificItems) =>
+              specificItems.length > 0 ? (
+                <>
+                  <div className="flex items-center gap-3 px-5 py-2 border-y border-slate-100 bg-slate-50/60">
+                    <span className="text-[0.62rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+                      {item.kind} details
+                    </span>
+                    <div className="flex-1 h-px bg-slate-200" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-px bg-slate-100">
+                    {specificItems.map((x) => (
+                      <InfoCell key={x.label} label={x.label} span={x.span}>
+                        {x.value}
+                      </InfoCell>
+                    ))}
+                  </div>
+                </>
+              ) : null
+            }
+          </ResourceInfoItems>
         )}
 
         {/* Tags */}

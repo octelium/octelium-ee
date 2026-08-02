@@ -14,6 +14,7 @@ import ResourceYAML from "../ResourceYAML";
 import TimeAgo from "../TimeAgo";
 
 import { ResourceVisibilityButtons } from "./ResourceInfo";
+import ResourceInfoItems from "./ResourceInfoItems";
 
 const CompactInfoCell = ({
   label,
@@ -93,9 +94,6 @@ export const ResourceListItemDetails = (props: {
       : []),
   ];
 
-  const specificItems: ResourceInfoMainItem[] =
-    props.mainItemsGetter?.({ item })?.items ?? [];
-
   const hasVisibility =
     hasAccessLog(item) ||
     hasAuthenticationLog(item) ||
@@ -128,15 +126,22 @@ export const ResourceListItemDetails = (props: {
           </CompactInfoCell>
         ))}
 
-        {specificItems.length > 0 && (
-          <SectionDivider label={`${item.kind} details`} />
+        {props.mainItemsGetter && (
+          <ResourceInfoItems getter={props.mainItemsGetter} item={item}>
+            {(specificItems) => (
+              <>
+                {specificItems.length > 0 && (
+                  <SectionDivider label={`${item.kind} details`} />
+                )}
+                {specificItems.map((x) => (
+                  <CompactInfoCell key={x.label} label={x.label} span={x.span}>
+                    {x.value}
+                  </CompactInfoCell>
+                ))}
+              </>
+            )}
+          </ResourceInfoItems>
         )}
-
-        {specificItems.map((x, i) => (
-          <CompactInfoCell key={i} label={x.label} span={x.span}>
-            {x.value}
-          </CompactInfoCell>
-        ))}
       </div>
 
       {md.tags && md.tags.length > 0 && (

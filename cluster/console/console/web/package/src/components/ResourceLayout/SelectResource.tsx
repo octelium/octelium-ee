@@ -9,7 +9,7 @@ import {
   Resource,
   ResourceList,
 } from "@/utils/pb";
-import { Select } from "@mantine/core";
+import { Alert, Button, Select } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
 import * as React from "react";
 
@@ -38,7 +38,7 @@ const SelectResource = (props: {
     [api, kind],
   );
 
-  const { isLoading, data } = useQuery({
+  const { isLoading, isError, error, data, refetch } = useQuery({
     queryKey: ["listSelectComponent", api, kind],
     queryFn: async () => {
       // @ts-ignore
@@ -62,9 +62,30 @@ const SelectResource = (props: {
     );
   }
 
+  if (isError) {
+    return (
+      <Alert color="red" title={`Could not load ${kind}s`}>
+        <div className="flex flex-col gap-2">
+          <span className="text-xs">{error.message}</span>
+          <Button size="compact-xs" variant="outline" onClick={() => refetch()}>
+            Retry
+          </Button>
+        </div>
+      </Alert>
+    );
+  }
+
   const itemList = data?.["response"] as ResourceList | undefined;
 
-  if (!itemList) return null;
+  if (!itemList) {
+    return (
+      <Alert color="red" title={`Could not load ${kind}s`}>
+        <Button size="compact-xs" variant="outline" onClick={() => refetch()}>
+          Retry
+        </Button>
+      </Alert>
+    );
+  }
 
   const rscList = itemList.items.map((x) => ({
     value: x.metadata!.name,
@@ -79,8 +100,7 @@ const SelectResource = (props: {
       clearable={props.clearable}
       searchable
       data={rscList}
-      defaultValue={props.defaultValue}
-      value={props.defaultValue}
+      value={props.defaultValue ?? null}
       disabled={rscList.length === 0}
       placeholder={
         rscList.length === 0 ? `No ${kind}s found` : `Select ${kind}…`
