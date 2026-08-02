@@ -1,28 +1,24 @@
-import ReactEChartsCore from "echarts-for-react";
-import * as echarts from "echarts/core";
-
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
+import ReactEChartsCore from "echarts-for-react";
 import { BarChart, LineChart as LineChartC } from "echarts/charts";
 import {
+  AriaComponent,
   GridComponent,
-  LegendComponent,
-  MarkAreaComponent,
   MarkLineComponent,
-  TitleComponent,
   TooltipComponent,
 } from "echarts/components";
+import * as echarts from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
+import { useMemo } from "react";
 
 echarts.use([
-  TitleComponent,
+  AriaComponent,
   TooltipComponent,
   GridComponent,
   BarChart,
   LineChartC,
   CanvasRenderer,
-  LegendComponent,
   MarkLineComponent,
-  MarkAreaComponent,
 ]);
 
 interface DataPoint {
@@ -36,167 +32,273 @@ export interface Props {
   variant?: "line" | "bar";
 }
 
-const LineChart = (props: Props) => {
-  const { title, points, variant = "line" } = props;
+const formatNumber = (value: number, maximumFractionDigits = 1) =>
+  value.toLocaleString(undefined, { maximumFractionDigits });
 
-  if (!points || points.length === 0) return null;
+const formatCompactNumber = (value: number) =>
+  new Intl.NumberFormat(undefined, {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value);
 
-  const data = points.map((item) => [Timestamp.toDate(item.ts), item.value]);
-  const values = points.map((p) => p.value);
-  const avg = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
-  const peak = Math.max(...values);
+const formatTooltipDate = (value: number) =>
+  new Date(value).toLocaleString([], {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
-  const yMax = Math.ceil(peak * 1.25);
+const LineChart = ({ title, points, variant = "line" }: Props) => {
+  const data = useMemo(
+    () =>
+      (points ?? [])
+        .map((item) => [Timestamp.toDate(item.ts).getTime(), item.value] as const)
+        .filter(
+          ([timestamp, value]) =>
+            Number.isFinite(timestamp) && Number.isFinite(value),
+        )
+        .sort(([timestampA], [timestampB]) => timestampA - timestampB),
+    [points],
+  );
 
-  const option = {
-    grid: {
-      top: 28,
-      right: 20,
-      bottom: 42,
-      left: 52,
-      containLabel: false,
-    },
+  const statistics = useMemo(() => {
+    if (data.length === 0) {
+      return { average: 0, peak: 0, latest: 0 };
+    }
 
-    tooltip: {
-      trigger: "axis",
-      axisPointer: {
-        type: variant === "bar" ? "shadow" : "line",
-        lineStyle: { color: "#93c5fd", width: 1, type: "dashed" },
-        shadowStyle: { color: "rgba(96,165,250,0.06)" },
+    const values = data.map(([, value]) => value);
+
+    return {
+      average: values.reduce((sum, value) => sum + value, 0) / values.length,
+      peak: Math.max(...values),
+      latest: values.at(-1) ?? 0,
+    };
+  }, [data]);
+
+  const option = useMemo(
+    () => ({
+      animationDuration: 650,
+      animationEasing: "cubicOut",
+      aria: {
+        enabled: true,
+        decal: { show: false },
       },
-      backgroundColor: "#1e293b",
-      borderColor: "#334155",
-      borderWidth: 1,
-      padding: [8, 12],
-      textStyle: {
-        color: "#f8fafc",
-        fontSize: 12,
-        fontFamily: "Ubuntu, sans-serif",
+      grid: {
+        top: 22,
+        right: 14,
+        bottom: 34,
+        left: 8,
+        containLabel: true,
       },
-      formatter: (params: any) => {
-        const date: Date = params[0].value[0];
-        const count: number = params[0].value[1];
-        const diff = count - avg;
-        const diffLabel =
-          diff === 0
-            ? `<span style="color:#94a3b8">avg</span>`
-            : diff > 0
-              ? `<span style="color:#60a5fa">+${diff} above avg</span>`
-              : `<span style="color:#94a3b8">${diff} below avg</span>`;
-        return `
-          <div style="font-weight:700;margin-bottom:4px;">${date.toLocaleString(
-            [],
-            {
-              month: "short",
-              day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            },
-          )}</div>
-          <div style="display:flex;align-items:baseline;gap:6px;">
-            <span style="font-size:18px;font-weight:700;">${count.toLocaleString()}</span>
-            <span style="font-size:11px;">${diffLabel}</span>
-          </div>
-        `;
-      },
-    },
-
-    xAxis: {
-      type: "time",
-      boundaryGap: variant === "bar" ? ["5%", "5%"] : false,
-      axisLine: { lineStyle: { color: "#e2e8f0" } },
-      axisTick: { show: false },
-      axisLabel: {
-        color: "#94a3b8",
-        fontSize: 11,
-        fontFamily: "Ubuntu, sans-serif",
-        fontWeight: 600,
-        formatter: (value: number) =>
-          echarts.format.formatTime("MM/dd HH:mm", value),
-        hideOverlap: true,
-      },
-      splitLine: { show: false },
-    },
-
-    yAxis: {
-      type: "value",
-      max: yMax,
-      axisLine: { show: false },
-      axisTick: { show: false },
-      axisLabel: {
-        color: "#94a3b8",
-        fontSize: 11,
-        fontFamily: "Ubuntu, sans-serif",
-        fontWeight: 600,
-        formatter: (v: number) =>
-          v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v),
-      },
-      splitLine: { lineStyle: { color: "#f1f5f9", type: "solid" } },
-    },
-
-    series: [
-      {
-        type: variant,
-        data,
-        large: true,
-
-        ...(variant === "line" && {
-          smooth: 0.4,
-          symbol: "none",
-          lineStyle: { color: "#1d4ed8", width: 2 },
-          areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: "rgba(29,78,216,0.18)" },
-              { offset: 1, color: "rgba(29,78,216,0.01)" },
-            ]),
-          },
-        }),
-
-        ...(variant === "bar" && {
-          barMaxWidth: 24,
-          itemStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: "#3b82f6" },
-              { offset: 1, color: "#1d4ed8" },
-            ]),
-            borderRadius: [3, 3, 0, 0],
-          },
-          emphasis: {
-            itemStyle: { color: "#60a5fa" },
-          },
-        }),
-
-        markLine: {
-          silent: true,
-          symbol: "none",
-          lineStyle: { color: "#93c5fd", type: "dashed", width: 1 },
-          label: {
-            formatter: `avg ${avg.toLocaleString()}`,
-            position: "insideEndTop",
+      tooltip: {
+        trigger: "axis",
+        confine: true,
+        backgroundColor: "#0f172a",
+        borderColor: "#334155",
+        borderWidth: 1,
+        padding: [10, 12],
+        textStyle: {
+          color: "#f8fafc",
+          fontSize: 12,
+          fontFamily: "Ubuntu, sans-serif",
+        },
+        extraCssText:
+          "border-radius:10px;box-shadow:0 10px 24px rgba(15,23,42,.18);",
+        axisPointer: {
+          type: variant === "bar" ? "shadow" : "line",
+          snap: true,
+          lineStyle: {
             color: "#60a5fa",
-            fontSize: 11,
-            fontWeight: 600,
-            fontFamily: "Ubuntu, sans-serif",
+            width: 1,
+            type: "dashed",
           },
-          data: [{ type: "average" }],
+          shadowStyle: { color: "rgba(37,99,235,0.06)" },
+          label: { show: false },
+        },
+        formatter: (
+          params: Array<{ value: [number, number]; marker?: string }>,
+        ) => {
+          const point = params[0];
+          if (!point) return "";
+
+          const [timestamp, value] = point.value;
+          const difference = value - statistics.average;
+          const differenceText =
+            Math.abs(difference) < 0.005
+              ? "At average"
+              : `${difference > 0 ? "+" : ""}${formatNumber(difference)} vs average`;
+
+          return `<div style="min-width:154px"><div style="margin-bottom:7px;color:#cbd5e1;font-size:11px;font-weight:700">${formatTooltipDate(timestamp)}</div><div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px"><span style="font-size:18px;font-weight:700">${formatNumber(value)}</span><span style="color:${difference >= 0 ? "#93c5fd" : "#cbd5e1"};font-size:10px;font-weight:700">${differenceText}</span></div></div>`;
         },
       },
-    ],
-  };
+      xAxis: {
+        type: "time",
+        boundaryGap: variant === "bar" ? ["4%", "4%"] : false,
+        axisLine: { lineStyle: { color: "#e2e8f0" } },
+        axisTick: { show: false },
+        axisLabel: {
+          color: "#94a3b8",
+          fontSize: 10,
+          fontFamily: "Ubuntu, sans-serif",
+          fontWeight: 600,
+          margin: 12,
+          hideOverlap: true,
+          formatter: (value: number) =>
+            echarts.format.formatTime("MM/dd\nHH:mm", value),
+        },
+        splitLine: { show: false },
+      },
+      yAxis: {
+        type: "value",
+        min: 0,
+        minInterval: 1,
+        max: ({ max }: { max: number }) =>
+          max === 0 ? 1 : Math.ceil(max * 1.15),
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: {
+          color: "#94a3b8",
+          fontSize: 10,
+          fontFamily: "Ubuntu, sans-serif",
+          fontWeight: 600,
+          margin: 12,
+          formatter: formatCompactNumber,
+        },
+        splitLine: {
+          lineStyle: { color: "#e2e8f0", type: "dashed", opacity: 0.7 },
+        },
+      },
+      series: [
+        {
+          name: title ?? "Activity",
+          type: variant,
+          data,
+          emphasis: { focus: "series" },
+          ...(variant === "line" && {
+            smooth: 0.28,
+            showSymbol: data.length <= 12,
+            symbol: "circle",
+            symbolSize: 6,
+            sampling: "lttb",
+            lineStyle: {
+              color: "#2563eb",
+              width: 2.5,
+              cap: "round",
+              join: "round",
+            },
+            itemStyle: {
+              color: "#2563eb",
+              borderColor: "#ffffff",
+              borderWidth: 2,
+            },
+            areaStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: "rgba(37,99,235,0.20)" },
+                { offset: 0.65, color: "rgba(37,99,235,0.05)" },
+                { offset: 1, color: "rgba(37,99,235,0)" },
+              ]),
+            },
+          }),
+          ...(variant === "bar" && {
+            large: data.length > 400,
+            barMaxWidth: 22,
+            itemStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: "#60a5fa" },
+                { offset: 1, color: "#2563eb" },
+              ]),
+              borderRadius: [5, 5, 1, 1],
+            },
+            emphasis: {
+              itemStyle: { color: "#1d4ed8" },
+            },
+          }),
+          markLine: {
+            silent: true,
+            symbol: "none",
+            animation: false,
+            lineStyle: {
+              color: "#94a3b8",
+              type: "dashed",
+              width: 1,
+              opacity: 0.75,
+            },
+            label: {
+              formatter: `Avg ${formatNumber(statistics.average)}`,
+              position: "insideEndTop",
+              color: "#64748b",
+              backgroundColor: "rgba(248,250,252,0.9)",
+              borderRadius: 4,
+              padding: [2, 5],
+              fontSize: 10,
+              fontWeight: 700,
+              fontFamily: "Ubuntu, sans-serif",
+            },
+            data: [{ yAxis: statistics.average }],
+          },
+        },
+      ],
+    }),
+    [data, statistics, title, variant],
+  );
+
+  if (data.length === 0) {
+    return (
+      <div className="flex min-h-52 w-full items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/60 px-4 text-center">
+        <div>
+          {title && (
+            <p className="mb-1 text-xs font-bold text-slate-700">{title}</p>
+          )}
+          <p className="text-xs font-semibold text-slate-400">
+            No activity data available
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="w-full">
-      {title && (
-        <p className="text-[0.78rem] font-bold uppercase tracking-[0.05em] text-slate-800 mb-2 px-1">
-          {title}
-        </p>
-      )}
-      <ReactEChartsCore
-        echarts={echarts}
-        option={option}
-        style={{ height: "220px", width: "100%" }}
-      />
-    </div>
+    <section className="w-full" aria-label={title ?? "Activity over time"}>
+      <div className="flex flex-wrap items-end justify-between gap-3 px-1 pb-2">
+        <div>
+          <p className="text-[0.62rem] font-bold uppercase tracking-[0.08em] text-slate-400">
+            {title ?? "Activity over time"}
+          </p>
+          <p className="mt-0.5 text-xs font-semibold text-slate-500">
+            {data.length.toLocaleString()} data point
+            {data.length === 1 ? "" : "s"}
+          </p>
+        </div>
+
+        <dl className="flex items-center gap-4 sm:gap-5">
+          {[
+            { label: "Latest", value: statistics.latest },
+            { label: "Average", value: statistics.average },
+            { label: "Peak", value: statistics.peak },
+          ].map((statistic) => (
+            <div key={statistic.label} className="text-right">
+              <dt className="text-[0.58rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+                {statistic.label}
+              </dt>
+              <dd className="mt-0.5 text-xs font-bold tabular-nums text-slate-700">
+                {formatNumber(statistic.value)}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+
+      <div className="h-56 w-full rounded-xl border border-slate-200/80 bg-slate-50/60 px-1 pt-1 sm:h-60 sm:px-2">
+        <ReactEChartsCore
+          echarts={echarts}
+          option={option}
+          style={{ height: "100%", width: "100%" }}
+          notMerge
+          lazyUpdate
+        />
+      </div>
+    </section>
   );
 };
 
