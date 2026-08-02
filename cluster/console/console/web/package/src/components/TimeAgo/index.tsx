@@ -10,22 +10,45 @@ dayjs.extend(utc);
 
 import { Tooltip } from "@mantine/core";
 
+const listeners = new Set<() => void>();
+let now = Date.now();
+let interval: ReturnType<typeof setInterval> | undefined;
+
+const subscribe = (listener: () => void) => {
+  listeners.add(listener);
+
+  if (!interval) {
+    now = Date.now();
+    interval = setInterval(() => {
+      now = Date.now();
+      listeners.forEach((notify) => notify());
+    }, 10000);
+  }
+
+  return () => {
+    listeners.delete(listener);
+    if (listeners.size === 0 && interval) {
+      clearInterval(interval);
+      interval = undefined;
+    }
+  };
+};
+
+const getSnapshot = () => now;
+
 const TimeAgo = (props: { rfc3339?: Timestamp }) => {
+  const currentTime = React.useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getSnapshot,
+  );
+
   if (!props.rfc3339) {
     return <></>;
   }
 
   const t = Timestamp.toDate(props.rfc3339);
-  let [time, setTime] = React.useState(dayjs(t).fromNow());
-
-  React.useEffect(() => {
-    setTime(dayjs(t).fromNow());
-
-    const interval = setInterval(() => setTime(dayjs(t).fromNow()), 10000);
-    return () => {
-      clearInterval(interval);
-    };
-  }, [props.rfc3339]);
+  const time = dayjs(t).from(currentTime);
   return (
     <Tooltip
       label={
