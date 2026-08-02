@@ -1,20 +1,15 @@
-import { User } from "@/apis/corev1/corev1";
 import { ObjectReference } from "@/apis/metav1/metav1";
 import { ResourceComponentInfo } from "@/pages/utils/types";
 import {
-  getResourcePath,
+  getAPIFromAPIVersion,
+  getResourcePathFromAPIKind,
   getShortName,
-  printResourceNameWithDisplay,
-  printUserWithEmail,
   Resource,
   ResourceList,
 } from "@/utils/pb";
-import { HoverCard } from "@mantine/core";
 import { Link2 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
-import ResourceInfo from "../ResourceLayout/ResourceInfo";
-import { useResourceFromRef } from "../ResourceLayout/utils";
 import TimeAgo from "../TimeAgo";
 
 export const ResourceListWrapper = (props: { children?: React.ReactNode }) => (
@@ -166,30 +161,6 @@ const LabelContent = ({
   </span>
 );
 
-const ResourceHoverCardWrapper = (props: {
-  children: React.ReactNode;
-  data: Resource;
-}) => (
-  <HoverCard
-    width={460}
-    shadow="md"
-    withArrow
-    openDelay={200}
-    closeDelay={400}
-    transitionProps={{ transition: "pop" }}
-    zIndex={30}
-  >
-    <HoverCard.Target>
-      <span className="inline-flex max-w-full align-middle">
-        {props.children}
-      </span>
-    </HoverCard.Target>
-    <HoverCard.Dropdown>
-      <ResourceInfo resource={props.data} />
-    </HoverCard.Dropdown>
-  </HoverCard>
-);
-
 const ResourceListLabelContent = (props: {
   children?: React.ReactNode;
   label?: string;
@@ -214,58 +185,46 @@ const ResourceListLabelContent = (props: {
   );
 };
 
-const ResourceListLabelWithItemRef = (props: {
+const ResourceListLabelReference = (props: {
   children?: React.ReactNode;
   label?: string;
   itemRef: ObjectReference;
 }) => {
-  const r = useResourceFromRef(props.itemRef);
-  if (!r?.isSuccess || !r.data) {
-    const fallback = props.itemRef.name || props.itemRef.uid;
-    if (!fallback) return null;
+  const location = useLocation();
+  const { itemRef } = props;
+  const api = getAPIFromAPIVersion(itemRef.apiVersion);
+  const kindPath = api
+    ? getResourcePathFromAPIKind({ api, kind: itemRef.kind as any })
+    : undefined;
+  const path =
+    api && kindPath && itemRef.name
+      ? `/${api}/${kindPath}/${itemRef.name}`
+      : undefined;
+  const displayName = props.children ?? (itemRef.name || itemRef.uid);
 
-    return (
-      <LabelContent label={props.label ?? "Resource"} reference>
-        <span className="truncate">{fallback}</span>
-      </LabelContent>
-    );
-  }
+  if (!displayName) return null;
 
-  const displayName =
-    r.data.apiVersion === "core/v1" && r.data.kind === "User"
-      ? printUserWithEmail(r.data as User)
-      : printResourceNameWithDisplay(r.data);
-
-  return (
-    <ResourceHoverCardWrapper data={r.data}>
-      <Link
-        to={getResourcePath(r.data)}
-        preventScrollReset
-        className="inline-flex max-w-full rounded-md align-middle outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 focus-visible:ring-offset-1"
-      >
-        <LabelContent
-          label={props.label ?? r.data.kind}
-          interactive
-          reference
-        >
-          <span className="truncate">{props.children ?? displayName}</span>
-        </LabelContent>
-      </Link>
-    </ResourceHoverCardWrapper>
+  const content = (
+    <LabelContent
+      label={props.label || itemRef.kind || "Resource"}
+      interactive={!!path}
+      reference
+    >
+      <span className="truncate">{displayName}</span>
+    </LabelContent>
   );
-};
 
-export const ResourceHoverCard = (props: {
-  children?: React.ReactNode;
-  itemRef: ObjectReference;
-}) => {
-  const r = useResourceFromRef(props.itemRef);
-  if (!r?.isSuccess || !r.data) return null;
+  if (!path) return content;
 
   return (
-    <ResourceHoverCardWrapper data={r.data}>
-      {props.children}
-    </ResourceHoverCardWrapper>
+    <Link
+      to={path}
+      state={{ returnTo: `${location.pathname}${location.search}` }}
+      preventScrollReset
+      className="inline-flex max-w-full rounded-md align-middle outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 focus-visible:ring-offset-1"
+    >
+      {content}
+    </Link>
   );
 };
 
@@ -276,9 +235,9 @@ export const ResourceListLabel = (props: {
   to?: string;
 }) =>
   props.itemRef ? (
-    <ResourceListLabelWithItemRef label={props.label} itemRef={props.itemRef}>
+    <ResourceListLabelReference label={props.label} itemRef={props.itemRef}>
       {props.children}
-    </ResourceListLabelWithItemRef>
+    </ResourceListLabelReference>
   ) : (
     <ResourceListLabelContent label={props.label} to={props.to}>
       {props.children}
