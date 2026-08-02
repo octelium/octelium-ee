@@ -40,6 +40,7 @@ export type ResourceCore =
   | CoreP.Gateway
   | CoreP.Region
   | CoreP.Credential
+  | CoreP.Config
   | CoreP.ClusterConfig
   | CoreP.Authenticator;
 
@@ -72,7 +73,8 @@ export type ResourceCoreList =
   | CoreP.IdentityProviderList
   | CoreP.GatewayList
   | CoreP.RegionList
-  | CoreP.CredentialList;
+  | CoreP.CredentialList
+  | CoreP.ConfigList;
 
 export type ResourceEnterpriseList =
   | EnterpriseP.SecretList
@@ -103,6 +105,7 @@ export type ResourceCoreName =
   | "Gateway"
   | "Region"
   | "Credential"
+  | "Config"
   | "ClusterConfig"
   | "Authenticator";
 
@@ -131,6 +134,7 @@ const coreResourcePathMap = new Map<string, ResourceCoreName>([
   ["secrets", "Secret"],
   ["sessions", "Session"],
   ["credentials", "Credential"],
+  ["configs", "Config"],
   ["regions", "Region"],
   ["gateways", "Gateway"],
   ["authenticators", "Authenticator"],
@@ -145,6 +149,7 @@ const enterpriseResourcePathMap = new Map<string, ResourceEnterpriseName>([
   ["certificateissuers", "CertificateIssuer"],
   ["directoryproviders", "DirectoryProvider"],
   ["secretstores", "SecretStore"],
+  ["devicemanagers", "DeviceManager"],
 ]);
 
 const accessResourcePathMap = new Map<string, ResourceAccessName>([
