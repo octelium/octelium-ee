@@ -1,9 +1,9 @@
 import { formatNumber } from "@/utils";
 import { AnimatePresence, motion } from "framer-motion";
+import { ArrowRight, Inbox } from "lucide-react";
+import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
-
-import { useRef } from "react";
 
 export const SummaryItemCount = (props: {
   children?: React.ReactNode;
@@ -20,83 +20,102 @@ export const SummaryItemCount = (props: {
   const direction = prev === undefined || count >= prev ? 1 : -1;
   prevCountRef.current = count;
 
-  const labelContent = (
-    <span
-      className={twMerge(
-        "text-[0.78rem] font-semibold tracking-[0.01em] transition-colors duration-150 whitespace-nowrap",
-        active
-          ? "text-slate-600"
-          : to
-            ? "text-slate-500 group-hover:text-slate-800 group-hover:underline underline-offset-2"
-            : "text-slate-500",
-      )}
-    >
-      {children}
-      {to && !active && (
-        <span className="ml-0.5 text-[0.62rem] opacity-50">↗</span>
-      )}
-    </span>
+  const content = (
+    <>
+      <div className="flex min-w-0 items-start justify-between gap-2">
+        <div className="h-8 min-w-0 overflow-hidden">
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.span
+              key={count}
+              initial={{ y: `${direction * 110}%`, opacity: 0 }}
+              animate={{ y: "0%", opacity: 1 }}
+              exit={{ y: `${direction * -110}%`, opacity: 0 }}
+              transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+              className={twMerge(
+                "block truncate text-[1.55rem] font-bold leading-8 tracking-[-0.035em] tabular-nums",
+                active ? "text-slate-900" : "text-slate-700",
+              )}
+            >
+              {formatNumber(count)}
+            </motion.span>
+          </AnimatePresence>
+        </div>
+
+        {active ? (
+          <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-slate-900 ring-4 ring-slate-900/10" />
+        ) : to ? (
+          <ArrowRight
+            size={13}
+            strokeWidth={2.5}
+            className="mt-1 shrink-0 text-slate-300 transition-[color,transform] duration-500 group-hover:translate-x-0.5 group-hover:text-slate-600"
+          />
+        ) : null}
+      </div>
+
+      <span
+        className={twMerge(
+          "truncate text-[0.72rem] font-bold leading-4 text-slate-500 transition-colors duration-500",
+          to && !active && "group-hover:text-slate-800",
+          active && "text-slate-700",
+        )}
+      >
+        {children}
+      </span>
+    </>
   );
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: -4 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.2, ease: "easeOut" }}
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.22, ease: "easeOut" }}
       className={twMerge(
-        "group relative flex flex-col gap-1",
-        "pl-4 pr-5 py-2.5 min-w-[120px]",
-        "border-l-[3px] transition-[border-color] duration-150",
+        "group relative min-w-0 overflow-hidden rounded-lg border bg-white",
+        "shadow-[0_1px_2px_rgba(15,23,42,0.035)]",
+        "transition-[background-color,border-color,box-shadow] duration-500 ease-out",
         active
-          ? "border-l-slate-900"
-          : "border-l-slate-500 hover:border-l-slate-700",
+          ? "border-slate-300 bg-slate-50 shadow-[0_2px_8px_rgba(15,23,42,0.07)] ring-1 ring-slate-900/[0.04]"
+          : to
+            ? "border-slate-200 hover:border-slate-300 hover:shadow-[0_4px_12px_rgba(15,23,42,0.07)]"
+            : "border-slate-200",
       )}
     >
-      <div className="overflow-hidden h-[2.1rem]">
-        <AnimatePresence mode="popLayout" initial={false}>
-          <motion.span
-            key={count}
-            initial={{ y: `${direction * 110}%`, opacity: 0 }}
-            animate={{ y: "0%", opacity: 1 }}
-            exit={{ y: `${direction * -110}%`, opacity: 0 }}
-            transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-            className={twMerge(
-              "block text-[1.65rem] font-bold leading-none tracking-[-0.03em] tabular-nums",
-              active ? "text-slate-900" : "text-slate-600",
-            )}
-          >
-            {formatNumber(count)}
-          </motion.span>
-        </AnimatePresence>
-      </div>
-
-      <div className="h-[1.1rem] flex items-center">
-        {to && !active ? (
-          <Link to={to} className="contents">
-            {labelContent}
-          </Link>
-        ) : (
-          labelContent
-        )}
-      </div>
+      {to && !active ? (
+        <Link
+          to={to}
+          className="flex min-h-[76px] w-full flex-col justify-center gap-1 px-3.5 py-2.5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-500"
+        >
+          {content}
+        </Link>
+      ) : (
+        <div className="flex min-h-[76px] w-full flex-col justify-center gap-1 px-3.5 py-2.5">
+          {content}
+        </div>
+      )}
     </motion.div>
   );
 };
 
-export const SummaryItemCountWrap = (props: { children?: React.ReactNode }) => {
-  return (
-    <div className="flex flex-wrap items-stretch divide-x divide-slate-200">
-      {props.children}
-    </div>
-  );
-};
+export const SummaryItemCountWrap = (props: { children?: React.ReactNode }) => (
+  <div className="grid w-full grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-2">
+    {props.children}
+  </div>
+);
 
-export const SummaryNoItems = (props: { children?: React.ReactNode }) => {
-  return (
-    <div className="w-full flex items-center justify-center h-[200px]">
-      <span className="font-bold text-xl text-slate-400 tracking-wide select-none">
-        No items found
+export const SummaryNoItems = (props: { children?: React.ReactNode }) => (
+  <div className="flex min-h-[190px] w-full items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50/50 px-6 text-center">
+    <div className="flex flex-col items-center gap-3">
+      <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 shadow-sm">
+        <Inbox size={18} strokeWidth={2} />
       </span>
+      <div className="flex flex-col gap-1">
+        <span className="text-sm font-bold text-slate-600">
+          {props.children ?? "No items found"}
+        </span>
+        <span className="text-[0.72rem] font-semibold text-slate-400">
+          Resources will appear here when they become available.
+        </span>
+      </div>
     </div>
-  );
-};
+  </div>
+);
