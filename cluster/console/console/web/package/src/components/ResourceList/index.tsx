@@ -10,9 +10,9 @@ import {
   ResourceList,
 } from "@/utils/pb";
 import { HoverCard } from "@mantine/core";
+import { Link2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
-import Label from "../Label";
 import ResourceInfo from "../ResourceLayout/ResourceInfo";
 import { useResourceFromRef } from "../ResourceLayout/utils";
 import TimeAgo from "../TimeAgo";
@@ -119,14 +119,41 @@ export const ResourceListInfo = (props: {
 const LabelContent = ({
   label,
   children,
+  interactive,
+  reference,
 }: {
   label?: string;
   children: React.ReactNode;
+  interactive?: boolean;
+  reference?: boolean;
 }) => (
-  <Label isLink>
-    {label && <span className="text-blue-300 font-bold mr-0.5">{label}</span>}
-    <span className="flex items-center">{children}</span>
-  </Label>
+  <span
+    className={twMerge(
+      "inline-flex min-h-6 max-w-full items-center gap-1.5 rounded-md border px-2 py-1 align-middle",
+      "bg-slate-50/80 border-slate-200 text-[0.7rem] font-semibold leading-none text-slate-600",
+      "shadow-[0_1px_1px_rgba(15,23,42,0.03)] transition-[background-color,border-color,color,box-shadow] duration-500",
+      "[&_svg]:size-3 [&_svg]:shrink-0",
+      interactive &&
+        "cursor-pointer border-blue-200/80 bg-blue-50/70 text-blue-700 hover:border-blue-300 hover:bg-white hover:text-blue-800 hover:shadow-[0_2px_6px_rgba(37,99,235,0.10)]",
+    )}
+  >
+    {reference && <Link2 aria-hidden="true" />}
+    {label && (
+      <>
+        <span className="shrink-0 font-bold text-slate-400">{label}</span>
+        <span
+          aria-hidden="true"
+          className={twMerge(
+            "h-3 w-px shrink-0 bg-slate-200",
+            interactive && "bg-blue-200",
+          )}
+        />
+      </>
+    )}
+    <span className="flex min-w-0 items-center gap-1 [&>span]:min-w-0">
+      {children}
+    </span>
+  </span>
 );
 
 const ResourceHoverCardWrapper = (props: {
@@ -143,7 +170,9 @@ const ResourceHoverCardWrapper = (props: {
     zIndex={30}
   >
     <HoverCard.Target>
-      <span>{props.children}</span>
+      <span className="inline-flex max-w-full align-middle">
+        {props.children}
+      </span>
     </HoverCard.Target>
     <HoverCard.Dropdown>
       <ResourceInfo resource={props.data} />
@@ -157,10 +186,22 @@ const ResourceListLabelContent = (props: {
   to?: string;
 }) => {
   const content = (
-    <LabelContent label={props.label}>{props.children}</LabelContent>
+    <LabelContent label={props.label} interactive={!!props.to}>
+      {props.children}
+    </LabelContent>
   );
 
-  return props.to ? <Link to={props.to}>{content}</Link> : content;
+  return props.to ? (
+    <Link
+      to={props.to}
+      preventScrollReset
+      className="inline-flex max-w-full rounded-md align-middle outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 focus-visible:ring-offset-1"
+    >
+      {content}
+    </Link>
+  ) : (
+    content
+  );
 };
 
 const ResourceListLabelWithItemRef = (props: {
@@ -169,7 +210,16 @@ const ResourceListLabelWithItemRef = (props: {
   itemRef: ObjectReference;
 }) => {
   const r = useResourceFromRef(props.itemRef);
-  if (!r?.isSuccess || !r.data) return null;
+  if (!r?.isSuccess || !r.data) {
+    const fallback = props.itemRef.name || props.itemRef.uid;
+    if (!fallback) return null;
+
+    return (
+      <LabelContent label={props.label ?? "Resource"} reference>
+        <span className="truncate">{fallback}</span>
+      </LabelContent>
+    );
+  }
 
   const displayName =
     r.data.apiVersion === "core/v1" && r.data.kind === "User"
@@ -178,9 +228,17 @@ const ResourceListLabelWithItemRef = (props: {
 
   return (
     <ResourceHoverCardWrapper data={r.data}>
-      <Link to={getResourcePath(r.data)}>
-        <LabelContent label={props.label ?? r.data.kind}>
-          {props.children ?? displayName}
+      <Link
+        to={getResourcePath(r.data)}
+        preventScrollReset
+        className="inline-flex max-w-full rounded-md align-middle outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 focus-visible:ring-offset-1"
+      >
+        <LabelContent
+          label={props.label ?? r.data.kind}
+          interactive
+          reference
+        >
+          <span className="truncate">{props.children ?? displayName}</span>
         </LabelContent>
       </Link>
     </ResourceHoverCardWrapper>
@@ -220,7 +278,7 @@ export const ResourceListLabel = (props: {
 export const ResourceListLabelWrap = (props: {
   children?: React.ReactNode;
 }) => (
-  <div className="w-full mt-1.5 flex flex-row flex-wrap gap-1">
+  <div className="mt-2 flex w-full flex-row flex-wrap content-start items-center gap-1.5">
     {props.children}
   </div>
 );
