@@ -74,6 +74,7 @@ export const ItemInfo = (props: { item: CoreP.Authenticator }) => {
 
       <InfoItem title="State">
         <EditItemWrap
+          mutation={mutationUpdate}
           showComponent={
             <span
               className={twMerge(
@@ -179,6 +180,7 @@ export const MainInfo = (props: {
         label: "State",
         value: (
           <EditItemWrap
+            mutation={mutationUpdate}
             label="state"
             showComponent={
               <span

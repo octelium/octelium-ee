@@ -61,6 +61,7 @@ export const ItemInfo = (props: { item: CoreP.Device }) => {
       )}
       <InfoItem title="State">
         <EditItemWrap
+          mutation={mutationUpdate}
           showComponent={
             <span
               className={twMerge(
@@ -164,6 +165,7 @@ export const MainInfo = (props: { item: CoreP.Device }): ResourceMainInfo => {
         label: "State",
         value: (
           <EditItemWrap
+            mutation={mutationUpdate}
             label="state"
             showComponent={
               <span

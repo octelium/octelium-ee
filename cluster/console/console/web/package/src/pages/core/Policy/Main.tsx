@@ -54,6 +54,7 @@ export const MainInfo = (props: { item: CoreC.Policy }): ResourceMainInfo => {
         label: "Active",
         value: (
           <EditItemWrap
+            mutation={mutationUpdate}
             label="active"
             showComponent={
               <span

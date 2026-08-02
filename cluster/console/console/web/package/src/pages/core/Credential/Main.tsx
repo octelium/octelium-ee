@@ -162,6 +162,7 @@ export const ItemInfo = (props: { item: CoreC.Credential }) => {
     <>
       <InfoItem title="Type">
         <EditItemWrap
+          mutation={mutationUpdate}
           showComponent={
             <span>
               {match(item.spec!.type)
@@ -308,6 +309,7 @@ export const MainInfo = (props: {
         label: "Type",
         value: (
           <EditItemWrap
+            mutation={mutationUpdate}
             label="type"
             showComponent={
               <span className="text-[0.75rem] font-semibold text-slate-700">
@@ -439,6 +441,7 @@ export const MainInfo = (props: {
         label: "Active",
         value: (
           <EditItemWrap
+            mutation={mutationUpdate}
             label="active"
             showComponent={
               <span

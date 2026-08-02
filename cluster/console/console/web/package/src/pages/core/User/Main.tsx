@@ -101,6 +101,7 @@ const UserActiveControl = (props: { item: CoreC.User }) => {
 
   return (
     <EditItemWrap
+      mutation={mutationUpdate}
       label="active"
       showComponent={
         <span

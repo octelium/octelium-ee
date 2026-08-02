@@ -174,6 +174,7 @@ export const MainInfo = (props: { item: CoreC.Service }): ResourceMainInfo => {
         label: "Active",
         value: (
           <EditItemWrap
+            mutation={mutationUpdate}
             label="active"
             showComponent={
               <span

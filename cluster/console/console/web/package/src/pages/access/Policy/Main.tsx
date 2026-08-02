@@ -57,6 +57,7 @@ export const MainInfo = (props: { item: AccessC.Policy }): ResourceMainInfo => {
         label: "Active",
         value: (
           <EditItemWrap
+            mutation={mutationUpdate}
             label="active"
             showComponent={
               <span

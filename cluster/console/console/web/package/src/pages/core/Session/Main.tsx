@@ -46,6 +46,7 @@ export const ItemInfo = (props: { item: CoreC.Session }) => {
         <InfoItem title="Expiration">
           <div className="w-full flex items-center">
             <EditItemWrap
+              mutation={mutationUpdate}
               showComponent={
                 <span className="flex-1 mr-2">
                   <TimeAgo rfc3339={item.spec.expiresAt} />
@@ -101,6 +102,7 @@ export const ItemInfo = (props: { item: CoreC.Session }) => {
 
       <InfoItem title="State">
         <EditItemWrap
+          mutation={mutationUpdate}
           showComponent={
             <span
               className={twMerge(
@@ -177,6 +179,7 @@ const SessionStateControl = (props: { item: CoreC.Session }) => {
 
   return (
     <EditItemWrap
+      mutation={mutationUpdate}
       label="state"
       showComponent={
         <span
@@ -241,6 +244,7 @@ const SessionExpirationControl = (props: { item: CoreC.Session }) => {
 
   return (
     <EditItemWrap
+      mutation={mutationUpdate}
       label="expiration"
       showComponent={
         <span className="text-[0.75rem] font-semibold text-slate-600">

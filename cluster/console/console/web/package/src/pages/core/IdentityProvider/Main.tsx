@@ -67,6 +67,7 @@ export const MainInfo = (props: {
         label: "Active",
         value: (
           <EditItemWrap
+            mutation={mutationUpdate}
             label="active"
             showComponent={
               <span
