@@ -12,7 +12,12 @@ import { getResourceRef } from "@/utils/pb";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, ClipboardList, RefreshCw } from "lucide-react";
+import {
+  ArrowRight,
+  ChevronDown,
+  ClipboardList,
+  RefreshCw,
+} from "lucide-react";
 import * as React from "react";
 import { twMerge } from "tailwind-merge";
 import Editor from "../AccessLogViewer/Editor";
@@ -31,13 +36,13 @@ const DetailField = ({
   children: React.ReactNode;
   mono?: boolean;
 }) => (
-  <div className="flex flex-col gap-0.5">
-    <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+  <div className="flex min-h-14 min-w-0 flex-col gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.025)]">
+    <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-500">
       {label}
     </span>
     <span
       className={twMerge(
-        "text-[0.75rem] font-semibold text-slate-700 break-all",
+        "min-w-0 break-words text-[0.74rem] font-semibold leading-5 text-slate-700",
         mono && "font-mono",
       )}
     >
@@ -70,69 +75,77 @@ const AuditLogDetails = ({ auditLog }: { auditLog: AuditLog }) => {
   if (!entry) return null;
 
   return (
-    <div className="px-4 py-3 border-t border-slate-100 bg-slate-50/40">
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-3">
-        <DetailField label="Log ID" mono>
-          <CopyText value={x.metadata!.id} />
-        </DetailField>
+    <div className="border-t border-slate-200 bg-slate-50/70 px-4 py-4 sm:px-5">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h4 className="text-[0.75rem] font-bold text-slate-700">
+          Log details
+        </h4>
+        <Editor item={x} />
+      </div>
 
-        {entry.operation && (
-          <div className="col-span-full">
-            <DetailField label="Operation">{entry.operation}</DetailField>
-          </div>
-        )}
-
-        {entry.package && (
-          <DetailField label="Package">{entry.package}</DetailField>
-        )}
-
-        {entry.service && (
-          <DetailField label="Service">{entry.service}</DetailField>
-        )}
-
-        {entry.method && (
-          <DetailField label="Method">{entry.method}</DetailField>
-        )}
-
-        {entry.resourceRef && (
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
-              Resource ({entry.resourceRef.kind})
-            </span>
-            <ResourceListLabel itemRef={getResourceRef(entry.resourceRef)} />
-          </div>
-        )}
-
+      <div className="grid grid-cols-1 gap-2">
         {entry.sessionRef && (
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+          <div className="flex min-h-14 min-w-0 flex-col gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+            <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-500">
               Session
             </span>
             <CardSession itemRef={entry.sessionRef} />
           </div>
         )}
 
-        {entry.userRef && (
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
-              User
+        {(entry.userRef || entry.deviceRef) && (
+          <div className="flex min-h-14 min-w-0 flex-col gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+            <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-500">
+              Actor context
             </span>
-            <ResourceListLabel itemRef={entry.userRef} />
+            <div className="flex flex-wrap items-center gap-1.5">
+              {entry.userRef && (
+                <ResourceListLabel label="User" itemRef={entry.userRef} />
+              )}
+              {entry.deviceRef && (
+                <ResourceListLabel label="Device" itemRef={entry.deviceRef} />
+              )}
+            </div>
           </div>
         )}
 
-        {entry.deviceRef && (
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
-              Device
+        {entry.resourceRef && (
+          <div className="flex min-h-14 min-w-0 flex-col gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+            <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-500">
+              Target resource
             </span>
-            <ResourceListLabel itemRef={entry.deviceRef} />
+            <div className="flex flex-wrap items-center gap-1.5">
+              <ResourceListLabel
+                label={entry.resourceRef.kind || "Resource"}
+                itemRef={getResourceRef(entry.resourceRef)}
+              />
+            </div>
           </div>
         )}
 
-        <div className="col-span-full flex justify-end pt-1">
-          <Editor item={x} />
-        </div>
+        {(entry.operation || entry.package || entry.service || entry.method) && (
+          <div className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-100/60 p-3">
+            <span className="text-[0.62rem] font-bold uppercase tracking-[0.07em] text-slate-600">
+              Operation details
+            </span>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {entry.operation && (
+                <div className="sm:col-span-2 lg:col-span-3">
+                  <DetailField label="Operation">{entry.operation}</DetailField>
+                </div>
+              )}
+              {entry.package && (
+                <DetailField label="Package">{entry.package}</DetailField>
+              )}
+              {entry.service && (
+                <DetailField label="Service">{entry.service}</DetailField>
+              )}
+              {entry.method && (
+                <DetailField label="Method">{entry.method}</DetailField>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -141,80 +154,114 @@ const AuditLogDetails = ({ auditLog }: { auditLog: AuditLog }) => {
 export const AuditLogC = ({ auditLog }: { auditLog: AuditLog }) => {
   const x = auditLog;
   const [expanded, setExpanded] = React.useState(false);
+  const detailsID = React.useId();
   const entry = x.entry;
+
+  if (!entry) return null;
+
+  const actorRef = entry.userRef ?? entry.sessionRef;
+  const actorName = actorRef?.name ?? actorRef?.uid;
+  const actorLabel = entry.userRef ? "User" : "Session";
+  const resourceName = entry.resourceRef?.name ?? entry.resourceRef?.uid;
 
   return (
     <div
       className={twMerge(
-        "bg-white border border-slate-200 border-l-[3px] border-l-violet-500 rounded-lg overflow-hidden mb-1.5",
-        "transition-[border-color,box-shadow] duration-150",
-        "hover:border-slate-300 hover:shadow-[0_2px_8px_rgba(15,23,42,0.06)]",
+        "mb-2 overflow-hidden rounded-xl border border-slate-200 bg-white",
+        "shadow-[0_1px_3px_rgba(15,23,42,0.04)] transition-[border-color,box-shadow] duration-500 ease-out",
+        "hover:border-slate-300 hover:shadow-[0_4px_14px_rgba(15,23,42,0.065)]",
+        expanded &&
+          "border-slate-300 shadow-[0_4px_16px_rgba(15,23,42,0.07)]",
       )}
     >
       <button
-        className="w-full flex items-center gap-2 px-3.5 py-2 text-left cursor-pointer"
+        type="button"
+        aria-expanded={expanded}
+        aria-controls={detailsID}
+        className="group flex w-full cursor-pointer items-start gap-3 px-3.5 py-3 text-left outline-none transition-colors duration-500 hover:bg-slate-50/50 focus-visible:bg-violet-50/40 sm:px-4"
         onClick={() => setExpanded((v) => !v)}
       >
-        <ClipboardList
-          size={13}
-          className="text-violet-500 shrink-0"
-          strokeWidth={2.5}
-        />
-
-        <span className="text-[0.68rem] font-semibold text-slate-400 font-mono shrink-0">
-          <TimeAgo rfc3339={x.metadata!.createdAt} />
+        <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-violet-200 bg-violet-50 text-violet-600">
+          <ClipboardList size={16} strokeWidth={2.4} />
         </span>
 
-        <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-hidden">
-          {entry?.sessionRef && (
-            <span className="text-[0.72rem] font-semibold text-slate-600 bg-slate-100 border border-slate-200 rounded px-1.5 py-px truncate max-w-[140px] font-mono">
-              {entry.sessionRef.name ?? entry.sessionRef.uid}
+        <span className="flex min-w-0 flex-1 flex-col gap-2">
+          <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5">
+            <span className="rounded-md border border-violet-200 bg-violet-50 px-2 py-1 text-[0.65rem] font-bold text-violet-700">
+              Audit event
             </span>
-          )}
-          {entry?.sessionRef && entry?.resourceRef && (
-            <span className="text-slate-300 text-[0.7rem] shrink-0">→</span>
-          )}
-          {entry?.resourceRef && (
-            <span className="text-[0.72rem] font-semibold text-violet-700 bg-violet-50 border border-violet-200 rounded px-1.5 py-px truncate max-w-[140px] font-mono">
-              {entry.resourceRef.name ?? entry.resourceRef.uid}
-            </span>
-          )}
-          {entry?.resourceRef?.kind && (
-            <span className="text-[0.65rem] font-semibold text-slate-400 shrink-0 hidden sm:block">
-              · {entry.resourceRef.kind}
-            </span>
-          )}
-        </div>
 
-        {entry?.operation && (
-          <div className="shrink-0 hidden md:flex items-center max-w-[260px] overflow-hidden">
-            <OperationBadge operation={entry.operation} />
-          </div>
-        )}
+            <span className="flex min-w-0 items-center gap-1.5">
+              {actorName ? (
+                <>
+                  <span className="shrink-0 text-[0.62rem] font-bold uppercase tracking-[0.05em] text-slate-400">
+                    {actorLabel}
+                  </span>
+                  <span className="max-w-44 truncate font-mono text-[0.7rem] font-semibold text-slate-700">
+                    {actorName}
+                  </span>
+                </>
+              ) : (
+                <span className="text-[0.7rem] font-semibold text-slate-400">
+                  Unknown actor
+                </span>
+              )}
+              <ArrowRight size={12} className="shrink-0 text-slate-300" />
+              <span className="max-w-44 truncate font-mono text-[0.7rem] font-semibold text-violet-700">
+                {resourceName ?? "Unknown resource"}
+              </span>
+            </span>
 
-        {(entry?.service || entry?.method) && (
-          <span className="text-[0.62rem] font-bold px-1.5 py-px rounded bg-slate-800 text-slate-200 font-mono shrink-0 hidden lg:block">
-            {entry.service ? `${entry.service}/${entry.method}` : entry.method}
+            {entry.resourceRef?.kind && (
+              <span className="hidden text-[0.64rem] font-semibold text-slate-400 sm:inline">
+                {entry.resourceRef.kind}
+              </span>
+            )}
           </span>
-        )}
+
+          <span className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1.5">
+            {entry.operation && <OperationBadge operation={entry.operation} />}
+            {(entry.service || entry.method) && (
+              <span className="max-w-64 truncate rounded-md border border-slate-200 bg-slate-100 px-1.5 py-0.5 font-mono text-[0.62rem] font-bold text-slate-600">
+                {entry.service
+                  ? `${entry.service}${entry.method ? `/${entry.method}` : ""}`
+                  : entry.method}
+              </span>
+            )}
+          </span>
+        </span>
 
         <motion.span
           animate={{ rotate: expanded ? 180 : 0 }}
-          transition={{ duration: 0.18 }}
-          className="flex items-center shrink-0 text-slate-400"
+          transition={{ duration: 0.35, ease: "easeOut" }}
+          className="mt-2 flex shrink-0 text-slate-400 transition-colors duration-500 group-hover:text-slate-600"
         >
-          <ChevronDown size={13} strokeWidth={2.5} />
+          <ChevronDown size={15} strokeWidth={2.25} />
         </motion.span>
       </button>
+
+      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 border-t border-slate-100 bg-slate-50/40 px-4 py-1.5 pl-[60px] text-[0.6rem] font-semibold text-slate-400">
+        <TimeAgo rfc3339={x.metadata!.createdAt} />
+        <span aria-hidden="true" className="text-slate-300">
+          ·
+        </span>
+        <span className="flex min-w-0 items-center gap-1 font-mono">
+          <span className="shrink-0 uppercase tracking-[0.05em]">Log ID</span>
+          <span className="min-w-0 truncate text-slate-500">
+            <CopyText value={x.metadata!.id} />
+          </span>
+        </span>
+      </div>
 
       <AnimatePresence initial={false}>
         {expanded && (
           <motion.div
+            id={detailsID}
             key="details"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.18, ease: "easeInOut" }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className="overflow-hidden"
           >
             <AuditLogDetails auditLog={x} />
