@@ -1,17 +1,10 @@
 import {
-  CommonListOptions,
-  CommonListOptions_OrderBy_Type,
-} from "@/apis/metav1/metav1";
-import {
-  getClientResourceList,
-  getPBResourceListFromAPI,
   printResourceNameWithDisplay,
   Resource,
-  ResourceList,
 } from "@/utils/pb";
 import { Alert, Button, MultiSelect } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
-import * as React from "react";
+import { listResourcesForSelect } from "./listResourcesForSelect";
 
 const SelectResourceMultiple = (props: {
   api: string;
@@ -26,25 +19,9 @@ const SelectResourceMultiple = (props: {
 }) => {
   const { api, kind } = props;
 
-  const req = React.useMemo(
-    () =>
-      // @ts-ignore
-      getPBResourceListFromAPI(api)![`List${kind}Options`]["create"]({
-        common: CommonListOptions.create({
-          itemsPerPage: 1000,
-          orderBy: { type: CommonListOptions_OrderBy_Type.NAME },
-        }),
-      }),
-    [api, kind],
-  );
-
   const { isLoading, isError, error, data, refetch } = useQuery({
     queryKey: ["listSelectComponent", api, kind],
-    queryFn: async () => {
-      // @ts-ignore
-      const d = await getClientResourceList(api)?.[`list${kind}`](req);
-      return d;
-    },
+    queryFn: () => listResourcesForSelect(api, kind),
   });
 
   const label = props.labelDefault ? `Select ${kind}` : props.label;
@@ -75,9 +52,7 @@ const SelectResourceMultiple = (props: {
     );
   }
 
-  const itemList = data?.["response"] as ResourceList | undefined;
-
-  if (!itemList) {
+  if (!data) {
     return (
       <Alert color="red" title={`Could not load ${kind}s`}>
         <Button size="compact-xs" variant="outline" onClick={() => refetch()}>
@@ -87,7 +62,7 @@ const SelectResourceMultiple = (props: {
     );
   }
 
-  const rscList = itemList.items.map((x) => ({
+  const rscList = data.map((x) => ({
     value: x.metadata!.name,
     label: printResourceNameWithDisplay(x),
   }));
@@ -107,7 +82,7 @@ const SelectResourceMultiple = (props: {
       }
       nothingFoundMessage={`No ${kind}s match your search`}
       renderOption={({ option }) => {
-        const item = itemList.items.find(
+        const item = data.find(
           (x) => x.metadata!.name === option.value,
         );
         if (!item) return null;
@@ -136,7 +111,7 @@ const SelectResourceMultiple = (props: {
           return;
         }
         const items = v
-          .map((val) => itemList.items.find((x) => x.metadata?.name === val))
+          .map((val) => data.find((x) => x.metadata?.name === val))
           // @ts-ignore
           .filter((x): x is Resource => x !== undefined);
         // @ts-ignore
