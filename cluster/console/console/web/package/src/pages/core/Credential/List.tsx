@@ -18,7 +18,6 @@ import { toURLWithQry } from "@/pages/utils";
 import { getDomain } from "@/utils";
 import { getClientVisibilityCore } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
-import { Shield } from "lucide-react";
 import { MdTimer } from "react-icons/md";
 import { useSearchParams } from "react-router-dom";
 import { match } from "ts-pattern";
@@ -58,24 +57,14 @@ export const LabelComponent = (props: { item: Credential }) => {
       <ResourceListLabel itemRef={item.status!.userRef}></ResourceListLabel>
       {item.spec?.isDisabled && (
         <ResourceListLabel>
-          <span className="flex items-center text-red-400">Disabled</span>
+          <span className="flex items-center text-red-500">Disabled</span>
         </ResourceListLabel>
       )}
-
-      {item.spec?.authorization &&
-        item.spec?.authorization.policies.length > 0 && (
-          <ResourceListLabel>
-            <Shield size={14} className="mr-1" />
-            {item.spec.authorization.policies.length} Policies
-          </ResourceListLabel>
-        )}
-      {item.spec?.authorization &&
-        item.spec?.authorization.inlinePolicies.length > 0 && (
-          <ResourceListLabel>
-            <Shield size={14} className="mr-1" />
-            {item.spec.authorization.inlinePolicies.length} Inline Policies
-          </ResourceListLabel>
-        )}
+      {item.status?.isLocked && (
+        <ResourceListLabel>
+          <span className="flex items-center text-red-500">Locked</span>
+        </ResourceListLabel>
+      )}
     </ResourceListLabelWrap>
   );
 };
@@ -131,8 +120,9 @@ const DoSummary = (props: { resp: GetCredentialSummaryResponse }) => {
         >
           Access Token
         </SummaryItemCount>
+        <SummaryItemCount count={resp.totalUser}>Users</SummaryItemCount>
         <SummaryItemCount
-          count={resp.totalOAuth2}
+          count={resp.totalDisabled}
           to={toURLWithQry(`/core/credentials`, {
             isDisabled: "true",
           })}
@@ -140,8 +130,6 @@ const DoSummary = (props: { resp: GetCredentialSummaryResponse }) => {
         >
           Disabled
         </SummaryItemCount>
-        <SummaryItemCount count={resp.totalUser}>Users</SummaryItemCount>
-        <SummaryItemCount count={resp.totalDisabled}>Disabled</SummaryItemCount>
       </SummaryItemCountWrap>
     </div>
   );

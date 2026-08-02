@@ -1,4 +1,5 @@
 import * as CoreC from "@/apis/corev1/corev1";
+import { ObjectReference } from "@/apis/metav1/metav1";
 import { onError } from "@/utils";
 import { getClientCore } from "@/utils/client";
 import {
@@ -18,7 +19,7 @@ import TimeAgo from "@/components/TimeAgo";
 import { useUpdateResource } from "@/pages/utils/resource";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { useDisclosure } from "@mantine/hooks";
-import { RefreshCcw, RefreshCw } from "lucide-react";
+import { RefreshCcw, RefreshCw, Shield } from "lucide-react";
 import * as React from "react";
 import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
@@ -143,12 +144,14 @@ const GenerateTokenModal = (props: {
 
   return (
     <Modal opened={opened} onClose={handleClose} size="xl" centered>
-      <GenerateC
-        item={item}
-        onGenerated={() => {
-          generatedRef.current = true;
-        }}
-      />
+      {opened && (
+        <GenerateC
+          item={item}
+          onGenerated={() => {
+            generatedRef.current = true;
+          }}
+        />
+      )}
     </Modal>
   );
 };
@@ -206,11 +209,12 @@ export const ItemInfo = (props: { item: CoreC.Credential }) => {
                     ],
                 },
               ]}
-              defaultValue={CoreP.Credential_Spec_Type[item.spec!.type]}
+              value={CoreP.Credential_Spec_Type[item.spec!.type]}
               onChange={(v) => {
                 if (!v) return;
-                item.spec!.type = CoreP.Credential_Spec_Type[v as "OAUTH2"];
-                mutationUpdate.mutate(item);
+                const next = CoreC.Credential.clone(item);
+                next.spec!.type = CoreP.Credential_Spec_Type[v as "OAUTH2"];
+                mutationUpdate.mutate(next);
               }}
             />
           }
@@ -233,7 +237,7 @@ export const ItemInfo = (props: { item: CoreC.Credential }) => {
         </InfoItem>
       )}
 
-      {item.status!.totalRotations > 0 && (
+      {item.status!.totalAuthentications > 0 && (
         <InfoItem title="Total Rotations">
           <span>{item.status!.totalRotations}</span>
           {item.spec!.maxAuthentications > 0 && (
@@ -263,8 +267,9 @@ export const ItemInfo = (props: { item: CoreC.Credential }) => {
             className="ml-2"
             checked={!item.spec!.isDisabled}
             onChange={(v) => {
-              item.spec!.isDisabled = !v.currentTarget.checked;
-              mutationUpdate.mutate(item);
+              const next = CoreC.Credential.clone(item);
+              next.spec!.isDisabled = !v.currentTarget.checked;
+              mutationUpdate.mutate(next);
             }}
           />
         </div>
@@ -296,14 +301,20 @@ export const MainInfo = (props: {
   const { item } = props;
   const mutationUpdate = useUpdateResource();
   const [opened, { open, close }] = useDisclosure(false);
+  const userRef =
+    item.status?.userRef?.name || item.status?.userRef?.uid
+      ? item.status.userRef
+      : ObjectReference.create({
+          apiVersion: "core/v1",
+          kind: "User",
+          name: item.spec!.user,
+        });
 
   return {
     items: [
       {
         label: "User",
-        value: (
-          <ResourceListLabel itemRef={item.status!.userRef}></ResourceListLabel>
-        ),
+        value: <ResourceListLabel itemRef={userRef} />,
       },
       {
         label: "Type",
@@ -355,11 +366,13 @@ export const MainInfo = (props: {
                       ],
                   },
                 ]}
-                defaultValue={CoreP.Credential_Spec_Type[item.spec!.type]}
+                value={CoreP.Credential_Spec_Type[item.spec!.type]}
                 onChange={(v) => {
                   if (!v) return;
-                  item.spec!.type = CoreP.Credential_Spec_Type[v as "OAUTH2"];
-                  mutationUpdate.mutate(item);
+                  const next = CoreC.Credential.clone(item);
+                  next.spec!.type =
+                    CoreP.Credential_Spec_Type[v as "OAUTH2"];
+                  mutationUpdate.mutate(next);
                 }}
               />
             }
@@ -438,6 +451,82 @@ export const MainInfo = (props: {
         : []),
 
       {
+        label: "Session type",
+        value:
+          item.spec!.sessionType === CoreC.Session_Status_Type.CLIENT
+            ? "Client"
+            : item.spec!.sessionType === CoreC.Session_Status_Type.CLIENTLESS
+              ? "Clientless"
+              : "Not set",
+      },
+
+      ...(item.spec!.autoDelete
+        ? [
+            {
+              label: "Lifecycle",
+              value: "Automatically delete after reaching the usage limit",
+              span: "full" as const,
+            },
+          ]
+        : []),
+
+      ...(item.status?.isLocked
+        ? [
+            {
+              label: "Security state",
+              value: <span className="font-semibold text-red-600">Locked</span>,
+            },
+          ]
+        : []),
+
+      ...(item.spec?.authorization?.policies.length
+        ? [
+            {
+              label: "Policies",
+              value: (
+                <div className="flex flex-wrap gap-1">
+                  {item.spec.authorization.policies.map((policy) => (
+                    <ResourceListLabel
+                      key={policy}
+                      itemRef={ObjectReference.create({
+                        apiVersion: "core/v1",
+                        kind: "Policy",
+                        name: policy,
+                      })}
+                    />
+                  ))}
+                </div>
+              ),
+              span: "full" as const,
+            },
+          ]
+        : []),
+
+      ...(item.spec?.authorization?.inlinePolicies.length
+        ? [
+            {
+              label: "Inline policies",
+              value: (
+                <div className="flex flex-wrap gap-1">
+                  {item.spec.authorization.inlinePolicies.map(
+                    (policy, index) => (
+                      <ResourceListLabel
+                        key={`${policy.name}-${index}`}
+                        label="Inline policy"
+                      >
+                        <Shield size={12} strokeWidth={2.5} />
+                        {policy.name || `Inline policy ${index + 1}`}
+                      </ResourceListLabel>
+                    ),
+                  )}
+                </div>
+              ),
+              span: "full" as const,
+            },
+          ]
+        : []),
+
+      {
         label: "Active",
         value: (
           <EditItemWrap
@@ -458,8 +547,9 @@ export const MainInfo = (props: {
                 size="sm"
                 checked={!item.spec!.isDisabled}
                 onChange={(v) => {
-                  item.spec!.isDisabled = !v.currentTarget.checked;
-                  mutationUpdate.mutate(item);
+                  const next = CoreC.Credential.clone(item);
+                  next.spec!.isDisabled = !v.currentTarget.checked;
+                  mutationUpdate.mutate(next);
                 }}
               />
             }
