@@ -43,7 +43,12 @@ export const LabelComponent = (props: { item: IdentityProvider }) => {
     <ResourceListLabelWrap>
       {item.spec!.isDisabled && (
         <ResourceListLabel>
-          <span className="text-red-400">Disabled</span>
+          <span className="text-red-500">Disabled</span>
+        </ResourceListLabel>
+      )}
+      {item.status?.isLocked && (
+        <ResourceListLabel>
+          <span className="text-red-500">Locked</span>
         </ResourceListLabel>
       )}
       <ResourceListLabel label="Type">{getType(item)}</ResourceListLabel>
