@@ -5,6 +5,7 @@ import {
   AccessLog_Entry_Info_DNS_Type,
   AccessLog_Entry_Info_MySQL_Type,
   AccessLog_Entry_Info_Postgres_Type,
+  AccessLog_Entry_Info_SSH_Type,
   Service_Spec_Mode,
 } from "@/apis/corev1/corev1";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
@@ -20,7 +21,13 @@ import { getResourceRef } from "@/utils/pb";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, RefreshCw, ShieldCheck, ShieldX } from "lucide-react";
+import {
+  ArrowRight,
+  ChevronDown,
+  RefreshCw,
+  ShieldCheck,
+  ShieldX,
+} from "lucide-react";
 import * as React from "react";
 import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
@@ -123,13 +130,13 @@ const DetailField = ({
   children: React.ReactNode;
   mono?: boolean;
 }) => (
-  <div className="flex flex-col gap-0.5">
-    <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+  <div className="flex min-h-14 min-w-0 flex-col gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.025)]">
+    <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-500">
       {label}
     </span>
     <span
       className={twMerge(
-        "text-[0.75rem] font-semibold text-slate-700 break-all",
+        "min-w-0 break-words text-[0.74rem] font-semibold leading-5 text-slate-700",
         mono && "font-mono",
       )}
     >
@@ -181,19 +188,24 @@ const AccessLogDetails = ({ accessLog }: { accessLog: AccessLog }) => {
   const info = x.entry?.info;
 
   return (
-    <div className="px-4 py-3 border-t border-slate-100 bg-slate-50/40">
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-3">
-        <DetailField label="Log ID" mono>
-          <CopyText value={x.metadata!.id} />
-        </DetailField>
+    <div className="border-t border-slate-200 bg-slate-50/70 px-4 py-4 sm:px-5">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <h4 className="text-[0.75rem] font-bold text-slate-700">
+            Log details
+          </h4>
+        </div>
+        <Editor item={x} />
+      </div>
 
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {common?.connectionID && (
           <DetailField label="Connection ID">{common.connectionID}</DetailField>
         )}
 
         {common?.sessionRef && (
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+          <div className="col-span-full flex min-h-14 min-w-0 flex-col gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+            <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-500">
               Session
             </span>
             <CardSession itemRef={common.sessionRef} />
@@ -201,8 +213,8 @@ const AccessLogDetails = ({ accessLog }: { accessLog: AccessLog }) => {
         )}
 
         {common?.serviceRef && (
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+          <div className="col-span-full flex min-h-14 min-w-0 flex-col gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+            <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-500">
               Service
             </span>
             <CardService itemRef={common.serviceRef} />
@@ -210,8 +222,8 @@ const AccessLogDetails = ({ accessLog }: { accessLog: AccessLog }) => {
         )}
 
         {common?.reason?.details?.type.oneofKind === "policyMatch" && (
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+          <div className="flex min-h-14 min-w-0 flex-col gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+            <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-500">
               Policy
             </span>
             {common.reason.details.type.policyMatch.type.oneofKind ===
@@ -236,7 +248,13 @@ const AccessLogDetails = ({ accessLog }: { accessLog: AccessLog }) => {
           </div>
         )}
 
-        {info?.type.oneofKind === "http" && (
+        {info?.type.oneofKind && (
+          <div className="col-span-full flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-100/60 p-3">
+            <span className="text-[0.62rem] font-bold uppercase tracking-[0.07em] text-slate-600">
+              Protocol details
+            </span>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {info.type.oneofKind === "http" && (
           <>
             {info.type.http.request?.path && (
               <DetailField label="Path">
@@ -281,7 +299,7 @@ const AccessLogDetails = ({ accessLog }: { accessLog: AccessLog }) => {
           </>
         )}
 
-        {info?.type.oneofKind === "kubernetes" && (
+        {info.type.oneofKind === "kubernetes" && (
           <>
             {info.type.kubernetes.verb && (
               <DetailField label="Verb">
@@ -331,7 +349,7 @@ const AccessLogDetails = ({ accessLog }: { accessLog: AccessLog }) => {
           </>
         )}
 
-        {info?.type.oneofKind === "grpc" && (
+        {info.type.oneofKind === "grpc" && (
           <>
             {info.type.grpc.method && (
               <DetailField label="Method">{info.type.grpc.method}</DetailField>
@@ -359,7 +377,7 @@ const AccessLogDetails = ({ accessLog }: { accessLog: AccessLog }) => {
           </>
         )}
 
-        {info?.type.oneofKind === "postgres" && (
+        {info.type.oneofKind === "postgres" && (
           <>
             {info.type.postgres.type && (
               <DetailField label="Type">
@@ -377,7 +395,7 @@ const AccessLogDetails = ({ accessLog }: { accessLog: AccessLog }) => {
           </>
         )}
 
-        {info?.type.oneofKind === "mysql" && (
+        {info.type.oneofKind === "mysql" && (
           <>
             {info.type.mysql.type && (
               <DetailField label="Type">
@@ -395,7 +413,7 @@ const AccessLogDetails = ({ accessLog }: { accessLog: AccessLog }) => {
           </>
         )}
 
-        {info?.type.oneofKind === "dns" && (
+        {info.type.oneofKind === "dns" && (
           <>
             {info.type.dns.type && (
               <DetailField label="Type">
@@ -411,13 +429,12 @@ const AccessLogDetails = ({ accessLog }: { accessLog: AccessLog }) => {
           </>
         )}
 
-        {info?.type.oneofKind === "ssh" && info.type.ssh.type && (
+        {info.type.oneofKind === "ssh" && info.type.ssh.type && (
           <DetailField label="SSH type">{info.type.ssh.type}</DetailField>
         )}
-
-        <div className="col-span-full flex justify-end pt-1">
-          <Editor item={x} />
-        </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -426,10 +443,12 @@ const AccessLogDetails = ({ accessLog }: { accessLog: AccessLog }) => {
 export const AccessLogC = ({ accessLog }: { accessLog: AccessLog }) => {
   const x = accessLog;
   const [expanded, setExpanded] = React.useState(false);
+  const detailsID = React.useId();
 
   if (!x.entry?.common) return null;
 
   const common = x.entry.common;
+  const info = x.entry.info;
   const isAllowed = common.status === AccessLog_Entry_Common_Status.ALLOWED;
   const protoLabel = getProtoLabel(common.mode);
   const reason = getPolicyReason(common.reason?.type);
@@ -437,99 +456,182 @@ export const AccessLogC = ({ accessLog }: { accessLog: AccessLog }) => {
     common.reason?.type != null &&
     (common.reason.type as number) !==
       (AccessLog_Entry_Common_Reason_Type.TYPE_UNKNOWN_REASON as number);
+  const sourceRef = common.userRef ?? common.sessionRef;
+  const sourceName = sourceRef?.name ?? sourceRef?.uid;
+  const sourceLabel = common.userRef ? "User" : "Session";
+  const serviceName = common.serviceRef?.name ?? common.serviceRef?.uid;
+  let operation: string | undefined;
+  let target: string | undefined;
+  let response: React.ReactNode;
+
+  if (info?.type.oneofKind === "http") {
+    operation = info.type.http.request?.method;
+    target = info.type.http.request?.path;
+    if (info.type.http.response?.code) {
+      response = <HttpStatusBadge code={info.type.http.response.code} />;
+    }
+  } else if (info?.type.oneofKind === "kubernetes") {
+    operation = info.type.kubernetes.verb;
+    target = [
+      info.type.kubernetes.namespace,
+      info.type.kubernetes.resource,
+      info.type.kubernetes.name,
+    ]
+      .filter(Boolean)
+      .join("/");
+  } else if (info?.type.oneofKind === "grpc") {
+    operation = info.type.grpc.method;
+    target = info.type.grpc.serviceFullName || info.type.grpc.service;
+  } else if (info?.type.oneofKind === "dns") {
+    operation = info.type.dns.type
+      ? AccessLog_Entry_Info_DNS_Type[info.type.dns.type]
+      : undefined;
+    target = info.type.dns.name;
+  } else if (info?.type.oneofKind === "postgres") {
+    operation = info.type.postgres.type
+      ? AccessLog_Entry_Info_Postgres_Type[info.type.postgres.type]
+      : undefined;
+  } else if (info?.type.oneofKind === "mysql") {
+    operation = info.type.mysql.type
+      ? AccessLog_Entry_Info_MySQL_Type[info.type.mysql.type]
+      : undefined;
+  } else if (info?.type.oneofKind === "ssh") {
+    operation = info.type.ssh.type
+      ? AccessLog_Entry_Info_SSH_Type[info.type.ssh.type]
+      : undefined;
+  }
 
   return (
     <div
       className={twMerge(
-        "bg-white border rounded-lg overflow-hidden mb-1.5",
-        "transition-[border-color,box-shadow] duration-150",
-        "hover:border-slate-300 hover:shadow-[0_2px_8px_rgba(15,23,42,0.06)]",
+        "mb-2 overflow-hidden rounded-xl border bg-white",
+        "shadow-[0_1px_3px_rgba(15,23,42,0.04)] transition-[border-color,box-shadow] duration-500 ease-out",
+        "hover:border-slate-300 hover:shadow-[0_4px_14px_rgba(15,23,42,0.065)]",
         isAllowed
-          ? "border-l-[3px] border-l-emerald-500 border-slate-200"
-          : "border-l-[3px] border-l-red-500 border-slate-200",
+          ? "border-slate-200"
+          : "border-red-200/80 shadow-[0_1px_4px_rgba(220,38,38,0.045)]",
+        expanded && "border-slate-300 shadow-[0_4px_16px_rgba(15,23,42,0.07)]",
       )}
     >
       <button
-        className="w-full flex items-center gap-2 px-3.5 py-2 text-left cursor-pointer"
+        type="button"
+        aria-expanded={expanded}
+        aria-controls={detailsID}
+        className="group flex w-full cursor-pointer items-start gap-3 px-3.5 py-3 text-left outline-none transition-colors duration-500 hover:bg-slate-50/50 focus-visible:bg-blue-50/40 sm:px-4"
         onClick={() => setExpanded((v) => !v)}
       >
-        {isAllowed ? (
-          <ShieldCheck
-            size={13}
-            className="text-emerald-500 shrink-0"
-            strokeWidth={2.5}
-          />
-        ) : (
-          <ShieldX
-            size={13}
-            className="text-red-500 shrink-0"
-            strokeWidth={2.5}
-          />
-        )}
-
         <span
           className={twMerge(
-            "text-[0.65rem] font-bold px-1.5 py-px rounded border shrink-0",
+            "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border",
             isAllowed
-              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-              : "bg-red-50 text-red-700 border-red-200",
+              ? "border-emerald-200 bg-emerald-50 text-emerald-600"
+              : "border-red-200 bg-red-50 text-red-600",
           )}
         >
-          {isAllowed ? "Allowed" : "Denied"}
+          {isAllowed ? (
+            <ShieldCheck size={16} strokeWidth={2.4} />
+          ) : (
+            <ShieldX size={16} strokeWidth={2.4} />
+          )}
         </span>
 
-        <span className="text-[0.68rem] font-semibold text-slate-400 font-mono shrink-0">
-          <TimeAgo rfc3339={x.metadata!.createdAt} />
+        <span className="flex min-w-0 flex-1 flex-col gap-2">
+          <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5">
+            <span
+              className={twMerge(
+                "rounded-md border px-2 py-1 text-[0.65rem] font-bold",
+                isAllowed
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                  : "border-red-200 bg-red-50 text-red-700",
+              )}
+            >
+              {isAllowed ? "Allowed" : "Denied"}
+            </span>
+
+            <span className="flex min-w-0 items-center gap-1.5 text-[0.75rem] font-semibold text-slate-700">
+              {sourceName ? (
+                <>
+                  <span className="shrink-0 text-[0.62rem] font-bold uppercase tracking-[0.05em] text-slate-400">
+                    {sourceLabel}
+                  </span>
+                  <span className="max-w-40 truncate font-mono text-[0.7rem]">
+                    {sourceName}
+                  </span>
+                </>
+              ) : (
+                <span className="text-slate-400">Unknown source</span>
+              )}
+              <ArrowRight size={12} className="shrink-0 text-slate-300" />
+              <span className="max-w-44 truncate font-mono text-[0.7rem] text-blue-700">
+                {serviceName ?? "Unknown service"}
+              </span>
+            </span>
+
+            {common.namespaceRef?.name && (
+              <span className="hidden truncate text-[0.66rem] font-semibold text-slate-400 sm:inline">
+                in {common.namespaceRef.name}
+              </span>
+            )}
+          </span>
+
+          <span className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1.5">
+            {protoLabel && (
+              <span className="rounded-md border border-slate-200 bg-slate-100 px-1.5 py-0.5 font-mono text-[0.61rem] font-bold text-slate-600">
+                {protoLabel}
+              </span>
+            )}
+
+            {operation && (
+              <span className="font-mono text-[0.67rem] font-bold text-slate-600">
+                {operation}
+              </span>
+            )}
+            {target && (
+              <span className="max-w-64 truncate font-mono text-[0.67rem] font-medium text-slate-500">
+                {target}
+              </span>
+            )}
+            {response}
+
+            {hasReason && (
+              <span className="truncate text-[0.67rem] font-semibold text-slate-500">
+                {reason}
+              </span>
+            )}
+          </span>
         </span>
-
-        <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-hidden">
-          {common.sessionRef && (
-            <span className="text-[0.72rem] font-semibold text-slate-600 bg-slate-100 border border-slate-200 rounded px-1.5 py-px truncate max-w-[160px]">
-              {common.sessionRef.name ?? common.sessionRef.uid}
-            </span>
-          )}
-          <span className="text-slate-300 text-[0.7rem] shrink-0">→</span>
-          {common.serviceRef && (
-            <span className="text-[0.72rem] font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded px-1.5 py-px truncate max-w-[160px]">
-              {common.serviceRef.name ?? common.serviceRef.uid}
-            </span>
-          )}
-          {common.namespaceRef && (
-            <span className="text-[0.68rem] font-semibold text-slate-400 truncate hidden sm:block">
-              · {common.namespaceRef.name}
-            </span>
-          )}
-        </div>
-
-        {protoLabel && (
-          <span className="text-[0.62rem] font-bold px-1.5 py-px rounded bg-slate-800 text-slate-200 font-mono shrink-0">
-            {protoLabel}
-          </span>
-        )}
-
-        {hasReason && (
-          <span className="text-[0.68rem] font-semibold text-slate-500 shrink-0 hidden md:block">
-            {reason}
-          </span>
-        )}
 
         <motion.span
           animate={{ rotate: expanded ? 180 : 0 }}
-          transition={{ duration: 0.18 }}
-          className="flex items-center shrink-0 text-slate-400"
+          transition={{ duration: 0.35, ease: "easeOut" }}
+          className="mt-2 flex shrink-0 text-slate-400 transition-colors duration-500 group-hover:text-slate-600"
         >
-          <ChevronDown size={13} strokeWidth={2.5} />
+          <ChevronDown size={15} strokeWidth={2.25} />
         </motion.span>
       </button>
+
+      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 border-t border-slate-100 bg-slate-50/40 px-4 py-1.5 pl-[60px] text-[0.6rem] font-semibold text-slate-400">
+        <TimeAgo rfc3339={x.metadata!.createdAt} />
+        <span aria-hidden="true" className="text-slate-300">
+          ·
+        </span>
+        <span className="flex min-w-0 items-center gap-1 font-mono">
+          <span className="shrink-0 uppercase tracking-[0.05em]">Log ID</span>
+          <span className="min-w-0 truncate text-slate-500">
+            <CopyText value={x.metadata!.id} />
+          </span>
+        </span>
+      </div>
 
       <AnimatePresence initial={false}>
         {expanded && (
           <motion.div
+            id={detailsID}
             key="details"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.18, ease: "easeInOut" }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className="overflow-hidden"
           >
             <AccessLogDetails accessLog={x} />
