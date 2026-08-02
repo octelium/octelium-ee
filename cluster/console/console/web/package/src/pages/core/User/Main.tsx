@@ -1,7 +1,9 @@
 import * as CoreC from "@/apis/corev1/corev1";
+import { ObjectReference } from "@/apis/metav1/metav1";
 import AccessLogViewer from "@/components/AccessLogViewer";
 import InfoItem from "@/components/InfoItem";
 import Label from "@/components/Label";
+import { ResourceListLabel } from "@/components/ResourceList";
 import EditItemWrap from "@/components/ResourceLayout/EditItemWrap";
 import { useUpdateResource } from "@/pages/utils/resource";
 import { ResourceMainInfo } from "@/pages/utils/types";
@@ -10,7 +12,16 @@ import { getClientCore } from "@/utils/client";
 import { getResourcePath, getResourceRef } from "@/utils/pb";
 import { Button, Modal, Switch } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import {
+  KeyRound,
+  LaptopMinimal,
+  Plus,
+  Shield,
+  Smartphone,
+  Terminal,
+  X,
+} from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -157,10 +168,48 @@ const CreateUserCredential = (props: { item: CoreC.User }) => {
   });
 
   return (
-    <div>
-      <Button onClick={open}>Create Credential</Button>
-      <Modal opened={opened} onClose={close} size={"xl"} centered>
-        <div>
+    <div className="flex items-center">
+      <Button
+        variant="light"
+        color="dark"
+        size="compact-sm"
+        leftSection={<Plus size={12} strokeWidth={2.5} />}
+        onClick={open}
+      >
+        Create credential
+      </Button>
+      <Modal
+        opened={opened}
+        onClose={close}
+        size="xl"
+        centered
+        closeOnClickOutside={!mutationCredential.isPending}
+        closeOnEscape={!mutationCredential.isPending}
+        title={
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600">
+              <KeyRound size={16} strokeWidth={2.25} />
+            </span>
+            <div className="flex flex-col">
+              <span className="text-sm font-bold text-slate-800">
+                Create credential
+              </span>
+              <span className="text-[0.7rem] font-semibold text-slate-500">
+                Issue a new credential for {item.metadata?.name}
+              </span>
+            </div>
+          </div>
+        }
+        overlayProps={{ backgroundOpacity: 0.2, blur: 1 }}
+        styles={{
+          header: { borderBottom: "1px solid #e2e8f0", minHeight: "64px" },
+          body: { padding: 0 },
+          content: { border: "1px solid #e2e8f0" },
+        }}
+      >
+        <div className="flex flex-col bg-slate-50/70">
+          <div className="p-4 sm:p-5">
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <Edit
             onUpdate={(v) => {
               v.metadata!.name = `${v.spec!.user}-${slugify(CoreC.Credential_Spec_Type[v.spec!.type]).toLowerCase()}-${randomStringLowerCase(6)}`;
@@ -168,14 +217,34 @@ const CreateUserCredential = (props: { item: CoreC.User }) => {
             }}
             item={credential}
           />
+            </div>
+          </div>
 
-          <div className="mt-4 flex items-end justify-end">
+          <div className="flex items-center justify-end gap-2 border-t border-slate-200 bg-white px-4 py-3 sm:px-5">
             <Button
-              onClick={() => {
-                mutationCredential.mutate();
-              }}
+              variant="default"
+              size="sm"
+              leftSection={<X size={13} strokeWidth={2.5} />}
+              disabled={mutationCredential.isPending}
+              onClick={close}
             >
-              Create
+              Cancel
+            </Button>
+            <Button
+              color="dark"
+              size="sm"
+              leftSection={<KeyRound size={13} strokeWidth={2.5} />}
+              loading={mutationCredential.isPending}
+              disabled={
+                mutationCredential.isPending ||
+                credential.spec?.type ===
+                  CoreC.Credential_Spec_Type.TYPE_UNKNOWN
+              }
+              onClick={() => mutationCredential.mutate()}
+            >
+              {mutationCredential.isPending
+                ? "Creating…"
+                : "Create credential"}
             </Button>
           </div>
         </div>
@@ -186,6 +255,64 @@ const CreateUserCredential = (props: { item: CoreC.User }) => {
 
 export const MainInfo = (props: { item: CoreC.User }): ResourceMainInfo => {
   const { item } = props;
+  const itemRef = getResourceRef(item);
+  const itemName = item.metadata!.name;
+
+  const qrySess = useQuery({
+    queryKey: ["core.listSession", "usr", itemName],
+    queryFn: () =>
+      getClientCore().listSession(
+        CoreC.ListSessionOptions.create({ userRef: itemRef }),
+      ).response,
+  });
+  const qryDev = useQuery({
+    queryKey: ["core.listDevice", "usr", itemName],
+    queryFn: () =>
+      getClientCore().listDevice(
+        CoreC.ListDeviceOptions.create({ userRef: itemRef }),
+      ).response,
+  });
+  const qryCred = useQuery({
+    queryKey: ["core.listCredential", "usr", itemName],
+    queryFn: () =>
+      getClientCore().listCredential(
+        CoreC.ListCredentialOptions.create({ userRef: itemRef }),
+      ).response,
+  });
+  const qryAuthn = useQuery({
+    queryKey: ["core.listAuthenticator", "usr", itemName],
+    queryFn: () =>
+      getClientCore().listAuthenticator(
+        CoreC.ListAuthenticatorOptions.create({ userRef: itemRef }),
+      ).response,
+  });
+
+  const related = [
+    {
+      label: "Sessions",
+      count: qrySess.data?.listResponseMeta?.totalCount,
+      path: `/core/sessions?userRef.name=${encodeURIComponent(itemName)}`,
+      icon: Terminal,
+    },
+    {
+      label: "Devices",
+      count: qryDev.data?.listResponseMeta?.totalCount,
+      path: `/core/devices?userRef.name=${encodeURIComponent(itemName)}`,
+      icon: LaptopMinimal,
+    },
+    {
+      label: "Authenticators",
+      count: qryAuthn.data?.listResponseMeta?.totalCount,
+      path: `/core/authenticators?userRef.name=${encodeURIComponent(itemName)}`,
+      icon: Smartphone,
+    },
+    {
+      label: "Credentials",
+      count: qryCred.data?.listResponseMeta?.totalCount,
+      path: `/core/credentials?userRef.name=${encodeURIComponent(itemName)}`,
+      icon: KeyRound,
+    },
+  ];
 
   return {
     items: [
@@ -206,9 +333,7 @@ export const MainInfo = (props: { item: CoreC.User }): ResourceMainInfo => {
             {
               label: "Email",
               value: (
-                <span className="font-mono text-[0.75rem]">
-                  {item.spec.email}
-                </span>
+                <span className="text-[0.75rem]">{item.spec.email}</span>
               ),
             },
           ]
@@ -221,7 +346,14 @@ export const MainInfo = (props: { item: CoreC.User }): ResourceMainInfo => {
               value: (
                 <div className="flex flex-wrap gap-1">
                   {item.spec!.groups.map((x) => (
-                    <Label key={x}>{x}</Label>
+                    <ResourceListLabel
+                      key={x}
+                      itemRef={ObjectReference.create({
+                        apiVersion: "core/v1",
+                        kind: "Group",
+                        name: x,
+                      })}
+                    />
                   ))}
                 </div>
               ),
@@ -238,7 +370,14 @@ export const MainInfo = (props: { item: CoreC.User }): ResourceMainInfo => {
               value: (
                 <div className="flex flex-wrap gap-1">
                   {item.spec!.authorization!.policies.map((x) => (
-                    <Label key={x}>{x}</Label>
+                    <ResourceListLabel
+                      key={x}
+                      itemRef={ObjectReference.create({
+                        apiVersion: "access/v1",
+                        kind: "Policy",
+                        name: x,
+                      })}
+                    />
                   ))}
                 </div>
               ),
@@ -246,6 +385,40 @@ export const MainInfo = (props: { item: CoreC.User }): ResourceMainInfo => {
             },
           ]
         : []),
+
+      ...(item.spec?.authorization?.inlinePolicies.length
+        ? [
+            {
+              label: "Inline policies",
+              value: (
+                <div className="flex flex-wrap gap-1">
+                  {item.spec.authorization.inlinePolicies.map((policy) => (
+                    <ResourceListLabel key={policy.name} label="Inline policy">
+                      <Shield size={12} strokeWidth={2.5} />
+                      {policy.name}
+                    </ResourceListLabel>
+                  ))}
+                </div>
+              ),
+              span: "full" as const,
+            },
+          ]
+        : []),
+
+      {
+        label: "Related resources",
+        value: (
+          <div className="flex flex-wrap gap-1">
+            {related.map(({ label, count, path, icon: Icon }) => (
+              <ResourceListLabel key={label} label={label} to={path}>
+                <Icon size={12} strokeWidth={2.5} />
+                {count === undefined ? "…" : count.toLocaleString()}
+              </ResourceListLabel>
+            ))}
+          </div>
+        ),
+        span: "full" as const,
+      },
 
       {
         label: "Active",

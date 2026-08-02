@@ -1,8 +1,4 @@
 import {
-  ListAuthenticatorOptions,
-  ListCredentialOptions,
-  ListDeviceOptions,
-  ListSessionOptions,
   ListUserOptions,
   User_Spec_Type,
   UserList,
@@ -24,18 +20,14 @@ import {
 import { setListOptFilter } from "@/features/settings/slice";
 import { toURLWithQry } from "@/pages/utils";
 import { getDomain } from "@/utils";
-import { getClientCore, getClientVisibilityCore } from "@/utils/client";
+import { getClientVisibilityCore } from "@/utils/client";
 import { useAppDispatch } from "@/utils/hooks";
-import { getResourceRef, invalidateResourceListFromList } from "@/utils/pb";
+import { invalidateResourceListFromList } from "@/utils/pb";
 import { useQuery } from "@tanstack/react-query";
 import {
   Bot,
-  LaptopMinimal,
   Mail,
-  Shield,
-  Terminal,
   User as UserIcon,
-  Users,
 } from "lucide-react";
 import * as React from "react";
 import { useSearchParams } from "react-router-dom";
@@ -68,42 +60,6 @@ const ItemDetails = (props: { item: User; domain: string }) => {
 export const LabelComponent = (props: { item: User }) => {
   const { item } = props;
 
-  const qrySess = useQuery({
-    queryKey: ["core.listSession", "usr", item.metadata!.name],
-    queryFn: async () => {
-      return await getClientCore().listSession(
-        ListSessionOptions.create({ userRef: getResourceRef(item) }),
-      );
-    },
-  });
-
-  const qryDev = useQuery({
-    queryKey: ["core.listDevice", "usr", item.metadata!.name],
-    queryFn: async () => {
-      return await getClientCore().listDevice(
-        ListDeviceOptions.create({ userRef: getResourceRef(item) }),
-      );
-    },
-  });
-
-  const qryCred = useQuery({
-    queryKey: ["core.listCredential", "usr", item.metadata!.name],
-    queryFn: async () => {
-      return await getClientCore().listCredential(
-        ListCredentialOptions.create({ userRef: getResourceRef(item) }),
-      );
-    },
-  });
-
-  const qryAuthn = useQuery({
-    queryKey: ["core.listAuthenticator", "usr", item.metadata!.name],
-    queryFn: async () => {
-      return await getClientCore().listAuthenticator(
-        ListAuthenticatorOptions.create({ userRef: getResourceRef(item) }),
-      );
-    },
-  });
-
   return (
     <ResourceListLabelWrap>
       <ResourceListLabel>{getType(item)}</ResourceListLabel>
@@ -123,77 +79,6 @@ export const LabelComponent = (props: { item: User }) => {
         </ResourceListLabel>
       )}
 
-      {item.spec!.groups && item.spec!.groups.length > 0 && (
-        <ResourceListLabel>
-          <Users size={14} /> {item.spec?.groups.length} Groups
-        </ResourceListLabel>
-      )}
-
-      {qrySess.isSuccess &&
-        qrySess.data.response.listResponseMeta &&
-        qrySess.data.response.listResponseMeta.totalCount > 0 && (
-          <ResourceListLabel
-            to={toURLWithQry(`/core/sessions`, {
-              "userRef.name": item.metadata!.name,
-            })}
-          >
-            <Terminal size={14} className="mr-1" />
-            {qrySess.data.response.listResponseMeta.totalCount} Sessions
-          </ResourceListLabel>
-        )}
-
-      {qryDev.isSuccess &&
-        qryDev.data.response.listResponseMeta &&
-        qryDev.data.response.listResponseMeta.totalCount > 0 && (
-          <ResourceListLabel
-            to={toURLWithQry(`/core/devices`, {
-              "userRef.name": item.metadata!.name,
-            })}
-          >
-            <LaptopMinimal size={14} className="mr-1" />
-            {qryDev.data.response.listResponseMeta.totalCount} Devices
-          </ResourceListLabel>
-        )}
-
-      {qryAuthn.isSuccess &&
-        qryAuthn.data.response.listResponseMeta &&
-        qryAuthn.data.response.listResponseMeta.totalCount > 0 && (
-          <ResourceListLabel
-            to={toURLWithQry(`/core/authenticators`, {
-              "userRef.name": item.metadata!.name,
-            })}
-          >
-            <LaptopMinimal size={14} className="mr-1" />
-            {qryAuthn.data.response.listResponseMeta.totalCount} Authenticators
-          </ResourceListLabel>
-        )}
-
-      {qryCred.isSuccess &&
-        qryCred.data.response.listResponseMeta &&
-        qryCred.data.response.listResponseMeta.totalCount > 0 && (
-          <ResourceListLabel
-            to={toURLWithQry(`/core/credentials`, {
-              "userRef.name": item.metadata!.name,
-            })}
-          >
-            <LaptopMinimal size={14} className="mr-1" />
-            {qryCred.data.response.listResponseMeta.totalCount} Credentials
-          </ResourceListLabel>
-        )}
-      {item.spec?.authorization &&
-        item.spec?.authorization.policies.length > 0 && (
-          <ResourceListLabel>
-            <Shield size={14} className="mr-1" />
-            {item.spec.authorization.policies.length} Policies
-          </ResourceListLabel>
-        )}
-      {item.spec?.authorization &&
-        item.spec?.authorization.inlinePolicies.length > 0 && (
-          <ResourceListLabel>
-            <Shield size={14} className="mr-1" />
-            {item.spec.authorization.inlinePolicies.length} Inline Policies
-          </ResourceListLabel>
-        )}
     </ResourceListLabelWrap>
   );
 };
