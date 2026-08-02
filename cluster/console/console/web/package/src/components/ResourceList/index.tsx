@@ -24,6 +24,7 @@ export const ResourceListWrapper = (props: { children?: React.ReactNode }) => (
 export const ResourceListItem = (props: {
   children?: React.ReactNode;
   path?: string;
+  state?: unknown;
 }) => {
   const hasPath = !!props.path?.length;
   const navigate = useNavigate();
@@ -39,8 +40,31 @@ export const ResourceListItem = (props: {
         "hover:border-slate-300 hover:shadow-[0_2px_12px_rgba(15,23,42,0.09)]",
         hasPath && "cursor-pointer",
       )}
-      onClick={() => {
-        if (hasPath) navigate(props.path!);
+      role={hasPath ? "link" : undefined}
+      tabIndex={hasPath ? 0 : undefined}
+      onClick={(event) => {
+        if (
+          (event.target as HTMLElement).closest(
+            "a, button, input, select, textarea, [role='button']",
+          )
+        ) {
+          return;
+        }
+        if (hasPath) {
+          navigate(props.path!, {
+            state: props.state,
+            preventScrollReset: true,
+          });
+        }
+      }}
+      onKeyDown={(event) => {
+        if (hasPath && (event.key === "Enter" || event.key === " ")) {
+          event.preventDefault();
+          navigate(props.path!, {
+            state: props.state,
+            preventScrollReset: true,
+          });
+        }
       }}
     >
       {props.children}

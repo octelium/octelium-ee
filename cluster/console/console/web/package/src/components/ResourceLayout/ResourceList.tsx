@@ -11,10 +11,11 @@ import {
 } from "@/utils/pb";
 import { Tooltip } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import React from "react";
 import {
   Link,
+  Outlet,
   useLocation,
   useNavigate,
   useSearchParams,
@@ -30,13 +31,12 @@ import { Button } from "@mantine/core";
 import { Service, Service_Spec_Mode } from "@/apis/corev1/corev1";
 import { CommonListOptions } from "@/apis/metav1/metav1";
 import { getServicePublicURL } from "@/utils/octelium";
-import { ChevronDown, ExternalLink, Pencil, Plus } from "lucide-react";
+import { ExternalLink, Pencil, Plus } from "lucide-react";
 import DeleteResource from "../DeleteResource";
 import TimeAgo from "../TimeAgo";
 import CloneResource from "./CloneResource";
 import { parseQueryString } from "./queryParse";
 import ResourceInfo, { ResourceVisibilityButtons } from "./ResourceInfo";
-import ResourceListItemDetails from "./ResourceListItemDetails";
 
 const ItemExtra = (props: { item: Resource; info: ResourceComponentInfo }) => {
   return (
@@ -51,30 +51,11 @@ const ItemExtra = (props: { item: Resource; info: ResourceComponentInfo }) => {
 const Item = (props: { item: Resource; info: ResourceComponentInfo }) => {
   const { item } = props;
   const md = item.metadata!;
-
-  const [showDetails, setShowDetails] = React.useState(false);
-  const hoverTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
-
-  const handleMouseEnter = () => {
-    hoverTimerRef.current = setTimeout(() => setShowDetails(true), 120);
-  };
-
-  const handleMouseLeave = () => {
-    if (hoverTimerRef.current) {
-      clearTimeout(hoverTimerRef.current);
-      hoverTimerRef.current = null;
-    }
-    setShowDetails(false);
-  };
+  const location = useLocation();
+  const returnTo = `${location.pathname}${location.search}`;
 
   return (
-    <div
-      className="w-full font-semibold"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
+    <div className="w-full font-semibold">
       <div className="flex gap-3">
         {md.picURL && (
           <div className="shrink-0 mt-0.5">
@@ -91,6 +72,8 @@ const Item = (props: { item: Resource; info: ResourceComponentInfo }) => {
               <div className="flex items-center gap-2 flex-wrap">
                 <Link
                   to={getResourcePath(item)}
+                  state={{ returnTo }}
+                  preventScrollReset
                   className="text-[0.92rem] font-bold text-slate-800 hover:text-slate-900 transition-colors duration-150"
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -141,6 +124,8 @@ const Item = (props: { item: Resource; info: ResourceComponentInfo }) => {
                 variant="outline"
                 component={Link}
                 to={`${getResourcePath(item)}/edit`}
+                state={{ returnTo }}
+                preventScrollReset
                 leftSection={<Pencil size={11} />}
                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
               >
@@ -161,6 +146,7 @@ const Item = (props: { item: Resource; info: ResourceComponentInfo }) => {
                   component={Link}
                   to={getServicePublicURL(item as Service, getDomain())}
                   target="_blank"
+                  rel="noopener noreferrer"
                   leftSection={<ExternalLink size={11} />}
                   onClick={(e: React.MouseEvent) => e.stopPropagation()}
                   styles={{
@@ -175,24 +161,7 @@ const Item = (props: { item: Resource; info: ResourceComponentInfo }) => {
 
             <div className="flex-1" />
 
-            <div className="flex flex-col items-center gap-1">
-              <button
-                className="flex items-center justify-center w-6 h-6 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors duration-150"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowDetails((v) => !v);
-                }}
-                title={showDetails ? "Collapse" : "Expand"}
-              >
-                <motion.span
-                  animate={{ rotate: showDetails ? 180 : 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="flex items-center"
-                >
-                  <ChevronDown size={14} />
-                </motion.span>
-              </button>
-
+            <div className="flex items-center gap-1">
               {!props.info.unDeletable && (
                 <DeleteResource
                   btnColor="gray.6"
@@ -211,26 +180,6 @@ const Item = (props: { item: Resource; info: ResourceComponentInfo }) => {
             </div>
           )}
 
-          <AnimatePresence initial={false}>
-            {showDetails && (
-              <motion.div
-                key="details"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.22, ease: "easeInOut" }}
-                className="overflow-hidden"
-              >
-                <div className="mt-4">
-                  <ResourceListItemDetails
-                    expanded
-                    item={item}
-                    mainItemsGetter={props.info.infoItemsGetter}
-                  />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       </div>
     </div>
@@ -242,6 +191,7 @@ const ResourceListC = (props: {
   info: ResourceComponentInfo;
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const kindName = props.itemsList.kind.replace(/List$/, "");
   const totalCount = props.itemsList.listResponseMeta?.totalCount ?? 0;
 
@@ -300,7 +250,12 @@ const ResourceListC = (props: {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.18, delay: i * 0.03, ease: "easeOut" }}
           >
-            <ResourceListItem>
+            <ResourceListItem
+              path={getResourcePath(item)}
+              state={{
+                returnTo: `${location.pathname}${location.search}`,
+              }}
+            >
               <Item item={item} info={props.info} />
             </ResourceListItem>
           </motion.div>
@@ -356,7 +311,7 @@ const useListReq = () => {
   return req;
 };
 
-const ResourceListPage = (props: { info: ResourceComponentInfo }) => {
+const ResourceListContent = (props: { info: ResourceComponentInfo }) => {
   const loc = useLocation();
   const apiKind = getAPIKindFromPath(loc.pathname);
   if (!apiKind) return null;
@@ -387,6 +342,21 @@ const ResourceListPage = (props: { info: ResourceComponentInfo }) => {
     <div className="w-full">
       {itemList && <ResourceListC itemsList={itemList} info={props.info} />}
     </div>
+  );
+};
+
+const ResourceListPage = (props: { info: ResourceComponentInfo }) => {
+  const location = useLocation();
+  const isCreatePage =
+    location.pathname.split("/").filter(Boolean).at(-1) === "create";
+
+  if (isCreatePage) return <Outlet />;
+
+  return (
+    <>
+      <ResourceListContent info={props.info} />
+      <Outlet />
+    </>
   );
 };
 

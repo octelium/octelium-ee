@@ -14,7 +14,7 @@ import ResourceItemActionsPage from "@/components/ResourceLayout/ResourceActions
 import ResourceItemAuditLogsPage from "@/components/ResourceLayout/ResourceAuditLogs";
 import ResourceCreatePage from "@/components/ResourceLayout/ResourceCreate";
 import ResourceItemMainPage from "@/components/ResourceLayout/ResourceItemMainPage";
-import ResourceItemPage from "@/components/ResourceLayout/ResourceItemPage";
+import ResourceItemDrawer from "@/components/ResourceLayout/ResourceItemDrawer";
 
 export const resourceList = [
   policyRouter,
@@ -70,18 +70,9 @@ const getResourceChildrenRouter = (arg: ResourceComponentInfo): RouteObject => {
 
   return {
     path: getResourcePathFromAPIKind({ api: arg.API, kind: arg.Kind }),
-    element: (
-      <>
-        <Outlet />
-      </>
-    ),
+    element: <ResourceListPage info={arg} />,
 
     children: [
-      {
-        path: "",
-        element: <ResourceListPage info={arg} />,
-      },
-
       {
         path: "create",
         element: arg.Item.Edit ? (
@@ -93,7 +84,7 @@ const getResourceChildrenRouter = (arg: ResourceComponentInfo): RouteObject => {
       },
       {
         path: ":name",
-        element: <ResourceItemPage />,
+        element: <ResourceItemDrawer />,
         children,
       },
     ],

@@ -74,7 +74,12 @@ const ResourceMainBar = (props: { resource: Resource }) => {
         value={activeTab}
         onChange={(v) => {
           const tab = tabs.find((t) => t.value === v);
-          if (tab) navigate(tab.path);
+          if (tab) {
+            navigate(tab.path, {
+              state: loc.state,
+              preventScrollReset: true,
+            });
+          }
         }}
         data={tabs.map(({ value, label, icon: Icon }) => ({
           value,
