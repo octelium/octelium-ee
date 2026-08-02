@@ -432,55 +432,26 @@ const ConnectionDetails = (props: { item: CoreP.Session }) => {
 
 const AuthorizationDetails = (props: { item: CoreP.Session }) => {
   const { item } = props;
-  const policies = item.spec?.authorization?.policies ?? [];
-  const inlinePolicies = item.spec?.authorization?.inlinePolicies ?? [];
   const scopes = item.status?.scopes ?? [];
-  if (
-    policies.length === 0 &&
-    inlinePolicies.length === 0 &&
-    scopes.length === 0
-  )
-    return null;
+  if (scopes.length === 0) return null;
 
   return (
-    <Section title="Authorization">
-      {policies.length > 0 && (
-        <Field label="Policies" full>
-          <div className="flex flex-wrap gap-1">
-            {policies.map((policy) => (
-              <Label key={policy}>{policy}</Label>
-            ))}
-          </div>
-        </Field>
-      )}
-      {inlinePolicies.length > 0 && (
-        <Field label="Inline policies" full>
-          <div className="flex flex-wrap gap-1">
-            {inlinePolicies.map((policy, index) => (
-              <Label key={`${policy.name}-${index}`}>
-                {policy.name || `Inline policy ${index + 1}`}
+    <Section title="Authorization scopes">
+      <Field label="Scopes" full>
+        <div className="space-y-1">
+          {scopes.map((scope, index) => (
+            <div key={index}>
+              <Label>
+                {scope.type.oneofKind === "service"
+                  ? `Service: ${humanize(scope.type.service.type.oneofKind)}`
+                  : scope.type.oneofKind === "api"
+                    ? `API: ${humanize(scope.type.api.type.oneofKind)}`
+                    : "Unknown scope"}
               </Label>
-            ))}
-          </div>
-        </Field>
-      )}
-      {scopes.length > 0 && (
-        <Field label="Scopes" full>
-          <div className="space-y-1">
-            {scopes.map((scope, index) => (
-              <div key={index}>
-                <Label>
-                  {scope.type.oneofKind === "service"
-                    ? `Service: ${humanize(scope.type.service.type.oneofKind)}`
-                    : scope.type.oneofKind === "api"
-                      ? `API: ${humanize(scope.type.api.type.oneofKind)}`
-                      : "Unknown scope"}
-                </Label>
-              </div>
-            ))}
-          </div>
-        </Field>
-      )}
+            </div>
+          ))}
+        </div>
+      </Field>
     </Section>
   );
 };

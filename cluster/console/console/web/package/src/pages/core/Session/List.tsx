@@ -21,11 +21,9 @@ import {
 import { toURLWithQry } from "@/pages/utils";
 import { getClientVisibilityCore } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
-import { Shield } from "lucide-react";
 import { BsFillTerminalFill } from "react-icons/bs";
 import { IoBrowsers } from "react-icons/io5";
 import { useSearchParams } from "react-router-dom";
-import { SessionCompactSecurityInfo } from "./Info";
 
 export const getType = (svc: Session) => {
   return match(svc.status?.type)
@@ -77,7 +75,6 @@ export const LabelComponent = (props: { item: Session }) => {
 
   return (
     <ResourceListLabelWrap>
-      <SessionCompactSecurityInfo item={item} />
       {item.spec?.expiresAt && (
         <ResourceListLabel>
           <span className="mr-1">
@@ -114,20 +111,6 @@ export const LabelComponent = (props: { item: Session }) => {
         <ResourceListLabel itemRef={item.status!.deviceRef}></ResourceListLabel>
       )}
 
-      {item.spec?.authorization &&
-        item.spec?.authorization.policies.length > 0 && (
-          <ResourceListLabel>
-            <Shield size={14} className="mr-1" />
-            {item.spec.authorization.policies.length} Policies
-          </ResourceListLabel>
-        )}
-      {item.spec?.authorization &&
-        item.spec?.authorization.inlinePolicies.length > 0 && (
-          <ResourceListLabel>
-            <Shield size={14} className="mr-1" />
-            {item.spec.authorization.inlinePolicies.length} Inline Policies
-          </ResourceListLabel>
-        )}
     </ResourceListLabelWrap>
   );
 };

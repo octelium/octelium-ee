@@ -170,7 +170,7 @@ const CreateUserCredential = (props: { item: CoreC.User }) => {
   return (
     <div className="flex items-center">
       <Button
-        variant="light"
+        variant="filled"
         color="dark"
         size="compact-sm"
         leftSection={<Plus size={12} strokeWidth={2.5} />}
@@ -373,7 +373,7 @@ export const MainInfo = (props: { item: CoreC.User }): ResourceMainInfo => {
                     <ResourceListLabel
                       key={x}
                       itemRef={ObjectReference.create({
-                        apiVersion: "access/v1",
+                        apiVersion: "core/v1",
                         kind: "Policy",
                         name: x,
                       })}
