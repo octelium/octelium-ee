@@ -36,17 +36,7 @@ import DeleteResource from "../DeleteResource";
 import TimeAgo from "../TimeAgo";
 import CloneResource from "./CloneResource";
 import { parseQueryString } from "./queryParse";
-import ResourceInfo, { ResourceVisibilityButtons } from "./ResourceInfo";
-
-const ItemExtra = (props: { item: Resource; info: ResourceComponentInfo }) => {
-  return (
-    <div className="w-full">
-      <ResourceInfo resource={props.item} />
-      {props.info.Item.itemInfo &&
-        props.info.Item.itemInfo({ item: props.item })}
-    </div>
-  );
-};
+import { ResourceVisibilityButtons } from "./ResourceInfo";
 
 const Item = (props: { item: Resource; info: ResourceComponentInfo }) => {
   const { item } = props;
@@ -56,32 +46,31 @@ const Item = (props: { item: Resource; info: ResourceComponentInfo }) => {
 
   return (
     <div className="w-full font-semibold">
-      <div className="flex gap-3">
-        {md.picURL && (
-          <div className="shrink-0 mt-0.5">
+      <div className="flex items-start gap-3 sm:gap-4">
+        <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-100 text-sm font-bold uppercase text-slate-500 shadow-sm">
+          {md.picURL ? (
             <img
               src={md.picURL}
-              className="w-9 h-9 rounded-full border border-slate-200"
+              alt={md.displayName || md.name}
+              loading="lazy"
+              className="h-full w-full object-cover"
             />
-          </div>
-        )}
+          ) : (
+            <span aria-hidden="true">
+              {(md.displayName || md.name).slice(0, 2)}
+            </span>
+          )}
+        </div>
 
         <div className="flex flex-col flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex flex-col gap-0.5 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Link
-                  to={getResourcePath(item)}
-                  state={{ returnTo }}
-                  preventScrollReset
-                  className="text-[0.92rem] font-bold text-slate-800 hover:text-slate-900 transition-colors duration-150"
-                  onClick={(e) => e.stopPropagation()}
-                >
+          <div className="flex min-w-0 flex-col gap-0.5">
+              <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                <span className="min-w-0 text-[0.92rem] font-bold text-slate-800">
                   <CopyText value={md.name} />
-                </Link>
+                </span>
 
                 {md.displayName && (
-                  <span className="text-[0.85rem] font-semibold text-slate-400">
+                  <span className="truncate text-[0.82rem] font-semibold text-slate-500">
                     {md.displayName}
                   </span>
                 )}
@@ -99,23 +88,22 @@ const Item = (props: { item: Resource; info: ResourceComponentInfo }) => {
               </div>
 
               {md.description && (
-                <p className="text-[0.8rem] font-semibold text-slate-500 truncate max-w-xl">
+                <p className="mt-0.5 line-clamp-2 max-w-2xl text-[0.78rem] font-medium leading-5 text-slate-500">
                   {md.description}
                 </p>
               )}
 
-              <div className="text-[0.72rem] font-semibold text-slate-500 mt-0.5">
+              <div className="mt-1 text-[0.7rem] font-medium text-slate-400">
                 Created <TimeAgo rfc3339={md.createdAt} />
                 {md.updatedAt && (
-                  <span className="ml-2 text-slate-400">
+                  <span className="ml-2">
                     · Updated <TimeAgo rfc3339={md.updatedAt} />
                   </span>
                 )}
               </div>
-            </div>
           </div>
 
-          <div className="flex items-center flex-wrap gap-1 mt-2.5">
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
             <ResourceYAML item={item} size="xs" />
 
             {!props.info.unEditable && !md.isSystem && (
@@ -175,11 +163,10 @@ const Item = (props: { item: Resource; info: ResourceComponentInfo }) => {
           </div>
 
           {props.info.List.labelComponent && (
-            <div className="w-full mt-1">
+            <div className="w-full">
               {props.info.List.labelComponent({ item })}
             </div>
           )}
-
         </div>
       </div>
     </div>

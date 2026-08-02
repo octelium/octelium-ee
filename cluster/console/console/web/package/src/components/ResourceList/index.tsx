@@ -11,7 +11,7 @@ import {
 } from "@/utils/pb";
 import { HoverCard } from "@mantine/core";
 import { Link2 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 import ResourceInfo from "../ResourceLayout/ResourceInfo";
 import { useResourceFromRef } from "../ResourceLayout/utils";
@@ -28,6 +28,11 @@ export const ResourceListItem = (props: {
 }) => {
   const hasPath = !!props.path?.length;
   const navigate = useNavigate();
+  const location = useLocation();
+  const isActive =
+    hasPath &&
+    (location.pathname === props.path ||
+      location.pathname.startsWith(`${props.path}/`));
 
   return (
     <div
@@ -35,13 +40,17 @@ export const ResourceListItem = (props: {
         "w-full bg-white",
         "border border-slate-200 rounded-xl",
         "shadow-[0_1px_4px_rgba(15,23,42,0.06)]",
-        "px-5 py-4",
+        "px-4 py-3.5 sm:px-5 sm:py-4",
         "transition-[border-color,box-shadow] duration-150",
         "hover:border-slate-300 hover:shadow-[0_2px_12px_rgba(15,23,42,0.09)]",
-        hasPath && "cursor-pointer",
+        hasPath &&
+          "cursor-pointer outline-none focus-visible:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-500/20",
+        isActive &&
+          "border-blue-300 shadow-[0_2px_12px_rgba(37,99,235,0.10)] ring-1 ring-blue-500/10",
       )}
       role={hasPath ? "link" : undefined}
       tabIndex={hasPath ? 0 : undefined}
+      aria-current={isActive ? "page" : undefined}
       onClick={(event) => {
         if (
           (event.target as HTMLElement).closest(
@@ -58,6 +67,7 @@ export const ResourceListItem = (props: {
         }
       }}
       onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return;
         if (hasPath && (event.key === "Enter" || event.key === " ")) {
           event.preventDefault();
           navigate(props.path!, {
@@ -140,7 +150,7 @@ const LabelContent = ({
     {reference && <Link2 aria-hidden="true" />}
     {label && (
       <>
-        <span className="shrink-0 font-bold text-slate-400">{label}</span>
+        <span className="shrink-0 font-bold text-slate-600">{label}</span>
         <span
           aria-hidden="true"
           className={twMerge(
