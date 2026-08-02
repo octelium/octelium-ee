@@ -1,4 +1,6 @@
 import * as CoreP from "@/apis/corev1/corev1";
+import { ObjectReference } from "@/apis/metav1/metav1";
+import CopyText from "@/components/CopyText";
 import InfoItem from "@/components/InfoItem";
 import { useUpdateResource } from "@/pages/utils/resource";
 import { Select } from "@mantine/core";
@@ -8,9 +10,11 @@ import AccessLogViewer from "@/components/AccessLogViewer";
 import Label from "@/components/Label";
 import EditItemWrap from "@/components/ResourceLayout/EditItemWrap";
 import { ResourceListLabel } from "@/components/ResourceList";
+import TimeAgo from "@/components/TimeAgo";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { getResourceRef } from "@/utils/pb";
 import { FaAndroid, FaApple, FaLinux, FaWindows } from "react-icons/fa";
+import { Activity, Shield } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 
 export const getOSIcon = (item: CoreP.Device) => {
@@ -36,6 +40,15 @@ export const getOSTypeStr = (osType: CoreP.Device_Status_OSType) => {
     .with(CoreP.Device_Status_OSType.WINDOWS, () => "Windows")
     .with(CoreP.Device_Status_OSType.OS_TYPE_UNKNOWN, () => "Unknown OS")
     .otherwise(() => "");
+};
+
+const enumLabel = (values: any, value: number | undefined) => {
+  if (value === undefined) return "Unknown";
+  return String(values[value] ?? "Unknown")
+    .replace(/^(RISK_LEVEL|SIGNAL_STATE|STATE|ACCEPTANCE_METHOD)_/, "")
+    .toLowerCase()
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 };
 
 export const ItemInfo = (props: { item: CoreP.Device }) => {
@@ -105,8 +118,9 @@ export const ItemInfo = (props: { item: CoreP.Device }) => {
                 if (!v) {
                   return;
                 }
-                item.spec!.state = CoreP.Device_Spec_State[v as "ACTIVE"];
-                mutationUpdate.mutate(item);
+                const next = CoreP.Device.clone(item);
+                next.spec!.state = CoreP.Device_Spec_State[v as "ACTIVE"];
+                mutationUpdate.mutate(next);
               }}
             />
           }
@@ -115,7 +129,7 @@ export const ItemInfo = (props: { item: CoreP.Device }) => {
       {item.status!.macAddresses && item.status!.macAddresses.length > 0 && (
         <InfoItem title="MAC Addresses">
           {item.status!.macAddresses.map((x) => (
-            <Label>{x}</Label>
+            <Label key={x}>{x}</Label>
           ))}
         </InfoItem>
       )}
@@ -129,7 +143,6 @@ export const AccessLog = (props: { item: CoreP.Device }) => {
 
 export default (props: { item: CoreP.Device }) => {
   const { item } = props;
-  const mutationUpdate = useUpdateResource();
   return (
     <div className="w-full">
       <div className="w-full">
@@ -217,8 +230,9 @@ export const MainInfo = (props: { item: CoreP.Device }): ResourceMainInfo => {
                 value={CoreP.Device_Spec_State[item.spec!.state]}
                 onChange={(v) => {
                   if (!v) return;
-                  item.spec!.state = CoreP.Device_Spec_State[v as "ACTIVE"];
-                  mutationUpdate.mutate(item);
+                  const next = CoreP.Device.clone(item);
+                  next.spec!.state = CoreP.Device_Spec_State[v as "ACTIVE"];
+                  mutationUpdate.mutate(next);
                 }}
               />
             }
@@ -230,11 +244,7 @@ export const MainInfo = (props: { item: CoreP.Device }): ResourceMainInfo => {
         ? [
             {
               label: "Hostname",
-              value: (
-                <span className="text-sm font-mono text-slate-700">
-                  {item.status!.hostname}
-                </span>
-              ),
+              value: <CopyText value={item.status!.hostname} />,
             },
           ]
         : []),
@@ -243,11 +253,7 @@ export const MainInfo = (props: { item: CoreP.Device }): ResourceMainInfo => {
         ? [
             {
               label: "Device ID",
-              value: (
-                <span className="text-sm font-mono text-slate-700">
-                  {item.status!.id}
-                </span>
-              ),
+              value: <CopyText value={item.status!.id} />,
             },
           ]
         : []),
@@ -256,11 +262,7 @@ export const MainInfo = (props: { item: CoreP.Device }): ResourceMainInfo => {
         ? [
             {
               label: "Serial number",
-              value: (
-                <span className="text-sm font-mono text-slate-700">
-                  {item.status!.serialNumber}
-                </span>
-              ),
+              value: <CopyText value={item.status!.serialNumber} />,
             },
           ]
         : []),
@@ -272,10 +274,247 @@ export const MainInfo = (props: { item: CoreP.Device }): ResourceMainInfo => {
               value: (
                 <div className="flex flex-wrap gap-1">
                   {item.status!.macAddresses.map((x) => (
-                    <Label key={x}>
-                      <span className="font-mono">{x}</span>
-                    </Label>
+                    <ResourceListLabel key={x} label="MAC">
+                      <CopyText value={x} />
+                    </ResourceListLabel>
                   ))}
+                </div>
+              ),
+              span: "full" as const,
+            },
+          ]
+        : []),
+
+      ...(item.status?.isLocked
+        ? [
+            {
+              label: "Security state",
+              value: <span className="font-semibold text-red-600">Locked</span>,
+            },
+          ]
+        : []),
+
+      ...(item.spec?.authorization?.policies.length
+        ? [
+            {
+              label: "Policies",
+              value: (
+                <div className="flex flex-wrap gap-1">
+                  {item.spec.authorization.policies.map((policy) => (
+                    <ResourceListLabel
+                      key={policy}
+                      itemRef={ObjectReference.create({
+                        apiVersion: "core/v1",
+                        kind: "Policy",
+                        name: policy,
+                      })}
+                    />
+                  ))}
+                </div>
+              ),
+              span: "full" as const,
+            },
+          ]
+        : []),
+
+      ...(item.spec?.authorization?.inlinePolicies.length
+        ? [
+            {
+              label: "Inline policies",
+              value: (
+                <div className="flex flex-wrap gap-1">
+                  {item.spec.authorization.inlinePolicies.map(
+                    (policy, index) => (
+                      <ResourceListLabel
+                        key={`${policy.name}-${index}`}
+                        label="Inline policy"
+                      >
+                        <Shield size={12} strokeWidth={2.5} />
+                        {policy.name || `Inline policy ${index + 1}`}
+                      </ResourceListLabel>
+                    ),
+                  )}
+                </div>
+              ),
+              span: "full" as const,
+            },
+          ]
+        : []),
+
+      ...(item.status?.posture
+        ? [
+            {
+              label: "Device posture",
+              value: (
+                <div className="flex flex-wrap gap-1">
+                  <ResourceListLabel label="Risk">
+                    <span
+                      className={twMerge(
+                        item.status.posture.riskLevel ===
+                          CoreP.Device_Status_Posture_RiskLevel.CRITICAL ||
+                          item.status.posture.riskLevel ===
+                            CoreP.Device_Status_Posture_RiskLevel.HIGH
+                          ? "text-red-600"
+                          : item.status.posture.riskLevel ===
+                              CoreP.Device_Status_Posture_RiskLevel.MEDIUM
+                            ? "text-amber-600"
+                            : "text-emerald-600",
+                      )}
+                    >
+                      {enumLabel(
+                        CoreP.Device_Status_Posture_RiskLevel,
+                        item.status.posture.riskLevel,
+                      )}
+                    </span>
+                  </ResourceListLabel>
+                  {[
+                    ["Disk encryption", item.status.posture.diskEncryption],
+                    ["Compliance", item.status.posture.compliant],
+                    ["Threat status", item.status.posture.threatFree],
+                  ].map(([label, state]) => (
+                    <ResourceListLabel key={String(label)} label={String(label)}>
+                      <span
+                        className={twMerge(
+                          state === CoreP.Device_Status_Posture_SignalState.FAIL
+                            ? "text-red-600"
+                            : state ===
+                                CoreP.Device_Status_Posture_SignalState.PASS
+                              ? "text-emerald-600"
+                              : "text-slate-500",
+                        )}
+                      >
+                        {enumLabel(
+                          CoreP.Device_Status_Posture_SignalState,
+                          state as number,
+                        )}
+                      </span>
+                    </ResourceListLabel>
+                  ))}
+                  {Object.entries(item.status.posture.signals).map(
+                    ([name, state]) => (
+                      <ResourceListLabel key={name} label={name}>
+                        <span
+                          className={twMerge(
+                            state ===
+                              CoreP.Device_Status_Posture_SignalState.FAIL
+                              ? "text-red-600"
+                              : state ===
+                                  CoreP.Device_Status_Posture_SignalState.PASS
+                                ? "text-emerald-600"
+                                : "text-slate-500",
+                          )}
+                        >
+                          {enumLabel(
+                            CoreP.Device_Status_Posture_SignalState,
+                            state,
+                          )}
+                        </span>
+                      </ResourceListLabel>
+                    ),
+                  )}
+                  {item.status.posture.lastSyncAt && (
+                    <ResourceListLabel label="Last sync">
+                      <TimeAgo rfc3339={item.status.posture.lastSyncAt} />
+                    </ResourceListLabel>
+                  )}
+                  {item.status.posture.lastSeenAt && (
+                    <ResourceListLabel label="Last seen">
+                      <TimeAgo rfc3339={item.status.posture.lastSeenAt} />
+                    </ResourceListLabel>
+                  )}
+                  {item.status.posture.expiresAt && (
+                    <ResourceListLabel label="Expires">
+                      <TimeAgo rfc3339={item.status.posture.expiresAt} />
+                    </ResourceListLabel>
+                  )}
+                </div>
+              ),
+              span: "full" as const,
+            },
+          ]
+        : []),
+
+      ...(item.status?.binding
+        ? [
+            {
+              label: "Device Manager binding",
+              value: (
+                <div className="flex flex-wrap gap-1">
+                  {(item.status.binding.ownerRef?.name ||
+                    item.status.binding.ownerRef?.uid) && (
+                    <ResourceListLabel
+                      itemRef={item.status.binding.ownerRef}
+                    />
+                  )}
+                  <ResourceListLabel label="State">
+                    {enumLabel(
+                      CoreP.Device_Status_Binding_State,
+                      item.status.binding.state,
+                    )}
+                  </ResourceListLabel>
+                  <ResourceListLabel label="Acceptance">
+                    {enumLabel(
+                      CoreP.Device_Status_Binding_AcceptanceMethod,
+                      item.status.binding.acceptanceMethod,
+                    )}
+                  </ResourceListLabel>
+                  {item.status.binding.externalID && (
+                    <ResourceListLabel label="External ID">
+                      <CopyText value={item.status.binding.externalID} />
+                    </ResourceListLabel>
+                  )}
+                  {item.status.binding.acceptedAt && (
+                    <ResourceListLabel label="Accepted">
+                      <TimeAgo rfc3339={item.status.binding.acceptedAt} />
+                    </ResourceListLabel>
+                  )}
+                  {item.status.binding.lastVerifiedAt && (
+                    <ResourceListLabel label="Last verified">
+                      <TimeAgo rfc3339={item.status.binding.lastVerifiedAt} />
+                    </ResourceListLabel>
+                  )}
+                  {item.status.binding.expiresAt && (
+                    <ResourceListLabel label="Binding expires">
+                      <TimeAgo rfc3339={item.status.binding.expiresAt} />
+                    </ResourceListLabel>
+                  )}
+                  {item.status.binding.verificationFailures > 0 && (
+                    <ResourceListLabel label="Verification failures">
+                      <span className="text-red-600">
+                        {item.status.binding.verificationFailures}
+                      </span>
+                    </ResourceListLabel>
+                  )}
+                </div>
+              ),
+              span: "full" as const,
+            },
+          ]
+        : []),
+
+      ...(item.status?.probeAttempt
+        ? [
+            {
+              label: "Probe attempt",
+              value: (
+                <div className="flex flex-wrap gap-1">
+                  {item.status.probeAttempt.uid && (
+                    <ResourceListLabel label="Attempt ID">
+                      <CopyText value={item.status.probeAttempt.uid} />
+                    </ResourceListLabel>
+                  )}
+                  {item.status.probeAttempt.startedAt && (
+                    <ResourceListLabel label="Started">
+                      <TimeAgo rfc3339={item.status.probeAttempt.startedAt} />
+                    </ResourceListLabel>
+                  )}
+                  <ResourceListLabel label="Probes">
+                    <Activity size={12} strokeWidth={2.5} />
+                    {item.status.probeAttempt.probes.length}
+                  </ResourceListLabel>
+                  <ResourceListLabel label="Results">
+                    {item.status.probeAttempt.results.length}
+                  </ResourceListLabel>
                 </div>
               ),
               span: "full" as const,

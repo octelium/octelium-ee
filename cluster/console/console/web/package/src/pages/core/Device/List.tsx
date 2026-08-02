@@ -61,7 +61,7 @@ export const LabelComponent = (props: { item: Device }) => {
               .with(CoreP.Device_Spec_State.REJECTED, () => `text-red-400`)
               .with(CoreP.Device_Spec_State.ACTIVE, () => `text-green-400`)
               .with(CoreP.Device_Spec_State.PENDING, () => `text-yellow-400`)
-              .otherwise(() => undefined)
+              .otherwise(() => undefined),
           )}
         >
           {getState(item)}
@@ -75,6 +75,25 @@ export const LabelComponent = (props: { item: Device }) => {
       )}
 
       <ResourceListLabel itemRef={item.status!.userRef}></ResourceListLabel>
+      {item.status?.isLocked && (
+        <ResourceListLabel>
+          <span className="text-red-500">Locked</span>
+        </ResourceListLabel>
+      )}
+      {item.status?.posture &&
+        (item.status.posture.riskLevel ===
+          CoreP.Device_Status_Posture_RiskLevel.HIGH ||
+          item.status.posture.riskLevel ===
+            CoreP.Device_Status_Posture_RiskLevel.CRITICAL) && (
+          <ResourceListLabel label="Posture">
+            <span className="text-red-500">
+              {item.status.posture.riskLevel ===
+              CoreP.Device_Status_Posture_RiskLevel.CRITICAL
+                ? "Critical risk"
+                : "High risk"}
+            </span>
+          </ResourceListLabel>
+        )}
     </ResourceListLabelWrap>
   );
 };
