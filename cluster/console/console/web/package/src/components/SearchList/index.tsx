@@ -25,6 +25,7 @@ const SearchList = () => {
       } else {
         next.delete("common.query");
       }
+      next.delete("common.page");
       const search = next.toString();
       navigate(`${location.pathname}${search ? `?${search}` : ""}`, {
         replace: true,

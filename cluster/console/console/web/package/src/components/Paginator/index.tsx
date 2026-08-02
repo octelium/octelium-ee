@@ -32,6 +32,8 @@ const TYPE_LABEL_MAP: Record<string, string> = {
   MYSQL: "MySQL",
   UDP: "UDP",
   DNS: "DNS",
+  SOCKS5: "SOCKS5",
+  RDP_WEB: "RDP Web",
 };
 
 const BOOLEAN_PARAM_LABELS: Record<string, string> = {
@@ -104,7 +106,9 @@ const FilterChips = ({
           <span className="text-slate-400 font-bold">{chip.label}:</span>
           <span>{chip.value}</span>
           <button
+            type="button"
             onClick={() => onRemove(chip.key)}
+            aria-label={`Remove ${chip.label} filter`}
             className="flex items-center justify-center w-4 h-4 rounded ml-0.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors duration-150 cursor-pointer"
             title={`Remove ${chip.label} filter`}
           >
@@ -127,7 +131,8 @@ const Paginator = (props: {
 
   if (!meta) return null;
 
-  const totalPages = Math.ceil(meta.totalCount / meta.itemsPerPage);
+  const itemsPerPage = Math.max(meta.itemsPerPage, 1);
+  const totalPages = Math.max(1, Math.ceil(meta.totalCount / itemsPerPage));
   const hasMultiplePages = totalPages > 1;
   const hasItems = meta.totalCount > 0;
 
@@ -137,17 +142,32 @@ const Paginator = (props: {
     searchParams.get("common.orderBy.type") ?? "CREATED_AT";
   const currentOrderMode = searchParams.get("common.orderBy.mode") ?? "DESC";
 
+  const navigateWithParams = (next: URLSearchParams) => {
+    const search = next.toString();
+    navigate(
+      {
+        pathname: loc.pathname,
+        search: search ? `?${search}` : "",
+        hash: loc.hash,
+      },
+      {
+        state: loc.state,
+        preventScrollReset: true,
+      },
+    );
+  };
+
   const setParam = (key: string, value: string) => {
     const next = new URLSearchParams(searchParams.toString());
     next.set(key, value);
-    navigate(`${loc.pathname}?${next.toString()}`);
+    navigateWithParams(next);
   };
 
   const removeParam = (key: string) => {
     const next = new URLSearchParams(searchParams.toString());
     next.delete(key);
     next.delete("common.page");
-    navigate(`${loc.pathname}?${next.toString()}`);
+    navigateWithParams(next);
   };
 
   const itemCountLabel =
@@ -163,11 +183,11 @@ const Paginator = (props: {
         <FilterChips chips={filterChips} onRemove={removeParam} />
       )}
 
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         {hasMultiplePages ? (
           <Pagination
             total={totalPages}
-            value={meta.page + 1}
+            value={Math.min(Math.max(meta.page + 1, 1), totalPages)}
             withEdges
             radius="md"
             color="dark"
@@ -177,7 +197,7 @@ const Paginator = (props: {
                 "!border-slate-200 !bg-white !text-slate-700",
                 "!shadow-[0_1px_3px_rgba(15,23,42,0.07)]",
                 "hover:!bg-slate-50 hover:!border-slate-300",
-                "!transition-colors !duration-150",
+                "!transition-colors !duration-500",
                 "data-[active]:!bg-slate-900 data-[active]:!border-slate-900 data-[active]:!text-white",
               ),
             }}
@@ -198,7 +218,7 @@ const Paginator = (props: {
           </span>
         )}
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <SegmentedControl
             value={currentOrderBy}
             onChange={(v) => setParam("common.orderBy.type", v)}

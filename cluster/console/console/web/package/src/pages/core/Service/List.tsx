@@ -326,7 +326,7 @@ const DoSummary = (props: { resp: GetServiceSummaryResponse }) => {
           SOCKS5
         </SummaryItemCount>
         <SummaryItemCount
-          count={resp.totalSOCKS5}
+          count={resp.totalRDPWeb}
           to={toURLWithQry(`/core/services`, {
             mode: Service_Spec_Mode[Service_Spec_Mode.RDP_WEB],
           })}
