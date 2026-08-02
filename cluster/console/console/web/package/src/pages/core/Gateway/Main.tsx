@@ -24,7 +24,7 @@ export const MainInfo = (props: { item: CoreC.Gateway }): ResourceMainInfo => {
           ]
         : []),
 
-      ...(status?.regionRef
+      ...(status?.regionRef?.name || status?.regionRef?.uid
         ? [
             {
               label: "Region",
@@ -33,34 +33,30 @@ export const MainInfo = (props: { item: CoreC.Gateway }): ResourceMainInfo => {
           ]
         : []),
 
-      ...(status?.nodeRef
+      ...(status?.index !== undefined
         ? [
             {
-              label: "Node",
-              value: (
-                <span className="text-[0.78rem] font-mono font-semibold text-slate-600">
-                  {status.nodeRef.name}
-                </span>
-              ),
+              label: "Index",
+              value: <span className="font-semibold">{status.index}</span>,
             },
           ]
         : []),
 
-      ...(status?.cidr
+      ...(status?.cidr?.v4 || status?.cidr?.v6
         ? [
             {
               label: "CIDR",
               value: (
-                <div className="flex flex-col gap-0.5">
+                <div className="flex flex-wrap gap-1">
                   {status.cidr.v4 && (
-                    <span className="text-[0.75rem] font-mono font-semibold text-slate-600">
-                      {status.cidr.v4}
-                    </span>
+                    <ResourceListLabel label="IPv4">
+                      <CopyText value={status.cidr.v4} />
+                    </ResourceListLabel>
                   )}
                   {status.cidr.v6 && (
-                    <span className="text-[0.75rem] font-mono font-semibold text-slate-500">
-                      {status.cidr.v6}
-                    </span>
+                    <ResourceListLabel label="IPv6">
+                      <CopyText value={status.cidr.v6} />
+                    </ResourceListLabel>
                   )}
                 </div>
               ),
@@ -73,14 +69,11 @@ export const MainInfo = (props: { item: CoreC.Gateway }): ResourceMainInfo => {
             {
               label: "Public IPs",
               value: (
-                <div className="flex flex-col gap-0.5">
+                <div className="flex flex-wrap gap-1">
                   {status.publicIPs.map((ip) => (
-                    <span
-                      key={ip}
-                      className="text-[0.75rem] font-mono font-semibold text-slate-600"
-                    >
-                      {ip}
-                    </span>
+                    <ResourceListLabel key={ip} label="Address">
+                      <CopyText value={ip} />
+                    </ResourceListLabel>
                   ))}
                 </div>
               ),
@@ -97,7 +90,10 @@ export const MainInfo = (props: { item: CoreC.Gateway }): ResourceMainInfo => {
           ]
         : []),
 
-      ...(status?.wireguard
+      ...(status?.wireguard &&
+      (status.wireguard.port > 0 ||
+        !!status.wireguard.publicKey ||
+        !!status.wireguard.keyRotatedAt)
         ? [
             {
               label: "WireGuard",
@@ -109,7 +105,7 @@ export const MainInfo = (props: { item: CoreC.Gateway }): ResourceMainInfo => {
                       <span className="text-[0.68rem] font-bold uppercase tracking-[0.05em] text-slate-400 w-24 shrink-0">
                         Port
                       </span>
-                      <span className="text-[0.78rem] font-mono font-semibold text-slate-700">
+                      <span className="text-[0.78rem] font-semibold text-slate-700">
                         {status.wireguard.port}
                       </span>
                     </div>
@@ -141,14 +137,12 @@ export const MainInfo = (props: { item: CoreC.Gateway }): ResourceMainInfo => {
           ]
         : []),
 
-      ...(status?.quicv0
+      ...(status?.quicv0 && status.quicv0.port > 0
         ? [
             {
               label: "QUICv0",
               value: (
-                <span className="text-[0.78rem] font-mono font-semibold text-slate-700">
-                  :{status.quicv0.port}
-                </span>
+                <span className="font-semibold">:{status.quicv0.port}</span>
               ),
             },
           ]

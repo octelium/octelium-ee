@@ -1,5 +1,8 @@
 import { Gateway } from "@/apis/corev1/corev1";
-import { ResourceListLabel } from "@/components/ResourceList";
+import {
+  ResourceListLabel,
+  ResourceListLabelWrap,
+} from "@/components/ResourceList";
 
 import { GetGatewaySummaryResponse } from "@/apis/visibilityv1/core/vcorev1";
 import { SummaryItemCount, SummaryItemCountWrap } from "@/components/Summary";
@@ -18,9 +21,29 @@ export const LabelComponent = (props: { item: Gateway }) => {
   const { item } = props;
 
   return (
-    <div className="w-full mt-1 flex flex-row">
-      <ResourceListLabel itemRef={item.status!.regionRef}></ResourceListLabel>
-    </div>
+    <ResourceListLabelWrap>
+      <ResourceListLabel itemRef={item.status!.regionRef} />
+      {item.status?.hostname && (
+        <ResourceListLabel label="Hostname">
+          {item.status.hostname}
+        </ResourceListLabel>
+      )}
+      {!!item.status?.publicIPs.length && (
+        <ResourceListLabel label="Public IPs">
+          {item.status.publicIPs.length}
+        </ResourceListLabel>
+      )}
+      {(item.status?.wireguard?.port ?? 0) > 0 && (
+        <ResourceListLabel label="WireGuard">
+          :{item.status!.wireguard!.port}
+        </ResourceListLabel>
+      )}
+      {(item.status?.quicv0?.port ?? 0) > 0 && (
+        <ResourceListLabel label="QUICv0">
+          :{item.status!.quicv0!.port}
+        </ResourceListLabel>
+      )}
+    </ResourceListLabelWrap>
   );
 };
 

@@ -1,9 +1,13 @@
 import * as CoreC from "@/apis/corev1/corev1";
 import AccessLogViewer from "@/components/AccessLogViewer";
 import CopyText from "@/components/CopyText";
+import { ResourceListLabel } from "@/components/ResourceList";
 import TimeAgo from "@/components/TimeAgo";
 import { ResourceMainInfo } from "@/pages/utils/types";
+import { getClientCore } from "@/utils/client";
 import { getResourceRef } from "@/utils/pb";
+import { useQuery } from "@tanstack/react-query";
+import { Network, PanelTop } from "lucide-react";
 
 export const AccessLog = (props: { item: CoreC.Region }) => {
   return <AccessLogViewer regionRef={getResourceRef(props.item)} />;
@@ -17,6 +21,22 @@ export default (props: { item: CoreC.Region }) => {
 export const MainInfo = (props: { item: CoreC.Region }): ResourceMainInfo => {
   const { item } = props;
   const status = item.status;
+  const itemName = item.metadata!.name;
+  const itemRef = getResourceRef(item);
+  const qryGateways = useQuery({
+    queryKey: ["core.listGateway", "region", itemName],
+    queryFn: () =>
+      getClientCore().listGateway(
+        CoreC.ListGatewayOptions.create({ regionRef: itemRef }),
+      ).response,
+  });
+  const qryServices = useQuery({
+    queryKey: ["core.listService", "region", itemName],
+    queryFn: () =>
+      getClientCore().listService(
+        CoreC.ListServiceOptions.create({ regionRef: itemRef }),
+      ).response,
+  });
 
   return {
     items: [
@@ -24,11 +44,7 @@ export const MainInfo = (props: { item: CoreC.Region }): ResourceMainInfo => {
         ? [
             {
               label: "Index",
-              value: (
-                <span className="text-[0.78rem] font-mono font-semibold text-slate-700">
-                  {status.index}
-                </span>
-              ),
+              value: <span className="font-semibold">{status.index}</span>,
             },
           ]
         : []),
@@ -38,13 +54,38 @@ export const MainInfo = (props: { item: CoreC.Region }): ResourceMainInfo => {
             {
               label: "Version",
               value: (
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-[0.72rem] font-mono font-bold bg-slate-100 border border-slate-200 text-slate-700">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[0.72rem] font-bold bg-slate-100 border border-slate-200 text-slate-700">
                   {status.version}
                 </span>
               ),
             },
           ]
         : []),
+
+      {
+        label: "Related resources",
+        value: (
+          <div className="flex flex-wrap gap-1">
+            <ResourceListLabel
+              label="Gateways"
+              to={`/core/gateways?regionRef.name=${encodeURIComponent(itemName)}`}
+            >
+              <Network size={12} strokeWidth={2.5} />
+              {qryGateways.data?.listResponseMeta?.totalCount?.toLocaleString() ??
+                "…"}
+            </ResourceListLabel>
+            <ResourceListLabel
+              label="Services"
+              to={`/core/services?regionRef.name=${encodeURIComponent(itemName)}`}
+            >
+              <PanelTop size={12} strokeWidth={2.5} />
+              {qryServices.data?.listResponseMeta?.totalCount?.toLocaleString() ??
+                "…"}
+            </ResourceListLabel>
+          </div>
+        ),
+        span: "full",
+      },
 
       ...(status?.publicHostname
         ? [
@@ -92,7 +133,7 @@ export const MainInfo = (props: { item: CoreC.Region }): ResourceMainInfo => {
                             <span className="text-[0.68rem] font-bold uppercase tracking-[0.05em] text-slate-400 w-20 shrink-0">
                               Version
                             </span>
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[0.68rem] font-mono font-bold bg-white border border-slate-200 text-slate-700">
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[0.68rem] font-bold bg-white border border-slate-200 text-slate-700">
                               {info.version}
                             </span>
                           </div>
@@ -102,7 +143,7 @@ export const MainInfo = (props: { item: CoreC.Region }): ResourceMainInfo => {
                             <span className="text-[0.68rem] font-bold uppercase tracking-[0.05em] text-slate-400 w-20 shrink-0">
                               Package
                             </span>
-                            <span className="text-[0.75rem] font-mono font-semibold text-slate-600">
+                            <span className="text-[0.75rem] font-semibold text-slate-600">
                               {info.package}
                             </span>
                           </div>

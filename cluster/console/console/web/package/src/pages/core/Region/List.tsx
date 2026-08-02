@@ -2,6 +2,10 @@ import { Region } from "@/apis/corev1/corev1";
 
 import { GetRegionSummaryResponse } from "@/apis/visibilityv1/core/vcorev1";
 import { SummaryItemCount, SummaryItemCountWrap } from "@/components/Summary";
+import {
+  ResourceListLabel,
+  ResourceListLabelWrap,
+} from "@/components/ResourceList";
 import { getDomain } from "@/utils";
 import { getClientVisibilityCore } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
@@ -9,7 +13,25 @@ import { useQuery } from "@tanstack/react-query";
 export const LabelComponent = (props: { item: Region }) => {
   const { item } = props;
 
-  return <div className="w-full mt-1 flex flex-row"></div>;
+  return (
+    <ResourceListLabelWrap>
+      {item.status?.version && (
+        <ResourceListLabel label="Version">
+          {item.status.version}
+        </ResourceListLabel>
+      )}
+      {item.status?.publicHostname && (
+        <ResourceListLabel label="Hostname">
+          {item.status.publicHostname}
+        </ResourceListLabel>
+      )}
+      {!!item.status?.ingressAddresses.length && (
+        <ResourceListLabel label="Ingress addresses">
+          {item.status.ingressAddresses.length}
+        </ResourceListLabel>
+      )}
+    </ResourceListLabelWrap>
+  );
 };
 
 export const ExtraComponent = (props: { item: Region }) => {
