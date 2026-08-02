@@ -36,11 +36,16 @@ const DeleteResource = (props: {
   item: Resource;
   onSuccess?: () => void;
   doNotNavigateAfter?: boolean;
+  opened?: boolean;
+  onClose?: () => void;
+  hideTrigger?: boolean;
 }) => {
   const { item } = props;
   const [isDeletable, setIsDeletable] = React.useState(false);
   const navigate = useNavigate();
-  const [opened, { open, close }] = useDisclosure(false);
+  const [internalOpened, { open, close: closeInternal }] = useDisclosure(false);
+  const opened = props.opened ?? internalOpened;
+  const close = props.onClose ?? closeInternal;
 
   const handleClose = () => {
     setIsDeletable(false);
@@ -71,14 +76,16 @@ const DeleteResource = (props: {
 
   return (
     <>
-      <Button
-        color={props.btnColor ?? "red.8"}
-        onClick={open}
-        size={props.btnSize}
-        variant={props.btnVariant}
-      >
-        <MdDelete />
-      </Button>
+      {!props.hideTrigger && (
+        <Button
+          color={props.btnColor ?? "red.8"}
+          onClick={open}
+          size={props.btnSize}
+          variant={props.btnVariant}
+        >
+          <MdDelete />
+        </Button>
+      )}
 
       <Modal
         opened={opened}

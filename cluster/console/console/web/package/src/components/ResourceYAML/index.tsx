@@ -50,10 +50,15 @@ const ResourceYAML = (props: {
   onResourceChange?: (arg: Resource) => void;
   readOnly?: boolean;
   mode?: "json" | "yaml" | undefined;
+  opened?: boolean;
+  onClose?: () => void;
+  hideTrigger?: boolean;
 }) => {
   const [viewMode, setViewMode] = React.useState<ViewMode>(0);
   const { item } = props;
-  const [opened, { open, close }] = useDisclosure(false);
+  const [internalOpened, { open, close: closeInternal }] = useDisclosure(false);
+  const opened = props.opened ?? internalOpened;
+  const close = props.onClose ?? closeInternal;
   const [cur, setCur] = React.useState<Resource>(item);
   const [isChanged, setIsChanged] = React.useState(false);
 
@@ -111,16 +116,16 @@ const ResourceYAML = (props: {
 
   return (
     <>
-      {props.triggerComponent ? (
+      {!props.hideTrigger && props.triggerComponent ? (
         <span onClick={open} className="cursor-pointer">
           {props.triggerComponent}
         </span>
-      ) : (
+      ) : !props.hideTrigger ? (
         <Button variant={`outline`} size={`compact-xs`} onClick={open}>
           <FileText size={11} strokeWidth={2.5} />
           YAML
         </Button>
-      )}
+      ) : null}
 
       <Drawer
         opened={opened}

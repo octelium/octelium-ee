@@ -5,11 +5,16 @@ import {
   getClientResourceListP,
   getListKeyFromPath,
   getPBResourceListFromAPI,
+  getRefNameQueryArgStr,
   getResourcePath,
+  hasAccessLog,
+  hasAuditLog,
+  hasAuthenticationLog,
+  hasSSHSessionLog,
   Resource,
   ResourceList,
 } from "@/utils/pb";
-import { Tooltip } from "@mantine/core";
+import { ActionIcon, Button, Menu, Tooltip } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import React from "react";
@@ -26,17 +31,186 @@ import { ResourceListItem, ResourceListWrapper } from "../ResourceList";
 import ResourceYAML from "../ResourceYAML";
 
 import { ResourceComponentInfo } from "@/pages/utils/types";
-import { Button } from "@mantine/core";
-
 import { Service, Service_Spec_Mode } from "@/apis/corev1/corev1";
 import { CommonListOptions } from "@/apis/metav1/metav1";
 import { getServicePublicURL } from "@/utils/octelium";
-import { ExternalLink, Pencil, Plus } from "lucide-react";
+import {
+  Copy,
+  ExternalLink,
+  FileText,
+  Library,
+  MoreVertical,
+  Pencil,
+  Plus,
+  ShieldEllipsis,
+  ShieldUser,
+  SquareTerminal,
+  Trash2,
+} from "lucide-react";
 import DeleteResource from "../DeleteResource";
 import TimeAgo from "../TimeAgo";
 import CloneResource from "./CloneResource";
 import { parseQueryString } from "./queryParse";
-import { ResourceVisibilityButtons } from "./ResourceInfo";
+
+const ResourceItemActions = (props: {
+  item: Resource;
+  info: ResourceComponentInfo;
+  returnTo: string;
+}) => {
+  const { item, info, returnTo } = props;
+  const md = item.metadata!;
+  const [yamlOpened, setYamlOpened] = React.useState(false);
+  const [cloneOpened, setCloneOpened] = React.useState(false);
+  const [deleteOpened, setDeleteOpened] = React.useState(false);
+  const publicURL =
+    item.apiVersion === "core/v1" &&
+    item.kind === "Service" &&
+    (item as Service).spec?.isPublic &&
+    (item as Service).spec?.mode === Service_Spec_Mode.WEB
+      ? getServicePublicURL(item as Service, getDomain())
+      : undefined;
+  const query = getRefNameQueryArgStr(item);
+  const visibilityItems = [
+    {
+      show: hasAccessLog(item),
+      to: `/visibility/accesslogs?${query}`,
+      icon: ShieldEllipsis,
+      label: "Access logs",
+    },
+    {
+      show: hasAuthenticationLog(item),
+      to: `/visibility/authenticationlogs?${query}`,
+      icon: ShieldUser,
+      label: "Authentication logs",
+    },
+    {
+      show: hasAuditLog(item),
+      to: `/visibility/auditlogs?${query}`,
+      icon: Library,
+      label: "Audit logs",
+    },
+    {
+      show: hasSSHSessionLog(item),
+      to: `/visibility/ssh?${query}`,
+      icon: SquareTerminal,
+      label: "SSH sessions",
+    },
+  ].filter(({ show }) => show);
+
+  return (
+    <>
+      <Menu
+        position="bottom-end"
+        width={230}
+        shadow="md"
+        withinPortal
+        transitionProps={{ transition: "pop-top-right", duration: 180 }}
+      >
+        <Menu.Target>
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            size="sm"
+            aria-label={`Actions for ${md.name}`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <MoreVertical size={16} strokeWidth={2.25} />
+          </ActionIcon>
+        </Menu.Target>
+
+        <Menu.Dropdown onClick={(event) => event.stopPropagation()}>
+          <Menu.Label className="truncate">{md.name}</Menu.Label>
+          <Menu.Item
+            leftSection={<FileText size={14} />}
+            onClick={() => setYamlOpened(true)}
+          >
+            View YAML
+          </Menu.Item>
+          {!info.unEditable && !md.isSystem && (
+            <Menu.Item
+              component={Link}
+              to={`${getResourcePath(item)}/edit`}
+              state={{ returnTo }}
+              preventScrollReset
+              leftSection={<Pencil size={14} />}
+            >
+              Edit
+            </Menu.Item>
+          )}
+          {info.cloneable && (
+            <Menu.Item
+              leftSection={<Copy size={14} />}
+              onClick={() => setCloneOpened(true)}
+            >
+              Clone
+            </Menu.Item>
+          )}
+          {publicURL && (
+            <Menu.Item
+              component="a"
+              href={publicURL}
+              target="_blank"
+              rel="noopener noreferrer"
+              leftSection={<ExternalLink size={14} />}
+            >
+              Visit public service
+            </Menu.Item>
+          )}
+
+          {visibilityItems.length > 0 && <Menu.Divider />}
+          {visibilityItems.map(({ to, icon: Icon, label }) => (
+            <Menu.Item
+              key={to}
+              component={Link}
+              to={to}
+              preventScrollReset
+              leftSection={<Icon size={14} />}
+            >
+              {label}
+            </Menu.Item>
+          ))}
+
+          {!info.unDeletable && !md.isSystem && (
+            <>
+              <Menu.Divider />
+              <Menu.Item
+                color="red"
+                leftSection={<Trash2 size={14} />}
+                onClick={() => setDeleteOpened(true)}
+              >
+                Delete
+              </Menu.Item>
+            </>
+          )}
+        </Menu.Dropdown>
+      </Menu>
+
+      <ResourceYAML
+        item={item}
+        hideTrigger
+        opened={yamlOpened}
+        onClose={() => setYamlOpened(false)}
+      />
+      {info.cloneable && (
+        <CloneResource
+          item={item}
+          hideTrigger
+          opened={cloneOpened}
+          onClose={() => setCloneOpened(false)}
+        />
+      )}
+      {!info.unDeletable && !md.isSystem && (
+        <DeleteResource
+          item={item}
+          doNotNavigateAfter
+          hideTrigger
+          opened={deleteOpened}
+          onClose={() => setDeleteOpened(false)}
+        />
+      )}
+    </>
+  );
+};
 
 const Item = (props: { item: Resource; info: ResourceComponentInfo }) => {
   const { item } = props;
@@ -47,23 +221,20 @@ const Item = (props: { item: Resource; info: ResourceComponentInfo }) => {
   return (
     <div className="w-full font-semibold">
       <div className="flex items-start gap-3 sm:gap-4">
-        <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-100 text-sm font-bold uppercase text-slate-500 shadow-sm">
-          {md.picURL ? (
+        <div className="mt-0.5 h-10 w-10 shrink-0">
+          {md.picURL && (
             <img
               src={md.picURL}
               alt={md.displayName || md.name}
               loading="lazy"
-              className="h-full w-full object-cover"
+              className="h-full w-full rounded-lg border border-slate-200 object-cover shadow-sm"
             />
-          ) : (
-            <span aria-hidden="true">
-              {(md.displayName || md.name).slice(0, 2)}
-            </span>
           )}
         </div>
 
-        <div className="flex flex-col flex-1 min-w-0">
-          <div className="flex min-w-0 flex-col gap-0.5">
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="flex min-w-0 items-start justify-between gap-2">
+            <div className="flex min-w-0 flex-col gap-0.5">
               <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                 <span className="min-w-0 text-[0.92rem] font-bold text-slate-800">
                   <CopyText value={md.name} />
@@ -101,65 +272,13 @@ const Item = (props: { item: Resource; info: ResourceComponentInfo }) => {
                   </span>
                 )}
               </div>
-          </div>
-
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
-            <ResourceYAML item={item} size="xs" />
-
-            {!props.info.unEditable && !md.isSystem && (
-              <Button
-                size="compact-xs"
-                variant="outline"
-                component={Link}
-                to={`${getResourcePath(item)}/edit`}
-                state={{ returnTo }}
-                preventScrollReset
-                leftSection={<Pencil size={11} />}
-                onClick={(e: React.MouseEvent) => e.stopPropagation()}
-              >
-                Edit
-              </Button>
-            )}
-
-            {props.info.cloneable && <CloneResource item={item} />}
-
-            {item.apiVersion === "core/v1" &&
-              item.kind === "Service" &&
-              (item as Service).spec?.isPublic &&
-              (item as Service).spec?.mode === Service_Spec_Mode.WEB && (
-                <Button
-                  size="compact-xs"
-                  variant="outline"
-                  color="blue"
-                  component={Link}
-                  to={getServicePublicURL(item as Service, getDomain())}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  leftSection={<ExternalLink size={11} />}
-                  onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                  styles={{
-                    root: { fontWeight: 600, fontSize: "0.72rem" },
-                  }}
-                >
-                  Visit
-                </Button>
-              )}
-
-            <ResourceVisibilityButtons item={item} />
-
-            <div className="flex-1" />
-
-            <div className="flex items-center gap-1">
-              {!props.info.unDeletable && (
-                <DeleteResource
-                  btnColor="gray.6"
-                  btnSize="compact-xs"
-                  btnVariant="outline"
-                  item={item}
-                  doNotNavigateAfter
-                />
-              )}
             </div>
+
+            <ResourceItemActions
+              item={item}
+              info={props.info}
+              returnTo={returnTo}
+            />
           </div>
 
           {props.info.List.labelComponent && (

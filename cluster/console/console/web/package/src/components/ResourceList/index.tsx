@@ -41,12 +41,12 @@ export const ResourceListItem = (props: {
         "border border-slate-200 rounded-xl",
         "shadow-[0_1px_4px_rgba(15,23,42,0.06)]",
         "px-4 py-3.5 sm:px-5 sm:py-4",
-        "transition-[border-color,box-shadow] duration-150",
-        "hover:border-slate-300 hover:shadow-[0_2px_12px_rgba(15,23,42,0.09)]",
+        "transition-[border-color,box-shadow] duration-[600ms] ease-out",
+        "hover:border-slate-300 hover:shadow-[0_3px_14px_rgba(15,23,42,0.075)]",
         hasPath &&
           "cursor-pointer outline-none focus-visible:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-500/20",
         isActive &&
-          "border-blue-300 shadow-[0_2px_12px_rgba(37,99,235,0.10)] ring-1 ring-blue-500/10",
+          "border-blue-200 shadow-[0_3px_14px_rgba(37,99,235,0.075)] ring-1 ring-blue-500/[0.07]",
       )}
       role={hasPath ? "link" : undefined}
       tabIndex={hasPath ? 0 : undefined}

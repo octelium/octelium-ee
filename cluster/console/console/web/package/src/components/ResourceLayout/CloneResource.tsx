@@ -21,9 +21,16 @@ const makeCloneName = (name: string) => {
   return `${name.slice(0, dot)}-clone${name.slice(dot)}`;
 };
 
-const CloneResource = (props: { item: Resource }) => {
+const CloneResource = (props: {
+  item: Resource;
+  opened?: boolean;
+  onClose?: () => void;
+  hideTrigger?: boolean;
+}) => {
   const { item } = props;
-  const [opened, { open, close }] = useDisclosure(false);
+  const [internalOpened, { open, close: closeInternal }] = useDisclosure(false);
+  const opened = props.opened ?? internalOpened;
+  const close = props.onClose ?? closeInternal;
   const navigate = useNavigate();
 
   const originalName = item.metadata?.name ?? "";
@@ -75,17 +82,19 @@ const CloneResource = (props: { item: Resource }) => {
 
   return (
     <>
-      <Button
-        size="compact-xs"
-        variant="outline"
-        leftSection={<Copy size={11} />}
-        onClick={(e: React.MouseEvent) => {
-          e.stopPropagation();
-          open();
-        }}
-      >
-        Clone
-      </Button>
+      {!props.hideTrigger && (
+        <Button
+          size="compact-xs"
+          variant="outline"
+          leftSection={<Copy size={11} />}
+          onClick={(e: React.MouseEvent) => {
+            e.stopPropagation();
+            open();
+          }}
+        >
+          Clone
+        </Button>
+      )}
 
       <Modal
         opened={opened}
