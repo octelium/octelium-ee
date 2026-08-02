@@ -1,24 +1,13 @@
 import { Group } from "@/apis/corev1/corev1";
-import {
-  ResourceListLabel,
-  ResourceListLabelWrap,
-} from "@/components/ResourceList";
-
-import {
-  GetGroupSummaryResponse,
-  ListUserOptions,
-} from "@/apis/visibilityv1/core/vcorev1";
+import { GetGroupSummaryResponse } from "@/apis/visibilityv1/core/vcorev1";
 import {
   SummaryItemCount,
   SummaryItemCountWrap,
   SummaryNoItems,
 } from "@/components/Summary";
-import { toURLWithQry } from "@/pages/utils";
 import { getDomain } from "@/utils";
 import { getClientVisibilityCore } from "@/utils/client";
-import { getResourceRef } from "@/utils/pb";
 import { useQuery } from "@tanstack/react-query";
-import { Shield } from "lucide-react";
 
 const ItemDetails = (props: { item: Group; domain: string }) => {
   const { item } = props;
@@ -29,47 +18,7 @@ const ItemDetails = (props: { item: Group; domain: string }) => {
 
 export const LabelComponent = (props: { item: Group }) => {
   const { item } = props;
-
-  const qryGroup = useQuery({
-    queryKey: ["selectGroupComponent", item.metadata!.name],
-    queryFn: async () => {
-      return await getClientVisibilityCore().listUser(
-        ListUserOptions.create({
-          groupRef: getResourceRef(item),
-        }),
-      );
-    },
-  });
-
-  return (
-    <ResourceListLabelWrap>
-      {qryGroup.isSuccess &&
-        qryGroup.data.response.listResponseMeta &&
-        qryGroup.data.response.listResponseMeta.totalCount > 0 && (
-          <ResourceListLabel
-            to={toURLWithQry(`/core/users`, {
-              "groupRef.name": item.metadata!.name,
-            })}
-          >
-            {qryGroup.data.response.listResponseMeta.totalCount} Users
-          </ResourceListLabel>
-        )}
-      {item.spec?.authorization &&
-        item.spec?.authorization.policies.length > 0 && (
-          <ResourceListLabel>
-            <Shield size={14} className="mr-1" />
-            {item.spec.authorization.policies.length} Policies
-          </ResourceListLabel>
-        )}
-      {item.spec?.authorization &&
-        item.spec?.authorization.inlinePolicies.length > 0 && (
-          <ResourceListLabel>
-            <Shield size={14} className="mr-1" />
-            {item.spec.authorization.inlinePolicies.length} Inline Policies
-          </ResourceListLabel>
-        )}
-    </ResourceListLabelWrap>
-  );
+  return null;
 };
 
 export const ExtraComponent = (props: { item: Group }) => {
