@@ -71,9 +71,9 @@ export const ResourceItemInfo = (props: { item: CoreC.User }) => {
           </span>
           <Switch
             className="ml-2"
-            checked={item.spec!.isDisabled}
+            checked={!item.spec!.isDisabled}
             onChange={(v) => {
-              item.spec!.isDisabled = v.currentTarget.checked;
+              item.spec!.isDisabled = !v.currentTarget.checked;
               mutationUpdate.mutate(item);
             }}
           />
@@ -95,9 +95,39 @@ export default (props: { item: CoreC.User }) => {
   );
 };
 
-export const MainInfo = (props: { item: CoreC.User }): ResourceMainInfo => {
+const UserActiveControl = (props: { item: CoreC.User }) => {
   const { item } = props;
   const mutationUpdate = useUpdateResource();
+
+  return (
+    <EditItemWrap
+      label="active"
+      showComponent={
+        <span
+          className={twMerge(
+            "text-[0.75rem] font-semibold",
+            item.spec!.isDisabled ? "text-red-500" : "text-emerald-600",
+          )}
+        >
+          {item.spec!.isDisabled ? "Disabled" : "Active"}
+        </span>
+      }
+      editComponent={
+        <Switch
+          size="sm"
+          checked={!item.spec!.isDisabled}
+          onChange={(v) => {
+            item.spec!.isDisabled = !v.currentTarget.checked;
+            mutationUpdate.mutate(item);
+          }}
+        />
+      }
+    />
+  );
+};
+
+const CreateUserCredential = (props: { item: CoreC.User }) => {
+  const { item } = props;
   const [opened, { open, close }] = useDisclosure(false);
   const navigate = useNavigate();
   const [credential, setCredential] = useState(
@@ -124,6 +154,37 @@ export const MainInfo = (props: { item: CoreC.User }): ResourceMainInfo => {
       }
     },
   });
+
+  return (
+    <div>
+      <Button onClick={open}>Create Credential</Button>
+      <Modal opened={opened} onClose={close} size={"xl"} centered>
+        <div>
+          <Edit
+            onUpdate={(v) => {
+              v.metadata!.name = `${v.spec!.user}-${slugify(CoreC.Credential_Spec_Type[v.spec!.type]).toLowerCase()}-${randomStringLowerCase(6)}`;
+              setCredential(CoreC.Credential.clone(v));
+            }}
+            item={credential}
+          />
+
+          <div className="mt-4 flex items-end justify-end">
+            <Button
+              onClick={() => {
+                mutationCredential.mutate();
+              }}
+            >
+              Create
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  );
+};
+
+export const MainInfo = (props: { item: CoreC.User }): ResourceMainInfo => {
+  const { item } = props;
 
   return {
     items: [
@@ -187,60 +248,11 @@ export const MainInfo = (props: { item: CoreC.User }): ResourceMainInfo => {
 
       {
         label: "Active",
-        value: (
-          <EditItemWrap
-            label="active"
-            showComponent={
-              <span
-                className={twMerge(
-                  "text-[0.75rem] font-semibold",
-                  item.spec!.isDisabled ? "text-red-500" : "text-emerald-600",
-                )}
-              >
-                {item.spec!.isDisabled ? "Disabled" : "Active"}
-              </span>
-            }
-            editComponent={
-              <Switch
-                size="sm"
-                checked={!item.spec!.isDisabled}
-                onChange={(v) => {
-                  item.spec!.isDisabled = !v.currentTarget.checked;
-                  mutationUpdate.mutate(item);
-                }}
-              />
-            }
-          />
-        ),
+        value: <UserActiveControl item={item} />,
       },
       {
         label: "Credential",
-        value: (
-          <div>
-            <Button onClick={open}>Create Credential</Button>
-            <Modal opened={opened} onClose={close} size={"xl"} centered>
-              <div>
-                <Edit
-                  onUpdate={(v) => {
-                    v.metadata!.name = `${v.spec!.user}-${slugify(CoreC.Credential_Spec_Type[v.spec!.type]).toLowerCase()}-${randomStringLowerCase(6)}`;
-                    setCredential(CoreC.Credential.clone(v));
-                  }}
-                  item={credential}
-                />
-
-                <div className="mt-4 flex items-end justify-end">
-                  <Button
-                    onClick={() => {
-                      mutationCredential.mutate();
-                    }}
-                  >
-                    Create
-                  </Button>
-                </div>
-              </div>
-            </Modal>
-          </div>
-        ),
+        value: <CreateUserCredential item={item} />,
       },
     ],
   };
