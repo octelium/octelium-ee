@@ -272,6 +272,111 @@ export const AuditLogC = ({ auditLog }: { auditLog: AuditLog }) => {
   );
 };
 
+const getListAuditLogResponseTest = async () => {
+  const { response } = await getClientCore().listSession({});
+  const session = response.items.at(0);
+  const sessionRef = session
+    ? getResourceRef(session)
+    : ObjectReference.create({ uid: "dev-session", name: "dev-session" });
+  const userRef =
+    session?.status?.userRef ??
+    ObjectReference.create({ uid: "dev-user", name: "alice" });
+  const deviceRef =
+    session?.status?.deviceRef ??
+    ObjectReference.create({ uid: "dev-device", name: "alice-laptop" });
+  const createdAt = (minutesAgo: number) =>
+    Timestamp.fromDate(dayjs().subtract(minutesAgo, "minute").toDate());
+  const target = (kind: string, name: string) =>
+    ObjectReference.create({
+      apiVersion: "core/v1",
+      kind,
+      uid: `dev-${kind.toLowerCase()}-${name}`,
+      name,
+    });
+  const makeLog = (
+    id: string,
+    minutesAgo: number,
+    resourceRef: ObjectReference,
+    operation: string,
+    service: string,
+    method: string,
+  ) =>
+    AuditLog.create({
+      kind: "AuditLog",
+      metadata: { id, createdAt: createdAt(minutesAgo), actorRef: userRef },
+      entry: {
+        sessionRef,
+        userRef,
+        deviceRef,
+        resourceRef,
+        operation,
+        package: "octelium.api.core.v1",
+        service,
+        method,
+      },
+    });
+  const items = [
+    makeLog(
+      "dev-audit-create-user",
+      2,
+      target("User", "new-operator"),
+      "octelium.api.core.v1.UserService.CreateUser",
+      "UserService",
+      "CreateUser",
+    ),
+    makeLog(
+      "dev-audit-update-policy",
+      6,
+      target("Policy", "production-access"),
+      "octelium.api.core.v1.PolicyService.UpdatePolicy",
+      "PolicyService",
+      "UpdatePolicy",
+    ),
+    makeLog(
+      "dev-audit-update-service",
+      11,
+      target("Service", "admin-console"),
+      "octelium.api.core.v1.ServiceService.UpdateService",
+      "ServiceService",
+      "UpdateService",
+    ),
+    makeLog(
+      "dev-audit-read-secret",
+      18,
+      target("Secret", "database-credentials"),
+      "octelium.api.core.v1.SecretService.GetSecret",
+      "SecretService",
+      "GetSecret",
+    ),
+    makeLog(
+      "dev-audit-delete-device",
+      25,
+      target("Device", "retired-laptop"),
+      "octelium.api.core.v1.DeviceService.DeleteDevice",
+      "DeviceService",
+      "DeleteDevice",
+    ),
+    makeLog(
+      "dev-audit-update-config",
+      34,
+      target("Config", "cluster"),
+      "octelium.api.core.v1.ConfigService.UpdateConfig",
+      "ConfigService",
+      "UpdateConfig",
+    ),
+  ];
+
+  return ListAuditLogResponse.create({
+    items,
+    listResponseMeta: {
+      totalCount: items.length,
+      page: 0,
+      itemsPerPage: items.length,
+      hasMore: false,
+    },
+  });
+};
+
 const AuditLogViewer = (props: {
   userRef?: ObjectReference;
   sessionRef?: ObjectReference;
@@ -298,32 +403,7 @@ const AuditLogViewer = (props: {
       from ? Timestamp.toDate(from).toISOString() : undefined,
     ],
     queryFn: async () => {
-      if (isDev()) {
-        const r = await getClientCore().listSession({});
-        const sess = r.response.items.at(0);
-        return ListAuditLogResponse.create({
-          items: [
-            AuditLog.create({
-              kind: "AuditLog",
-              metadata: {
-                createdAt: Timestamp.now(),
-                id: "mulb-o92x-p092j5ltc3q1nyajoiidx0tq-1r9h-x3p0",
-                actorRef: getResourceRef(sess!),
-              },
-              entry: {
-                sessionRef: getResourceRef(sess!),
-                userRef: sess?.status?.userRef,
-                deviceRef: sess?.status?.deviceRef,
-                resourceRef: getResourceRef(sess!),
-                operation: "octelium.api.core.v1.ListUser",
-                service: "MainService",
-                method: "ListUser",
-                package: "octelium.api.core.v1",
-              },
-            }),
-          ],
-        });
-      }
+      if (isDev()) return getListAuditLogResponseTest();
 
       const { response } = await getClientVisibilityAuditLog().listAuditLog(
         ListAuditLogRequest.create({

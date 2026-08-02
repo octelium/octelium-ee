@@ -469,6 +469,143 @@ export const AuthenticationLogC = ({
   );
 };
 
+const getListAuthenticationLogResponseTest = async () => {
+  const { response } = await getClientCore().listSession({});
+  const session = response.items.at(0);
+  const sessionRef = session
+    ? getResourceRef(session)
+    : ObjectReference.create({ uid: "dev-session", name: "dev-session" });
+  const userRef =
+    session?.status?.userRef ??
+    ObjectReference.create({ uid: "dev-user", name: "alice" });
+  const deviceRef =
+    session?.status?.deviceRef ??
+    ObjectReference.create({ uid: "dev-device", name: "alice-laptop" });
+  const identityProviderRef = ObjectReference.create({
+    uid: "dev-idp",
+    name: "google-workspace",
+  });
+  const authenticatorRef = ObjectReference.create({
+    uid: "dev-authenticator",
+    name: "alice-passkey",
+  });
+  const credentialRef = ObjectReference.create({
+    uid: "dev-credential",
+    name: "ci-access-token",
+  });
+  const createdAt = (minutesAgo: number) =>
+    Timestamp.fromDate(dayjs().subtract(minutesAgo, "minute").toDate());
+  const makeLog = (
+    id: string,
+    minutesAgo: number,
+    info: Record<string, unknown>,
+  ) =>
+    AuthenticationLog.create({
+      kind: "AuthenticationLog",
+      metadata: { id, createdAt: createdAt(minutesAgo), actorRef: userRef },
+      entry: {
+        sessionRef,
+        userRef,
+        deviceRef,
+        authentication: { info: info as any },
+      },
+    });
+  const items = [
+    makeLog("dev-auth-idp", 1, {
+      type: Session_Status_Authentication_Info_Type.IDENTITY_PROVIDER,
+      aal: Session_Status_Authentication_Info_AAL.AAL2,
+      downstream: {
+        ipAddress: "203.0.113.24",
+        userAgent: "Mozilla/5.0 Chrome/126.0",
+        clientVersion: "0.15.2",
+      },
+      details: {
+        oneofKind: "identityProvider",
+        identityProvider: {
+          email: "alice@example.com",
+          identifier: "00u-dev-alice",
+          identityProviderRef,
+        },
+      },
+    }),
+    makeLog("dev-auth-passkey", 4, {
+      type: Session_Status_Authentication_Info_Type.AUTHENTICATOR,
+      aal: Session_Status_Authentication_Info_AAL.AAL3,
+      downstream: {
+        ipAddress: "198.51.100.18",
+        userAgent: "Mozilla/5.0 Safari/17.5",
+        clientVersion: "0.15.2",
+      },
+      details: {
+        oneofKind: "authenticator",
+        authenticator: {
+          authenticatorRef,
+          type: Authenticator_Status_Type.FIDO,
+          mode: 1,
+          info: {
+            type: {
+              oneofKind: "fido",
+              fido: {
+                isPasskey: true,
+                isHardware: true,
+                isSoftware: false,
+                isAttestationVerified: true,
+                userVerified: true,
+                userPresent: true,
+                aaguid: "adce0002-35bc-c60a-648b-0b25f1f05503",
+              },
+            },
+          },
+        },
+      },
+    }),
+    makeLog("dev-auth-credential", 9, {
+      type: Session_Status_Authentication_Info_Type.CREDENTIAL,
+      aal: Session_Status_Authentication_Info_AAL.AAL1,
+      downstream: {
+        ipAddress: "10.20.4.17",
+        userAgent: "octelium-cli/0.15.2",
+        clientVersion: "0.15.2",
+      },
+      details: {
+        oneofKind: "credential",
+        credential: {
+          credentialRef,
+          tokenID: "tok_dev_7e2f9c4d",
+        },
+      },
+    }),
+    makeLog("dev-auth-refresh", 16, {
+      type: Session_Status_Authentication_Info_Type.REFRESH_TOKEN,
+      aal: Session_Status_Authentication_Info_AAL.AAL2,
+      downstream: {
+        ipAddress: "203.0.113.24",
+        userAgent: "octelium-client/0.15.2 linux/amd64",
+        clientVersion: "0.15.2",
+      },
+    }),
+    makeLog("dev-auth-external", 28, {
+      type: Session_Status_Authentication_Info_Type.EXTERNAL,
+      aal: Session_Status_Authentication_Info_AAL.AAL1,
+      downstream: {
+        ipAddress: "192.0.2.55",
+        userAgent: "External-OIDC-Bridge/2.4",
+        clientVersion: "2.4.0",
+      },
+    }),
+  ];
+
+  return ListAuthenticationLogResponse.create({
+    items,
+    listResponseMeta: {
+      totalCount: items.length,
+      page: 0,
+      itemsPerPage: items.length,
+      hasMore: false,
+    },
+  });
+};
+
 const DoAuthenticationLogViewer = (props: {
   userRef?: ObjectReference;
   sessionRef?: ObjectReference;
@@ -507,39 +644,7 @@ const DoAuthenticationLogViewer = (props: {
       props.from?.nanos,
     ],
     queryFn: async () => {
-      if (isDev()) {
-        const r = await getClientCore().listSession({});
-        const sess = r.response.items.at(0);
-        return ListAuthenticationLogResponse.create({
-          items: [
-            AuthenticationLog.create({
-              kind: "AuthenticationLog",
-              metadata: {
-                createdAt: Timestamp.now(),
-                id: "mulb-o92x-p092j5ltc3q1nyajoiidx0tq-1r9h-x3p0",
-                actorRef: getResourceRef(sess!),
-              },
-              entry: {
-                sessionRef: getResourceRef(sess!),
-                userRef: sess?.status?.userRef,
-                deviceRef: sess?.status?.deviceRef,
-                authentication: {
-                  info: {
-                    type: Session_Status_Authentication_Info_Type.IDENTITY_PROVIDER,
-                    aal: Session_Status_Authentication_Info_AAL.AAL2,
-                    downstream: {
-                      ipAddress: "1.2.3.4",
-                      userAgent: "Mozilla/5.0",
-                    },
-                  },
-                },
-              },
-            }),
-          ],
-        });
-      }
-
-      
+      if (isDev()) return getListAuthenticationLogResponseTest();
 
       const { response } =
         await getClientVisibilityAuthenticationLog().listAuthenticationLog(
