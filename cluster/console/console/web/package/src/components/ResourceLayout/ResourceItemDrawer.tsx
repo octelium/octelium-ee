@@ -14,7 +14,14 @@ const ResourceItemDrawer = () => {
   const returnTo = state?.returnTo ?? parentPath;
 
   useEffect(() => {
-    setOpened(true);
+    let openFrame = 0;
+    const mountFrame = requestAnimationFrame(() => {
+      openFrame = requestAnimationFrame(() => setOpened(true));
+    });
+    return () => {
+      cancelAnimationFrame(mountFrame);
+      cancelAnimationFrame(openFrame);
+    };
   }, []);
 
   return (
