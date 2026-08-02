@@ -34,7 +34,7 @@ import {
   getServicePublicFQDN,
 } from "@/utils/octelium";
 import { getResourcePath, printServiceMode } from "@/utils/pb";
-import { Lock, Shield } from "lucide-react";
+import { Lock } from "lucide-react";
 
 export const getType = (svc: Service): string => {
   return printServiceMode(svc.spec!.mode);
@@ -167,24 +167,11 @@ export const LabelComponent = (props: { item: Service }) => {
       {item.spec?.isAnonymous && (
         <ResourceListLabel>Anonymous Access</ResourceListLabel>
       )}
-      {item.spec?.config?.type.oneofKind === `ssh` &&
-        item.spec.config.type.ssh.eSSHMode && (
-          <ResourceListLabel>Embedded SSH</ResourceListLabel>
-        )}
-      {item.spec?.authorization &&
-        item.spec?.authorization.policies.length > 0 && (
-          <ResourceListLabel>
-            <Shield size={14} className="mr-1" />
-            {item.spec.authorization.policies.length} Policies
-          </ResourceListLabel>
-        )}
-      {item.spec?.authorization &&
-        item.spec?.authorization.inlinePolicies.length > 0 && (
-          <ResourceListLabel>
-            <Shield size={14} className="mr-1" />
-            {item.spec.authorization.inlinePolicies.length} Inline Policies
-          </ResourceListLabel>
-        )}
+      {item.spec?.isDisabled && (
+        <ResourceListLabel>
+          <span className="text-red-500">Disabled</span>
+        </ResourceListLabel>
+      )}
       <ResourceListLabel itemRef={item.status!.regionRef}></ResourceListLabel>
     </ResourceListLabelWrap>
   );

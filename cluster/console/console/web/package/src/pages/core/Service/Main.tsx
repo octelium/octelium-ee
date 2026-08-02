@@ -1,16 +1,18 @@
 import * as CoreC from "@/apis/corev1/corev1";
+import { ObjectReference } from "@/apis/metav1/metav1";
 import AccessLogViewer from "@/components/AccessLogViewer";
 import CopyText from "@/components/CopyText";
 import InfoItem from "@/components/InfoItem";
 import Label from "@/components/Label";
 import EditItemWrap from "@/components/ResourceLayout/EditItemWrap";
+import { ResourceListLabel } from "@/components/ResourceList";
 import { useUpdateResource } from "@/pages/utils/resource";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { getDomain } from "@/utils";
 import { getServicePrivateFQDN, getServicePublicFQDN } from "@/utils/octelium";
 import { getResourceRef } from "@/utils/pb";
 import { Button, Switch } from "@mantine/core";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Server, Shield } from "lucide-react";
 import { FaLink } from "react-icons/fa";
 import { twMerge } from "tailwind-merge";
 import { getType } from "./List";
@@ -69,10 +71,11 @@ export const ItemInfo = (props: { item: CoreC.Service }) => {
           </span>
           <Switch
             className="ml-2"
-            checked={item.spec!.isDisabled}
+            checked={!item.spec!.isDisabled}
             onChange={(v) => {
-              item.spec!.isDisabled = v.currentTarget.checked;
-              mutationUpdate.mutate(item);
+              const next = CoreC.Service.clone(item);
+              next.spec!.isDisabled = !v.currentTarget.checked;
+              mutationUpdate.mutate(next);
             }}
           />
         </div>
@@ -115,11 +118,27 @@ export const MainInfo = (props: { item: CoreC.Service }): ResourceMainInfo => {
         ? [
             {
               label: "Port",
+              value: <span className="text-[0.75rem]">{item.status.port}</span>,
+            },
+          ]
+        : []),
+
+      ...(item.status?.namespaceRef?.name || item.status?.namespaceRef?.uid
+        ? [
+            {
+              label: "Namespace",
               value: (
-                <span className="font-mono text-[0.75rem]">
-                  {item.status.port}
-                </span>
+                <ResourceListLabel itemRef={item.status.namespaceRef} />
               ),
+            },
+          ]
+        : []),
+
+      ...(item.status?.regionRef?.name || item.status?.regionRef?.uid
+        ? [
+            {
+              label: "Region",
+              value: <ResourceListLabel itemRef={item.status.regionRef} />,
             },
           ]
         : []),
@@ -164,8 +183,92 @@ export const MainInfo = (props: { item: CoreC.Service }): ResourceMainInfo => {
                   {item.spec!.isTLS && <Label>TLS</Label>}
                   {item.spec!.isPublic && <Label>Public</Label>}
                   {item.spec!.isAnonymous && <Label>Anonymous</Label>}
+                  {item.spec?.config?.type.oneofKind === "ssh" &&
+                    item.spec.config.type.ssh.eSSHMode && (
+                      <Label>Embedded SSH</Label>
+                    )}
                 </div>
               ),
+            },
+          ]
+        : []),
+
+      ...(item.status?.primaryHostname
+        ? [
+            {
+              label: "Primary hostname",
+              value: <CopyText value={item.status.primaryHostname} />,
+              span: "full" as const,
+            },
+          ]
+        : []),
+
+      ...(item.status?.addresses.length
+        ? [
+            {
+              label: "Private addresses",
+              value: (
+                <div className="flex flex-wrap gap-1">
+                  {item.status.addresses.flatMap((address) =>
+                    [address.dualStackIP?.ipv4, address.dualStackIP?.ipv6]
+                      .filter((value): value is string => !!value)
+                      .map((value) => (
+                        <ResourceListLabel key={value} label="Address">
+                          <Server size={12} strokeWidth={2.5} />
+                          <CopyText value={value} />
+                        </ResourceListLabel>
+                      )),
+                  )}
+                </div>
+              ),
+              span: "full" as const,
+            },
+          ]
+        : []),
+
+      ...(item.spec?.authorization?.policies.length
+        ? [
+            {
+              label: "Policies",
+              value: (
+                <div className="flex flex-wrap gap-1">
+                  {item.spec.authorization.policies.map((policy) => (
+                    <ResourceListLabel
+                      key={policy}
+                      itemRef={ObjectReference.create({
+                        apiVersion: "core/v1",
+                        kind: "Policy",
+                        name: policy,
+                      })}
+                    />
+                  ))}
+                </div>
+              ),
+              span: "full" as const,
+            },
+          ]
+        : []),
+
+      ...(item.spec?.authorization?.inlinePolicies.length
+        ? [
+            {
+              label: "Inline policies",
+              value: (
+                <div className="flex flex-wrap gap-1">
+                  {item.spec.authorization.inlinePolicies.map(
+                    (policy, index) => (
+                      <ResourceListLabel
+                        key={`${policy.name}-${index}`}
+                        label="Inline policy"
+                      >
+                        <Shield size={12} strokeWidth={2.5} />
+                        {policy.name || `Inline policy ${index + 1}`}
+                      </ResourceListLabel>
+                    ),
+                  )}
+                </div>
+              ),
+              span: "full" as const,
             },
           ]
         : []),
@@ -191,8 +294,9 @@ export const MainInfo = (props: { item: CoreC.Service }): ResourceMainInfo => {
                 size="sm"
                 checked={!item.spec!.isDisabled}
                 onChange={(v) => {
-                  item.spec!.isDisabled = !v.currentTarget.checked;
-                  mutationUpdate.mutate(item);
+                  const next = CoreC.Service.clone(item);
+                  next.spec!.isDisabled = !v.currentTarget.checked;
+                  mutationUpdate.mutate(next);
                 }}
               />
             }
