@@ -1,6 +1,6 @@
 import { onError } from "@/utils";
 import {
-  getPB,
+  cloneResource,
   getResourceClient,
   invalidateResource,
   invalidateResourceList,
@@ -23,7 +23,7 @@ import {
 import { useDisclosure } from "@mantine/hooks";
 import { useMutation } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Copy, FileText, Loader2, Save, X } from "lucide-react";
+import { Check, Copy, FileText, Loader2, Save } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
 import { match } from "ts-pattern";
@@ -59,31 +59,37 @@ const ResourceYAML = (props: {
   const [internalOpened, { open, close: closeInternal }] = useDisclosure(false);
   const opened = props.opened ?? internalOpened;
   const close = props.onClose ?? closeInternal;
-  const [cur, setCur] = React.useState<Resource>(item);
-  const [isChanged, setIsChanged] = React.useState(false);
+  const [cur, setCur] = React.useState<Resource>(() => cloneResource(item));
+  const [baseline, setBaseline] = React.useState<Resource>(() =>
+    cloneResource(item),
+  );
 
   React.useEffect(() => {
-    try {
-      // @ts-ignore
-      const changed = !getPB(item)[`${item.kind}_Spec`].equals(
-        item.spec,
-        cur.spec,
-      );
-      setIsChanged(changed);
-    } catch {
-      setIsChanged(false);
+    if (!opened) {
+      const next = cloneResource(item);
+      setCur(next);
+      setBaseline(cloneResource(next));
     }
-  }, [cur, item]);
+  }, [item, opened]);
+
+  const isChanged = React.useMemo(
+    () => resourceToJSON(cur) !== resourceToJSON(baseline),
+    [baseline, cur],
+  );
 
   const mutationUpdate = useMutation({
     mutationFn: async (req: Resource) => {
       // @ts-ignore
       const { response } =
         // @ts-ignore
-        await getResourceClient(cur)[`update${req.kind}`](cur);
+        await getResourceClient(req)[`update${req.kind}`](req);
       return response as Resource;
     },
     onSuccess: (response) => {
+      const next = cloneResource(response);
+      setCur(next);
+      setBaseline(cloneResource(next));
+      props.onResourceChange?.(response);
       invalidateResource(response);
       invalidateResourceList(response);
       toast.success(
@@ -96,17 +102,17 @@ const ResourceYAML = (props: {
   const value = match(viewMode)
     .with(1, () =>
       props.mode === "json"
-        ? resourceSpecToJSON(item)
-        : resourceSpecToYAML(item),
+        ? resourceSpecToJSON(cur)
+        : resourceSpecToYAML(cur),
     )
     .with(2, () =>
       props.mode === "json"
-        ? resourceStatusToJSON(item)
-        : resourceStatusToYAML(item),
+        ? resourceStatusToJSON(cur)
+        : resourceStatusToYAML(cur),
     )
-    .with(3, () => resourceMetadataToYAML(item))
+    .with(3, () => resourceMetadataToYAML(cur))
     .otherwise(() =>
-      props.mode === "json" ? resourceToJSON(item) : resourceToYAML(item),
+      props.mode === "json" ? resourceToJSON(cur) : resourceToYAML(cur),
     );
 
   const activeSchemaMode = VIEW_MODES.find(
@@ -130,52 +136,58 @@ const ResourceYAML = (props: {
       <Drawer
         opened={opened}
         onClose={close}
-        size="lg"
-        withCloseButton={false}
-        padding={0}
+        position="right"
+        size="min(900px, 100vw)"
+        padding="md"
+        title={
+          <div className="flex min-w-0 items-center gap-2">
+            <FileText
+              size={15}
+              className="shrink-0 text-slate-400"
+              strokeWidth={2.25}
+            />
+            <span className="text-xs font-bold uppercase tracking-[0.06em] text-slate-500">
+              YAML
+            </span>
+            <span className="text-sm font-semibold text-slate-800 truncate">
+              {item.metadata?.name}
+            </span>
+            <span className="hidden text-xs font-semibold text-slate-400 sm:inline">
+              {item.kind}
+            </span>
+            {item.metadata?.isSystem && (
+              <Tooltip label="System resource" withArrow>
+                <span className="hidden items-center rounded-md border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider text-blue-600 sm:inline-flex">
+                  System
+                </span>
+              </Tooltip>
+            )}
+          </div>
+        }
+        overlayProps={{ backgroundOpacity: 0.2, blur: 1 }}
+        transitionProps={{
+          transition: "slide-left",
+          duration: 500,
+          exitDuration: 500,
+        }}
         styles={{
+          header: { borderBottom: "1px solid #e2e8f0", minHeight: "56px" },
           body: {
-            padding: 0,
-            height: "100%",
+            minHeight: "calc(100dvh - 56px)",
+            padding: "16px",
             display: "flex",
             flexDirection: "column",
+            backgroundColor: "#f8fafc",
           },
-          content: { display: "flex", flexDirection: "column" },
+          content: {
+            display: "flex",
+            flexDirection: "column",
+            borderLeft: "1px solid #e2e8f0",
+          },
         }}
       >
-        <div className="flex flex-col h-full bg-white">
-          {/* Header */}
-          <div className="flex items-center justify-between px-5 py-3 shrink-0 border-b border-slate-200 bg-white">
-            <div className="flex items-center gap-2 min-w-0">
-              <FileText
-                size={13}
-                className="text-slate-400 shrink-0"
-                strokeWidth={2}
-              />
-              <span className="text-[0.78rem] font-bold text-slate-700 truncate">
-                {item.metadata?.name}
-              </span>
-              <span className="text-[0.68rem] font-semibold text-slate-400 shrink-0">
-                {item.kind}
-              </span>
-              {item.metadata?.isSystem && (
-                <Tooltip label="System resource" withArrow>
-                  <span className="inline-flex items-center px-1.5 py-px text-[0.6rem] font-bold uppercase tracking-wider rounded border border-blue-200 text-blue-600 bg-blue-50 leading-none shrink-0">
-                    System
-                  </span>
-                </Tooltip>
-              )}
-            </div>
-            <button
-              onClick={close}
-              className="flex items-center justify-center w-7 h-7 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors duration-150 cursor-pointer"
-            >
-              <X size={13} strokeWidth={2} />
-            </button>
-          </div>
-
-          {/* Toolbar */}
-          <div className="flex items-center justify-between px-4 py-2 shrink-0 border-b border-slate-100 bg-slate-50/60">
+        <div className="flex min-h-0 flex-1 flex-col gap-3">
+          <div className="flex shrink-0 flex-col gap-2 rounded-xl border border-slate-200 bg-white p-2 shadow-sm sm:flex-row sm:items-center sm:justify-between">
             <SegmentedControl
               value={String(viewMode)}
               onChange={(v) => setViewMode(Number(v) as ViewMode)}
@@ -183,7 +195,7 @@ const ResourceYAML = (props: {
                 label: m.label,
                 value: String(m.value),
               }))}
-              // styles={segmentedStyles}
+              fullWidth
             />
 
             <CopyButton value={value}>
@@ -225,76 +237,87 @@ const ResourceYAML = (props: {
             </CopyButton>
           </div>
 
-          {/* Unsaved changes banner */}
-          <AnimatePresence>
-            {isChanged && !isReadOnly && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.15 }}
-                className="overflow-hidden shrink-0"
-              >
-                <div className="flex items-center justify-between px-4 py-2 bg-amber-50 border-b border-amber-200">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-                    <span className="text-[0.72rem] font-semibold text-amber-700">
-                      Unsaved changes
-                    </span>
-                  </div>
-                  <Button
-                    size="compact-sm"
-                    variant="filled"
-                    color="orange"
-                    leftSection={
-                      mutationUpdate.isPending ? (
-                        <Loader2
-                          size={11}
-                          className="animate-spin"
-                          strokeWidth={2.5}
-                        />
-                      ) : (
-                        <Save size={11} strokeWidth={2.5} />
-                      )
-                    }
-                    loading={mutationUpdate.isPending}
-                    onClick={() => mutationUpdate.mutate(cur)}
-                    styles={{
-                      root: {
-                        fontFamily: "Ubuntu, sans-serif",
-                        fontSize: "0.7rem",
-                        fontWeight: 700,
-                      },
-                    }}
-                  >
-                    {mutationUpdate.isPending ? "Saving…" : "Save"}
-                  </Button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Editor */}
-          <div className="flex-1 overflow-hidden p-3">
+          <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
             <Editor
-              item={props.item}
+              item={cur}
               mode={props.mode === "json" ? "json" : "yaml"}
               onResourceChange={(n) => setCur(n)}
               value={value}
               readOnly={isReadOnly}
               schemaMode={activeSchemaMode}
+              minHeight="calc(100dvh - 210px)"
+              maxHeight="calc(100dvh - 210px)"
             />
           </div>
 
-          {/* Read-only footer */}
-          {isReadOnly && (
-            <div className="shrink-0 px-4 py-2.5 border-t border-slate-100 bg-slate-50/60 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0" />
-              <span className="text-[0.68rem] font-semibold text-slate-400">
-                Read-only{item.metadata?.isSystem ? " · System resource" : ""}
-              </span>
+          <div className="flex min-h-9 shrink-0 items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+            <div className="min-w-0">
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={isReadOnly ? "readonly" : isChanged ? "changed" : "saved"}
+                  initial={{ opacity: 0, y: 3 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -3 }}
+                  transition={{ duration: 0.15 }}
+                  className="flex items-center gap-2"
+                >
+                  <span
+                    className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                      isReadOnly
+                        ? "bg-slate-300"
+                        : isChanged
+                          ? "bg-amber-500"
+                          : "bg-emerald-500"
+                    }`}
+                  />
+                  <span
+                    className={`truncate text-[0.72rem] font-semibold ${
+                      isChanged && !isReadOnly
+                        ? "text-amber-700"
+                        : "text-slate-500"
+                    }`}
+                  >
+                    {isReadOnly
+                      ? `Read-only${item.metadata?.isSystem ? " · System resource" : ""}`
+                      : isChanged
+                        ? "Unsaved changes"
+                        : "No unsaved changes"}
+                  </span>
+                </motion.div>
+              </AnimatePresence>
             </div>
-          )}
+
+            {!isReadOnly && (
+              <Button
+                size="compact-sm"
+                variant="filled"
+                color="dark"
+                leftSection={
+                  mutationUpdate.isPending ? (
+                    <Loader2
+                      size={11}
+                      className="animate-spin"
+                      strokeWidth={2.5}
+                    />
+                  ) : (
+                    <Save size={11} strokeWidth={2.5} />
+                  )
+                }
+                disabled={!isChanged || mutationUpdate.isPending}
+                loading={mutationUpdate.isPending}
+                onClick={() => mutationUpdate.mutate(cur)}
+                styles={{
+                  root: {
+                    fontFamily: "Ubuntu, sans-serif",
+                    fontSize: "0.7rem",
+                    fontWeight: 700,
+                  },
+                }}
+              >
+                {mutationUpdate.isPending ? "Saving…" : "Save changes"}
+              </Button>
+            )}
+          </div>
         </div>
       </Drawer>
     </>
