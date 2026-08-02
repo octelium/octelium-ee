@@ -1,41 +1,48 @@
 import { Metadata } from "@/apis/metav1/metav1";
 import { getShortNameFromStr, Resource } from "@/utils/pb";
-import { Group, TagsInput, Textarea, TextInput } from "@mantine/core";
+import { SimpleGrid, TagsInput, Textarea, TextInput } from "@mantine/core";
+import { AlignLeft, LockKeyhole, ShieldCheck, Tag, Type } from "lucide-react";
 import * as React from "react";
 
 const sharedInputStyles = {
   label: {
-    fontSize: "0.72rem",
+    fontSize: "0.74rem",
     fontWeight: 700,
-    textTransform: "uppercase" as const,
-    letterSpacing: "0.05em",
-    color: "#475569",
-    marginBottom: "4px",
+    color: "#334155",
+    marginBottom: "5px",
   },
   description: {
-    fontSize: "0.7rem",
+    fontSize: "0.68rem",
     fontWeight: 600,
+    lineHeight: 1.4,
     color: "#94a3b8",
-    marginBottom: "4px",
+    marginBottom: "6px",
   },
   input: {
-    fontSize: "0.82rem",
+    fontSize: "0.8rem",
     fontWeight: 600,
-    backgroundColor: "#ffffff",
+    backgroundColor: "rgba(248, 250, 252, 0.85)",
     border: "1px solid #e2e8f0",
-    borderRadius: "6px",
+    borderRadius: "8px",
     color: "#1e293b",
-    boxShadow: "0 1px 3px rgba(15,23,42,0.05)",
+    boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
+    transition:
+      "background-color 500ms ease, border-color 500ms ease, box-shadow 500ms ease",
     "&:focus": {
+      backgroundColor: "#ffffff",
       borderColor: "#94a3b8",
-      boxShadow: "0 0 0 2px rgba(148,163,184,0.2)",
+      boxShadow: "0 0 0 3px rgba(148, 163, 184, 0.16)",
     },
     "&:disabled": {
-      backgroundColor: "#f8fafc",
-      color: "#94a3b8",
+      backgroundColor: "#f1f5f9",
+      color: "#64748b",
       borderColor: "#e2e8f0",
+      opacity: 1,
       cursor: "not-allowed",
     },
+  },
+  section: {
+    color: "#94a3b8",
   },
 };
 
@@ -46,33 +53,74 @@ const MetadataEdit = (props: {
   skipDisplayName?: boolean;
   isUpdateMode?: boolean;
 }) => {
-  const { isUpdateMode } = props;
-  const [req, setReq] = React.useState(
+  const [req, setReq] = React.useState(() =>
     Metadata.clone(props.item.metadata ?? Metadata.create()),
   );
+  const sourceMetadata = props.item.metadata;
+  const isSystem = !!sourceMetadata?.isSystem;
+  const isNameLocked = isSystem || !!props.isUpdateMode;
 
-  const disabled = props.item.metadata?.isSystem;
+  React.useEffect(() => {
+    setReq(Metadata.clone(sourceMetadata ?? Metadata.create()));
+  }, [sourceMetadata]);
 
-  const update = (partial: Partial<typeof req>) => {
-    Object.assign(req, partial);
-    const cloned = Metadata.clone(req);
-    setReq(cloned);
-    props.onUpdate(cloned);
+  const update = (partial: Partial<Metadata>) => {
+    const next = Metadata.clone(req);
+    Object.assign(next, partial);
+    setReq(next);
+    props.onUpdate(next);
   };
 
   return (
-    <div className="w-full flex flex-col gap-4">
-      <Group grow align="flex-start" gap="md">
+    <div className="flex w-full flex-col gap-5">
+      {isSystem && (
+        <div className="flex items-start gap-2.5 rounded-lg border border-blue-200/80 bg-blue-50/70 px-3 py-2.5">
+          <ShieldCheck
+            size={15}
+            strokeWidth={2.25}
+            className="mt-0.5 shrink-0 text-blue-600"
+          />
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <span className="text-[0.74rem] font-bold text-blue-800">
+              System-managed metadata
+            </span>
+            <span className="text-[0.68rem] font-semibold leading-4 text-blue-600">
+              This resource is managed by the Cluster and its metadata cannot be
+              changed here.
+            </span>
+          </div>
+        </div>
+      )}
+
+      <SimpleGrid
+        cols={{ base: 1, sm: props.skipDisplayName ? 1 : 2 }}
+        spacing="md"
+        verticalSpacing="md"
+      >
         <TextInput
           value={getShortNameFromStr(req.name)}
           label="Name"
+          description={
+            props.isUpdateMode
+              ? "Resource names are immutable after creation"
+              : props.parentName
+                ? `Created under ${props.parentName}`
+                : "A unique name used by the Cluster API"
+          }
           placeholder="my-resource"
           required
-          disabled={disabled || isUpdateMode}
-          onChange={(v) => {
-            const arg = v.target.value;
+          disabled={isNameLocked}
+          leftSection={
+            isNameLocked ? (
+              <LockKeyhole size={13} strokeWidth={2.25} />
+            ) : (
+              <Tag size={13} strokeWidth={2.25} />
+            )
+          }
+          onChange={(event) => {
+            const name = event.currentTarget.value;
             update({
-              name: props.parentName ? `${arg}.${props.parentName}` : arg,
+              name: props.parentName ? `${name}.${props.parentName}` : name,
             });
           }}
           styles={sharedInputStyles}
@@ -81,51 +129,66 @@ const MetadataEdit = (props: {
         {!props.skipDisplayName && (
           <TextInput
             value={req.displayName}
-            label="Display Name"
+            label="Display name"
+            description="A friendly name shown throughout the console"
             placeholder="My Resource"
-            disabled={disabled}
-            onChange={(v) => update({ displayName: v.target.value })}
+            disabled={isSystem}
+            leftSection={<Type size={13} strokeWidth={2.25} />}
+            onChange={(event) =>
+              update({ displayName: event.currentTarget.value })
+            }
             styles={sharedInputStyles}
           />
         )}
-      </Group>
+      </SimpleGrid>
 
       <TagsInput
         label="Tags"
-        disabled={disabled}
-        placeholder="dev, ops, production, sensitive"
-        description="One or more tags to describe this resource"
+        disabled={isSystem}
+        placeholder="Add a tag and press Enter"
+        description="Use tags to organize and identify related resources"
         value={req.tags}
-        onChange={(v) => update({ tags: v })}
+        leftSection={<Tag size={13} strokeWidth={2.25} />}
+        onChange={(tags) => update({ tags })}
+        clearable
         styles={{
           ...sharedInputStyles,
           pill: {
-            fontSize: "0.7rem",
+            height: "24px",
+            fontSize: "0.68rem",
             fontWeight: 700,
             backgroundColor: "#f1f5f9",
-            color: "#334155",
+            color: "#475569",
             border: "1px solid #e2e8f0",
+            borderRadius: "6px",
           },
           input: {
             ...sharedInputStyles.input,
-            minHeight: "36px",
+            minHeight: "40px",
           },
         }}
       />
 
       <Textarea
         value={req.description}
-        disabled={disabled}
+        disabled={isSystem}
         label="Description"
-        placeholder="A short description of what this resource is for..."
-        rows={3}
-        onChange={(v) => update({ description: v.target.value })}
+        description="Document the purpose of this resource for other administrators"
+        placeholder="Describe what this resource is used for…"
+        minRows={3}
+        autosize
+        maxRows={7}
+        leftSection={<AlignLeft size={13} strokeWidth={2.25} />}
+        onChange={(event) =>
+          update({ description: event.currentTarget.value })
+        }
         styles={{
           ...sharedInputStyles,
           input: {
             ...sharedInputStyles.input,
-            resize: "vertical" as const,
-            lineHeight: "1.6",
+            lineHeight: 1.55,
+            paddingTop: "10px",
+            paddingBottom: "10px",
           },
         }}
       />
