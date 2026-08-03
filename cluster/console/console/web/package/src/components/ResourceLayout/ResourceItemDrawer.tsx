@@ -11,6 +11,7 @@ const ResourceItemDrawer = () => {
   const state = location.state as { returnTo?: string } | null;
   const segments = location.pathname.split("/").filter(Boolean);
   const parentPath = `/${segments.slice(0, 2).join("/")}`;
+  const resourcePath = `/${segments.slice(0, 3).join("/")}`;
   const returnTo = state?.returnTo ?? parentPath;
 
   useEffect(() => {
@@ -22,7 +23,7 @@ const ResourceItemDrawer = () => {
       cancelAnimationFrame(mountFrame);
       cancelAnimationFrame(openFrame);
     };
-  }, []);
+  }, [resourcePath]);
 
   return (
     <Drawer
