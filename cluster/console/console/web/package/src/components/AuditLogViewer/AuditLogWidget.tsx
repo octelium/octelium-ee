@@ -15,16 +15,21 @@ import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import {
   Activity,
+  ArrowUpRight,
   ChevronDown,
+  ClipboardList,
+  Laptop,
   Minus,
-  RefreshCw,
   TrendingDown,
   TrendingUp,
+  Users,
 } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
 import LineChart from "../Charts/LineChart";
+import { LogWidgetHeader } from "../LogWidget";
 import TopList from "../TopList";
 
 interface PeriodOption {
@@ -129,30 +134,55 @@ const StatCard = ({
   value,
   prevValue,
   icon: Icon,
+  to,
 }: {
   label: string;
   value: number;
   prevValue: number;
   icon: React.FC<any>;
-}) => (
-  <div className="flex flex-col gap-2.5 p-4 rounded-xl border bg-slate-50 border-slate-200">
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-1.5">
-        <Icon size={13} className="text-slate-500" strokeWidth={2.5} />
-        <span className="text-[0.68rem] font-bold uppercase tracking-[0.06em] text-slate-500">
-          {label}
-        </span>
+  to?: string;
+}) => {
+  const content = (
+    <>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <Icon size={13} className="text-slate-500" strokeWidth={2.5} />
+          <span className="text-[0.68rem] font-bold uppercase tracking-[0.06em] text-slate-500">
+            {label}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <TrendBadge cur={value} prev={prevValue} />
+          {to && (
+            <ArrowUpRight
+              size={11}
+              className="text-slate-300 transition-colors duration-500 group-hover:text-slate-500"
+            />
+          )}
+        </div>
       </div>
-      <TrendBadge cur={value} prev={prevValue} />
-    </div>
-    <span className="text-2xl font-bold tabular-nums text-slate-700">
-      {value.toLocaleString()}
-    </span>
-    <span className="text-[0.63rem] font-semibold text-slate-400">
-      prev: {prevValue.toLocaleString()}
-    </span>
-  </div>
-);
+      <span className="text-2xl font-bold tabular-nums text-slate-700">
+        {value.toLocaleString()}
+      </span>
+      <span className="text-[0.64rem] font-semibold text-slate-400">
+        Previous period: {prevValue.toLocaleString()}
+      </span>
+    </>
+  );
+  const className = twMerge(
+    "group flex min-h-[112px] flex-col gap-2.5 rounded-xl border border-slate-200 bg-slate-50 p-3",
+    to &&
+      "outline-none transition-[border-color,box-shadow] duration-500 hover:shadow-[0_5px_18px_rgba(15,23,42,0.07)] focus-visible:ring-2 focus-visible:ring-blue-500/30",
+  );
+
+  return to ? (
+    <Link to={to} className={className}>
+      {content}
+    </Link>
+  ) : (
+    <div className={className}>{content}</div>
+  );
+};
 
 const MiniStat = ({ label, value }: { label: string; value: number }) => (
   <div className="flex flex-col gap-0.5 px-3 py-2.5 rounded-lg border border-slate-200 bg-white">
@@ -183,6 +213,7 @@ const PeriodSelector = ({
         const active = opt.minutes === value;
         return (
           <Button
+            type="button"
             key={opt.minutes}
             onClick={() => onChange(opt.minutes)}
             styles={{
@@ -212,6 +243,7 @@ const PeriodSelector = ({
       <Menu position="bottom-end" offset={4} withArrow={false}>
         <Menu.Target>
           <Button
+            type="button"
             styles={{
               root: {
                 height: "26px",
@@ -242,6 +274,7 @@ const PeriodSelector = ({
           <div className="flex flex-col py-1 min-w-[100px]">
             {EXTENDED_PERIODS.map((opt) => (
               <button
+                type="button"
                 key={opt.minutes}
                 onClick={() => onChange(opt.minutes)}
                 className={twMerge(
@@ -267,6 +300,24 @@ interface AuditLogHealthWidgetProps {
   deviceRef?: ObjectReference;
   resourceRef?: ObjectReference;
 }
+
+const getAuditLogPath = (props: AuditLogHealthWidgetProps) => {
+  const params = new URLSearchParams();
+  const refs = [
+    ["userRef", props.userRef],
+    ["sessionRef", props.sessionRef],
+    ["deviceRef", props.deviceRef],
+    ["resourceRef", props.resourceRef],
+  ] as const;
+
+  refs.forEach(([key, ref]) => {
+    if (ref?.name) params.set(`${key}.name`, ref.name);
+    else if (ref?.uid) params.set(`${key}.uid`, ref.uid);
+  });
+
+  const query = params.toString();
+  return `/visibility/auditlogs${query ? `?${query}` : ""}`;
+};
 
 const AuditLogHealthWidget = (props: AuditLogHealthWidgetProps) => {
   const [periodMinutes, setPeriodMinutes] = useState(60);
@@ -396,61 +447,52 @@ const AuditLogHealthWidget = (props: AuditLogHealthWidgetProps) => {
   };
 
   return (
-    <div className="w-full flex flex-col gap-5">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <PeriodSelector value={periodMinutes} onChange={setPeriodMinutes} />
-          <span className="text-[0.68rem] font-semibold text-slate-400">
-            vs previous {periodLabel}
-          </span>
-        </div>
-        <button
-          onClick={refetchAll}
-          disabled={isAnyLoading}
-          className="flex items-center justify-center w-7 h-7 rounded-md text-slate-400 border border-slate-200 bg-white hover:text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition-colors duration-150 cursor-pointer shadow-[0_1px_2px_rgba(15,23,42,0.05)] disabled:opacity-50"
-        >
-          <RefreshCw
-            size={12}
-            strokeWidth={2.5}
-            className={isAnyLoading ? "animate-spin" : ""}
-          />
-        </button>
-      </div>
+    <div className="flex w-full flex-col gap-4">
+      <LogWidgetHeader
+        icon={ClipboardList}
+        title="Audit activity"
+        description={`Compared with the previous ${periodLabel}`}
+        isLoading={isAnyLoading}
+        onRefresh={refetchAll}
+      >
+        <PeriodSelector value={periodMinutes} onChange={setPeriodMinutes} />
+      </LogWidgetHeader>
 
       {isSummaryLoading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
           {[0, 1, 2].map((i) => (
             <div
               key={i}
-              className="h-[120px] rounded-xl border border-slate-200 bg-slate-50 animate-pulse"
+              className="h-28 animate-pulse rounded-xl border border-slate-200 bg-slate-50"
             />
           ))}
         </div>
       ) : cur && prev ? (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
             <StatCard
               label="Total"
               value={n(cur.totalNumber)}
               prevValue={n(prev.totalNumber)}
               icon={Activity}
+              to={getAuditLogPath(props)}
             />
             <StatCard
               label="Users"
               value={n(cur.totalUser)}
               prevValue={n(prev.totalUser)}
-              icon={Activity}
+              icon={Users}
             />
             <StatCard
               label="Sessions"
               value={n(cur.totalSession)}
               prevValue={n(prev.totalSession)}
-              icon={Activity}
+              icon={Laptop}
             />
           </div>
 
           {n(cur.totalNumber) > 0 && (
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <MiniStat label="Resources" value={n(cur.totalResource)} />
               <MiniStat label="Devices" value={n(cur.totalDevice)} />
             </div>
@@ -490,11 +532,11 @@ const AuditLogHealthWidget = (props: AuditLogHealthWidgetProps) => {
         (showTopSessions &&
           topSessions.data &&
           topSessions.data?.items.length > 0)) && (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           {showTopUsers && topUsers.data && topUsers.data?.items.length > 0 && (
             <TopList
               title="Top Users"
-              to="/visibility/auditlogs"
+              to={getAuditLogPath(props)}
               items={topUsers.data.items.map((x) => ({
                 resource: x.user!,
                 count: x.count,
@@ -506,7 +548,7 @@ const AuditLogHealthWidget = (props: AuditLogHealthWidgetProps) => {
             topSessions.data?.items.length > 0 && (
               <TopList
                 title="Top Sessions"
-                to="/visibility/auditlogs"
+                to={getAuditLogPath(props)}
                 items={topSessions.data.items.map((x) => ({
                   resource: x.session!,
                   count: x.count,

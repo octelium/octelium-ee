@@ -14,16 +14,22 @@ import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import {
   Activity,
+  ArrowUpRight,
   ChevronDown,
+  CircleX,
   Minus,
-  RefreshCw,
+  ScrollText,
+  Siren,
+  TriangleAlert,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
 import LineChart from "../Charts/LineChart";
+import { LogWidgetHeader } from "../LogWidget";
 
 interface PeriodOption {
   label: string;
@@ -97,7 +103,18 @@ const deltaPct = (cur: number, prev: number) =>
 const pct = (value: number, total: number) =>
   total === 0 ? 0 : Math.round((value / total) * 100);
 
-const TrendBadge = ({ cur, prev }: { cur: number; prev: number }) => {
+const getComponentLogPath = (level?: string) =>
+  `/visibility/componentlogs${level ? `?level=${level}` : ""}`;
+
+const TrendBadge = ({
+  cur,
+  prev,
+  inverse,
+}: {
+  cur: number;
+  prev: number;
+  inverse?: boolean;
+}) => {
   const d = deltaPct(cur, prev);
   if (d === 0 || prev === 0)
     return (
@@ -106,11 +123,12 @@ const TrendBadge = ({ cur, prev }: { cur: number; prev: number }) => {
       </span>
     );
   const up = d > 0;
+  const favorable = inverse ? !up : up;
   return (
     <span
       className={twMerge(
         "inline-flex items-center gap-0.5 text-[0.65rem] font-bold",
-        up ? "text-emerald-600" : "text-red-500",
+        favorable ? "text-emerald-600" : "text-red-500",
       )}
     >
       {up ? (
@@ -130,31 +148,58 @@ const StatCard = ({
   prevValue,
   icon: Icon,
   colorClass,
+  inverse,
+  to,
 }: {
   label: string;
   value: number;
   prevValue: number;
   icon: React.FC<any>;
   colorClass: string;
-}) => (
-  <div className="flex flex-col gap-2.5 p-4 rounded-xl border bg-white border-slate-200">
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-1.5">
-        <Icon size={13} className={colorClass} strokeWidth={2.5} />
-        <span className="text-[0.68rem] font-bold uppercase tracking-[0.06em] text-slate-500">
-          {label}
-        </span>
+  inverse?: boolean;
+  to?: string;
+}) => {
+  const content = (
+    <>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <Icon size={13} className={colorClass} strokeWidth={2.5} />
+          <span className="text-[0.68rem] font-bold uppercase tracking-[0.06em] text-slate-500">
+            {label}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <TrendBadge cur={value} prev={prevValue} inverse={inverse} />
+          {to && (
+            <ArrowUpRight
+              size={11}
+              className="text-slate-300 transition-colors duration-500 group-hover:text-slate-500"
+            />
+          )}
+        </div>
       </div>
-      <TrendBadge cur={value} prev={prevValue} />
-    </div>
-    <span className={twMerge("text-2xl font-bold tabular-nums", colorClass)}>
-      {value.toLocaleString()}
-    </span>
-    <span className="text-[0.63rem] font-semibold text-slate-400">
-      prev: {prevValue.toLocaleString()}
-    </span>
-  </div>
-);
+      <span className={twMerge("text-2xl font-bold tabular-nums", colorClass)}>
+        {value.toLocaleString()}
+      </span>
+      <span className="text-[0.64rem] font-semibold text-slate-400">
+        Previous period: {prevValue.toLocaleString()}
+      </span>
+    </>
+  );
+  const className = twMerge(
+    "group flex min-h-[112px] flex-col gap-2.5 rounded-xl border border-slate-200 bg-white p-3",
+    to &&
+      "outline-none transition-[border-color,box-shadow] duration-500 hover:shadow-[0_5px_18px_rgba(15,23,42,0.07)] focus-visible:ring-2 focus-visible:ring-blue-500/30",
+  );
+
+  return to ? (
+    <Link to={to} className={className}>
+      {content}
+    </Link>
+  ) : (
+    <div className={className}>{content}</div>
+  );
+};
 
 const LevelBar = ({
   cur,
@@ -171,22 +216,52 @@ const LevelBar = ({
   total: number;
 }) => {
   const segments = [
-    { label: "Debug", value: n(cur?.totalDebug), color: "bg-slate-400" },
-    { label: "Info", value: n(cur?.totalInfo), color: "bg-sky-500" },
-    { label: "Warn", value: n(cur?.totalWarn), color: "bg-amber-400" },
-    { label: "Error", value: n(cur?.totalError), color: "bg-red-500" },
-    { label: "Panic", value: n(cur?.totalPanic), color: "bg-red-700" },
-    { label: "Fatal", value: n(cur?.totalFatal), color: "bg-red-900" },
+    {
+      label: "Debug",
+      level: "DEBUG",
+      value: n(cur?.totalDebug),
+      color: "bg-slate-400",
+    },
+    {
+      label: "Info",
+      level: "INFO",
+      value: n(cur?.totalInfo),
+      color: "bg-sky-500",
+    },
+    {
+      label: "Warn",
+      level: "WARN",
+      value: n(cur?.totalWarn),
+      color: "bg-amber-400",
+    },
+    {
+      label: "Error",
+      level: "ERROR",
+      value: n(cur?.totalError),
+      color: "bg-red-500",
+    },
+    {
+      label: "Panic",
+      level: "PANIC",
+      value: n(cur?.totalPanic),
+      color: "bg-red-700",
+    },
+    {
+      label: "Fatal",
+      level: "FATAL",
+      value: n(cur?.totalFatal),
+      color: "bg-red-900",
+    },
   ].filter((s) => s.value > 0);
 
   if (segments.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white">
+    <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3">
       <span className="text-[0.68rem] font-bold uppercase tracking-[0.06em] text-slate-400">
         Level breakdown
       </span>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden flex">
           {segments.map(({ label, value, color }) => (
             <div
@@ -199,17 +274,18 @@ const LevelBar = ({
             />
           ))}
         </div>
-        <div className="flex items-center gap-3 shrink-0 flex-wrap">
-          {segments.map(({ label, value, color }) => (
-            <span
+        <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+          {segments.map(({ label, level, value, color }) => (
+            <Link
               key={label}
-              className="flex items-center gap-1 text-[0.65rem] font-bold text-slate-500"
+              to={getComponentLogPath(level)}
+              className="flex items-center gap-1 rounded-md px-1.5 py-1 text-[0.65rem] font-bold text-slate-500 outline-none transition-colors duration-500 hover:bg-slate-50 hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-blue-500/30"
             >
               <span
                 className={twMerge("w-2 h-2 rounded-full shrink-0", color)}
               />
               {label}: {value.toLocaleString()}
-            </span>
+            </Link>
           ))}
         </div>
       </div>
@@ -235,6 +311,7 @@ const PeriodSelector = ({
         const active = opt.minutes === value;
         return (
           <Button
+            type="button"
             key={opt.minutes}
             onClick={() => onChange(opt.minutes)}
             styles={{
@@ -264,6 +341,7 @@ const PeriodSelector = ({
       <Menu position="bottom-end" offset={4} withArrow={false}>
         <Menu.Target>
           <Button
+            type="button"
             styles={{
               root: {
                 height: "26px",
@@ -294,6 +372,7 @@ const PeriodSelector = ({
           <div className="flex flex-col py-1 min-w-[100px]">
             {EXTENDED_PERIODS.map((opt) => (
               <button
+                type="button"
                 key={opt.minutes}
                 onClick={() => onChange(opt.minutes)}
                 className={twMerge(
@@ -400,66 +479,62 @@ const ComponentLogHealthWidget = () => {
   const totalNum = n(cur?.totalNumber);
 
   return (
-    <div className="w-full flex flex-col gap-5">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <PeriodSelector value={periodMinutes} onChange={setPeriodMinutes} />
-          <span className="text-[0.68rem] font-semibold text-slate-400">
-            vs previous {periodLabel}
-          </span>
-        </div>
-        <button
-          onClick={refetchAll}
-          disabled={isAnyLoading}
-          className="flex items-center justify-center w-7 h-7 rounded-md text-slate-400 border border-slate-200 bg-white hover:text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition-colors duration-150 cursor-pointer shadow-[0_1px_2px_rgba(15,23,42,0.05)] disabled:opacity-50"
-        >
-          <RefreshCw
-            size={12}
-            strokeWidth={2.5}
-            className={isAnyLoading ? "animate-spin" : ""}
-          />
-        </button>
-      </div>
+    <div className="flex w-full flex-col gap-4">
+      <LogWidgetHeader
+        icon={ScrollText}
+        title="Component activity"
+        description={`Compared with the previous ${periodLabel}`}
+        isLoading={isAnyLoading}
+        onRefresh={refetchAll}
+      >
+        <PeriodSelector value={periodMinutes} onChange={setPeriodMinutes} />
+      </LogWidgetHeader>
 
       {isSummaryLoading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
           {[0, 1, 2, 3].map((i) => (
             <div
               key={i}
-              className="h-[120px] rounded-xl border border-slate-200 bg-slate-50 animate-pulse"
+              className="h-28 animate-pulse rounded-xl border border-slate-200 bg-slate-50"
             />
           ))}
         </div>
       ) : cur && prev ? (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
               label="Total"
               value={n(cur.totalNumber)}
               prevValue={n(prev.totalNumber)}
               icon={Activity}
               colorClass="text-slate-700"
+              to={getComponentLogPath()}
             />
             <StatCard
               label="Warn"
               value={n(cur.totalWarn)}
               prevValue={n(prev.totalWarn)}
-              icon={Activity}
+              icon={TriangleAlert}
               colorClass="text-amber-600"
+              inverse
+              to={getComponentLogPath("WARN")}
             />
             <StatCard
               label="Error"
               value={n(cur.totalError)}
               prevValue={n(prev.totalError)}
-              icon={Activity}
+              icon={CircleX}
               colorClass="text-red-600"
+              inverse
+              to={getComponentLogPath("ERROR")}
             />
             <StatCard
-              label="Fatal"
+              label="Critical"
               value={n(cur.totalFatal) + n(cur.totalPanic)}
               prevValue={n(prev.totalFatal) + n(prev.totalPanic)}
-              icon={Activity}
+              icon={Siren}
               colorClass="text-red-800"
+              inverse
             />
           </div>
 

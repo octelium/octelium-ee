@@ -3,6 +3,7 @@ import { Duration, ObjectReference } from "@/apis/metav1/metav1";
 import {
   GetAuthenticationLogDataPointRequest,
   GetAuthenticationLogSummaryRequest,
+  ListAuthenticationLogTopCredentialRequest,
   ListAuthenticationLogTopIdentityProviderRequest,
   ListAuthenticationLogTopUserRequest,
 } from "@/apis/visibilityv1/visibilityv1";
@@ -15,20 +16,22 @@ import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import {
   Activity,
+  ArrowUpRight,
   ChevronDown,
   Fingerprint,
   KeyRound,
   Minus,
-  RefreshCw,
   Repeat2,
   ShieldUser,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
 import LineChart from "../Charts/LineChart";
+import { LogWidgetHeader } from "../LogWidget";
 import TopList from "../TopList";
 
 interface PeriodOption {
@@ -139,12 +142,14 @@ const StatCard = ({
   prevValue,
   icon: Icon,
   color,
+  to,
 }: {
   label: string;
   value: number;
   prevValue: number;
   icon: React.FC<any>;
   color: "slate" | "blue" | "violet" | "amber" | "teal";
+  to?: string;
 }) => {
   const palette = {
     slate: {
@@ -179,14 +184,8 @@ const StatCard = ({
     },
   }[color];
 
-  return (
-    <div
-      className={twMerge(
-        "flex flex-col gap-2.5 p-4 rounded-xl border",
-        palette.bg,
-        palette.border,
-      )}
-    >
+  const content = (
+    <>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <Icon size={13} className={palette.icon} strokeWidth={2.5} />
@@ -194,17 +193,41 @@ const StatCard = ({
             {label}
           </span>
         </div>
-        <TrendBadge cur={value} prev={prevValue} />
+        <div className="flex items-center gap-2">
+          <TrendBadge cur={value} prev={prevValue} />
+          {to && (
+            <ArrowUpRight
+              size={11}
+              className="text-slate-300 transition-colors duration-500 group-hover:text-slate-500"
+            />
+          )}
+        </div>
       </div>
       <span
         className={twMerge("text-2xl font-bold tabular-nums", palette.value)}
       >
         {value.toLocaleString()}
       </span>
-      <span className="text-[0.63rem] font-semibold text-slate-400">
-        prev: {prevValue.toLocaleString()}
+      <span className="text-[0.64rem] font-semibold text-slate-400">
+        Previous period: {prevValue.toLocaleString()}
       </span>
-    </div>
+    </>
+  );
+
+  const className = twMerge(
+    "group flex min-h-[112px] flex-col gap-2.5 rounded-xl border p-3",
+    palette.bg,
+    palette.border,
+    to &&
+      "outline-none transition-[border-color,box-shadow] duration-500 hover:shadow-[0_5px_18px_rgba(15,23,42,0.07)] focus-visible:ring-2 focus-visible:ring-blue-500/30",
+  );
+
+  return to ? (
+    <Link to={to} className={className}>
+      {content}
+    </Link>
+  ) : (
+    <div className={className}>{content}</div>
   );
 };
 
@@ -252,6 +275,7 @@ const PeriodSelector = ({
         const active = opt.minutes === value;
         return (
           <Button
+            type="button"
             key={opt.minutes}
             onClick={() => onChange(opt.minutes)}
             styles={{
@@ -281,6 +305,7 @@ const PeriodSelector = ({
       <Menu position="bottom-end" offset={4} withArrow={false}>
         <Menu.Target>
           <Button
+            type="button"
             styles={{
               root: {
                 height: "26px",
@@ -311,6 +336,7 @@ const PeriodSelector = ({
           <div className="flex flex-col py-1 min-w-[100px]">
             {EXTENDED_PERIODS.map((opt) => (
               <button
+                type="button"
                 key={opt.minutes}
                 onClick={() => onChange(opt.minutes)}
                 className={twMerge(
@@ -336,6 +362,26 @@ interface AuthenticationLogHealthWidgetProps {
   deviceRef?: ObjectReference;
   identityProviderRef?: ObjectReference;
 }
+
+const getAuthenticationLogPath = (
+  props: AuthenticationLogHealthWidgetProps,
+) => {
+  const params = new URLSearchParams();
+  const refs = [
+    ["userRef", props.userRef],
+    ["sessionRef", props.sessionRef],
+    ["deviceRef", props.deviceRef],
+    ["identityProviderRef", props.identityProviderRef],
+  ] as const;
+
+  refs.forEach(([key, ref]) => {
+    if (ref?.name) params.set(`${key}.name`, ref.name);
+    else if (ref?.uid) params.set(`${key}.uid`, ref.uid);
+  });
+
+  const query = params.toString();
+  return `/visibility/authenticationlogs${query ? `?${query}` : ""}`;
+};
 
 const AuthenticationLogHealthWidget = (
   props: AuthenticationLogHealthWidgetProps,
@@ -457,7 +503,7 @@ const AuthenticationLogHealthWidget = (
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAuthenticationLog().listAuthenticationLogTopCredential(
-          ListAuthenticationLogTopIdentityProviderRequest.create({
+          ListAuthenticationLogTopCredentialRequest.create({
             from: toTs(curFrom),
             to: toTs(curTo),
             userRef: props.userRef,
@@ -479,7 +525,8 @@ const AuthenticationLogHealthWidget = (
     isSummaryLoading ||
     dataPoint.isLoading ||
     topUsers.isLoading ||
-    topIdentityProviders.isLoading;
+    topIdentityProviders.isLoading ||
+    topCredentials.isLoading;
 
   const refetchAll = () => {
     curSummary.refetch();
@@ -491,45 +538,36 @@ const AuthenticationLogHealthWidget = (
   };
 
   return (
-    <div className="w-full flex flex-col gap-5">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <PeriodSelector value={periodMinutes} onChange={setPeriodMinutes} />
-          <span className="text-[0.68rem] font-semibold text-slate-400">
-            vs previous {periodLabel}
-          </span>
-        </div>
-        <button
-          onClick={refetchAll}
-          disabled={isAnyLoading}
-          className="flex items-center justify-center w-7 h-7 rounded-md text-slate-400 border border-slate-200 bg-white hover:text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition-colors duration-150 cursor-pointer shadow-[0_1px_2px_rgba(15,23,42,0.05)] disabled:opacity-50"
-        >
-          <RefreshCw
-            size={12}
-            strokeWidth={2.5}
-            className={isAnyLoading ? "animate-spin" : ""}
-          />
-        </button>
-      </div>
+    <div className="flex w-full flex-col gap-4">
+      <LogWidgetHeader
+        icon={ShieldUser}
+        title="Authentication activity"
+        description={`Compared with the previous ${periodLabel}`}
+        isLoading={isAnyLoading}
+        onRefresh={refetchAll}
+      >
+        <PeriodSelector value={periodMinutes} onChange={setPeriodMinutes} />
+      </LogWidgetHeader>
 
       {isSummaryLoading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
           {[0, 1, 2, 3].map((i) => (
             <div
               key={i}
-              className="h-[120px] rounded-xl border border-slate-200 bg-slate-50 animate-pulse"
+              className="h-28 animate-pulse rounded-xl border border-slate-200 bg-slate-50"
             />
           ))}
         </div>
       ) : cur && prev ? (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
               label="Total"
               value={n(cur.totalNumber)}
               prevValue={n(prev.totalNumber)}
               icon={Activity}
               color="slate"
+              to={getAuthenticationLogPath(props)}
             />
             <StatCard
               label="Identity Provider"
@@ -556,11 +594,11 @@ const AuthenticationLogHealthWidget = (
 
           {n(cur.totalNumber) > 0 && (
             <>
-              <div className="flex flex-col gap-2 p-4 rounded-xl border border-slate-200 bg-white">
+              <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3">
                 <span className="text-[0.68rem] font-bold uppercase tracking-[0.06em] text-slate-400">
                   Assurance level breakdown
                 </span>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                   <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden flex">
                     {[
                       {
@@ -586,7 +624,7 @@ const AuthenticationLogHealthWidget = (
                       />
                     ))}
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
+                  <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1">
                     {[
                       {
                         label: "AAL1",
@@ -621,7 +659,7 @@ const AuthenticationLogHealthWidget = (
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 <MiniStat
                   label="Passkey"
                   value={n(cur.totalAuthenticatorPasskey)}
@@ -644,7 +682,7 @@ const AuthenticationLogHealthWidget = (
                 />
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 <MiniStat
                   label="Sessions"
                   value={n(cur.totalSession)}
@@ -719,11 +757,11 @@ const AuthenticationLogHealthWidget = (
         (showTopCredentials &&
           topCredentials.data &&
           topCredentials.data?.items.length > 0)) && (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           {showTopUsers && topUsers.data && topUsers.data?.items.length > 0 && (
             <TopList
               title="Top Users"
-              to="/visibility/authenticationlogs"
+              to={getAuthenticationLogPath(props)}
               items={topUsers.data.items.map((x) => ({
                 resource: x.user!,
                 count: x.count,
@@ -735,7 +773,7 @@ const AuthenticationLogHealthWidget = (
             topIdentityProviders.data?.items.length > 0 && (
               <TopList
                 title="Top Identity Providers"
-                to="/visibility/authenticationlogs"
+                to={getAuthenticationLogPath(props)}
                 items={topIdentityProviders.data.items.map((x) => ({
                   resource: x.identityProvider!,
                   count: x.count,
@@ -747,7 +785,7 @@ const AuthenticationLogHealthWidget = (
             topCredentials.data?.items.length > 0 && (
               <TopList
                 title="Top Credentials"
-                to="/visibility/authenticationlogs"
+                to={getAuthenticationLogPath(props)}
                 items={topCredentials.data.items.map((x) => ({
                   resource: x.credential!,
                   count: x.count,
