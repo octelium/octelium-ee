@@ -13,31 +13,35 @@ export default (props: { item: CoreC.Group }) => {
   return <></>;
 };
 
-export const MainInfo = (props: { item: CoreC.Group }): ResourceMainInfo => {
-  const { item } = props;
-  const itemName = item.metadata!.name;
+export const GroupUsersLabel = (props: { item: CoreC.Group }) => {
+  const itemName = props.item.metadata!.name;
   const qryUsers = useQuery({
     queryKey: ["selectGroupComponent", itemName],
     queryFn: () =>
       getClientVisibilityCore().listUser(
-        ListUserOptions.create({ groupRef: getResourceRef(item) }),
+        ListUserOptions.create({ groupRef: getResourceRef(props.item) }),
       ).response,
   });
+
+  return (
+    <ResourceListLabel
+      label="Users"
+      to={`/core/users?groupRef.name=${encodeURIComponent(itemName)}`}
+    >
+      <Users size={12} strokeWidth={2.5} />
+      {qryUsers.data?.listResponseMeta?.totalCount?.toLocaleString() ?? "…"}
+    </ResourceListLabel>
+  );
+};
+
+export const MainInfo = (props: { item: CoreC.Group }): ResourceMainInfo => {
+  const { item } = props;
 
   return {
     items: [
       {
         label: "Related resources",
-        value: (
-          <ResourceListLabel
-            label="Users"
-            to={`/core/users?groupRef.name=${encodeURIComponent(itemName)}`}
-          >
-            <Users size={12} strokeWidth={2.5} />
-            {qryUsers.data?.listResponseMeta?.totalCount?.toLocaleString() ??
-              "…"}
-          </ResourceListLabel>
-        ),
+        value: <GroupUsersLabel item={item} />,
         span: "full",
       },
       ...(item.spec?.authorization?.policies.length

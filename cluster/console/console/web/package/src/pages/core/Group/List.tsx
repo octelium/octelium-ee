@@ -8,6 +8,7 @@ import {
 import { getDomain } from "@/utils";
 import { getClientVisibilityCore } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
+import { GroupUsersLabel } from "./Main";
 
 const ItemDetails = (props: { item: Group; domain: string }) => {
   const { item } = props;
@@ -17,8 +18,7 @@ const ItemDetails = (props: { item: Group; domain: string }) => {
 };
 
 export const LabelComponent = (props: { item: Group }) => {
-  const { item } = props;
-  return null;
+  return <GroupUsersLabel item={props.item} />;
 };
 
 export const ExtraComponent = (props: { item: Group }) => {
