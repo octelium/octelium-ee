@@ -105,7 +105,7 @@ const ResourceItemActions = (props: {
         shadow="md"
         withinPortal
         transitionProps={{ transition: "pop-top-right", duration: 180 }}
-        styles={{ item: { fontWeight: 700 } }}
+        styles={{ item: { fontWeight: 600 } }}
       >
         <Menu.Target>
           <ActionIcon
@@ -222,73 +222,69 @@ const Item = (props: { item: Resource; info: ResourceComponentInfo }) => {
   return (
     <div className="w-full font-semibold">
       <div className="flex items-start gap-3 sm:gap-4">
-        <div className="mt-0.5 h-10 w-10 shrink-0">
-          {md.picURL && (
-            <img
-              src={md.picURL}
-              alt={md.displayName || md.name}
-              loading="lazy"
-              className="h-full w-full rounded-lg border border-slate-200 object-cover shadow-sm"
-            />
-          )}
-        </div>
+        {md.picURL && (
+          <img
+            src={md.picURL}
+            alt={md.displayName || md.name}
+            loading="lazy"
+            className="mt-0.5 h-10 w-10 shrink-0 rounded-lg border border-slate-200 object-cover shadow-sm"
+          />
+        )}
 
-        <div className="flex min-w-0 flex-1 flex-col">
-          <div className="flex min-w-0 items-start justify-between gap-2">
-            <div className="flex min-w-0 flex-col gap-0.5">
-              <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                <span className="min-w-0 text-[0.92rem] font-bold text-slate-800">
-                  <CopyText value={md.name} />
+        <div className="flex min-w-0 flex-1 items-start justify-between gap-2">
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="min-w-0 text-[0.92rem] font-bold text-slate-800">
+                <CopyText value={md.name} />
+              </span>
+
+              {md.displayName && (
+                <span className="truncate text-[0.82rem] font-semibold text-slate-500">
+                  {md.displayName}
                 </span>
-
-                {md.displayName && (
-                  <span className="truncate text-[0.82rem] font-semibold text-slate-500">
-                    {md.displayName}
-                  </span>
-                )}
-
-                {md.isSystem && (
-                  <Tooltip
-                    label="This is a system resource created by the cluster"
-                    withArrow
-                  >
-                    <span className="inline-flex items-center px-1.5 py-px text-[0.65rem] font-bold uppercase tracking-wider rounded border border-blue-200 text-blue-600 bg-blue-50 leading-none">
-                      System
-                    </span>
-                  </Tooltip>
-                )}
-              </div>
-
-              {md.description && (
-                <p className="mt-0.5 line-clamp-2 max-w-2xl text-[0.78rem] font-medium leading-5 text-slate-500">
-                  {md.description}
-                </p>
               )}
 
-              <div className="mt-1 text-[0.7rem] font-medium text-slate-400">
-                Created <TimeAgo rfc3339={md.createdAt} />
-                {md.updatedAt && (
-                  <span className="ml-2">
-                    · Updated <TimeAgo rfc3339={md.updatedAt} />
+              {md.isSystem && (
+                <Tooltip
+                  label="This is a system resource created by the cluster"
+                  withArrow
+                >
+                  <span className="inline-flex items-center px-1.5 py-px text-[0.65rem] font-bold uppercase tracking-wider rounded border border-blue-200 text-blue-600 bg-blue-50 leading-none">
+                    System
                   </span>
-                )}
-              </div>
+                </Tooltip>
+              )}
             </div>
 
-            <ResourceItemActions
-              item={item}
-              info={props.info}
-              returnTo={returnTo}
-            />
+            {md.description && (
+              <p className="mt-0.5 line-clamp-2 max-w-2xl text-[0.78rem] font-medium leading-5 text-slate-500">
+                {md.description}
+              </p>
+            )}
+
+            <div className="mt-1 text-[0.7rem] font-medium text-slate-400">
+              Created <TimeAgo rfc3339={md.createdAt} />
+              {md.updatedAt && (
+                <span className="ml-2">
+                  · Updated <TimeAgo rfc3339={md.updatedAt} />
+                </span>
+              )}
+            </div>
           </div>
 
-          {props.info.List.labelComponent && (
-            <div className="w-full">
-              {props.info.List.labelComponent({ item })}
-            </div>
-          )}
+          <ResourceItemActions
+            item={item}
+            info={props.info}
+            returnTo={returnTo}
+          />
         </div>
       </div>
+
+      {props.info.List.labelComponent && (
+        <div className="w-full">
+          {props.info.List.labelComponent({ item })}
+        </div>
+      )}
     </div>
   );
 };
