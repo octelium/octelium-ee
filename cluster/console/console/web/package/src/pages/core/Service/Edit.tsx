@@ -59,7 +59,7 @@ const ContainerProbe = (props: {
         <div>
           <Tabs
             className="mb-4"
-            defaultValue={probe.type.oneofKind}
+            value={probe.type.oneofKind}
             onChange={(v) => {
               match(v)
                 .with("httpGet", () => {
@@ -113,7 +113,7 @@ const ContainerProbe = (props: {
                         max={65535}
                         value={httpGet.httpGet.port}
                         onChange={(v) => {
-                          httpGet.httpGet.port = v as number;
+                          httpGet.httpGet.port = strToNum(v);
                           onChange();
                         }}
                       />
@@ -136,7 +136,7 @@ const ContainerProbe = (props: {
                       max={65535}
                       value={tcpSocket.tcpSocket.port}
                       onChange={(v) => {
-                        tcpSocket.tcpSocket.port = v as number;
+                        tcpSocket.tcpSocket.port = strToNum(v);
                         onChange();
                       }}
                     />
@@ -158,7 +158,7 @@ const ContainerProbe = (props: {
                       max={65535}
                       value={grpc.grpc.port}
                       onChange={(v) => {
-                        grpc.grpc.port = v as number;
+                        grpc.grpc.port = strToNum(v);
                         onChange();
                       }}
                     />
@@ -176,7 +176,7 @@ const ContainerProbe = (props: {
               min={0}
               value={probe.initialDelaySeconds}
               onChange={(v) => {
-                probe.initialDelaySeconds = v as number;
+                probe.initialDelaySeconds = strToNum(v);
                 onChange();
               }}
             />
@@ -185,7 +185,7 @@ const ContainerProbe = (props: {
               min={0}
               value={probe.timeoutSeconds}
               onChange={(v) => {
-                probe.timeoutSeconds = v as number;
+                probe.timeoutSeconds = strToNum(v);
                 onChange();
               }}
             />
@@ -194,7 +194,7 @@ const ContainerProbe = (props: {
               min={0}
               value={probe.periodSeconds}
               onChange={(v) => {
-                probe.periodSeconds = v as number;
+                probe.periodSeconds = strToNum(v);
                 onChange();
               }}
             />
@@ -203,7 +203,7 @@ const ContainerProbe = (props: {
               min={0}
               value={probe.successThreshold}
               onChange={(v) => {
-                probe.successThreshold = v as number;
+                probe.successThreshold = strToNum(v);
                 onChange();
               }}
             />
@@ -212,7 +212,7 @@ const ContainerProbe = (props: {
               min={0}
               value={probe.failureThreshold}
               onChange={(v) => {
-                probe.failureThreshold = v as number;
+                probe.failureThreshold = strToNum(v);
                 onChange();
               }}
             />
@@ -276,13 +276,10 @@ const Config = (props: {
   const [req, setReq] = React.useState(
     cloneConfigForMode(item, props.mode),
   );
-  const [init, setInit] = React.useState(
-    cloneConfigForMode(item, props.mode),
-  );
+  const [init] = React.useState(cloneConfigForMode(item, props.mode));
 
   React.useEffect(() => {
     setReq(cloneConfigForMode(item, props.mode));
-    setInit(cloneConfigForMode(item, props.mode));
   }, [item, props.mode]);
 
   const updateReq = () => {
@@ -331,13 +328,13 @@ const Config = (props: {
           <>
             <Tabs
               className="mb-8"
-              defaultValue={req.upstream.type.oneofKind}
+              value={req.upstream.type.oneofKind}
               onChange={(v) => {
                 match(v)
                   .with("url", () => {
                     match(init.upstream?.type.oneofKind)
                       .with(`url`, () => {
-                        req.upstream!.type = init!.upstream!.type;
+                        req.upstream!.type = structuredClone(init!.upstream!.type);
                       })
                       .otherwise(() => {
                         req.upstream!.type = {
@@ -351,7 +348,7 @@ const Config = (props: {
                   .with("container", () => {
                     match(init.upstream?.type.oneofKind)
                       .with(`container`, () => {
-                        req.upstream!.type = init!.upstream!.type;
+                        req.upstream!.type = structuredClone(init!.upstream!.type);
                       })
                       .otherwise(() => {
                         req.upstream!.type = {
@@ -366,7 +363,7 @@ const Config = (props: {
                   .with("loadbalance", () => {
                     match(init.upstream?.type.oneofKind)
                       .with("loadbalance", () => {
-                        req.upstream!.type = init!.upstream!.type;
+                        req.upstream!.type = structuredClone(init!.upstream!.type);
                       })
                       .otherwise(() => {
                         req.upstream!.type = {
@@ -818,7 +815,7 @@ const Config = (props: {
                                     }
                                     onChange={(v) => {
                                       container.container.resourceLimit!.cpu!.millicores =
-                                        v as number;
+                                        strToNum(v);
                                       updateReq();
                                     }}
                                   />
@@ -834,7 +831,7 @@ const Config = (props: {
                                     }
                                     onChange={(v) => {
                                       container.container.resourceLimit!.memory!.megabytes =
-                                        v as number;
+                                        strToNum(v);
                                       updateReq();
                                     }}
                                   />
@@ -851,22 +848,34 @@ const Config = (props: {
                                   }
                                   isList
                                   onSet={() => {
-                                    container.container.resourceLimit!.ext[""] =
-                                      "";
+                                    const ext =
+                                      container.container.resourceLimit!.ext;
+                                    let idx = Object.keys(ext).length + 1;
+                                    let key = `resource-${idx}`;
+                                    while (Object.hasOwn(ext, key)) {
+                                      key = `resource-${++idx}`;
+                                    }
+                                    ext[key] = "";
                                     updateReq();
                                   }}
                                   onAddListItem={() => {
-                                    container.container.resourceLimit!.ext[""] =
-                                      "";
+                                    const ext =
+                                      container.container.resourceLimit!.ext;
+                                    let idx = Object.keys(ext).length + 1;
+                                    let key = `resource-${idx}`;
+                                    while (Object.hasOwn(ext, key)) {
+                                      key = `resource-${++idx}`;
+                                    }
+                                    ext[key] = "";
                                     updateReq();
                                   }}
                                 >
                                   {Object.entries(
                                     container.container.resourceLimit!.ext,
-                                  ).map(([k, v], idx) => (
+                                  ).map(([k, v]) => (
                                     <div
                                       className="w-full flex mb-3"
-                                      key={`${idx}`}
+                                      key={k}
                                     >
                                       <CloseButton
                                         size={"sm"}
@@ -886,13 +895,24 @@ const Config = (props: {
                                           placeholder="nvidia.com/gpu"
                                           value={k}
                                           onChange={(e) => {
+                                            const nextKey = e.target.value;
+                                            if (
+                                              nextKey !== k &&
+                                              Object.hasOwn(
+                                                container.container
+                                                  .resourceLimit!.ext,
+                                                nextKey,
+                                              )
+                                            ) {
+                                              return;
+                                            }
                                             const val =
                                               container.container.resourceLimit!
                                                 .ext[k];
                                             delete container.container
                                               .resourceLimit!.ext[k];
                                             container.container.resourceLimit!.ext[
-                                              e.target.value
+                                              nextKey
                                             ] = val;
                                             updateReq();
                                           }}
@@ -1034,7 +1054,7 @@ const Config = (props: {
                                     }
                                     onChange={(v) => {
                                       container.container.securityContext!.runAsUser =
-                                        v as number;
+                                        strToNum(v);
                                       updateReq();
                                     }}
                                   />
@@ -1240,7 +1260,7 @@ const Config = (props: {
                                 </Group>
                                 <Tabs
                                   className="mb-4"
-                                  defaultValue={volume.type.oneofKind}
+                                  value={volume.type.oneofKind}
                                   onChange={(v) => {
                                     match(v)
                                       .with("emptyDir", () => {
@@ -1285,7 +1305,7 @@ const Config = (props: {
                                             }
                                             onChange={(v) => {
                                               emptyDir.emptyDir.sizeLimitMegabytes =
-                                                v as number;
+                                                strToNum(v);
                                               updateReq();
                                             }}
                                           />
@@ -1546,7 +1566,7 @@ const Config = (props: {
             return (
               <div>
                 <Tabs
-                  defaultValue={kubernetes.kubernetes.type.oneofKind}
+                  value={kubernetes.kubernetes.type.oneofKind}
                   onChange={(v) => {
                     match(v)
                       .with("kubeconfig", () => {
@@ -1557,7 +1577,9 @@ const Config = (props: {
                               .when(
                                 (x) => x.type.oneofKind === `kubeconfig`,
                                 (x) => {
-                                  kubernetes.kubernetes.type = x.type;
+                                  kubernetes.kubernetes.type = structuredClone(
+                                    x.type,
+                                  );
                                 },
                               )
                               .otherwise(() => {
@@ -1587,7 +1609,9 @@ const Config = (props: {
                               .when(
                                 (x) => x.type.oneofKind === `bearerToken`,
                                 (x) => {
-                                  kubernetes.kubernetes.type = x.type;
+                                  kubernetes.kubernetes.type = structuredClone(
+                                    x.type,
+                                  );
                                 },
                               )
                               .otherwise(() => {
@@ -1617,7 +1641,9 @@ const Config = (props: {
                               .when(
                                 (x) => x.type.oneofKind === `clientCertificate`,
                                 (x) => {
-                                  kubernetes.kubernetes.type = x.type;
+                                  kubernetes.kubernetes.type = structuredClone(
+                                    x.type,
+                                  );
                                 },
                               )
                               .otherwise(() => {
@@ -1817,7 +1843,7 @@ const Config = (props: {
                                 ],
                             },
                           ]}
-                          defaultValue={
+                          value={
                             CoreP.Service_Spec_Config_HTTP_Header_ForwardedMode[
                               http.http.header.forwardedMode
                             ] ??
@@ -1828,6 +1854,7 @@ const Config = (props: {
                             ]
                           }
                           onChange={(v) => {
+                            if (!v) return;
                             http.http.header!.forwardedMode =
                               CoreP.Service_Spec_Config_HTTP_Header_ForwardedMode[
                                 v as "OBFUSCATE"
@@ -1863,13 +1890,14 @@ const Config = (props: {
                                 ],
                             },
                           ]}
-                          defaultValue={
+                          value={
                             CoreP
                               .Service_Spec_Config_HTTP_Header_AuthorizationMode[
                               http.http.header.authorizationMode
                             ]
                           }
                           onChange={(v) => {
+                            if (!v) return;
                             http.http.header!.authorizationMode =
                               CoreP.Service_Spec_Config_HTTP_Header_AuthorizationMode[
                                 v as "PASS"
@@ -1943,9 +1971,33 @@ const Config = (props: {
                                   updateReq();
                                 }}
                               />
+                              <Select
+                                label="Value type"
+                                data={[
+                                  { label: "Literal", value: "value" },
+                                  { label: "Eval (CEL)", value: "eval" },
+                                ]}
+                                value={
+                                  http.http.header!.addRequestHeaders[idx].type
+                                    .oneofKind ?? "value"
+                                }
+                                onChange={(v) => {
+                                  if (!v) return;
+                                  http.http.header!.addRequestHeaders[idx].type =
+                                    v === "eval"
+                                      ? { oneofKind: "eval", eval: "" }
+                                      : { oneofKind: "value", value: "" };
+                                  updateReq();
+                                }}
+                              />
                               <TextInput
                                 required
-                                label="Value"
+                                label={
+                                  http.http.header!.addRequestHeaders[idx].type
+                                    .oneofKind === "eval"
+                                    ? "CEL expression"
+                                    : "Value"
+                                }
                                 description="Set the Header value"
                                 placeholder="my-value"
                                 value={match(
@@ -2051,9 +2103,35 @@ const Config = (props: {
                                   updateReq();
                                 }}
                               />
+                              <Select
+                                label="Value type"
+                                data={[
+                                  { label: "Literal", value: "value" },
+                                  { label: "Eval (CEL)", value: "eval" },
+                                ]}
+                                value={
+                                  http.http.header!.addResponseHeaders[idx].type
+                                    .oneofKind ?? "value"
+                                }
+                                onChange={(v) => {
+                                  if (!v) return;
+                                  http.http.header!.addResponseHeaders[
+                                    idx
+                                  ].type =
+                                    v === "eval"
+                                      ? { oneofKind: "eval", eval: "" }
+                                      : { oneofKind: "value", value: "" };
+                                  updateReq();
+                                }}
+                              />
                               <TextInput
                                 required
-                                label="Value"
+                                label={
+                                  http.http.header!.addResponseHeaders[idx].type
+                                    .oneofKind === "eval"
+                                    ? "CEL expression"
+                                    : "Value"
+                                }
                                 description="Set the Header value"
                                 placeholder="my-value"
                                 value={match(
@@ -2220,7 +2298,7 @@ const Config = (props: {
                       >
                         {http.http.header.host && (
                           <Tabs
-                            defaultValue={http.http.header.host.type.oneofKind}
+                            value={http.http.header.host.type.oneofKind}
                             onChange={(v) => {
                               match(v)
                                 .with("preserve", () => {
@@ -2403,7 +2481,7 @@ const Config = (props: {
                                 max={599}
                                 value={direct.direct.statusCode}
                                 onChange={(v) => {
-                                  direct.direct.statusCode = v as number;
+                                  direct.direct.statusCode = strToNum(v);
                                   updateReq();
                                 }}
                               />
@@ -2421,7 +2499,7 @@ const Config = (props: {
 
                             <Tabs
                               className="mt-4"
-                              defaultValue={
+                              value={
                                 direct.direct.type.oneofKind ?? "inline"
                               }
                               onChange={(v) => {
@@ -2558,7 +2636,7 @@ const Config = (props: {
                         min={0}
                         value={http.http.body.maxRequestSize}
                         onChange={(v) => {
-                          http.http.body!.maxRequestSize = v as number;
+                          http.http.body!.maxRequestSize = strToNum(v);
                           updateReq();
                         }}
                       />
@@ -2582,6 +2660,7 @@ const Config = (props: {
                           ]
                         }
                         onChange={(v) => {
+                          if (!v) return;
                           http.http.body!.mode =
                             CoreP.Service_Spec_Config_HTTP_Body_Mode[
                               v as "JSON"
@@ -2620,7 +2699,7 @@ const Config = (props: {
                   {http.http.auth && (
                     <div>
                       <Tabs
-                        defaultValue={http.http.auth!.type.oneofKind}
+                        value={http.http.auth!.type.oneofKind}
                         onChange={(v) => {
                           match(v)
                             .with("bearer", () => {
@@ -2632,7 +2711,9 @@ const Config = (props: {
                                 .with(`bearer`, () => {
                                   http.http.auth!.type =
                                     init.type.oneofKind === `http`
-                                      ? init.type.http.auth!.type
+                                      ? structuredClone(
+                                          init.type.http.auth!.type,
+                                        )
                                       : {
                                           oneofKind: "bearer",
                                           bearer:
@@ -2672,7 +2753,9 @@ const Config = (props: {
                                 .with(`basic`, () => {
                                   http.http.auth!.type =
                                     init.type.oneofKind === `http`
-                                      ? init.type.http.auth!.type
+                                      ? structuredClone(
+                                          init.type.http.auth!.type,
+                                        )
                                       : {
                                           oneofKind: "basic",
                                           basic:
@@ -2725,7 +2808,9 @@ const Config = (props: {
                                 .with(`oauth2ClientCredentials`, () => {
                                   ff.http.auth!.type =
                                     init!.type.oneofKind === `http`
-                                      ? init!.type.http.auth!.type
+                                      ? structuredClone(
+                                          init!.type.http.auth!.type,
+                                        )
                                       : {
                                           oneofKind: "oauth2ClientCredentials",
                                           oauth2ClientCredentials:
@@ -2778,7 +2863,9 @@ const Config = (props: {
                                 .with(`custom`, () => {
                                   ff.http.auth!.type =
                                     init!.type.oneofKind === `http`
-                                      ? init!.type.http.auth!.type
+                                      ? structuredClone(
+                                          init!.type.http.auth!.type,
+                                        )
                                       : {
                                           oneofKind: "custom",
                                           custom:
@@ -2831,7 +2918,9 @@ const Config = (props: {
                                 .with(`sigv4`, () => {
                                   ff.http.auth!.type =
                                     init.type.oneofKind === `http`
-                                      ? init.type.http.auth!.type
+                                      ? structuredClone(
+                                          init.type.http.auth!.type,
+                                        )
                                       : {
                                           oneofKind: "sigv4",
                                           sigv4:
@@ -3188,7 +3277,7 @@ const Config = (props: {
                           max={10000}
                           value={http.http.retry!.maxRetries}
                           onChange={(v) => {
-                            http.http.retry!.maxRetries = v as number;
+                            http.http.retry!.maxRetries = strToNum(v);
                             updateReq();
                           }}
                         />
@@ -3201,7 +3290,7 @@ const Config = (props: {
                           step={0.1}
                           value={http.http.retry!.multiplier}
                           onChange={(v) => {
-                            http.http.retry!.multiplier = v as number;
+                            http.http.retry!.multiplier = strToNum(v);
                             updateReq();
                           }}
                         />
@@ -3283,7 +3372,7 @@ const Config = (props: {
                               max={599}
                               value={http.http.retry!.statusCodes[idx]}
                               onChange={(v) => {
-                                http.http.retry!.statusCodes[idx] = v as number;
+                                http.http.retry!.statusCodes[idx] = strToNum(v);
                                 updateReq();
                               }}
                             />
@@ -3785,6 +3874,7 @@ const Config = (props: {
                             ]
                           }
                           onChange={(v) => {
+                            if (!v) return;
                             plugin.phase =
                               CoreP.Service_Spec_Config_HTTP_Plugin_Phase[
                                 v as "PRE_AUTH"
@@ -3820,7 +3910,7 @@ const Config = (props: {
                       />
                       <Tabs
                         className="mb-8"
-                        defaultValue={plugin.type.oneofKind}
+                        value={plugin.type.oneofKind}
                         onChange={(v) => {
                           match(v)
                             .with("direct", () => {
@@ -3913,7 +4003,7 @@ const Config = (props: {
                                       max={599}
                                       value={direct.direct.statusCode}
                                       onChange={(v) => {
-                                        direct.direct.statusCode = v as number;
+                                        direct.direct.statusCode = strToNum(v);
                                         updateReq();
                                       }}
                                     />
@@ -3942,7 +4032,7 @@ const Config = (props: {
                                   >
                                     {direct.direct.body && (
                                       <Tabs
-                                        defaultValue={
+                                        value={
                                           direct.direct.body.type.oneofKind ??
                                           "inline"
                                         }
@@ -4152,7 +4242,7 @@ const Config = (props: {
                                       value={Number(rateLimit.rateLimit.limit)}
                                       onChange={(v) => {
                                         rateLimit.rateLimit.limit =
-                                          (v as number) || 0;
+                                          strToNum(v);
 
                                         updateReq();
                                       }}
@@ -4165,7 +4255,7 @@ const Config = (props: {
                                       value={rateLimit.rateLimit.statusCode}
                                       onChange={(v) => {
                                         rateLimit.rateLimit.statusCode =
-                                          v as number;
+                                          strToNum(v);
                                         updateReq();
                                       }}
                                     />
@@ -4198,7 +4288,7 @@ const Config = (props: {
                                     min={0}
                                     value={Number(cache.cache.maxSize)}
                                     onChange={(v) => {
-                                      cache.cache.maxSize = (v as number) || 0;
+                                      cache.cache.maxSize = strToNum(v);
 
                                       updateReq();
                                     }}
@@ -4280,7 +4370,7 @@ const Config = (props: {
                                       value={jsonSchema.jsonSchema.statusCode}
                                       onChange={(v) => {
                                         jsonSchema.jsonSchema.statusCode =
-                                          v as number;
+                                          strToNum(v);
                                         updateReq();
                                       }}
                                     />
@@ -4465,7 +4555,7 @@ const Config = (props: {
                                 <div>
                                   <Tabs
                                     className="mb-4"
-                                    defaultValue={
+                                    value={
                                       extProc.extProc.type.oneofKind ??
                                       "address"
                                     }
@@ -4546,7 +4636,7 @@ const Config = (props: {
                                                 value={container.container.port}
                                                 onChange={(v) => {
                                                   container.container.port =
-                                                    v as number;
+                                                    strToNum(v);
                                                   updateReq();
                                                 }}
                                               />
@@ -4617,6 +4707,7 @@ const Config = (props: {
                                             ]
                                           }
                                           onChange={(v) => {
+                                            if (!v) return;
                                             extProc.extProc.processingMode!.requestHeaderMode =
                                               CoreP.Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_HeaderSendMode[
                                                 v as "SEND"
@@ -4656,6 +4747,7 @@ const Config = (props: {
                                             ]
                                           }
                                           onChange={(v) => {
+                                            if (!v) return;
                                             extProc.extProc.processingMode!.responseHeaderMode =
                                               CoreP.Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_HeaderSendMode[
                                                 v as "SEND"
@@ -4695,6 +4787,7 @@ const Config = (props: {
                                             ]
                                           }
                                           onChange={(v) => {
+                                            if (!v) return;
                                             extProc.extProc.processingMode!.requestBodyMode =
                                               CoreP.Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_BodySendMode[
                                                 v as "NONE"
@@ -4734,6 +4827,7 @@ const Config = (props: {
                                             ]
                                           }
                                           onChange={(v) => {
+                                            if (!v) return;
                                             extProc.extProc.processingMode!.responseBodyMode =
                                               CoreP.Service_Spec_Config_HTTP_Plugin_ExtProc_ProcessingMode_BodySendMode[
                                                 v as "NONE"
@@ -4928,7 +5022,7 @@ const Config = (props: {
                   {ssh.ssh.auth && (
                     <Tabs
                       className="mb-8"
-                      defaultValue={ssh.ssh.auth!.type.oneofKind}
+                      value={ssh.ssh.auth!.type.oneofKind}
                       onChange={(v) => {
                         match(v)
                           .with("password", () => {
@@ -5287,6 +5381,7 @@ const Config = (props: {
                         ]
                       }
                       onChange={(v) => {
+                        if (!v) return;
                         postgres.postgres.authorization!.mode =
                           CoreP.Service_Spec_Config_Postgres_Authorization_Mode[
                             v as "ALL"
@@ -5333,7 +5428,7 @@ const Config = (props: {
                   <Switch
                     label="Enable TLS"
                     description="Connect to the Upstream over TLS"
-                    defaultChecked={mysql.mysql.isTLS}
+                    checked={mysql.mysql.isTLS}
                     onChange={(v) => {
                       mysql.mysql.isTLS = v.target.checked;
                       updateReq();
@@ -5406,7 +5501,7 @@ const Config = (props: {
               >
                 {socks5.socks5.auth && (
                   <Tabs
-                    defaultValue={socks5.socks5.auth.type.oneofKind ?? "noAuth"}
+                    value={socks5.socks5.auth.type.oneofKind ?? "noAuth"}
                     onChange={(v) => {
                       match(v)
                         .with("noAuth", () => {
@@ -5784,9 +5879,9 @@ const Edit = (props: {
 }) => {
   const { item, onUpdate } = props;
   const [req, setReq] = React.useState(CoreP.Service.clone(item));
-  const [init, _] = React.useState(CoreP.Service.clone(item));
+  const [init, setInit] = React.useState(CoreP.Service.clone(item));
   const configsByMode = React.useRef<
-    Partial<Record<CoreP.Service_Spec_Mode, CoreP.Service_Spec_Config>>
+    Partial<Record<number, CoreP.Service_Spec_Config>>
   >(
     item.spec?.config
       ? {
@@ -5794,9 +5889,21 @@ const Edit = (props: {
         }
       : {},
   );
+  const itemKey = item.metadata?.uid || item.metadata?.name;
+  React.useEffect(() => {
+    const next = CoreP.Service.clone(item);
+    setReq(next);
+    setInit(CoreP.Service.clone(item));
+    configsByMode.current = item.spec?.config
+      ? {
+          [item.spec.mode]: CoreP.Service_Spec_Config.clone(item.spec.config),
+        }
+      : {};
+  }, [itemKey]);
   const updateReq = () => {
-    setReq(CoreP.Service.clone(req));
-    onUpdate(req);
+    const next = CoreP.Service.clone(req);
+    setReq(next);
+    onUpdate(CoreP.Service.clone(next));
   };
 
   return (
@@ -5859,13 +5966,16 @@ const Edit = (props: {
           ]}
           value={CoreP.Service_Spec_Mode[req.spec!.mode]}
           onChange={(v) => {
+            if (!v) return;
             const previousMode = req.spec!.mode;
             if (req.spec!.config) {
               configsByMode.current[previousMode] =
                 CoreP.Service_Spec_Config.clone(req.spec!.config);
             }
-            // @ts-ignore
-            req.spec!.mode = CoreP.Service_Spec_Mode[v];
+            const nextMode = CoreP.Service_Spec_Mode[
+              v as keyof typeof CoreP.Service_Spec_Mode
+            ] as CoreP.Service_Spec_Mode;
+            req.spec!.mode = nextMode;
 
             match(req.spec!.mode)
               .when(
@@ -5879,6 +5989,17 @@ const Edit = (props: {
                     previousMode === CoreP.Service_Spec_Mode.GRPC ||
                     previousMode === CoreP.Service_Spec_Mode.WEB
                   ) {
+                    return;
+                  }
+
+                  const previousConfig =
+                    configsByMode.current[nextMode] ??
+                    configsByMode.current[CoreP.Service_Spec_Mode.HTTP] ??
+                    configsByMode.current[CoreP.Service_Spec_Mode.WEB] ??
+                    configsByMode.current[CoreP.Service_Spec_Mode.GRPC];
+                  if (previousConfig) {
+                    req.spec!.config =
+                      CoreP.Service_Spec_Config.clone(previousConfig);
                     return;
                   }
 
@@ -5912,7 +6033,9 @@ const Edit = (props: {
                   .when(
                     (x) => x?.oneofKind === `ssh`,
                     (x) => {
-                      req.spec!.config = init.spec!.config;
+                      req.spec!.config = CoreP.Service_Spec_Config.clone(
+                        init.spec!.config!,
+                      );
                     },
                   )
                   .otherwise(() => {
@@ -5942,14 +6065,15 @@ const Edit = (props: {
                     });
                   });
 
-                updateReq();
               })
               .with(CoreP.Service_Spec_Mode.POSTGRES, () => {
                 match(init.spec!.config?.type)
                   .when(
                     (x) => x?.oneofKind === `postgres`,
                     (x) => {
-                      req.spec!.config = init.spec!.config;
+                      req.spec!.config = CoreP.Service_Spec_Config.clone(
+                        init.spec!.config!,
+                      );
                     },
                   )
                   .otherwise(() => {
@@ -5980,14 +6104,15 @@ const Edit = (props: {
                     });
                   });
 
-                updateReq();
               })
               .with(CoreP.Service_Spec_Mode.MYSQL, () => {
                 match(init.spec!.config?.type)
                   .when(
                     (x) => x?.oneofKind === `mysql`,
                     (x) => {
-                      req.spec!.config = init.spec!.config;
+                      req.spec!.config = CoreP.Service_Spec_Config.clone(
+                        init.spec!.config!,
+                      );
                     },
                   )
                   .otherwise(() => {
@@ -6019,7 +6144,6 @@ const Edit = (props: {
                     });
                   });
 
-                updateReq();
               })
               .with(CoreP.Service_Spec_Mode.KUBERNETES, () => {
                 const previousConfig =
@@ -6048,7 +6172,6 @@ const Edit = (props: {
                     } as CoreP.Service_Spec_Config_Kubernetes,
                   },
                     });
-                updateReq();
               })
               .with(CoreP.Service_Spec_Mode.SOCKS5, () => {
                 const previousConfig =
@@ -6069,7 +6192,6 @@ const Edit = (props: {
                     } as CoreP.Service_Spec_Config_SOCKS5,
                   },
                     });
-                updateReq();
               })
               .with(CoreP.Service_Spec_Mode.RDP_WEB, () => {
                 const previousConfig =
@@ -6094,7 +6216,6 @@ const Edit = (props: {
                     } as CoreP.Service_Spec_Config_RDP,
                   },
                     });
-                updateReq();
               })
 
               .when(
@@ -6103,15 +6224,10 @@ const Edit = (props: {
                   x === CoreP.Service_Spec_Mode.DNS ||
                   x === CoreP.Service_Spec_Mode.UDP,
                 () => {
-                  match(init.spec!.config)
-                    .when(
-                      (x) => !!x,
-                      (x) => {
-                        req.spec!.config = init.spec!.config;
-                      },
-                    )
-                    .otherwise(() => {
-                      req.spec!.config = CoreP.Service_Spec_Config.create({
+                  const previousConfig = configsByMode.current[nextMode];
+                  req.spec!.config = previousConfig
+                    ? CoreP.Service_Spec_Config.clone(previousConfig)
+                    : CoreP.Service_Spec_Config.create({
                         upstream: {
                           type: {
                             oneofKind: "url",
@@ -6122,9 +6238,6 @@ const Edit = (props: {
                           oneofKind: undefined,
                         },
                       });
-                    });
-
-                  updateReq();
                 },
               )
               .otherwise(() => {});
@@ -6140,7 +6253,7 @@ const Edit = (props: {
           max={65535}
           value={req.spec!.port}
           onChange={(v) => {
-            req.spec!.port = v as number;
+            req.spec!.port = strToNum(v);
             updateReq();
           }}
         />
@@ -6168,6 +6281,12 @@ const Edit = (props: {
             checked={req.spec!.isPublic}
             onChange={(v) => {
               req.spec!.isPublic = v.target.checked;
+              if (!v.target.checked) {
+                req.spec!.isAnonymous = false;
+                if (req.spec!.authorization) {
+                  req.spec!.authorization.enableAnonymous = false;
+                }
+              }
               updateReq();
             }}
           />
@@ -6189,6 +6308,12 @@ const Edit = (props: {
             disabled={!req.spec?.isPublic}
             onChange={(v) => {
               req.spec!.isAnonymous = v.target.checked;
+              if (
+                !v.target.checked &&
+                req.spec!.authorization?.enableAnonymous
+              ) {
+                req.spec!.authorization.enableAnonymous = false;
+              }
               updateReq();
             }}
           />
@@ -6208,7 +6333,7 @@ const Edit = (props: {
             .when(
               (x) => !!x,
               (x) => {
-                req.spec!.config = x;
+                req.spec!.config = CoreP.Service_Spec_Config.clone(x);
               },
             )
             .otherwise(() => {
@@ -6227,6 +6352,7 @@ const Edit = (props: {
       >
         {req.spec!.config && (
           <Config
+            key={itemKey}
             default
             mode={req.spec!.mode}
             item={req.spec!.config}
@@ -6360,7 +6486,15 @@ const Edit = (props: {
               }}
             >
               {req.spec!.dynamicConfig.configs.map((x, idx) => (
-                <div key={`${idx}`}>
+                <EditItem
+                  key={`${idx}`}
+                  obj={{}}
+                  title={x.name || `Configuration ${idx + 1}`}
+                  onUnset={() => {
+                    req.spec!.dynamicConfig!.configs.splice(idx, 1);
+                    updateReq();
+                  }}
+                >
                   <Config
                     item={req.spec!.dynamicConfig!.configs[idx]}
                     onUpdate={(v) => {
@@ -6368,7 +6502,7 @@ const Edit = (props: {
                       updateReq();
                     }}
                   />
-                </div>
+                </EditItem>
               ))}
             </ItemMessage>
 
