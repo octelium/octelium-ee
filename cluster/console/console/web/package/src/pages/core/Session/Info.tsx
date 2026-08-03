@@ -4,6 +4,15 @@ import CopyText from "@/components/CopyText";
 import Label from "@/components/Label";
 import { ResourceListLabel } from "@/components/ResourceList";
 import TimeAgo from "@/components/TimeAgo";
+import {
+  FaChrome,
+  FaEdge,
+  FaFirefoxBrowser,
+  FaInternetExplorer,
+  FaOpera,
+  FaSafari,
+} from "react-icons/fa6";
+import { IoBrowsersOutline } from "react-icons/io5";
 
 const humanize = (value?: string): string =>
   value
@@ -18,9 +27,6 @@ const enumName = (values: any, value: number | undefined): string =>
   humanize(value === undefined ? undefined : values[value]);
 
 const hasRef = (ref: any): boolean => !!(ref?.name || ref?.uid);
-
-const mask = (value: string): string =>
-  value.length <= 10 ? "••••••" : `${value.slice(0, 4)}••••${value.slice(-4)}`;
 
 const bytesToHex = (value: Uint8Array): string =>
   Array.from(value, (byte) => byte.toString(16).padStart(2, "0")).join("");
@@ -37,6 +43,27 @@ const formatLocation = (item: CoreP.Session): string | undefined => {
   return [geo.city?.name, geo.region?.name, geo.country?.name]
     .filter(Boolean)
     .join(", ");
+};
+
+const BrowserIcon = (props: { userAgent: string }) => {
+  const value = props.userAgent.toLowerCase();
+  const Icon = value.includes("edg/")
+    ? FaEdge
+    : value.includes("opr/") || value.includes("opera")
+      ? FaOpera
+      : value.includes("firefox/")
+        ? FaFirefoxBrowser
+        : value.includes("chromium/")
+          ? FaChrome
+          : value.includes("chrome/") || value.includes("crios/")
+            ? FaChrome
+            : value.includes("safari/")
+              ? FaSafari
+              : value.includes("msie") || value.includes("trident/")
+                ? FaInternetExplorer
+                : IoBrowsersOutline;
+
+  return <Icon className="h-4 w-4 shrink-0 text-slate-500" aria-hidden />;
 };
 
 export const getSessionPresentation = (item: CoreP.Session) => {
@@ -57,7 +84,10 @@ export const getSessionPresentation = (item: CoreP.Session) => {
       CoreP.Session_Status_Authentication_Info_Type,
       info?.type,
     ),
-    aal: enumName(CoreP.Session_Status_Authentication_Info_AAL, info?.aal),
+    aal:
+      info?.aal === undefined
+        ? undefined
+        : CoreP.Session_Status_Authentication_Info_AAL[info.aal]?.toUpperCase(),
     authenticatorAction: enumName(
       CoreP.Session_Status_AuthenticatorAction,
       status?.authenticatorAction,
@@ -215,18 +245,17 @@ const AuthenticationDetails = (props: { item: CoreP.Session }) => {
         </Field>
       )}
       <Field label="Method">{p.authenticationMethod}</Field>
-      <Field label="Assurance level">{p.aal}</Field>
+      {info?.aal !== undefined &&
+        info.aal !==
+          CoreP.Session_Status_Authentication_Info_AAL.AAL_UNSET && (
+          <Field label="Assurance level">{p.aal}</Field>
+        )}
       <Field label="Access token duration">
         {formatDuration(auth?.accessTokenDuration)}
       </Field>
       <Field label="Refresh token duration">
         {formatDuration(auth?.refreshTokenDuration)}
       </Field>
-      {auth?.tokenID && (
-        <Field label="Token ID">
-          <CopyText value={auth.tokenID} hide /> {mask(auth.tokenID)}
-        </Field>
-      )}
       {details?.oneofKind === "identityProvider" && (
         <>
           <ReferenceField
@@ -249,12 +278,6 @@ const AuthenticationDetails = (props: { item: CoreP.Session }) => {
             label="Credential"
             ref={details.credential.credentialRef}
           />
-          {details.credential.tokenID && (
-            <Field label="Credential token ID">
-              <CopyText value={details.credential.tokenID} hide />{" "}
-              {mask(details.credential.tokenID)}
-            </Field>
-          )}
         </>
       )}
       {details?.oneofKind === "authenticator" && (
@@ -309,7 +332,10 @@ const AuthenticationDetails = (props: { item: CoreP.Session }) => {
       )}
       {info?.downstream?.userAgent && (
         <Field label="User agent" full>
-          {info.downstream.userAgent}
+          <span className="flex items-start gap-2">
+            <BrowserIcon userAgent={info.downstream.userAgent} />
+            <span>{info.downstream.userAgent}</span>
+          </span>
         </Field>
       )}
     </Section>
@@ -458,51 +484,14 @@ const AuthorizationDetails = (props: { item: CoreP.Session }) => {
 
 const HistoryDetails = (props: { item: CoreP.Session }) => {
   const status = props.item.status;
-  const events: { time: Timestamp; text: string }[] = [];
-  if (status?.initialAuthentication?.setAt)
-    events.push({
-      time: status.initialAuthentication.setAt,
-      text: "Initial authentication",
-    });
-  for (const auth of status?.lastAuthentications ?? [])
-    if (auth.setAt)
-      events.push({
-        time: auth.setAt,
-        text: `Authenticated via ${enumName(CoreP.Session_Status_Authentication_Info_Type, auth.info?.type)}`,
-      });
-  for (const connection of status?.lastConnections ?? []) {
-    if (connection.startedAt)
-      events.push({ time: connection.startedAt, text: "Connection started" });
-    if (connection.endedAt)
-      events.push({ time: connection.endedAt, text: "Connection ended" });
-  }
-  events.sort(
-    (a, b) =>
-      Number(Timestamp.toDate(b.time)) - Number(Timestamp.toDate(a.time)),
-  );
 
   return (
     <Section title="History">
       <Field label="Authentication count">
         {status?.totalAuthentications ?? 0}
       </Field>
-      <Field label="Connection count">{status?.totalConnections ?? 0}</Field>
-      {events.length > 0 && (
-        <Field label="Recent activity" full>
-          <ol className="space-y-1.5">
-            {events.slice(0, 12).map((event, index) => (
-              <li
-                key={index}
-                className="flex flex-wrap items-center justify-between gap-2 border-l-2 border-slate-200 pl-2"
-              >
-                <span>{event.text}</span>
-                <span className="text-slate-500">
-                  <TimeAgo rfc3339={event.time} />
-                </span>
-              </li>
-            ))}
-          </ol>
-        </Field>
+      {!!status?.totalConnections && status.totalConnections > 0 && (
+        <Field label="Connection count">{status.totalConnections}</Field>
       )}
     </Section>
   );
@@ -515,17 +504,19 @@ export const SessionOperationalDetails = (props: { item: CoreP.Session }) => {
 
   return (
     <div className="flex flex-col gap-3">
+      <AuthenticationDetails item={item} />
       <Section title="Security status">
-        <Field label="Locked">
-          {item.status?.isLocked ? <Signal tone="danger">Locked</Signal> : "No"}
-        </Field>
-        <Field label="Authenticator action">
-          {action === undefined ||
-          action ===
-            CoreP.Session_Status_AuthenticatorAction.AUTHENTICATOR_ACTION_UNSET
-            ? "None"
-            : p.authenticatorAction}
-        </Field>
+        {item.status?.isLocked && (
+          <Field label="Locked">
+            <Signal tone="danger">Locked</Signal>
+          </Field>
+        )}
+        {action !== undefined &&
+          action !==
+            CoreP.Session_Status_AuthenticatorAction
+              .AUTHENTICATOR_ACTION_UNSET && (
+            <Field label="Authenticator action">{p.authenticatorAction}</Field>
+          )}
         <ReferenceField
           label="Required authenticator"
           ref={item.status?.requiredAuthenticatorRef}
@@ -535,7 +526,6 @@ export const SessionOperationalDetails = (props: { item: CoreP.Session }) => {
           ref={item.status?.credentialRef}
         />
       </Section>
-      <AuthenticationDetails item={item} />
       <ConnectionDetails item={item} />
       <AuthorizationDetails item={item} />
       <HistoryDetails item={item} />

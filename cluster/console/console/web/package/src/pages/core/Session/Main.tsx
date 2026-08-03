@@ -390,7 +390,7 @@ export const MainInfo = (props: { item: CoreC.Session }): ResourceMainInfo => {
         : []),
 
       {
-        label: "Session investigation",
+        label: "Session status",
         value: <SessionOperationalDetails item={item} />,
         span: "full",
       },
