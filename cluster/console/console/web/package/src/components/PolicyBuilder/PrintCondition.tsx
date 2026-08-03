@@ -2,6 +2,7 @@ import {
   Condition,
   Condition_Expression,
 } from "@/apis/enterprisev1/enterprisev1";
+import { Braces, Check, Sparkles } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
 import itemList from "./ItemList";
@@ -9,76 +10,125 @@ import itemList from "./ItemList";
 const kindMeta = {
   and: {
     label: "All of",
-    sub: "All must match",
-    badge: "bg-blue-50 text-blue-800 border-blue-200",
+    description: "Every condition must match",
+    badge: "border-blue-200 bg-blue-50 text-blue-700",
     border: "border-blue-200",
-    sep: "AND",
-    sepColor: "text-blue-600 bg-blue-50 border-blue-100",
+    separator: "AND",
+    separatorStyle: "border-blue-100 bg-blue-50 text-blue-600",
   },
   or: {
     label: "Any of",
-    sub: "At least one must match",
-    badge: "bg-green-50 text-green-800 border-green-200",
-    border: "border-green-200",
-    sep: "OR",
-    sepColor: "text-green-700 bg-green-50 border-green-100",
+    description: "At least one condition must match",
+    badge: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    border: "border-emerald-200",
+    separator: "OR",
+    separatorStyle: "border-emerald-100 bg-emerald-50 text-emerald-700",
   },
   none: {
     label: "None of",
-    sub: "No conditions may match",
-    badge: "bg-orange-50 text-orange-800 border-orange-200",
-    border: "border-orange-200",
-    sep: "NOR",
-    sepColor: "text-orange-700 bg-orange-50 border-orange-100",
+    description: "No conditions may match",
+    badge: "border-amber-200 bg-amber-50 text-amber-700",
+    border: "border-amber-200",
+    separator: "NOR",
+    separatorStyle: "border-amber-100 bg-amber-50 text-amber-700",
   },
 };
 
-const OpBadge = ({ kind }: { kind: "and" | "or" | "none" }) => {
-  const m = kindMeta[kind];
+const GroupHeading = ({ kind }: { kind: "and" | "or" | "none" }) => {
+  const meta = kindMeta[kind];
   return (
-    <div className="flex items-center gap-2 py-1">
+    <div className="flex flex-wrap items-center gap-2 py-1">
       <span
         className={twMerge(
-          "text-[0.65rem] font-bold uppercase tracking-[0.08em] px-2 py-0.5 rounded border",
-          m.badge,
+          "rounded-md border px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.07em]",
+          meta.badge,
         )}
       >
-        {m.label}
+        {meta.label}
       </span>
-      <span className="text-[0.7rem] font-semibold text-slate-400">
-        {m.sub}
+      <span className="text-[0.65rem] font-semibold text-slate-400">
+        {meta.description}
       </span>
     </div>
   );
 };
 
 const Separator = ({ kind }: { kind: "and" | "or" | "none" }) => {
-  const m = kindMeta[kind];
+  const meta = kindMeta[kind];
   return (
-    <div className="flex items-center gap-1.5 py-0.5 pl-1">
+    <div className="flex items-center py-1 pl-1">
       <span
         className={twMerge(
-          "text-[0.6rem] font-bold uppercase tracking-widest px-1.5 py-px rounded border",
-          m.sepColor,
+          "rounded border px-1.5 py-px text-[0.56rem] font-bold uppercase tracking-widest",
+          meta.separatorStyle,
         )}
       >
-        {m.sep}
+        {meta.separator}
       </span>
     </div>
   );
 };
 
 export const ExprChip = ({ item }: { item: Condition_Expression }) => {
-  const meta = itemList.find((x) => x.type === item.type.oneofKind);
+  const definition = itemList.find(
+    (candidate) => candidate.type === item.type.oneofKind,
+  );
+
   return (
-    <div className="inline-flex items-center gap-1.5 flex-wrap">
-      <span className="text-[0.72rem] font-bold text-slate-700 bg-slate-100 rounded px-1.5 py-0.5 border border-slate-200 whitespace-nowrap">
-        {meta?.title}
+    <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+      <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-[0.7rem] font-bold text-slate-700">
+        <Braces size={11} strokeWidth={2.25} className="text-slate-400" />
+        {definition?.title ?? "Unknown expression"}
       </span>
-      <span className="text-[0.68rem] font-semibold text-slate-400">is</span>
-      <span className="text-[0.72rem] font-bold bg-white border border-slate-200 rounded px-1.5 py-0.5 text-slate-700">
-        {meta?.components.Value({ item })}
+      <span className="text-[0.65rem] font-semibold text-slate-400">is</span>
+      <span className="min-w-0 rounded-md border border-slate-200 bg-white px-2 py-1 text-[0.7rem] font-bold text-slate-700">
+        {definition?.components.Value({ item }) ?? "Not configured"}
       </span>
+    </div>
+  );
+};
+
+const duplicateOccurrence = (
+  items: Condition[],
+  index: number,
+  serialized: string,
+) =>
+  items
+    .slice(0, index)
+    .filter((item) => Condition.toJsonString(item) === serialized).length;
+
+const GroupPreview = ({
+  kind,
+  items,
+  depth,
+}: {
+  kind: "and" | "or" | "none";
+  items: Condition[];
+  depth: number;
+}) => {
+  const meta = kindMeta[kind];
+  return (
+    <div className="flex flex-col gap-1">
+      <GroupHeading kind={kind} />
+      <div
+        className={twMerge(
+          "ml-2 flex flex-col border-l-2 pl-3",
+          meta.border,
+        )}
+      >
+        {items.map((item, index) => {
+          const serialized = Condition.toJsonString(item);
+          return (
+            <div
+              key={`${serialized}-${duplicateOccurrence(items, index, serialized)}`}
+              className="flex flex-col"
+            >
+              <PrintCond item={item} depth={depth + 1} />
+              {index < items.length - 1 && <Separator kind={kind} />}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };
@@ -89,85 +139,59 @@ const PrintCond = ({
 }: {
   item: Condition;
   depth?: number;
-}) => {
-  return match(item.type)
-    .when(
-      (x) => x.oneofKind === "expression",
-      (c) => <ExprChip item={c.expression} />,
-    )
-    .when(
-      (x) => x.oneofKind === "all",
-      (c) => {
-        const m = kindMeta["and"];
-        return (
-          <div className="flex flex-col gap-0.5">
-            <OpBadge kind="and" />
-            <div
-              className={twMerge(
-                "ml-3 pl-3 border-l-2 flex flex-col gap-0.5",
-                m.border,
-              )}
-            >
-              {c.all.of.map((x, idx) => (
-                <div key={idx} className="flex flex-col">
-                  <PrintCond item={x} depth={depth + 1} />
-                  {idx < c.all.of.length - 1 && <Separator kind="and" />}
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      },
-    )
-    .when(
-      (x) => x.oneofKind === "any",
-      (c) => {
-        const m = kindMeta["or"];
-        return (
-          <div className="flex flex-col gap-0.5">
-            <OpBadge kind="or" />
-            <div
-              className={twMerge(
-                "ml-3 pl-3 border-l-2 flex flex-col gap-0.5",
-                m.border,
-              )}
-            >
-              {c.any.of.map((x, idx) => (
-                <div key={idx} className="flex flex-col">
-                  <PrintCond item={x} depth={depth + 1} />
-                  {idx < c.any.of.length - 1 && <Separator kind="or" />}
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      },
-    )
-    .when(
-      (x) => x.oneofKind === "none",
-      (c) => {
-        const m = kindMeta["none"];
-        return (
-          <div className="flex flex-col gap-0.5">
-            <OpBadge kind="none" />
-            <div
-              className={twMerge(
-                "ml-3 pl-3 border-l-2 flex flex-col gap-0.5",
-                m.border,
-              )}
-            >
-              {c.none.of.map((x, idx) => (
-                <div key={idx} className="flex flex-col">
-                  <PrintCond item={x} depth={depth + 1} />
-                  {idx < c.none.of.length - 1 && <Separator kind="none" />}
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      },
-    )
-    .otherwise(() => null);
-};
+}) =>
+  match(item.type)
+    .with({ oneofKind: "expression" }, (type) => (
+      <ExprChip item={type.expression} />
+    ))
+    .with({ oneofKind: "all" }, (type) => (
+      <GroupPreview kind="and" items={type.all.of} depth={depth} />
+    ))
+    .with({ oneofKind: "any" }, (type) => (
+      <GroupPreview kind="or" items={type.any.of} depth={depth} />
+    ))
+    .with({ oneofKind: "none" }, (type) => (
+      <GroupPreview kind="none" items={type.none.of} depth={depth} />
+    ))
+    .with({ oneofKind: "not" }, (type) => (
+      <div className="rounded-lg border border-red-100 bg-red-50/50 p-2.5">
+        <div className="mb-2 flex items-center gap-2">
+          <span className="rounded-md border border-red-200 bg-white px-2 py-0.5 text-[0.58rem] font-bold uppercase tracking-[0.07em] text-red-600">
+            NOT
+          </span>
+          <span className="text-[0.63rem] font-semibold text-red-700/70">
+            Result is inverted
+          </span>
+        </div>
+        {type.not.expression ? (
+          <ExprChip item={type.not.expression} />
+        ) : (
+          <span className="text-[0.68rem] font-semibold text-red-600/70">
+            Negated expression is not configured
+          </span>
+        )}
+      </div>
+    ))
+    .with({ oneofKind: "matchAny" }, () => (
+      <div className="flex items-center gap-2.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-900 text-white">
+          <Sparkles size={11} strokeWidth={2.25} />
+        </span>
+        <div>
+          <p className="text-[0.7rem] font-bold text-slate-700">
+            Match everything
+          </p>
+          <p className="mt-0.5 text-[0.62rem] font-semibold text-slate-400">
+            No restrictions are applied
+          </p>
+        </div>
+        <Check size={12} className="ml-auto text-emerald-600" />
+      </div>
+    ))
+    .otherwise(() => (
+      <div className="rounded-lg border border-dashed border-slate-200 px-3 py-3 text-center text-[0.68rem] font-semibold text-slate-400">
+        Condition is not configured
+      </div>
+    ));
 
 export default PrintCond;
