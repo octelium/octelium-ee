@@ -14,7 +14,7 @@ import {
   Resource,
   ResourceList,
 } from "@/utils/pb";
-import { ActionIcon, Button, Menu, Tooltip } from "@mantine/core";
+import { ActionIcon, Button, Loader, Menu, Tooltip } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import React from "react";
@@ -42,6 +42,7 @@ import {
   MoreVertical,
   Pencil,
   Plus,
+  SearchX,
   ShieldEllipsis,
   ShieldUser,
   SquareTerminal,
@@ -327,12 +328,19 @@ const ResourceListC = (props: {
       )}
 
       {props.itemsList.items.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-20 gap-5">
-          <div className="text-[0.78rem] font-bold uppercase tracking-[0.08em] text-slate-400">
-            No {kindName}s found
+        <div className="flex min-h-72 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 px-6 py-14 text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400 shadow-sm">
+            <SearchX size={20} strokeWidth={1.9} />
           </div>
+          <h2 className="mt-4 text-sm font-bold text-slate-700">
+            No {kindName} resources found
+          </h2>
+          <p className="mt-1.5 max-w-sm text-[0.75rem] font-medium leading-5 text-slate-400">
+            There are no resources to display with the current filters or page.
+          </p>
           {!props.info.unCreatable && (
             <Button
+              className="mt-5"
               variant="filled"
               leftSection={<Plus size={14} />}
               onClick={() => navigate("create")}
@@ -414,6 +422,28 @@ const useListReq = () => {
   return req;
 };
 
+const ResourceListLoading = () => (
+  <motion.div
+    role="status"
+    aria-live="polite"
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    transition={{ duration: 0.5 }}
+    className="flex min-h-72 w-full flex-col items-center justify-center gap-3"
+  >
+    <motion.div
+      animate={{ opacity: [0.45, 1, 0.45], scale: [0.96, 1, 0.96] }}
+      transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+      className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm"
+    >
+      <Loader size={22} color="dark" type="oval" />
+    </motion.div>
+    <span className="text-[0.7rem] font-semibold tracking-wide text-slate-400">
+      Loading resources…
+    </span>
+  </motion.div>
+);
+
 const ResourceListContent = (props: { info: ResourceComponentInfo }) => {
   const loc = useLocation();
   const apiKind = getAPIKindFromPath(loc.pathname);
@@ -437,7 +467,7 @@ const ResourceListContent = (props: { info: ResourceComponentInfo }) => {
     },
   });
 
-  if (!data || isLoading) return null;
+  if (!data || isLoading) return <ResourceListLoading />;
 
   const itemList = data["response"] as ResourceList | undefined;
 
