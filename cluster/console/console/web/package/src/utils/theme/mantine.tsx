@@ -6,6 +6,7 @@ import {
   createTheme,
   HoverCard,
   Input,
+  Menu,
   MultiSelect,
   NumberInput,
   Pagination,
@@ -28,23 +29,23 @@ const FONT =
 
 const labelStyles = {
   label: {
-    fontSize: "0.78rem",
+    fontSize: "0.72rem",
     fontWeight: 700,
     fontFamily: FONT,
     textTransform: "uppercase" as const,
-    letterSpacing: "0.05em",
+    letterSpacing: "0.04em",
     color: "#475569",
     marginBottom: "4px",
   },
   description: {
-    fontSize: "0.75rem",
+    fontSize: "0.7rem",
     fontWeight: 600,
     fontFamily: FONT,
     color: "#94a3b8",
     marginBottom: "4px",
   },
   error: {
-    fontSize: "0.75rem",
+    fontSize: "0.7rem",
     fontWeight: 600,
     fontFamily: FONT,
   },
@@ -57,14 +58,18 @@ const inputStyles = {
     fontFamily: FONT,
     backgroundColor: "#ffffff",
     border: "1px solid #e2e8f0",
-    borderRadius: "6px",
+    borderRadius: "8px",
     color: "#1e293b",
-    boxShadow: "0 1px 3px rgba(15,23,42,0.05)",
-    transition: "border-color 500ms, box-shadow 500ms",
+    boxShadow: "none",
+    minHeight: "38px",
+    transition: "border-color 500ms, background-color 500ms",
     "&:focus, &[data-focus]": {
-      borderColor: "#0f172a",
-      boxShadow: "0 0 0 2px rgba(15,23,42,0.12)",
+      borderColor: "#64748b",
+      boxShadow: "none",
       outline: "none",
+    },
+    "&[data-error]": {
+      borderColor: "#ef4444",
     },
     "&:disabled": {
       backgroundColor: "#f8fafc",
@@ -84,17 +89,22 @@ const optionStyles = {
     fontSize: "0.78rem",
     fontWeight: 600,
     fontFamily: FONT,
-    borderRadius: "4px",
-    transition: "background-color 100ms",
+    borderRadius: "7px",
+    minHeight: "34px",
+    transition: "background-color 300ms, color 300ms",
+    "&[data-combobox-selected]": {
+      backgroundColor: "#0f172a",
+      color: "#ffffff",
+    },
   },
 };
 
 const comboboxDefaultProps = {
   radius: "md" as const,
   comboboxProps: {
-    transitionProps: { transition: "pop" as MantineTransition, duration: 180 },
-    shadow: "sm",
-    radius: "md" as const,
+    transitionProps: { transition: "pop" as MantineTransition, duration: 200 },
+    shadow: "md",
+    radius: "lg" as const,
   },
 };
 
@@ -105,6 +115,7 @@ const theme = createTheme({
   primaryColor: "dark",
   autoContrast: true,
   defaultRadius: "md",
+  cursorType: "pointer",
 
   components: {
     Button: Button.extend({
@@ -116,9 +127,14 @@ const theme = createTheme({
           fontFamily: FONT,
           fontWeight: 700,
           fontSize: "0.78rem",
-          borderRadius: "6px",
-          transition: "background-color 500ms, box-shadow 500ms",
-          boxShadow: "0 2px 4px rgba(0,0,0,0.08)",
+          borderRadius: "8px",
+          transition:
+            "background-color 500ms, border-color 500ms, color 500ms, opacity 500ms",
+          boxShadow: "none",
+          "&:focus-visible": {
+            outline: "2px solid #94a3b8",
+            outlineOffset: "2px",
+          },
         },
         label: {
           fontFamily: FONT,
@@ -164,7 +180,7 @@ const theme = createTheme({
         ...labelStyles,
         input: {
           ...inputStyles.input,
-          minHeight: "36px",
+          minHeight: "38px",
         },
         pill: {
           fontSize: "0.7rem",
@@ -183,7 +199,7 @@ const theme = createTheme({
         ...labelStyles,
         input: {
           ...inputStyles.input,
-          minHeight: "36px",
+          minHeight: "38px",
         },
         pill: {
           fontSize: "0.7rem",
@@ -216,11 +232,11 @@ const theme = createTheme({
         },
         description: labelStyles.description,
         track: {
-          transition: "background-color 150ms",
+          transition: "background-color 300ms, border-color 300ms",
           cursor: "pointer",
         },
         thumb: {
-          transition: "left 150ms",
+          transition: "left 300ms",
         },
       },
     }),
@@ -237,7 +253,7 @@ const theme = createTheme({
         input: {
           cursor: "pointer",
           borderColor: "#e2e8f0",
-          transition: "background-color 150ms, border-color 150ms",
+          transition: "background-color 300ms, border-color 300ms",
         },
       },
     }),
@@ -254,7 +270,7 @@ const theme = createTheme({
         radio: {
           cursor: "pointer",
           borderColor: "#e2e8f0",
-          transition: "background-color 150ms, border-color 150ms",
+          transition: "background-color 300ms, border-color 300ms",
         },
       },
     }),
@@ -264,23 +280,23 @@ const theme = createTheme({
         root: {
           backgroundColor: "#f1f5f9",
           border: "1px solid #e2e8f0",
-          // borderRadius: "10px",
-          // padding: "3px",
-          // height: "44px",
+          borderRadius: "10px",
+          padding: "3px",
         },
         label: {
           fontSize: "0.82rem",
           fontWeight: 700,
           color: "#64748b",
-          transition: "color 150ms",
+          transition: "color 500ms",
           "&[data-active]": {
-            color: "#ffffff",
+            color: "#0f172a",
           },
         },
         indicator: {
-          backgroundColor: "#fff",
+          backgroundColor: "#ffffff",
           borderRadius: "7px",
-          boxShadow: "0 1px 4px rgba(15,23,42,0.18)",
+          boxShadow: "0 1px 3px rgba(15,23,42,0.16)",
+          transition: "transform 300ms ease, width 300ms ease",
         },
       },
     }),
@@ -294,8 +310,9 @@ const theme = createTheme({
           border: "1px solid #e2e8f0",
           backgroundColor: "#ffffff",
           color: "#475569",
-          boxShadow: "0 1px 3px rgba(15,23,42,0.07)",
-          transition: "background-color 150ms, border-color 150ms",
+          boxShadow: "none",
+          transition:
+            "background-color 500ms, border-color 500ms, color 500ms",
           "&:hover": {
             backgroundColor: "#f8fafc",
             borderColor: "#cbd5e1",
@@ -309,13 +326,48 @@ const theme = createTheme({
       },
     }),
 
+    Menu: Menu.extend({
+      defaultProps: {
+        shadow: "md",
+        radius: "lg",
+        transitionProps: {
+          transition: "pop" as MantineTransition,
+          duration: 200,
+        },
+      },
+      styles: {
+        dropdown: {
+          border: "1px solid #e2e8f0",
+          boxShadow: "0 10px 28px rgba(15,23,42,0.12)",
+          padding: "6px",
+        },
+        item: {
+          borderRadius: "7px",
+          fontFamily: FONT,
+          fontSize: "0.76rem",
+          fontWeight: 700,
+          minHeight: "34px",
+          transition: "background-color 300ms, color 300ms",
+        },
+        label: {
+          color: "#94a3b8",
+          fontFamily: FONT,
+          fontSize: "0.64rem",
+          fontWeight: 700,
+          letterSpacing: "0.05em",
+          textTransform: "uppercase",
+        },
+        divider: { borderColor: "#e2e8f0" },
+      },
+    }),
+
     Tabs: Tabs.extend({
       styles: {
         tab: {
           fontSize: "0.78rem",
           fontWeight: 700,
           fontFamily: FONT,
-          transition: "color 150ms, border-color 150ms",
+          transition: "color 500ms, border-color 500ms",
         },
         panel: {
           fontFamily: FONT,
@@ -338,7 +390,7 @@ const theme = createTheme({
           fontWeight: 600,
         },
         control: {
-          transition: "background-color 150ms",
+          transition: "background-color 500ms",
         },
       },
     }),
@@ -373,7 +425,7 @@ const theme = createTheme({
           backgroundColor: "#1e293b",
           color: "#f8fafc",
           border: "1px solid #334155",
-          borderRadius: "6px",
+          borderRadius: "8px",
           boxShadow: "0 4px 12px rgba(15,23,42,0.15)",
           padding: "5px 10px",
         },
@@ -391,7 +443,7 @@ const theme = createTheme({
       styles: {
         dropdown: {
           border: "1px solid #e2e8f0",
-          borderRadius: "10px",
+          borderRadius: "12px",
           boxShadow: "0 8px 24px rgba(15,23,42,0.10)",
           fontFamily: FONT,
         },
@@ -410,7 +462,7 @@ const theme = createTheme({
       styles: {
         dropdown: {
           border: "1px solid #e2e8f0",
-          borderRadius: "10px",
+          borderRadius: "12px",
           boxShadow: "0 8px 32px rgba(15,23,42,0.12)",
           fontFamily: FONT,
           overflow: "visible",
