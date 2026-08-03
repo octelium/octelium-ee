@@ -5,9 +5,95 @@ import SelectSecret from "@/components/ResourceLayout/SelectSecret";
 import TextAreaCustom from "@/components/TextAreaCustom";
 import { getDomain } from "@/utils";
 import { cloneResource } from "@/utils/pb";
-import { Group, Switch, Tabs, TagsInput, TextInput } from "@mantine/core";
+import {
+  Group,
+  SegmentedControl,
+  Switch,
+  TagsInput,
+  TextInput,
+} from "@mantine/core";
 import React from "react";
 import { match } from "ts-pattern";
+
+type SegmentedTabsContextValue = {
+  value: string | null;
+  onChange: (value: string) => void;
+};
+
+const SegmentedTabsContext = React.createContext<SegmentedTabsContextValue>({
+  value: null,
+  onChange: () => {},
+});
+
+const SegmentedTabsRoot = (props: {
+  value?: string | null;
+  defaultValue?: string | null;
+  onChange?: (value: string | null) => void;
+  className?: string;
+  children: React.ReactNode;
+}) => {
+  const [internalValue, setInternalValue] = React.useState(
+    props.defaultValue ?? null,
+  );
+  const value = props.value ?? internalValue;
+  const onChange = (next: string) => {
+    if (props.value === undefined) setInternalValue(next);
+    props.onChange?.(next);
+  };
+
+  return (
+    <SegmentedTabsContext.Provider value={{ value, onChange }}>
+      <div className={props.className}>{props.children}</div>
+    </SegmentedTabsContext.Provider>
+  );
+};
+
+const SegmentedTabsTab = (_props: {
+  value: string;
+  children: React.ReactNode;
+}) => null;
+
+const SegmentedTabsList = (props: {
+  className?: string;
+  children: React.ReactNode;
+}) => {
+  const { value, onChange } = React.useContext(SegmentedTabsContext);
+  const data = React.Children.toArray(props.children)
+    .filter(React.isValidElement)
+    .map((child) => {
+      const tab = child as React.ReactElement<{
+        value: string;
+        children: React.ReactNode;
+      }>;
+      return { value: tab.props.value, label: tab.props.children };
+    });
+
+  return (
+    <div className={`overflow-x-auto ${props.className ?? ""}`}>
+      <SegmentedControl
+        size="xs"
+        value={value ?? data[0]?.value}
+        onChange={onChange}
+        data={data}
+        className="min-w-max"
+      />
+    </div>
+  );
+};
+
+const SegmentedTabsPanel = (props: {
+  value: string;
+  children: React.ReactNode;
+}) => {
+  const { value } = React.useContext(SegmentedTabsContext);
+  return value === props.value ? <>{props.children}</> : null;
+};
+
+const Tabs = Object.assign(SegmentedTabsRoot, {
+  List: SegmentedTabsList,
+  Tab: SegmentedTabsTab,
+  Panel: SegmentedTabsPanel,
+});
 
 const Edit = (props: {
   item: CoreP.IdentityProvider;
