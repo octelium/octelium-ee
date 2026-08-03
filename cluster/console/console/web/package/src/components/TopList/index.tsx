@@ -62,12 +62,22 @@ const TopList = (props: {
           {index + 1}
         </span>
 
-        <span className="relative flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="truncate text-[0.76rem] font-bold text-slate-700 transition-colors duration-500 group-hover:text-slate-900">
-            {printResourceNameWithDisplay(resource)}
-          </span>
-          <span className="truncate text-[0.62rem] font-semibold uppercase tracking-[0.05em] text-slate-400">
-            {resource.kind}
+        <span className="relative flex min-w-0 flex-1 items-center gap-2.5">
+          {md.picURL && (
+            <img
+              src={md.picURL}
+              alt=""
+              loading="lazy"
+              className="h-9 w-9 shrink-0 rounded-lg border border-slate-200 bg-white object-cover shadow-sm"
+            />
+          )}
+          <span className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
+            <span className="truncate text-[0.76rem] font-bold text-slate-700 transition-colors duration-500 group-hover:text-slate-900">
+              {printResourceNameWithDisplay(resource)}
+            </span>
+            <span className="truncate text-[0.62rem] font-semibold uppercase tracking-[0.05em] text-slate-400">
+              {resource.kind}
+            </span>
           </span>
         </span>
 
