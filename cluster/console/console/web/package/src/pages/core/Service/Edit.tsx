@@ -242,6 +242,29 @@ const cloneConfigForMode = (
   return ret;
 };
 
+const configTypeTitle = (
+  type: CoreP.Service_Spec_Config["type"]["oneofKind"],
+) => {
+  switch (type) {
+    case "http":
+      return "HTTP-specific configuration";
+    case "kubernetes":
+      return "Kubernetes-specific configuration";
+    case "ssh":
+      return "SSH-specific configuration";
+    case "postgres":
+      return "PostgreSQL-specific configuration";
+    case "mysql":
+      return "MySQL-specific configuration";
+    case "socks5":
+      return "SOCKS5-specific configuration";
+    case "rdp":
+      return "RDP-specific configuration";
+    default:
+      return "Mode-specific configuration";
+  }
+};
+
 const Config = (props: {
   item: CoreP.Service_Spec_Config;
 
@@ -1508,7 +1531,15 @@ const Config = (props: {
         )}
       </EditItem>
 
-      {match(req.type)
+      {req.type.oneofKind !== undefined && (
+        <EditItem
+          title={configTypeTitle(req.type.oneofKind)}
+          description="Configure settings specific to this Service mode"
+          obj={req.type}
+          onUnset={() => {}}
+          noDelete
+        >
+          {match(req.type)
         .when(
           (x) => x.oneofKind === `kubernetes`,
           (kubernetes) => {
@@ -5615,7 +5646,9 @@ const Config = (props: {
         )
         .otherwise(() => (
           <></>
-        ))}
+            ))}
+        </EditItem>
+      )}
 
       <EditItem
         title="TLS"
