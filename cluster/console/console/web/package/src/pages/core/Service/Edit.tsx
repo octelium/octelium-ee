@@ -223,20 +223,44 @@ const ContainerProbe = (props: {
   );
 };
 
+const cloneConfigForMode = (
+  item: CoreP.Service_Spec_Config,
+  mode?: CoreP.Service_Spec_Mode,
+) => {
+  const ret = CoreP.Service_Spec_Config.clone(item);
+  if (
+    ret.type.oneofKind === undefined &&
+    (mode === CoreP.Service_Spec_Mode.HTTP ||
+      mode === CoreP.Service_Spec_Mode.WEB ||
+      mode === CoreP.Service_Spec_Mode.GRPC)
+  ) {
+    ret.type = {
+      oneofKind: "http",
+      http: CoreP.Service_Spec_Config_HTTP.create(),
+    };
+  }
+  return ret;
+};
+
 const Config = (props: {
   item: CoreP.Service_Spec_Config;
 
   onUpdate: (item: CoreP.Service_Spec_Config) => void;
   default?: boolean;
+  mode?: CoreP.Service_Spec_Mode;
 }) => {
   const { item, onUpdate } = props;
-  const [req, setReq] = React.useState(CoreP.Service_Spec_Config.clone(item));
-  const [init, setInit] = React.useState(CoreP.Service_Spec_Config.clone(item));
+  const [req, setReq] = React.useState(
+    cloneConfigForMode(item, props.mode),
+  );
+  const [init, setInit] = React.useState(
+    cloneConfigForMode(item, props.mode),
+  );
 
   React.useEffect(() => {
-    setReq(CoreP.Service_Spec_Config.clone(item));
-    setInit(CoreP.Service_Spec_Config.clone(item));
-  }, [item]);
+    setReq(cloneConfigForMode(item, props.mode));
+    setInit(cloneConfigForMode(item, props.mode));
+  }, [item, props.mode]);
 
   const updateReq = () => {
     setReq(CoreP.Service_Spec_Config.clone(req));
@@ -6171,6 +6195,7 @@ const Edit = (props: {
         {req.spec!.config && (
           <Config
             default
+            mode={req.spec!.mode}
             item={req.spec!.config}
             onUpdate={(v) => {
               req.spec!.config = v;
