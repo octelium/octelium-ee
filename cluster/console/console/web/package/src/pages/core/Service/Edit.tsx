@@ -18,7 +18,6 @@ import ItemMessage from "@/components/ItemMessage";
 import SelectInlinePolicies from "@/components/ResourceLayout/SelectInlinePolicies";
 import SelectPolicies from "@/components/ResourceLayout/SelectPolicies";
 import SelectResource from "@/components/ResourceLayout/SelectResource";
-import SelectSecret from "@/components/ResourceLayout/SelectSecret";
 import TextAreaCustom from "@/components/TextAreaCustom";
 import { strToNum } from "@/utils/convert";
 import { Tabs } from "@mantine/core";
@@ -551,8 +550,9 @@ const Config = (props: {
 
                                   {container.container.env[idx].type
                                     .oneofKind === `fromSecret` && (
-                                    <SelectSecret
+                                    <SelectResource
                                       api="core"
+                                      kind="Secret"
                                       label="Value Secret"
                                       description="Select the Secret whose value is used"
                                       defaultValue={
@@ -565,7 +565,7 @@ const Config = (props: {
                                       onChange={(v) => {
                                         container.container.env[idx].type = {
                                           oneofKind: "fromSecret",
-                                          fromSecret: v ?? "",
+                                          fromSecret: v?.metadata?.name ?? "",
                                         };
                                         updateReq();
                                       }}
@@ -683,8 +683,9 @@ const Config = (props: {
                                             updateReq();
                                           }}
                                         />
-                                        <SelectSecret
+                                        <SelectResource
                                           api="core"
+                                          kind="Secret"
                                           label="Password Secret"
                                           description="Select the secret of the password"
                                           defaultValue={
@@ -704,7 +705,8 @@ const Config = (props: {
                                               (x) =>
                                                 x?.oneofKind === `fromSecret`,
                                               (x) => {
-                                                x.fromSecret = val ?? "";
+                                                x.fromSecret =
+                                                  val?.metadata?.name ?? "";
                                               },
                                             );
 
@@ -1588,8 +1590,9 @@ const Config = (props: {
                         (kubeconfig) => {
                           return (
                             <Group grow>
-                              <SelectSecret
+                              <SelectResource
                                 api="core"
+                                kind="Secret"
                                 defaultValue={
                                   kubeconfig.kubeconfig.type.oneofKind ===
                                   `fromSecret`
@@ -1600,7 +1603,7 @@ const Config = (props: {
                                   match(kubeconfig.kubeconfig.type).when(
                                     (x) => x.oneofKind === `fromSecret`,
                                     (x) => {
-                                      x.fromSecret = v ?? "";
+                                      x.fromSecret = v?.metadata?.name ?? "";
                                     },
                                   );
 
@@ -1635,8 +1638,9 @@ const Config = (props: {
                         (bearerToken) => {
                           return (
                             <div className="w-full">
-                              <SelectSecret
+                              <SelectResource
                                 api="core"
+                                kind="Secret"
                                 defaultValue={
                                   bearerToken.bearerToken.type.oneofKind ===
                                   `fromSecret`
@@ -1647,7 +1651,7 @@ const Config = (props: {
                                   match(bearerToken.bearerToken.type).when(
                                     (x) => x.oneofKind === `fromSecret`,
                                     (x) => {
-                                      x.fromSecret = v ?? "";
+                                      x.fromSecret = v?.metadata?.name ?? "";
                                     },
                                   );
 
@@ -2829,8 +2833,9 @@ const Config = (props: {
                               (bearer) => {
                                 return (
                                   <div className="w-full">
-                                    <SelectSecret
+                                    <SelectResource
                                       api="core"
+                                      kind="Secret"
                                       label="Bearer access token Secret"
                                       description="Select the Secret of the bearer access token"
                                       defaultValue={
@@ -2843,7 +2848,8 @@ const Config = (props: {
                                         match(bearer.bearer.type).when(
                                           (x) => x.oneofKind === `fromSecret`,
                                           (x) => {
-                                            x.fromSecret = val ?? "";
+                                            x.fromSecret =
+                                              val?.metadata?.name ?? "";
                                           },
                                         );
 
@@ -2888,13 +2894,15 @@ const Config = (props: {
                                         (x) => x?.oneofKind === `fromSecret`,
                                         (x) => {
                                           return (
-                                            <SelectSecret
+                                            <SelectResource
                                               api="core"
+                                              kind="Secret"
                                               label="Client Secret"
                                               description="Select the Secret of the OAuth2 client secret"
                                               defaultValue={x.fromSecret}
                                               onChange={(v) => {
-                                                x.fromSecret = v ?? "";
+                                                x.fromSecret =
+                                                  v?.metadata?.name ?? "";
                                                 updateReq();
                                               }}
                                             />
@@ -2950,13 +2958,15 @@ const Config = (props: {
                                         (x) => x?.oneofKind === `fromSecret`,
                                         (x) => {
                                           return (
-                                            <SelectSecret
+                                            <SelectResource
                                               api="core"
+                                              kind="Secret"
                                               label="Password Secret"
                                               description="Select the Secret of the basic authentication password"
                                               defaultValue={x.fromSecret}
                                               onChange={(v) => {
-                                                x.fromSecret = v ?? "";
+                                                x.fromSecret =
+                                                  v?.metadata?.name ?? "";
                                                 updateReq();
                                               }}
                                             />
@@ -2996,13 +3006,15 @@ const Config = (props: {
                                         (x) => x?.oneofKind === `fromSecret`,
                                         (x) => {
                                           return (
-                                            <SelectSecret
+                                            <SelectResource
                                               api="core"
+                                              kind="Secret"
                                               label="Header value Secret"
                                               description="Select the Secret of the header value"
                                               defaultValue={x.fromSecret}
                                               onChange={(v) => {
-                                                x.fromSecret = v ?? "";
+                                                x.fromSecret =
+                                                  v?.metadata?.name ?? "";
                                                 updateReq();
                                               }}
                                             />
@@ -3065,13 +3077,15 @@ const Config = (props: {
                                         (x) => x?.oneofKind === `fromSecret`,
                                         (x) => {
                                           return (
-                                            <SelectSecret
+                                            <SelectResource
                                               api="core"
+                                              kind="Secret"
                                               label="Secret Access Key"
                                               description="Set the Secret of the Sigv4 Secret Access Key"
                                               defaultValue={x.fromSecret}
                                               onChange={(v) => {
-                                                x.fromSecret = v ?? "";
+                                                x.fromSecret =
+                                                  v?.metadata?.name ?? "";
                                                 updateReq();
                                               }}
                                             />
@@ -4968,13 +4982,15 @@ const Config = (props: {
                                   (x) => x?.oneofKind === `fromSecret`,
                                   (x) => {
                                     return (
-                                      <SelectSecret
+                                      <SelectResource
                                         api="core"
+                                        kind="Secret"
                                         label="Password Secret"
                                         description="Select the Secret of the password"
                                         defaultValue={x.fromSecret}
                                         onChange={(v) => {
-                                          x.fromSecret = v ?? "";
+                                          x.fromSecret =
+                                            v?.metadata?.name ?? "";
                                           updateReq();
                                         }}
                                       />
@@ -4999,13 +5015,15 @@ const Config = (props: {
                                   (x) => x?.oneofKind === `fromSecret`,
                                   (x) => {
                                     return (
-                                      <SelectSecret
+                                      <SelectResource
                                         api="core"
+                                        kind="Secret"
                                         label="Private key Secret"
                                         description="Select the Secret of the private key"
                                         defaultValue={x.fromSecret}
                                         onChange={(v) => {
-                                          x.fromSecret = v ?? "";
+                                          x.fromSecret =
+                                            v?.metadata?.name ?? "";
                                           updateReq();
                                         }}
                                       />
@@ -5146,13 +5164,14 @@ const Config = (props: {
                             (x) => x?.oneofKind === `fromSecret`,
                             (x) => {
                               return (
-                                <SelectSecret
+                                <SelectResource
                                   api="core"
+                                  kind="Secret"
                                   label="Password Secret"
                                   description="Select the Secret of the Password"
                                   defaultValue={x.fromSecret}
                                   onChange={(v) => {
-                                    x.fromSecret = v ?? "";
+                                    x.fromSecret = v?.metadata?.name ?? "";
                                     updateReq();
                                   }}
                                 />
@@ -5275,11 +5294,12 @@ const Config = (props: {
                             (x) => x?.oneofKind === `fromSecret`,
                             (x) => {
                               return (
-                                <SelectSecret
+                                <SelectResource
                                   api="core"
+                                  kind="Secret"
                                   defaultValue={x.fromSecret}
                                   onChange={(v) => {
-                                    x.fromSecret = v ?? "";
+                                    x.fromSecret = v?.metadata?.name ?? "";
                                     updateReq();
                                   }}
                                 />
@@ -5392,13 +5412,15 @@ const Config = (props: {
                                 .when(
                                   (x) => x?.oneofKind === "fromSecret",
                                   (x) => (
-                                    <SelectSecret
+                                    <SelectResource
                                       api="core"
+                                      kind="Secret"
                                       label="Password Secret"
                                       description="Select the Secret holding the password"
                                       defaultValue={x.fromSecret}
                                       onChange={(val) => {
-                                        x.fromSecret = val ?? "";
+                                        x.fromSecret =
+                                          val?.metadata?.name ?? "";
                                         updateReq();
                                       }}
                                     />
@@ -5468,13 +5490,14 @@ const Config = (props: {
                       .when(
                         (x) => x?.oneofKind === "fromSecret",
                         (x) => (
-                          <SelectSecret
+                          <SelectResource
                             api="core"
+                            kind="Secret"
                             label="Password Secret"
                             description="Select the Secret holding the upstream RDP password"
                             defaultValue={x.fromSecret}
                             onChange={(val) => {
-                              x.fromSecret = val ?? "";
+                              x.fromSecret = val?.metadata?.name ?? "";
                               updateReq();
                             }}
                           />
@@ -5674,11 +5697,12 @@ BQAwRTELMAkGA1UEBhMCQ...wpk+geq0
                   (x) => {
                     return (
                       <div>
-                        <SelectSecret
+                        <SelectResource
                           api="core"
+                          kind="Secret"
                           defaultValue={x.fromSecret}
                           onChange={(v) => {
-                            x.fromSecret = v ?? "";
+                            x.fromSecret = v?.metadata?.name ?? "";
                             updateReq();
                           }}
                         />
