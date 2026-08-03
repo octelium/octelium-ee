@@ -14,12 +14,17 @@ import {
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useMutation } from "@tanstack/react-query";
-import { AlertTriangle, Loader2, X } from "lucide-react";
+import {
+  AlertTriangle,
+  FileText,
+  Loader2,
+  ShieldAlert,
+  Trash2,
+  X,
+} from "lucide-react";
 import * as React from "react";
-import { MdDelete } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { twMerge } from "tailwind-merge";
 import CopyText from "../CopyText";
 import ResourceYAML from "../ResourceYAML";
 
@@ -42,49 +47,66 @@ const DeleteResource = (props: {
   btnLabel?: string;
 }) => {
   const { item } = props;
-  const [isDeletable, setIsDeletable] = React.useState(false);
+  const metadata = item.metadata!;
   const navigate = useNavigate();
+  const [isConfirmed, setIsConfirmed] = React.useState(false);
   const [internalOpened, { open, close: closeInternal }] = useDisclosure(false);
   const opened = props.opened ?? internalOpened;
   const close = props.onClose ?? closeInternal;
-
-  const handleClose = () => {
-    setIsDeletable(false);
-    close();
-  };
 
   const mutationDelete = useMutation({
     mutationFn: async () => {
       // @ts-ignore
       await getResourceClient(item)[`delete${item.kind}`]({
-        uid: item.metadata?.uid,
+        uid: metadata.uid,
       });
     },
     onSuccess: () => {
-      setIsDeletable(false);
+      setIsConfirmed(false);
       close();
       invalidateResourceList(item);
       props.onSuccess?.();
       if (!props.doNotNavigateAfter) {
         navigate(getResourceListPathFromResource(item));
       }
-      toast.success(`${item.kind} ${item.metadata!.name} deleted`);
+      toast.success(`${item.kind} ${metadata.name} deleted`);
     },
     onError,
   });
 
-  if (item.metadata?.isSystem) return null;
+  React.useEffect(() => {
+    if (!opened) {
+      setIsConfirmed(false);
+      mutationDelete.reset();
+    }
+  }, [opened, metadata.uid]);
+
+  const handleClose = () => {
+    if (mutationDelete.isPending) return;
+    setIsConfirmed(false);
+    mutationDelete.reset();
+    close();
+  };
+
+  const errorMessage =
+    mutationDelete.error instanceof Error
+      ? mutationDelete.error.message
+      : "The resource could not be deleted.";
+
+  if (metadata.isSystem) return null;
 
   return (
     <>
       {!props.hideTrigger && (
         <Button
+          type="button"
           color={props.btnColor ?? "red.8"}
           onClick={open}
           size={props.btnSize}
           variant={props.btnVariant}
+          leftSection={<Trash2 size={12} strokeWidth={2.25} />}
+          aria-label={props.btnLabel ?? `Delete ${item.kind} ${metadata.name}`}
         >
-          <MdDelete />
           {props.btnLabel}
         </Button>
       )}
@@ -93,112 +115,189 @@ const DeleteResource = (props: {
         opened={opened}
         onClose={handleClose}
         centered
+        size="md"
         withCloseButton={false}
         padding={0}
+        closeOnClickOutside={!mutationDelete.isPending}
+        closeOnEscape={!mutationDelete.isPending}
+        overlayProps={{ backgroundOpacity: 0.25, blur: 1 }}
+        transitionProps={{ transition: "pop", duration: 250 }}
         styles={{
           content: {
-            borderRadius: "12px",
             border: "1px solid #e2e8f0",
+            borderRadius: "14px",
+            boxShadow: "0 24px 64px rgba(15,23,42,0.18)",
             overflow: "hidden",
           },
         }}
       >
         <div className="flex flex-col">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 bg-slate-50/60">
-            <div className="flex items-center gap-2">
-              <AlertTriangle
-                size={15}
-                className="text-red-500 shrink-0"
-                strokeWidth={2.5}
-              />
-              <span className="text-[0.82rem] font-bold text-slate-800">
-                Delete {item.kind}
+          <header className="flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-50/70 px-4 py-3.5 sm:px-5">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-600 text-white shadow-sm">
+                <Trash2 size={16} strokeWidth={2.25} />
               </span>
+              <div className="min-w-0">
+                <h2 className="truncate text-sm font-bold text-slate-900">
+                  Delete {item.kind}
+                </h2>
+                <p className="mt-0.5 text-[0.65rem] font-semibold text-slate-400">
+                  Permanent destructive action
+                </p>
+              </div>
             </div>
-            <button
+            <Button
+              type="button"
+              variant="subtle"
+              color="gray"
+              size="compact-xs"
+              disabled={mutationDelete.isPending}
+              leftSection={<X size={12} strokeWidth={2.5} />}
               onClick={handleClose}
-              className="flex items-center justify-center w-6 h-6 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors duration-150 cursor-pointer"
             >
-              <X size={13} strokeWidth={2.5} />
-            </button>
-          </div>
+              Close
+            </Button>
+          </header>
 
-          <div className="px-5 py-4 flex flex-col gap-4">
-            <p className="text-[0.82rem] font-semibold text-slate-600">
-              This action is permanent and cannot be undone. The following
-              resource will be permanently deleted.
-            </p>
-
-            <div className="rounded-lg border border-slate-200 bg-slate-50 overflow-hidden">
-              <div className="grid grid-cols-[80px_1fr] text-[0.75rem]">
-                <span className="px-3 py-2 font-bold uppercase tracking-[0.05em] text-slate-400 border-b border-slate-200">
-                  Name
-                </span>
-                <span className="px-3 py-2 font-semibold text-slate-700 font-mono border-b border-slate-200">
-                  <CopyText value={item.metadata!.name} />
-                </span>
-                <span className="px-3 py-2 font-bold uppercase tracking-[0.05em] text-slate-400">
-                  UID
-                </span>
-                <span className="px-3 py-2 font-semibold text-slate-500 font-mono truncate">
-                  <CopyText value={item.metadata!.uid} />
-                </span>
+          <div className="space-y-4 px-4 py-4 sm:px-5">
+            <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50/70 px-3.5 py-3">
+              <AlertTriangle
+                size={16}
+                className="mt-0.5 shrink-0 text-red-600"
+                strokeWidth={2.25}
+              />
+              <div>
+                <p className="text-[0.76rem] font-bold text-red-800">
+                  This action cannot be undone
+                </p>
+                <p className="mt-1 text-[0.69rem] font-semibold leading-relaxed text-red-700/80">
+                  The resource will be permanently removed from the cluster.
+                  Review its identity carefully before continuing.
+                </p>
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <ResourceYAML item={item} size="xs" />
+            <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+              <div className="flex items-start gap-3 border-b border-slate-100 bg-slate-50/60 px-3.5 py-3">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500">
+                  <ShieldAlert size={14} strokeWidth={2.25} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2">
+                    <span className="truncate text-[0.8rem] font-bold text-slate-800">
+                      <CopyText value={metadata.name} />
+                    </span>
+                    <span className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[0.58rem] font-bold uppercase tracking-[0.06em] text-slate-500">
+                      {item.kind}
+                    </span>
+                  </div>
+                  {metadata.displayName && (
+                    <p className="mt-0.5 truncate text-[0.68rem] font-semibold text-slate-400">
+                      {metadata.displayName}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="grid grid-cols-[72px_minmax(0,1fr)] items-center gap-x-3 px-3.5 py-2.5 text-[0.68rem]">
+                <span className="font-bold uppercase tracking-[0.06em] text-slate-400">
+                  UID
+                </span>
+                <span className="min-w-0 truncate font-semibold text-slate-500">
+                  <CopyText value={metadata.uid} />
+                </span>
+              </div>
+            </section>
+
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[0.67rem] font-semibold text-slate-400">
+                Need to inspect the resource first?
+              </span>
+              <ResourceYAML
+                item={item}
+                size="xs"
+                readOnly
+                triggerComponent={
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="compact-xs"
+                    leftSection={<FileText size={11} strokeWidth={2.25} />}
+                  >
+                    Review YAML
+                  </Button>
+                }
+              />
             </div>
 
-            <Switch
-              checked={isDeletable}
-              onChange={(e) => setIsDeletable(e.currentTarget.checked)}
-              color="red"
-              size="md"
-              label={
-                <span className="text-[0.78rem] font-semibold text-slate-600">
-                  I understand, permanently delete this {item.kind}
-                </span>
-              }
-            />
+            <div className="rounded-xl border border-slate-200 bg-slate-50/60 px-3.5 py-3">
+              <Switch
+                autoFocus
+                checked={isConfirmed}
+                disabled={mutationDelete.isPending}
+                color="red.8"
+                size="sm"
+                label="I understand that this action is permanent"
+                description={`Confirm deletion of ${item.kind} “${metadata.name}”`}
+                onChange={(event) => {
+                  setIsConfirmed(event.currentTarget.checked);
+                  if (mutationDelete.isError) mutationDelete.reset();
+                }}
+                styles={{
+                  label: {
+                    color: "#334155",
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
+                  },
+                  description: {
+                    color: "#94a3b8",
+                    fontSize: "0.67rem",
+                    fontWeight: 600,
+                    marginTop: 2,
+                  },
+                }}
+              />
+            </div>
+
+            {mutationDelete.isError && (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-3.5 py-3">
+                <p className="text-[0.72rem] font-bold text-red-700">
+                  Deletion failed
+                </p>
+                <p className="mt-1 line-clamp-2 text-[0.68rem] font-semibold text-red-600/80">
+                  {errorMessage}
+                </p>
+              </div>
+            )}
           </div>
 
-          <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-slate-200 bg-slate-50/60">
-            <button
+          <footer className="flex items-center justify-end gap-2 border-t border-slate-200 bg-slate-50/70 px-4 py-3 sm:px-5">
+            <Button
+              type="button"
+              variant="default"
+              disabled={mutationDelete.isPending}
               onClick={handleClose}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[0.78rem] font-bold text-slate-600 border border-slate-200 bg-white hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 transition-colors duration-150 cursor-pointer"
             >
               Cancel
-            </button>
-
-            <button
-              disabled={!isDeletable || mutationDelete.isPending}
+            </Button>
+            <Button
+              type="button"
+              color="red.8"
+              disabled={!isConfirmed || mutationDelete.isPending}
+              loading={mutationDelete.isPending}
+              leftSection={
+                mutationDelete.isPending ? (
+                  <Loader2 size={13} className="animate-spin" />
+                ) : (
+                  <Trash2 size={13} strokeWidth={2.25} />
+                )
+              }
               onClick={() => mutationDelete.mutate()}
-              className={twMerge(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[0.78rem] font-bold",
-                "border transition-colors duration-150",
-                "disabled:opacity-40 disabled:cursor-not-allowed",
-                isDeletable
-                  ? "bg-red-600 text-white border-red-600 hover:bg-red-700 hover:border-red-700 shadow-[0_2px_8px_rgba(220,38,38,0.3)]"
-                  : "bg-red-100 text-red-400 border-red-200 cursor-not-allowed",
-              )}
             >
-              {mutationDelete.isPending ? (
-                <>
-                  <Loader2
-                    size={12}
-                    className="animate-spin"
-                    strokeWidth={2.5}
-                  />{" "}
-                  Deleting…
-                </>
-              ) : (
-                <>
-                  <MdDelete size={13} /> Delete {item.kind}
-                </>
-              )}
-            </button>
-          </div>
+              {mutationDelete.isPending
+                ? "Deleting…"
+                : `Delete ${item.kind}`}
+            </Button>
+          </footer>
         </div>
       </Modal>
     </>
