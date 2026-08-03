@@ -1,17 +1,41 @@
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import {
   Button,
-  Group,
   Input,
   InputBase,
   Popover,
-  Select,
+  SegmentedControl,
 } from "@mantine/core";
 import { DatePicker, TimeInput } from "@mantine/dates";
 import dayjs from "dayjs";
-import { useRef, useState } from "react";
-import { LuCalendar, LuClock, LuTimer } from "react-icons/lu";
-import { timeRangePickList } from "../AccessLogViewer/utils";
+import {
+  CalendarDays,
+  ChevronDown,
+  Clock3,
+  RotateCcw,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+
+type RelativeUnit = "minute" | "hour" | "day" | "week" | "month";
+
+const PRESETS: Array<{
+  value: number;
+  unit: RelativeUnit;
+  shortLabel: string;
+}> = [
+  { value: 1, unit: "minute", shortLabel: "1m" },
+  { value: 5, unit: "minute", shortLabel: "5m" },
+  { value: 15, unit: "minute", shortLabel: "15m" },
+  { value: 30, unit: "minute", shortLabel: "30m" },
+  { value: 1, unit: "hour", shortLabel: "1h" },
+  { value: 2, unit: "hour", shortLabel: "2h" },
+  { value: 6, unit: "hour", shortLabel: "6h" },
+  { value: 12, unit: "hour", shortLabel: "12h" },
+  { value: 1, unit: "day", shortLabel: "1d" },
+  { value: 3, unit: "day", shortLabel: "3d" },
+  { value: 1, unit: "week", shortLabel: "1w" },
+  { value: 1, unit: "month", shortLabel: "1mo" },
+];
 
 interface TimestampPickerProps {
   value?: Timestamp;
@@ -23,142 +47,138 @@ interface TimestampPickerProps {
   disableExcludePast?: boolean;
 }
 
+const formatTimestamp = (date: Date) =>
+  dayjs(date).format("MMM D, YYYY · h:mm A");
+
 const TimestampPicker = ({
   value,
   onChange,
   label,
   description,
-  placeholder = "Select date & time",
+  placeholder = "Select date and time",
   isFuture = false,
-  disableExcludePast,
+  disableExcludePast = false,
 }: TimestampPickerProps) => {
   const [opened, setOpened] = useState(false);
-  const [activeTab, setActiveTab] = useState<"presets" | "custom">("presets");
+  const [activeView, setActiveView] = useState<"relative" | "custom">(
+    "relative",
+  );
+  const externalDate = useMemo(
+    () => (value ? Timestamp.toDate(value) : null),
+    [value],
+  );
+  const [selectedDate, setSelectedDate] = useState<Date | null>(externalDate);
+  const [timeValue, setTimeValue] = useState(
+    externalDate ? dayjs(externalDate).format("HH:mm") : dayjs().format("HH:mm"),
+  );
+  const [validationError, setValidationError] = useState<string>();
+  const timeZone = useMemo(
+    () => Intl.DateTimeFormat().resolvedOptions().timeZone || "Local time",
+    [],
+  );
 
-  const initialDate = value ? Timestamp.toDate(value) : null;
-  const [internalDate, setInternalDate] = useState<Date | null>(initialDate);
-  const timeRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    setSelectedDate(externalDate);
+    if (externalDate) setTimeValue(dayjs(externalDate).format("HH:mm"));
+    setValidationError(undefined);
+  }, [externalDate?.getTime()]);
 
-  const displayValue = value
-    ? dayjs(Timestamp.toDate(value)).format("MMM D, YYYY h:mm A")
-    : "";
+  const customTimestamp = useMemo(() => {
+    if (!selectedDate || !/^\d{2}:\d{2}$/.test(timeValue)) return null;
+    const [hours, minutes] = timeValue.split(":").map(Number);
+    if (hours > 23 || minutes > 59) return null;
 
-  const handlePresetChange = (v: string | null) => {
-    if (!v) return;
-    const [numStr, unit] = v.split(" ");
-    const num = parseInt(numStr, 10);
-    const targetDate = isFuture
-      ? dayjs().add(num, unit as dayjs.ManipulateType)
-      : dayjs().subtract(num, unit as dayjs.ManipulateType);
-    onChange(Timestamp.fromDate(targetDate.toDate()));
-    setOpened(false);
-  };
-
-  const handleDateChange = (val: string | Date | null) => {
-    if (!val) {
-      setInternalDate(null);
-      return;
-    }
-    setInternalDate(dayjs(val).toDate());
-  };
-
-  const applyCustomChange = () => {
-    if (!internalDate) return;
-    const timeVal = timeRef.current?.value || "00:00";
-    const [hours, minutes] = timeVal.split(":").map(Number);
-    const finalDate = dayjs(internalDate)
+    return dayjs(selectedDate)
       .hour(hours)
       .minute(minutes)
       .second(0)
+      .millisecond(0)
       .toDate();
-    if (isFuture && dayjs(finalDate).isBefore(dayjs())) {
-      alert("Please select a future date and time.");
-      return;
-    }
-    onChange(Timestamp.fromDate(finalDate));
+  }, [selectedDate, timeValue]);
+
+  const chooseRelativeTime = (
+    amount: number,
+    unit: RelativeUnit,
+  ) => {
+    const target = isFuture
+      ? dayjs().add(amount, unit)
+      : dayjs().subtract(amount, unit);
+    onChange(Timestamp.fromDate(target.toDate()));
     setOpened(false);
   };
 
-  const tabBtnStyles = (active: boolean, position: "left" | "right") => ({
-    root: {
-      height: "30px",
-      fontSize: "0.72rem",
-      fontWeight: 700,
-      padding: "0 12px",
-      flex: 1,
-      backgroundColor: active ? "#0f172a" : "#f8fafc",
-      color: active ? "#ffffff" : "#64748b",
-      border: "none",
-      borderRadius: 0,
-      borderTopLeftRadius: position === "left" ? "8px" : 0,
-      borderTopRightRadius: position === "right" ? "8px" : 0,
-      transition: "background-color 150ms, color 150ms",
-      "&:hover": {
-        backgroundColor: active ? "#1e293b" : "#f1f5f9",
-        color: active ? "#ffffff" : "#0f172a",
-      },
-    },
-  });
+  const applyCustomTime = () => {
+    if (!customTimestamp) {
+      setValidationError("Choose a valid date and time.");
+      return;
+    }
+
+    if (
+      isFuture &&
+      !disableExcludePast &&
+      dayjs(customTimestamp).isBefore(dayjs())
+    ) {
+      setValidationError("Choose a date and time in the future.");
+      return;
+    }
+
+    setValidationError(undefined);
+    onChange(Timestamp.fromDate(customTimestamp));
+    setOpened(false);
+  };
 
   return (
-    <Input.Wrapper
-      label={
-        label ? (
-          <span className="text-[0.72rem] font-bold uppercase tracking-[0.05em] text-slate-600 mb-1 block">
-            {label}
-          </span>
-        ) : undefined
-      }
-      description={
-        description ? (
-          <span className="text-[0.7rem] font-semibold text-slate-400">
-            {description}
-          </span>
-        ) : undefined
-      }
-    >
+    <Input.Wrapper label={label} description={description} className="w-full">
       <Popover
         opened={opened}
         onChange={setOpened}
-        width="auto"
+        width={520}
         position="bottom-start"
         withArrow
         shadow="xl"
-        transitionProps={{ transition: "pop", duration: 180 }}
+        trapFocus
+        returnFocus
+        transitionProps={{ transition: "pop", duration: 200 }}
       >
         <Popover.Target>
           <InputBase
             component="button"
             type="button"
             pointer
+            aria-haspopup="dialog"
+            aria-expanded={opened}
             leftSection={
-              <LuClock
-                size={13}
-                className={displayValue ? "text-slate-500" : "text-slate-400"}
+              <Clock3
+                size={14}
+                strokeWidth={2.25}
+                className={externalDate ? "text-slate-600" : "text-slate-400"}
               />
             }
-            onClick={() => setOpened((o) => !o)}
+            rightSection={
+              <ChevronDown
+                size={13}
+                strokeWidth={2.5}
+                className={`text-slate-400 transition-transform duration-300 ${
+                  opened ? "rotate-180" : ""
+                }`}
+              />
+            }
+            onClick={() => setOpened((current) => !current)}
+            className="w-full text-left"
             styles={{
               input: {
                 minWidth: "220px",
-                height: "32px",
-                fontSize: "0.78rem",
-                fontWeight: 600,
-                backgroundColor: "#ffffff",
-                border: "1px solid #e2e8f0",
-                borderRadius: "6px",
-                color: "#1e293b",
-                boxShadow: "0 1px 3px rgba(15,23,42,0.06)",
                 cursor: "pointer",
+                textAlign: "left",
                 "&:hover": { borderColor: "#cbd5e1" },
-                "&:focus": {
-                  borderColor: "#94a3b8",
-                  boxShadow: "0 0 0 2px rgba(148,163,184,0.2)",
-                },
               },
             }}
           >
-            {displayValue || (
+            {externalDate ? (
+              <span className="text-[0.78rem] font-bold text-slate-700">
+                {formatTimestamp(externalDate)}
+              </span>
+            ) : (
               <span className="text-[0.78rem] font-semibold text-slate-400">
                 {placeholder}
               </span>
@@ -169,144 +189,185 @@ const TimestampPicker = ({
         <Popover.Dropdown
           p={0}
           style={{
-            border: "1px solid #e2e8f0",
-            borderRadius: "10px",
-            boxShadow: "0 8px 32px rgba(15,23,42,0.12)",
-            overflow: "visible",
+            maxWidth: "calc(100vw - 24px)",
+            overflow: "hidden",
           }}
         >
-          <div className="min-w-[300px]">
-            <div className="border-b border-slate-100 bg-slate-50 rounded-t-[10px] overflow-hidden">
-              <Button.Group style={{ display: "flex" }}>
-                {[
-                  {
-                    value: "presets" as const,
-                    label: "Presets",
-                    Icon: LuTimer,
-                  },
-                  {
-                    value: "custom" as const,
-                    label: "Custom",
-                    Icon: LuCalendar,
-                  },
-                ].map(({ value, label: lbl, Icon }, i) => (
-                  <Button
-                    key={value}
-                    onClick={() => setActiveTab(value)}
-                    styles={tabBtnStyles(
-                      activeTab === value,
-                      i === 0 ? "left" : "right",
-                    )}
-                    leftSection={<Icon size={12} />}
-                    style={{ flex: 1 }}
-                  >
-                    {lbl}
-                  </Button>
-                ))}
-              </Button.Group>
+          <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/70 px-4 py-3">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-white shadow-sm">
+                <CalendarDays size={14} strokeWidth={2.25} />
+              </span>
+              <div className="min-w-0">
+                <p className="text-[0.72rem] font-bold text-slate-700">
+                  Choose timestamp
+                </p>
+                <p className="mt-0.5 truncate text-[0.62rem] font-semibold text-slate-400">
+                  {timeZone} · {isFuture ? "Future time" : "Local time"}
+                </p>
+              </div>
             </div>
+            {externalDate && (
+              <Button
+                type="button"
+                size="compact-xs"
+                variant="subtle"
+                color="gray"
+                leftSection={<RotateCcw size={11} strokeWidth={2.25} />}
+                onClick={() => {
+                  onChange(undefined);
+                  setOpened(false);
+                }}
+              >
+                Clear
+              </Button>
+            )}
+          </div>
 
-            <div className="p-3 bg-white rounded-b-[10px]">
-              {activeTab === "presets" && (
-                <Select
-                  data={timeRangePickList}
-                  placeholder="Quick select relative time"
-                  searchable
-                  onChange={handlePresetChange}
-                  comboboxProps={{ withinPortal: true }}
-                  styles={{
-                    input: {
-                      fontSize: "0.78rem",
-                      fontWeight: 600,
-                      border: "1px solid #e2e8f0",
-                      borderRadius: "6px",
-                      color: "#1e293b",
-                      boxShadow: "0 1px 3px rgba(15,23,42,0.05)",
-                    },
-                    option: {
-                      fontSize: "0.78rem",
-                      fontWeight: 600,
-                    },
-                  }}
-                />
-              )}
+          <div className="bg-white p-3.5">
+            <SegmentedControl
+              fullWidth
+              value={activeView}
+              data={[
+                {
+                  label: isFuture ? "From now" : "Before now",
+                  value: "relative",
+                },
+                { label: "Date and time", value: "custom" },
+              ]}
+              onChange={(nextView) => {
+                setActiveView(nextView as "relative" | "custom");
+                setValidationError(undefined);
+              }}
+            />
 
-              {activeTab === "custom" && (
-                <Group align="flex-start" gap="md" wrap="nowrap">
-                  <div className="border border-slate-200 rounded-lg overflow-hidden bg-slate-50/50">
-                    <DatePicker
-                      value={internalDate}
-                      onChange={handleDateChange}
-                      minDate={isFuture ? new Date() : undefined}
-                      styles={{
-                        calendarHeader: {
-                          fontSize: "0.78rem",
-                          fontWeight: 700,
-                        },
-                        weekday: {
-                          fontSize: "0.68rem",
-                          fontWeight: 700,
-                          color: "#94a3b8",
-                        },
-                        day: {
-                          fontSize: "0.75rem",
-                          fontWeight: 600,
-                          borderRadius: "6px",
-                        },
-                      }}
-                    />
-                  </div>
-
-                  <div className="flex flex-col justify-between gap-4 py-1 min-w-[110px]">
-                    <TimeInput
-                      label={
-                        <span className="text-[0.68rem] font-bold uppercase tracking-[0.05em] text-slate-500">
-                          Time
-                        </span>
-                      }
-                      ref={timeRef}
-                      defaultValue={dayjs(internalDate || undefined).format(
-                        "HH:mm",
-                      )}
-                      leftSection={
-                        <LuClock size={12} className="text-slate-400" />
-                      }
-                      styles={{
-                        input: {
-                          fontSize: "0.78rem",
-                          fontWeight: 600,
-                          border: "1px solid #e2e8f0",
-                          borderRadius: "6px",
-                          color: "#1e293b",
-                          height: "32px",
-                          boxShadow: "0 1px 3px rgba(15,23,42,0.05)",
-                        },
-                      }}
-                    />
-
-                    <Button
-                      fullWidth
-                      onClick={applyCustomChange}
-                      disabled={!internalDate}
-                      styles={{
-                        root: {
-                          height: "32px",
-                          fontSize: "0.75rem",
-                          fontWeight: 700,
-                          backgroundColor: "#0f172a",
-                          borderRadius: "6px",
-                          "&:hover": { backgroundColor: "#1e293b" },
-                          "&:disabled": {
-                            backgroundColor: "#f1f5f9",
-                            color: "#94a3b8",
+            <div className="mt-3">
+              {activeView === "relative" ? (
+                <div>
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                    {PRESETS.map((preset) => (
+                      <Button
+                        key={`${preset.value}-${preset.unit}`}
+                        type="button"
+                        variant="default"
+                        onClick={() =>
+                          chooseRelativeTime(preset.value, preset.unit)
+                        }
+                        aria-label={`${isFuture ? "In" : "Before now by"} ${preset.value} ${preset.unit}${preset.value === 1 ? "" : "s"}`}
+                        styles={{
+                          root: {
+                            height: "38px",
+                            paddingInline: "8px",
+                            fontSize: "0.72rem",
+                            fontWeight: 700,
                           },
-                        },
-                      }}
-                    >
-                      Apply
-                    </Button>
+                        }}
+                      >
+                        <span className="flex items-center gap-1">
+                          <span className="text-slate-400">
+                            {isFuture ? "in" : "−"}
+                          </span>
+                          {preset.shortLabel}
+                        </span>
+                      </Button>
+                    ))}
                   </div>
-                </Group>
+                  <p className="mt-3 text-center text-[0.62rem] font-semibold text-slate-400">
+                    Relative timestamps are calculated when selected.
+                  </p>
+                </div>
+              ) : (
+                <form
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    applyCustomTime();
+                  }}
+                >
+                  <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_170px]">
+                    <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50 p-1">
+                      <DatePicker
+                        value={selectedDate}
+                        onChange={(nextDate) => {
+                          setSelectedDate(
+                            nextDate ? dayjs(nextDate).toDate() : null,
+                          );
+                          setValidationError(undefined);
+                        }}
+                        minDate={
+                          isFuture && !disableExcludePast
+                            ? new Date()
+                            : undefined
+                        }
+                        styles={{
+                          calendarHeader: {
+                            fontSize: "0.78rem",
+                            fontWeight: 700,
+                          },
+                          weekday: {
+                            color: "#94a3b8",
+                            fontSize: "0.66rem",
+                            fontWeight: 700,
+                          },
+                          day: {
+                            borderRadius: "7px",
+                            fontSize: "0.74rem",
+                            fontWeight: 600,
+                          },
+                        }}
+                      />
+                    </div>
+
+                    <div className="flex min-w-0 flex-col gap-3">
+                      <TimeInput
+                        label="Time"
+                        value={timeValue}
+                        leftSection={
+                          <Clock3 size={12} className="text-slate-400" />
+                        }
+                        onChange={(event) => {
+                          setTimeValue(event.target.value);
+                          setValidationError(undefined);
+                        }}
+                      />
+
+                      <div
+                        className={`rounded-lg border px-3 py-2.5 ${
+                          validationError
+                            ? "border-red-200 bg-red-50"
+                            : "border-slate-200 bg-slate-50/70"
+                        }`}
+                      >
+                        <p
+                          className={`text-[0.6rem] font-bold uppercase tracking-[0.06em] ${
+                            validationError ? "text-red-500" : "text-slate-400"
+                          }`}
+                        >
+                          {validationError ? "Check timestamp" : "Selection"}
+                        </p>
+                        <p
+                          className={`mt-1 text-[0.7rem] font-bold leading-relaxed ${
+                            validationError ? "text-red-700" : "text-slate-700"
+                          }`}
+                        >
+                          {validationError ??
+                            (customTimestamp
+                              ? formatTimestamp(customTimestamp)
+                              : "Choose a date and time")}
+                        </p>
+                      </div>
+
+                      <Button
+                        type="submit"
+                        fullWidth
+                        color="dark"
+                        disabled={!customTimestamp}
+                        className="mt-auto"
+                      >
+                        Apply timestamp
+                      </Button>
+                    </div>
+                  </div>
+                </form>
               )}
             </div>
           </div>
