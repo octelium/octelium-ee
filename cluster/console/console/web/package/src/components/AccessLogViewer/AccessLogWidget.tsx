@@ -5,6 +5,7 @@ import {
   GetAccessLogSummaryRequest,
   ListAccessLogTopServiceRequest,
   ListAccessLogTopSessionRequest,
+  ListAccessLogTopPolicyRequest,
   ListAccessLogTopUserRequest,
 } from "@/apis/visibilityv1/visibilityv1";
 import {
@@ -16,18 +17,20 @@ import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import {
   Activity,
+  ArrowUpRight,
   ChevronDown,
   Minus,
-  RefreshCw,
   ShieldCheck,
   ShieldX,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
 import LineChart from "../Charts/LineChart";
+import { LogWidgetHeader } from "../LogWidget";
 import TopList from "../TopList";
 
 interface PeriodOption {
@@ -101,7 +104,15 @@ const pct = (value: number, total: number) =>
 const deltaPct = (cur: number, prev: number) =>
   prev === 0 ? 0 : Math.round(((cur - prev) / prev) * 100);
 
-const TrendBadge = ({ cur, prev }: { cur: number; prev: number }) => {
+const TrendBadge = ({
+  cur,
+  prev,
+  inverse,
+}: {
+  cur: number;
+  prev: number;
+  inverse?: boolean;
+}) => {
   const d = deltaPct(cur, prev);
   if (d === 0 || prev === 0)
     return (
@@ -110,11 +121,12 @@ const TrendBadge = ({ cur, prev }: { cur: number; prev: number }) => {
       </span>
     );
   const up = d > 0;
+  const favorable = inverse ? !up : up;
   return (
     <span
       className={twMerge(
         "inline-flex items-center gap-0.5 text-[0.65rem] font-bold",
-        up ? "text-emerald-600" : "text-red-500",
+        favorable ? "text-emerald-600" : "text-red-500",
       )}
     >
       {up ? (
@@ -135,6 +147,7 @@ const StatCard = ({
   total,
   variant,
   icon: Icon,
+  to,
 }: {
   label: string;
   value: number;
@@ -142,6 +155,7 @@ const StatCard = ({
   total: number;
   variant: "allowed" | "denied" | "total";
   icon: React.FC<any>;
+  to: string;
 }) => {
   const rate = pct(value, total);
   const colors = {
@@ -169,9 +183,10 @@ const StatCard = ({
   }[variant];
 
   return (
-    <div
+    <Link
+      to={to}
       className={twMerge(
-        "flex flex-col gap-3 p-4 rounded-xl border",
+        "group flex min-h-[112px] flex-col gap-2.5 rounded-xl border p-3 outline-none transition-[border-color,box-shadow] duration-500 hover:shadow-[0_5px_18px_rgba(15,23,42,0.07)] focus-visible:ring-2 focus-visible:ring-blue-500/30",
         colors.bg,
         colors.border,
       )}
@@ -183,7 +198,17 @@ const StatCard = ({
             {label}
           </span>
         </div>
-        <TrendBadge cur={value} prev={prevValue} />
+        <div className="flex items-center gap-2">
+          <TrendBadge
+            cur={value}
+            prev={prevValue}
+            inverse={variant === "denied"}
+          />
+          <ArrowUpRight
+            size={11}
+            className="text-slate-300 transition-colors duration-500 group-hover:text-slate-500"
+          />
+        </div>
       </div>
       <div className="flex items-baseline gap-2">
         <span
@@ -208,10 +233,10 @@ const StatCard = ({
           />
         </div>
       )}
-      <div className="text-[0.65rem] font-semibold text-slate-400">
-        prev: {prevValue.toLocaleString()}
+      <div className="text-[0.64rem] font-semibold text-slate-400">
+        Previous period: {prevValue.toLocaleString()}
       </div>
-    </div>
+    </Link>
   );
 };
 
@@ -233,6 +258,7 @@ const PeriodSelector = ({
         const active = opt.minutes === value;
         return (
           <Button
+            type="button"
             key={opt.minutes}
             onClick={() => onChange(opt.minutes)}
             styles={{
@@ -262,6 +288,7 @@ const PeriodSelector = ({
       <Menu position="bottom-end" offset={4} withArrow={false}>
         <Menu.Target>
           <Button
+            type="button"
             styles={{
               root: {
                 height: "26px",
@@ -292,6 +319,7 @@ const PeriodSelector = ({
           <div className="flex flex-col py-1 min-w-[100px]">
             {EXTENDED_PERIODS.map((opt) => (
               <button
+                type="button"
                 key={opt.minutes}
                 onClick={() => onChange(opt.minutes)}
                 className={twMerge(
@@ -322,6 +350,31 @@ interface AccessLogHealthWidgetProps {
 }
 
 const refKey = (ref?: ObjectReference) => ref?.uid ?? ref?.name ?? null;
+
+const getAccessLogPath = (
+  props: AccessLogHealthWidgetProps,
+  status?: "ALLOWED" | "DENIED",
+) => {
+  const params = new URLSearchParams();
+  const refs = [
+    ["userRef", props.userRef],
+    ["sessionRef", props.sessionRef],
+    ["serviceRef", props.serviceRef],
+    ["namespaceRef", props.namespaceRef],
+    ["regionRef", props.regionRef],
+    ["deviceRef", props.deviceRef],
+    ["policyRef", props.policyRef],
+  ] as const;
+
+  refs.forEach(([key, ref]) => {
+    if (ref?.name) params.set(`${key}.name`, ref.name);
+    else if (ref?.uid) params.set(`${key}.uid`, ref.uid);
+  });
+  if (status) params.set("status", status);
+
+  const query = params.toString();
+  return `/visibility/accesslogs${query ? `?${query}` : ""}`;
+};
 
 const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
   const [periodMinutes, setPeriodMinutes] = useState(60);
@@ -459,14 +512,15 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAccessLog().listAccessLogTopPolicy(
-          ListAccessLogTopServiceRequest.create({
+          ListAccessLogTopPolicyRequest.create({
             from: toTs(curFrom),
             to: toTs(curTo),
             userRef: props.userRef,
             sessionRef: props.sessionRef,
             regionRef: props.regionRef,
             deviceRef: props.deviceRef,
-            policyRef: props.policyRef,
+            serviceRef: props.serviceRef,
+            namespaceRef: props.namespaceRef,
           }),
         );
       return response;
@@ -502,7 +556,9 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
     isSummaryLoading ||
     dataPoint.isLoading ||
     topUsers.isLoading ||
-    topServices.isLoading;
+    topServices.isLoading ||
+    topPolicies.isLoading ||
+    topSessions.isLoading;
 
   const refetchAll = () => {
     curSummary.refetch();
@@ -515,39 +571,29 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
   };
 
   return (
-    <div className="w-full flex flex-col gap-5">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <PeriodSelector value={periodMinutes} onChange={setPeriodMinutes} />
-          <span className="text-[0.68rem] font-semibold text-slate-400">
-            vs previous {periodLabel}
-          </span>
-        </div>
-        <button
-          onClick={refetchAll}
-          disabled={isAnyLoading}
-          className="flex items-center justify-center w-7 h-7 rounded-md text-slate-400 border border-slate-200 bg-white hover:text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition-colors duration-150 cursor-pointer shadow-[0_1px_2px_rgba(15,23,42,0.05)] disabled:opacity-50"
-        >
-          <RefreshCw
-            size={12}
-            strokeWidth={2.5}
-            className={isAnyLoading ? "animate-spin" : ""}
-          />
-        </button>
-      </div>
+    <div className="flex w-full flex-col gap-4">
+      <LogWidgetHeader
+        icon={Activity}
+        title="Access activity"
+        description={`Compared with the previous ${periodLabel}`}
+        isLoading={isAnyLoading}
+        onRefresh={refetchAll}
+      >
+        <PeriodSelector value={periodMinutes} onChange={setPeriodMinutes} />
+      </LogWidgetHeader>
 
       {isSummaryLoading ? (
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
           {[0, 1, 2].map((i) => (
             <div
               key={i}
-              className="h-[140px] rounded-xl border border-slate-200 bg-slate-50 animate-pulse"
+              className="h-28 animate-pulse rounded-xl border border-slate-200 bg-slate-50"
             />
           ))}
         </div>
       ) : curData && prevData ? (
         <>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
             <StatCard
               label="Total"
               value={Number(curData.totalNumber)}
@@ -555,6 +601,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
               total={Number(curData.totalNumber)}
               variant="total"
               icon={Activity}
+              to={getAccessLogPath(props)}
             />
             <StatCard
               label="Allowed"
@@ -563,6 +610,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
               total={Number(curData.totalNumber)}
               variant="allowed"
               icon={ShieldCheck}
+              to={getAccessLogPath(props, "ALLOWED")}
             />
             <StatCard
               label="Denied"
@@ -571,11 +619,12 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
               total={Number(curData.totalNumber)}
               variant="denied"
               icon={ShieldX}
+              to={getAccessLogPath(props, "DENIED")}
             />
           </div>
 
           {Number(curData.totalNumber) > 0 && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 border border-slate-200">
+            <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/70 px-3 py-2">
               <div className="flex-1 h-2 rounded-full bg-slate-200 overflow-hidden flex">
                 <div
                   className="h-full bg-emerald-500 transition-[width] duration-500"
@@ -597,7 +646,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
             </div>
           )}
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {[
               { label: "Sessions", value: Number(curData.totalSession) },
               { label: "Users", value: Number(curData.totalUser) },
@@ -650,7 +699,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
         (showTopSessions &&
           topSessions.data &&
           topSessions.data?.items.length > 0)) && (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           {showTopUsers && topUsers.data && topUsers.data?.items.length > 0 && (
             <TopList
               title="Top Users"
