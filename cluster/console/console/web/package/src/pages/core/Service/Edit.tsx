@@ -5704,6 +5704,15 @@ const Edit = (props: {
   const { item, onUpdate } = props;
   const [req, setReq] = React.useState(CoreP.Service.clone(item));
   const [init, _] = React.useState(CoreP.Service.clone(item));
+  const configsByMode = React.useRef<
+    Partial<Record<CoreP.Service_Spec_Mode, CoreP.Service_Spec_Config>>
+  >(
+    item.spec?.config
+      ? {
+          [item.spec.mode]: CoreP.Service_Spec_Config.clone(item.spec.config),
+        }
+      : {},
+  );
   const updateReq = () => {
     setReq(CoreP.Service.clone(req));
     onUpdate(req);
@@ -5769,6 +5778,11 @@ const Edit = (props: {
           ]}
           value={CoreP.Service_Spec_Mode[req.spec!.mode]}
           onChange={(v) => {
+            const previousMode = req.spec!.mode;
+            if (req.spec!.config) {
+              configsByMode.current[previousMode] =
+                CoreP.Service_Spec_Config.clone(req.spec!.config);
+            }
             // @ts-ignore
             req.spec!.mode = CoreP.Service_Spec_Mode[v];
 
@@ -5779,11 +5793,21 @@ const Edit = (props: {
                   x === CoreP.Service_Spec_Mode.GRPC ||
                   x === CoreP.Service_Spec_Mode.WEB,
                 () => {
+                  if (
+                    previousMode === CoreP.Service_Spec_Mode.HTTP ||
+                    previousMode === CoreP.Service_Spec_Mode.GRPC ||
+                    previousMode === CoreP.Service_Spec_Mode.WEB
+                  ) {
+                    return;
+                  }
+
                   match(init.spec!.config?.type)
                     .when(
                       (x) => x?.oneofKind === `http`,
-                      (x) => {
-                        req.spec!.config = init.spec!.config;
+                      () => {
+                        req.spec!.config = CoreP.Service_Spec_Config.clone(
+                          init.spec!.config!,
+                        );
                       },
                     )
                     .otherwise(() => {
@@ -5800,8 +5824,6 @@ const Edit = (props: {
                         },
                       });
                     });
-
-                  updateReq();
                 },
               )
               .with(CoreP.Service_Spec_Mode.SSH, () => {
@@ -5919,7 +5941,11 @@ const Edit = (props: {
                 updateReq();
               })
               .with(CoreP.Service_Spec_Mode.KUBERNETES, () => {
-                req.spec!.config = CoreP.Service_Spec_Config.create({
+                const previousConfig =
+                  configsByMode.current[CoreP.Service_Spec_Mode.KUBERNETES];
+                req.spec!.config = previousConfig
+                  ? CoreP.Service_Spec_Config.clone(previousConfig)
+                  : CoreP.Service_Spec_Config.create({
                   upstream: {
                     type: {
                       oneofKind: "url",
@@ -5940,11 +5966,15 @@ const Edit = (props: {
                       },
                     } as CoreP.Service_Spec_Config_Kubernetes,
                   },
-                });
+                    });
                 updateReq();
               })
               .with(CoreP.Service_Spec_Mode.SOCKS5, () => {
-                req.spec!.config = CoreP.Service_Spec_Config.create({
+                const previousConfig =
+                  configsByMode.current[CoreP.Service_Spec_Mode.SOCKS5];
+                req.spec!.config = previousConfig
+                  ? CoreP.Service_Spec_Config.clone(previousConfig)
+                  : CoreP.Service_Spec_Config.create({
                   upstream: {
                     type: {
                       oneofKind: "url",
@@ -5957,11 +5987,15 @@ const Edit = (props: {
                       auth: { type: { oneofKind: "noAuth", noAuth: true } },
                     } as CoreP.Service_Spec_Config_SOCKS5,
                   },
-                });
+                    });
                 updateReq();
               })
               .with(CoreP.Service_Spec_Mode.RDP_WEB, () => {
-                req.spec!.config = CoreP.Service_Spec_Config.create({
+                const previousConfig =
+                  configsByMode.current[CoreP.Service_Spec_Mode.RDP_WEB];
+                req.spec!.config = previousConfig
+                  ? CoreP.Service_Spec_Config.clone(previousConfig)
+                  : CoreP.Service_Spec_Config.create({
                   upstream: {
                     type: {
                       oneofKind: "url",
@@ -5978,7 +6012,7 @@ const Edit = (props: {
                       },
                     } as CoreP.Service_Spec_Config_RDP,
                   },
-                });
+                    });
                 updateReq();
               })
 
