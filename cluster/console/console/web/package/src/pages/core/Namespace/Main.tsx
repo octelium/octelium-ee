@@ -17,33 +17,39 @@ export default (props: { item: CoreC.Namespace }) => {
   return <div className="w-full"></div>;
 };
 
-export const MainInfo = (
-  props: { item: CoreC.Namespace },
-): ResourceMainInfo => {
-  const { item } = props;
-  const itemName = item.metadata!.name;
+export const NamespaceServicesLabel = (props: { item: CoreC.Namespace }) => {
+  const itemName = props.item.metadata!.name;
   const qryServices = useQuery({
     queryKey: ["selectServiceComponent", itemName],
     queryFn: () =>
       getClientCore().listService(
-        CoreC.ListServiceOptions.create({ namespaceRef: getResourceRef(item) }),
+        CoreC.ListServiceOptions.create({
+          namespaceRef: getResourceRef(props.item),
+        }),
       ).response,
   });
+
+  return (
+    <ResourceListLabel
+      label="Services"
+      to={`/core/services?namespaceRef.name=${encodeURIComponent(itemName)}`}
+    >
+      <PanelTop size={12} strokeWidth={2.5} />
+      {qryServices.data?.listResponseMeta?.totalCount?.toLocaleString() ?? "…"}
+    </ResourceListLabel>
+  );
+};
+
+export const MainInfo = (
+  props: { item: CoreC.Namespace },
+): ResourceMainInfo => {
+  const { item } = props;
 
   return {
     items: [
       {
         label: "Related resources",
-        value: (
-          <ResourceListLabel
-            label="Services"
-            to={`/core/services?namespaceRef.name=${encodeURIComponent(itemName)}`}
-          >
-            <PanelTop size={12} strokeWidth={2.5} />
-            {qryServices.data?.listResponseMeta?.totalCount?.toLocaleString() ??
-              "…"}
-          </ResourceListLabel>
-        ),
+        value: <NamespaceServicesLabel item={item} />,
         span: "full",
       },
       ...(item.spec?.authorization?.policies.length
