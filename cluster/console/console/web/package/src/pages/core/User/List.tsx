@@ -32,6 +32,7 @@ import {
 import * as React from "react";
 import { useSearchParams } from "react-router-dom";
 import { match } from "ts-pattern";
+import { useUserRelatedResources } from "./related";
 
 const getType = (svc: User) => {
   return match(svc.spec?.type)
@@ -59,6 +60,7 @@ const ItemDetails = (props: { item: User; domain: string }) => {
 
 export const LabelComponent = (props: { item: User }) => {
   const { item } = props;
+  const related = useUserRelatedResources(item);
 
   return (
     <ResourceListLabelWrap>
@@ -79,6 +81,12 @@ export const LabelComponent = (props: { item: User }) => {
         </ResourceListLabel>
       )}
 
+      {related.map(({ label, count, path, icon: Icon }) => (
+        <ResourceListLabel key={label} label={label} to={path}>
+          <Icon size={12} strokeWidth={2.5} />
+          {count === undefined ? "…" : count.toLocaleString()}
+        </ResourceListLabel>
+      ))}
     </ResourceListLabelWrap>
   );
 };

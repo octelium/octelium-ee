@@ -1,6 +1,7 @@
 import * as CoreC from "@/apis/corev1/corev1";
 import { ObjectReference } from "@/apis/metav1/metav1";
 import AccessLogViewer from "@/components/AccessLogViewer";
+import CopyText from "@/components/CopyText";
 import InfoItem from "@/components/InfoItem";
 import Label from "@/components/Label";
 import { ResourceListLabel } from "@/components/ResourceList";
@@ -12,14 +13,11 @@ import { getClientCore } from "@/utils/client";
 import { getResourcePath, getResourceRef } from "@/utils/pb";
 import { Button, Modal, Switch } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import {
   KeyRound,
-  LaptopMinimal,
   Plus,
   Shield,
-  Smartphone,
-  Terminal,
   X,
 } from "lucide-react";
 import { useState } from "react";
@@ -28,6 +26,7 @@ import { toast } from "sonner";
 import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
 import Edit from "../Credential/Edit";
+import { useUserRelatedResources } from "./related";
 
 export const AccessLog = (props: { item: CoreC.User }) => {
   return <AccessLogViewer userRef={getResourceRef(props.item)} />;
@@ -48,7 +47,11 @@ export const ResourceItemInfo = (props: { item: CoreC.User }) => {
         </Label>
       </InfoItem>
 
-      {item.spec?.email && <InfoItem title="Email">{item.spec.email}</InfoItem>}
+      {item.spec?.email && (
+        <InfoItem title="Email">
+          <CopyText value={item.spec.email} />
+        </InfoItem>
+      )}
 
       {item.spec!.groups.length > 0 && (
         <InfoItem title="Groups">
@@ -255,64 +258,7 @@ const CreateUserCredential = (props: { item: CoreC.User }) => {
 
 export const MainInfo = (props: { item: CoreC.User }): ResourceMainInfo => {
   const { item } = props;
-  const itemRef = getResourceRef(item);
-  const itemName = item.metadata!.name;
-
-  const qrySess = useQuery({
-    queryKey: ["core.listSession", "usr", itemName],
-    queryFn: () =>
-      getClientCore().listSession(
-        CoreC.ListSessionOptions.create({ userRef: itemRef }),
-      ).response,
-  });
-  const qryDev = useQuery({
-    queryKey: ["core.listDevice", "usr", itemName],
-    queryFn: () =>
-      getClientCore().listDevice(
-        CoreC.ListDeviceOptions.create({ userRef: itemRef }),
-      ).response,
-  });
-  const qryCred = useQuery({
-    queryKey: ["core.listCredential", "usr", itemName],
-    queryFn: () =>
-      getClientCore().listCredential(
-        CoreC.ListCredentialOptions.create({ userRef: itemRef }),
-      ).response,
-  });
-  const qryAuthn = useQuery({
-    queryKey: ["core.listAuthenticator", "usr", itemName],
-    queryFn: () =>
-      getClientCore().listAuthenticator(
-        CoreC.ListAuthenticatorOptions.create({ userRef: itemRef }),
-      ).response,
-  });
-
-  const related = [
-    {
-      label: "Sessions",
-      count: qrySess.data?.listResponseMeta?.totalCount,
-      path: `/core/sessions?userRef.name=${encodeURIComponent(itemName)}`,
-      icon: Terminal,
-    },
-    {
-      label: "Devices",
-      count: qryDev.data?.listResponseMeta?.totalCount,
-      path: `/core/devices?userRef.name=${encodeURIComponent(itemName)}`,
-      icon: LaptopMinimal,
-    },
-    {
-      label: "Authenticators",
-      count: qryAuthn.data?.listResponseMeta?.totalCount,
-      path: `/core/authenticators?userRef.name=${encodeURIComponent(itemName)}`,
-      icon: Smartphone,
-    },
-    {
-      label: "Credentials",
-      count: qryCred.data?.listResponseMeta?.totalCount,
-      path: `/core/credentials?userRef.name=${encodeURIComponent(itemName)}`,
-      icon: KeyRound,
-    },
-  ];
+  const related = useUserRelatedResources(item);
 
   return {
     items: [
@@ -333,7 +279,9 @@ export const MainInfo = (props: { item: CoreC.User }): ResourceMainInfo => {
             {
               label: "Email",
               value: (
-                <span className="text-[0.75rem]">{item.spec.email}</span>
+                <span className="text-[0.75rem]">
+                  <CopyText value={item.spec.email} />
+                </span>
               ),
             },
           ]
