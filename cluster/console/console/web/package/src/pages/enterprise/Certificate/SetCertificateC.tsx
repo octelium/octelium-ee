@@ -1,4 +1,6 @@
 import { Certificate } from "@/apis/enterprisev1/enterprisev1";
+import SecretTextAreaCustom from "@/components/TextAreaCustom/SecretTextAreaCustom";
+import TextAreaCustom from "@/components/TextAreaCustom";
 import { onError } from "@/utils";
 import { getClientEnterprise } from "@/utils/client";
 import {
@@ -6,273 +8,178 @@ import {
   invalidateResource,
   invalidateResourceList,
 } from "@/utils/pb";
-import { Button, CopyButton, Modal } from "@mantine/core";
+import { Alert, Button, Modal } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useMutation } from "@tanstack/react-query";
-import { AnimatePresence, motion } from "framer-motion";
-import {
-  CheckCheck,
-  CheckCircle2,
-  Copy,
-  Loader2,
-  ShieldCheck,
-  Upload,
-  X,
-} from "lucide-react";
+import { AlertTriangle, ShieldCheck, Upload, X } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
 
+const isCertificatePEM = (value: string) =>
+  value.includes("-----BEGIN CERTIFICATE-----") &&
+  value.includes("-----END CERTIFICATE-----");
+
+const isPrivateKeyPEM = (value: string) =>
+  /-----BEGIN (?:RSA |EC |ENCRYPTED )?PRIVATE KEY-----/.test(value) &&
+  /-----END (?:RSA |EC |ENCRYPTED )?PRIVATE KEY-----/.test(value);
+
 export const SetCertificateC = (props: { item: Certificate }) => {
-  const { item } = props;
   const [opened, { open, close }] = useDisclosure(false);
   const [certificate, setCertificate] = React.useState("");
   const [privateKey, setPrivateKey] = React.useState("");
 
-  const certFileRef = React.useRef<HTMLInputElement>(null);
-  const keyFileRef = React.useRef<HTMLInputElement>(null);
-
-  const readFile = (file: File): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target?.result as string);
-      reader.onerror = reject;
-      reader.readAsText(file);
-    });
+  const clearAndClose = () => {
+    setCertificate("");
+    setPrivateKey("");
+    close();
+  };
 
   const mutationSet = useMutation({
     mutationFn: async () => {
       const { response } = await getClientEnterprise().setCertificate({
-        certificateRef: getResourceRef(item),
+        certificateRef: getResourceRef(props.item),
         certificate,
         privateKey,
       });
       return response;
     },
     onSuccess: () => {
-      invalidateResource(item);
-      invalidateResourceList(item);
-      setCertificate("");
-      setPrivateKey("");
-      close();
+      invalidateResource(props.item);
+      invalidateResourceList(props.item);
+      clearAndClose();
       toast.success("Certificate set successfully");
     },
     onError,
   });
 
-  const canSubmit =
-    certificate.trim().length > 0 && privateKey.trim().length > 0;
-
-  const PEMField = ({
-    label,
-    description,
-    placeholder,
-    value,
-    onChange,
-    fileRef,
-  }: {
-    label: string;
-    description: string;
-    placeholder: string;
-    value: string;
-    onChange: (v: string) => void;
-    fileRef: React.RefObject<HTMLInputElement | null>;
-  }) => (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col gap-0.5">
-          <span className="text-[0.72rem] font-bold uppercase tracking-[0.05em] text-slate-500">
-            {label}
-          </span>
-          <span className="text-[0.68rem] font-semibold text-slate-400">
-            {description}
-          </span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          {value && (
-            <CopyButton value={value}>
-              {({ copied, copy }) => (
-                <button
-                  onClick={copy}
-                  className="flex items-center gap-1 px-2 py-1 rounded text-[0.68rem] font-bold border border-slate-200 bg-white hover:bg-slate-50 transition-colors duration-150 cursor-pointer text-slate-500 hover:text-slate-700"
-                >
-                  <AnimatePresence mode="popLayout" initial={false}>
-                    <motion.span
-                      key={copied ? "check" : "copy"}
-                      initial={{ y: 4, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      exit={{ y: -4, opacity: 0 }}
-                      transition={{ duration: 0.1 }}
-                      className="flex items-center gap-1"
-                    >
-                      {copied ? (
-                        <>
-                          <CheckCheck size={11} strokeWidth={2.5} />
-                          Copied
-                        </>
-                      ) : (
-                        <>
-                          <Copy size={11} strokeWidth={2.5} />
-                          Copy
-                        </>
-                      )}
-                    </motion.span>
-                  </AnimatePresence>
-                </button>
-              )}
-            </CopyButton>
-          )}
-          <button
-            onClick={() => fileRef.current?.click()}
-            className="flex items-center gap-1 px-2 py-1 rounded text-[0.68rem] font-bold border border-slate-200 bg-white hover:bg-slate-50 transition-colors duration-150 cursor-pointer text-slate-500 hover:text-slate-700"
-          >
-            <Upload size={11} strokeWidth={2.5} />
-            Upload file
-          </button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".pem,.crt,.cer,.key,.txt"
-            className="hidden"
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              const text = await readFile(file);
-              onChange(text);
-              e.target.value = "";
-            }}
-          />
-        </div>
-      </div>
-      <textarea
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        rows={7}
-        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 font-mono text-[0.72rem] text-slate-700 placeholder:text-slate-300 focus:border-slate-900 focus:outline-none focus:ring-0 resize-none transition-colors duration-500 shadow-[0_1px_3px_rgba(15,23,42,0.05)]"
-        spellCheck={false}
-      />
-      {value && (
-        <div className="flex items-center gap-1.5">
-          <CheckCircle2
-            size={11}
-            strokeWidth={2.5}
-            className="text-emerald-500 shrink-0"
-          />
-          <span className="text-[0.68rem] font-semibold text-emerald-600">
-            {value.trim().split("\n").length} lines loaded
-          </span>
-          <button
-            onClick={() => onChange("")}
-            className="ml-auto flex items-center gap-1 text-[0.68rem] font-semibold text-slate-400 hover:text-red-500 transition-colors duration-150 cursor-pointer"
-          >
-            <X size={10} strokeWidth={2.5} />
-            Clear
-          </button>
-        </div>
-      )}
-    </div>
-  );
+  const certificateValid = isCertificatePEM(certificate.trim());
+  const privateKeyValid = isPrivateKeyPEM(privateKey.trim());
+  const canSubmit = certificateValid && privateKeyValid;
 
   return (
     <>
-      <button
+      <Button
+        type="button"
+        variant="default"
+        size="compact-sm"
+        leftSection={<Upload size={13} strokeWidth={2.4} />}
         onClick={open}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.75rem] font-bold border border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 transition-colors duration-150 cursor-pointer shadow-[0_1px_2px_rgba(15,23,42,0.05)] text-slate-600"
       >
-        <ShieldCheck size={13} strokeWidth={2.5} />
-        Set Certificate
-      </button>
+        Set certificate
+      </Button>
 
       <Modal
         opened={opened}
-        onClose={close}
+        onClose={clearAndClose}
         size="xl"
         centered
         withCloseButton={false}
         padding={0}
         styles={{
           content: {
-            borderRadius: "12px",
+            borderRadius: 14,
             border: "1px solid #e2e8f0",
             overflow: "hidden",
+            maxHeight: "92vh",
           },
+          body: { maxHeight: "92vh", overflow: "hidden" },
         }}
       >
-        <div className="flex flex-col">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 bg-slate-50/60">
-            <div className="flex items-center gap-2">
-              <ShieldCheck
-                size={14}
-                className="text-slate-500 shrink-0"
-                strokeWidth={2}
-              />
-              <span className="text-[0.82rem] font-bold text-slate-800">
-                Set Certificate
+        <div className="flex max-h-[92vh] flex-col bg-slate-50/40">
+          <header className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 bg-white px-5 py-4">
+            <div className="flex min-w-0 items-start gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-white">
+                <ShieldCheck size={17} strokeWidth={2.2} />
               </span>
-              <span className="text-[0.7rem] font-semibold text-slate-400 font-mono">
-                {item.metadata?.name}
-              </span>
+              <div className="min-w-0">
+                <h2 className="text-[0.86rem] font-bold text-slate-900">
+                  Set certificate
+                </h2>
+                <p className="mt-0.5 truncate text-[0.69rem] font-semibold text-slate-400">
+                  {props.item.metadata?.displayName ||
+                    props.item.metadata?.name}
+                </p>
+              </div>
             </div>
-            <button
-              onClick={close}
-              className="flex items-center justify-center w-6 h-6 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors duration-150 cursor-pointer"
+            <Button
+              type="button"
+              variant="subtle"
+              color="gray"
+              size="compact-xs"
+              onClick={clearAndClose}
             >
-              <X size={13} strokeWidth={2.5} />
-            </button>
-          </div>
+              <X size={14} />
+            </Button>
+          </header>
 
-          <div className="flex flex-col gap-5 px-5 py-5">
-            <PEMField
-              label="Certificate / Certificate Chain"
-              description="PEM-encoded certificate or full chain (cert + intermediates)"
+          <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5">
+            <Alert
+              color="amber"
+              icon={<AlertTriangle size={15} />}
+              title="This replaces the certificate currently served"
+            >
+              Confirm that the certificate chain and private key belong
+              together before applying them to the cluster.
+            </Alert>
+
+            <TextAreaCustom
+              required
+              rows={7}
+              label="Certificate or certificate chain"
+              description="PEM-encoded leaf certificate followed by any intermediate certificates."
               placeholder={`-----BEGIN CERTIFICATE-----\nMIIDazCCAlOgAwIBAgIU...\n-----END CERTIFICATE-----`}
               value={certificate}
-              onChange={setCertificate}
-              fileRef={certFileRef}
+              onChange={(value) => setCertificate(value ?? "")}
             />
+            {certificate && !certificateValid && (
+              <p className="text-[0.68rem] font-semibold text-red-600">
+                The value does not contain a complete PEM certificate block.
+              </p>
+            )}
 
-            <PEMField
-              label="Private Key"
-              description="PEM-encoded private key corresponding to the certificate"
+            <SecretTextAreaCustom
+              required
+              rows={7}
+              label="Private key"
+              description="PEM-encoded private key corresponding to the leaf certificate."
               placeholder={`-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0B...\n-----END PRIVATE KEY-----`}
               value={privateKey}
-              onChange={setPrivateKey}
-              fileRef={keyFileRef}
+              onChange={(value) => setPrivateKey(value ?? "")}
             />
+            {privateKey && !privateKeyValid && (
+              <p className="text-[0.68rem] font-semibold text-red-600">
+                The value does not contain a complete PEM private-key block.
+              </p>
+            )}
           </div>
 
-          <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-slate-200 bg-slate-50/60">
-            <Button
-              variant="default"
-              size="sm"
-              leftSection={<X size={13} strokeWidth={2.5} />}
-              onClick={close}
-              disabled={mutationSet.isPending}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="filled"
-              color="dark"
-              size="sm"
-              disabled={!canSubmit || mutationSet.isPending}
-              loading={mutationSet.isPending}
-              leftSection={
-                mutationSet.isPending ? (
-                  <Loader2
-                    size={13}
-                    strokeWidth={2.5}
-                    className="animate-spin"
-                  />
-                ) : (
-                  <ShieldCheck size={13} strokeWidth={2.5} />
-                )
-              }
-              onClick={() => mutationSet.mutate()}
-            >
-              {mutationSet.isPending ? "Setting…" : "Set Certificate"}
-            </Button>
-          </div>
+          <footer className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-white px-5 py-3.5">
+            <span className="text-[0.67rem] font-semibold text-slate-400">
+              Sensitive input is cleared when this dialog closes.
+            </span>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="default"
+                size="sm"
+                disabled={mutationSet.isPending}
+                onClick={clearAndClose}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                color="dark"
+                size="sm"
+                disabled={!canSubmit}
+                loading={mutationSet.isPending}
+                leftSection={<ShieldCheck size={13} />}
+                onClick={() => mutationSet.mutate()}
+              >
+                Apply certificate
+              </Button>
+            </div>
+          </footer>
         </div>
       </Modal>
     </>

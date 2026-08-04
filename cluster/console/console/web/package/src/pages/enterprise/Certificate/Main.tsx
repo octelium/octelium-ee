@@ -14,19 +14,19 @@ import {
   invalidateResource,
   invalidateResourceList,
 } from "@/utils/pb";
-import { Button, Modal } from "@mantine/core";
+import { Alert, Button, Modal } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useMutation } from "@tanstack/react-query";
-import { Loader2, RefreshCcw } from "lucide-react";
-import ClipLoader from "react-spinners/ClipLoader";
+import { AlertTriangle, Loader2, RefreshCcw, ShieldCheck, X } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
-import { getIssuanceState } from "./List";
+import { getCertificatePresentation, getIssuanceState } from "./List";
 import { SetCertificateC } from "./SetCertificateC";
 
 export const IssueC = (props: { item: Certificate }) => {
   const { item } = props;
   const [opened, { open, close }] = useDisclosure(false);
+  const presentation = getCertificatePresentation(item);
   const mutationGenerate = useMutation({
     mutationFn: async () => {
       const { response } = await getClientEnterprise().issueCertificate({
@@ -35,7 +35,7 @@ export const IssueC = (props: { item: Certificate }) => {
       return response;
     },
 
-    onSuccess: (response) => {
+    onSuccess: () => {
       invalidateResource(item);
       invalidateResourceList(item);
       close();
@@ -45,22 +45,78 @@ export const IssueC = (props: { item: Certificate }) => {
 
   return (
     <>
-      <Button size={`xs`} onClick={open}>
-        Issue/Re-issue this Certificate
+      <Button
+        type="button"
+        size="compact-sm"
+        color="dark"
+        leftSection={<RefreshCcw size={13} />}
+        onClick={open}
+      >
+        {presentation.successfulIssuance ? "Re-issue certificate" : "Issue certificate"}
       </Button>
-      <Modal opened={opened} onClose={close} size={"xl"} centered>
-        <div className="w-full">
-          <div className="flex items-center justify-center my-8">
-            <Button
-              onClick={() => {
-                mutationGenerate.mutate();
-              }}
-              loading={mutationGenerate.isPending}
-              leftSection={<RefreshCcw />}
-            >
-              Issue/Re-issue this Certificate
+      <Modal
+        opened={opened}
+        onClose={close}
+        size="md"
+        centered
+        withCloseButton={false}
+        padding={0}
+        styles={{ content: { borderRadius: 14, overflow: "hidden" } }}
+      >
+        <div className="overflow-hidden bg-white">
+          <header className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white">
+                <ShieldCheck size={15} />
+              </span>
+              <div>
+                <h2 className="text-[0.84rem] font-bold text-slate-900">
+                  {presentation.successfulIssuance ? "Re-issue" : "Issue"} certificate
+                </h2>
+                <p className="text-[0.67rem] font-semibold text-slate-400">
+                  {item.metadata?.displayName || item.metadata?.name}
+                </p>
+              </div>
+            </div>
+            <Button type="button" variant="subtle" color="gray" size="compact-xs" onClick={close}>
+              <X size={14} />
             </Button>
+          </header>
+          <div className="space-y-4 px-5 py-5">
+            <Alert color="amber" icon={<AlertTriangle size={15} />}>
+              A successful issuance replaces the certificate currently served
+              by the associated cluster resource.
+            </Alert>
+            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+              <div className="bg-white p-3">
+                <div className="text-[0.6rem] font-bold uppercase tracking-wide text-slate-400">Issuer</div>
+                <div className="mt-1 text-[0.72rem] font-semibold text-slate-700">
+                  {item.status?.certificateIssuerRef?.name || "Cluster default"}
+                </div>
+              </div>
+              <div className="bg-white p-3">
+                <div className="text-[0.6rem] font-bold uppercase tracking-wide text-slate-400">Current validity</div>
+                <div className="mt-1 text-[0.72rem] font-semibold capitalize text-slate-700">
+                  {presentation.expiryState}
+                </div>
+              </div>
+            </div>
           </div>
+          <footer className="flex justify-end gap-2 border-t border-slate-200 bg-slate-50/60 px-5 py-3.5">
+            <Button type="button" variant="default" size="sm" disabled={mutationGenerate.isPending} onClick={close}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              color="dark"
+              size="sm"
+              onClick={() => mutationGenerate.mutate()}
+              loading={mutationGenerate.isPending}
+              leftSection={<RefreshCcw size={13} />}
+            >
+              Confirm issuance
+            </Button>
+          </footer>
         </div>
       </Modal>
     </>
@@ -69,10 +125,9 @@ export const IssueC = (props: { item: Certificate }) => {
 
 export const ItemInfo = (props: { item: Certificate }) => {
   const { item } = props;
-  const issuance = item.status?.issuance;
-  const lastSuccess = item.status?.lastIssuances
-    .filter((x) => x.state === Certificate_Status_Issuance_State.SUCCESS)
-    .at(0);
+  const presentation = getCertificatePresentation(item);
+  const issuance = presentation.issuance;
+  const lastSuccess = presentation.successfulIssuance;
 
   return (
     <>
@@ -82,12 +137,7 @@ export const ItemInfo = (props: { item: Certificate }) => {
             issuance.state ===
               Certificate_Status_Issuance_State.ISSUANCE_REQUESTED) && (
             <InfoItem title="Issuance State">
-              <ClipLoader
-                loading={true}
-                size={14}
-                color="black"
-                className="mr-1"
-              />
+              <Loader2 size={14} className="mr-1 animate-spin" />
               <span>{getIssuanceState(issuance.state)}</span>
             </InfoItem>
           )}
@@ -128,22 +178,66 @@ export default (props: { item: Certificate }) => {
 
 export const MainInfo = (props: { item: Certificate }): ResourceMainInfo => {
   const { item } = props;
-  const issuance = item.status?.issuance;
-  const lastSuccess = item.status?.lastIssuances
-    .filter((x) => x.state === Certificate_Status_Issuance_State.SUCCESS)
-    .at(0);
+  const presentation = getCertificatePresentation(item);
+  const issuance = presentation.issuance;
+  const lastSuccess = presentation.successfulIssuance;
 
   const isInProgress =
     issuance?.state === Certificate_Status_Issuance_State.ISSUING ||
     issuance?.state === Certificate_Status_Issuance_State.ISSUANCE_REQUESTED;
 
-  const isSettled =
-    issuance?.state === Certificate_Status_Issuance_State.FAILED ||
-    issuance?.state === Certificate_Status_Issuance_State.SUCCESS;
-
   return {
     items: [
-      ...(!!item.status?.namespaceRef
+      {
+        label: "Mode",
+        value: (
+          <span className="text-sm font-semibold text-slate-700">
+            {presentation.mode}
+          </span>
+        ),
+      },
+      ...(presentation.expiryState !== "unknown"
+        ? [
+            {
+              label: "Certificate health",
+              value: (
+                <span
+                  className={twMerge(
+                    "font-semibold capitalize",
+                    presentation.expiryState === "valid"
+                      ? "text-emerald-600"
+                      : presentation.expiryState === "expiring"
+                        ? "text-amber-600"
+                        : "text-red-600",
+                  )}
+                >
+                  {presentation.expiryState === "expiring"
+                    ? "Expiring soon"
+                    : presentation.expiryState}
+                </span>
+              ),
+            },
+          ]
+        : []),
+      ...(item.status?.certificateIssuerRef?.name
+        ? [
+            {
+              label: "Certificate issuer",
+              value: (
+                <ResourceListLabel itemRef={item.status.certificateIssuerRef} />
+              ),
+            },
+          ]
+        : []),
+      ...(item.status?.secretRef?.name
+        ? [
+            {
+              label: "Certificate secret",
+              value: <ResourceListLabel itemRef={item.status.secretRef} />,
+            },
+          ]
+        : []),
+      ...(item.status?.namespaceRef?.name
         ? [
             {
               label: "Namespace",
@@ -155,7 +249,7 @@ export const MainInfo = (props: { item: Certificate }): ResourceMainInfo => {
             },
           ]
         : []),
-      ...(!!item.status?.serviceRef
+      ...(item.status?.serviceRef?.name
         ? [
             {
               label: "Service",
@@ -211,6 +305,24 @@ export const MainInfo = (props: { item: Certificate }): ResourceMainInfo => {
           ]
         : []),
 
+      ...(issuance?.issuanceStartedAt
+        ? [
+            {
+              label: "Issuance started",
+              value: <TimeAgo rfc3339={issuance.issuanceStartedAt} />,
+            },
+          ]
+        : []),
+
+      ...(issuance?.issuanceCompletedAt
+        ? [
+            {
+              label: "Issuance completed",
+              value: <TimeAgo rfc3339={issuance.issuanceCompletedAt} />,
+            },
+          ]
+        : []),
+
       ...(lastSuccess?.createdAt
         ? [
             {
@@ -237,6 +349,27 @@ export const MainInfo = (props: { item: Certificate }): ResourceMainInfo => {
           ]
         : []),
 
+      ...((item.status?.successfulIssuances ?? 0) > 0
+        ? [
+            {
+              label: "Successful issuances",
+              value: item.status!.successfulIssuances.toLocaleString(),
+            },
+          ]
+        : []),
+      ...((item.status?.failedIssuances ?? 0) > 0
+        ? [
+            {
+              label: "Failed issuances",
+              value: (
+                <span className="font-semibold text-red-600">
+                  {item.status!.failedIssuances.toLocaleString()}
+                </span>
+              ),
+            },
+          ]
+        : []),
+
       ...(item.status?.info
         ? [
             {
@@ -249,7 +382,7 @@ export const MainInfo = (props: { item: Certificate }): ResourceMainInfo => {
                       <span className="text-[0.68rem] font-bold uppercase tracking-[0.05em] text-slate-400 w-20 shrink-0">
                         Common Name
                       </span>
-                      <span className="text-[0.78rem] font-semibold text-slate-700 font-mono">
+                      <span className="text-[0.78rem] font-semibold text-slate-700">
                         {item.status.info.commonName}
                       </span>
                     </div>
@@ -259,7 +392,7 @@ export const MainInfo = (props: { item: Certificate }): ResourceMainInfo => {
                       <span className="text-[0.68rem] font-bold uppercase tracking-[0.05em] text-slate-400 w-20 shrink-0">
                         Subject
                       </span>
-                      <span className="text-[0.78rem] font-semibold text-slate-700 font-mono truncate">
+                      <span className="truncate text-[0.78rem] font-semibold text-slate-700">
                         {item.status.info.subject}
                       </span>
                     </div>
@@ -269,7 +402,7 @@ export const MainInfo = (props: { item: Certificate }): ResourceMainInfo => {
                       <span className="text-[0.68rem] font-bold uppercase tracking-[0.05em] text-slate-400 w-20 shrink-0">
                         Issuer
                       </span>
-                      <span className="text-[0.78rem] font-semibold text-slate-700 font-mono truncate">
+                      <span className="truncate text-[0.78rem] font-semibold text-slate-700">
                         {item.status.info.issuer}
                       </span>
                     </div>
@@ -303,7 +436,7 @@ export const MainInfo = (props: { item: Certificate }): ResourceMainInfo => {
                         {item.status.info.dnsNames.map((name) => (
                           <span
                             key={name}
-                            className="inline-flex items-center px-1.5 py-0.5 rounded text-[0.68rem] font-mono font-semibold bg-slate-100 border border-slate-200 text-slate-600"
+                            className="inline-flex items-center rounded border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[0.68rem] font-semibold text-slate-600"
                           >
                             {name}
                           </span>
@@ -311,6 +444,62 @@ export const MainInfo = (props: { item: Certificate }): ResourceMainInfo => {
                       </div>
                     </div>
                   )}
+                </div>
+              ),
+            },
+          ]
+        : []),
+
+      ...(item.status?.lastIssuances.length
+        ? [
+            {
+              label: "Issuance history",
+              span: "full" as const,
+              value: (
+                <div className="w-full overflow-hidden rounded-lg border border-slate-200">
+                  {[...item.status.lastIssuances]
+                    .sort((a, b) => {
+                      const aTime = a.issuanceCompletedAt ?? a.createdAt;
+                      const bTime = b.issuanceCompletedAt ?? b.createdAt;
+                      return (
+                        (bTime ? Number(bTime.seconds) : 0) -
+                        (aTime ? Number(aTime.seconds) : 0)
+                      );
+                    })
+                    .slice(0, 5)
+                    .map((entry, index) => (
+                      <div
+                        key={`${entry.createdAt?.seconds ?? 0}-${entry.state}-${index}`}
+                        className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-white px-3 py-2 last:border-0"
+                      >
+                        <span
+                          className={twMerge(
+                            "text-[0.7rem] font-bold",
+                            entry.state ===
+                              Certificate_Status_Issuance_State.SUCCESS
+                              ? "text-emerald-600"
+                              : entry.state ===
+                                  Certificate_Status_Issuance_State.FAILED
+                                ? "text-red-600"
+                                : "text-blue-600",
+                          )}
+                        >
+                          {getIssuanceState(entry.state)}
+                        </span>
+                        <div className="flex items-center gap-3 text-[0.68rem] font-semibold text-slate-500">
+                          {entry.issuanceCompletedAt && (
+                            <span>
+                              Completed <TimeAgo rfc3339={entry.issuanceCompletedAt} />
+                            </span>
+                          )}
+                          {entry.expiresAt && (
+                            <span>
+                              Expires <TimeAgo rfc3339={entry.expiresAt} />
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                 </div>
               ),
             },

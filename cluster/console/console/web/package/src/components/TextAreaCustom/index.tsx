@@ -1,5 +1,6 @@
 import { FileInput, Textarea } from "@mantine/core";
 import { Paperclip } from "lucide-react";
+import { useState } from "react";
 
 const TextAreaCustom = (props: {
   value?: string;
@@ -10,6 +11,7 @@ const TextAreaCustom = (props: {
   placeholder?: string;
   description?: string;
 }) => {
+  const [fileError, setFileError] = useState<string>();
   const handleFile = (file: File | null) => {
     if (!file) return;
 
@@ -22,11 +24,13 @@ const TextAreaCustom = (props: {
       try {
         const value = new TextDecoder("utf-8", { fatal: true }).decode(result);
         props.onChange(value);
+        setFileError(undefined);
       } catch {
-        // non-UTF-8 file — silently ignore
+        setFileError("The selected file is not valid UTF-8 text.");
       }
     };
 
+    reader.onerror = () => setFileError("The selected file could not be read.");
     reader.readAsArrayBuffer(file);
   };
 
@@ -49,6 +53,7 @@ const TextAreaCustom = (props: {
           placeholder="Load from file"
           leftSection={<Paperclip size={12} strokeWidth={2.5} />}
           onChange={handleFile}
+          error={fileError}
           clearable
           styles={{
             root: { width: "auto" },
