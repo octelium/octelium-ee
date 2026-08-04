@@ -12,6 +12,7 @@ import { getClientCluster, getClientEnterprise } from "@/utils/client";
 import { invalidateKey } from "@/utils/pb";
 import {
   ActionIcon,
+  Alert,
   Button,
   Checkbox,
   Modal,
@@ -29,6 +30,7 @@ import {
   ChevronRight,
   Clock,
   Loader2,
+  ServerCog,
   X,
   XCircle,
 } from "lucide-react";
@@ -36,7 +38,9 @@ import * as React from "react";
 import { toast } from "sonner";
 import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
-import ClusterVersionInfo from "./ClusterVersionInfo";
+import ClusterVersionInfo, {
+  useClusterVersionInfo,
+} from "./ClusterVersionInfo";
 
 const HISTORY_PREVIEW_COUNT = 3;
 
@@ -109,12 +113,7 @@ const VersionChip = ({
 }) => (
   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-slate-200 bg-slate-50 text-[0.65rem] font-bold text-slate-600">
     {label}
-    <span
-      className={twMerge(
-        "font-mono",
-        version ? "text-slate-800" : "text-slate-400",
-      )}
-    >
+    <span className={version ? "text-slate-800" : "text-slate-400"}>
       {version || "latest"}
     </span>
   </span>
@@ -209,6 +208,8 @@ const PackageRow = ({
   version,
   onToggle,
   onVersionChange,
+  currentVersion,
+  latestVersion,
 }: {
   label: string;
   description: string;
@@ -216,6 +217,8 @@ const PackageRow = ({
   version: string;
   onToggle: (checked: boolean) => void;
   onVersionChange: (v: string) => void;
+  currentVersion?: string;
+  latestVersion?: string;
 }) => {
   const [customVersion, setCustomVersion] = React.useState(false);
 
@@ -242,6 +245,13 @@ const PackageRow = ({
           <span className="text-[0.7rem] font-semibold text-slate-400">
             {description}
           </span>
+          {(currentVersion || latestVersion) && (
+            <span className="mt-1 text-[0.66rem] font-semibold text-slate-500">
+              {currentVersion || "Unknown"}
+              <ArrowUpCircle className="mx-1 inline" size={10} />
+              {version || latestVersion || "Latest"}
+            </span>
+          )}
         </div>
         <Switch
           checked={enabled}
@@ -308,9 +318,10 @@ const PackageRow = ({
   );
 };
 
-const UpgradeCluster = () => {
+const UpgradeCluster = (props: { upgradeInProgress?: boolean }) => {
   const [opened, { open, close }] = useDisclosure(false);
   const [confirmed, setConfirmed] = React.useState(false);
+  const versions = useClusterVersionInfo();
 
   const [req, setReq] = React.useState(
     UpgradeClusterRequest.create({ request: {} }),
@@ -322,6 +333,27 @@ const UpgradeCluster = () => {
     setReq(UpgradeClusterRequest.create({ request: {} }));
   };
 
+  const handleOpen = () => {
+    const data = versions.data;
+    setReq(
+      UpgradeClusterRequest.create({
+        request: {
+          core: data?.core?.canUpgrade
+            ? UpgradeClusterRequest_Request_Core.create()
+            : undefined,
+          packageEnterprise: data?.packageEnterprise?.canUpgrade
+            ? UpgradeClusterRequest_Request_PackageEnterprise.create()
+            : undefined,
+          packageCordium: data?.packageCordium?.canUpgrade
+            ? UpgradeClusterRequest_Request_PackageCordium.create()
+            : undefined,
+        },
+      }),
+    );
+    setConfirmed(false);
+    open();
+  };
+
   const mutationUpgrade = useMutation({
     mutationFn: async () => {
       const { response } = await getClientCluster().upgradeCluster(req);
@@ -330,6 +362,7 @@ const UpgradeCluster = () => {
     onSuccess: () => {
       toast.success("Cluster upgrade started");
       invalidateKey(["clusterman", "main", "getCluster"]);
+      invalidateKey(["clusterInfo"]);
       handleClose();
     },
     onError,
@@ -352,9 +385,14 @@ const UpgradeCluster = () => {
         variant="filled"
         color="dark"
         leftSection={<ArrowUpCircle size={15} strokeWidth={2.5} />}
-        onClick={open}
+        disabled={props.upgradeInProgress || versions.isLoading}
+        onClick={handleOpen}
       >
-        Upgrade cluster
+        {props.upgradeInProgress
+          ? "Upgrade in progress"
+          : versions.isLoading
+            ? "Checking versions…"
+            : "Upgrade cluster"}
       </Button>
 
       <Modal
@@ -424,6 +462,8 @@ const UpgradeCluster = () => {
             <PackageRow
               label="Core"
               description="The core cluster runtime and control plane"
+              currentVersion={versions.data?.core?.currentVersion}
+              latestVersion={versions.data?.core?.latestVersion}
               enabled={!!req.request?.core}
               version={req.request?.core?.version ?? ""}
               onToggle={(checked) =>
@@ -443,6 +483,8 @@ const UpgradeCluster = () => {
             <PackageRow
               label="Enterprise package"
               description="Enterprise features and integrations"
+              currentVersion={versions.data?.packageEnterprise?.currentVersion}
+              latestVersion={versions.data?.packageEnterprise?.latestVersion}
               enabled={!!req.request?.packageEnterprise}
               version={req.request?.packageEnterprise?.version ?? ""}
               onToggle={(checked) =>
@@ -462,6 +504,8 @@ const UpgradeCluster = () => {
             <PackageRow
               label="Cordium package"
               description="Cordium: the sandbox platform package"
+              currentVersion={versions.data?.packageCordium?.currentVersion}
+              latestVersion={versions.data?.packageCordium?.latestVersion}
               enabled={!!req.request?.packageCordium}
               version={req.request?.packageCordium?.version ?? ""}
               onToggle={(checked) =>
@@ -557,7 +601,32 @@ export default () => {
     refetchInterval: 5000,
   });
 
-  if (!qry.isSuccess || !qry.data) return null;
+  if (qry.isLoading) {
+    return (
+      <div className="flex min-h-64 items-center justify-center">
+        <Loader2 className="animate-spin text-slate-400" size={22} />
+      </div>
+    );
+  }
+
+  if (qry.isError || !qry.data) {
+    return (
+      <Alert color="red" title="Could not load cluster management status">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <span className="text-xs">
+            {qry.error?.message ?? "The Cluster API returned no status."}
+          </span>
+          <Button
+            size="compact-xs"
+            variant="outline"
+            onClick={() => qry.refetch()}
+          >
+            Try again
+          </Button>
+        </div>
+      </Alert>
+    );
+  }
 
   const cluster = qry.data.response;
   const status = cluster.status!;
@@ -567,7 +636,54 @@ export default () => {
   const isIdle = !current && history.length === 0;
 
   return (
-    <div className="w-full flex flex-col gap-6">
+    <div className="flex w-full flex-col gap-5 pb-8">
+      <header className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-[0_1px_4px_rgba(15,23,42,0.04)] sm:flex-row sm:items-center sm:justify-between sm:p-5">
+        <div className="flex min-w-0 items-start gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm">
+            <ServerCog size={19} strokeWidth={2.1} />
+          </span>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-base font-bold text-slate-900">
+                Cluster management
+              </h1>
+            </div>
+            <p className="mt-1 max-w-2xl text-[0.73rem] font-medium leading-relaxed text-slate-500">
+              Review installed package versions, plan upgrades, and follow the
+              rollout state across the cluster.
+            </p>
+          </div>
+        </div>
+        <div className="shrink-0">
+          <UpgradeCluster upgradeInProgress={!!current} />
+        </div>
+      </header>
+
+      <ClusterVersionInfo />
+
+      {current && (
+        <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50/60 px-4 py-3.5">
+          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
+            <Loader2 size={15} className="animate-spin" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[0.78rem] font-bold text-blue-900">
+                Cluster upgrade is active
+              </span>
+              <UpgradeStateBadge state={current.state} />
+            </div>
+            <div className="mt-1 text-[0.69rem] font-semibold text-blue-700/75">
+              Started <TimeAgo rfc3339={current.createdAt} />. Package services
+              may restart while the rollout is applied.
+            </div>
+            <div className="mt-2">
+              <VersionChips request={current.request} />
+            </div>
+          </div>
+        </div>
+      )}
+
       {(status.totalSuccessfulUpgrades > 0 ||
         status.totalFailedUpgrades > 0) && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -594,67 +710,6 @@ export default () => {
         </div>
       )}
 
-      {current && (
-        <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50/60">
-            <span className="text-[0.72rem] font-bold uppercase tracking-[0.05em] text-slate-500">
-              Current upgrade
-            </span>
-            <UpgradeStateBadge state={current.state} />
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 px-4 py-3 text-[0.75rem]">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
-                Started
-              </span>
-              <span className="font-semibold text-slate-700">
-                <TimeAgo rfc3339={current.createdAt} />
-              </span>
-            </div>
-            {current.doneAt && (
-              <div className="flex flex-col gap-0.5">
-                <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
-                  Completed
-                </span>
-                <span className="font-semibold text-slate-700">
-                  <TimeAgo rfc3339={current.doneAt} />
-                </span>
-              </div>
-            )}
-            {current.request?.core?.version && (
-              <div className="flex flex-col gap-0.5">
-                <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
-                  Core version
-                </span>
-                <span className="font-semibold text-slate-700 font-mono">
-                  {current.request.core.version}
-                </span>
-              </div>
-            )}
-            {current.request?.packageEnterprise?.version && (
-              <div className="flex flex-col gap-0.5">
-                <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
-                  Enterprise version
-                </span>
-                <span className="font-semibold text-slate-700 font-mono">
-                  {current.request.packageEnterprise.version}
-                </span>
-              </div>
-            )}
-            {current.request?.packageCordium?.version && (
-              <div className="flex flex-col gap-0.5">
-                <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
-                  Cordium version
-                </span>
-                <span className="font-semibold text-slate-700 font-mono">
-                  {current.request.packageCordium.version}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
       {history.length > 0 && <UpgradeHistory items={history} />}
 
       {isIdle && (
@@ -664,14 +719,6 @@ export default () => {
           </span>
         </div>
       )}
-
-      <div className="my-8">
-        <ClusterVersionInfo />
-      </div>
-
-      <div className="flex justify-end">
-        <UpgradeCluster />
-      </div>
     </div>
   );
 };
