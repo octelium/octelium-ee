@@ -10,6 +10,7 @@ import {
   CloseButton,
   Group,
   NumberInput,
+  SegmentedControl,
   Select,
   Switch,
   Tabs,
@@ -63,16 +64,27 @@ const normalizeSecretSelectors = (item: EnterpriseP.CollectorExporter) => {
   const type = item.spec?.type;
   if (!type?.oneofKind) return item;
   const normalizeAuth = (auth?: GrpcStyleAuth) => {
+    if (auth && !auth.type.oneofKind) auth.type = freshBearer();
     if (auth?.type.oneofKind === "bearer" && !auth.type.bearer) auth.type.bearer = freshSecret();
     if (auth?.type.oneofKind === "basic" && !auth.type.basic.password) auth.type.basic.password = freshSecret();
     if (auth?.type.oneofKind === "custom" && !auth.type.custom.value) auth.type.custom.value = freshSecret();
   };
-  if (type.oneofKind === "otlp") normalizeAuth(type.otlp.auth as unknown as GrpcStyleAuth);
-  if (type.oneofKind === "otlpHTTP") normalizeAuth(type.otlpHTTP.auth as unknown as GrpcStyleAuth);
-  if (type.oneofKind === "prometheusRemoteWrite") normalizeAuth(type.prometheusRemoteWrite.auth as unknown as GrpcStyleAuth);
+  if (type.oneofKind === "otlp") {
+    if (!type.otlp.auth) type.otlp.auth = EnterpriseP.CollectorExporter_Spec_OTLP_Auth.create({ type: freshBearer() });
+    normalizeAuth(type.otlp.auth as unknown as GrpcStyleAuth);
+  }
+  if (type.oneofKind === "otlpHTTP") {
+    if (!type.otlpHTTP.auth) type.otlpHTTP.auth = EnterpriseP.CollectorExporter_Spec_OTLPHTTP_Auth.create({ type: freshBearer() });
+    normalizeAuth(type.otlpHTTP.auth as unknown as GrpcStyleAuth);
+  }
+  if (type.oneofKind === "prometheusRemoteWrite") {
+    if (!type.prometheusRemoteWrite.auth) type.prometheusRemoteWrite.auth = EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_Auth.create({ type: freshBearer() });
+    normalizeAuth(type.prometheusRemoteWrite.auth as unknown as GrpcStyleAuth);
+  }
   if (type.oneofKind === "clickhouse" && !type.clickhouse.password) type.clickhouse.password = freshSecret();
   if (type.oneofKind === "elasticsearch" && type.elasticsearch.auth?.type.oneofKind === "apiKey" && !type.elasticsearch.auth.type.apiKey) type.elasticsearch.auth.type.apiKey = freshSecret();
   if (type.oneofKind === "elasticsearch" && type.elasticsearch.auth?.type.oneofKind === "basic" && !type.elasticsearch.auth.type.basic.password) type.elasticsearch.auth.type.basic.password = freshSecret();
+  if (type.oneofKind === "elasticsearch" && !type.elasticsearch.auth?.type.oneofKind) type.elasticsearch.auth = EnterpriseP.CollectorExporter_Spec_Elasticsearch_Auth.create({ type: { oneofKind: "apiKey", apiKey: freshSecret() } });
   if (type.oneofKind === "logzio" && !type.logzio.token) type.logzio.token = freshSecret();
   if (type.oneofKind === "influxDB" && !type.influxDB.token) type.influxDB.token = freshSecret();
   if (type.oneofKind === "kafka" && type.kafka.auth?.type.oneofKind === "sasl" && !type.kafka.auth.type.sasl.password) type.kafka.auth.type.sasl.password = freshSecret();
@@ -86,6 +98,7 @@ const normalizeSecretSelectors = (item: EnterpriseP.CollectorExporter) => {
     if (!type.azureMonitor.instrumentationKey) type.azureMonitor.instrumentationKey = freshSecret();
   }
   if (type.oneofKind === "azureDataExplorer" && type.azureDataExplorer.auth?.type.oneofKind === "servicePrincipal" && !type.azureDataExplorer.auth.type.servicePrincipal.applicationKey) type.azureDataExplorer.auth.type.servicePrincipal.applicationKey = freshSecret();
+  if (type.oneofKind === "azureDataExplorer" && !type.azureDataExplorer.auth?.type.oneofKind) type.azureDataExplorer.auth = EnterpriseP.CollectorExporter_Spec_AzureDataExplorer_Auth.create({ type: { oneofKind: "servicePrincipal", servicePrincipal: { applicationID: "", applicationKey: freshSecret(), tenantID: "" } } });
   return item;
 };
 
@@ -148,32 +161,25 @@ const SecretAuthTabs = (props: {
       a.type = freshBasic();
     } else if (value === "custom") {
       a.type = freshCustom();
-    } else {
-      a.type = { oneofKind: undefined };
-    }
+    } else a.type = freshBearer();
     onUpdate();
   };
 
   return (
-    <Tabs
-      value={auth?.type.oneofKind ?? "none"}
-      onChange={(value) => changeAuth(value ?? "none")}
-    >
-      <Tabs.List>
-        <Tabs.Tab value="none">None</Tabs.Tab>
-        <Tabs.Tab value="bearer">Bearer Authentication</Tabs.Tab>
-        <Tabs.Tab value="basic">Basic Authentication</Tabs.Tab>
-        <Tabs.Tab value="custom">Custom Header</Tabs.Tab>
-      </Tabs.List>
+    <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/50 p-3">
+      <SegmentedControl
+        fullWidth
+        value={auth?.type.oneofKind ?? "bearer"}
+        onChange={changeAuth}
+        data={[
+          { label: "Bearer", value: "bearer" },
+          { label: "Basic", value: "basic" },
+          { label: "Custom header", value: "custom" },
+        ]}
+      />
 
-      <Tabs.Panel value="none">
-        <div className="py-3 text-xs font-semibold text-slate-400">
-          No exporter authentication is configured.
-        </div>
-      </Tabs.Panel>
-
-      <Tabs.Panel value="bearer">
-        {match(auth?.type)
+      {auth?.type.oneofKind === "bearer" && (
+        match(auth?.type)
           .with({ oneofKind: "bearer" }, (b) => (
             <SecretSelectField
               label="Bearer Token Secret"
@@ -183,11 +189,11 @@ const SecretAuthTabs = (props: {
           ))
           .otherwise(() => (
             <></>
-          ))}
-      </Tabs.Panel>
+          ))
+      )}
 
-      <Tabs.Panel value="basic">
-        {match(auth?.type)
+      {auth?.type.oneofKind === "basic" && (
+        match(auth?.type)
           .with({ oneofKind: "basic" }, (b) => (
             <Group grow>
               <TextInput
@@ -208,11 +214,11 @@ const SecretAuthTabs = (props: {
           ))
           .otherwise(() => (
             <></>
-          ))}
-      </Tabs.Panel>
+          ))
+      )}
 
-      <Tabs.Panel value="custom">
-        {match(auth?.type)
+      {auth?.type.oneofKind === "custom" && (
+        match(auth?.type)
           .with({ oneofKind: "custom" }, (c) => (
             <Group grow>
               <TextInput
@@ -234,9 +240,9 @@ const SecretAuthTabs = (props: {
           ))
           .otherwise(() => (
             <></>
-          ))}
-      </Tabs.Panel>
-    </Tabs>
+          ))
+      )}
+    </div>
   );
 };
 
@@ -1409,7 +1415,7 @@ const Edit = (props: {
                 />
 
                 <Tabs
-                  value={type.elasticsearch.auth?.type.oneofKind ?? "none"}
+                  value={type.elasticsearch.auth?.type.oneofKind ?? "apiKey"}
                   onChange={(v) => {
                     if (!type.elasticsearch.auth) {
                       type.elasticsearch.auth =
@@ -1426,9 +1432,6 @@ const Edit = (props: {
                       return;
                     }
                     match(v)
-                      .with("none", () => {
-                        type.elasticsearch.auth!.type = { oneofKind: undefined };
-                      })
                       .with("apiKey", () => {
                         type.elasticsearch.auth!.type = {
                           oneofKind: "apiKey",
@@ -1445,11 +1448,22 @@ const Edit = (props: {
                     updateReq();
                   }}
                 >
-                  <Tabs.List>
-                    <Tabs.Tab value="none">None</Tabs.Tab>
-                    <Tabs.Tab value="apiKey">API Key</Tabs.Tab>
-                    <Tabs.Tab value="basic">Basic Authentication</Tabs.Tab>
-                  </Tabs.List>
+                  <SegmentedControl
+                    fullWidth
+                    value={type.elasticsearch.auth?.type.oneofKind ?? "apiKey"}
+                    data={[
+                      { label: "API key", value: "apiKey" },
+                      { label: "Basic", value: "basic" },
+                    ]}
+                    onChange={(value) => {
+                      if (!type.elasticsearch.auth) type.elasticsearch.auth = EnterpriseP.CollectorExporter_Spec_Elasticsearch_Auth.create();
+                      const current = type.elasticsearch.auth.type.oneofKind;
+                      if (current) authenticationConfigurations.current[`elasticsearch.${current}`] = structuredClone(type.elasticsearch.auth.type);
+                      const cached = authenticationConfigurations.current[`elasticsearch.${value}`] as typeof type.elasticsearch.auth.type | undefined;
+                      type.elasticsearch.auth.type = cached ? structuredClone(cached) : value === "basic" ? { oneofKind: "basic", basic: { user: "", password: freshSecret() } } : { oneofKind: "apiKey", apiKey: freshSecret() };
+                      updateReq();
+                    }}
+                  />
 
                   <Tabs.Panel value="apiKey">
                     {match(type.elasticsearch.auth?.type)
@@ -2117,7 +2131,7 @@ const Edit = (props: {
                 </Group>
 
                 <Tabs
-                  value={type.azureDataExplorer.auth?.type.oneofKind ?? "none"}
+                  value={type.azureDataExplorer.auth?.type.oneofKind ?? "servicePrincipal"}
                   onChange={(v) => {
                     if (!type.azureDataExplorer.auth) {
                       type.azureDataExplorer.auth =
@@ -2134,9 +2148,6 @@ const Edit = (props: {
                       return;
                     }
                     match(v)
-                      .with("none", () => {
-                        type.azureDataExplorer.auth!.type = { oneofKind: undefined };
-                      })
                       .with("servicePrincipal", () => {
                         type.azureDataExplorer.auth!.type = {
                           oneofKind: "servicePrincipal",
@@ -2163,16 +2174,23 @@ const Edit = (props: {
                     updateReq();
                   }}
                 >
-                  <Tabs.List>
-                    <Tabs.Tab value="none">None</Tabs.Tab>
-                    <Tabs.Tab value="servicePrincipal">
-                      Service Principal
-                    </Tabs.Tab>
-                    <Tabs.Tab value="managedIdentity">
-                      Managed Identity
-                    </Tabs.Tab>
-                    <Tabs.Tab value="azureDefault">Azure Default</Tabs.Tab>
-                  </Tabs.List>
+                  <SegmentedControl
+                    fullWidth
+                    value={type.azureDataExplorer.auth?.type.oneofKind ?? "servicePrincipal"}
+                    data={[
+                      { label: "Service principal", value: "servicePrincipal" },
+                      { label: "Managed identity", value: "managedIdentity" },
+                      { label: "Azure default", value: "azureDefault" },
+                    ]}
+                    onChange={(value) => {
+                      if (!type.azureDataExplorer.auth) type.azureDataExplorer.auth = EnterpriseP.CollectorExporter_Spec_AzureDataExplorer_Auth.create();
+                      const current = type.azureDataExplorer.auth.type.oneofKind;
+                      if (current) authenticationConfigurations.current[`azureDataExplorer.${current}`] = structuredClone(type.azureDataExplorer.auth.type);
+                      const cached = authenticationConfigurations.current[`azureDataExplorer.${value}`] as typeof type.azureDataExplorer.auth.type | undefined;
+                      type.azureDataExplorer.auth.type = cached ? structuredClone(cached) : value === "managedIdentity" ? { oneofKind: "managedIdentity", managedIdentity: { id: "" } } : value === "azureDefault" ? { oneofKind: "azureDefault", azureDefault: {} } : { oneofKind: "servicePrincipal", servicePrincipal: { applicationID: "", applicationKey: freshSecret(), tenantID: "" } };
+                      updateReq();
+                    }}
+                  />
 
                   <Tabs.Panel value="servicePrincipal">
                     {match(type.azureDataExplorer.auth?.type)
