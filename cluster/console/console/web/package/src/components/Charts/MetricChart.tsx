@@ -97,7 +97,7 @@ type ChartSeries = {
   data: [number, number][];
 };
 
-type MetricChartProps = {
+export type MetricChartProps = {
   title?: string;
   unit?: string;
   metric: string;
@@ -113,6 +113,9 @@ type MetricChartProps = {
   limitSeries?: number;
   limitPointsPerSeries?: number;
   height?: number;
+  enabled?: boolean;
+  autoRefresh?: boolean;
+  hideResolution?: boolean;
 };
 
 const numberValue = (p: NumberPoint): number | undefined => {
@@ -369,6 +372,9 @@ const MetricChart = (props: MetricChartProps) => {
     limitSeries,
     limitPointsPerSeries,
     height = 240,
+    enabled = true,
+    autoRefresh = true,
+    hideResolution = false,
   } = props;
 
   const [step, setStep] = useState(props.step);
@@ -415,6 +421,7 @@ const MetricChart = (props: MetricChartProps) => {
 
   const qry = useQuery({
     queryKey,
+    enabled,
 
     queryFn: async () => {
       const now = new Date();
@@ -448,7 +455,8 @@ const MetricChart = (props: MetricChartProps) => {
       return response;
     },
 
-    refetchInterval: refetchIntervalChart,
+    refetchInterval: autoRefresh ? refetchIntervalChart : false,
+    refetchIntervalInBackground: false,
   });
 
   const effectiveUnit =
@@ -487,6 +495,7 @@ const MetricChart = (props: MetricChartProps) => {
 
       animation: statistics.pointCount <= 1_000,
       animationDuration: 650,
+      animationDurationUpdate: 0,
       animationEasing: "cubicOut",
 
       aria: {
@@ -738,7 +747,7 @@ const MetricChart = (props: MetricChartProps) => {
           </div>
         </div>
 
-        {supportsStep && (
+        {supportsStep && !hideResolution && (
           <div className="w-36 shrink-0">
             <span className="mb-1 block text-[0.58rem] font-bold uppercase tracking-[0.07em] text-slate-400">
               Resolution
