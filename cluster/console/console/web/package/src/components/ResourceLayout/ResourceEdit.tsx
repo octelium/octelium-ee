@@ -36,6 +36,7 @@ export const ResourceEdit = (props: {
   onUpdateDone?: (item: Resource) => void;
   noPostUpdateNavigation?: boolean;
   noPostUpdateToast?: boolean;
+  readOnly?: boolean;
 }) => {
   const [req, setReq] = React.useState<Resource>(cloneResource(props.item));
   const [curYAML, setCurYAML] = React.useState(() =>
@@ -141,6 +142,7 @@ export const ResourceEdit = (props: {
         <SegmentedControl
           value={activeTab}
           onChange={handleTabChange}
+          disabled={props.readOnly}
           data={[
             {
               value: "main",
@@ -168,15 +170,17 @@ export const ResourceEdit = (props: {
         <div className="flex flex-col gap-8">
           {!props.noMetadata && (
             <ContainerGen title="Metadata">
-              <MetadataEdit
-                isUpdateMode
-                item={req}
-                onUpdate={(md) => {
-                  const next = cloneResource(req);
-                  next.metadata = md;
-                  setReq(next);
-                }}
-              />
+              <fieldset disabled={props.readOnly} className={props.readOnly ? "opacity-55" : undefined}>
+                <MetadataEdit
+                  isUpdateMode
+                  item={req}
+                  onUpdate={(md) => {
+                    const next = cloneResource(req);
+                    next.metadata = md;
+                    setReq(next);
+                  }}
+                />
+              </fieldset>
             </ContainerGen>
           )}
 
@@ -274,7 +278,9 @@ export const ResourceEdit = (props: {
                 <Save size={13} strokeWidth={2.5} />
               )
             }
-            disabled={mutationUpdate.isPending || !canSubmit || !isDirty}
+            disabled={
+              props.readOnly || mutationUpdate.isPending || !canSubmit || !isDirty
+            }
             loading={mutationUpdate.isPending}
             onClick={() => mutationUpdate.mutate(req)}
           >
@@ -295,6 +301,7 @@ const ResourceEditPage = (props: {
     item: Resource;
     onUpdate: (item: Resource) => void;
   }) => React.ReactNode;
+  readOnly?: boolean;
 }) => {
   const ctx = useContextResource();
   if (!ctx) return null;
@@ -306,6 +313,7 @@ const ResourceEditPage = (props: {
           item={ctx.data}
           specComponent={props.specComponent}
           dataComponent={props.dataComponent}
+          readOnly={props.readOnly}
         />
       )}
     </PageWrap>

@@ -68,7 +68,10 @@ const getResourceChildrenRouter = (arg: ResourceComponentInfo): RouteObject => {
     {
       path: "edit",
       element: arg.Item.Edit ? (
-        <ResourceEditPage specComponent={arg.Item.Edit} />
+        <ResourceEditPage
+          specComponent={arg.Item.Edit}
+          readOnly={arg.readOnlyEdit}
+        />
       ) : null,
     },
     {

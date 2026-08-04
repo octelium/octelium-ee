@@ -8,6 +8,7 @@ export type ResourceComponentInfo = {
   unCreatable?: boolean;
   unDeletable?: boolean;
   unEditable?: boolean;
+  readOnlyEdit?: boolean;
   cloneable?: boolean;
   infoItemsGetter?: (props: { item: Resource }) => ResourceMainInfo;
 };

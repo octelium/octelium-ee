@@ -1,368 +1,194 @@
 import * as EnterpriseP from "@/apis/enterprisev1/enterprisev1";
+import { Alert, SegmentedControl, TextInput } from "@mantine/core";
+import { Boxes, Cloud, Info, LockKeyhole } from "lucide-react";
+import * as React from "react";
 
-import { Group, Tabs, TextInput } from "@mantine/core";
-import { useState } from "react";
-import { match } from "ts-pattern";
+type StoreType = EnterpriseP.SecretStore_Spec["type"];
+type StoreKind = Exclude<StoreType["oneofKind"], undefined>;
+
+const storeOptions: { label: string; value: StoreKind }[] = [
+  { label: "Kubernetes", value: "kubernetes" },
+  { label: "HashiCorp Vault", value: "hashicorpVault" },
+  { label: "AWS KMS", value: "awsKeyManagementService" },
+  { label: "Azure Key Vault", value: "azureKeyVault" },
+  { label: "Google Cloud KMS", value: "googleCloudKeyManagementService" },
+];
+
+const createType = (kind: StoreKind): StoreType => {
+  switch (kind) {
+    case "kubernetes":
+      return {
+        oneofKind: "kubernetes",
+        kubernetes: EnterpriseP.SecretStore_Spec_Kubernetes.create(),
+      };
+    case "hashicorpVault":
+      return {
+        oneofKind: "hashicorpVault",
+        hashicorpVault: EnterpriseP.SecretStore_Spec_HashicorpVault.create(),
+      };
+    case "awsKeyManagementService":
+      return {
+        oneofKind: "awsKeyManagementService",
+        awsKeyManagementService:
+          EnterpriseP.SecretStore_Spec_AWSKeyManagementService.create(),
+      };
+    case "azureKeyVault":
+      return {
+        oneofKind: "azureKeyVault",
+        azureKeyVault: EnterpriseP.SecretStore_Spec_AzureKeyVault.create(),
+      };
+    case "googleCloudKeyManagementService":
+      return {
+        oneofKind: "googleCloudKeyManagementService",
+        googleCloudKeyManagementService:
+          EnterpriseP.SecretStore_Spec_GoogleCloudKeyManagementService.create(),
+      };
+  }
+};
+
+const cloneForEdit = (item: EnterpriseP.SecretStore) => {
+  const next = EnterpriseP.SecretStore.clone(item);
+  if (!next.spec) next.spec = EnterpriseP.SecretStore_Spec.create();
+  if (!next.spec.type.oneofKind) next.spec.type = createType("kubernetes");
+  return next;
+};
+
+const isValidURL = (value: string) => {
+  if (!value) return true;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:";
+  } catch {
+    return false;
+  }
+};
 
 const Edit = (props: {
   item: EnterpriseP.SecretStore;
   onUpdate: (item: EnterpriseP.SecretStore) => void;
 }) => {
-  const { item, onUpdate } = props;
-  const [req, setReq] = useState(EnterpriseP.SecretStore.clone(item));
-  let [init, _] = useState(EnterpriseP.SecretStore.clone(req));
+  const [req, setReq] = React.useState(() => cloneForEdit(props.item));
+  const configurations = React.useRef<Partial<Record<StoreKind, StoreType>>>({
+    [req.spec!.type.oneofKind!]: structuredClone(req.spec!.type),
+  });
+  const itemKey = props.item.metadata?.uid || props.item.metadata?.name;
+
+  React.useEffect(() => {
+    const next = cloneForEdit(props.item);
+    setReq(next);
+    configurations.current = {
+      [next.spec!.type.oneofKind!]: structuredClone(next.spec!.type),
+    };
+  }, [itemKey]);
+
   const updateReq = () => {
-    setReq(EnterpriseP.SecretStore.clone(req));
-    onUpdate(req);
+    const next = EnterpriseP.SecretStore.clone(req);
+    setReq(next);
+    props.onUpdate(EnterpriseP.SecretStore.clone(next));
   };
 
-  if (!req.spec) {
-    return <></>;
-  }
+  const changeType = (value: string) => {
+    if (!req.spec || !storeOptions.some((option) => option.value === value)) return;
+    const nextKind = value as StoreKind;
+    const currentKind = req.spec.type.oneofKind;
+    if (currentKind) {
+      configurations.current[currentKind] = structuredClone(req.spec.type);
+    }
+    req.spec.type = structuredClone(
+      configurations.current[nextKind] ?? createType(nextKind),
+    );
+    updateReq();
+  };
+
+  if (!req.spec) return null;
+  const type = req.spec.type;
 
   return (
-    <div>
-      <Tabs
-        defaultValue={req.spec!.type.oneofKind}
-        onChange={(v) => {
-          match(v)
-            .with("hashicorpVault", () => {
-              match(init.spec?.type)
-                .when(
-                  (x) => x?.oneofKind === `hashicorpVault`,
-                  (x) => {
-                    req.spec!.type = x;
-                  },
-                )
-                .otherwise(() => {
-                  req.spec!.type = {
-                    oneofKind: "hashicorpVault",
-                    hashicorpVault:
-                      {} as EnterpriseP.SecretStore_Spec_HashicorpVault,
-                  };
-                });
-            })
-            .with("kubernetes", () => {
-              match(init.spec?.type)
-                .when(
-                  (x) => x?.oneofKind === `kubernetes`,
-                  (x) => {
-                    req.spec!.type = x;
-                  },
-                )
-                .otherwise(() => {
-                  req.spec!.type = {
-                    oneofKind: "kubernetes",
-                    kubernetes: {} as EnterpriseP.SecretStore_Spec_Kubernetes,
-                  };
-                });
-            })
-            .with("azureKeyVault", () => {
-              match(init.spec?.type)
-                .when(
-                  (x) => x?.oneofKind === `azureKeyVault`,
-                  (x) => {
-                    req.spec!.type = x;
-                  },
-                )
-                .otherwise(() => {
-                  req.spec!.type = {
-                    oneofKind: "azureKeyVault",
-                    azureKeyVault:
-                      {} as EnterpriseP.SecretStore_Spec_AzureKeyVault,
-                  };
-                });
-            })
-            .with("googleCloudKeyManagementService", () => {
-              match(init.spec?.type)
-                .when(
-                  (x) => x?.oneofKind === `googleCloudKeyManagementService`,
-                  (x) => {
-                    req.spec!.type = x;
-                  },
-                )
-                .otherwise(() => {
-                  req.spec!.type = {
-                    oneofKind: "googleCloudKeyManagementService",
-                    googleCloudKeyManagementService:
-                      {} as EnterpriseP.SecretStore_Spec_GoogleCloudKeyManagementService,
-                  };
-                });
-            })
-            .with("awsKeyManagementService", () => {
-              match(init.spec?.type)
-                .when(
-                  (x) => x?.oneofKind === `awsKeyManagementService`,
-                  (x) => {
-                    req.spec!.type = x;
-                  },
-                )
-                .otherwise(() => {
-                  req.spec!.type = {
-                    oneofKind: "awsKeyManagementService",
-                    awsKeyManagementService:
-                      {} as EnterpriseP.SecretStore_Spec_AWSKeyManagementService,
-                  };
-                });
-            });
-
-          updateReq();
-        }}
+    <div className="space-y-4">
+      <Alert
+        color="blue"
+        icon={<LockKeyhole size={16} />}
+        title="Secret store editing is not currently supported"
       >
-        <Tabs.List>
-          <Tabs.Tab value="kubernetes">Kubernetes</Tabs.Tab>
-          <Tabs.Tab value="hashicorpVault">Hashicorp vault</Tabs.Tab>
-          <Tabs.Tab value="awsKeyManagementService">AWS KMS</Tabs.Tab>
-          <Tabs.Tab value="azureKeyVault">Azure Key Vault</Tabs.Tab>
-          <Tabs.Tab value="googleCloudKeyManagementService">
-            Google Key Cloud Management
-          </Tabs.Tab>
-        </Tabs.List>
+        The cluster currently uses Kubernetes-native key storage. The
+        configuration is shown below for reference, but cannot be changed from
+        the console yet.
+      </Alert>
 
-        <Tabs.Panel value="hashicorpVault">
-          {req.spec!.type.oneofKind === `hashicorpVault` && (
-            <>
-              <Group grow>
-                <TextInput
-                  required
-                  label="Address"
-                  placeholder={"vault.example.com"}
-                  value={req.spec!.type.hashicorpVault.address}
-                  onChange={(v) => {
-                    match(req.spec?.type).when(
-                      (x) => x?.oneofKind === `hashicorpVault`,
-                      (x) => {
-                        x.hashicorpVault.address = v.target.value;
-                        updateReq();
-                      },
-                    );
-                  }}
-                />
+      <fieldset disabled className="space-y-4 opacity-55">
+        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-slate-50/50 p-3">
+          <div className="mb-2 flex items-center gap-2 text-[0.72rem] font-bold text-slate-700">
+            <Cloud size={14} /> Secret store backend
+          </div>
+          <SegmentedControl
+            value={type.oneofKind ?? "kubernetes"}
+            onChange={changeType}
+            data={storeOptions}
+            className="min-w-[650px]"
+            fullWidth
+          />
+        </div>
 
-                <TextInput
-                  required
-                  label="Key"
-                  placeholder={"my-key"}
-                  value={req.spec!.type.hashicorpVault.key}
-                  onChange={(v) => {
-                    match(req.spec?.type).when(
-                      (x) => x?.oneofKind === `hashicorpVault`,
-                      (x) => {
-                        x.hashicorpVault.key = v.target.value;
-                        updateReq();
-                      },
-                    );
-                  }}
-                />
+        <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center gap-2 text-[0.75rem] font-bold text-slate-800">
+            <Boxes size={15} /> Backend configuration
+          </div>
 
-                <TextInput
-                  required
-                  label="Role"
-                  placeholder={"my-role"}
-                  value={req.spec!.type.hashicorpVault.role}
-                  onChange={(v) => {
-                    match(req.spec?.type).when(
-                      (x) => x?.oneofKind === `hashicorpVault`,
-                      (x) => {
-                        x.hashicorpVault.role = v.target.value;
-                        updateReq();
-                      },
-                    );
-                  }}
-                />
-              </Group>
-            </>
-          )}
-        </Tabs.Panel>
-        <Tabs.Panel value="awsKeyManagementService">
-          {req.spec.type.oneofKind === `awsKeyManagementService` && (
-            <>
-              <Group grow>
-                <TextInput
-                  required
-                  label="Key ID"
-                  placeholder={"ABCDEDF123456"}
-                  value={req.spec!.type.awsKeyManagementService.keyID}
-                  onChange={(v) => {
-                    match(req.spec?.type).when(
-                      (x) => x?.oneofKind === `awsKeyManagementService`,
-                      (x) => {
-                        x.awsKeyManagementService.keyID = v.target.value;
-                        updateReq();
-                      },
-                    );
-                  }}
-                />
+        {type.oneofKind === "kubernetes" && (
+          <Alert color="blue" icon={<Info size={15} />} title="Kubernetes-native storage">
+            This backend uses the cluster’s Kubernetes key storage and requires
+            no additional configuration.
+          </Alert>
+        )}
 
-                <TextInput
-                  required
-                  label="Region"
-                  placeholder={"eu-central-1"}
-                  value={req.spec!.type.awsKeyManagementService.region}
-                  onChange={(v) => {
-                    match(req.spec?.type).when(
-                      (x) => x?.oneofKind === `awsKeyManagementService`,
-                      (x) => {
-                        x.awsKeyManagementService.region = v.target.value;
-                        updateReq();
-                      },
-                    );
-                  }}
-                />
+        {type.oneofKind === "hashicorpVault" && (
+          <div className="grid gap-4 md:grid-cols-2">
+            <TextInput
+              required
+              type="url"
+              label="Vault address"
+              description="HTTP or HTTPS address of the Vault server."
+              placeholder="https://vault.example.com"
+              value={type.hashicorpVault.address}
+              error={isValidURL(type.hashicorpVault.address) ? undefined : "Enter a valid HTTP or HTTPS URL"}
+              className="md:col-span-2"
+              onChange={(event) => {
+                type.hashicorpVault.address = event.currentTarget.value;
+                updateReq();
+              }}
+            />
+            <TextInput required label="Role" description="Vault role used by the cluster." placeholder="octelium" value={type.hashicorpVault.role} onChange={(event) => { type.hashicorpVault.role = event.currentTarget.value; updateReq(); }} />
+            <TextInput required label="Key" description="Vault encryption key name." placeholder="cluster-secrets" value={type.hashicorpVault.key} onChange={(event) => { type.hashicorpVault.key = event.currentTarget.value; updateReq(); }} />
+          </div>
+        )}
 
-                <TextInput
-                  required
-                  label="Role ARN"
-                  placeholder={"ABCDEDF123456"}
-                  value={req.spec!.type.awsKeyManagementService.roleARN}
-                  onChange={(v) => {
-                    match(req.spec?.type).when(
-                      (x) => x?.oneofKind === `awsKeyManagementService`,
-                      (x) => {
-                        x.awsKeyManagementService.roleARN = v.target.value;
-                        updateReq();
-                      },
-                    );
-                  }}
-                />
-              </Group>
-            </>
-          )}
-        </Tabs.Panel>
+        {type.oneofKind === "awsKeyManagementService" && (
+          <div className="grid gap-4 md:grid-cols-2">
+            <TextInput required label="Key ID" description="KMS key ID, ARN, or alias." placeholder="alias/octelium-secrets" value={type.awsKeyManagementService.keyID} onChange={(event) => { type.awsKeyManagementService.keyID = event.currentTarget.value; updateReq(); }} />
+            <TextInput required label="Region" placeholder="us-east-1" value={type.awsKeyManagementService.region} onChange={(event) => { type.awsKeyManagementService.region = event.currentTarget.value; updateReq(); }} />
+            <TextInput required label="Role ARN" description="IAM role assumed to access the KMS key." placeholder="arn:aws:iam::123456789012:role/octelium-kms" value={type.awsKeyManagementService.roleARN} error={type.awsKeyManagementService.roleARN && !/^arn:aws[a-z-]*:iam::\d{12}:role\/.+/.test(type.awsKeyManagementService.roleARN) ? "Enter a valid IAM role ARN" : undefined} className="md:col-span-2" onChange={(event) => { type.awsKeyManagementService.roleARN = event.currentTarget.value; updateReq(); }} />
+          </div>
+        )}
 
-        <Tabs.Panel value="azureKeyVault">
-          {req.spec.type.oneofKind === `azureKeyVault` && (
-            <>
-              <Group grow>
-                <TextInput
-                  required
-                  label="Client ID"
-                  placeholder={"abcdedf123456"}
-                  value={req.spec!.type.azureKeyVault.clientID}
-                  onChange={(v) => {
-                    match(req.spec?.type).when(
-                      (x) => x?.oneofKind === `azureKeyVault`,
-                      (x) => {
-                        x.azureKeyVault.clientID = v.target.value;
-                        updateReq();
-                      },
-                    );
-                  }}
-                />
+        {type.oneofKind === "azureKeyVault" && (
+          <div className="grid gap-4 md:grid-cols-2">
+            <TextInput required label="Client ID" placeholder="00000000-0000-0000-0000-000000000000" value={type.azureKeyVault.clientID} onChange={(event) => { type.azureKeyVault.clientID = event.currentTarget.value; updateReq(); }} />
+            <TextInput required label="Tenant ID" placeholder="00000000-0000-0000-0000-000000000000" value={type.azureKeyVault.tenantID} onChange={(event) => { type.azureKeyVault.tenantID = event.currentTarget.value; updateReq(); }} />
+            <TextInput required type="url" label="Vault URL" placeholder="https://example.vault.azure.net" value={type.azureKeyVault.vaultURL} error={isValidURL(type.azureKeyVault.vaultURL) ? undefined : "Enter a valid HTTP or HTTPS URL"} onChange={(event) => { type.azureKeyVault.vaultURL = event.currentTarget.value; updateReq(); }} />
+            <TextInput required label="Key" description="Azure Key Vault key name." placeholder="octelium-secrets" value={type.azureKeyVault.key} onChange={(event) => { type.azureKeyVault.key = event.currentTarget.value; updateReq(); }} />
+          </div>
+        )}
 
-                <TextInput
-                  required
-                  label="Tenant ID"
-                  placeholder={"eu-central-1"}
-                  value={req.spec!.type.azureKeyVault.tenantID}
-                  onChange={(v) => {
-                    match(req.spec?.type).when(
-                      (x) => x?.oneofKind === `azureKeyVault`,
-                      (x) => {
-                        x.azureKeyVault.tenantID = v.target.value;
-                        updateReq();
-                      },
-                    );
-                  }}
-                />
-
-                <TextInput
-                  required
-                  label="Vault URL"
-                  placeholder={"ABCDEDF123456"}
-                  value={req.spec!.type.azureKeyVault.vaultURL}
-                  onChange={(v) => {
-                    match(req.spec?.type).when(
-                      (x) => x?.oneofKind === `azureKeyVault`,
-                      (x) => {
-                        x.azureKeyVault.vaultURL = v.target.value;
-                        updateReq();
-                      },
-                    );
-                  }}
-                />
-              </Group>
-            </>
-          )}
-        </Tabs.Panel>
-
-        <Tabs.Panel value="googleCloudKeyManagementService">
-          {req.spec.type.oneofKind === `googleCloudKeyManagementService` && (
-            <>
-              <Group grow>
-                <TextInput
-                  required
-                  label="Location"
-                  placeholder={"eu-central-1"}
-                  value={
-                    req.spec!.type.googleCloudKeyManagementService.location
-                  }
-                  onChange={(v) => {
-                    match(req.spec?.type).when(
-                      (x) => x?.oneofKind === `googleCloudKeyManagementService`,
-                      (x) => {
-                        x.googleCloudKeyManagementService.location =
-                          v.target.value;
-                        updateReq();
-                      },
-                    );
-                  }}
-                />
-
-                <TextInput
-                  required
-                  label="Key"
-                  placeholder={"my-key"}
-                  value={req.spec!.type.googleCloudKeyManagementService.key}
-                  onChange={(v) => {
-                    match(req.spec?.type).when(
-                      (x) => x?.oneofKind === `googleCloudKeyManagementService`,
-                      (x) => {
-                        x.googleCloudKeyManagementService.key = v.target.value;
-                        updateReq();
-                      },
-                    );
-                  }}
-                />
-
-                <TextInput
-                  required
-                  label="Key Ring"
-                  placeholder={"my-key-ring"}
-                  value={req.spec!.type.googleCloudKeyManagementService.keyRing}
-                  onChange={(v) => {
-                    match(req.spec?.type).when(
-                      (x) => x?.oneofKind === `googleCloudKeyManagementService`,
-                      (x) => {
-                        x.googleCloudKeyManagementService.keyRing =
-                          v.target.value;
-                        updateReq();
-                      },
-                    );
-                  }}
-                />
-
-                <TextInput
-                  required
-                  label="Project"
-                  placeholder={"my-project"}
-                  value={req.spec!.type.googleCloudKeyManagementService.project}
-                  onChange={(v) => {
-                    match(req.spec?.type).when(
-                      (x) => x?.oneofKind === `googleCloudKeyManagementService`,
-                      (x) => {
-                        x.googleCloudKeyManagementService.project =
-                          v.target.value;
-                        updateReq();
-                      },
-                    );
-                  }}
-                />
-              </Group>
-            </>
-          )}
-        </Tabs.Panel>
-      </Tabs>
+        {type.oneofKind === "googleCloudKeyManagementService" && (
+          <div className="grid gap-4 md:grid-cols-2">
+            <TextInput required label="Project" placeholder="production-infrastructure" value={type.googleCloudKeyManagementService.project} onChange={(event) => { type.googleCloudKeyManagementService.project = event.currentTarget.value; updateReq(); }} />
+            <TextInput required label="Location" placeholder="global" value={type.googleCloudKeyManagementService.location} onChange={(event) => { type.googleCloudKeyManagementService.location = event.currentTarget.value; updateReq(); }} />
+            <TextInput required label="Key ring" placeholder="octelium" value={type.googleCloudKeyManagementService.keyRing} onChange={(event) => { type.googleCloudKeyManagementService.keyRing = event.currentTarget.value; updateReq(); }} />
+            <TextInput required label="Key" placeholder="cluster-secrets" value={type.googleCloudKeyManagementService.key} onChange={(event) => { type.googleCloudKeyManagementService.key = event.currentTarget.value; updateReq(); }} />
+          </div>
+        )}
+        </section>
+      </fieldset>
     </div>
   );
 };
