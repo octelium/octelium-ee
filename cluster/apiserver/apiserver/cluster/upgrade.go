@@ -139,7 +139,7 @@ func validateAndNormalizeUpgradeRequest(
 func validateUpgradeVersion(ver string, field string) (string, error) {
 	ver = strings.TrimSpace(ver)
 	if ver == "" {
-		return "", nil
+		return "latest", nil
 	}
 
 	if len(ver) > 100 {

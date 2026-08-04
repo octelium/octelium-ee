@@ -201,7 +201,7 @@ func TestValidateAndNormalizeUpgradeRequest(t *testing.T) {
 		})
 		assert.Nil(t, err, "%+v", err)
 		assert.NotNil(t, ret.Core)
-		assert.Equal(t, "", ret.Core.Version)
+		assert.Equal(t, "latest", ret.Core.Version)
 	}
 
 	{
