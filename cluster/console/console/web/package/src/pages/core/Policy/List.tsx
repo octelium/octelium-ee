@@ -34,7 +34,8 @@ export const LabelComponent = (props: { item: Policy }) => {
       {item.spec!.rules && item.spec!.rules.length > 0 && (
         <ResourceListLabel>{item.spec!.rules.length} Rules</ResourceListLabel>
       )}
-      {item.spec!.rules && item.spec!.enforcementRules.length > 0 && (
+      {item.spec!.enforcementRules &&
+        item.spec!.enforcementRules.length > 0 && (
         <ResourceListLabel>
           {item.spec!.enforcementRules.length} Enforcement Rules
         </ResourceListLabel>
@@ -65,6 +66,12 @@ const DoSummary = (props: { resp: GetPolicySummaryResponse }) => {
           Disabled
         </SummaryItemCount>
         <SummaryItemCount count={resp.totalRule}>Rules</SummaryItemCount>
+        <SummaryItemCount count={resp.totalRuleAllow}>
+          Allowed Rules
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalRuleDenied}>
+          Denied Rules
+        </SummaryItemCount>
       </SummaryItemCountWrap>
     </div>
   );

@@ -22,9 +22,9 @@ export const ItemInfo = (props: { item: CoreC.Policy }) => {
           </span>
           <Switch
             className="ml-2"
-            checked={item.spec!.isDisabled}
+            checked={!item.spec!.isDisabled}
             onChange={(v) => {
-              item.spec!.isDisabled = v.currentTarget.checked;
+              item.spec!.isDisabled = !v.currentTarget.checked;
               mutationUpdate.mutate(item);
             }}
           />

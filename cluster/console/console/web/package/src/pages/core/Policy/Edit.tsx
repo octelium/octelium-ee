@@ -6,16 +6,33 @@ import EditItem from "@/components/EditItem";
 
 import Cond from "@/components/Condition";
 import ItemMessage from "@/components/ItemMessage";
-import { Group, Select, Switch, TextInput } from "@mantine/core";
+import { Group, Select, Slider, Switch, TextInput } from "@mantine/core";
 
 const Edit = (props: {
   item: CoreP.Policy;
   onUpdate: (item: CoreP.Policy) => void;
 }) => {
-  let [req, setReq] = React.useState(props.item);
+  const [req, setReq] = React.useState(CoreP.Policy.clone(props.item));
+  const ruleKeys = React.useRef(
+    props.item.spec!.rules.map(() => crypto.randomUUID()),
+  );
+  const enforcementRuleKeys = React.useRef(
+    props.item.spec!.enforcementRules.map(() => crypto.randomUUID()),
+  );
+  const itemKey = props.item.metadata?.uid || props.item.metadata?.name;
+
+  React.useEffect(() => {
+    setReq(CoreP.Policy.clone(props.item));
+    ruleKeys.current = props.item.spec!.rules.map(() => crypto.randomUUID());
+    enforcementRuleKeys.current = props.item.spec!.enforcementRules.map(() =>
+      crypto.randomUUID(),
+    );
+  }, [itemKey]);
+
   const updateReq = () => {
-    setReq(CoreP.Policy.clone(req));
-    props.onUpdate(req);
+    const next = CoreP.Policy.clone(req);
+    setReq(next);
+    props.onUpdate(CoreP.Policy.clone(next));
   };
 
   return (
@@ -37,19 +54,23 @@ const Edit = (props: {
         isList
         onSet={() => {
           req.spec!.rules = [CoreP.Policy_Spec_Rule.create({})];
+          ruleKeys.current = [crypto.randomUUID()];
           updateReq();
         }}
         onAddListItem={() => {
           req.spec!.rules.push(CoreP.Policy_Spec_Rule.create({}));
+          ruleKeys.current.push(crypto.randomUUID());
           updateReq();
         }}
       >
         {req.spec!.rules &&
           req.spec!.rules.map((rule: any, ruleIdx: number) => (
             <EditItem
+              key={ruleKeys.current[ruleIdx]}
               obj={req.spec!.rules[ruleIdx]}
               onUnset={() => {
                 req.spec!.rules.splice(ruleIdx, 1);
+                ruleKeys.current.splice(ruleIdx, 1);
                 updateReq();
               }}
             >
@@ -74,12 +95,13 @@ const Edit = (props: {
                         ],
                     },
                   ]}
-                  defaultValue={
+                  value={
                     CoreP.Policy_Spec_Rule_Effect[
                       req.spec!.rules[ruleIdx].effect
                     ]
                   }
                   onChange={(v) => {
+                    if (!v) return;
                     req.spec!.rules[ruleIdx].effect =
                       CoreP.Policy_Spec_Rule_Effect[v as "ALLOW"];
                     updateReq();
@@ -99,7 +121,6 @@ const Edit = (props: {
 
                 <PriorityPicker
                   label="Priority"
-                  description="Lower values execute first. Default is 0."
                   value={req.spec!.rules[ruleIdx].priority}
                   onChange={(v) => {
                     req.spec!.rules[ruleIdx].priority = v;
@@ -127,21 +148,25 @@ const Edit = (props: {
           req.spec!.enforcementRules = [
             CoreP.Policy_Spec_EnforcementRule.create({}),
           ];
+          enforcementRuleKeys.current = [crypto.randomUUID()];
           updateReq();
         }}
         onAddListItem={() => {
           req.spec!.enforcementRules.push(
             CoreP.Policy_Spec_EnforcementRule.create({}),
           );
+          enforcementRuleKeys.current.push(crypto.randomUUID());
           updateReq();
         }}
       >
         {req.spec!.enforcementRules &&
           req.spec!.enforcementRules.map((rule: any, ruleIdx: number) => (
             <EditItem
+              key={enforcementRuleKeys.current[ruleIdx]}
               obj={req.spec!.enforcementRules[ruleIdx]}
               onUnset={() => {
                 req.spec!.enforcementRules.splice(ruleIdx, 1);
+                enforcementRuleKeys.current.splice(ruleIdx, 1);
                 updateReq();
               }}
             >
@@ -166,12 +191,13 @@ const Edit = (props: {
                         ],
                     },
                   ]}
-                  defaultValue={
-                    CoreP.Policy_Spec_Rule_Effect[
+                  value={
+                    CoreP.Policy_Spec_EnforcementRule_Effect[
                       req.spec!.enforcementRules[ruleIdx].effect
                     ]
                   }
                   onChange={(v) => {
+                    if (!v) return;
                     req.spec!.enforcementRules[ruleIdx].effect =
                       CoreP.Policy_Spec_EnforcementRule_Effect[v as "ENFORCE"];
                     updateReq();
@@ -203,32 +229,27 @@ type Priority = (typeof PRIORITY_STEPS)[number];
 const priorityMeta = (p: Priority) => {
   if (p <= -3)
     return {
-      label: `${p}`,
       hint: "Highest",
-      color: "bg-slate-900 text-white border-slate-900",
+      color: "border-slate-700 bg-slate-800 text-white",
     };
   if (p <= -1)
     return {
-      label: `${p}`,
       hint: "High",
-      color: "bg-slate-700 text-white border-slate-700",
+      color: "border-slate-300 bg-slate-100 text-slate-700",
     };
   if (p === 0)
     return {
-      label: "0",
       hint: "Default",
-      color: "bg-blue-600 text-white border-blue-600",
+      color: "border-blue-200 bg-blue-50 text-blue-700",
     };
   if (p <= 2)
     return {
-      label: `+${p}`,
       hint: "Low",
-      color: "bg-slate-300 text-slate-700 border-slate-300",
+      color: "border-amber-200 bg-amber-50 text-amber-700",
     };
   return {
-    label: `+${p}`,
-    hint: "Lowest",
-    color: "bg-slate-200 text-slate-500 border-slate-200",
+      hint: "Lowest",
+      color: "border-orange-200 bg-orange-50 text-orange-700",
   };
 };
 
@@ -239,60 +260,64 @@ const PriorityPicker = (props: {
   description?: string;
 }) => {
   const value = Math.min(4, Math.max(-4, props.value)) as Priority;
+  const valueLabel = value > 0 ? `+${value}` : `${value}`;
+  const meta = priorityMeta(value);
 
   return (
-    <div className="flex flex-col gap-1.5">
-      {props.label && (
-        <span className="text-[0.72rem] font-bold uppercase tracking-[0.05em] text-slate-600">
-          {props.label}
+    <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50 shadow-[0_1px_3px_rgba(15,23,42,0.035)]">
+      <div className="flex items-start justify-between gap-3 border-b border-slate-100 bg-white px-3 py-2.5">
+        <div className="min-w-0">
+          {props.label && (
+            <div className="text-[0.72rem] font-bold text-slate-700">
+              {props.label}
+            </div>
+          )}
+          {props.description && (
+            <div className="mt-0.5 text-[0.66rem] font-semibold text-slate-400">
+              {props.description}
+            </div>
+          )}
+        </div>
+        <span
+          className={twMerge(
+            "inline-flex shrink-0 items-center gap-1 rounded-md border px-2 py-1 text-[0.65rem] font-bold",
+            meta.color,
+          )}
+        >
+          {meta.hint}
+          <span className="opacity-70">{valueLabel}</span>
         </span>
-      )}
-      {props.description && (
-        <span className="text-[0.7rem] font-semibold text-slate-400">
-          {props.description}
-        </span>
-      )}
-
-      <div className="flex items-stretch gap-0 rounded-lg overflow-hidden border border-slate-200 shadow-[0_1px_3px_rgba(15,23,42,0.06)] bg-white">
-        {PRIORITY_STEPS.map((step) => {
-          const isActive = step === value;
-          const meta = priorityMeta(step);
-          return (
-            <button
-              key={step}
-              onClick={() => props.onChange(step)}
-              title={meta.hint}
-              className={twMerge(
-                "flex-1 flex flex-col items-center justify-center py-2 gap-0.5",
-                "text-[0.7rem] font-bold cursor-pointer",
-                "transition-colors duration-150",
-                "border-r border-slate-100 last:border-r-0",
-                isActive
-                  ? meta.color
-                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-800",
-              )}
-            >
-              <span className="leading-none">
-                {step > 0 ? `+${step}` : step}
-              </span>
-            </button>
-          );
-        })}
       </div>
 
-      <div className="flex items-center justify-between mt-0.5">
-        <span className="text-[0.62rem] font-bold uppercase tracking-[0.06em] text-slate-400">
-          ← Highest priority
-        </span>
-        <span className="text-[0.7rem] font-semibold text-slate-600">
-          {priorityMeta(value).hint}{" "}
-          <span className="font-bold text-slate-800">
-            ({value > 0 ? `+${value}` : value})
-          </span>
-        </span>
-        <span className="text-[0.62rem] font-bold uppercase tracking-[0.06em] text-slate-400">
-          Lowest priority →
-        </span>
+      <div className="px-4 pb-5 pt-4">
+        <Slider
+          aria-label={props.label ?? "Rule priority"}
+          min={-4}
+          max={4}
+          step={1}
+          value={value}
+          onChange={props.onChange}
+          color="dark"
+          size="sm"
+          label={(next) => {
+            const priority = next as Priority;
+            const formatted = priority > 0 ? `+${priority}` : `${priority}`;
+            return `${priorityMeta(priority).hint} · ${formatted}`;
+          }}
+          marks={[
+            { value: -4, label: "−4 · Earlier" },
+            { value: 0, label: "0 · Default" },
+            { value: 4, label: "+4 · Later" },
+          ]}
+          styles={{
+            markLabel: {
+              fontSize: "0.61rem",
+              fontWeight: 700,
+              color: "#94a3b8",
+              whiteSpace: "nowrap",
+            },
+          }}
+        />
       </div>
     </div>
   );
