@@ -1,392 +1,169 @@
-import { ClusterConfig_Spec_Collector_Pipeline_Type } from "@/apis/enterprisev1/enterprisev1";
-
 import * as EnterpriseP from "@/apis/enterprisev1/enterprisev1";
 import EditItem from "@/components/EditItem";
+import ItemMessage from "@/components/ItemMessage";
 import { ResourceEdit } from "@/components/ResourceLayout/ResourceEdit";
-import ResourceYAML from "@/components/ResourceYAML";
+import SelectResourceMultiple from "@/components/ResourceLayout/SelectResourceMultiple";
 import { getClientEnterprise } from "@/utils/client";
+import { strToNum } from "@/utils/convert";
 import { invalidateKey } from "@/utils/pb";
 import {
-  CloseButton,
+  Alert,
+  Button,
   Group,
+  Loader,
   NumberInput,
-  Select,
+  SegmentedControl,
+  Switch,
   TextInput,
 } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
-
-import ItemMessage from "@/components/ItemMessage";
-import SelectResourceMultiple from "@/components/ResourceLayout/SelectResourceMultiple";
-import { strToNum } from "@/utils/convert";
-import { useState } from "react";
+import { AlertTriangle, Trash2 } from "lucide-react";
+import * as React from "react";
 import { toast } from "sonner";
 
-const Edit = (props: {
+const pipelineTypes = EnterpriseP.ClusterConfig_Spec_Collector_Pipeline_Type;
+
+const Edit = ({
+  item,
+  onUpdate,
+}: {
   item: EnterpriseP.ClusterConfig;
   onUpdate: (item: EnterpriseP.ClusterConfig) => void;
 }) => {
-  const { item, onUpdate } = props;
-  const [req, setReq] = useState(EnterpriseP.ClusterConfig.clone(item));
-  const updateReq = () => {
-    setReq(EnterpriseP.ClusterConfig.clone(req));
-    onUpdate(req);
+  const cloneForEdit = React.useCallback((value: EnterpriseP.ClusterConfig) => {
+    const next = EnterpriseP.ClusterConfig.clone(value);
+    if (!next.spec) next.spec = EnterpriseP.ClusterConfig_Spec.create();
+    return next;
+  }, []);
+  const [req, setReq] = React.useState(() => cloneForEdit(item));
+  const pipelineIDs = React.useRef<string[]>([]);
+  const itemKey = item.metadata?.uid || item.metadata?.name || item.apiVersion;
+
+  React.useEffect(() => {
+    setReq(cloneForEdit(item));
+    pipelineIDs.current = [];
+  }, [cloneForEdit, itemKey]);
+
+  const update = (mutate: (next: EnterpriseP.ClusterConfig) => void) => {
+    const next = EnterpriseP.ClusterConfig.clone(req);
+    if (!next.spec) next.spec = EnterpriseP.ClusterConfig_Spec.create();
+    mutate(next);
+    setReq(next);
+    onUpdate(EnterpriseP.ClusterConfig.clone(next));
+  };
+
+  const pipelineID = (index: number) => {
+    while (pipelineIDs.current.length <= index) {
+      pipelineIDs.current.push(crypto.randomUUID());
+    }
+    return pipelineIDs.current[index];
   };
 
   return (
-    <div className="w-full">
-      <div className="w-full my-12">
-        <ResourceYAML item={req} />
-        <div className="w-full">
-          <EditItem
-            title="Scaler"
-            description="Scale your different Cluster components"
-            onUnset={() => {
-              req.spec!.scaler = undefined;
+    <div className="w-full space-y-5 py-2">
+      <EditItem
+        title="Scaler"
+        description="Set replica counts for enterprise cluster components"
+        obj={req.spec?.scaler}
+        onUnset={() => update((next) => (next.spec!.scaler = undefined))}
+        onSet={() =>
+          update((next) => {
+            next.spec!.scaler = EnterpriseP.ClusterConfig_Spec_Scaler.create({
+              collector: {},
+              ingress: {},
+              octovigil: {},
+            });
+          })
+        }
+      >
+        {req.spec?.scaler && (
+          <div className="grid gap-4 md:grid-cols-3">
+            <NumberInput label="Collector replicas" description="OpenTelemetry Collector instances" min={0} max={32} value={req.spec.scaler.collector?.replicas ?? 0} onChange={(value) => update((next) => { next.spec!.scaler!.collector ??= EnterpriseP.ClusterConfig_Spec_Scaler_Collector.create(); next.spec!.scaler!.collector.replicas = strToNum(value); })} />
+            <NumberInput label="Ingress replicas" description="Envoy ingress instances" min={0} max={32} value={req.spec.scaler.ingress?.replicas ?? 0} onChange={(value) => update((next) => { next.spec!.scaler!.ingress ??= EnterpriseP.ClusterConfig_Spec_Scaler_Ingress.create(); next.spec!.scaler!.ingress.replicas = strToNum(value); })} />
+            <NumberInput label="Octovigil replicas" description="Octovigil instances" min={0} max={32} value={req.spec.scaler.octovigil?.replicas ?? 0} onChange={(value) => update((next) => { next.spec!.scaler!.octovigil ??= EnterpriseP.ClusterConfig_Spec_Scaler_Octovigil.create(); next.spec!.scaler!.octovigil.replicas = strToNum(value); })} />
+          </div>
+        )}
+      </EditItem>
 
-              updateReq();
-            }}
-            obj={req.spec!.scaler}
-            onSet={() => {
-              if (!req.spec!.scaler) {
-                req.spec!.scaler = EnterpriseP.ClusterConfig_Spec_Scaler.create(
-                  {
-                    collector: {},
-                    ingress: {},
-                    octovigil: {},
-                  },
-                );
-              }
-              updateReq();
-            }}
+      <EditItem
+        title="Collector"
+        description="Configure telemetry pipelines and their exporters"
+        obj={req.spec?.collector}
+        onUnset={() => update((next) => (next.spec!.collector = undefined))}
+        onSet={() => update((next) => { next.spec!.collector = EnterpriseP.ClusterConfig_Spec_Collector.create(); })}
+      >
+        {req.spec?.collector && (
+          <ItemMessage
+            title="Pipelines"
+            obj={req.spec.collector.pipelines}
+            isList
+            onSet={() => update((next) => { next.spec!.collector!.pipelines = [EnterpriseP.ClusterConfig_Spec_Collector_Pipeline.create()]; })}
+            onAddListItem={() => update((next) => { next.spec!.collector!.pipelines.push(EnterpriseP.ClusterConfig_Spec_Collector_Pipeline.create()); })}
           >
-            {req.spec!.scaler && (
-              <div>
-                <Group grow>
-                  <NumberInput
-                    label="Collector Replicas"
-                    description="Set the replicas of the OTEL Collector"
-                    min={0}
-                    max={32}
-                    value={req.spec!.scaler!.collector!.replicas}
-                    onChange={(v) => {
-                      req.spec!.scaler!.collector!.replicas = strToNum(v);
-                      updateReq();
-                    }}
-                  />
+            <div className="space-y-3">
+              {req.spec.collector.pipelines.map((pipeline, index) => (
+                <div key={pipelineID(index)} className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 sm:p-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Pipeline {index + 1}</div>
+                    <Button type="button" size="compact-xs" variant="subtle" color="red" leftSection={<Trash2 size={13} />} onClick={() => { pipelineIDs.current.splice(index, 1); update((next) => { next.spec!.collector!.pipelines.splice(index, 1); }); }}>Remove</Button>
+                  </div>
+                  <div className="grid items-start gap-4 lg:grid-cols-3">
+                    <TextInput required label="Name" description="A unique pipeline name" placeholder="application-logs" value={pipeline.name} onChange={(event) => update((next) => { next.spec!.collector!.pipelines[index].name = event.currentTarget.value; })} />
+                    <div>
+                      <div className="mb-1 text-sm font-semibold text-slate-700">Signal type <span className="text-red-500">*</span></div>
+                      <div className="mb-2 text-xs text-slate-500">Choose the telemetry signal handled by this pipeline</div>
+                      <SegmentedControl fullWidth value={pipelineTypes[pipeline.type]} data={[{ label: "Logs", value: "LOGS" }, { label: "Metrics", value: "METRICS" }]} onChange={(value) => update((next) => { next.spec!.collector!.pipelines[index].type = pipelineTypes[value as "LOGS" | "METRICS"]; })} />
+                    </div>
+                    <SelectResourceMultiple api="enterprise" kind="CollectorExporter" label="Collector exporters" description="Destinations that receive this pipeline" defaultValue={pipeline.exporters} clearable onChange={(value) => update((next) => { next.spec!.collector!.pipelines[index].exporters = value?.map((resource) => resource.metadata!.name) ?? []; })} />
+                  </div>
+                  <Switch className="mt-4" label="Disable this pipeline" checked={pipeline.isDisabled} onChange={(event) => update((next) => { next.spec!.collector!.pipelines[index].isDisabled = event.currentTarget.checked; })} />
+                </div>
+              ))}
+            </div>
+          </ItemMessage>
+        )}
+      </EditItem>
 
-                  <NumberInput
-                    label="Ingress Replicas"
-                    description="Set the replicas of the Envoy ingress"
-                    min={0}
-                    max={32}
-                    value={req.spec!.scaler!.ingress!.replicas}
-                    onChange={(v) => {
-                      req.spec!.scaler!.ingress!.replicas = strToNum(v);
-                      updateReq();
-                    }}
-                  />
-
-                  <NumberInput
-                    label="Octovigil Replicas"
-                    description="Set the replicas for Octovigil"
-                    min={0}
-                    max={32}
-                    value={req.spec!.scaler!.octovigil!.replicas}
-                    onChange={(v) => {
-                      req.spec!.scaler!.octovigil!.replicas = strToNum(v);
-                      updateReq();
-                    }}
-                  />
-                </Group>
-              </div>
-            )}
-          </EditItem>
-
-          <EditItem
-            title="Collector"
-            description="Set your Collector pipelines and exporters"
-            onUnset={() => {
-              req.spec!.collector = undefined;
-
-              updateReq();
-            }}
-            obj={req.spec!.collector}
-            onSet={() => {
-              if (!req.spec!.collector) {
-                req.spec!.collector =
-                  EnterpriseP.ClusterConfig_Spec_Collector.create();
-                updateReq();
-              }
-            }}
-          >
-            {req.spec!.collector && (
-              <div>
-                <ItemMessage
-                  title="Pipelines"
-                  obj={req!.spec!.collector!.pipelines}
-                  isList
-                  onSet={() => {
-                    req.spec!.collector!.pipelines = [
-                      EnterpriseP.ClusterConfig_Spec_Collector_Pipeline.create(),
-                    ];
-                    updateReq();
-                  }}
-                  onAddListItem={() => {
-                    req.spec!.collector!.pipelines.push(
-                      EnterpriseP.ClusterConfig_Spec_Collector_Pipeline.create(),
-                    );
-                    updateReq();
-                  }}
-                >
-                  {req!.spec!.collector!.pipelines?.map(
-                    (x: any, idx: number) => (
-                      <div className="mb-4" key={`${idx}`}>
-                        <div className="flex">
-                          <CloseButton
-                            size={"sm"}
-                            variant="subtle"
-                            onClick={() => {
-                              req.spec!.collector!.pipelines.splice(idx, 1);
-                              updateReq();
-                            }}
-                          ></CloseButton>
-                          <div className="flex-1 ml-2">
-                            <Group grow>
-                              <TextInput
-                                required
-                                label="Name"
-                                description="Define a unique name for the pipeline"
-                                placeholder="logs-1"
-                                value={req.spec!.collector!.pipelines[idx].name}
-                                onChange={(v) => {
-                                  req.spec!.collector!.pipelines[idx].name =
-                                    v.target.value;
-                                  updateReq();
-                                }}
-                              />
-
-                              <Select
-                                label="Type"
-                                required
-                                description="The pipeline can be either a LOGS or METRICS pipeline"
-                                data={[
-                                  {
-                                    label: "Logs",
-                                    value:
-                                      ClusterConfig_Spec_Collector_Pipeline_Type[
-                                        ClusterConfig_Spec_Collector_Pipeline_Type
-                                          .LOGS
-                                      ],
-                                  },
-                                  {
-                                    label: "Metrics",
-                                    value:
-                                      ClusterConfig_Spec_Collector_Pipeline_Type[
-                                        ClusterConfig_Spec_Collector_Pipeline_Type
-                                          .METRICS
-                                      ],
-                                  },
-                                ]}
-                                value={
-                                  ClusterConfig_Spec_Collector_Pipeline_Type[
-                                    req.spec!.collector!.pipelines[idx].type
-                                  ]
-                                }
-                                onChange={(v) => {
-                                  req.spec!.collector!.pipelines[idx].type =
-                                    ClusterConfig_Spec_Collector_Pipeline_Type[
-                                      v as "METRICS"
-                                    ];
-                                  updateReq();
-                                }}
-                              />
-
-                              <SelectResourceMultiple
-                                api="enterprise"
-                                kind="CollectorExporter"
-                                label="Collector Exporters"
-                                description="Select one or more Collector Exporters for this pipeline"
-                                defaultValue={
-                                  req.spec!.collector!.pipelines[idx].exporters
-                                }
-                                clearable
-                                onChange={(v) => {
-                                  req.spec!.collector!.pipelines[
-                                    idx
-                                  ].exporters =
-                                    v?.map((x) => x.metadata!.name) ?? [];
-                                  updateReq();
-                                }}
-                              />
-                            </Group>
-                          </div>
-                        </div>
-                      </div>
-                    ),
-                  )}
-                </ItemMessage>
-              </div>
-            )}
-          </EditItem>
-
-          <EditItem
-            title="Certificate"
-            description="Set Certificate-specific configs"
-            onUnset={() => {
-              req.spec!.certificate = undefined;
-
-              updateReq();
-            }}
-            obj={req.spec!.certificate}
-            onSet={() => {
-              if (!req.spec!.certificate) {
-                req.spec!.certificate =
-                  EnterpriseP.ClusterConfig_Spec_Certificate.create();
-              }
-              updateReq();
-            }}
-          >
-            {req.spec!.certificate && (
-              <div>
-                <Group grow>
-                  <Select
-                    label="Mode"
-                    required
-                    description="Set the Certificate mode to MANAGED OR MANUAL"
-                    data={[
-                      {
-                        label: "Managed",
-                        value:
-                          EnterpriseP.Certificate_Spec_Mode[
-                            EnterpriseP.Certificate_Spec_Mode.MANAGED
-                          ],
-                      },
-                      {
-                        label: "Manual",
-                        value:
-                          EnterpriseP.Certificate_Spec_Mode[
-                            EnterpriseP.Certificate_Spec_Mode.MANUAL
-                          ],
-                      },
-                    ]}
-                    defaultValue={
-                      EnterpriseP.Certificate_Spec_Mode[
-                        req.spec!.certificate!.defaultMode
-                      ] ??
-                      EnterpriseP.Certificate_Spec_Mode[
-                        EnterpriseP.Certificate_Spec_Mode.MANAGED
-                      ]
-                    }
-                    onChange={(v) => {
-                      req.spec!.certificate!.defaultMode =
-                        EnterpriseP.Certificate_Spec_Mode[v as "MANAGED"];
-                      updateReq();
-                    }}
-                  />
-                </Group>
-              </div>
-            )}
-          </EditItem>
-        </div>
-      </div>
+      <EditItem
+        title="Certificate"
+        description="Choose the default certificate lifecycle mode"
+        obj={req.spec?.certificate}
+        onUnset={() => update((next) => (next.spec!.certificate = undefined))}
+        onSet={() => update((next) => { next.spec!.certificate = EnterpriseP.ClusterConfig_Spec_Certificate.create({ defaultMode: EnterpriseP.Certificate_Spec_Mode.MANAGED }); })}
+      >
+        {req.spec?.certificate && (
+          <div className="max-w-md">
+            <div className="mb-1 text-sm font-semibold text-slate-700">Default mode</div>
+            <div className="mb-2 text-xs text-slate-500">Apply managed or manual handling to certificates by default</div>
+            <SegmentedControl fullWidth value={EnterpriseP.Certificate_Spec_Mode[req.spec.certificate.defaultMode] || "MANAGED"} data={[{ label: "Managed", value: "MANAGED" }, { label: "Manual", value: "MANUAL" }]} onChange={(value) => update((next) => { next.spec!.certificate!.defaultMode = EnterpriseP.Certificate_Spec_Mode[value as "MANAGED" | "MANUAL"]; })} />
+          </div>
+        )}
+      </EditItem>
     </div>
   );
 };
 
 export default () => {
-  const { isSuccess, isLoading, data } = useQuery({
+  const query = useQuery({
     queryKey: ["enterprise", "clusterconfig"],
-    queryFn: async () => {
-      return await getClientEnterprise().getClusterConfig({});
-    },
+    queryFn: async () => getClientEnterprise().getClusterConfig({}),
   });
 
-  if (!isSuccess) {
-    return <></>;
-  }
-
-  if (!data) {
-    return <></>;
-  }
+  if (query.isLoading) return <div className="flex min-h-64 items-center justify-center"><Loader size="sm" color="gray" /></div>;
+  if (query.isError) return <div className="mx-auto mt-10 max-w-xl"><Alert color="red" title="Could not load enterprise cluster configuration" icon={<AlertTriangle size={16} />}><div className="space-y-3"><div className="text-xs">{query.error.message}</div><Button type="button" size="compact-sm" variant="outline" onClick={() => query.refetch()}>Retry</Button></div></Alert></div>;
+  if (!query.data?.response) return <div className="py-16 text-center text-sm font-semibold text-slate-500">Enterprise cluster configuration is unavailable.</div>;
 
   return (
-    <div>
-      {data && data.response && (
-        <ResourceEdit
-          item={data.response}
-          // @ts-ignore
-          specComponent={Edit}
-          noPostUpdateNavigation
-          noPostUpdateToast
-          noMetadata
-          onUpdateDone={(v) => {
-            invalidateKey(["enterprise", "clusterconfig"]);
-            toast.success("ClusterConfig successfully updated");
-          }}
-        />
-      )}
-    </div>
+    <ResourceEdit
+      item={query.data.response}
+      specComponent={({ item, onUpdate }) => <Edit item={item as EnterpriseP.ClusterConfig} onUpdate={(next) => onUpdate(next)} />}
+      noPostUpdateNavigation
+      noPostUpdateToast
+      noMetadata
+      onUpdateDone={() => {
+        invalidateKey(["enterprise", "clusterconfig"]);
+        toast.success("Enterprise ClusterConfig successfully updated");
+      }}
+    />
   );
 };
-
-/*
-export default () => {
-  const { isSuccess, isLoading, data } = useQuery({
-    queryKey: ["enterprise", "clusterconfig"],
-    queryFn: async () => {
-      return await getClientEnterprise().getClusterConfig({});
-    },
-  });
-
-  if (!isSuccess) {
-    return <></>;
-  }
-
-  if (!data) {
-    return <></>;
-  }
-
-  return (
-    <div>
-      {data && data.response && (
-        <ResourceEdit
-          item={data.response}
-          // @ts-ignore
-          specComponent={Edit}
-          noPostUpdateNavigation
-          noPostUpdateToast
-          noMetadata
-          onUpdateDone={(v) => {
-            invalidateKey(["enterprise", "clusterconfig"]);
-          }}
-        />
-      )}
-    </div>
-  );
-};
-
-const DNSProvider = () => {
-  const { isSuccess, isLoading, data } = useQuery({
-    queryKey: ["enterprise", "DNSProvider", "default"],
-    queryFn: async () => {
-      return await getClientEnterprise().getDNSProvider(
-        GetOptions.create({ name: "default" }),
-      );
-    },
-  });
-
-  if (!isSuccess) {
-    return <></>;
-  }
-
-  if (!data) {
-    return <></>;
-  }
-
-  return (
-    <div>
-      <EditDNSProvider item={data.response} onUpdate={(itm) => {}} />
-    </div>
-  );
-};
-*/

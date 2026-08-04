@@ -1709,7 +1709,7 @@ export default () => {
 
   return (
     <div className="space-y-5">
-      {status && <section className="rounded-xl border border-slate-200 bg-white p-4"><div className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-800"><Network size={15} /> Effective cluster configuration</div><div className="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3 [&>div>:last-child]:font-bold">
+      {status && <section className="rounded-xl border border-slate-200 bg-white p-4"><div className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-800"><Network size={15} /> Cluster status</div><div className="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3 [&>div>:last-child]:font-bold">
         {status.domain && <div><div className="text-[0.66rem] font-bold uppercase tracking-wide text-slate-400">Domain</div><CopyText value={status.domain} /></div>}
         {mode && <div><div className="text-[0.66rem] font-bold uppercase tracking-wide text-slate-400">Network mode</div><div className="mt-1 text-sm font-semibold text-slate-700">{mode.replaceAll("_", " ")}</div></div>}
         {network?.clusterNetwork?.v4 && <div><div className="text-[0.66rem] font-bold uppercase tracking-wide text-slate-400">Cluster IPv4 network</div><CopyText value={network.clusterNetwork.v4} /></div>}
