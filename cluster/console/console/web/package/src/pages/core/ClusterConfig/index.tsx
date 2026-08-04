@@ -3,22 +3,28 @@ import Cond from "@/components/Condition";
 import DurationPicker from "@/components/DurationPicker";
 import EditItem from "@/components/EditItem";
 import ItemMessage from "@/components/ItemMessage";
+import CopyText from "@/components/CopyText";
 import { ResourceEdit } from "@/components/ResourceLayout/ResourceEdit";
+import SelectResource from "@/components/ResourceLayout/SelectResource";
 import SelectInlinePolicies from "@/components/ResourceLayout/SelectInlinePolicies";
 import SelectPolicies from "@/components/ResourceLayout/SelectPolicies";
-import SelectSecret from "@/components/ResourceLayout/SelectSecret";
 import { getClientCore } from "@/utils/client";
 import { strToNum } from "@/utils/convert";
 import { invalidateKey } from "@/utils/pb";
 import {
+  Alert,
+  Button,
   Group,
+  Loader,
   NumberInput,
+  SegmentedControl,
   Select,
   Switch,
   Tabs,
   TagsInput,
   TextInput,
 } from "@mantine/core";
+import { AlertTriangle, Network } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import * as React from "react";
 import { toast } from "sonner";
@@ -29,15 +35,56 @@ const Edit = (props: {
   onUpdate: (item: CoreP.ClusterConfig) => void;
 }) => {
   const { item, onUpdate } = props;
-  const [req, setReq] = React.useState(CoreP.ClusterConfig.clone(item));
+  const cloneForEdit = React.useCallback((value: CoreP.ClusterConfig) => {
+    const next = CoreP.ClusterConfig.clone(value);
+    if (!next.spec) next.spec = CoreP.ClusterConfig_Spec.create();
+    return next;
+  }, []);
+  const [req, setReq] = React.useState(() => cloneForEdit(item));
+  const mmdbSources = React.useRef<
+    Partial<
+      Record<
+        string,
+        CoreP.ClusterConfig_Spec_Authentication_Geolocation_MMDB["type"]
+      >
+    >
+  >({});
+  const mmdbAuthTypes = React.useRef<Record<string, unknown>>({});
+  const ruleIDs = React.useRef<Record<string, string[]>>({
+    post: [],
+    authentication: [],
+    registration: [],
+  });
+  const getRuleID = (kind: string, index: number) => {
+    const ids = ruleIDs.current[kind];
+    while (ids.length <= index) ids.push(`${kind}-${crypto.randomUUID()}`);
+    return ids[index];
+  };
+  const itemKey = item.metadata?.uid || item.metadata?.name || item.apiVersion;
+
+  React.useEffect(() => {
+    const next = cloneForEdit(item);
+    setReq(next);
+    const source =
+      next.spec?.authentication?.geolocation?.type.oneofKind === "mmdb"
+        ? next.spec.authentication.geolocation.type.mmdb.type
+        : undefined;
+    mmdbSources.current = source?.oneofKind
+      ? { [source.oneofKind]: structuredClone(source) }
+      : {};
+    mmdbAuthTypes.current = {};
+    ruleIDs.current = { post: [], authentication: [], registration: [] };
+  }, [cloneForEdit, itemKey]);
+
   const updateReq = () => {
-    setReq(CoreP.ClusterConfig.clone(req));
-    onUpdate(req);
+    const next = CoreP.ClusterConfig.clone(req);
+    setReq(next);
+    onUpdate(CoreP.ClusterConfig.clone(next));
   };
 
   return (
     <div className="w-full">
-      <div className="w-full my-12">
+      <div className="w-full py-2">
         <div className="w-full">
           <EditItem
             title="DNS"
@@ -318,9 +365,9 @@ const Edit = (props: {
                 >
                   {req.spec!.authenticator!.postAuthenticationRules &&
                     req.spec!.authenticator!.postAuthenticationRules.map(
-                      (rule: any, ruleIdx: number) => (
+                      (rule, ruleIdx) => (
                         <EditItem
-                          key={`${ruleIdx}`}
+                          key={getRuleID("post", ruleIdx)}
                           obj={
                             req.spec!.authenticator!.postAuthenticationRules[
                               ruleIdx
@@ -331,6 +378,7 @@ const Edit = (props: {
                               ruleIdx,
                               1,
                             );
+                            ruleIDs.current.post.splice(ruleIdx, 1);
                             updateReq();
                           }}
                         >
@@ -448,9 +496,9 @@ const Edit = (props: {
                 >
                   {req.spec!.authenticator!.authenticationEnforcementRules &&
                     req.spec!.authenticator!.authenticationEnforcementRules.map(
-                      (rule: any, ruleIdx: number) => (
+                      (rule, ruleIdx) => (
                         <EditItem
-                          key={`${ruleIdx}`}
+                          key={getRuleID("authentication", ruleIdx)}
                           obj={
                             req.spec!.authenticator!
                               .authenticationEnforcementRules[ruleIdx]
@@ -460,6 +508,7 @@ const Edit = (props: {
                               ruleIdx,
                               1,
                             );
+                            ruleIDs.current.authentication.splice(ruleIdx, 1);
                             updateReq();
                           }}
                         >
@@ -572,9 +621,9 @@ const Edit = (props: {
                 >
                   {req.spec!.authenticator!.registrationEnforcementRules &&
                     req.spec!.authenticator!.registrationEnforcementRules.map(
-                      (rule: any, ruleIdx: number) => (
+                      (rule, ruleIdx) => (
                         <EditItem
-                          key={`${ruleIdx}`}
+                          key={getRuleID("registration", ruleIdx)}
                           obj={
                             req.spec!.authenticator!
                               .registrationEnforcementRules[ruleIdx]
@@ -584,6 +633,7 @@ const Edit = (props: {
                               ruleIdx,
                               1,
                             );
+                            ruleIDs.current.registration.splice(ruleIdx, 1);
                             updateReq();
                           }}
                         >
@@ -1151,10 +1201,11 @@ const Edit = (props: {
             }}
           >
             {req.spec!.ingress && (
-              <Group grow>
+              <div className="space-y-4">
+              {req.spec!.ingress.useForwardedForHeader && <Alert color="amber" icon={<AlertTriangle size={15} />} title="Only trust known reverse proxies">An incorrect trusted-hop count can allow clients to spoof forwarding information and their apparent source address.</Alert>}
+              <div className="grid gap-4 md:grid-cols-2">
                 <Switch
                   label="Use X-Forwarded-For Header"
-                  description="Trust and enable the use of the X-Forwarded-For header to obtain the downstream IP address"
                   checked={req.spec!.ingress!.useForwardedForHeader}
                   onChange={(v) => {
                     req.spec!.ingress!.useForwardedForHeader = v.target.checked;
@@ -1165,7 +1216,7 @@ const Edit = (props: {
 
                 <NumberInput
                   label="X-Forwarded-For trusted Hops"
-                  description="Set the number of trusted hops between Octelium ingress an the downstream"
+                  description="Number of trusted proxies between Octelium ingress and the downstream client."
                   value={req.spec!.ingress!.xffNumTrustedHops}
                   min={0}
                   max={100}
@@ -1174,7 +1225,8 @@ const Edit = (props: {
                     updateReq();
                   }}
                 />
-              </Group>
+              </div>
+              </div>
             )}
           </EditItem>
 
@@ -1249,7 +1301,17 @@ const Edit = (props: {
                                   ]}
                                   value={mmdb.mmdb.type.oneofKind}
                                   onChange={(v) => {
-                                    mmdb.mmdb.type = match(v)
+                                    const currentKind = mmdb.mmdb.type.oneofKind;
+                                    if (currentKind) {
+                                      mmdbSources.current[currentKind] =
+                                        structuredClone(mmdb.mmdb.type);
+                                    }
+                                    const cached = v
+                                      ? mmdbSources.current[v]
+                                      : undefined;
+                                    mmdb.mmdb.type = cached
+                                      ? structuredClone(cached)
+                                      : match(v)
                                       .with("fromConfig", () => ({
                                         oneofKind: "fromConfig" as const,
                                         fromConfig: "",
@@ -1271,14 +1333,15 @@ const Edit = (props: {
                                     (fromConfig) => {
                                       return (
                                         <Group grow>
-                                          <TextInput
+                                          <SelectResource
+                                            api="core"
+                                            kind="Config"
                                             label="From Config"
-                                            placeholder="my-mmdb-config"
                                             description="Set the name of the config containing the MMDB"
-                                            value={fromConfig.fromConfig}
+                                            defaultValue={fromConfig.fromConfig}
                                             onChange={(v) => {
                                               fromConfig.fromConfig =
-                                                v.target.value;
+                                                v?.metadata?.name ?? "";
                                               updateReq();
                                             }}
                                           />
@@ -1289,6 +1352,24 @@ const Edit = (props: {
                                   .when(
                                     (x) => x.oneofKind === `upstream`,
                                     (upstream) => {
+                                      const changeMMDBAuth = (v: string | null) => {
+                                        if (!upstream.upstream.auth || !v) return;
+                                        const currentKind = upstream.upstream.auth.type.oneofKind;
+                                        if (currentKind) mmdbAuthTypes.current[currentKind] = structuredClone(upstream.upstream.auth.type);
+                                        const cached = mmdbAuthTypes.current[v] as typeof upstream.upstream.auth.type | undefined;
+                                        if (cached) {
+                                          upstream.upstream.auth.type = structuredClone(cached);
+                                          updateReq();
+                                          return;
+                                        }
+                                        match(v)
+                                          .with("bearer", () => { upstream.upstream.auth!.type = { oneofKind: "bearer", bearer: CoreP.ClusterConfig_Spec_Authentication_Geolocation_MMDB_Upstream_Auth_Bearer.create({ type: { oneofKind: "fromSecret", fromSecret: "" } }) }; })
+                                          .with("basic", () => { upstream.upstream.auth!.type = { oneofKind: "basic", basic: CoreP.ClusterConfig_Spec_Authentication_Geolocation_MMDB_Upstream_Auth_Basic.create({ password: { type: { oneofKind: "fromSecret", fromSecret: "" } } }) }; })
+                                          .with("custom", () => { upstream.upstream.auth!.type = { oneofKind: "custom", custom: CoreP.ClusterConfig_Spec_Authentication_Geolocation_MMDB_Upstream_Auth_Custom.create({ value: { type: { oneofKind: "fromSecret", fromSecret: "" } } }) }; })
+                                          .with("query", () => { upstream.upstream.auth!.type = { oneofKind: "query", query: CoreP.ClusterConfig_Spec_Authentication_Geolocation_MMDB_Upstream_Auth_Query.create({ value: { type: { oneofKind: "fromSecret", fromSecret: "" } } }) }; })
+                                          .otherwise(() => {});
+                                        updateReq();
+                                      };
                                       return (
                                         <div>
                                           <Group grow>
@@ -1335,105 +1416,23 @@ const Edit = (props: {
                                           >
                                             {upstream.upstream.auth && (
                                               <Tabs
-                                                defaultValue={
+                                                value={
                                                   upstream.upstream.auth.type
                                                     .oneofKind
                                                 }
-                                                onChange={(v) => {
-                                                  match(v)
-                                                    .with("bearer", () => {
-                                                      upstream.upstream.auth!.type =
-                                                        {
-                                                          oneofKind: "bearer",
-                                                          bearer:
-                                                            CoreP.ClusterConfig_Spec_Authentication_Geolocation_MMDB_Upstream_Auth_Bearer.create(
-                                                              {
-                                                                type: {
-                                                                  oneofKind:
-                                                                    "fromSecret",
-                                                                  fromSecret:
-                                                                    "",
-                                                                },
-                                                              },
-                                                            ),
-                                                        };
-                                                    })
-                                                    .with("basic", () => {
-                                                      upstream.upstream.auth!.type =
-                                                        {
-                                                          oneofKind: "basic",
-                                                          basic:
-                                                            CoreP.ClusterConfig_Spec_Authentication_Geolocation_MMDB_Upstream_Auth_Basic.create(
-                                                              {
-                                                                password: {
-                                                                  type: {
-                                                                    oneofKind:
-                                                                      "fromSecret",
-                                                                    fromSecret:
-                                                                      "",
-                                                                  },
-                                                                },
-                                                              },
-                                                            ),
-                                                        };
-                                                    })
-                                                    .with("custom", () => {
-                                                      upstream.upstream.auth!.type =
-                                                        {
-                                                          oneofKind: "custom",
-                                                          custom:
-                                                            CoreP.ClusterConfig_Spec_Authentication_Geolocation_MMDB_Upstream_Auth_Custom.create(
-                                                              {
-                                                                value: {
-                                                                  type: {
-                                                                    oneofKind:
-                                                                      "fromSecret",
-                                                                    fromSecret:
-                                                                      "",
-                                                                  },
-                                                                },
-                                                              },
-                                                            ),
-                                                        };
-                                                    })
-                                                    .with("query", () => {
-                                                      upstream.upstream.auth!.type =
-                                                        {
-                                                          oneofKind: "query",
-                                                          query:
-                                                            CoreP.ClusterConfig_Spec_Authentication_Geolocation_MMDB_Upstream_Auth_Query.create(
-                                                              {
-                                                                value: {
-                                                                  type: {
-                                                                    oneofKind:
-                                                                      "fromSecret",
-                                                                    fromSecret:
-                                                                      "",
-                                                                  },
-                                                                },
-                                                              },
-                                                            ),
-                                                        };
-                                                    })
-                                                    .otherwise(() => {});
-                                                  updateReq();
-                                                }}
+                                                onChange={changeMMDBAuth}
                                               >
-                                                <Tabs.List>
-                                                  <Tabs.Tab value="bearer">
-                                                    Bearer
-                                                  </Tabs.Tab>
-                                                  <Tabs.Tab value="basic">
-                                                    Basic
-                                                  </Tabs.Tab>
-                                                  <Tabs.Tab value="custom">
-                                                    Custom Header
-                                                  </Tabs.Tab>
-                                                  <Tabs.Tab value="query">
-                                                    Query
-                                                  </Tabs.Tab>
-                                                </Tabs.List>
-
+                                                <SegmentedControl
+                                                  fullWidth
+                                                  value={upstream.upstream.auth.type.oneofKind ?? "bearer"}
+                                                  onChange={changeMMDBAuth}
+                                                  data={[
+                                                    { label: "Bearer", value: "bearer" },
+                                                    { label: "Basic", value: "basic" },
+                                                    { label: "Custom header", value: "custom" },
+                                                    { label: "Query", value: "query" },
+                                                  ]}
+                                                />
                                                 <Tabs.Panel value="bearer">
                                                   {match(
                                                     upstream.upstream.auth.type,
@@ -1443,8 +1442,10 @@ const Edit = (props: {
                                                         x.oneofKind ===
                                                         "bearer",
                                                       (bearer) => (
-                                                        <SelectSecret
+                                                        <SelectResource
                                                           api="core"
+                                                          kind="Secret"
+                                                          required
                                                           label="Bearer token Secret"
                                                           description="Select the Secret of the bearer token"
                                                           defaultValue={
@@ -1466,7 +1467,7 @@ const Edit = (props: {
                                                                 "fromSecret",
                                                               (x) => {
                                                                 x.fromSecret =
-                                                                  val ?? "";
+                                                                  val?.metadata?.name ?? "";
                                                               },
                                                             );
                                                             updateReq();
@@ -1510,8 +1511,10 @@ const Edit = (props: {
                                                                 x?.oneofKind ===
                                                                 "fromSecret",
                                                               (x) => (
-                                                                <SelectSecret
+                                                                <SelectResource
                                                                   api="core"
+                                                                  kind="Secret"
+                                                                  required
                                                                   label="Password Secret"
                                                                   description="Select the Secret of the password"
                                                                   defaultValue={
@@ -1521,7 +1524,7 @@ const Edit = (props: {
                                                                     v,
                                                                   ) => {
                                                                     x.fromSecret =
-                                                                      v ?? "";
+                                                                      v?.metadata?.name ?? "";
                                                                     updateReq();
                                                                   }}
                                                                 />
@@ -1570,8 +1573,10 @@ const Edit = (props: {
                                                                 x?.oneofKind ===
                                                                 "fromSecret",
                                                               (x) => (
-                                                                <SelectSecret
+                                                                <SelectResource
                                                                   api="core"
+                                                                  kind="Secret"
+                                                                  required
                                                                   label="Header value Secret"
                                                                   description="Select the Secret of the header value"
                                                                   defaultValue={
@@ -1581,7 +1586,7 @@ const Edit = (props: {
                                                                     v,
                                                                   ) => {
                                                                     x.fromSecret =
-                                                                      v ?? "";
+                                                                      v?.metadata?.name ?? "";
                                                                     updateReq();
                                                                   }}
                                                                 />
@@ -1628,8 +1633,10 @@ const Edit = (props: {
                                                                 x?.oneofKind ===
                                                                 "fromSecret",
                                                               (x) => (
-                                                                <SelectSecret
+                                                                <SelectResource
                                                                   api="core"
+                                                                  kind="Secret"
+                                                                  required
                                                                   label="Query value Secret"
                                                                   description="Select the Secret of the query value"
                                                                   defaultValue={
@@ -1639,7 +1646,7 @@ const Edit = (props: {
                                                                     v,
                                                                   ) => {
                                                                     x.fromSecret =
-                                                                      v ?? "";
+                                                                      v?.metadata?.name ?? "";
                                                                     updateReq();
                                                                   }}
                                                                 />
@@ -1685,37 +1692,40 @@ const Edit = (props: {
 };
 
 export default () => {
-  const { isSuccess, data } = useQuery({
+  const query = useQuery({
     queryKey: ["core", "clusterconfig"],
-    queryFn: async () => {
-      return await getClientCore().getClusterConfig({});
-    },
+    queryFn: async () => getClientCore().getClusterConfig({}),
   });
 
-  if (!isSuccess) {
-    return <></>;
-  }
+  if (query.isLoading) return <div className="flex min-h-64 items-center justify-center"><Loader size="sm" color="gray" /></div>;
+  if (query.isError) return <div className="mx-auto mt-10 max-w-xl"><Alert color="red" title="Could not load cluster configuration" icon={<AlertTriangle size={16} />}><div className="space-y-3"><div className="text-xs">{query.error.message}</div><Button type="button" size="compact-sm" variant="outline" onClick={() => query.refetch()}>Retry</Button></div></Alert></div>;
+  if (!query.data?.response) return <div className="py-16 text-center text-sm font-semibold text-slate-500">Cluster configuration is unavailable.</div>;
 
-  if (!data) {
-    return <></>;
-  }
+  const item = query.data.response;
+  const status = item.status;
+  const network = status?.network;
+  const networkConfig = status?.networkConfig;
+  const mode = networkConfig ? CoreP.ClusterConfig_Status_NetworkConfig_Mode[networkConfig.mode] : undefined;
 
   return (
-    <div>
-      {data && data.response && (
-        <ResourceEdit
-          item={data.response}
-          // @ts-ignore
-          specComponent={Edit}
-          noPostUpdateNavigation
-          noPostUpdateToast
-          noMetadata
-          onUpdateDone={(v) => {
-            invalidateKey(["core", "clusterconfig"]);
-            toast.success("ClusterConfig successfully updated");
-          }}
-        />
-      )}
+    <div className="space-y-5">
+      {status && <section className="rounded-xl border border-slate-200 bg-white p-4"><div className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-800"><Network size={15} /> Effective cluster configuration</div><div className="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3 [&>div>:last-child]:font-bold">
+        {status.domain && <div><div className="text-[0.66rem] font-bold uppercase tracking-wide text-slate-400">Domain</div><CopyText value={status.domain} /></div>}
+        {mode && <div><div className="text-[0.66rem] font-bold uppercase tracking-wide text-slate-400">Network mode</div><div className="mt-1 text-sm font-semibold text-slate-700">{mode.replaceAll("_", " ")}</div></div>}
+        {network?.clusterNetwork?.v4 && <div><div className="text-[0.66rem] font-bold uppercase tracking-wide text-slate-400">Cluster IPv4 network</div><CopyText value={network.clusterNetwork.v4} /></div>}
+        {network?.clusterNetwork?.v6 && <div><div className="text-[0.66rem] font-bold uppercase tracking-wide text-slate-400">Cluster IPv6 network</div><CopyText value={network.clusterNetwork.v6} /></div>}
+        {network?.serviceSubnet?.v4 && <div><div className="text-[0.66rem] font-bold uppercase tracking-wide text-slate-400">Service IPv4 subnet</div><CopyText value={network.serviceSubnet.v4} /></div>}
+        {network?.serviceSubnet?.v6 && <div><div className="text-[0.66rem] font-bold uppercase tracking-wide text-slate-400">Service IPv6 subnet</div><CopyText value={network.serviceSubnet.v6} /></div>}
+        {network?.wgConnSubnet?.v4 && <div><div className="text-[0.66rem] font-bold uppercase tracking-wide text-slate-400">WireGuard connection subnet</div><CopyText value={network.wgConnSubnet.v4} /></div>}
+        {network?.quicConnSubnet?.v4 && <div><div className="text-[0.66rem] font-bold uppercase tracking-wide text-slate-400">QUIC connection subnet</div><CopyText value={network.quicConnSubnet.v4} /></div>}
+        {networkConfig?.v4?.clusterNetwork && <div><div className="text-[0.66rem] font-bold uppercase tracking-wide text-slate-400">Configured IPv4 network</div><CopyText value={networkConfig.v4.clusterNetwork} /></div>}
+        {networkConfig?.v6?.clusterNetwork && <div><div className="text-[0.66rem] font-bold uppercase tracking-wide text-slate-400">Configured IPv6 network</div><CopyText value={networkConfig.v6.clusterNetwork} /></div>}
+        {networkConfig?.wireguard && <div><div className="text-[0.66rem] font-bold uppercase tracking-wide text-slate-400">WireGuard</div><div className="mt-1 text-sm font-semibold text-slate-700">Port {networkConfig.wireguard.gatewayPort || "default"} · MTU {networkConfig.wireguard.mtu || "default"}</div></div>}
+        {networkConfig?.quicv0 && <div><div className="text-[0.66rem] font-bold uppercase tracking-wide text-slate-400">QUICv0</div><div className="mt-1 text-sm font-semibold text-slate-700">{networkConfig.quicv0.enable ? "Enabled" : "Disabled"} · Port {networkConfig.quicv0.gatewayPort || "default"}</div></div>}
+        {status.secretManager?.address && <div><div className="text-[0.66rem] font-bold uppercase tracking-wide text-slate-400">Secret manager</div><div className="flex flex-wrap items-center gap-2"><CopyText value={status.secretManager.address} /><span className="text-xs font-semibold text-slate-500">{status.secretManager.tls ? "TLS" : "No TLS"}</span></div></div>}
+        {!!status.device?.probes.length && <div><div className="text-[0.66rem] font-bold uppercase tracking-wide text-slate-400">Device probes</div><div className="mt-1 text-sm font-semibold text-slate-700">{status.device.probes.length.toLocaleString()}</div></div>}
+      </div></section>}
+      <ResourceEdit item={item} specComponent={({ item, onUpdate }) => <Edit item={item as CoreP.ClusterConfig} onUpdate={(next) => onUpdate(next)} />} noPostUpdateNavigation noPostUpdateToast noMetadata onUpdateDone={() => { invalidateKey(["core", "clusterconfig"]); toast.success("ClusterConfig successfully updated"); }} />
     </div>
   );
 };
