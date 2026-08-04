@@ -2,36 +2,33 @@ import { ResourceComponentInfo } from "@/pages/utils/types";
 
 import {
   CollectorExporter,
+  CollectorExporter_Spec,
   CollectorExporter_Spec_OTLP,
 } from "@/apis/enterprisev1/enterprisev1";
+import { Resource } from "@/utils/pb";
 import Edit from "./Edit";
-import { ExtraComponent, LabelComponent } from "./List";
+import { LabelComponent } from "./List";
 import Main, { MainInfo } from "./Main";
 
 const resourceComponentInfo: ResourceComponentInfo = {
   API: "enterprise",
   Kind: "CollectorExporter",
   List: {
-    // @ts-ignore
-    labelComponent: LabelComponent,
-    // @ts-ignore
-    extraComponent: ExtraComponent,
+    labelComponent: ({ item }: { item: Resource }) => <LabelComponent item={item as CollectorExporter} />,
   },
   Item: {
-    // @ts-ignore
-    Edit: Edit,
-    // @ts-ignore
-    Main: Main,
+    Edit: ({ item, onUpdate }) => <Edit item={item as CollectorExporter} onUpdate={(next) => onUpdate(next)} />,
+    Main: ({ item }) => <Main item={item as CollectorExporter} />,
 
     createResource: () => {
       return CollectorExporter.create({
         apiVersion: "enterprise/v1",
         kind: "CollectorExporter",
         metadata: {},
-        spec: {
+        spec: CollectorExporter_Spec.create({
           type: {
             oneofKind: "otlp",
-            otlp: {
+            otlp: CollectorExporter_Spec_OTLP.create({
               auth: {
                 type: {
                   oneofKind: "bearer",
@@ -43,16 +40,15 @@ const resourceComponentInfo: ResourceComponentInfo = {
                   },
                 },
               },
-            } as CollectorExporter_Spec_OTLP,
+            }),
           },
-        },
+        }),
         status: {},
       });
     },
   },
 
-  // @ts-ignore
-  infoItemsGetter: MainInfo,
+  infoItemsGetter: ({ item }) => MainInfo({ item: item as CollectorExporter }),
 
   cloneable: true,
 };

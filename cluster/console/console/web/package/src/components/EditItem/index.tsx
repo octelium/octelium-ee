@@ -10,7 +10,7 @@ interface Props {
   description?: string;
   obj?: object | Array<any>;
   onSet?: () => void;
-  onUnset: () => void;
+  onUnset?: () => void;
   isList?: boolean;
   onAddListItem?: () => void;
   noDelete?: boolean;
@@ -106,7 +106,7 @@ const EditItem = (props: Props) => {
           </Button>
         )}
 
-        {!props.noDelete && (
+        {!props.noDelete && props.onUnset && (
           <AnimatePresence initial={false}>
             {isExpanded && (
               <motion.div

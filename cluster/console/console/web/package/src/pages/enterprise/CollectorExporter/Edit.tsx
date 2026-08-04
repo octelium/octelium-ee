@@ -1,8 +1,12 @@
 import * as EnterpriseP from "@/apis/enterprisev1/enterprisev1";
+import { Duration } from "@/apis/metav1/metav1";
 import ItemMessage from "@/components/ItemMessage";
+import DurationPicker from "@/components/DurationPicker";
+import EditItem from "@/components/EditItem";
 
-import SelectSecret from "@/components/ResourceLayout/SelectSecret";
+import SelectResource from "@/components/ResourceLayout/SelectResource";
 import {
+  Alert,
   CloseButton,
   Group,
   NumberInput,
@@ -10,7 +14,9 @@ import {
   Switch,
   Tabs,
   TextInput,
+  Textarea,
 } from "@mantine/core";
+import { AlertTriangle } from "lucide-react";
 import * as React from "react";
 import { match } from "ts-pattern";
 
@@ -53,6 +59,36 @@ const freshCustom = (): GrpcStyleAuth["type"] => ({
   custom: { header: "", value: freshSecret() },
 });
 
+const normalizeSecretSelectors = (item: EnterpriseP.CollectorExporter) => {
+  const type = item.spec?.type;
+  if (!type?.oneofKind) return item;
+  const normalizeAuth = (auth?: GrpcStyleAuth) => {
+    if (auth?.type.oneofKind === "bearer" && !auth.type.bearer) auth.type.bearer = freshSecret();
+    if (auth?.type.oneofKind === "basic" && !auth.type.basic.password) auth.type.basic.password = freshSecret();
+    if (auth?.type.oneofKind === "custom" && !auth.type.custom.value) auth.type.custom.value = freshSecret();
+  };
+  if (type.oneofKind === "otlp") normalizeAuth(type.otlp.auth as unknown as GrpcStyleAuth);
+  if (type.oneofKind === "otlpHTTP") normalizeAuth(type.otlpHTTP.auth as unknown as GrpcStyleAuth);
+  if (type.oneofKind === "prometheusRemoteWrite") normalizeAuth(type.prometheusRemoteWrite.auth as unknown as GrpcStyleAuth);
+  if (type.oneofKind === "clickhouse" && !type.clickhouse.password) type.clickhouse.password = freshSecret();
+  if (type.oneofKind === "elasticsearch" && type.elasticsearch.auth?.type.oneofKind === "apiKey" && !type.elasticsearch.auth.type.apiKey) type.elasticsearch.auth.type.apiKey = freshSecret();
+  if (type.oneofKind === "elasticsearch" && type.elasticsearch.auth?.type.oneofKind === "basic" && !type.elasticsearch.auth.type.basic.password) type.elasticsearch.auth.type.basic.password = freshSecret();
+  if (type.oneofKind === "logzio" && !type.logzio.token) type.logzio.token = freshSecret();
+  if (type.oneofKind === "influxDB" && !type.influxDB.token) type.influxDB.token = freshSecret();
+  if (type.oneofKind === "kafka" && type.kafka.auth?.type.oneofKind === "sasl" && !type.kafka.auth.type.sasl.password) type.kafka.auth.type.sasl.password = freshSecret();
+  if (type.oneofKind === "datadog") {
+    if (!type.datadog.api) type.datadog.api = EnterpriseP.CollectorExporter_Spec_Datadog_API.create();
+    if (!type.datadog.api.key) type.datadog.api.key = freshSecret();
+  }
+  if (type.oneofKind === "splunk" && !type.splunk.token) type.splunk.token = freshSecret();
+  if (type.oneofKind === "azureMonitor") {
+    if (!type.azureMonitor.connectionString) type.azureMonitor.connectionString = freshSecret();
+    if (!type.azureMonitor.instrumentationKey) type.azureMonitor.instrumentationKey = freshSecret();
+  }
+  if (type.oneofKind === "azureDataExplorer" && type.azureDataExplorer.auth?.type.oneofKind === "servicePrincipal" && !type.azureDataExplorer.auth.type.servicePrincipal.applicationKey) type.azureDataExplorer.auth.type.servicePrincipal.applicationKey = freshSecret();
+  return item;
+};
+
 const SecretSelectField = (props: {
   label: string;
   sel?: SecretSelector;
@@ -65,13 +101,15 @@ const SecretSelectField = (props: {
   }
 
   return (
-    <SelectSecret
+    <SelectResource
       api="enterprise"
+      kind="Secret"
+      required
       label={label}
       defaultValue={sel.type.fromSecret}
       onChange={(v) => {
         if (sel.type.oneofKind === "fromSecret") {
-          sel.type.fromSecret = v ?? "";
+          sel.type.fromSecret = v?.metadata?.name ?? "";
           onUpdate();
         }
       }}
@@ -86,40 +124,53 @@ const SecretAuthTabs = (props: {
   onUpdate: () => void;
 }) => {
   const { auth, ensureAuth, initAuth, onUpdate } = props;
+  const configurations = React.useRef<Partial<Record<string, GrpcStyleAuth["type"]>>>({});
+
+  React.useEffect(() => {
+    if (auth?.type.oneofKind) {
+      configurations.current = {
+        [auth.type.oneofKind]: structuredClone(auth.type),
+      };
+    }
+  }, [initAuth]);
+
+  const changeAuth = (value: string) => {
+    const a = ensureAuth();
+    if (a.type.oneofKind) {
+      configurations.current[a.type.oneofKind] = structuredClone(a.type);
+    }
+    const cached = configurations.current[value];
+    if (cached) {
+      a.type = structuredClone(cached);
+    } else if (value === "bearer") {
+      a.type = freshBearer();
+    } else if (value === "basic") {
+      a.type = freshBasic();
+    } else if (value === "custom") {
+      a.type = freshCustom();
+    } else {
+      a.type = { oneofKind: undefined };
+    }
+    onUpdate();
+  };
 
   return (
     <Tabs
-      defaultValue={auth?.type.oneofKind}
-      onChange={(v) => {
-        const a = ensureAuth();
-        match(v)
-          .with("bearer", () => {
-            a.type =
-              initAuth?.type.oneofKind === "bearer"
-                ? initAuth.type
-                : freshBearer();
-          })
-          .with("basic", () => {
-            a.type =
-              initAuth?.type.oneofKind === "basic"
-                ? initAuth.type
-                : freshBasic();
-          })
-          .with("custom", () => {
-            a.type =
-              initAuth?.type.oneofKind === "custom"
-                ? initAuth.type
-                : freshCustom();
-          })
-          .otherwise(() => {});
-        onUpdate();
-      }}
+      value={auth?.type.oneofKind ?? "none"}
+      onChange={(value) => changeAuth(value ?? "none")}
     >
       <Tabs.List>
+        <Tabs.Tab value="none">None</Tabs.Tab>
         <Tabs.Tab value="bearer">Bearer Authentication</Tabs.Tab>
         <Tabs.Tab value="basic">Basic Authentication</Tabs.Tab>
         <Tabs.Tab value="custom">Custom Header</Tabs.Tab>
       </Tabs.List>
+
+      <Tabs.Panel value="none">
+        <div className="py-3 text-xs font-semibold text-slate-400">
+          No exporter authentication is configured.
+        </div>
+      </Tabs.Panel>
 
       <Tabs.Panel value="bearer">
         {match(auth?.type)
@@ -195,6 +246,14 @@ const HeaderList = (props: {
   onUpdate: () => void;
 }) => {
   const { headers, makeHeader, onUpdate } = props;
+  const nextID = React.useRef(0);
+  const itemIDs = React.useRef<string[]>([]);
+  while (itemIDs.current.length < headers.length) {
+    itemIDs.current.push(`header-${nextID.current++}`);
+  }
+  if (itemIDs.current.length > headers.length) {
+    itemIDs.current.length = headers.length;
+  }
 
   return (
     <Group grow>
@@ -204,21 +263,24 @@ const HeaderList = (props: {
         isList
         onSet={() => {
           headers.push(makeHeader());
+          itemIDs.current.push(`header-${nextID.current++}`);
           onUpdate();
         }}
         onAddListItem={() => {
           headers.push(makeHeader());
+          itemIDs.current.push(`header-${nextID.current++}`);
           onUpdate();
         }}
       >
         {headers.map((x, idx) => (
-          <div className="w-full flex mb-3" key={idx}>
+          <div className="w-full flex mb-3" key={itemIDs.current[idx]}>
             <CloseButton
               size="sm"
               variant="subtle"
               className="mr-2"
               onClick={() => {
                 headers.splice(idx, 1);
+                itemIDs.current.splice(idx, 1);
                 onUpdate();
               }}
             ></CloseButton>
@@ -282,18 +344,204 @@ const EnumSelect = (props: {
   );
 };
 
+const DurationField = (props: {
+  label: string;
+  value?: Duration;
+  onChange: (value?: Duration) => void;
+}) => (
+  <DurationPicker
+    title={props.label}
+    value={props.value}
+    onChange={props.onChange}
+  />
+);
+
+const StringListField = (props: {
+  label: string;
+  description?: string;
+  value: string[];
+  onChange: (value: string[]) => void;
+}) => (
+  <TextInput
+    label={props.label}
+    description={props.description ?? "Separate multiple values with commas."}
+    value={props.value.join(", ")}
+    onChange={(event) =>
+      props.onChange(
+        event.currentTarget.value
+          .split(",")
+          .map((value) => value.trim())
+          .filter(Boolean),
+      )
+    }
+  />
+);
+
+const AdvancedSettings = (props: {
+  type: EnterpriseP.CollectorExporter_Spec["type"];
+  onUpdate: () => void;
+}) => {
+  const { type, onUpdate } = props;
+
+  if (type.oneofKind === "otlp") {
+    const value = type.otlp;
+    return (
+      <EditItem title="Advanced delivery" obj={value}>
+        <div className="grid gap-4 md:grid-cols-2">
+          <DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} />
+          <TextInput label="Authority" value={value.authority} onChange={(event) => { value.authority = event.currentTarget.value; onUpdate(); }} />
+          <TextInput label="User agent" value={value.userAgent} onChange={(event) => { value.userAgent = event.currentTarget.value; onUpdate(); }} />
+          <TextInput label="Balancer name" value={value.balancerName} onChange={(event) => { value.balancerName = event.currentTarget.value; onUpdate(); }} />
+          <NumberInput min={0} label="Read buffer size" value={value.readBufferSize} onChange={(next) => { value.readBufferSize = Number(next) || 0; onUpdate(); }} />
+          <NumberInput min={0} label="Write buffer size" value={value.writeBufferSize} onChange={(next) => { value.writeBufferSize = Number(next) || 0; onUpdate(); }} />
+        </div>
+        <EditItem
+          title="TLS details"
+          obj={value.tls}
+          onSet={() => { value.tls = EnterpriseP.CollectorExporter_Spec_OTLP_TLS.create(); onUpdate(); }}
+          onUnset={() => { value.tls = undefined; onUpdate(); }}
+        >
+          {value.tls && <div className="grid gap-4 md:grid-cols-2"><TextInput label="Server name override" value={value.tls.serverNameOverride} onChange={(event) => { value.tls!.serverNameOverride = event.currentTarget.value; onUpdate(); }} /><Textarea label="CA certificate PEM" autosize minRows={3} value={value.tls.caPEM} onChange={(event) => { value.tls!.caPEM = event.currentTarget.value; onUpdate(); }} /></div>}
+        </EditItem>
+        <EditItem title="Keepalive" obj={value.keepalive} onSet={() => { value.keepalive = EnterpriseP.CollectorExporter_Spec_OTLP_Keepalive.create(); onUpdate(); }} onUnset={() => { value.keepalive = undefined; onUpdate(); }}>
+          {value.keepalive && <div className="grid gap-4 md:grid-cols-2"><DurationField label="Keepalive time" value={value.keepalive.time} onChange={(next) => { value.keepalive!.time = next; onUpdate(); }} /><DurationField label="Keepalive timeout" value={value.keepalive.timeout} onChange={(next) => { value.keepalive!.timeout = next; onUpdate(); }} /><Switch label="Permit without stream" checked={value.keepalive.permitWithoutStream} onChange={(event) => { value.keepalive!.permitWithoutStream = event.currentTarget.checked; onUpdate(); }} /></div>}
+        </EditItem>
+      </EditItem>
+    );
+  }
+
+  if (type.oneofKind === "otlpHTTP") {
+    const value = type.otlpHTTP;
+    return <EditItem title="Advanced delivery" obj={value}><div className="grid gap-4 md:grid-cols-2"><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /><NumberInput min={0} label="Read buffer size" value={value.readBufferSize} onChange={(next) => { value.readBufferSize = Number(next) || 0; onUpdate(); }} /><NumberInput min={0} label="Write buffer size" value={value.writeBufferSize} onChange={(next) => { value.writeBufferSize = Number(next) || 0; onUpdate(); }} /></div><EditItem title="TLS" obj={value.tls} onSet={() => { value.tls = EnterpriseP.CollectorExporter_Spec_OTLPHTTP_TLS.create(); onUpdate(); }} onUnset={() => { value.tls = undefined; onUpdate(); }}>{value.tls && <div className="grid gap-4 md:grid-cols-2"><Switch label="No TLS" checked={value.tls.insecure} onChange={(event) => { value.tls!.insecure = event.currentTarget.checked; onUpdate(); }} /><Switch label="Skip TLS verification" checked={value.tls.insecureSkipVerify} onChange={(event) => { value.tls!.insecureSkipVerify = event.currentTarget.checked; onUpdate(); }} /><TextInput label="Server name override" value={value.tls.serverNameOverride} onChange={(event) => { value.tls!.serverNameOverride = event.currentTarget.value; onUpdate(); }} /><Textarea label="CA certificate PEM" autosize minRows={3} value={value.tls.caPEM} onChange={(event) => { value.tls!.caPEM = event.currentTarget.value; onUpdate(); }} />{value.tls.insecureSkipVerify && <Alert color="red" icon={<AlertTriangle size={14} />}>Server certificates will not be verified.</Alert>}</div>}</EditItem></EditItem>;
+  }
+
+  if (type.oneofKind === "prometheusRemoteWrite") {
+    const value = type.prometheusRemoteWrite;
+    return <EditItem title="Advanced delivery" obj={value}><HeaderList headers={value.headers} makeHeader={() => EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_Header.create()} onUpdate={onUpdate} /><HeaderList headers={value.externalLabels} makeHeader={() => EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel.create()} onUpdate={onUpdate} /><div className="grid gap-4 md:grid-cols-2"><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /><NumberInput min={0} label="Maximum batch size (bytes)" value={value.maxBatchSizeBytes} onChange={(next) => { value.maxBatchSizeBytes = Number(next) || 0; onUpdate(); }} /><NumberInput min={0} label="Maximum parallel requests" value={value.maxBatchRequestParallelism} onChange={(next) => { value.maxBatchRequestParallelism = Number(next) || 0; onUpdate(); }} /></div><EditItem title="Remote write queue" obj={value.remoteWriteQueue} onSet={() => { value.remoteWriteQueue = EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue.create(); onUpdate(); }} onUnset={() => { value.remoteWriteQueue = undefined; onUpdate(); }}>{value.remoteWriteQueue && <div className="grid gap-4 md:grid-cols-3"><Switch label="Enabled" checked={value.remoteWriteQueue.enabled} onChange={(event) => { value.remoteWriteQueue!.enabled = event.currentTarget.checked; onUpdate(); }} /><NumberInput min={0} label="Queue size" value={value.remoteWriteQueue.queueSize} onChange={(next) => { value.remoteWriteQueue!.queueSize = Number(next) || 0; onUpdate(); }} /><NumberInput min={0} label="Consumers" value={value.remoteWriteQueue.numConsumers} onChange={(next) => { value.remoteWriteQueue!.numConsumers = Number(next) || 0; onUpdate(); }} /></div>}</EditItem><EditItem title="Resource conversion" obj={value.resourceToTelemetryConversion} onSet={() => { value.resourceToTelemetryConversion = EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion.create(); onUpdate(); }} onUnset={() => { value.resourceToTelemetryConversion = undefined; onUpdate(); }}>{value.resourceToTelemetryConversion && <Group><Switch label="Enabled" checked={value.resourceToTelemetryConversion.enabled} onChange={(event) => { value.resourceToTelemetryConversion!.enabled = event.currentTarget.checked; onUpdate(); }} /><Switch label="Exclude service attributes" checked={value.resourceToTelemetryConversion.excludeServiceAttributes} onChange={(event) => { value.resourceToTelemetryConversion!.excludeServiceAttributes = event.currentTarget.checked; onUpdate(); }} /></Group>}</EditItem><Switch label="Target information" checked={value.targetInfo?.enabled ?? false} onChange={(event) => { value.targetInfo = EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo.create({ enabled: event.currentTarget.checked }); onUpdate(); }} /></EditItem>;
+  }
+
+  if (type.oneofKind === "clickhouse") {
+    const value = type.clickhouse;
+    return <EditItem title="Advanced delivery" obj={value}><HeaderList headers={value.connectionParams} makeHeader={() => EnterpriseP.CollectorExporter_Spec_Clickhouse_ConnectionParam.create()} onUpdate={onUpdate} /><div className="grid gap-4 md:grid-cols-2"><DurationField label="TTL" value={value.ttl} onChange={(next) => { value.ttl = next; onUpdate(); }} /><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /></div><EditItem title="Metrics tables" obj={value.metricsTables} onSet={() => { value.metricsTables = EnterpriseP.CollectorExporter_Spec_Clickhouse_MetricsTables.create(); onUpdate(); }} onUnset={() => { value.metricsTables = undefined; onUpdate(); }}>{value.metricsTables && <div className="grid gap-4 md:grid-cols-2">{(["gauge", "sum", "summary", "histogram", "exponentialHistogram"] as const).map((field) => <TextInput key={field} label={field === "exponentialHistogram" ? "Exponential histogram" : field[0].toUpperCase() + field.slice(1)} value={value.metricsTables![field]} onChange={(event) => { value.metricsTables![field] = event.currentTarget.value; onUpdate(); }} />)}</div>}</EditItem><EditItem title="Table engine" obj={value.tableEngine} onSet={() => { value.tableEngine = EnterpriseP.CollectorExporter_Spec_Clickhouse_TableEngine.create(); onUpdate(); }} onUnset={() => { value.tableEngine = undefined; onUpdate(); }}>{value.tableEngine && <div className="grid gap-4 md:grid-cols-2"><TextInput label="Engine name" value={value.tableEngine.name} onChange={(event) => { value.tableEngine!.name = event.currentTarget.value; onUpdate(); }} /><TextInput label="Parameters" value={value.tableEngine.params} onChange={(event) => { value.tableEngine!.params = event.currentTarget.value; onUpdate(); }} /></div>}</EditItem><EditItem title="TLS" obj={value.tls} onSet={() => { value.tls = EnterpriseP.CollectorExporter_Spec_Clickhouse_TLS.create(); onUpdate(); }} onUnset={() => { value.tls = undefined; onUpdate(); }}>{value.tls && <div className="grid gap-4 md:grid-cols-2"><Switch label="No TLS" checked={value.tls.insecure} onChange={(event) => { value.tls!.insecure = event.currentTarget.checked; onUpdate(); }} /><Switch label="Skip TLS verification" checked={value.tls.insecureSkipVerify} onChange={(event) => { value.tls!.insecureSkipVerify = event.currentTarget.checked; onUpdate(); }} /><TextInput label="Server name override" value={value.tls.serverNameOverride} onChange={(event) => { value.tls!.serverNameOverride = event.currentTarget.value; onUpdate(); }} /><Textarea label="CA certificate PEM" autosize minRows={3} value={value.tls.caPEM} onChange={(event) => { value.tls!.caPEM = event.currentTarget.value; onUpdate(); }} /></div>}</EditItem></EditItem>;
+  }
+
+  if (type.oneofKind === "elasticsearch") {
+    const value = type.elasticsearch;
+    return <EditItem title="Advanced delivery" obj={value}><HeaderList headers={value.headers} makeHeader={() => EnterpriseP.CollectorExporter_Spec_Elasticsearch_Header.create()} onUpdate={onUpdate} /><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /><Switch label="Skip TLS verification" checked={value.tls?.insecureSkipVerify ?? false} onChange={(event) => { value.tls = EnterpriseP.CollectorExporter_Spec_Elasticsearch_TLS.create({ insecureSkipVerify: event.currentTarget.checked }); onUpdate(); }} />{value.tls?.insecureSkipVerify && <Alert color="red" icon={<AlertTriangle size={14} />}>Server certificates will not be verified.</Alert>}</EditItem>;
+  }
+
+  if (type.oneofKind === "logzio") return <EditItem title="Advanced delivery" obj={type.logzio}><DurationField label="Timeout" value={type.logzio.timeout} onChange={(next) => { type.logzio.timeout = next; onUpdate(); }} /></EditItem>;
+
+  if (type.oneofKind === "influxDB") {
+    const value = type.influxDB;
+    return <EditItem title="Advanced delivery" obj={value}><HeaderList headers={value.headers} makeHeader={() => EnterpriseP.CollectorExporter_Spec_InfluxDB_Header.create()} onUpdate={onUpdate} /><div className="grid gap-4 md:grid-cols-2"><NumberInput min={0} label="Maximum payload lines" value={value.payloadMaxLines} onChange={(next) => { value.payloadMaxLines = Number(next) || 0; onUpdate(); }} /><NumberInput min={0} label="Maximum payload bytes" value={value.payloadMaxBytes} onChange={(next) => { value.payloadMaxBytes = Number(next) || 0; onUpdate(); }} /><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /><StringListField label="Log record dimensions" value={value.logRecordDimensions} onChange={(next) => { value.logRecordDimensions = next; onUpdate(); }} /></div><EditItem title="InfluxDB v1 compatibility" obj={value.v1Compatibility} onSet={() => { value.v1Compatibility = EnterpriseP.CollectorExporter_Spec_InfluxDB_V1Compatibility.create(); onUpdate(); }} onUnset={() => { value.v1Compatibility = undefined; onUpdate(); }}>{value.v1Compatibility && <div className="grid gap-4 md:grid-cols-2"><Switch label="Enabled" checked={value.v1Compatibility.enabled} onChange={(event) => { value.v1Compatibility!.enabled = event.currentTarget.checked; onUpdate(); }} /><TextInput label="Database" value={value.v1Compatibility.db} onChange={(event) => { value.v1Compatibility!.db = event.currentTarget.value; onUpdate(); }} /><TextInput label="Username" value={value.v1Compatibility.username} onChange={(event) => { value.v1Compatibility!.username = event.currentTarget.value; onUpdate(); }} /><SecretSelectField label="Password Secret" sel={value.v1Compatibility.password} onUpdate={onUpdate} /></div>}</EditItem></EditItem>;
+  }
+
+  if (type.oneofKind === "kafka") {
+    const value = type.kafka;
+    return <EditItem title="Advanced delivery" obj={value}><HeaderList headers={value.recordHeaders} makeHeader={() => EnterpriseP.CollectorExporter_Spec_Kafka_Header.create()} onUpdate={onUpdate} /><div className="grid gap-4 md:grid-cols-2"><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /><DurationField label="Connection idle timeout" value={value.connIdleTimeout} onChange={(next) => { value.connIdleTimeout = next; onUpdate(); }} /><Switch label="Partition logs by resource attributes" checked={value.partitionLogsByResourceAttributes} onChange={(event) => { value.partitionLogsByResourceAttributes = event.currentTarget.checked; onUpdate(); }} /><Switch label="Partition metrics by resource attributes" checked={value.partitionMetricsByResourceAttributes} onChange={(event) => { value.partitionMetricsByResourceAttributes = event.currentTarget.checked; onUpdate(); }} /></div><EditItem title="TLS" obj={value.tls} onSet={() => { value.tls = EnterpriseP.CollectorExporter_Spec_Kafka_TLS.create(); onUpdate(); }} onUnset={() => { value.tls = undefined; onUpdate(); }}>{value.tls && <Group><Switch label="No TLS" checked={value.tls.insecure} onChange={(event) => { value.tls!.insecure = event.currentTarget.checked; onUpdate(); }} /><Switch label="Skip TLS verification" checked={value.tls.insecureSkipVerify} onChange={(event) => { value.tls!.insecureSkipVerify = event.currentTarget.checked; onUpdate(); }} /></Group>}</EditItem><EditItem title="Producer" obj={value.producer} onSet={() => { value.producer = EnterpriseP.CollectorExporter_Spec_Kafka_Producer.create(); onUpdate(); }} onUnset={() => { value.producer = undefined; onUpdate(); }}>{value.producer && <div className="grid gap-4 md:grid-cols-2"><NumberInput min={0} label="Maximum message bytes" value={value.producer.maxMessageBytes} onChange={(next) => { value.producer!.maxMessageBytes = Number(next) || 0; onUpdate(); }} /><NumberInput label="Required acknowledgements" value={value.producer.requiredAcks} onChange={(next) => { value.producer!.requiredAcks = Number(next) || 0; onUpdate(); }} /><NumberInput min={0} label="Flush maximum messages" value={value.producer.flushMaxMessages} onChange={(next) => { value.producer!.flushMaxMessages = Number(next) || 0; onUpdate(); }} /><Switch label="Allow automatic topic creation" checked={value.producer.allowAutoTopicCreation} onChange={(event) => { value.producer!.allowAutoTopicCreation = event.currentTarget.checked; onUpdate(); }} /><DurationField label="Linger" value={value.producer.linger} onChange={(next) => { value.producer!.linger = next; onUpdate(); }} /><EnumSelect label="Compression" enumObj={EnterpriseP.CollectorExporter_Spec_Kafka_ProducerCompression} value={value.producer.compression} options={[{ label: "None", value: EnterpriseP.CollectorExporter_Spec_Kafka_ProducerCompression.NONE }, { label: "Gzip", value: EnterpriseP.CollectorExporter_Spec_Kafka_ProducerCompression.GZIP }, { label: "Snappy", value: EnterpriseP.CollectorExporter_Spec_Kafka_ProducerCompression.SNAPPY }, { label: "LZ4", value: EnterpriseP.CollectorExporter_Spec_Kafka_ProducerCompression.LZ4 }, { label: "Zstd", value: EnterpriseP.CollectorExporter_Spec_Kafka_ProducerCompression.ZSTD }]} onChange={(next) => { value.producer!.compression = next; onUpdate(); }} /></div>}</EditItem></EditItem>;
+  }
+
+  if (type.oneofKind === "datadog") {
+    const value = type.datadog;
+    return <EditItem title="Advanced delivery" obj={value}><EditItem title="Metrics" obj={value.metrics} onSet={() => { value.metrics = EnterpriseP.CollectorExporter_Spec_Datadog_Metrics.create(); onUpdate(); }} onUnset={() => { value.metrics = undefined; onUpdate(); }}>{value.metrics && <div className="grid gap-4 md:grid-cols-2"><TextInput label="Metrics endpoint" value={value.metrics.endpoint} onChange={(event) => { value.metrics!.endpoint = event.currentTarget.value; onUpdate(); }} /><Switch label="Resource attributes as tags" checked={value.metrics.resourceAttributesAsTags} onChange={(event) => { value.metrics!.resourceAttributesAsTags = event.currentTarget.checked; onUpdate(); }} /><Switch label="Instrumentation scope metadata as tags" checked={value.metrics.instrumentationScopeMetadataAsTags} onChange={(event) => { value.metrics!.instrumentationScopeMetadataAsTags = event.currentTarget.checked; onUpdate(); }} /></div>}</EditItem><EditItem title="Logs" obj={value.logs} onSet={() => { value.logs = EnterpriseP.CollectorExporter_Spec_Datadog_Logs.create(); onUpdate(); }} onUnset={() => { value.logs = undefined; onUpdate(); }}>{value.logs && <div className="grid gap-4 md:grid-cols-2"><TextInput label="Logs endpoint" value={value.logs.endpoint} onChange={(event) => { value.logs!.endpoint = event.currentTarget.value; onUpdate(); }} /><Switch label="Use compression" checked={value.logs.useCompression} onChange={(event) => { value.logs!.useCompression = event.currentTarget.checked; onUpdate(); }} /><NumberInput min={0} label="Compression level" value={value.logs.compressionLevel} onChange={(next) => { value.logs!.compressionLevel = Number(next) || 0; onUpdate(); }} /><DurationField label="Batch wait" value={value.logs.batchWait} onChange={(next) => { value.logs!.batchWait = next; onUpdate(); }} /></div>}</EditItem><EditItem title="Host metadata" obj={value.hostMetadata} onSet={() => { value.hostMetadata = EnterpriseP.CollectorExporter_Spec_Datadog_HostMetadata.create(); onUpdate(); }} onUnset={() => { value.hostMetadata = undefined; onUpdate(); }}>{value.hostMetadata && <div className="grid gap-4 md:grid-cols-2"><Switch label="Enabled" checked={value.hostMetadata.enabled} onChange={(event) => { value.hostMetadata!.enabled = event.currentTarget.checked; onUpdate(); }} /><DurationField label="Reporter period" value={value.hostMetadata.reporterPeriod} onChange={(next) => { value.hostMetadata!.reporterPeriod = next; onUpdate(); }} /></div>}</EditItem><DurationField label="Hostname detection timeout" value={value.hostnameDetectionTimeout} onChange={(next) => { value.hostnameDetectionTimeout = next; onUpdate(); }} /></EditItem>;
+  }
+
+  if (type.oneofKind === "splunk") {
+    const value = type.splunk;
+    return <EditItem title="Advanced delivery" obj={value}><div className="grid gap-4 md:grid-cols-2"><NumberInput min={0} label="Maximum log content length" value={value.maxContentLengthLogs} onChange={(next) => { value.maxContentLengthLogs = Number(next) || 0; onUpdate(); }} /><NumberInput min={0} label="Maximum metric content length" value={value.maxContentLengthMetrics} onChange={(next) => { value.maxContentLengthMetrics = Number(next) || 0; onUpdate(); }} /><NumberInput min={0} label="Maximum idle connections" value={value.maxIdleConns} onChange={(next) => { value.maxIdleConns = Number(next) || 0; onUpdate(); }} /><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /><Switch label="Skip TLS verification" checked={value.tls?.insecureSkipVerify ?? false} onChange={(event) => { value.tls = EnterpriseP.CollectorExporter_Spec_Splunk_TLS.create({ insecureSkipVerify: event.currentTarget.checked }); onUpdate(); }} /></div>{value.tls?.insecureSkipVerify && <Alert color="red" icon={<AlertTriangle size={14} />}>Server certificates will not be verified.</Alert>}</EditItem>;
+  }
+
+  if (type.oneofKind === "azureMonitor") {
+    const value = type.azureMonitor;
+    return <EditItem title="Advanced delivery" obj={value}><div className="grid gap-4 md:grid-cols-2"><DurationField label="Maximum batch interval" value={value.maxBatchInterval} onChange={(next) => { value.maxBatchInterval = next; onUpdate(); }} /><DurationField label="Shutdown timeout" value={value.shutdownTimeout} onChange={(next) => { value.shutdownTimeout = next; onUpdate(); }} /></div></EditItem>;
+  }
+
+  if (type.oneofKind === "azureDataExplorer") {
+    const value = type.azureDataExplorer;
+    return <EditItem title="Advanced delivery" obj={value}><div className="grid gap-4 md:grid-cols-2"><TextInput label="Metrics table mapping" value={value.metricsTableMapping} onChange={(event) => { value.metricsTableMapping = event.currentTarget.value; onUpdate(); }} /><TextInput label="Logs table mapping" value={value.logsTableMapping} onChange={(event) => { value.logsTableMapping = event.currentTarget.value; onUpdate(); }} /><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /></div></EditItem>;
+  }
+
+  return null;
+};
+
+const PrometheusTLSSettings = (props: {
+  type: EnterpriseP.CollectorExporter_Spec["type"];
+  onUpdate: () => void;
+}) => {
+  if (props.type.oneofKind !== "prometheusRemoteWrite") return null;
+  const value = props.type.prometheusRemoteWrite;
+  return (
+    <EditItem
+      title="TLS"
+      obj={value.tls}
+      onSet={() => {
+        value.tls =
+          EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_TLS.create();
+        props.onUpdate();
+      }}
+      onUnset={() => {
+        value.tls = undefined;
+        props.onUpdate();
+      }}
+    >
+      {value.tls && (
+        <div className="grid gap-4 md:grid-cols-2">
+          <Switch label="No TLS" checked={value.tls.insecure} onChange={(event) => { value.tls!.insecure = event.currentTarget.checked; props.onUpdate(); }} />
+          <Switch label="Skip TLS verification" checked={value.tls.insecureSkipVerify} onChange={(event) => { value.tls!.insecureSkipVerify = event.currentTarget.checked; props.onUpdate(); }} />
+          <TextInput label="Server name override" value={value.tls.serverNameOverride} onChange={(event) => { value.tls!.serverNameOverride = event.currentTarget.value; props.onUpdate(); }} />
+          <Textarea label="CA certificate PEM" autosize minRows={3} value={value.tls.caPEM} onChange={(event) => { value.tls!.caPEM = event.currentTarget.value; props.onUpdate(); }} />
+          {value.tls.insecureSkipVerify && <Alert color="red" icon={<AlertTriangle size={14} />}>Server certificates will not be verified.</Alert>}
+        </div>
+      )}
+    </EditItem>
+  );
+};
+
 const Edit = (props: {
   item: EnterpriseP.CollectorExporter;
   onUpdate: (item: EnterpriseP.CollectorExporter) => void;
 }) => {
   const { item, onUpdate } = props;
   const [req, setReq] = React.useState(
-    EnterpriseP.CollectorExporter.clone(item),
+    normalizeSecretSelectors(EnterpriseP.CollectorExporter.clone(item)),
   );
-  const [init] = React.useState(EnterpriseP.CollectorExporter.clone(req));
+  const [init, setInit] = React.useState(
+    EnterpriseP.CollectorExporter.clone(req),
+  );
+  const configurations = React.useRef<
+    Partial<Record<string, EnterpriseP.CollectorExporter_Spec["type"]>>
+  >({
+    [req.spec?.type.oneofKind ?? "otlp"]: structuredClone(
+      req.spec?.type ?? { oneofKind: undefined },
+    ),
+  });
+  const authenticationConfigurations = React.useRef<Record<string, unknown>>({});
+  const itemKey = item.metadata?.uid || item.metadata?.name;
+
+  React.useEffect(() => {
+    const next = normalizeSecretSelectors(EnterpriseP.CollectorExporter.clone(item));
+    if (!next.spec) {
+      next.spec = EnterpriseP.CollectorExporter_Spec.create({
+        type: {
+          oneofKind: "otlp",
+          otlp: EnterpriseP.CollectorExporter_Spec_OTLP.create({
+            auth: { type: freshBearer() },
+          }),
+        },
+      });
+    }
+    setReq(next);
+    setInit(EnterpriseP.CollectorExporter.clone(next));
+    configurations.current = {
+      [next.spec.type.oneofKind ?? "otlp"]: structuredClone(next.spec.type),
+    };
+  }, [itemKey]);
+
   const updateReq = () => {
-    setReq(EnterpriseP.CollectorExporter.clone(req));
-    onUpdate(req);
+    const next = EnterpriseP.CollectorExporter.clone(req);
+    setReq(next);
+    onUpdate(EnterpriseP.CollectorExporter.clone(next));
   };
 
   if (!req.spec) {
@@ -324,21 +572,29 @@ const Edit = (props: {
       .otherwise(() => undefined);
 
   return (
-    <div>
-      <Group>
+    <div className="space-y-4">
+      <div className="rounded-xl border border-slate-200 bg-white p-3">
         <Switch
           label="Disabled"
-          description="Disable/deactivate the Collector Exporter"
           checked={req.spec!.isDisabled}
           onChange={(v) => {
             req.spec!.isDisabled = v.target.checked;
             updateReq();
           }}
         />
-      </Group>
+      </div>
       <Tabs
-        defaultValue={req.spec!.type.oneofKind}
+        value={req.spec!.type.oneofKind}
         onChange={(v) => {
+          const currentKind = req.spec!.type.oneofKind;
+          if (currentKind) {
+            configurations.current[currentKind] = structuredClone(req.spec!.type);
+          }
+          if (v && configurations.current[v]) {
+            req.spec!.type = structuredClone(configurations.current[v]!);
+            updateReq();
+            return;
+          }
           match(v)
             .with("otlp", () => {
               match(init.spec!.type.oneofKind)
@@ -552,7 +808,7 @@ const Edit = (props: {
             });
         }}
       >
-        <Tabs.List>
+        <Tabs.List className="flex-nowrap overflow-x-auto rounded-xl border border-slate-200 bg-slate-50/60 p-1">
           <Tabs.Tab value="otlp">OTLP</Tabs.Tab>
           <Tabs.Tab value="otlpHTTP">OTLP HTTP</Tabs.Tab>
           <Tabs.Tab value="clickhouse">ClickHouse</Tabs.Tab>
@@ -1153,13 +1409,26 @@ const Edit = (props: {
                 />
 
                 <Tabs
-                  defaultValue={type.elasticsearch.auth?.type.oneofKind}
+                  value={type.elasticsearch.auth?.type.oneofKind ?? "none"}
                   onChange={(v) => {
                     if (!type.elasticsearch.auth) {
                       type.elasticsearch.auth =
                         EnterpriseP.CollectorExporter_Spec_Elasticsearch_Auth.create();
                     }
+                    const currentKind = type.elasticsearch.auth.type.oneofKind;
+                    if (currentKind) {
+                      authenticationConfigurations.current[`elasticsearch.${currentKind}`] = structuredClone(type.elasticsearch.auth.type);
+                    }
+                    const cached = authenticationConfigurations.current[`elasticsearch.${v}`] as typeof type.elasticsearch.auth.type | undefined;
+                    if (cached) {
+                      type.elasticsearch.auth.type = structuredClone(cached);
+                      updateReq();
+                      return;
+                    }
                     match(v)
+                      .with("none", () => {
+                        type.elasticsearch.auth!.type = { oneofKind: undefined };
+                      })
                       .with("apiKey", () => {
                         type.elasticsearch.auth!.type = {
                           oneofKind: "apiKey",
@@ -1177,6 +1446,7 @@ const Edit = (props: {
                   }}
                 >
                   <Tabs.List>
+                    <Tabs.Tab value="none">None</Tabs.Tab>
                     <Tabs.Tab value="apiKey">API Key</Tabs.Tab>
                     <Tabs.Tab value="basic">Basic Authentication</Tabs.Tab>
                   </Tabs.List>
@@ -1847,13 +2117,26 @@ const Edit = (props: {
                 </Group>
 
                 <Tabs
-                  defaultValue={type.azureDataExplorer.auth?.type.oneofKind}
+                  value={type.azureDataExplorer.auth?.type.oneofKind ?? "none"}
                   onChange={(v) => {
                     if (!type.azureDataExplorer.auth) {
                       type.azureDataExplorer.auth =
                         EnterpriseP.CollectorExporter_Spec_AzureDataExplorer_Auth.create();
                     }
+                    const currentKind = type.azureDataExplorer.auth.type.oneofKind;
+                    if (currentKind) {
+                      authenticationConfigurations.current[`azureDataExplorer.${currentKind}`] = structuredClone(type.azureDataExplorer.auth.type);
+                    }
+                    const cached = authenticationConfigurations.current[`azureDataExplorer.${v}`] as typeof type.azureDataExplorer.auth.type | undefined;
+                    if (cached) {
+                      type.azureDataExplorer.auth.type = structuredClone(cached);
+                      updateReq();
+                      return;
+                    }
                     match(v)
+                      .with("none", () => {
+                        type.azureDataExplorer.auth!.type = { oneofKind: undefined };
+                      })
                       .with("servicePrincipal", () => {
                         type.azureDataExplorer.auth!.type = {
                           oneofKind: "servicePrincipal",
@@ -1881,6 +2164,7 @@ const Edit = (props: {
                   }}
                 >
                   <Tabs.List>
+                    <Tabs.Tab value="none">None</Tabs.Tab>
                     <Tabs.Tab value="servicePrincipal">
                       Service Principal
                     </Tabs.Tab>
@@ -1957,6 +2241,10 @@ const Edit = (props: {
             ))}
         </Tabs.Panel>
       </Tabs>
+      <div className="mt-4">
+        <PrometheusTLSSettings type={req.spec.type} onUpdate={updateReq} />
+        <AdvancedSettings type={req.spec.type} onUpdate={updateReq} />
+      </div>
     </div>
   );
 };
