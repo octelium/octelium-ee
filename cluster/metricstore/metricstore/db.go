@@ -43,10 +43,6 @@ func (s *Server) initDB(ctx context.Context) error {
 	if version > metricStoreSchemaVersion {
 		return fmt.Errorf("unsupported metricstore schema version: %d", version)
 	}
-	if version != 0 && version < metricStoreSchemaVersion {
-		return fmt.Errorf("unsupported in-place metricstore schema migration from version %d to %d",
-			version, metricStoreSchemaVersion)
-	}
 
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -54,21 +50,119 @@ func (s *Server) initDB(ctx context.Context) error {
 	}
 	defer tx.Rollback()
 
-	if err := createMetricStoreTables(ctx, tx); err != nil {
-		return err
+	switch version {
+	case 0:
+		if err := createMetricStoreTables(ctx, tx); err != nil {
+			return err
+		}
+		if err := setMetricStoreSchemaVersion(ctx, tx, metricStoreSchemaVersion); err != nil {
+			return err
+		}
+
+	case 2:
+		if err := migrateMetricStoreV2ToV3(ctx, tx); err != nil {
+			return fmt.Errorf("could not migrate metricstore schema from version 2 to 3: %w", err)
+		}
+		if err := setMetricStoreSchemaVersion(ctx, tx, 3); err != nil {
+			return err
+		}
+
+	case metricStoreSchemaVersion:
+		if err := createMetricStoreTables(ctx, tx); err != nil {
+			return err
+		}
+
+	default:
+		return fmt.Errorf("unsupported in-place metricstore schema migration from version %d to %d",
+			version, metricStoreSchemaVersion)
 	}
 
-	if version == 0 {
-		if _, err := tx.ExecContext(ctx,
-			`INSERT INTO metricstore_schema (version, applied_at) VALUES (?, ?)`,
-			metricStoreSchemaVersion,
-			metricTimeToDB(time.Now()),
-		); err != nil {
+	return tx.Commit()
+}
+
+func setMetricStoreSchemaVersion(ctx context.Context, tx *sql.Tx, version int) error {
+	_, err := tx.ExecContext(ctx, `
+INSERT INTO metricstore_schema (version, applied_at) VALUES (?, ?)
+ON CONFLICT (version) DO UPDATE SET applied_at = EXCLUDED.applied_at
+`, version, metricTimeToDB(time.Now()))
+	return err
+}
+
+func migrateMetricStoreV2ToV3(ctx context.Context, tx *sql.Tx) error {
+	statements := []string{
+		`UPDATE metric_histogram_points
+SET bucket_counts = CAST(json_extract_string(bucket_counts, '$') AS JSON)
+WHERE json_type(bucket_counts) = 'VARCHAR'`,
+		`UPDATE metric_exponential_histogram_points
+SET
+	positive_counts = CASE
+		WHEN json_type(positive_counts) = 'VARCHAR'
+		THEN CAST(json_extract_string(positive_counts, '$') AS JSON)
+		ELSE positive_counts
+	END,
+	negative_counts = CASE
+		WHEN json_type(negative_counts) = 'VARCHAR'
+		THEN CAST(json_extract_string(negative_counts, '$') AS JSON)
+		ELSE negative_counts
+	END
+WHERE json_type(positive_counts) = 'VARCHAR' OR json_type(negative_counts) = 'VARCHAR'`,
+		`UPDATE metric_descriptors
+SET explicit_bounds = CAST(json_extract_string(explicit_bounds, '$') AS JSON)
+WHERE explicit_bounds IS NOT NULL AND json_type(explicit_bounds) = 'VARCHAR'`,
+		`DROP TABLE IF EXISTS metric_histogram_staging`,
+		`DROP TABLE IF EXISTS metric_exponential_histogram_staging`,
+	}
+
+	for _, statement := range statements {
+		if _, err := tx.ExecContext(ctx, statement); err != nil {
 			return err
 		}
 	}
 
-	return tx.Commit()
+	if err := verifyMetricStoreV3JSONColumns(ctx, tx); err != nil {
+		return err
+	}
+
+	return createMetricStoreTables(ctx, tx)
+}
+
+func verifyMetricStoreV3JSONColumns(ctx context.Context, tx *sql.Tx) error {
+	checks := []struct {
+		name  string
+		query string
+	}{
+		{
+			name:  "histogram bucket counts",
+			query: `SELECT COUNT(*) FROM metric_histogram_points WHERE json_type(bucket_counts) != 'ARRAY'`,
+		},
+		{
+			name: "exponential histogram positive counts",
+			query: `SELECT COUNT(*) FROM metric_exponential_histogram_points
+WHERE json_type(positive_counts) != 'ARRAY'`,
+		},
+		{
+			name: "exponential histogram negative counts",
+			query: `SELECT COUNT(*) FROM metric_exponential_histogram_points
+WHERE json_type(negative_counts) != 'ARRAY'`,
+		},
+		{
+			name: "histogram descriptor bounds",
+			query: `SELECT COUNT(*) FROM metric_descriptors
+WHERE explicit_bounds IS NOT NULL AND json_type(explicit_bounds) != 'ARRAY'`,
+		},
+	}
+
+	for _, check := range checks {
+		var count int64
+		if err := tx.QueryRowContext(ctx, check.query).Scan(&count); err != nil {
+			return fmt.Errorf("could not verify %s: %w", check.name, err)
+		}
+		if count != 0 {
+			return fmt.Errorf("metricstore migration left %d invalid %s rows", count, check.name)
+		}
+	}
+
+	return nil
 }
 
 func (s *Server) getSchemaVersion(ctx context.Context) (int, error) {
