@@ -123,7 +123,6 @@ func getMetricStoreDBConfig() (*metricStoreDBConfig, error) {
 	values.Set("memory_limit", memoryLimit)
 	values.Set("max_temp_directory_size", maxTempSize)
 	values.Set("preserve_insertion_order", "false")
-	values.Set("temp_directory", tempDir)
 	values.Set("threads", strconv.Itoa(threads))
 	values.Set("write_buffer_row_group_count", "1")
 
