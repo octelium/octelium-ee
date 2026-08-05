@@ -18,6 +18,7 @@ import (
 
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetricsv1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
+	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -289,7 +290,9 @@ func scanExplicitHistogramRawPoint(scanner interface{ Scan(...any) error }) (exp
 		ret.max = &value
 	}
 	if err := json.Unmarshal([]byte(bucketCountsJSON), &ret.bucketCounts); err != nil {
-		return explicitHistogramRawPoint{}, err
+		zap.L().Error("Could not decode stored histogram bucket counts",
+			zap.String("seriesID", ret.seriesID), zap.Error(err))
+		return explicitHistogramRawPoint{}, status.Error(codes.Internal, "stored histogram data is invalid")
 	}
 	return ret, nil
 }

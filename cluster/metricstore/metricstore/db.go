@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	metricStoreSchemaVersion = 2
+	metricStoreSchemaVersion = 3
 	rawMetricRetention       = 48 * time.Hour
 	retentionInterval        = 30 * time.Minute
 )
@@ -180,9 +180,39 @@ func createMetricStoreTables(ctx context.Context, tx *sql.Tx) error {
 			negative_counts JSON NOT NULL
 		)`,
 		`CREATE TABLE IF NOT EXISTS metric_number_staging AS SELECT * FROM metric_number_points WHERE false`,
-		`CREATE TABLE IF NOT EXISTS metric_histogram_staging AS SELECT * FROM metric_histogram_points WHERE false`,
-		`CREATE TABLE IF NOT EXISTS metric_exponential_histogram_staging AS
-			SELECT * FROM metric_exponential_histogram_points WHERE false`,
+
+		`CREATE TABLE IF NOT EXISTS metric_histogram_staging (
+			point_id VARCHAR NOT NULL,
+			timestamp BIGINT NOT NULL,
+			ingested_at BIGINT NOT NULL,
+			start_timestamp BIGINT,
+			series_id VARCHAR NOT NULL,
+			count UBIGINT NOT NULL,
+			has_sum BOOLEAN NOT NULL,
+			sum DOUBLE,
+			min DOUBLE,
+			max DOUBLE,
+			bucket_counts VARCHAR NOT NULL
+		)`,
+		`CREATE TABLE IF NOT EXISTS metric_exponential_histogram_staging (
+			point_id VARCHAR NOT NULL,
+			timestamp BIGINT NOT NULL,
+			ingested_at BIGINT NOT NULL,
+			start_timestamp BIGINT,
+			series_id VARCHAR NOT NULL,
+			count UBIGINT NOT NULL,
+			has_sum BOOLEAN NOT NULL,
+			sum DOUBLE,
+			min DOUBLE,
+			max DOUBLE,
+			scale INTEGER NOT NULL,
+			zero_count UBIGINT NOT NULL,
+			zero_threshold DOUBLE NOT NULL,
+			positive_offset INTEGER NOT NULL,
+			positive_counts VARCHAR NOT NULL,
+			negative_offset INTEGER NOT NULL,
+			negative_counts VARCHAR NOT NULL
+		)`,
 	}
 
 	for _, statement := range statements {
@@ -229,8 +259,6 @@ func (s *Server) runRetentionLoop(ctx context.Context) {
 }
 
 func (s *Server) applyRetention(ctx context.Context) error {
-	// Keep one extra retention-loop interval so periodic cleanup cannot shorten
-	// the effective retention window.
 	cutoff := time.Now().UTC().Add(-(rawMetricRetention + retentionInterval))
 	pointTables := []string{
 		"metric_number_points",

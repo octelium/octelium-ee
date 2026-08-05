@@ -72,9 +72,6 @@ func ensureRawRowLimit(ctx context.Context, conn *sql.Conn, table string, query 
 	includePrevious bool, limit int) error {
 	from := query.from
 	if includePrevious {
-		// Cumulative queries need one preceding sample per series. The current
-		// implementation resolves that sample from retained raw history, so count
-		// the complete participating retained range before executing the query.
 		from = time.Unix(0, 0).UTC()
 	}
 

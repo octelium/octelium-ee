@@ -1204,7 +1204,16 @@ func replaceHistogramPoints(ctx context.Context, conn *sql.Conn, points []histog
 	}); err != nil {
 		return err
 	}
-	if _, err := conn.ExecContext(ctx, `INSERT INTO metric_histogram_points SELECT * FROM metric_histogram_staging`); err != nil {
+	if _, err := conn.ExecContext(ctx, `
+INSERT INTO metric_histogram_points (
+	point_id, timestamp, ingested_at, start_timestamp, series_id,
+	count, has_sum, sum, min, max, bucket_counts
+)
+SELECT
+	point_id, timestamp, ingested_at, start_timestamp, series_id,
+	count, has_sum, sum, min, max, CAST(bucket_counts AS JSON)
+FROM metric_histogram_staging
+`); err != nil {
 		return err
 	}
 	_, err := conn.ExecContext(ctx, `DELETE FROM metric_histogram_staging`)
@@ -1233,8 +1242,18 @@ func replaceExponentialHistogramPoints(ctx context.Context, conn *sql.Conn,
 	}); err != nil {
 		return err
 	}
-	if _, err := conn.ExecContext(ctx,
-		`INSERT INTO metric_exponential_histogram_points SELECT * FROM metric_exponential_histogram_staging`); err != nil {
+	if _, err := conn.ExecContext(ctx, `
+INSERT INTO metric_exponential_histogram_points (
+	point_id, timestamp, ingested_at, start_timestamp, series_id,
+	count, has_sum, sum, min, max, scale, zero_count, zero_threshold,
+	positive_offset, positive_counts, negative_offset, negative_counts
+)
+SELECT
+	point_id, timestamp, ingested_at, start_timestamp, series_id,
+	count, has_sum, sum, min, max, scale, zero_count, zero_threshold,
+	positive_offset, CAST(positive_counts AS JSON), negative_offset, CAST(negative_counts AS JSON)
+FROM metric_exponential_histogram_staging
+`); err != nil {
 		return err
 	}
 	_, err := conn.ExecContext(ctx, `DELETE FROM metric_exponential_histogram_staging`)

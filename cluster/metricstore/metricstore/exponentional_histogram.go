@@ -18,6 +18,7 @@ import (
 
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetricsv1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
+	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -306,10 +307,14 @@ func scanExponentialHistogramRawPoint(scanner interface{ Scan(...any) error }) (
 
 	var positiveCounts, negativeCounts []uint64
 	if err := json.Unmarshal([]byte(positiveJSON), &positiveCounts); err != nil {
-		return exponentialHistogramRawPoint{}, err
+		zap.L().Error("Could not decode stored exponential histogram positive counts",
+			zap.String("seriesID", ret.seriesID), zap.Error(err))
+		return exponentialHistogramRawPoint{}, status.Error(codes.Internal, "stored histogram data is invalid")
 	}
 	if err := json.Unmarshal([]byte(negativeJSON), &negativeCounts); err != nil {
-		return exponentialHistogramRawPoint{}, err
+		zap.L().Error("Could not decode stored exponential histogram negative counts",
+			zap.String("seriesID", ret.seriesID), zap.Error(err))
+		return exponentialHistogramRawPoint{}, status.Error(codes.Internal, "stored histogram data is invalid")
 	}
 	ret.positive = denseBucketMap(positiveOffset, positiveCounts)
 	ret.negative = denseBucketMap(negativeOffset, negativeCounts)
