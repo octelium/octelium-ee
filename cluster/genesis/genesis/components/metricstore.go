@@ -71,7 +71,7 @@ func getMetricStoreDeployment(o *CommonOpts) *appsv1.Deployment {
 					AutomountServiceAccountToken: utils_types.BoolToPtr(false),
 					NodeSelector:                 getNodeSelectorControlPlane(o.ClusterConfig),
 					ImagePullSecrets:             getImagePullSecrets(),
-
+					SecurityContext:              getStorePodSecurityContext(),
 					Containers: []k8scorev1.Container{
 						{
 							Name: componentMetricStore,

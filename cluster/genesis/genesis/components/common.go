@@ -16,6 +16,7 @@ import (
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/cluster/common/vutils"
 	gcomponents "github.com/octelium/octelium/cluster/genesis/genesis/components"
+	utils_types "github.com/octelium/octelium/pkg/utils/types"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	k8scorev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -122,4 +123,15 @@ func getDuckDBResourceLimit() k8scorev1.ResourceList {
 type CommonOpts struct {
 	gcomponents.CommonOpts
 	Version string
+}
+
+const octeliumStoreFSGroup int64 = 3454
+
+func getStorePodSecurityContext() *k8scorev1.PodSecurityContext {
+	fsGroupChangePolicy := k8scorev1.FSGroupChangeOnRootMismatch
+
+	return &k8scorev1.PodSecurityContext{
+		FSGroup:             utils_types.Int64ToPtr(octeliumStoreFSGroup),
+		FSGroupChangePolicy: &fsGroupChangePolicy,
+	}
 }
