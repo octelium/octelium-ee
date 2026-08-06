@@ -92,6 +92,15 @@ export const eqFilter = (key: string, value: string): AttributeFilter =>
     }),
   });
 
+export const eqBoolFilter = (key: string, value: boolean): AttributeFilter =>
+  AttributeFilter.create({
+    key,
+    operator: AttributeFilter_Operator.EQ,
+    value: AttributeValue.create({
+      value: { oneofKind: "boolValue", boolValue: value },
+    }),
+  });
+
 type ChartSeries = {
   name: string;
   data: [number, number][];
@@ -193,7 +202,11 @@ const quantilePart = (quantile: number): string =>
 
 const labelPart = (label: Attribute): string => {
   const shortKey = label.key.split(".").at(-1) || label.key;
-  return `${shortKey}=${attributeValue(label.value)}`;
+  const rawValue = attributeValue(label.value);
+  const value = label.key === "reason"
+    ? rawValue.toLowerCase().replaceAll("_", " ").replace(/^./, (character) => character.toUpperCase())
+    : rawValue;
+  return `${shortKey}=${value}`;
 };
 
 const seriesLabel = (
@@ -289,6 +302,9 @@ const formatValue = (v: number, unit?: string): string => {
   switch (unit) {
     case "bytes":
       return formatBytes(v);
+
+    case "bytes/s":
+      return `${formatBytes(v)}/s`;
 
     case "ms":
       return `${v.toFixed(v < 10 ? 1 : 0)} ms`;
