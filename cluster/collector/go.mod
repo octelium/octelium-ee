@@ -1,6 +1,6 @@
 module github.com/octelium/octelium-ee/cluster/collector
 
-go 1.26.4
+go 1.26.5
 
 require (
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000

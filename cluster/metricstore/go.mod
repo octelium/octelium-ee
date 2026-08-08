@@ -1,6 +1,6 @@
 module github.com/octelium/octelium-ee/cluster/metricstore
 
-go 1.26.4
+go 1.26.5
 
 require (
 	github.com/duckdb/duckdb-go/v2 v2.10505.0
