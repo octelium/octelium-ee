@@ -4,8 +4,8 @@ go 1.26.5
 
 require (
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20260806095238-08e1b4f4de29
-	github.com/octelium/octelium/pkg v0.0.0-20260806095238-08e1b4f4de29
+	github.com/octelium/octelium/cluster/common v0.0.0-20260809094951-7e251b36f511
+	github.com/octelium/octelium/pkg v0.0.0-20260809094951-7e251b36f511
 	github.com/pkg/errors v0.9.1
 	go.uber.org/zap v1.28.0
 	golang.org/x/oauth2 v0.36.0 // indirect
@@ -14,9 +14,9 @@ require (
 require (
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-20250516172457-ae6f09fa68bf
 	github.com/octelium/octelium-ee/cluster/genesis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/client/common v0.0.0-20260806095238-08e1b4f4de29
-	github.com/octelium/octelium/client/octops v0.0.0-20260806095238-08e1b4f4de29
-	github.com/octelium/octelium/cluster/genesis v0.0.0-20260806095238-08e1b4f4de29
+	github.com/octelium/octelium/client/common v0.0.0-20260809094951-7e251b36f511
+	github.com/octelium/octelium/client/octops v0.0.0-20260809094951-7e251b36f511
+	github.com/octelium/octelium/cluster/genesis v0.0.0-20260809094951-7e251b36f511
 	github.com/spf13/cobra v1.10.2
 	k8s.io/api v0.35.3
 	k8s.io/apimachinery v0.35.3

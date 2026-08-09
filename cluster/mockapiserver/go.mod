@@ -7,12 +7,12 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/apiserver v0.0.0-20260806095238-08e1b4f4de29
-	github.com/octelium/octelium/cluster/authserver v0.0.0-20260806095238-08e1b4f4de29
-	github.com/octelium/octelium/cluster/common v0.0.0-20260806095238-08e1b4f4de29
-	github.com/octelium/octelium/cluster/octovigil v0.0.0-20260806095238-08e1b4f4de29 // indirect
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260806095238-08e1b4f4de29 // indirect
-	github.com/octelium/octelium/pkg v0.0.0-20260806095238-08e1b4f4de29
+	github.com/octelium/octelium/cluster/apiserver v0.0.0-20260809094951-7e251b36f511
+	github.com/octelium/octelium/cluster/authserver v0.0.0-20260809094951-7e251b36f511
+	github.com/octelium/octelium/cluster/common v0.0.0-20260809094951-7e251b36f511
+	github.com/octelium/octelium/cluster/octovigil v0.0.0-20260809094951-7e251b36f511 // indirect
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260809094951-7e251b36f511 // indirect
+	github.com/octelium/octelium/pkg v0.0.0-20260809094951-7e251b36f511
 	go.uber.org/zap v1.28.0
 	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20241231184526-a9ab2273dd10 // indirect
 	google.golang.org/grpc v1.82.1

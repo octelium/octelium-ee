@@ -670,10 +670,10 @@ github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd/go.mod h1:6dJ
 github.com/modern-go/reflect2 v1.0.2/go.mod h1:yWuevngMOJpCy52FWWMvUC8ws7m/LJsjYzDa0/r8luk=
 github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee h1:W5t00kpgFdJifH4BDsTlE89Zl93FEloxaWZfGcifgq8=
 github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee/go.mod h1:yWuevngMOJpCy52FWWMvUC8ws7m/LJsjYzDa0/r8luk=
-github.com/octelium/octelium/cluster/common v0.0.0-20260806095238-08e1b4f4de29 h1:fnCPaFwuYTvMHBEafScLX+JKDKwyTK4/XZJVLItKOmA=
-github.com/octelium/octelium/cluster/common v0.0.0-20260806095238-08e1b4f4de29/go.mod h1:6n9820ao9RdPbKBzk1vOYWDUJ6wW06B1bG+4y3IccPs=
-github.com/octelium/octelium/pkg v0.0.0-20260806095238-08e1b4f4de29 h1:FjCNm/DhgNH4wkPis2s75aGlXen2OGhV/FEZ78xtXio=
-github.com/octelium/octelium/pkg v0.0.0-20260806095238-08e1b4f4de29/go.mod h1:kcyEJp1ZEeMW1NdU+Js4xgHiywonSml6aJpPAroT+es=
+github.com/octelium/octelium/cluster/common v0.0.0-20260809094951-7e251b36f511 h1:D3PD6KNje1OXNEfe3bPJcfRtH2ayXPz6IngCD/Ca1yc=
+github.com/octelium/octelium/cluster/common v0.0.0-20260809094951-7e251b36f511/go.mod h1:v6ssSm1QtMaVHDvlKMrgrgteEjkvZsI7TBEeR+egKcg=
+github.com/octelium/octelium/pkg v0.0.0-20260809094951-7e251b36f511 h1:h0PVRws5oNXSKLCv8POqcty4MH3nq4TvGSKWng2uqeE=
+github.com/octelium/octelium/pkg v0.0.0-20260809094951-7e251b36f511/go.mod h1:qUFgKIc0nStiORIqJMR+gmxZ6qaaCregD2U7NxkmyBU=
 github.com/opentracing/opentracing-go v1.1.0/go.mod h1:UkNAQd3GIcIGf0SeVgPpRdFStlNbqXla1AfSYxPUl2o=
 github.com/phpdave11/gofpdf v1.4.2/go.mod h1:zpO6xFn9yxo3YLyMvW8HcKWVdbNqgIfOOp2dXMnm1mY=
 github.com/phpdave11/gofpdi v1.0.12/go.mod h1:vBmVV0Do6hSBHC8uKUQ71JGW+ZGQq74llk/7bXwjDoI=

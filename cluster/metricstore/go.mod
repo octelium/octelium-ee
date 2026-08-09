@@ -6,8 +6,8 @@ require (
 	github.com/duckdb/duckdb-go/v2 v2.10505.0
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20260806095238-08e1b4f4de29
-	github.com/octelium/octelium/pkg v0.0.0-20260806095238-08e1b4f4de29
+	github.com/octelium/octelium/cluster/common v0.0.0-20260809094951-7e251b36f511
+	github.com/octelium/octelium/pkg v0.0.0-20260809094951-7e251b36f511
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/pdata v1.55.0
 	go.uber.org/zap v1.28.0
