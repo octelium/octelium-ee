@@ -1,0 +1,16 @@
+{
+  "keys": [
+    {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "8_LiB6oQzJj32U0QGJE-XTQeuUXva0eGE8r5IYvMkUg",
+      "y": "GiPMaCam2YA02Qo6YMXaOPGLSdDIrcMXoTJW91fF3Z4",
+      "kid": "c75e7dbf-b392-4dfa-a5f4-80772af4d435",
+      "alg": "ES256",
+      "use": "sig",
+      "key_ops": [
+        "verify"
+      ]
+    }
+  ]
+}
