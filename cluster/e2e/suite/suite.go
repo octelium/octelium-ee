@@ -6,17 +6,21 @@
 //
 // See the LICENSE file in the repository root for full license text.
 
-package main
+package suite
 
 import (
-	eescenario "github.com/octelium/octelium-ee/cluster/e2e/scenario"
-	"github.com/octelium/octelium/cluster/e2e/cli"
+	"github.com/octelium/octelium/cluster/e2e/suite"
+
+	_ "github.com/octelium/octelium-ee/cluster/e2e/scenario"
 )
 
-func main() {
-	cli.Main(cli.Opts{
-		Name:            "octelium-ee-e2e",
-		Short:           "Provision an environment for the Octelium Enterprise e2e suite and run it",
-		DefaultScenario: eescenario.DefaultScenario,
-	})
+func Phases() []suite.Phase {
+	return []suite.Phase{
+		{Name: "EnterpriseSDK", Run: testEnterpriseSDK},
+		{Name: "SCIM", Run: testSCIM},
+	}
+}
+
+func All() []suite.Phase {
+	return suite.InsertBefore(suite.Phases(), "ComponentHealth", Phases()...)
 }

@@ -1,3 +1,5 @@
+//go:build e2e
+
 // Copyright (c) 2025-present Octelium Labs, LLC. All rights reserved.
 //
 // This software is licensed under the Octelium Enterprise Source-Available License.
@@ -6,17 +8,20 @@
 //
 // See the LICENSE file in the repository root for full license text.
 
-package main
+package tests
 
 import (
-	eescenario "github.com/octelium/octelium-ee/cluster/e2e/scenario"
-	"github.com/octelium/octelium/cluster/e2e/cli"
+	"os"
+	"testing"
+
+	eesuite "github.com/octelium/octelium-ee/cluster/e2e/suite"
+	"github.com/octelium/octelium/cluster/e2e/suite"
 )
 
-func main() {
-	cli.Main(cli.Opts{
-		Name:            "octelium-ee-e2e",
-		Short:           "Provision an environment for the Octelium Enterprise e2e suite and run it",
-		DefaultScenario: eescenario.DefaultScenario,
-	})
+func TestMain(m *testing.M) {
+	os.Exit(suite.Bootstrap(m))
+}
+
+func TestE2E(t *testing.T) {
+	suite.Run(t, eesuite.All())
 }
