@@ -115,8 +115,8 @@ func getDefaultLivenessProbe() *k8scorev1.Probe {
 
 func getDuckDBResourceLimit() k8scorev1.ResourceList {
 	return k8scorev1.ResourceList{
-		k8scorev1.ResourceMemory: resource.MustParse("3000Mi"),
-		k8scorev1.ResourceCPU:    resource.MustParse("4000m"),
+		k8scorev1.ResourceMemory: resource.MustParse("1500Mi"),
+		k8scorev1.ResourceCPU:    resource.MustParse("1500m"),
 	}
 }
 
