@@ -4640,6 +4640,27 @@ export interface Credential_Status {
      * @generated from protobuf field: bool isLocked = 7
      */
     isLocked: boolean;
+    /**
+     * PKCE is set when the Credential is issued to a client login flow that
+     * supplied a code challenge.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Credential.Status.PKCE pkce = 8
+     */
+    pkce?: Credential_Status_PKCE;
+}
+/**
+ * PKCE binds the Credential to a code challenge supplied by the client
+ * that initiated the login.
+ *
+ * @generated from protobuf message octelium.api.main.core.v1.Credential.Status.PKCE
+ */
+export interface Credential_Status_PKCE {
+    /**
+     * CodeChallenge is the SHA256 digest of the code verifier.
+     *
+     * @generated from protobuf field: bytes codeChallenge = 1
+     */
+    codeChallenge: Uint8Array;
 }
 /**
  * @generated from protobuf message octelium.api.main.core.v1.CredentialList
@@ -21024,7 +21045,8 @@ class Credential_Status$Type extends MessageType<Credential_Status> {
             { no: 4, name: "lastRotationAt", kind: "message", T: () => Timestamp },
             { no: 5, name: "totalRotations", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
             { no: 6, name: "totalAuthentications", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 7, name: "isLocked", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 7, name: "isLocked", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 8, name: "pkce", kind: "message", T: () => Credential_Status_PKCE }
         ]);
     }
     create(value?: PartialMessage<Credential_Status>): Credential_Status {
@@ -21064,6 +21086,9 @@ class Credential_Status$Type extends MessageType<Credential_Status> {
                 case /* bool isLocked */ 7:
                     message.isLocked = reader.bool();
                     break;
+                case /* octelium.api.main.core.v1.Credential.Status.PKCE pkce */ 8:
+                    message.pkce = Credential_Status_PKCE.internalBinaryRead(reader, reader.uint32(), options, message.pkce);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -21097,6 +21122,9 @@ class Credential_Status$Type extends MessageType<Credential_Status> {
         /* bool isLocked = 7; */
         if (message.isLocked !== false)
             writer.tag(7, WireType.Varint).bool(message.isLocked);
+        /* octelium.api.main.core.v1.Credential.Status.PKCE pkce = 8; */
+        if (message.pkce)
+            Credential_Status_PKCE.internalBinaryWrite(message.pkce, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -21107,6 +21135,53 @@ class Credential_Status$Type extends MessageType<Credential_Status> {
  * @generated MessageType for protobuf message octelium.api.main.core.v1.Credential.Status
  */
 export const Credential_Status = new Credential_Status$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Credential_Status_PKCE$Type extends MessageType<Credential_Status_PKCE> {
+    constructor() {
+        super("octelium.api.main.core.v1.Credential.Status.PKCE", [
+            { no: 1, name: "codeChallenge", kind: "scalar", T: 12 /*ScalarType.BYTES*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Credential_Status_PKCE>): Credential_Status_PKCE {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.codeChallenge = new Uint8Array(0);
+        if (value !== undefined)
+            reflectionMergePartial<Credential_Status_PKCE>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Credential_Status_PKCE): Credential_Status_PKCE {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bytes codeChallenge */ 1:
+                    message.codeChallenge = reader.bytes();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Credential_Status_PKCE, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bytes codeChallenge = 1; */
+        if (message.codeChallenge.length)
+            writer.tag(1, WireType.LengthDelimited).bytes(message.codeChallenge);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.Credential.Status.PKCE
+ */
+export const Credential_Status_PKCE = new Credential_Status_PKCE$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class CredentialList$Type extends MessageType<CredentialList> {
     constructor() {
