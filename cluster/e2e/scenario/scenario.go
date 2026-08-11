@@ -10,17 +10,26 @@ package scenario
 
 import (
 	"context"
+	"fmt"
+	"slices"
+	"time"
 
 	"github.com/octelium/octelium/cluster/e2e/scenario"
 )
 
 const DefaultScenario = "k3s-flannel-ee"
 
+// Package is the Cluster package installed on top of the core Cluster.
+const Package = "octeliumee"
+
 func init() {
 	scenario.Register(DefaultScenario, k3sFlannelEE)
 }
 
-var Components = append(scenario.DefaultComponents,
+// Components are the components whose pods the suite checks for restarts. The
+// enterprise components carry the same `octelium.com/component` label values as
+// their core counterparts, so the core entries cover both.
+var Components = slices.Concat(scenario.DefaultComponents, []string{
 	"clusterman",
 	"secretman",
 	"logstore",
@@ -29,7 +38,29 @@ var Components = append(scenario.DefaultComponents,
 	"cloudman",
 	"collector",
 	"policyportal",
-)
+})
+
+// Deployments are the Deployments the enterprise package brings up. They only
+// exist once the package is installed, which happens after the core Cluster is
+// up, so they cannot be part of Install.WaitDeployments.
+var Deployments = []string{
+	"octeliumee-rscserver",
+	"octeliumee-nocturne",
+	"octeliumee-secretman",
+	"octeliumee-clusterman",
+	"octeliumee-cloudman",
+	"octeliumee-collector",
+	"octeliumee-logstore",
+	"octeliumee-rscstore",
+	"octeliumee-metricstore",
+	"octeliumee-policyportal",
+
+	"svc-enterprise-octelium-api",
+	"svc-public-octelium",
+	"svc-dirsync-octelium",
+	"svc-console-octelium",
+	"svc-access-octelium",
+}
 
 func k3sFlannelEE() *scenario.Scenario {
 	ret := scenario.MustGet("k3s-flannel")
@@ -37,8 +68,6 @@ func k3sFlannelEE() *scenario.Scenario {
 	ret.Description = "Single-node k3s with flannel, SPIRE and the Enterprise components."
 
 	ret.Install.EnableSPIFFECSI = true
-	ret.Install.WaitDeployments = append(ret.Install.WaitDeployments,
-		"svc-enterprise-octelium-api")
 
 	ret.Components = Components
 
@@ -47,6 +76,13 @@ func k3sFlannelEE() *scenario.Scenario {
 	ret.Hooks.PostPrepare = []scenario.Step{
 		{Name: "spire/install", Run: stepSPIRE},
 	}
+
+	ret.Hooks.PostInstall = []scenario.Step{
+		{Name: "octeliumee/install-package", Run: stepInstallPackage},
+		{Name: "octeliumee/readiness", Run: stepWaitDeployments},
+	}
+
+	ret.Budget = 75 * time.Minute
 
 	return ret
 }
@@ -58,4 +94,14 @@ helm repo update spire
 helm upgrade --install spire-crds spire/spire-crds --namespace spire --create-namespace
 helm upgrade --install spire spire/spire --namespace spire --wait --timeout 10m
 `)
+}
+
+func stepInstallPackage(ctx context.Context, r *scenario.Runner) error {
+	versionArg := ""
+	if version := r.Scenario.Install.Version; version != "" {
+		versionArg = fmt.Sprintf(" --version %s", version)
+	}
+
+	return r.Bash(ctx, fmt.Sprintf("octops install-package %s --package %s --kubeconfig %s%s",
+		r.Scenario.Domain, Package, r.State.KubeconfigPath, versionArg))
 }

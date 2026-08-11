@@ -216,4 +216,3 @@ func testSCIM(t *testing.T, h *harness.H) {
 		assert.True(t, grpcerr.IsNotFound(err))
 	})
 }
-

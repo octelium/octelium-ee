@@ -10,10 +10,9 @@ package suite
 
 import (
 	"github.com/octelium/octelium/cluster/e2e/suite"
-
-	_ "github.com/octelium/octelium-ee/cluster/e2e/scenario"
 )
 
+// Phases are the Enterprise-only phases.
 func Phases() []suite.Phase {
 	return []suite.Phase{
 		{Name: "EnterpriseSDK", Run: testEnterpriseSDK},
@@ -21,6 +20,15 @@ func Phases() []suite.Phase {
 	}
 }
 
+// ReadyPhase asserts that the Enterprise package came up. It runs right after
+// the core readiness phase so that a broken package install fails the suite
+// before anything else gets a chance to time out against it.
+func ReadyPhase() suite.Phase {
+	return suite.Phase{Name: "EnterpriseReady", Run: testEnterpriseReady}
+}
+
+// All is the core suite with the Enterprise phases woven in.
 func All() []suite.Phase {
-	return suite.InsertBefore(suite.Phases(), "ComponentHealth", Phases()...)
+	ret := suite.InsertAfter(suite.Phases(), "ClusterReady", ReadyPhase())
+	return suite.InsertBefore(ret, "ComponentHealth", Phases()...)
 }
