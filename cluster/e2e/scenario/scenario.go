@@ -58,17 +58,9 @@ var Deployments = []string{
 func k3sFlannelEE() *scenario.Scenario {
 	ret := scenario.MustGet("k3s-flannel")
 
-	ret.Description = "Single-node k3s with flannel, SPIRE and the Enterprise components."
-
-	ret.Install.EnableSPIFFECSI = true
+	ret.Description = "Single-node k3s with flannel and the Enterprise components."
 
 	ret.Components = Components
-
-	ret.Caps = append(ret.Caps, scenario.CapSPIFFE)
-
-	ret.Hooks.PostPrepare = []scenario.Step{
-		{Name: "spire/install", Run: stepSPIRE},
-	}
 
 	ret.Hooks.PostInstall = []scenario.Step{
 		{Name: "octeliumee/install-package", Run: stepInstallPackage},
@@ -78,15 +70,6 @@ func k3sFlannelEE() *scenario.Scenario {
 	ret.Budget = 75 * time.Minute
 
 	return ret
-}
-
-func stepSPIRE(ctx context.Context, r *scenario.Runner) error {
-	return r.Bash(ctx, `
-helm repo add spire https://spiffe.github.io/helm-charts-hardened/
-helm repo update spire
-helm upgrade --install spire-crds spire/spire-crds --namespace spire --create-namespace
-helm upgrade --install spire spire/spire --namespace spire --wait --timeout 10m
-`)
 }
 
 func stepInstallPackage(ctx context.Context, r *scenario.Runner) error {

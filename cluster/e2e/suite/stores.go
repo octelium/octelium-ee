@@ -9,6 +9,7 @@
 package suite
 
 import (
+	"cmp"
 	"context"
 	"slices"
 	"testing"
@@ -21,6 +22,7 @@ import (
 	"github.com/octelium/octelium/apis/main/visibilityv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcorev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetav1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vmetricsv1"
 	"github.com/octelium/octelium/cluster/e2e/harness"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
@@ -33,10 +35,13 @@ import (
 const trafficRequests = 6
 
 const (
-	counterMetricName   = "req.total"
-	gaugeMetricName     = "req.active"
-	histogramMetricName = "req.duration"
+	processMetricPrefix = "process."
+	metricLookback      = 15 * time.Minute
 )
+
+func metricStep() *metav1.Duration {
+	return eeharness.Minutes(1)
+}
 
 func testLogStoreQueryPath(t *testing.T, ch *harness.H) {
 	h := eeharness.Wrap(ch)
@@ -164,45 +169,52 @@ func testMetricStoreQueryPath(t *testing.T, ch *harness.H) {
 
 	driveTraffic(t, h)
 
-	from := pbutils.Timestamp(time.Now().Add(-10 * time.Minute))
-	to := pbutils.Timestamp(time.Now().Add(time.Minute))
+	t.Run("Capabilities", func(t *testing.T) {
+		_, err := h.MetricsC().GetMetricsCapabilities(ctx,
+			&vmetricsv1.GetMetricsCapabilitiesRequest{})
+		assert.Nil(t, err)
+	})
 
-	common := func(name string) *visibilityv1.CommonQueryMetricsOptions {
-		return &visibilityv1.CommonQueryMetricsOptions{
-			Name: name,
-			From: from,
-			To:   to,
-		}
-	}
+	t.Run("Catalog", func(t *testing.T) {
+		res, err := h.MetricsC().ListMetricCatalog(ctx,
+			&vmetricsv1.ListMetricCatalogRequest{})
+		require.Nil(t, err)
+		assert.True(t, len(res.Items) > 0)
+	})
 
-	t.Run("Counter", func(t *testing.T) {
-		h.Eventually(t, "a Cluster counter to be queryable", eeharness.IngestionBudget,
-			func(ctx context.Context) error {
-				res, err := h.MetricsC().GetCounter(ctx, &visibilityv1.GetCounterRequest{
-					Common: common(counterMetricName),
-				})
+	t.Run("Descriptors", func(t *testing.T) {
+		h.Eventually(t, "the ingested Cluster metric descriptors to be listed",
+			eeharness.IngestionBudget, func(ctx context.Context) error {
+				res, err := h.MetricsC().ListMetricDescriptors(ctx,
+					&vmetricsv1.ListMetricDescriptorsRequest{NamePrefix: processMetricPrefix})
 				if err != nil {
 					return err
 				}
-				if len(res.Points) < 1 {
-					return errors.Errorf("the counter %s has no datapoints", counterMetricName)
+				if len(res.Items) < 1 {
+					return errors.Errorf("no descriptor carries the %q prefix",
+						processMetricPrefix)
 				}
 				return nil
 			})
 	})
 
-	t.Run("Gauge", func(t *testing.T) {
-		_, err := h.MetricsC().GetGauge(ctx, &visibilityv1.GetGaugeRequest{
-			Common: common(gaugeMetricName),
-		})
-		assert.Nil(t, err)
+	t.Run("Query", func(t *testing.T) {
+		h.Eventually(t, "a catalog metric to answer with datapoints",
+			eeharness.IngestionBudget, func(ctx context.Context) error {
+				return queryAnyCatalogMetric(ctx, h)
+			})
 	})
 
-	t.Run("Histogram", func(t *testing.T) {
-		_, err := h.MetricsC().GetHistogram(ctx, &visibilityv1.GetHistogramRequest{
-			Common: common(histogramMetricName),
+	t.Run("UnknownMetricIsRejected", func(t *testing.T) {
+		_, err := h.MetricsC().QueryMetrics(ctx, &vmetricsv1.QueryMetricsRequest{
+			Metric: &vmetricsv1.MetricSelector{
+				Selector: &vmetricsv1.MetricSelector_Name{Name: h.Name()},
+			},
+			TimeRange: metricRange(),
+			Step:      metricStep(),
+			Operation: gaugeLast(),
 		})
-		assert.Nil(t, err)
+		assert.NotNil(t, err)
 	})
 
 	t.Run("SurvivesARestart", func(t *testing.T) {
@@ -210,12 +222,61 @@ func testMetricStoreQueryPath(t *testing.T, ch *harness.H) {
 
 		h.Eventually(t, "the metricstore to answer after the restart",
 			eeharness.IngestionBudget, func(ctx context.Context) error {
-				_, err := h.MetricsC().GetCounter(ctx, &visibilityv1.GetCounterRequest{
-					Common: common(counterMetricName),
-				})
-				return err
+				return queryAnyCatalogMetric(ctx, h)
 			})
 	})
+}
+
+func queryAnyCatalogMetric(ctx context.Context, h *eeharness.H) error {
+	catalog, err := h.MetricsC().ListMetricCatalog(ctx, &vmetricsv1.ListMetricCatalogRequest{})
+	if err != nil {
+		return err
+	}
+
+	var lastErr error
+
+	for _, itm := range catalog.Items {
+		res, err := h.MetricsC().QueryMetrics(ctx, &vmetricsv1.QueryMetricsRequest{
+			Metric:            itm.Metric,
+			TimeRange:         metricRange(),
+			Step:              cmp.Or(itm.DefaultStep, metricStep()),
+			Operation:         cmp.Or(itm.DefaultOperation, gaugeLast()),
+			GroupBy:           itm.DefaultGroupBy,
+			Filters:           itm.DefaultFilters,
+			SeriesAggregation: itm.DefaultSeriesAggregation,
+		})
+		if err != nil {
+			lastErr = errors.Errorf("the catalog metric %s could not be queried: %+v",
+				itm.Id, err)
+			continue
+		}
+		if len(res.Series) > 0 {
+			return nil
+		}
+
+		lastErr = errors.Errorf("the catalog metric %s has no series yet", itm.Id)
+	}
+
+	if lastErr == nil {
+		lastErr = errors.Errorf("the metric catalog is empty")
+	}
+
+	return lastErr
+}
+
+func metricRange() *vmetricsv1.TimeRange {
+	return &vmetricsv1.TimeRange{
+		From: pbutils.Timestamp(time.Now().Add(-metricLookback)),
+		To:   pbutils.Timestamp(time.Now().Add(time.Minute)),
+	}
+}
+
+func gaugeLast() *vmetricsv1.QueryOperation {
+	return &vmetricsv1.QueryOperation{
+		Type: &vmetricsv1.QueryOperation_Gauge{
+			Gauge: &vmetricsv1.GaugeOperation{Function: vmetricsv1.GaugeOperation_LAST},
+		},
+	}
 }
 
 func testRscStoreReconciliation(t *testing.T, ch *harness.H) {
@@ -230,7 +291,7 @@ func testRscStoreReconciliation(t *testing.T, ch *harness.H) {
 	})
 
 	t.Run("Update", func(t *testing.T) {
-		usr.Spec.Email = h.Name() + "@octelium.com"
+		usr.Metadata.DisplayName = h.Name()
 		usr = h.UpdateUser(t, usr)
 
 		h.Eventually(t, "the visibility mirror to carry the update",
@@ -246,9 +307,9 @@ func testRscStoreReconciliation(t *testing.T, ch *harness.H) {
 				if idx < 0 {
 					return errors.Errorf("the User is not mirrored")
 				}
-				if res.Items[idx].Spec.Email != usr.Spec.Email {
-					return errors.Errorf("the mirrored email is %q, want %q",
-						res.Items[idx].Spec.Email, usr.Spec.Email)
+				if res.Items[idx].Metadata.DisplayName != usr.Metadata.DisplayName {
+					return errors.Errorf("the mirrored displayName is %q, want %q",
+						res.Items[idx].Metadata.DisplayName, usr.Metadata.DisplayName)
 				}
 
 				return nil

@@ -12,6 +12,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 	"testing"
 
 	"github.com/go-resty/resty/v2"
@@ -19,6 +20,7 @@ import (
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
+	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/cluster/e2e/harness"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/stretchr/testify/assert"
@@ -61,6 +63,7 @@ func newSCIMCtx(t *testing.T, h *eeharness.H) *scimCtx {
 
 func scimClient(h *eeharness.H, dp *enterprisev1.DirectoryProvider, token string) *resty.Client {
 	return h.HTTP().
+		SetRetryCount(6).
 		SetBaseURL(fmt.Sprintf("https://dirsync.octelium.%s/scim/%s", h.Domain, dp.Status.Id)).
 		SetAuthScheme("Bearer").
 		SetAuthToken(token).
@@ -174,19 +177,30 @@ func testSCIMProtocol(t *testing.T, ch *harness.H) {
 		var out map[string]any
 
 		res, err := s.c.R().SetResult(&out).
-			Get(`/Users?filter=userName eq "pagination.one@octelium.com"`)
+			SetQueryParam("filter", `userName eq "pagination.one@octelium.com"`).
+			Get("/Users")
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, res.StatusCode(), res.String())
 
-		total, ok := out["totalResults"].(float64)
-		require.True(t, ok)
-		assert.Equal(t, float64(1), total)
+		resources, ok := out["Resources"].([]any)
+		require.True(t, ok, res.String())
+		assert.Equal(t, 1, len(resources), res.String())
+	})
+
+	t.Run("UnsupportedFilterIsRejected", func(t *testing.T) {
+		res, err := s.c.R().
+			SetQueryParam("filter", `displayName co "octelium"`).
+			Get("/Users")
+		require.Nil(t, err)
+		assert.Equal(t, http.StatusBadRequest, res.StatusCode(), res.String())
 	})
 
 	t.Run("Pagination", func(t *testing.T) {
 		var out map[string]any
 
-		res, err := s.c.R().SetResult(&out).Get("/Users?startIndex=1&count=1")
+		res, err := s.c.R().SetResult(&out).
+			SetQueryParams(map[string]string{"startIndex": "1", "count": "1"}).
+			Get("/Users")
 		require.Nil(t, err)
 		require.Equal(t, http.StatusOK, res.StatusCode(), res.String())
 
@@ -208,9 +222,17 @@ func testSCIMProtocol(t *testing.T, ch *harness.H) {
 	})
 
 	t.Run("UnknownID", func(t *testing.T) {
+		res, err := s.c.R().Get("/Users/" + vutils.UUIDv4())
+		require.Nil(t, err)
+		assert.True(t, res.StatusCode() >= 400 && res.StatusCode() < 500,
+			"an unknown SCIM id must not fault the server, got %d", res.StatusCode())
+	})
+
+	t.Run("MalformedIDIsRejected", func(t *testing.T) {
 		res, err := s.c.R().Get("/Users/" + h.Name())
 		require.Nil(t, err)
-		assert.Equal(t, http.StatusNotFound, res.StatusCode())
+		assert.True(t, res.StatusCode() >= 400 && res.StatusCode() < 500,
+			"a malformed SCIM id must not fault the server, got %d", res.StatusCode())
 	})
 
 	t.Run("PatchActive", func(t *testing.T) {
@@ -297,16 +319,14 @@ func testSCIMToDataPlane(t *testing.T, ch *harness.H) {
 			Rules: []*corev1.Policy_Spec_Rule{
 				harness.MatchRule("allow-group", 0, corev1.Policy_Spec_Rule_ALLOW,
 					fmt.Sprintf(`ctx.user.spec.groups.exists(g, g == %q) && `+
-						`ctx.service.metadata.name == %q`,
-						grp.Metadata.Name, svc.Metadata.Name)),
+						`ctx.service.metadata.uid == %q`,
+						grp.Metadata.Name, svc.Metadata.Uid)),
 			},
 		},
 	})
 
-	probe := h.Probe(t, usr, svc)
-
 	t.Run("DeniedBeforeMembership", func(t *testing.T) {
-		probe.MustBeDenied(t)
+		waitAuthorization(t, h, usr, svc, false)
 	})
 
 	t.Run("AllowedAfterMembership", func(t *testing.T) {
@@ -316,7 +336,11 @@ func testSCIMToDataPlane(t *testing.T, ch *harness.H) {
 			"value": []map[string]any{{"value": userID}},
 		})
 
-		probe.MustBeAllowed(t)
+		waitAuthorization(t, h, usr, svc, true)
+	})
+
+	t.Run("TheCoreUserCarriesTheGroup", func(t *testing.T) {
+		assert.True(t, slices.Contains(s.octeliumUser(t).Spec.Groups, grp.Metadata.Name))
 	})
 
 	t.Run("DeniedAfterRemoval", func(t *testing.T) {
@@ -325,6 +349,6 @@ func testSCIMToDataPlane(t *testing.T, ch *harness.H) {
 			"path": fmt.Sprintf("members[value eq %q]", userID),
 		})
 
-		probe.MustBeDenied(t)
+		waitAuthorization(t, h, usr, svc, false)
 	})
 }

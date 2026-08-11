@@ -10,7 +10,6 @@ package suite
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"testing"
 
@@ -35,23 +34,25 @@ func newSecretConsumer(t *testing.T, h *eeharness.H) *secretConsumer {
 	token := utilrand.GetRandomStringCanonical(32)
 	sec := h.CreateCoreSecret(t, token)
 
-	upstream := h.StartHTTPUpstream(t, &harness.TestSrvHTTP{BearerToken: token})
+	upstream := h.StartNodeUpstream(t, token)
+
+	h.Eventually(t, "the node upstream to answer", eeharness.PropagationBudget,
+		upstream.Reachable)
 
 	usr := h.CreateWorkloadUser(t, &corev1.User_Spec_Authorization{
 		InlinePolicies: harness.InlineAllowAny("allow"),
 	})
 
 	svc := h.CreateService(t, &corev1.Service{
-		Metadata: &metav1.Metadata{Name: fmt.Sprintf("%s.default", h.Name())},
+		Metadata: &metav1.Metadata{Name: h.Name()},
 		Spec: &corev1.Service_Spec{
 			Mode:     corev1.Service_Spec_HTTP,
 			IsPublic: true,
 			Config: &corev1.Service_Spec_Config{
 				Upstream: &corev1.Service_Spec_Config_Upstream{
 					Type: &corev1.Service_Spec_Config_Upstream_Url{
-						Url: fmt.Sprintf("http://localhost:%d", upstream.Port),
+						Url: upstream.URL,
 					},
-					User: "root",
 				},
 				Type: &corev1.Service_Spec_Config_Http{
 					Http: &corev1.Service_Spec_Config_HTTP{

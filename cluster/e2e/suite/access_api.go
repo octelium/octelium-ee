@@ -16,6 +16,7 @@ import (
 
 	eeharness "github.com/octelium/octelium-ee/cluster/e2e/harness"
 	"github.com/octelium/octelium/apis/main/accessv1"
+	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/main/visibilityv1"
 	"github.com/octelium/octelium/cluster/e2e/harness"
@@ -24,6 +25,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+)
+
+const (
+	accessPortalService  = "access.octelium"
+	consolePortalService = "console.octelium"
 )
 
 func testAccessAPIScoping(t *testing.T, ch *harness.H) {
@@ -170,19 +176,33 @@ func waitAuditLogMethod(t *testing.T, h *eeharness.H, a *eeharness.Actor, method
 func testAccessPortal(t *testing.T, ch *harness.H) {
 	h := eeharness.Wrap(ch)
 
-	a := h.NewActor(t)
+	ctx := t.Context()
 
-	t.Run("RequiresAuthentication", func(t *testing.T) {
-		h.GetStatus(t, h.HTTPPublic("access-octelium"), "/", http.StatusUnauthorized)
+	svc, err := h.CoreC().GetService(ctx, &metav1.GetOptions{Name: accessPortalService})
+	require.Nil(t, err)
+
+	a := h.NewActorWithAuthorization(t, &corev1.User_Spec_Authorization{
+		InlinePolicies: eeharness.ServicePolicy("access-portal", svc),
 	})
 
-	t.Run("ServedToAnAuthenticatedSession", func(t *testing.T) {
-		h.WaitGetStatus(t, h.HTTPPublicToken("access-octelium", a.Token), "/", http.StatusOK)
+	t.Run("RequiresAuthentication", func(t *testing.T) {
+		h.GetStatus(t, h.HTTPPublic(accessPortalService), "/", http.StatusUnauthorized)
+	})
+
+	t.Run("DeniedForAnUnauthorizedSession", func(t *testing.T) {
+		other := h.CreateWorkloadUser(t, nil)
+		h.WaitGetStatus(t, h.HTTPPublicToken(accessPortalService, h.AccessToken(t, other)),
+			"/", http.StatusForbidden)
+	})
+
+	t.Run("ServedToAnAuthorizedSession", func(t *testing.T) {
+		h.WaitGetStatus(t, h.HTTPPublicToken(accessPortalService, a.Token), "/",
+			http.StatusOK)
 	})
 }
 
 func testConsolePortal(t *testing.T, ch *harness.H) {
 	h := eeharness.Wrap(ch)
 
-	h.GetStatus(t, h.HTTPPublic("console-octelium"), "/", http.StatusUnauthorized)
+	h.GetStatus(t, h.HTTPPublic(consolePortalService), "/", http.StatusUnauthorized)
 }

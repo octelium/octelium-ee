@@ -10,7 +10,10 @@ package harness
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -22,19 +25,87 @@ import (
 	"google.golang.org/grpc"
 )
 
+const (
+	accessUserService     = "octelium.api.main.access.v1.UserService"
+	accessReviewerService = "octelium.api.main.access.v1.ReviewerService"
+)
+
 type Actor struct {
 	User  *corev1.User
 	Conn  *grpc.ClientConn
 	Token string
 }
 
+func APIPolicy(name string, services ...string) []*corev1.InlinePolicy {
+	quoted := make([]string, 0, len(services))
+	for _, svc := range services {
+		quoted = append(quoted, strconv.Quote(svc))
+	}
+
+	return []*corev1.InlinePolicy{
+		{
+			Name: name,
+			Spec: &corev1.Policy_Spec{
+				Rules: []*corev1.Policy_Spec_Rule{
+					{
+						Name:     "allow",
+						Effect:   corev1.Policy_Spec_Rule_ALLOW,
+						Priority: -1,
+						Condition: &corev1.Condition{
+							Type: &corev1.Condition_Match{
+								Match: fmt.Sprintf(
+									`ctx.namespace.metadata.name == "octelium-api" && `+
+										`ctx.request.grpc.serviceFullName in [%s]`,
+									strings.Join(quoted, ", ")),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func ServicePolicy(name string, svc *corev1.Service) []*corev1.InlinePolicy {
+	return []*corev1.InlinePolicy{
+		{
+			Name: name,
+			Spec: &corev1.Policy_Spec{
+				Rules: []*corev1.Policy_Spec_Rule{
+					{
+						Name:     "allow",
+						Effect:   corev1.Policy_Spec_Rule_ALLOW,
+						Priority: -1,
+						Condition: &corev1.Condition{
+							Type: &corev1.Condition_Match{
+								Match: fmt.Sprintf(`ctx.service.metadata.uid == %q`,
+									svc.Metadata.Uid),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func (h *H) NewActor(t *testing.T, groups ...string) *Actor {
+	t.Helper()
+
+	return h.NewActorWithAuthorization(t, &corev1.User_Spec_Authorization{
+		InlinePolicies: APIPolicy("access-api", accessUserService, accessReviewerService),
+	}, groups...)
+}
+
+func (h *H) NewActorWithAuthorization(t *testing.T,
+	authz *corev1.User_Spec_Authorization, groups ...string) *Actor {
 	t.Helper()
 
 	usr := h.CreateUser(t, &corev1.User{
 		Spec: &corev1.User_Spec{
-			Type:   corev1.User_Spec_WORKLOAD,
-			Groups: groups,
+			Type:          corev1.User_Spec_WORKLOAD,
+			Groups:        groups,
+			Authorization: authz,
 		},
 	})
 

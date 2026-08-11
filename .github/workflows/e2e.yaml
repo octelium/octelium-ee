@@ -12,6 +12,11 @@ on:
         description: "Only run tests matching this regular expression (go test -run)"
         required: false
         default: ""
+      skipApply:
+        description: "Skip the core Apply phase and its heavy database upstreams"
+        required: false
+        type: boolean
+        default: false
 env:
   GO_VERSION: "1.26.5"
 jobs:
@@ -69,6 +74,8 @@ jobs:
             --scenario=${{ inputs.scenario || matrix.scenario }} \
             --artifacts="${{ runner.temp }}/e2e-artifacts" \
             ${{ inputs.run && format('--run={0}', inputs.run) || '' }}
+        env:
+          OCTELIUM_E2E_SKIP_APPLY: ${{ inputs.skipApply }}
 
       - name: Collect cluster state on failure
         if: failure()
@@ -78,6 +85,8 @@ jobs:
 
           kubectl get all -A -o wide > "$OUT/get-all.txt" 2>&1 || true
           kubectl get events -A --sort-by=.lastTimestamp > "$OUT/events.txt" 2>&1 || true
+          kubectl describe nodes > "$OUT/describe-nodes.txt" 2>&1 || true
+          { df -h /; echo; free -h; } > "$OUT/host-resources.txt" 2>&1 || true
           kubectl describe pods -n octelium > "$OUT/describe-pods.txt" 2>&1 || true
           kubectl get pods -n octelium \
             -o custom-columns=NAME:.metadata.name,STATUS:.status.phase,IMAGE:.spec.containers[*].image \

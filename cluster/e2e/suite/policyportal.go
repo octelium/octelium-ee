@@ -45,6 +45,31 @@ func isAuthorized(t *testing.T, h *eeharness.H,
 	return res.IsAuthorized
 }
 
+func waitAuthorization(t *testing.T, h *eeharness.H,
+	usr *corev1.User, svc *corev1.Service, want bool) {
+	t.Helper()
+
+	h.Eventually(t, fmt.Sprintf("the PolicyPortal to answer %v", want),
+		eeharness.PropagationBudget, func(ctx context.Context) error {
+			res, err := h.PolicyPortalC().IsAuthorized(ctx, &enterprisev1.IsAuthorizedRequest{
+				Downstream: &enterprisev1.IsAuthorizedRequest_UserRef{
+					UserRef: umetav1.GetObjectReference(usr),
+				},
+				Upstream: &enterprisev1.IsAuthorizedRequest_ServiceRef{
+					ServiceRef: umetav1.GetObjectReference(svc),
+				},
+			})
+			if err != nil {
+				return err
+			}
+			if res.IsAuthorized != want {
+				return errors.Errorf("the PolicyPortal says %v, want %v",
+					res.IsAuthorized, want)
+			}
+			return nil
+		})
+}
+
 func waitParity(t *testing.T, h *eeharness.H,
 	usr *corev1.User, svc *corev1.Service, probe *eeharness.Probe, want bool) {
 	t.Helper()
