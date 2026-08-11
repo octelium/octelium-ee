@@ -8,6 +8,7 @@ require (
 	github.com/octelium/octelium/apis v0.0.0-20260811052756-b07f6481066d
 	github.com/octelium/octelium/client/common v0.0.0-20260811052756-b07f6481066d
 	github.com/octelium/octelium/cluster/common v0.0.0-20260811052756-b07f6481066d
+	github.com/octelium/octelium/cluster/e2e v0.0.0-20260811052756-b07f6481066d
 	github.com/octelium/octelium/pkg v0.0.0-20260811052756-b07f6481066d
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.11.1
@@ -78,7 +79,7 @@ require (
 	github.com/nats-io/nkeys v0.4.11 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260811052756-b07f6481066d // indirect
-	github.com/octelium/octelium/octelium-go v0.0.0-00010101000000-000000000000 // indirect
+	github.com/octelium/octelium/octelium-go v0.0.0-20260811052756-b07f6481066d // indirect
 	github.com/openai/openai-go/v3 v3.2.0 // indirect
 	github.com/paulmach/orb v0.11.1 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect
@@ -145,9 +146,3 @@ replace github.com/octelium/octelium-ee/cluster/rscserver => ../rscserver
 replace github.com/octelium/octelium-ee/pkg => ../../pkg
 
 replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20241209162323-e6fa225c2576
-
-require github.com/octelium/octelium/cluster/e2e v0.0.0-00010101000000-000000000000
-
-replace github.com/octelium/octelium/cluster/e2e => /home/ubuntu/octelium/cluster/e2e
-
-replace github.com/octelium/octelium/octelium-go => /home/ubuntu/octelium/octelium-go

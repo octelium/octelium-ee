@@ -764,8 +764,12 @@ github.com/octelium/octelium/client/common v0.0.0-20260811052756-b07f6481066d h1
 github.com/octelium/octelium/client/common v0.0.0-20260811052756-b07f6481066d/go.mod h1:yFjRAtgHF0JLD4eNNmWBwXphcHs1jUdbI7UeYGQH5YI=
 github.com/octelium/octelium/cluster/common v0.0.0-20260811052756-b07f6481066d h1:5wSwyjI4lReMm0IRCtmp26K1swZsngHSQjz/9SgSssY=
 github.com/octelium/octelium/cluster/common v0.0.0-20260811052756-b07f6481066d/go.mod h1:v6ssSm1QtMaVHDvlKMrgrgteEjkvZsI7TBEeR+egKcg=
+github.com/octelium/octelium/cluster/e2e v0.0.0-20260811052756-b07f6481066d h1:QaauCM3LYP36YtaTUA8o+OgoaDtwSaQ/IjVMAx5CJFI=
+github.com/octelium/octelium/cluster/e2e v0.0.0-20260811052756-b07f6481066d/go.mod h1:Igvrlb6shYYjPkow799F7rwnF46vy4icqY2brBqZ0uc=
 github.com/octelium/octelium/cluster/rscserver v0.0.0-20260811052756-b07f6481066d h1:8UPAuYYlqOaTghuY/utRZmpVlJyNkNxildSxTKfpSgU=
 github.com/octelium/octelium/cluster/rscserver v0.0.0-20260811052756-b07f6481066d/go.mod h1:dP9i4ZuaSE+O6DrB5Fbh6QAi6vcAD6Amq9RaUW96Gfk=
+github.com/octelium/octelium/octelium-go v0.0.0-20260811052756-b07f6481066d h1:7ieF8r8mFtDr0Ncg1JpKTaQ6bsaDsLkAYA5hg43XS0I=
+github.com/octelium/octelium/octelium-go v0.0.0-20260811052756-b07f6481066d/go.mod h1:uvREHQ7/Koslk7Xer182VgZ2gafzgV1NvG8C9ARhPSo=
 github.com/octelium/octelium/pkg v0.0.0-20260811052756-b07f6481066d h1:u6ND4zi6h44r+fsl5TxMnrNPDNtUDsws5AB87sfi2TM=
 github.com/octelium/octelium/pkg v0.0.0-20260811052756-b07f6481066d/go.mod h1:qUFgKIc0nStiORIqJMR+gmxZ6qaaCregD2U7NxkmyBU=
 github.com/onsi/ginkgo v1.16.5 h1:8xi0RTUf59SOSfEtZMvwTvXYMzG4gV23XVHOZiXNtnE=
