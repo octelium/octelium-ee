@@ -350,19 +350,25 @@ func metricAttributeFilterCapability(key string) (bool, string) {
 
 func metricAttributeGroupCapability(key string, estimatedDistinct uint64) (bool, string) {
 	allowed := map[string]struct{}{
-		"octelium.component.type":      {},
-		"octelium.component.namespace": {},
-		"octelium.component.name":      {},
-		"http.method":                  {},
-		"http.request.method":          {},
-		"http.response.status_code":    {},
-		"rpc.system":                   {},
-		"rpc.service":                  {},
-		"rpc.method":                   {},
-		"net.transport":                {},
-		"service.name":                 {},
-		"service.namespace":            {},
-		"deployment.environment":       {},
+		"octelium.component.type":           {},
+		"octelium.component.namespace":      {},
+		"octelium.component.name":           {},
+		"octelium.vigil.svc.name":           {},
+		"octelium.vigil.svc.namespace.name": {},
+		"octelium.vigil.svc.region.name":    {},
+		"octelium.vigil.svc.mode":           {},
+		"reason":                            {},
+		"state":                             {},
+		"http.method":                       {},
+		"http.request.method":               {},
+		"http.response.status_code":         {},
+		"rpc.system":                        {},
+		"rpc.service":                       {},
+		"rpc.method":                        {},
+		"net.transport":                     {},
+		"service.name":                      {},
+		"service.namespace":                 {},
+		"deployment.environment":            {},
 	}
 	if _, ok := allowed[key]; !ok {
 		return false, "attribute key is not in the low-cardinality groupBy allowlist"
