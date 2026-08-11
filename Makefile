@@ -76,24 +76,17 @@ build-e2e:
 build-accessportal:
 	CGO_ENABLED=0 GOOS=linux go build $(LDFLAGS) -o bin/octeliumee-accessportal github.com/octelium/octelium-ee/cluster/accessportal
 
-# The e2e scenario to run against. See `./bin/octeliumee-e2e list`.
 E2E_SCENARIO ?= k3s-flannel-ee
 
-# The core CLIs (octelium, octeliumctl, octops) are released artifacts, so the
-# e2e stages install them instead of building them from source.
 install-cli:
 	curl -fsSL https://octelium.com/install.sh | bash
 
 e2e-list: build-e2e
 	./bin/octeliumee-e2e list
 
-# Provision, install and test in one go. This installs a Kubernetes cluster on
-# the current host, so run it on a throwaway machine.
 e2e: build-e2e install-cli
 	./bin/octeliumee-e2e all --scenario=$(E2E_SCENARIO)
 
-# Re-run only the suite against a Cluster that is already installed.
-# Pass E2E_RUN to filter, e.g. `make e2e-test E2E_RUN=TestE2E/SCIM`.
 e2e-test: build-e2e
 	./bin/octeliumee-e2e test --scenario=$(E2E_SCENARIO) $(if $(E2E_RUN),--run=$(E2E_RUN),)
 

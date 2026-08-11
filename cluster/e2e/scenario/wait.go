@@ -33,9 +33,6 @@ const (
 	pollReportEvery = 15 * time.Second
 )
 
-// stepWaitDeployments waits for the enterprise package to land.
-// `octops install-package` only creates the genesis Job and returns, so the
-// package is installed asynchronously.
 func stepWaitDeployments(ctx context.Context, r *scenario.Runner) error {
 	k8sC, err := r.K8sC()
 	if err != nil {

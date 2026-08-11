@@ -19,16 +19,12 @@ import (
 
 const DefaultScenario = "k3s-flannel-ee"
 
-// Package is the Cluster package installed on top of the core Cluster.
 const Package = "octeliumee"
 
 func init() {
 	scenario.Register(DefaultScenario, k3sFlannelEE)
 }
 
-// Components are the components whose pods the suite checks for restarts. The
-// enterprise components carry the same `octelium.com/component` label values as
-// their core counterparts, so the core entries cover both.
 var Components = slices.Concat(scenario.DefaultComponents, []string{
 	"clusterman",
 	"secretman",
@@ -40,9 +36,6 @@ var Components = slices.Concat(scenario.DefaultComponents, []string{
 	"policyportal",
 })
 
-// Deployments are the Deployments the enterprise package brings up. They only
-// exist once the package is installed, which happens after the core Cluster is
-// up, so they cannot be part of Install.WaitDeployments.
 var Deployments = []string{
 	"octeliumee-rscserver",
 	"octeliumee-nocturne",

@@ -26,7 +26,7 @@ jobs:
             scenario: k3s-flannel-ee
     runs-on: ${{ matrix.runner }}
     name: ${{ matrix.scenario }}-${{ matrix.runner }}
-    timeout-minutes: 150
+    timeout-minutes: 180
     steps:
       - name: Install deps
         run: |

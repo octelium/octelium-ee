@@ -3,13 +3,16 @@ module github.com/octelium/octelium-ee/cluster/e2e
 go 1.26.5
 
 require (
+	github.com/go-resty/resty/v2 v2.17.2
 	github.com/octelium/octelium/apis v0.0.0-20260811052756-b07f6481066d
 	github.com/octelium/octelium/cluster/common v0.0.0-20260811052756-b07f6481066d
 	github.com/octelium/octelium/cluster/e2e v0.0.0-20260811052756-b07f6481066d
+	github.com/octelium/octelium/octelium-go v0.0.0-20260811052756-b07f6481066d
 	github.com/octelium/octelium/pkg v0.0.0-20260811052756-b07f6481066d
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/zap v1.28.0
+	google.golang.org/grpc v1.82.1
 	k8s.io/api v0.35.3
 	k8s.io/apimachinery v0.35.3
 	k8s.io/client-go v0.35.3
@@ -44,7 +47,6 @@ require (
 	github.com/go-openapi/jsonreference v0.20.2 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
 	github.com/go-redis/redis/v8 v8.11.5 // indirect
-	github.com/go-resty/resty/v2 v2.17.2 // indirect
 	github.com/go-sql-driver/mysql v1.9.3 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/gofrs/flock v0.13.0 // indirect
@@ -78,7 +80,6 @@ require (
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/octelium/octelium/client/common v0.0.0-20260811052756-b07f6481066d // indirect
 	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260811052756-b07f6481066d // indirect
-	github.com/octelium/octelium/octelium-go v0.0.0-20260811052756-b07f6481066d // indirect
 	github.com/openai/openai-go/v3 v3.2.0 // indirect
 	github.com/paulmach/orb v0.11.1 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect
@@ -120,7 +121,6 @@ require (
 	golang.org/x/text v0.40.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260414002931-afd174a4e478 // indirect
-	google.golang.org/grpc v1.82.1 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
