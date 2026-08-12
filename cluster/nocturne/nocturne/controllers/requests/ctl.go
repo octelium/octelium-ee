@@ -52,11 +52,7 @@ func (c *Controller) OnUpdate(ctx context.Context, new, old *accessv1.Request) e
 }
 
 func (c *Controller) OnDelete(ctx context.Context, itm *accessv1.Request) error {
-	if itm.Status.PolicyTriggerRef == nil {
-		return nil
-	}
-
-	return c.deletePolicyTrigger(ctx, itm.Status.PolicyTriggerRef)
+	return c.deletePolicyTriggerOf(ctx, itm)
 }
 
 func (c *Controller) reconcile(ctx context.Context, itm *accessv1.Request) error {
@@ -373,6 +369,14 @@ func (c *Controller) ensurePolicyTrigger(ctx context.Context, req *accessv1.Requ
 			return err
 		}
 
+		exists, err := c.requestExists(ctx, req)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			return c.deletePolicyTrigger(ctx, umetav1.GetObjectReference(pt))
+		}
+
 		req.Status.PolicyTriggerRef = umetav1.GetObjectReference(pt)
 		return nil
 	}
@@ -395,16 +399,29 @@ func (c *Controller) ensurePolicyTrigger(ctx context.Context, req *accessv1.Requ
 }
 
 func (c *Controller) ensureNoPolicyTrigger(ctx context.Context, req *accessv1.Request) error {
-	if req.Status.PolicyTriggerRef == nil {
-		return nil
-	}
-
-	if err := c.deletePolicyTrigger(ctx, req.Status.PolicyTriggerRef); err != nil {
+	if err := c.deletePolicyTriggerOf(ctx, req); err != nil {
 		return err
 	}
 
 	req.Status.PolicyTriggerRef = nil
 	return nil
+}
+
+func (c *Controller) requestExists(ctx context.Context, req *accessv1.Request) (bool, error) {
+	if req.Metadata.Uid == "" {
+		return true, nil
+	}
+
+	if _, err := c.octeliumC.AccessC().GetRequest(ctx, &rmetav1.GetOptions{
+		Uid: req.Metadata.Uid,
+	}); err != nil {
+		if grpcerr.IsNotFound(err) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
 }
 
 func (c *Controller) buildPolicyTrigger(
@@ -572,6 +589,17 @@ func (c *Controller) buildCatalogTargetPreCondition(
 			},
 		},
 	}, nil
+}
+
+func (c *Controller) deletePolicyTriggerOf(ctx context.Context, req *accessv1.Request) error {
+	_, err := c.octeliumC.CoreC().DeletePolicyTrigger(ctx, &rmetav1.DeleteOptions{
+		Name: policyTriggerName(req),
+	})
+	if err != nil && !grpcerr.IsNotFound(err) {
+		return err
+	}
+
+	return nil
 }
 
 func (c *Controller) deletePolicyTrigger(ctx context.Context, ref *metav1.ObjectReference) error {

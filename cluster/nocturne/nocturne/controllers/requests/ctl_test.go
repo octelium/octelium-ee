@@ -717,3 +717,74 @@ func TestRequestGetAccessDuration(t *testing.T) {
 	)
 	assert.Equal(t, 1*time.Hour, nilAuthz)
 }
+
+func autoApprovedRequest(t *testing.T, ctx context.Context, ctrl *Controller,
+	octeliumC octeliumc.ClientInterface) *accessv1.Request {
+
+	svc := createService(t, ctx, octeliumC)
+
+	createPolicy(t, ctx, octeliumC, false, &accessv1.Policy_Spec_Rule{
+		Name:      utilrand.GetRandomStringCanonical(6),
+		Effect:    accessv1.Policy_Spec_Rule_AUTO_APPROVE,
+		Condition: matchAny(),
+		Authorization: &accessv1.Policy_Spec_Rule_Authorization{
+			MaxAccessDuration: durationHours(1),
+		},
+	})
+
+	req := createRequest(t, ctx, octeliumC, baseRequest(objRef("User"), serviceRef(svc)))
+	reqG := converge(t, ctx, ctrl, octeliumC, req.Metadata.Uid)
+
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED, reqG.Status.State.Status)
+	assert.NotNil(t, reqG.Status.PolicyTriggerRef)
+
+	return reqG
+}
+
+func policyTriggerExists(t *testing.T, ctx context.Context,
+	octeliumC octeliumc.ClientInterface, req *accessv1.Request) bool {
+
+	_, err := octeliumC.CoreC().GetPolicyTrigger(ctx, &rmetav1.GetOptions{
+		Name: fmt.Sprintf("access-request-%s", req.Metadata.Uid),
+	})
+	if err != nil {
+		assert.True(t, grpcerr.IsNotFound(err), "%+v", err)
+		return false
+	}
+
+	return true
+}
+
+func TestRequestDeleteRevokesPolicyTriggerWithoutRef(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	reqG := autoApprovedRequest(t, ctx, ctrl, octeliumC)
+
+	stale := pbutils.Clone(reqG).(*accessv1.Request)
+	stale.Status.PolicyTriggerRef = nil
+
+	_, err := octeliumC.AccessC().DeleteRequest(ctx, &rmetav1.DeleteOptions{
+		Uid: reqG.Metadata.Uid,
+	})
+	assert.Nil(t, err, "%+v", err)
+
+	assert.Nil(t, ctrl.OnDelete(ctx, stale))
+	assert.False(t, policyTriggerExists(t, ctx, octeliumC, reqG))
+}
+
+func TestRequestDeleteIsNotUndoneByALateReconcile(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	reqG := autoApprovedRequest(t, ctx, ctrl, octeliumC)
+
+	_, err := octeliumC.AccessC().DeleteRequest(ctx, &rmetav1.DeleteOptions{
+		Uid: reqG.Metadata.Uid,
+	})
+	assert.Nil(t, err, "%+v", err)
+
+	assert.Nil(t, ctrl.OnDelete(ctx, reqG))
+	assert.False(t, policyTriggerExists(t, ctx, octeliumC, reqG))
+
+	assert.Nil(t, ctrl.OnUpdate(ctx, reqG, reqG))
+	assert.False(t, policyTriggerExists(t, ctx, octeliumC, reqG))
+}

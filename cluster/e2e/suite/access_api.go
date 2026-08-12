@@ -135,20 +135,19 @@ func testAccessActorTrail(t *testing.T, ch *harness.H) {
 	h.WaitRequestState(t, req, accessv1.Request_Status_State_APPROVED, eeharness.RequestBudget)
 
 	t.Run("TheRequestRecordsTheRequester", func(t *testing.T) {
-		cur := h.GetRequest(t, req)
-
-		require.NotNil(t, cur.Metadata.ActorRef)
-		assert.Equal(t, "Session", cur.Metadata.ActorRef.Kind)
-		assert.NotEmpty(t, cur.Metadata.ActorRef.Uid)
+		require.NotNil(t, req.Metadata.ActorRef)
+		assert.Equal(t, "Session", req.Metadata.ActorRef.Kind)
+		assert.NotEmpty(t, req.Metadata.ActorRef.Uid)
 		assert.Equal(t, "octelium.api.main.access.v1.UserService/CreateRequest",
-			cur.Metadata.ActorOperation)
+			req.Metadata.ActorOperation)
 
-		assert.Equal(t, c.alice.User.Metadata.Uid, sessionUser(t, h, cur.Metadata.ActorRef.Uid))
+		assert.Equal(t, c.alice.User.Metadata.Uid, sessionUser(t, h, req.Metadata.ActorRef.Uid))
 	})
 
 	t.Run("TheReviewRecordsTheReviewer", func(t *testing.T) {
 		require.NotNil(t, review.Metadata.ActorRef)
 		assert.Equal(t, "Session", review.Metadata.ActorRef.Kind)
+		assert.NotEmpty(t, review.Metadata.ActorRef.Uid)
 		assert.Equal(t, "octelium.api.main.access.v1.ReviewerService/CreateReview",
 			review.Metadata.ActorOperation)
 
@@ -157,8 +156,10 @@ func testAccessActorTrail(t *testing.T, ch *harness.H) {
 	})
 
 	t.Run("TheRequesterIsNotTheReviewer", func(t *testing.T) {
-		cur := h.GetRequest(t, req)
-		assert.NotEqual(t, cur.Metadata.ActorRef.Uid, review.Metadata.ActorRef.Uid)
+		require.NotNil(t, req.Metadata.ActorRef)
+		require.NotNil(t, review.Metadata.ActorRef)
+
+		assert.NotEqual(t, req.Metadata.ActorRef.Uid, review.Metadata.ActorRef.Uid)
 	})
 }
 
