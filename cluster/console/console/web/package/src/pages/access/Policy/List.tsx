@@ -1,4 +1,5 @@
-import { ListPolicyOptions, Policy } from "@/apis/accessv1/accessv1";
+import { Policy } from "@/apis/accessv1/accessv1";
+import { GetPolicySummaryResponse } from "@/apis/visibilityv1/access/vaccessv1";
 import {
   ResourceListLabel,
   ResourceListLabelWrap,
@@ -10,7 +11,7 @@ import {
   SummaryNoItems,
 } from "@/components/Summary";
 import { getDomain } from "@/utils";
-import { getClientAccess } from "@/utils/client";
+import { getClientVisibilityAccess } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
 
 const ItemDetails = (props: { item: Policy; domain: string }) => {
@@ -43,26 +44,28 @@ export const ExtraComponent = (props: { item: Policy }) => {
   return <ItemDetails item={item} domain={domain} />;
 };
 
-const DoSummary = (props: {
-  totalNumber: number;
-  totalDisabled: number;
-  totalRule: number;
-}) => {
-  const { totalNumber, totalDisabled, totalRule } = props;
+const DoSummary = ({ resp }: { resp: GetPolicySummaryResponse }) => {
 
   return (
     <div className="w-full">
       <SummaryItemCountWrap>
-        <SummaryItemCount count={totalNumber} to={`/access/policies`}>
+        <SummaryItemCount count={resp.totalNumber} to="/access/policies">
           Total
         </SummaryItemCount>
         <SummaryItemCount
-          count={totalDisabled}
+          count={resp.totalDisabled}
           to={`/access/policies?isDisabled=true`}
         >
           Disabled
         </SummaryItemCount>
-        <SummaryItemCount count={totalRule}>Rules</SummaryItemCount>
+        <SummaryItemCount count={resp.totalRule}>Rules</SummaryItemCount>
+        <SummaryItemCount count={resp.totalRuleDeny} to="/access/policies?effect=DENY">Deny rules</SummaryItemCount>
+        <SummaryItemCount count={resp.totalRuleReview} to="/access/policies?effect=REVIEW">Review rules</SummaryItemCount>
+        <SummaryItemCount count={resp.totalRuleAutoApprove} to="/access/policies?effect=AUTO_APPROVE">Auto-approve rules</SummaryItemCount>
+        <SummaryItemCount count={resp.totalRuleAuthorization}>Authorization rules</SummaryItemCount>
+        <SummaryItemCount count={resp.totalRuleMaxAccessDuration}>Duration-limited rules</SummaryItemCount>
+        <SummaryItemCount count={resp.totalReviewStep}>Review steps</SummaryItemCount>
+        <SummaryItemCount count={resp.totalReviewer}>Reviewers</SummaryItemCount>
       </SummaryItemCountWrap>
     </div>
   );
@@ -72,9 +75,7 @@ export const Summary = (props: { showNoItems?: boolean }) => {
   const qry = useQuery({
     queryKey: ["visibility", "access", "summary", "Policy"],
     queryFn: async () => {
-      const { response } = await getClientAccess().listPolicy(
-        ListPolicyOptions.create({}),
-      );
+      const { response } = await getClientVisibilityAccess().getPolicySummary({});
       return response;
     },
   });
@@ -82,26 +83,10 @@ export const Summary = (props: { showNoItems?: boolean }) => {
     return <></>;
   }
 
-  const items = qry.data.items;
-  const totalNumber = items.length;
-  const totalDisabled = items.filter((x) => x.spec?.isDisabled).length;
-  const totalRule = items.reduce(
-    (acc, x) => acc + (x.spec?.rules.length ?? 0),
-    0,
-  );
-
   return (
     <div>
-      {totalNumber > 0 && (
-        <div>
-          <DoSummary
-            totalNumber={totalNumber}
-            totalDisabled={totalDisabled}
-            totalRule={totalRule}
-          />
-        </div>
-      )}
-      {totalNumber === 0 && props.showNoItems && <SummaryNoItems />}
+      {qry.data.totalNumber > 0 && <DoSummary resp={qry.data} />}
+      {qry.data.totalNumber === 0 && props.showNoItems && <SummaryNoItems />}
     </div>
   );
 };

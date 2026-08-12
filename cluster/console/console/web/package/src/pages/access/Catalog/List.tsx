@@ -1,4 +1,5 @@
-import { Catalog, ListCatalogOptions } from "@/apis/accessv1/accessv1";
+import { Catalog } from "@/apis/accessv1/accessv1";
+import { GetCatalogSummaryResponse } from "@/apis/visibilityv1/access/vaccessv1";
 import {
   ResourceListLabel,
   ResourceListLabelWrap,
@@ -9,7 +10,7 @@ import {
   SummaryItemCountWrap,
   SummaryNoItems,
 } from "@/components/Summary";
-import { getClientAccess } from "@/utils/client";
+import { getClientVisibilityAccess } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
 
 const countServices = (item: Catalog): number =>
@@ -35,16 +36,16 @@ export const ExtraComponent = (props: { item: Catalog }) => {
   return <div></div>;
 };
 
-const DoSummary = (props: { totalNumber: number; totalServices: number }) => {
-  const { totalNumber, totalServices } = props;
+const DoSummary = ({ resp }: { resp: GetCatalogSummaryResponse }) => {
 
   return (
     <div className="w-full">
       <SummaryItemCountWrap>
-        <SummaryItemCount count={totalNumber} to={`/access/catalogs`}>
+        <SummaryItemCount count={resp.totalNumber} to="/access/catalogs">
           Total
         </SummaryItemCount>
-        <SummaryItemCount count={totalServices}>Services</SummaryItemCount>
+        <SummaryItemCount count={resp.totalService}>Services</SummaryItemCount>
+        <SummaryItemCount count={resp.totalNamespace}>Namespaces</SummaryItemCount>
       </SummaryItemCountWrap>
     </div>
   );
@@ -54,9 +55,7 @@ export const Summary = (props: { showNoItems?: boolean }) => {
   const qry = useQuery({
     queryKey: ["visibility", "access", "summary", "Catalog"],
     queryFn: async () => {
-      const { response } = await getClientAccess().listCatalog(
-        ListCatalogOptions.create({}),
-      );
+      const { response } = await getClientVisibilityAccess().getCatalogSummary({});
       return response;
     },
   });
@@ -64,18 +63,10 @@ export const Summary = (props: { showNoItems?: boolean }) => {
     return <></>;
   }
 
-  const items = qry.data.items;
-  const totalNumber = items.length;
-  const totalServices = items.reduce((acc, x) => acc + countServices(x), 0);
-
   return (
     <div>
-      {totalNumber > 0 && (
-        <div>
-          <DoSummary totalNumber={totalNumber} totalServices={totalServices} />
-        </div>
-      )}
-      {totalNumber === 0 && props.showNoItems && <SummaryNoItems />}
+      {qry.data.totalNumber > 0 && <DoSummary resp={qry.data} />}
+      {qry.data.totalNumber === 0 && props.showNoItems && <SummaryNoItems />}
     </div>
   );
 };

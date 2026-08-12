@@ -1,8 +1,7 @@
 import {
-  ListReviewOptions,
   Review,
-  Review_Spec_Decision,
 } from "@/apis/accessv1/accessv1";
+import { GetReviewSummaryResponse } from "@/apis/visibilityv1/access/vaccessv1";
 import {
   ResourceListLabel,
   ResourceListLabelWrap,
@@ -13,7 +12,7 @@ import {
   SummaryItemCountWrap,
   SummaryNoItems,
 } from "@/components/Summary";
-import { getClientAccess } from "@/utils/client";
+import { getClientVisibilityAccess } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
 import { getDecisionMeta } from "./utils";
 
@@ -36,21 +35,20 @@ export const ExtraComponent = (props: { item: Review }) => {
   return <div></div>;
 };
 
-const DoSummary = (props: {
-  totalNumber: number;
-  totalApproved: number;
-  totalRejected: number;
-}) => {
-  const { totalNumber, totalApproved, totalRejected } = props;
+const DoSummary = ({ resp }: { resp: GetReviewSummaryResponse }) => {
 
   return (
     <div className="w-full">
       <SummaryItemCountWrap>
-        <SummaryItemCount count={totalNumber} to={`/access/reviews`}>
+        <SummaryItemCount count={resp.totalNumber} to="/access/reviews">
           Total
         </SummaryItemCount>
-        <SummaryItemCount count={totalApproved}>Approved</SummaryItemCount>
-        <SummaryItemCount count={totalRejected}>Rejected</SummaryItemCount>
+        <SummaryItemCount count={resp.totalPending} to="/access/reviews?isDecided=false">Pending</SummaryItemCount>
+        <SummaryItemCount count={resp.totalApproved} to="/access/reviews?decision=APPROVE">Approved</SummaryItemCount>
+        <SummaryItemCount count={resp.totalRejected} to="/access/reviews?decision=REJECT">Rejected</SummaryItemCount>
+        <SummaryItemCount count={resp.totalRevised}>Revised</SummaryItemCount>
+        <SummaryItemCount count={resp.totalUser}>Reviewers</SummaryItemCount>
+        <SummaryItemCount count={resp.totalRequest}>Requests</SummaryItemCount>
       </SummaryItemCountWrap>
     </div>
   );
@@ -60,9 +58,7 @@ export const Summary = (props: { showNoItems?: boolean }) => {
   const qry = useQuery({
     queryKey: ["visibility", "access", "summary", "Review"],
     queryFn: async () => {
-      const { response } = await getClientAccess().listReview(
-        ListReviewOptions.create({}),
-      );
+      const { response } = await getClientVisibilityAccess().getReviewSummary({});
       return response;
     },
   });
@@ -70,27 +66,10 @@ export const Summary = (props: { showNoItems?: boolean }) => {
     return <></>;
   }
 
-  const items = qry.data.items;
-  const totalNumber = items.length;
-  const totalApproved = items.filter(
-    (x) => x.spec?.decision === Review_Spec_Decision.APPROVE,
-  ).length;
-  const totalRejected = items.filter(
-    (x) => x.spec?.decision === Review_Spec_Decision.REJECT,
-  ).length;
-
   return (
     <div>
-      {totalNumber > 0 && (
-        <div>
-          <DoSummary
-            totalNumber={totalNumber}
-            totalApproved={totalApproved}
-            totalRejected={totalRejected}
-          />
-        </div>
-      )}
-      {totalNumber === 0 && props.showNoItems && <SummaryNoItems />}
+      {qry.data.totalNumber > 0 && <DoSummary resp={qry.data} />}
+      {qry.data.totalNumber === 0 && props.showNoItems && <SummaryNoItems />}
     </div>
   );
 };

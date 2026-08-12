@@ -7,6 +7,8 @@ import * as CoreC from "../../apis/corev1/corev1.client";
 import * as EnterpriseC from "../../apis/enterprisev1/enterprisev1.client";
 import * as UserC from "../../apis/userv1/userv1.client";
 import * as VisibilityCoreC from "../../apis/visibilityv1/core/vcorev1.client";
+import * as VisibilityAccessC from "../../apis/visibilityv1/access/vaccessv1.client";
+import * as VisibilityEnterpriseC from "../../apis/visibilityv1/enterprise/venterprisev1.client";
 import * as VisibilityMetricsC from "../../apis/visibilityv1/metrics/vmetricsv1.client";
 import * as VisibilityC from "../../apis/visibilityv1/visibilityv1.client";
 
@@ -53,6 +55,16 @@ export const getClientVisibilityAccessLog =
 export const getClientVisibilityCore =
   (): VisibilityCoreC.ResourceServiceClient => {
     return new VisibilityCoreC.ResourceServiceClient(getTransport());
+  };
+
+export const getClientVisibilityAccess =
+  (): VisibilityAccessC.ResourceServiceClient => {
+    return new VisibilityAccessC.ResourceServiceClient(getTransport());
+  };
+
+export const getClientVisibilityEnterprise =
+  (): VisibilityEnterpriseC.ResourceServiceClient => {
+    return new VisibilityEnterpriseC.ResourceServiceClient(getTransport());
   };
 
 export const getClientVisibilityAuthenticationLog =

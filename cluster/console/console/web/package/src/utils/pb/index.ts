@@ -5,6 +5,7 @@ import * as CoreP from "../../apis/corev1/corev1";
 import * as EnterpriseP from "../../apis/enterprisev1/enterprisev1";
 import * as MetaPB from "../../apis/metav1/metav1";
 import * as VisibilityCoreP from "../../apis/visibilityv1/core/vcorev1";
+import * as VisibilityAccessP from "../../apis/visibilityv1/access/vaccessv1";
 
 import { queryClient } from "@/utils";
 import { match } from "ts-pattern";
@@ -13,6 +14,7 @@ import {
   getClientCore,
   getClientEnterprise,
   getClientVisibilityCore,
+  getClientVisibilityAccess,
 } from "../client";
 
 export type Resource = ResourceCore | ResourceEnterprise | ResourceAccess;
@@ -471,7 +473,7 @@ export const getPBResourceListFromAPI = (api: API) =>
   match(api)
     .with("core", () => VisibilityCoreP)
     .with("enterprise", () => EnterpriseP)
-    .with("access", () => AccessP)
+    .with("access", () => VisibilityAccessP)
     .otherwise(() => undefined);
 
 export const getClient = (api: API) =>
@@ -497,14 +499,14 @@ export const getClientResourceList = (api: API) =>
   match(api)
     .with("core", () => getClientVisibilityCore())
     .with("enterprise", () => getClientEnterprise())
-    .with("access", () => getClientAccess())
+    .with("access", () => getClientVisibilityAccess())
     .otherwise(() => undefined);
 
 export const getClientResourceListP = (api: API) =>
   match(api)
     .with("core", () => VisibilityCoreP)
     .with("enterprise", () => EnterpriseP)
-    .with("access", () => AccessP)
+    .with("access", () => VisibilityAccessP)
     .otherwise(() => undefined);
 
 export const printResourceNameWithDisplay = (arg: Resource): string =>

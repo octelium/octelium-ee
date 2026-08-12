@@ -1,8 +1,7 @@
 import {
-  ListRequestOptions,
   Request,
-  Request_Status_State_Status,
 } from "@/apis/accessv1/accessv1";
+import { GetRequestSummaryResponse } from "@/apis/visibilityv1/access/vaccessv1";
 import {
   ResourceListLabel,
   ResourceListLabelWrap,
@@ -13,7 +12,7 @@ import {
   SummaryItemCountWrap,
   SummaryNoItems,
 } from "@/components/Summary";
-import { getClientAccess } from "@/utils/client";
+import { getClientVisibilityAccess } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
 import { getStatusMeta, getUrgencyLabel } from "./utils";
 
@@ -43,21 +42,29 @@ export const ExtraComponent = (props: { item: Request }) => {
   return <div></div>;
 };
 
-const DoSummary = (props: {
-  totalNumber: number;
-  totalPending: number;
-  totalApproved: number;
-}) => {
-  const { totalNumber, totalPending, totalApproved } = props;
+const DoSummary = ({ resp }: { resp: GetRequestSummaryResponse }) => {
 
   return (
     <div className="w-full">
       <SummaryItemCountWrap>
-        <SummaryItemCount count={totalNumber} to={`/access/requests`}>
+        <SummaryItemCount count={resp.totalNumber} to="/access/requests">
           Total
         </SummaryItemCount>
-        <SummaryItemCount count={totalPending}>Pending</SummaryItemCount>
-        <SummaryItemCount count={totalApproved}>Approved</SummaryItemCount>
+        <SummaryItemCount count={resp.totalPending} to="/access/requests?state=PENDING">Pending</SummaryItemCount>
+        <SummaryItemCount count={resp.totalActive} to="/access/requests?isActive=true">Active</SummaryItemCount>
+        <SummaryItemCount count={resp.totalApproved} to="/access/requests?state=APPROVED">Approved</SummaryItemCount>
+        <SummaryItemCount count={resp.totalRejected} to="/access/requests?state=REJECTED">Rejected</SummaryItemCount>
+        <SummaryItemCount count={resp.totalRevoked} to="/access/requests?state=REVOKED">Revoked</SummaryItemCount>
+        <SummaryItemCount count={resp.totalExpired} to="/access/requests?state=EXPIRED">Expired</SummaryItemCount>
+        <SummaryItemCount count={resp.totalCancelled} to="/access/requests?state=CANCELLED">Cancelled</SummaryItemCount>
+        <SummaryItemCount count={resp.totalDeadlinePassed}>Past deadline</SummaryItemCount>
+        <SummaryItemCount count={resp.totalWithDeadline}>With deadline</SummaryItemCount>
+        <SummaryItemCount count={resp.totalUrgencyHigh + resp.totalUrgencyVeryHigh + resp.totalUrgencyHighest}>High urgency</SummaryItemCount>
+        <SummaryItemCount count={resp.totalUser}>Requesters</SummaryItemCount>
+        <SummaryItemCount count={resp.totalSubjectUser}>Subject users</SummaryItemCount>
+        <SummaryItemCount count={resp.totalService}>Services</SummaryItemCount>
+        <SummaryItemCount count={resp.totalCatalog}>Catalogs</SummaryItemCount>
+        <SummaryItemCount count={resp.totalPolicy}>Policies</SummaryItemCount>
       </SummaryItemCountWrap>
     </div>
   );
@@ -67,9 +74,7 @@ export const Summary = (props: { showNoItems?: boolean }) => {
   const qry = useQuery({
     queryKey: ["visibility", "access", "summary", "Request"],
     queryFn: async () => {
-      const { response } = await getClientAccess().listRequest(
-        ListRequestOptions.create({}),
-      );
+      const { response } = await getClientVisibilityAccess().getRequestSummary({});
       return response;
     },
   });
@@ -77,27 +82,10 @@ export const Summary = (props: { showNoItems?: boolean }) => {
     return <></>;
   }
 
-  const items = qry.data.items;
-  const totalNumber = items.length;
-  const totalPending = items.filter(
-    (x) => x.status?.state?.status === Request_Status_State_Status.PENDING,
-  ).length;
-  const totalApproved = items.filter(
-    (x) => x.status?.state?.status === Request_Status_State_Status.APPROVED,
-  ).length;
-
   return (
     <div>
-      {totalNumber > 0 && (
-        <div>
-          <DoSummary
-            totalNumber={totalNumber}
-            totalPending={totalPending}
-            totalApproved={totalApproved}
-          />
-        </div>
-      )}
-      {totalNumber === 0 && props.showNoItems && <SummaryNoItems />}
+      {qry.data.totalNumber > 0 && <DoSummary resp={qry.data} />}
+      {qry.data.totalNumber === 0 && props.showNoItems && <SummaryNoItems />}
     </div>
   );
 };
