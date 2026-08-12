@@ -56,7 +56,6 @@ export type ResourceEnterprise =
   | EnterpriseP.CollectorExporter
   | EnterpriseP.DNSProvider
   | EnterpriseP.SecretStore
-  | EnterpriseP.DeviceManager
   | EnterpriseP.DirectoryProvider;
 
 export type ResourceAccess =
@@ -87,7 +86,6 @@ export type ResourceEnterpriseList =
   | EnterpriseP.CollectorExporterList
   | EnterpriseP.DNSProviderList
   | EnterpriseP.SecretStoreList
-  | EnterpriseP.DeviceManagerList
   | EnterpriseP.DirectoryProviderList;
 
 export type ResourceAccessList =
@@ -121,7 +119,6 @@ export type ResourceEnterpriseName =
   | "CollectorExporter"
   | "DNSProvider"
   | "SecretStore"
-  | "DeviceManager"
   | "DirectoryProvider";
 
 export type ResourceAccessName = "Catalog" | "Policy" | "Request" | "Review";
@@ -153,7 +150,6 @@ const enterpriseResourcePathMap = new Map<string, ResourceEnterpriseName>([
   ["certificateissuers", "CertificateIssuer"],
   ["directoryproviders", "DirectoryProvider"],
   ["secretstores", "SecretStore"],
-  ["devicemanagers", "DeviceManager"],
 ]);
 
 const accessResourcePathMap = new Map<string, ResourceAccessName>([

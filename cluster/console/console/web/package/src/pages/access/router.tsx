@@ -15,6 +15,7 @@ import ResourceItemAuditLogsPage from "@/components/ResourceLayout/ResourceAudit
 import ResourceCreatePage from "@/components/ResourceLayout/ResourceCreate";
 import ResourceItemMainPage from "@/components/ResourceLayout/ResourceItemMainPage";
 import ResourceItemDrawer from "@/components/ResourceLayout/ResourceItemDrawer";
+import MainPage from "./index";
 
 export const resourceList = [
   policyRouter,
@@ -31,9 +32,9 @@ export default (): RouteObject => {
         <Outlet />
       </>
     ),
-    children: resourceList.map((x) => {
-      return getResourceChildrenRouter(x);
-    }),
+    children: resourceList
+      .map((x) => getResourceChildrenRouter(x))
+      .concat([{ path: "", element: <MainPage /> }]),
   };
 
   return ret;

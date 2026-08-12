@@ -21,6 +21,7 @@ import ResourceItemMainPage from "@/components/ResourceLayout/ResourceItemMainPa
 import ResourceItemDrawer from "@/components/ResourceLayout/ResourceItemDrawer";
 
 import PolicyTesterPage from "./PolicyTester";
+import MainPage from "./index";
 
 export const resourceList = [
   secretRouter,
@@ -47,6 +48,7 @@ export default (): RouteObject => {
       .concat([
         clusterConfigRouter(),
         { path: `policytester`, element: <PolicyTesterPage /> },
+        { path: "", element: <MainPage /> },
       ]),
   };
 

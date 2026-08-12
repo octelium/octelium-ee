@@ -1,6 +1,6 @@
-import * as CoreC from "@/apis/corev1/corev1";
+import * as EnterpriseP from "@/apis/enterprisev1/enterprisev1";
 
-export default (props: { item: CoreC.Service }) => {
+export default (props: { item: EnterpriseP.Secret }) => {
   const { item } = props;
   return <></>;
 };

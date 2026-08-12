@@ -434,64 +434,6 @@ export const MainInfo = (props: { item: CoreP.Device }): ResourceMainInfo => {
           ]
         : []),
 
-      ...(item.status?.binding
-        ? [
-            {
-              label: "Device Manager binding",
-              value: (
-                <div className="flex flex-wrap gap-1">
-                  {(item.status.binding.ownerRef?.name ||
-                    item.status.binding.ownerRef?.uid) && (
-                    <ResourceListLabel
-                      itemRef={item.status.binding.ownerRef}
-                    />
-                  )}
-                  <ResourceListLabel label="State">
-                    {enumLabel(
-                      CoreP.Device_Status_Binding_State,
-                      item.status.binding.state,
-                    )}
-                  </ResourceListLabel>
-                  <ResourceListLabel label="Acceptance">
-                    {enumLabel(
-                      CoreP.Device_Status_Binding_AcceptanceMethod,
-                      item.status.binding.acceptanceMethod,
-                    )}
-                  </ResourceListLabel>
-                  {item.status.binding.externalID && (
-                    <ResourceListLabel label="External ID">
-                      <CopyText value={item.status.binding.externalID} />
-                    </ResourceListLabel>
-                  )}
-                  {item.status.binding.acceptedAt && (
-                    <ResourceListLabel label="Accepted">
-                      <TimeAgo rfc3339={item.status.binding.acceptedAt} />
-                    </ResourceListLabel>
-                  )}
-                  {item.status.binding.lastVerifiedAt && (
-                    <ResourceListLabel label="Last verified">
-                      <TimeAgo rfc3339={item.status.binding.lastVerifiedAt} />
-                    </ResourceListLabel>
-                  )}
-                  {item.status.binding.expiresAt && (
-                    <ResourceListLabel label="Binding expires">
-                      <TimeAgo rfc3339={item.status.binding.expiresAt} />
-                    </ResourceListLabel>
-                  )}
-                  {item.status.binding.verificationFailures > 0 && (
-                    <ResourceListLabel label="Verification failures">
-                      <span className="text-red-600">
-                        {item.status.binding.verificationFailures}
-                      </span>
-                    </ResourceListLabel>
-                  )}
-                </div>
-              ),
-              span: "full" as const,
-            },
-          ]
-        : []),
-
       ...(item.status?.probeAttempt
         ? [
             {
