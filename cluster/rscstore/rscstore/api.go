@@ -11,12 +11,19 @@ package rscstore
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
+	"github.com/octelium/octelium-ee/pkg/apiutils/uaccessv1"
+	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
+	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/corev1"
+	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vaccessv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcorev1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/venterprisev1"
 	"github.com/octelium/octelium/cluster/common/apivalidation"
 	"github.com/octelium/octelium/pkg/apiutils/ucorev1"
 )
@@ -591,4 +598,687 @@ func appendRefFilter(filters []exp.Expression, ref *metav1.ObjectReference, o *a
 	}
 
 	return filters, nil
+}
+
+type srvEnterprise struct {
+	s *Server
+	venterprisev1.UnimplementedResourceServiceServer
+}
+
+func (s *srvEnterprise) GetCollectorExporterSummary(ctx context.Context, req *venterprisev1.GetCollectorExporterSummaryRequest) (*venterprisev1.GetCollectorExporterSummaryResponse, error) {
+	return s.s.getSummaryEnterpriseCollectorExporter(ctx, req)
+}
+
+func (s *srvEnterprise) GetSecretSummary(ctx context.Context, req *venterprisev1.GetSecretSummaryRequest) (*venterprisev1.GetSecretSummaryResponse, error) {
+	return s.s.getSummaryEnterpriseSecret(ctx, req)
+}
+
+func (s *srvEnterprise) GetSecretStoreSummary(ctx context.Context, req *venterprisev1.GetSecretStoreSummaryRequest) (*venterprisev1.GetSecretStoreSummaryResponse, error) {
+	return s.s.getSummaryEnterpriseSecretStore(ctx, req)
+}
+
+func (s *srvEnterprise) GetCertificateSummary(ctx context.Context, req *venterprisev1.GetCertificateSummaryRequest) (*venterprisev1.GetCertificateSummaryResponse, error) {
+	return s.s.getSummaryEnterpriseCertificate(ctx, req)
+}
+
+func (s *srvEnterprise) GetCertificateIssuerSummary(ctx context.Context, req *venterprisev1.GetCertificateIssuerSummaryRequest) (*venterprisev1.GetCertificateIssuerSummaryResponse, error) {
+	return s.s.getSummaryEnterpriseCertificateIssuer(ctx, req)
+}
+
+func (s *srvEnterprise) GetDNSProviderSummary(ctx context.Context, req *venterprisev1.GetDNSProviderSummaryRequest) (*venterprisev1.GetDNSProviderSummaryResponse, error) {
+	return s.s.getSummaryEnterpriseDNSProvider(ctx, req)
+}
+
+func (s *srvEnterprise) GetDirectoryProviderSummary(ctx context.Context, req *venterprisev1.GetDirectoryProviderSummaryRequest) (*venterprisev1.GetDirectoryProviderSummaryResponse, error) {
+	return s.s.getSummaryEnterpriseDirectoryProvider(ctx, req)
+}
+
+func (s *srvEnterprise) GetDirectoryProviderUserSummary(ctx context.Context, req *venterprisev1.GetDirectoryProviderUserSummaryRequest) (*venterprisev1.GetDirectoryProviderUserSummaryResponse, error) {
+	return s.s.getSummaryEnterpriseDirectoryProviderUser(ctx, req)
+}
+
+func (s *srvEnterprise) GetDirectoryProviderGroupSummary(ctx context.Context, req *venterprisev1.GetDirectoryProviderGroupSummaryRequest) (*venterprisev1.GetDirectoryProviderGroupSummaryResponse, error) {
+	return s.s.getSummaryEnterpriseDirectoryProviderGroup(ctx, req)
+}
+
+func (s *srvEnterprise) GetDeviceManagerSummary(ctx context.Context, req *venterprisev1.GetDeviceManagerSummaryRequest) (*venterprisev1.GetDeviceManagerSummaryResponse, error) {
+	return s.s.getSummaryEnterpriseDeviceManager(ctx, req)
+}
+
+func collectorExporterTypeField(t venterprisev1.ListCollectorExporterOptions_Type) string {
+	switch t {
+	case venterprisev1.ListCollectorExporterOptions_OTLP:
+		return "otlp"
+	case venterprisev1.ListCollectorExporterOptions_OTLP_HTTP:
+		return "otlpHTTP"
+	case venterprisev1.ListCollectorExporterOptions_CLICKHOUSE:
+		return "clickhouse"
+	case venterprisev1.ListCollectorExporterOptions_ELASTICSEARCH:
+		return "elasticsearch"
+	case venterprisev1.ListCollectorExporterOptions_LOGZIO:
+		return "logzio"
+	case venterprisev1.ListCollectorExporterOptions_INFLUXDB:
+		return "influxDB"
+	case venterprisev1.ListCollectorExporterOptions_KAFKA:
+		return "kafka"
+	case venterprisev1.ListCollectorExporterOptions_DATADOG:
+		return "datadog"
+	case venterprisev1.ListCollectorExporterOptions_SPLUNK:
+		return "splunk"
+	case venterprisev1.ListCollectorExporterOptions_AZURE_MONITOR:
+		return "azureMonitor"
+	case venterprisev1.ListCollectorExporterOptions_AZURE_DATA_EXPLORER:
+		return "azureDataExplorer"
+	case venterprisev1.ListCollectorExporterOptions_PROMETHEUS_REMOTE_WRITE:
+		return "prometheusRemoteWrite"
+	default:
+		return ""
+	}
+}
+
+func (s *srvEnterprise) ListCollectorExporter(ctx context.Context, req *venterprisev1.ListCollectorExporterOptions) (*enterprisev1.CollectorExporterList, error) {
+
+	doListReq := &doListReq{
+		api:     uenterprisev1.API,
+		version: uenterprisev1.Version,
+		kind:    uenterprisev1.KindCollectorExporter,
+		common:  req.Common,
+	}
+
+	if field := collectorExporterTypeField(req.Type); field != "" {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`json_extract(rsc, '$.spec.%s') IS NOT NULL`, field)))
+	}
+
+	if req.IsDisabled {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(`json_extract(rsc, '$.spec.isDisabled') = true`))
+	}
+
+	ret, err := s.s.doList(ctx, doListReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret.(*enterprisev1.CollectorExporterList), nil
+}
+
+func (s *srvEnterprise) ListSecret(ctx context.Context, req *venterprisev1.ListSecretOptions) (*enterprisev1.SecretList, error) {
+
+	doListReq := &doListReq{
+		api:     uenterprisev1.API,
+		version: uenterprisev1.Version,
+		kind:    uenterprisev1.KindSecret,
+		common:  req.Common,
+	}
+
+	ret, err := s.s.doList(ctx, doListReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret.(*enterprisev1.SecretList), nil
+}
+
+func (s *srvEnterprise) ListSecretStore(ctx context.Context, req *venterprisev1.ListSecretStoreOptions) (*enterprisev1.SecretStoreList, error) {
+
+	doListReq := &doListReq{
+		api:     uenterprisev1.API,
+		version: uenterprisev1.Version,
+		kind:    uenterprisev1.KindSecretStore,
+		common:  req.Common,
+	}
+
+	if req.Type != enterprisev1.SecretStore_Status_TYPE_UNKNOWN {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(`rsc->>'$.status.type'`).Eq(req.Type.String()))
+	}
+
+	if req.State != enterprisev1.SecretStore_Status_STATE_UNKNOWN {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(`rsc->>'$.status.state'`).Eq(req.State.String()))
+	}
+
+	if req.SynchronizationState != enterprisev1.SecretStore_Status_Synchronization_STATE_UNSET {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(`rsc->>'$.status.synchronization.state'`).Eq(req.SynchronizationState.String()))
+	}
+
+	ret, err := s.s.doList(ctx, doListReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret.(*enterprisev1.SecretStoreList), nil
+}
+
+func (s *srvEnterprise) ListCertificate(ctx context.Context, req *venterprisev1.ListCertificateOptions) (*enterprisev1.CertificateList, error) {
+
+	doListReq := &doListReq{
+		api:     uenterprisev1.API,
+		version: uenterprisev1.Version,
+		kind:    uenterprisev1.KindCertificate,
+		common:  req.Common,
+	}
+	var err error
+
+	if req.Mode != enterprisev1.Certificate_Spec_MODE_UNSET {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(`rsc->>'$.spec.mode'`).Eq(req.Mode.String()))
+	}
+
+	if req.IssuanceState != enterprisev1.Certificate_Status_Issuance_STATE_UNSET {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(`rsc->>'$.status.issuance.state'`).Eq(req.IssuanceState.String()))
+	}
+
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.CertificateIssuerRef, nil, "status.certificateIssuerRef")
+	if err != nil {
+		return nil, err
+	}
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.NamespaceRef, nil, "status.namespaceRef")
+	if err != nil {
+		return nil, err
+	}
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.ServiceRef, nil, "status.serviceRef")
+	if err != nil {
+		return nil, err
+	}
+
+	if req.IsExpired || req.IsExpiringSoon {
+		now := time.Now().UTC()
+
+		if req.IsExpired {
+			doListReq.filters = append(doListReq.filters,
+				goqu.L(`(rsc->>'$.status.issuance.expiresAt') < ?`, now.Format(time.RFC3339Nano)))
+		}
+
+		if req.IsExpiringSoon {
+			doListReq.filters = append(doListReq.filters,
+				goqu.L(`(rsc->>'$.status.issuance.expiresAt' >= ?) AND (rsc->>'$.status.issuance.expiresAt' < ?)`,
+					now.Format(time.RFC3339Nano), now.Add(30*24*time.Hour).Format(time.RFC3339Nano)))
+		}
+	}
+
+	ret, err := s.s.doList(ctx, doListReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret.(*enterprisev1.CertificateList), nil
+}
+
+func (s *srvEnterprise) ListCertificateIssuer(ctx context.Context, req *venterprisev1.ListCertificateIssuerOptions) (*enterprisev1.CertificateIssuerList, error) {
+
+	doListReq := &doListReq{
+		api:     uenterprisev1.API,
+		version: uenterprisev1.Version,
+		kind:    uenterprisev1.KindCertificateIssuer,
+		common:  req.Common,
+	}
+
+	if req.Type == venterprisev1.ListCertificateIssuerOptions_ACME {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(`json_extract(rsc, '$.spec.acme') IS NOT NULL`))
+	}
+
+	if req.State != enterprisev1.CertificateIssuer_Status_STATE_UNKNOWN {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(`rsc->>'$.status.state'`).Eq(req.State.String()))
+	}
+
+	ret, err := s.s.doList(ctx, doListReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret.(*enterprisev1.CertificateIssuerList), nil
+}
+
+func dnsProviderTypeField(t venterprisev1.ListDNSProviderOptions_Type) string {
+	switch t {
+	case venterprisev1.ListDNSProviderOptions_CLOUDFLARE:
+		return "cloudflare"
+	case venterprisev1.ListDNSProviderOptions_AWS:
+		return "aws"
+	case venterprisev1.ListDNSProviderOptions_DIGITALOCEAN:
+		return "digitalocean"
+	case venterprisev1.ListDNSProviderOptions_GOOGLE:
+		return "google"
+	case venterprisev1.ListDNSProviderOptions_AZURE:
+		return "azure"
+	case venterprisev1.ListDNSProviderOptions_LINODE:
+		return "linode"
+	case venterprisev1.ListDNSProviderOptions_OVH:
+		return "ovh"
+	default:
+		return ""
+	}
+}
+
+func (s *srvEnterprise) ListDNSProvider(ctx context.Context, req *venterprisev1.ListDNSProviderOptions) (*enterprisev1.DNSProviderList, error) {
+
+	doListReq := &doListReq{
+		api:     uenterprisev1.API,
+		version: uenterprisev1.Version,
+		kind:    uenterprisev1.KindDNSProvider,
+		common:  req.Common,
+	}
+
+	if field := dnsProviderTypeField(req.Type); field != "" {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`json_extract(rsc, '$.spec.%s') IS NOT NULL`, field)))
+	}
+
+	ret, err := s.s.doList(ctx, doListReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret.(*enterprisev1.DNSProviderList), nil
+}
+
+func directoryProviderTypeField(t venterprisev1.ListDirectoryProviderOptions_Type) string {
+	switch t {
+	case venterprisev1.ListDirectoryProviderOptions_SCIM:
+		return "scim"
+	case venterprisev1.ListDirectoryProviderOptions_GOOGLE_WORKSPACE:
+		return "googleWorkspace"
+	case venterprisev1.ListDirectoryProviderOptions_KEYCLOAK:
+		return "keycloak"
+	default:
+		return ""
+	}
+}
+
+func (s *srvEnterprise) ListDirectoryProvider(ctx context.Context, req *venterprisev1.ListDirectoryProviderOptions) (*enterprisev1.DirectoryProviderList, error) {
+
+	doListReq := &doListReq{
+		api:     uenterprisev1.API,
+		version: uenterprisev1.Version,
+		kind:    uenterprisev1.KindDirectoryProvider,
+		common:  req.Common,
+	}
+
+	if field := directoryProviderTypeField(req.Type); field != "" {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`json_extract(rsc, '$.spec.%s') IS NOT NULL`, field)))
+	}
+
+	if req.IsDisabled {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(`json_extract(rsc, '$.spec.isDisabled') = true`))
+	}
+
+	if req.SynchronizationState != enterprisev1.DirectoryProvider_Status_Synchronization_STATE_UNSET {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(`rsc->>'$.status.synchronization.state'`).Eq(req.SynchronizationState.String()))
+	}
+
+	ret, err := s.s.doList(ctx, doListReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret.(*enterprisev1.DirectoryProviderList), nil
+}
+
+func (s *srvEnterprise) ListDirectoryProviderUser(ctx context.Context, req *venterprisev1.ListDirectoryProviderUserOptions) (*enterprisev1.DirectoryProviderUserList, error) {
+
+	doListReq := &doListReq{
+		api:     uenterprisev1.API,
+		version: uenterprisev1.Version,
+		kind:    uenterprisev1.KindDirectoryProviderUser,
+		common:  req.Common,
+	}
+	var err error
+
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.DirectoryProviderRef, nil, "status.directoryProviderRef")
+	if err != nil {
+		return nil, err
+	}
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.UserRef, nil, "status.userRef")
+	if err != nil {
+		return nil, err
+	}
+
+	ret, err := s.s.doList(ctx, doListReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret.(*enterprisev1.DirectoryProviderUserList), nil
+}
+
+func (s *srvEnterprise) ListDirectoryProviderGroup(ctx context.Context, req *venterprisev1.ListDirectoryProviderGroupOptions) (*enterprisev1.DirectoryProviderGroupList, error) {
+
+	doListReq := &doListReq{
+		api:     uenterprisev1.API,
+		version: uenterprisev1.Version,
+		kind:    uenterprisev1.KindDirectoryProviderGroup,
+		common:  req.Common,
+	}
+	var err error
+
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.DirectoryProviderRef, nil, "status.directoryProviderRef")
+	if err != nil {
+		return nil, err
+	}
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.GroupRef, nil, "status.groupRef")
+	if err != nil {
+		return nil, err
+	}
+
+	ret, err := s.s.doList(ctx, doListReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret.(*enterprisev1.DirectoryProviderGroupList), nil
+}
+
+func (s *srvEnterprise) ListDeviceManager(ctx context.Context, req *venterprisev1.ListDeviceManagerOptions) (*enterprisev1.DeviceManagerList, error) {
+
+	doListReq := &doListReq{
+		api:     uenterprisev1.API,
+		version: uenterprisev1.Version,
+		kind:    uenterprisev1.KindDeviceManager,
+		common:  req.Common,
+	}
+
+	if req.Type != enterprisev1.DeviceManager_Status_TYPE_UNKNOWN {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(`rsc->>'$.status.type'`).Eq(req.Type.String()))
+	}
+
+	if req.State != enterprisev1.DeviceManager_Status_STATE_UNKNOWN {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(`rsc->>'$.status.state'`).Eq(req.State.String()))
+	}
+
+	if req.Strategy != enterprisev1.DeviceManager_Spec_Linking_STRATEGY_UNSET {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(`rsc->>'$.spec.linking.strategy'`).Eq(req.Strategy.String()))
+	}
+
+	if req.ApprovalMode != enterprisev1.DeviceManager_Spec_Linking_APPROVAL_MODE_UNSET {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(`rsc->>'$.spec.linking.approvalMode'`).Eq(req.ApprovalMode.String()))
+	}
+
+	if req.IsPollingDisabled {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(`json_extract(rsc, '$.spec.polling.isDisabled') = true`))
+	}
+
+	ret, err := s.s.doList(ctx, doListReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret.(*enterprisev1.DeviceManagerList), nil
+}
+
+type srvAccess struct {
+	s *Server
+	vaccessv1.UnimplementedResourceServiceServer
+}
+
+func (s *srvAccess) GetPolicySummary(ctx context.Context, req *vaccessv1.GetPolicySummaryRequest) (*vaccessv1.GetPolicySummaryResponse, error) {
+	return s.s.getSummaryAccessPolicy(ctx, req)
+}
+
+func (s *srvAccess) GetCatalogSummary(ctx context.Context, req *vaccessv1.GetCatalogSummaryRequest) (*vaccessv1.GetCatalogSummaryResponse, error) {
+	return s.s.getSummaryAccessCatalog(ctx, req)
+}
+
+func (s *srvAccess) GetRequestSummary(ctx context.Context, req *vaccessv1.GetRequestSummaryRequest) (*vaccessv1.GetRequestSummaryResponse, error) {
+	return s.s.getSummaryAccessRequest(ctx, req)
+}
+
+func (s *srvAccess) GetReviewSummary(ctx context.Context, req *vaccessv1.GetReviewSummaryRequest) (*vaccessv1.GetReviewSummaryResponse, error) {
+	return s.s.getSummaryAccessReview(ctx, req)
+}
+
+func (s *srvAccess) ListPolicy(ctx context.Context, req *vaccessv1.ListPolicyOptions) (*accessv1.PolicyList, error) {
+
+	doListReq := &doListReq{
+		api:     uaccessv1.API,
+		version: uaccessv1.Version,
+		kind:    uaccessv1.KindPolicy,
+		common:  req.Common,
+	}
+
+	if req.IsDisabled {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(`json_extract(rsc, '$.spec.isDisabled') = true`))
+	}
+
+	if req.Effect != accessv1.Policy_Spec_Rule_EFFECT_UNSET {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(`len(list_filter(CAST(json_extract(rsc, '$.spec.rules') AS JSON[]), x -> json_extract_string(x, '$.effect') = ?)) > 0`,
+				req.Effect.String()))
+	}
+
+	if req.UserRef != nil && (req.UserRef.Uid != "" || req.UserRef.Name != "") {
+		if err := apivalidation.CheckObjectRef(req.UserRef, &apivalidation.CheckGetOptionsOpts{}); err != nil {
+			return nil, err
+		}
+
+		val := req.UserRef.Uid
+		pth := "$.condition.subject.userRef.uid"
+		if val == "" {
+			val = req.UserRef.Name
+			pth = "$.condition.subject.userRef.name"
+		}
+
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`len(list_filter(CAST(json_extract(rsc, '$.spec.rules') AS JSON[]), x -> json_extract_string(x, '%s') = ?)) > 0`, pth), val))
+	}
+
+	if req.GroupRef != nil && (req.GroupRef.Uid != "" || req.GroupRef.Name != "") {
+		if err := apivalidation.CheckObjectRef(req.GroupRef, &apivalidation.CheckGetOptionsOpts{}); err != nil {
+			return nil, err
+		}
+
+		val := req.GroupRef.Uid
+		pth := "$.condition.subject.groupRef.uid"
+		if val == "" {
+			val = req.GroupRef.Name
+			pth = "$.condition.subject.groupRef.name"
+		}
+
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`len(list_filter(CAST(json_extract(rsc, '$.spec.rules') AS JSON[]), x -> json_extract_string(x, '%s') = ?)) > 0`, pth), val))
+	}
+
+	if req.ServiceRef != nil && (req.ServiceRef.Uid != "" || req.ServiceRef.Name != "") {
+		if err := apivalidation.CheckObjectRef(req.ServiceRef, &apivalidation.CheckGetOptionsOpts{}); err != nil {
+			return nil, err
+		}
+
+		val := req.ServiceRef.Uid
+		pth := "$.condition.resource.serviceRef.uid"
+		if val == "" {
+			val = req.ServiceRef.Name
+			pth = "$.condition.resource.serviceRef.name"
+		}
+
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`len(list_filter(CAST(json_extract(rsc, '$.spec.rules') AS JSON[]), x -> json_extract_string(x, '%s') = ?)) > 0`, pth), val))
+	}
+
+	if req.CatalogRef != nil && (req.CatalogRef.Uid != "" || req.CatalogRef.Name != "") {
+		if err := apivalidation.CheckObjectRef(req.CatalogRef, &apivalidation.CheckGetOptionsOpts{}); err != nil {
+			return nil, err
+		}
+
+		val := req.CatalogRef.Uid
+		pth := "$.condition.resource.catalogRef.uid"
+		if val == "" {
+			val = req.CatalogRef.Name
+			pth = "$.condition.resource.catalogRef.name"
+		}
+
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`len(list_filter(CAST(json_extract(rsc, '$.spec.rules') AS JSON[]), x -> json_extract_string(x, '%s') = ?)) > 0`, pth), val))
+	}
+
+	ret, err := s.s.doList(ctx, doListReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret.(*accessv1.PolicyList), nil
+}
+
+func (s *srvAccess) ListCatalog(ctx context.Context, req *vaccessv1.ListCatalogOptions) (*accessv1.CatalogList, error) {
+
+	doListReq := &doListReq{
+		api:     uaccessv1.API,
+		version: uaccessv1.Version,
+		kind:    uaccessv1.KindCatalog,
+		common:  req.Common,
+	}
+
+	if req.ServiceRef != nil && req.ServiceRef.Name != "" {
+		if err := apivalidation.CheckObjectRef(req.ServiceRef, &apivalidation.CheckGetOptionsOpts{}); err != nil {
+			return nil, err
+		}
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(`list_contains(CAST(json_extract(rsc, '$.spec.resourceCollection.service.services') AS VARCHAR[]), ?)`, req.ServiceRef.Name))
+	}
+
+	if req.NamespaceRef != nil && req.NamespaceRef.Name != "" {
+		if err := apivalidation.CheckObjectRef(req.NamespaceRef, &apivalidation.CheckGetOptionsOpts{}); err != nil {
+			return nil, err
+		}
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(`list_contains(CAST(json_extract(rsc, '$.spec.resourceCollection.service.namespaces') AS VARCHAR[]), ?)`, req.NamespaceRef.Name))
+	}
+
+	ret, err := s.s.doList(ctx, doListReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret.(*accessv1.CatalogList), nil
+}
+
+func (s *srvAccess) ListRequest(ctx context.Context, req *vaccessv1.ListRequestOptions) (*accessv1.RequestList, error) {
+
+	doListReq := &doListReq{
+		api:     uaccessv1.API,
+		version: uaccessv1.Version,
+		kind:    uaccessv1.KindRequest,
+		common:  req.Common,
+	}
+	var err error
+
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.UserRef, nil, "status.userRef")
+	if err != nil {
+		return nil, err
+	}
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.SubjectUserRef, nil, "spec.subject.userRef")
+	if err != nil {
+		return nil, err
+	}
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.ServiceRef, nil, "spec.resource.serviceRef")
+	if err != nil {
+		return nil, err
+	}
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.CatalogRef, nil, "spec.resource.catalog.catalogRef")
+	if err != nil {
+		return nil, err
+	}
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.PolicyRef, nil, "status.policyRef")
+	if err != nil {
+		return nil, err
+	}
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.PolicyTriggerRef, nil, "status.policyTriggerRef")
+	if err != nil {
+		return nil, err
+	}
+
+	if req.ReviewerRef != nil && (req.ReviewerRef.Uid != "" || req.ReviewerRef.Name != "") {
+		if err := apivalidation.CheckObjectRef(req.ReviewerRef, &apivalidation.CheckGetOptionsOpts{}); err != nil {
+			return nil, err
+		}
+
+		val := req.ReviewerRef.Uid
+		pth := "$.user.userRef.uid"
+		if val == "" {
+			val = req.ReviewerRef.Name
+			pth = "$.user.userRef.name"
+		}
+
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(fmt.Sprintf(`len(list_filter(
+				flatten(list_transform(
+					COALESCE(CAST(json_extract(rsc, '$.status.rule.action.review.steps') AS JSON[]), []),
+					s -> COALESCE(CAST(json_extract(s, '$.reviewers') AS JSON[]), [])
+				)),
+				r -> json_extract_string(r, '%s') = ?
+			)) > 0`, pth), val))
+	}
+
+	if req.State != accessv1.Request_Status_State_STATUS_UNKNOWN {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(`rsc->>'$.status.state.status'`).Eq(req.State.String()))
+	}
+
+	if req.Urgency != accessv1.Request_Spec_URGENCY_UNSET {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(`rsc->>'$.spec.urgency'`).Eq(req.Urgency.String()))
+	}
+
+	if req.IsActive {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(`(rsc->>'$.status.state.status' = ?) AND ((json_extract(rsc, '$.status.accessEndsAt') IS NULL) OR (rsc->>'$.status.accessEndsAt' > ?))`,
+				accessv1.Request_Status_State_APPROVED.String(), time.Now().UTC().Format(time.RFC3339Nano)))
+	}
+
+	ret, err := s.s.doList(ctx, doListReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret.(*accessv1.RequestList), nil
+}
+
+func (s *srvAccess) ListReview(ctx context.Context, req *vaccessv1.ListReviewOptions) (*accessv1.ReviewList, error) {
+
+	doListReq := &doListReq{
+		api:     uaccessv1.API,
+		version: uaccessv1.Version,
+		kind:    uaccessv1.KindReview,
+		common:  req.Common,
+	}
+	var err error
+
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.UserRef, nil, "status.userRef")
+	if err != nil {
+		return nil, err
+	}
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.RequestRef, nil, "status.requestRef")
+	if err != nil {
+		return nil, err
+	}
+
+	if req.Decision != accessv1.Review_Spec_DECISION_UNSET {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(`rsc->>'$.spec.decision'`).Eq(req.Decision.String()))
+	}
+
+	if req.IsDecided {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(`(rsc->>'$.spec.decision' = 'DECISION_APPROVE') OR (rsc->>'$.spec.decision' = 'DECISION_REJECT')`))
+	}
+
+	ret, err := s.s.doList(ctx, doListReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret.(*accessv1.ReviewList), nil
 }

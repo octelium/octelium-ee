@@ -86,6 +86,26 @@ func (c *EnterpriseV1Watcher) DirectoryProvider(
 	return runWatcherEnterpriseV1(ctx, c.octeliumC, opts, uenterprisev1.KindDirectoryProvider, onCreate, onUpdate, onDelete)
 }
 
+func (c *EnterpriseV1Watcher) DirectoryProviderUser(
+	ctx context.Context,
+	opts *watchers.Opts,
+	onCreate func(ctx context.Context, item *enterprisev1.DirectoryProviderUser) error,
+	onUpdate func(ctx context.Context, new, old *enterprisev1.DirectoryProviderUser) error,
+	onDelete func(ctx context.Context, item *enterprisev1.DirectoryProviderUser) error,
+) error {
+	return runWatcherEnterpriseV1(ctx, c.octeliumC, opts, uenterprisev1.KindDirectoryProviderUser, onCreate, onUpdate, onDelete)
+}
+
+func (c *EnterpriseV1Watcher) DirectoryProviderGroup(
+	ctx context.Context,
+	opts *watchers.Opts,
+	onCreate func(ctx context.Context, item *enterprisev1.DirectoryProviderGroup) error,
+	onUpdate func(ctx context.Context, new, old *enterprisev1.DirectoryProviderGroup) error,
+	onDelete func(ctx context.Context, item *enterprisev1.DirectoryProviderGroup) error,
+) error {
+	return runWatcherEnterpriseV1(ctx, c.octeliumC, opts, uenterprisev1.KindDirectoryProviderGroup, onCreate, onUpdate, onDelete)
+}
+
 func (c *EnterpriseV1Watcher) CollectorExporter(
 	ctx context.Context,
 	opts *watchers.Opts,

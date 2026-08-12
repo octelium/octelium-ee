@@ -114,6 +114,8 @@ gen-go-main:
 	mkdir -p apis/main/accessv1 apis/main/visibilityv1
 	mkdir -p apis/main/visibilityv1/vmetav1
 	mkdir -p apis/main/visibilityv1/vcorev1
+	mkdir -p apis/main/visibilityv1/venterprisev1
+	mkdir -p apis/main/visibilityv1/vaccessv1
 	mkdir -p apis/main/visibilityv1/vmetricsv1
 	protoc -I . -I $(PROTO_IN_MAIN)/metav1 metav1.proto \
 		--go_out=apis/main/metav1 --go-grpc_out=apis/main/metav1 $(PROTO_GO_OPT)
@@ -140,6 +142,12 @@ gen-go-main:
 	protoc -I . -I $(PROTO_IN_MAIN)/visibilityv1/core vcorev1.proto \
 		--go_out=apis/main/visibilityv1/vcorev1 --go-grpc_out=apis/main/visibilityv1/vcorev1 $(PROTO_GO_OPT_GRPC)
 	
+	protoc -I . -I $(PROTO_IN_MAIN)/visibilityv1/enterprise venterprisev1.proto \
+		--go_out=apis/main/visibilityv1/venterprisev1 --go-grpc_out=apis/main/visibilityv1/venterprisev1 $(PROTO_GO_OPT_GRPC)
+
+	protoc -I . -I $(PROTO_IN_MAIN)/visibilityv1/access vaccessv1.proto \
+		--go_out=apis/main/visibilityv1/vaccessv1 --go-grpc_out=apis/main/visibilityv1/vaccessv1 $(PROTO_GO_OPT_GRPC)
+
 	protoc -I . -I $(PROTO_IN_MAIN)/visibilityv1/metrics vmetricsv1.proto \
 		--go_out=apis/main/visibilityv1/vmetricsv1 --go-grpc_out=apis/main/visibilityv1/vmetricsv1 $(PROTO_GO_OPT_GRPC)
 

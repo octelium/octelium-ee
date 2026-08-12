@@ -17,8 +17,13 @@ import (
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
+	watchersee "github.com/octelium/octelium-ee/cluster/common/watchers"
+	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/corev1"
+	"github.com/octelium/octelium/apis/main/enterprisev1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vaccessv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcorev1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/venterprisev1"
 	"github.com/octelium/octelium/cluster/common/healthcheck"
 	oc "github.com/octelium/octelium/cluster/common/octeliumc"
 	"github.com/octelium/octelium/cluster/common/spiffec"
@@ -122,6 +127,14 @@ func (s *Server) Run(ctx context.Context) error {
 		return err
 	}
 
+	if err := s.validateEnterpriseReconcileKinds(); err != nil {
+		return err
+	}
+
+	if err := s.validateAccessReconcileKinds(); err != nil {
+		return err
+	}
+
 	if err := s.initGRPC(ctx); err != nil {
 		return err
 	}
@@ -174,6 +187,14 @@ func (s *Server) initGRPC(ctx context.Context) error {
 	)
 
 	vcorev1.RegisterResourceServiceServer(grpcSrv, &srvCore{
+		s: s,
+	})
+
+	venterprisev1.RegisterResourceServiceServer(grpcSrv, &srvEnterprise{
+		s: s,
+	})
+
+	vaccessv1.RegisterResourceServiceServer(grpcSrv, &srvAccess{
 		s: s,
 	})
 
@@ -400,6 +421,164 @@ func (s *Server) setResources(ctx context.Context) error {
 		}, func(ctx context.Context, new, old *corev1.Credential) error {
 			return s.insertResource(ctx, new)
 		}, func(ctx context.Context, item *corev1.Credential) error {
+			return s.removeResource(ctx, item)
+		}); err != nil {
+		return err
+	}
+
+	we := watchersee.NewEnterpriseV1(s.octeliumC)
+
+	if err := we.CollectorExporter(ctx, nil,
+		func(ctx context.Context, item *enterprisev1.CollectorExporter) error {
+			return s.insertResource(ctx, item)
+		}, func(ctx context.Context, new, old *enterprisev1.CollectorExporter) error {
+			return s.insertResource(ctx, new)
+		}, func(ctx context.Context, item *enterprisev1.CollectorExporter) error {
+			return s.removeResource(ctx, item)
+		}); err != nil {
+		return err
+	}
+
+	if err := we.Secret(ctx, nil,
+		func(ctx context.Context, item *enterprisev1.Secret) error {
+			return s.insertResource(ctx, item)
+		}, func(ctx context.Context, new, old *enterprisev1.Secret) error {
+			return s.insertResource(ctx, new)
+		}, func(ctx context.Context, item *enterprisev1.Secret) error {
+			return s.removeResource(ctx, item)
+		}); err != nil {
+		return err
+	}
+
+	if err := we.SecretStore(ctx, nil,
+		func(ctx context.Context, item *enterprisev1.SecretStore) error {
+			return s.insertResource(ctx, item)
+		}, func(ctx context.Context, new, old *enterprisev1.SecretStore) error {
+			return s.insertResource(ctx, new)
+		}, func(ctx context.Context, item *enterprisev1.SecretStore) error {
+			return s.removeResource(ctx, item)
+		}); err != nil {
+		return err
+	}
+
+	if err := we.Certificate(ctx, nil,
+		func(ctx context.Context, item *enterprisev1.Certificate) error {
+			return s.insertResource(ctx, item)
+		}, func(ctx context.Context, new, old *enterprisev1.Certificate) error {
+			return s.insertResource(ctx, new)
+		}, func(ctx context.Context, item *enterprisev1.Certificate) error {
+			return s.removeResource(ctx, item)
+		}); err != nil {
+		return err
+	}
+
+	if err := we.CertificateIssuer(ctx, nil,
+		func(ctx context.Context, item *enterprisev1.CertificateIssuer) error {
+			return s.insertResource(ctx, item)
+		}, func(ctx context.Context, new, old *enterprisev1.CertificateIssuer) error {
+			return s.insertResource(ctx, new)
+		}, func(ctx context.Context, item *enterprisev1.CertificateIssuer) error {
+			return s.removeResource(ctx, item)
+		}); err != nil {
+		return err
+	}
+
+	if err := we.DNSProvider(ctx, nil,
+		func(ctx context.Context, item *enterprisev1.DNSProvider) error {
+			return s.insertResource(ctx, item)
+		}, func(ctx context.Context, new, old *enterprisev1.DNSProvider) error {
+			return s.insertResource(ctx, new)
+		}, func(ctx context.Context, item *enterprisev1.DNSProvider) error {
+			return s.removeResource(ctx, item)
+		}); err != nil {
+		return err
+	}
+
+	if err := we.DirectoryProvider(ctx, nil,
+		func(ctx context.Context, item *enterprisev1.DirectoryProvider) error {
+			return s.insertResource(ctx, item)
+		}, func(ctx context.Context, new, old *enterprisev1.DirectoryProvider) error {
+			return s.insertResource(ctx, new)
+		}, func(ctx context.Context, item *enterprisev1.DirectoryProvider) error {
+			return s.removeResource(ctx, item)
+		}); err != nil {
+		return err
+	}
+
+	if err := we.DirectoryProviderUser(ctx, nil,
+		func(ctx context.Context, item *enterprisev1.DirectoryProviderUser) error {
+			return s.insertResource(ctx, item)
+		}, func(ctx context.Context, new, old *enterprisev1.DirectoryProviderUser) error {
+			return s.insertResource(ctx, new)
+		}, func(ctx context.Context, item *enterprisev1.DirectoryProviderUser) error {
+			return s.removeResource(ctx, item)
+		}); err != nil {
+		return err
+	}
+
+	if err := we.DirectoryProviderGroup(ctx, nil,
+		func(ctx context.Context, item *enterprisev1.DirectoryProviderGroup) error {
+			return s.insertResource(ctx, item)
+		}, func(ctx context.Context, new, old *enterprisev1.DirectoryProviderGroup) error {
+			return s.insertResource(ctx, new)
+		}, func(ctx context.Context, item *enterprisev1.DirectoryProviderGroup) error {
+			return s.removeResource(ctx, item)
+		}); err != nil {
+		return err
+	}
+
+	if err := we.DeviceManager(ctx, nil,
+		func(ctx context.Context, item *enterprisev1.DeviceManager) error {
+			return s.insertResource(ctx, item)
+		}, func(ctx context.Context, new, old *enterprisev1.DeviceManager) error {
+			return s.insertResource(ctx, new)
+		}, func(ctx context.Context, item *enterprisev1.DeviceManager) error {
+			return s.removeResource(ctx, item)
+		}); err != nil {
+		return err
+	}
+
+	wa := watchersee.NewAccessV1(s.octeliumC)
+
+	if err := wa.Catalog(ctx, nil,
+		func(ctx context.Context, item *accessv1.Catalog) error {
+			return s.insertResource(ctx, item)
+		}, func(ctx context.Context, new, old *accessv1.Catalog) error {
+			return s.insertResource(ctx, new)
+		}, func(ctx context.Context, item *accessv1.Catalog) error {
+			return s.removeResource(ctx, item)
+		}); err != nil {
+		return err
+	}
+
+	if err := wa.Policy(ctx, nil,
+		func(ctx context.Context, item *accessv1.Policy) error {
+			return s.insertResource(ctx, item)
+		}, func(ctx context.Context, new, old *accessv1.Policy) error {
+			return s.insertResource(ctx, new)
+		}, func(ctx context.Context, item *accessv1.Policy) error {
+			return s.removeResource(ctx, item)
+		}); err != nil {
+		return err
+	}
+
+	if err := wa.Request(ctx, nil,
+		func(ctx context.Context, item *accessv1.Request) error {
+			return s.insertResource(ctx, item)
+		}, func(ctx context.Context, new, old *accessv1.Request) error {
+			return s.insertResource(ctx, new)
+		}, func(ctx context.Context, item *accessv1.Request) error {
+			return s.removeResource(ctx, item)
+		}); err != nil {
+		return err
+	}
+
+	if err := wa.Review(ctx, nil,
+		func(ctx context.Context, item *accessv1.Review) error {
+			return s.insertResource(ctx, item)
+		}, func(ctx context.Context, new, old *accessv1.Review) error {
+			return s.insertResource(ctx, new)
+		}, func(ctx context.Context, item *accessv1.Review) error {
 			return s.removeResource(ctx, item)
 		}); err != nil {
 		return err
