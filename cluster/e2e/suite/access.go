@@ -18,6 +18,7 @@ import (
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/cluster/e2e/harness"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
+	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -188,15 +189,10 @@ func testAccessSingleStepReview(t *testing.T, ch *harness.H) {
 	})
 
 	t.Run("AnUnrelatedUserCannotReview", func(t *testing.T) {
-		_, err := h.AccessReviewerC(c.mallory.Conn).CreateReview(ctx, &accessv1.Review{
-			Spec: &accessv1.Review_Spec{
-				Decision: accessv1.Review_Spec_DECISION_APPROVE,
-			},
-			Status: &accessv1.Review_Status{
-				RequestRef: umetav1.GetObjectReference(req),
-			},
-		})
-		assert.NotNil(t, err)
+		_, err := h.AccessReviewerC(c.mallory.Conn).CreateReview(ctx,
+			eeharness.ReviewOf(req, accessv1.Review_Spec_DECISION_APPROVE))
+		require.NotNil(t, err)
+		assert.True(t, grpcerr.IsUnauthorized(err))
 	})
 
 	review := h.Review(t, c.rita, req, accessv1.Review_Spec_DECISION_APPROVE)
@@ -276,15 +272,10 @@ func testAccessMultiStepQuorum(t *testing.T, ch *harness.H) {
 	})
 
 	t.Run("AStepZeroReviewerCannotCloseStepOne", func(t *testing.T) {
-		_, err := h.AccessReviewerC(c.mallory.Conn).CreateReview(t.Context(), &accessv1.Review{
-			Spec: &accessv1.Review_Spec{
-				Decision: accessv1.Review_Spec_DECISION_APPROVE,
-			},
-			Status: &accessv1.Review_Status{
-				RequestRef: umetav1.GetObjectReference(req),
-			},
-		})
-		assert.NotNil(t, err)
+		_, err := h.AccessReviewerC(c.mallory.Conn).CreateReview(t.Context(),
+			eeharness.ReviewOf(req, accessv1.Review_Spec_DECISION_APPROVE))
+		require.NotNil(t, err)
+		assert.True(t, grpcerr.IsUnauthorized(err))
 	})
 
 	h.Review(t, c.rosa, req, accessv1.Review_Spec_DECISION_APPROVE)

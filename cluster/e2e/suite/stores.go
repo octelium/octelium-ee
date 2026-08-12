@@ -324,13 +324,25 @@ func testRscStoreReconciliation(t *testing.T, ch *harness.H) {
 	})
 
 	t.Run("Counts", func(t *testing.T) {
-		res, err := h.VisibilityCoreC().ListUser(ctx, &vcorev1.ListUserOptions{})
-		require.Nil(t, err)
+		h.Eventually(t, "the mirrored User count to converge with the core count",
+			eeharness.IngestionBudget, func(ctx context.Context) error {
+				res, err := h.VisibilityCoreC().ListUser(ctx, &vcorev1.ListUserOptions{})
+				if err != nil {
+					return err
+				}
 
-		usrList, err := h.CoreC().ListUser(ctx, &corev1.ListUserOptions{})
-		require.Nil(t, err)
+				usrList, err := h.CoreC().ListUser(ctx, &corev1.ListUserOptions{})
+				if err != nil {
+					return err
+				}
 
-		assert.Equal(t, res.ListResponseMeta.TotalCount, usrList.ListResponseMeta.TotalCount)
+				if res.ListResponseMeta.TotalCount != usrList.ListResponseMeta.TotalCount {
+					return errors.Errorf("the mirror has %d Users, core has %d",
+						res.ListResponseMeta.TotalCount, usrList.ListResponseMeta.TotalCount)
+				}
+
+				return nil
+			})
 	})
 
 	t.Run("SurvivesARestart", func(t *testing.T) {

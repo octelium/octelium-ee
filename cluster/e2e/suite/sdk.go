@@ -9,9 +9,11 @@
 package suite
 
 import (
+	"context"
 	"slices"
 	"testing"
 
+	eeharness "github.com/octelium/octelium-ee/cluster/e2e/harness"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
@@ -21,6 +23,7 @@ import (
 	"github.com/octelium/octelium/cluster/e2e/harness"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -123,12 +126,24 @@ func testEnterpriseSDK(t *testing.T, h *harness.H) {
 	})
 
 	t.Run("AuthenticationLogScopedToUser", func(t *testing.T) {
-		res, err := authenticationLogC.ListAuthenticationLog(ctx,
-			&visibilityv1.ListAuthenticationLogRequest{
-				UserRef: umetav1.GetObjectReference(meUsr),
+		var res *visibilityv1.ListAuthenticationLogResponse
+
+		h.Eventually(t, "the authentication log to carry the current User",
+			eeharness.IngestionBudget, func(ctx context.Context) error {
+				cur, err := authenticationLogC.ListAuthenticationLog(ctx,
+					&visibilityv1.ListAuthenticationLogRequest{
+						UserRef: umetav1.GetObjectReference(meUsr),
+					})
+				if err != nil {
+					return err
+				}
+				if len(cur.Items) < 1 {
+					return errNotProvisioned("an authentication log entry")
+				}
+
+				res = cur
+				return nil
 			})
-		require.Nil(t, err)
-		require.True(t, len(res.Items) > 0)
 
 		for _, itm := range res.Items {
 			assert.Equal(t, status.User.Metadata.Uid, itm.Entry.UserRef.Uid)
@@ -168,18 +183,32 @@ func testEnterpriseSDK(t *testing.T, h *harness.H) {
 	})
 
 	t.Run("VisibilityMirrorsCore", func(t *testing.T) {
-		res, err := visibilityCoreC.ListUser(ctx, &vcorev1.ListUserOptions{})
-		require.Nil(t, err)
+		h.Eventually(t, "the visibility mirror to converge with core",
+			eeharness.IngestionBudget, func(ctx context.Context) error {
+				res, err := visibilityCoreC.ListUser(ctx, &vcorev1.ListUserOptions{})
+				if err != nil {
+					return err
+				}
 
-		usrList, err := coreC.ListUser(ctx, &corev1.ListUserOptions{})
-		require.Nil(t, err)
+				usrList, err := coreC.ListUser(ctx, &corev1.ListUserOptions{})
+				if err != nil {
+					return err
+				}
 
-		assert.Equal(t, res.ListResponseMeta.TotalCount, usrList.ListResponseMeta.TotalCount)
+				for _, usr := range usrList.Items {
+					if !slices.ContainsFunc(res.Items, func(itm *corev1.User) bool {
+						return itm.Metadata.Uid == usr.Metadata.Uid
+					}) {
+						return errNotProvisioned("the mirrored User " + usr.Metadata.Name)
+					}
+				}
 
-		for _, usr := range usrList.Items {
-			assert.True(t, slices.ContainsFunc(res.Items, func(itm *corev1.User) bool {
-				return itm.Metadata.Uid == usr.Metadata.Uid
-			}))
-		}
+				if res.ListResponseMeta.TotalCount != usrList.ListResponseMeta.TotalCount {
+					return errors.Errorf("the mirror has %d Users, core has %d",
+						res.ListResponseMeta.TotalCount, usrList.ListResponseMeta.TotalCount)
+				}
+
+				return nil
+			})
 	})
 }

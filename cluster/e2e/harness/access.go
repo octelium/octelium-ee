@@ -17,6 +17,7 @@ import (
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
+	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/pkg/errors"
 )
 
@@ -84,8 +85,10 @@ func AllOf(conds ...*accessv1.Policy_Spec_Rule_Condition) *accessv1.Policy_Spec_
 
 func CatalogRequest(cat *accessv1.Catalog, duration *metav1.Duration) *accessv1.Request {
 	return &accessv1.Request{
+		Metadata: &metav1.Metadata{Name: utilrand.GetRandomStringCanonical(8)},
 		Spec: &accessv1.Request_Spec{
-			Urgency: accessv1.Request_Spec_NORMAL,
+			Urgency:       accessv1.Request_Spec_NORMAL,
+			Justification: "e2e",
 			Resource: &accessv1.Request_Spec_Resource{
 				Type: &accessv1.Request_Spec_Resource_Catalog_{
 					Catalog: &accessv1.Request_Spec_Resource_Catalog{
@@ -94,6 +97,20 @@ func CatalogRequest(cat *accessv1.Catalog, duration *metav1.Duration) *accessv1.
 				},
 			},
 			Duration: duration,
+		},
+	}
+}
+
+func ReviewOf(req *accessv1.Request,
+	decision accessv1.Review_Spec_Decision) *accessv1.Review {
+	return &accessv1.Review{
+		Metadata: &metav1.Metadata{Name: utilrand.GetRandomStringCanonical(8)},
+		Spec: &accessv1.Review_Spec{
+			Decision:      decision,
+			Justification: "e2e",
+		},
+		Status: &accessv1.Review_Status{
+			RequestRef: umetav1.GetObjectReference(req),
 		},
 	}
 }
@@ -185,15 +202,7 @@ func (h *H) Review(t *testing.T, a *Actor,
 	ctx, cancel := h.Ctx(t)
 	defer cancel()
 
-	ret, err := h.AccessReviewerC(a.Conn).CreateReview(ctx, &accessv1.Review{
-		Spec: &accessv1.Review_Spec{
-			Decision:      decision,
-			Justification: "e2e",
-		},
-		Status: &accessv1.Review_Status{
-			RequestRef: umetav1.GetObjectReference(req),
-		},
-	})
+	ret, err := h.AccessReviewerC(a.Conn).CreateReview(ctx, ReviewOf(req, decision))
 	if err != nil {
 		t.Fatalf("Could not review the Request %s as %s: %+v",
 			req.Metadata.Name, a.User.Metadata.Name, err)

@@ -26,6 +26,8 @@ import (
 
 const settleWindow = 20 * time.Second
 
+const driveEvery = 20
+
 func testCollectorExportOTLP(t *testing.T, ch *harness.H) {
 	h := eeharness.Wrap(ch)
 	h.Require(t, eescenario.CapOTLPSink)
@@ -151,7 +153,7 @@ func waitAccessLogGrows(t *testing.T, h *eeharness.H, by uint32) {
 	cancel()
 	require.Nil(t, err)
 
-	driveTraffic(t, h)
+	var attempts int
 
 	h.Eventually(t, "the access log count to grow", eeharness.IngestionBudget,
 		func(ctx context.Context) error {
@@ -159,9 +161,15 @@ func waitAccessLogGrows(t *testing.T, h *eeharness.H, by uint32) {
 			if err != nil {
 				return err
 			}
-			if cur < before+by {
-				return errors.Errorf("the access log count is %d, want at least %d", cur, before+by)
+			if cur >= before+by {
+				return nil
 			}
-			return nil
+
+			if attempts%driveEvery == 0 {
+				driveTraffic(t, h)
+			}
+			attempts++
+
+			return errors.Errorf("the access log count is %d, want at least %d", cur, before+by)
 		})
 }
