@@ -22,7 +22,9 @@ import (
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vaccessv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcorev1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/venterprisev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetricsv1"
 	"github.com/octelium/octelium/cluster/common/commoninit"
 	"github.com/octelium/octelium/cluster/common/healthcheck"
@@ -91,6 +93,16 @@ func Run(ctx context.Context) error {
 		return err
 	}
 
+	srvVisibilityResourceEnterprise, err := visibility.NewServerResourceEnterprise(ctx, octeliumC)
+	if err != nil {
+		return err
+	}
+
+	srvVisibilityResourceAccess, err := visibility.NewServerResourceAccess(ctx, octeliumC)
+	if err != nil {
+		return err
+	}
+
 	srvVisibilityMetric, err := visibility.NewServerMetric(ctx, octeliumC)
 	if err != nil {
 		return err
@@ -116,6 +128,8 @@ func Run(ctx context.Context) error {
 	vmetricsv1.RegisterMetricsServiceServer(s, srvVisibilityMetric)
 	visibilityv1.RegisterComponentLogServiceServer(s, srvVisibilityComponentLog)
 	vcorev1.RegisterResourceServiceServer(s, srvVisibilityResource)
+	venterprisev1.RegisterResourceServiceServer(s, srvVisibilityResourceEnterprise)
+	vaccessv1.RegisterResourceServiceServer(s, srvVisibilityResourceAccess)
 	enterprisev1.RegisterPolicyPortalServiceServer(s, policyPortalSrv)
 	enterprisev1.RegisterClusterServiceServer(s, clusterSrv)
 

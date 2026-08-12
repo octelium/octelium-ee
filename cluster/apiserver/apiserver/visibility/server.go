@@ -16,7 +16,9 @@ import (
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
 	pb "github.com/octelium/octelium/apis/main/visibilityv1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vaccessv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcorev1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/venterprisev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetricsv1"
 	oc "github.com/octelium/octelium/cluster/common/octeliumc"
 	"github.com/octelium/octelium/pkg/utils/ldflags"
@@ -90,6 +92,78 @@ func NewServerResource(ctx context.Context, octeliumC octeliumc.ClientInterface)
 	return &ServerResource{
 		octeliumC: octeliumC,
 		coreC:     vcorev1.NewResourceServiceClient(grpcConn),
+	}, nil
+}
+
+type ServerResourceEnterprise struct {
+	octeliumC octeliumc.ClientInterface
+	venterprisev1.UnimplementedResourceServiceServer
+
+	enterpriseC venterprisev1.ResourceServiceClient
+}
+
+func NewServerResourceEnterprise(ctx context.Context, octeliumC octeliumc.ClientInterface) (*ServerResourceEnterprise, error) {
+
+	var host string
+
+	if ovutils.IsMockMode() {
+		host = "localhost:40001"
+	} else if ldflags.IsTest() {
+		host = fmt.Sprintf("localhost:%s", os.Getenv("OCTELIUM_TEST_RSCSTORE_PORT"))
+	} else {
+		host = "octeliumee-rscstore.octelium.svc:8080"
+	}
+
+	grpcOpts, err := oc.DefaultDialOpts(ctx)
+	if err != nil {
+		return nil, err
+	}
+	grpcConn, err := grpc.NewClient(
+		host, grpcOpts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ServerResourceEnterprise{
+		octeliumC:   octeliumC,
+		enterpriseC: venterprisev1.NewResourceServiceClient(grpcConn),
+	}, nil
+}
+
+type ServerResourceAccess struct {
+	octeliumC octeliumc.ClientInterface
+	vaccessv1.UnimplementedResourceServiceServer
+
+	accessC vaccessv1.ResourceServiceClient
+}
+
+func NewServerResourceAccess(ctx context.Context, octeliumC octeliumc.ClientInterface) (*ServerResourceAccess, error) {
+
+	var host string
+
+	if ovutils.IsMockMode() {
+		host = "localhost:40001"
+	} else if ldflags.IsTest() {
+		host = fmt.Sprintf("localhost:%s", os.Getenv("OCTELIUM_TEST_RSCSTORE_PORT"))
+	} else {
+		host = "octeliumee-rscstore.octelium.svc:8080"
+	}
+
+	grpcOpts, err := oc.DefaultDialOpts(ctx)
+	if err != nil {
+		return nil, err
+	}
+	grpcConn, err := grpc.NewClient(
+		host, grpcOpts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ServerResourceAccess{
+		octeliumC: octeliumC,
+		accessC:   vaccessv1.NewResourceServiceClient(grpcConn),
 	}, nil
 }
 
