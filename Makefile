@@ -77,6 +77,13 @@ build-accessportal:
 	CGO_ENABLED=0 GOOS=linux go build $(LDFLAGS) -o bin/octeliumee-accessportal github.com/octelium/octelium-ee/cluster/accessportal
 
 E2E_SCENARIO ?= k3s-flannel-ee
+E2E_SUITE ?= enterprise
+E2E_PACKAGE_VERSION ?= $(shell git rev-parse --abbrev-ref HEAD)
+E2E_CORE_VERSION ?=
+
+export OCTELIUM_E2E_SUITE = $(E2E_SUITE)
+export OCTELIUM_E2E_PACKAGE_VERSION = $(E2E_PACKAGE_VERSION)
+export OCTELIUM_E2E_CORE_VERSION = $(E2E_CORE_VERSION)
 
 install-cli:
 	curl -fsSL https://octelium.com/install.sh | bash

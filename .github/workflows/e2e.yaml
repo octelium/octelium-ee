@@ -12,13 +12,33 @@ on:
         description: "Only run tests matching this regular expression (go test -run)"
         required: false
         default: ""
+      suite:
+        description: "Which phases to run"
+        required: false
+        type: choice
+        options:
+          - enterprise
+          - all
+        default: enterprise
+      packageVersion:
+        description: "octeliumee package version to install. Defaults to this branch"
+        required: false
+        default: ""
+      coreVersion:
+        description: "Octelium core version to install. Empty means latest"
+        required: false
+        default: ""
       skipApply:
-        description: "Skip the core Apply phase and its heavy database upstreams"
+        description: "With suite=all, skip the core Apply phase and its database upstreams"
         required: false
         type: boolean
         default: false
 env:
   GO_VERSION: "1.26.5"
+  OCTELIUM_E2E_SUITE: ${{ inputs.suite || 'enterprise' }}
+  OCTELIUM_E2E_PACKAGE_VERSION: ${{ inputs.packageVersion }}
+  OCTELIUM_E2E_CORE_VERSION: ${{ inputs.coreVersion }}
+  OCTELIUM_E2E_SKIP_APPLY: ${{ inputs.skipApply }}
 jobs:
   test:
     strategy:
@@ -74,8 +94,6 @@ jobs:
             --scenario=${{ inputs.scenario || matrix.scenario }} \
             --artifacts="${{ runner.temp }}/e2e-artifacts" \
             ${{ inputs.run && format('--run={0}', inputs.run) || '' }}
-        env:
-          OCTELIUM_E2E_SKIP_APPLY: ${{ inputs.skipApply }}
 
       - name: Collect cluster state on failure
         if: failure()
