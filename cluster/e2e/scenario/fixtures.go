@@ -16,8 +16,6 @@ import (
 	"github.com/octelium/octelium/cluster/e2e/scenario"
 )
 
-const FullScenario = "k3s-flannel-ee-full"
-
 const (
 	CapVault    scenario.Capability = "vault"
 	CapKeycloak scenario.Capability = "keycloak"
@@ -60,38 +58,23 @@ const (
 )
 
 func init() {
-	scenario.Register(FullScenario, k3sFlannelEEFull)
+	register(FullScenario, opts{
+		description: "The Enterprise scenario plus SPIRE, Vault, Keycloak and an OTLP sink",
+		spire:       true,
+		budget:      120 * time.Minute,
+		fixtures:    true,
+	})
 }
 
-func k3sFlannelEEFull() *scenario.Scenario {
-	ret := scenario.MustGet(DefaultScenario)
-
-	ret.Description = "The Enterprise scenario plus SPIRE, Vault, Keycloak and an OTLP sink."
-
-	ret.Install.EnableSPIFFECSI = true
-
-	ret.Caps = append(ret.Caps, scenario.CapSPIFFE, CapVault, CapKeycloak, CapOTLPSink)
+func withFixtures(ret *scenario.Scenario) {
+	ret.Caps = append(ret.Caps, CapVault, CapKeycloak, CapOTLPSink)
 
 	ret.Hooks.PostPrepare = append(ret.Hooks.PostPrepare,
 		scenario.Step{Name: "fixtures/namespace", Run: stepFixtureNamespace},
-		scenario.Step{Name: "spire/install", Run: stepSPIRE},
 		scenario.Step{Name: "fixtures/vault", Run: stepVault},
 		scenario.Step{Name: "fixtures/keycloak", Run: stepKeycloak},
 		scenario.Step{Name: "fixtures/otlp-sink", Run: stepOTLPSink},
 	)
-
-	ret.Budget = 120 * time.Minute
-
-	return ret
-}
-
-func stepSPIRE(ctx context.Context, r *scenario.Runner) error {
-	return r.Bash(ctx, `
-helm repo add spire https://spiffe.github.io/helm-charts-hardened/
-helm repo update spire
-helm upgrade --install spire-crds spire/spire-crds --namespace spire --create-namespace
-helm upgrade --install spire spire/spire --namespace spire --wait --timeout 10m
-`)
 }
 
 func stepFixtureNamespace(ctx context.Context, r *scenario.Runner) error {

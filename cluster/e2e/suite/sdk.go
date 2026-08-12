@@ -28,6 +28,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func waitIngested(t *testing.T, h *harness.H, what string,
+	fn func(ctx context.Context) (int, error)) {
+	t.Helper()
+
+	h.Eventually(t, what, eeharness.IngestionBudget, func(ctx context.Context) error {
+		n, err := fn(ctx)
+		if err != nil {
+			return err
+		}
+		if n < 1 {
+			return errNotProvisioned(what)
+		}
+		return nil
+	})
+}
+
 func testEnterpriseSDK(t *testing.T, h *harness.H) {
 	ctx := t.Context()
 
@@ -96,17 +112,29 @@ func testEnterpriseSDK(t *testing.T, h *harness.H) {
 	})
 
 	t.Run("AccessLog", func(t *testing.T) {
-		res, err := accessLogC.ListAccessLog(ctx, &visibilityv1.ListAccessLogRequest{})
-		require.Nil(t, err)
-		assert.True(t, len(res.Items) > 0)
+		waitIngested(t, h, "the access log to carry entries", func(ctx context.Context) (int, error) {
+			res, err := accessLogC.ListAccessLog(ctx, &visibilityv1.ListAccessLogRequest{})
+			if err != nil {
+				return 0, err
+			}
+			return len(res.Items), nil
+		})
 	})
 
 	t.Run("AccessLogScopedToUser", func(t *testing.T) {
-		res, err := accessLogC.ListAccessLog(ctx, &visibilityv1.ListAccessLogRequest{
-			UserRef: umetav1.GetObjectReference(meUsr),
-		})
-		require.Nil(t, err)
-		require.True(t, len(res.Items) > 0)
+		var res *visibilityv1.ListAccessLogResponse
+
+		waitIngested(t, h, "the access log to carry the current User",
+			func(ctx context.Context) (int, error) {
+				cur, err := accessLogC.ListAccessLog(ctx, &visibilityv1.ListAccessLogRequest{
+					UserRef: umetav1.GetObjectReference(meUsr),
+				})
+				if err != nil {
+					return 0, err
+				}
+				res = cur
+				return len(cur.Items), nil
+			})
 
 		for _, itm := range res.Items {
 			assert.Equal(t, status.User.Metadata.Uid, itm.Entry.Common.UserRef.Uid)
@@ -114,11 +142,19 @@ func testEnterpriseSDK(t *testing.T, h *harness.H) {
 	})
 
 	t.Run("AuditLogScopedToUser", func(t *testing.T) {
-		res, err := auditLogC.ListAuditLog(ctx, &visibilityv1.ListAuditLogRequest{
-			UserRef: umetav1.GetObjectReference(meUsr),
-		})
-		require.Nil(t, err)
-		require.True(t, len(res.Items) > 0)
+		var res *visibilityv1.ListAuditLogResponse
+
+		waitIngested(t, h, "the audit log to carry the current User",
+			func(ctx context.Context) (int, error) {
+				cur, err := auditLogC.ListAuditLog(ctx, &visibilityv1.ListAuditLogRequest{
+					UserRef: umetav1.GetObjectReference(meUsr),
+				})
+				if err != nil {
+					return 0, err
+				}
+				res = cur
+				return len(cur.Items), nil
+			})
 
 		for _, itm := range res.Items {
 			assert.Equal(t, status.User.Metadata.Uid, itm.Entry.UserRef.Uid)
@@ -126,27 +162,25 @@ func testEnterpriseSDK(t *testing.T, h *harness.H) {
 	})
 
 	t.Run("AuthenticationLogScopedToUser", func(t *testing.T) {
+		a := eeharness.Wrap(h).NewActor(t)
+
 		var res *visibilityv1.ListAuthenticationLogResponse
 
-		h.Eventually(t, "the authentication log to carry the current User",
-			eeharness.IngestionBudget, func(ctx context.Context) error {
+		waitIngested(t, h, "the authentication log to carry the authenticated User",
+			func(ctx context.Context) (int, error) {
 				cur, err := authenticationLogC.ListAuthenticationLog(ctx,
 					&visibilityv1.ListAuthenticationLogRequest{
-						UserRef: umetav1.GetObjectReference(meUsr),
+						UserRef: umetav1.GetObjectReference(a.User),
 					})
 				if err != nil {
-					return err
+					return 0, err
 				}
-				if len(cur.Items) < 1 {
-					return errNotProvisioned("an authentication log entry")
-				}
-
 				res = cur
-				return nil
+				return len(cur.Items), nil
 			})
 
 		for _, itm := range res.Items {
-			assert.Equal(t, status.User.Metadata.Uid, itm.Entry.UserRef.Uid)
+			assert.Equal(t, a.User.Metadata.Uid, itm.Entry.UserRef.Uid)
 		}
 	})
 

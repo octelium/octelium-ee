@@ -11,6 +11,7 @@ package suite
 import (
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/octelium/octelium/cluster/e2e/suite"
 )
@@ -81,9 +82,34 @@ func ReclaimPhase() suite.Phase {
 	return suite.Phase{Name: "ReclaimApply", Run: testReclaimApply}
 }
 
-const EnvSkipApply = "OCTELIUM_E2E_SKIP_APPLY"
+const (
+	EnvSkipApply = "OCTELIUM_E2E_SKIP_APPLY"
+	EnvSuite     = "OCTELIUM_E2E_SUITE"
+)
+
+const (
+	SuiteEnterprise = "enterprise"
+	SuiteAll        = "all"
+)
 
 func All() []suite.Phase {
+	if strings.EqualFold(os.Getenv(EnvSuite), SuiteAll) {
+		return withCore()
+	}
+
+	return Enterprise()
+}
+
+func Enterprise() []suite.Phase {
+	ret := suite.Only(suite.Phases(), "ClusterReady")
+	ret = append(ret, ReadyPhase())
+	ret = append(ret, Phases()...)
+	ret = append(ret, suite.Only(suite.Phases(), "ComponentHealth")...)
+
+	return append(ret, TailPhases()...)
+}
+
+func withCore() []suite.Phase {
 	ret := suite.InsertAfter(suite.Phases(), "ClusterReady", ReadyPhase())
 	ret = suite.InsertBefore(ret, "Apply", Phases()...)
 	ret = suite.InsertAfter(ret, "Apply", ReclaimPhase())
