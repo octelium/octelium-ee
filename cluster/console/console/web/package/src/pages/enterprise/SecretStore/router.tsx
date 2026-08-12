@@ -3,7 +3,7 @@ import { ResourceComponentInfo } from "@/pages/utils/types";
 import { Resource } from "@/utils/pb";
 
 import Edit from "./Edit";
-import { LabelComponent } from "./List";
+import { LabelComponent, Summary } from "./List";
 import Main, { MainInfo } from "./Main";
 
 const resourceComponentInfo: ResourceComponentInfo = {
@@ -13,6 +13,7 @@ const resourceComponentInfo: ResourceComponentInfo = {
     labelComponent: ({ item }: { item: Resource }) => (
       <LabelComponent item={item as SecretStore} />
     ),
+    SummaryComponent: Summary,
   },
   Item: {
     Edit: ({ item, onUpdate }) => (

@@ -7,7 +7,7 @@ import {
 } from "@/apis/enterprisev1/enterprisev1";
 import { Resource } from "@/utils/pb";
 import Edit from "./Edit";
-import { LabelComponent } from "./List";
+import { LabelComponent, Summary } from "./List";
 import Main, { MainInfo } from "./Main";
 
 const resourceComponentInfo: ResourceComponentInfo = {
@@ -15,6 +15,7 @@ const resourceComponentInfo: ResourceComponentInfo = {
   Kind: "CollectorExporter",
   List: {
     labelComponent: ({ item }: { item: Resource }) => <LabelComponent item={item as CollectorExporter} />,
+    SummaryComponent: Summary,
   },
   Item: {
     Edit: ({ item, onUpdate }) => <Edit item={item as CollectorExporter} onUpdate={(next) => onUpdate(next)} />,

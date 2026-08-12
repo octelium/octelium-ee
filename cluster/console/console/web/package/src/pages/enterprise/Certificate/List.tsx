@@ -5,12 +5,16 @@ import {
   Certificate_Status_Issuance_State,
 } from "@/apis/enterprisev1/enterprisev1";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
+import { GetCertificateSummaryResponse } from "@/apis/visibilityv1/enterprise/venterprisev1";
 import {
   ResourceListLabel,
   ResourceListLabelWrap,
 } from "@/components/ResourceList";
 import TimeAgo from "@/components/TimeAgo";
+import { SummaryItemCount, SummaryItemCountWrap, SummaryNoItems } from "@/components/Summary";
 import { getDomain } from "@/utils";
+import { getClientVisibilityEnterprise } from "@/utils/client";
+import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, CheckCircle2, Clock3, Loader2 } from "lucide-react";
 import { match } from "ts-pattern";
 
@@ -135,4 +139,25 @@ export const LabelComponent = (props: { item: Certificate }) => {
 export const ExtraComponent = (props: { item: Certificate }) => {
   const domain = getDomain();
   return <ItemDetails item={props.item} domain={domain} />;
+};
+
+const DoSummary = ({ resp }: { resp: GetCertificateSummaryResponse }) => <SummaryItemCountWrap>
+  <SummaryItemCount count={resp.totalNumber} to="/enterprise/certificates">Total</SummaryItemCount>
+  <SummaryItemCount count={resp.totalManaged} to="/enterprise/certificates?mode=MANAGED">Managed</SummaryItemCount>
+  <SummaryItemCount count={resp.totalManual} to="/enterprise/certificates?mode=MANUAL">Manual</SummaryItemCount>
+  <SummaryItemCount count={resp.totalIssuanceRequested} to="/enterprise/certificates?issuanceState=ISSUANCE_REQUESTED">Issuance requested</SummaryItemCount>
+  <SummaryItemCount count={resp.totalIssuing} to="/enterprise/certificates?issuanceState=ISSUING">Issuing</SummaryItemCount>
+  <SummaryItemCount count={resp.totalIssuanceSuccess} to="/enterprise/certificates?issuanceState=SUCCESS">Issued</SummaryItemCount>
+  <SummaryItemCount count={resp.totalIssuanceFailed} to="/enterprise/certificates?issuanceState=FAILED">Failed issuance</SummaryItemCount>
+  <SummaryItemCount count={resp.totalExpired} to="/enterprise/certificates?isExpired=true">Expired</SummaryItemCount>
+  <SummaryItemCount count={resp.totalExpiringSoon} to="/enterprise/certificates?isExpiringSoon=true">Expiring soon</SummaryItemCount>
+  <SummaryItemCount count={resp.totalService}>Services</SummaryItemCount>
+  <SummaryItemCount count={resp.totalNamespace}>Namespaces</SummaryItemCount>
+  <SummaryItemCount count={resp.totalCertificateIssuer}>Issuers</SummaryItemCount>
+</SummaryItemCountWrap>;
+
+export const Summary = ({ showNoItems }: { showNoItems?: boolean }) => {
+  const query = useQuery({ queryKey: ["visibility", "enterprise", "summary", "Certificate"], queryFn: async () => (await getClientVisibilityEnterprise().getCertificateSummary({})).response });
+  if (!query.data) return null;
+  return query.data.totalNumber > 0 ? <DoSummary resp={query.data} /> : showNoItems ? <SummaryNoItems /> : null;
 };

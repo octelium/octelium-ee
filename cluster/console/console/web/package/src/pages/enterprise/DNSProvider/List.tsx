@@ -1,8 +1,12 @@
 import { DNSProvider } from "@/apis/enterprisev1/enterprisev1";
+import { GetDNSProviderSummaryResponse } from "@/apis/visibilityv1/enterprise/venterprisev1";
 import {
   ResourceListLabel,
   ResourceListLabelWrap,
 } from "@/components/ResourceList";
+import { SummaryItemCount, SummaryItemCountWrap, SummaryNoItems } from "@/components/Summary";
+import { getClientVisibilityEnterprise } from "@/utils/client";
+import { useQuery } from "@tanstack/react-query";
 import { match } from "ts-pattern";
 
 export const getDNSProviderType = (item: DNSProvider): string =>
@@ -55,4 +59,20 @@ export const LabelComponent = (props: { item: DNSProvider }) => {
       )}
     </ResourceListLabelWrap>
   );
+};
+
+const providerTypes: Array<[keyof GetDNSProviderSummaryResponse, string, string]> = [
+  ["totalCloudflare", "Cloudflare", "CLOUDFLARE"], ["totalAWS", "AWS", "AWS"], ["totalDigitalOcean", "DigitalOcean", "DIGITALOCEAN"],
+  ["totalGoogle", "Google", "GOOGLE"], ["totalAzure", "Azure", "AZURE"], ["totalLinode", "Linode", "LINODE"], ["totalOVH", "OVH", "OVH"],
+];
+
+const DoSummary = ({ resp }: { resp: GetDNSProviderSummaryResponse }) => <SummaryItemCountWrap>
+  <SummaryItemCount count={resp.totalNumber} to="/enterprise/dnsproviders">Total</SummaryItemCount>
+  {providerTypes.map(([field, label, type]) => <SummaryItemCount key={field} count={resp[field]} to={`/enterprise/dnsproviders?type=${type}`}>{label}</SummaryItemCount>)}
+</SummaryItemCountWrap>;
+
+export const Summary = ({ showNoItems }: { showNoItems?: boolean }) => {
+  const query = useQuery({ queryKey: ["visibility", "enterprise", "summary", "DNSProvider"], queryFn: async () => (await getClientVisibilityEnterprise().getDNSProviderSummary({})).response });
+  if (!query.data) return null;
+  return query.data.totalNumber > 0 ? <DoSummary resp={query.data} /> : showNoItems ? <SummaryNoItems /> : null;
 };

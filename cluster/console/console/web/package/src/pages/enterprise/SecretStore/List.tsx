@@ -5,11 +5,15 @@ import {
   SecretStore_Status_Synchronization_State,
   SecretStore_Status_Type,
 } from "@/apis/enterprisev1/enterprisev1";
+import { GetSecretStoreSummaryResponse } from "@/apis/visibilityv1/enterprise/venterprisev1";
 import {
   ResourceListLabel,
   ResourceListLabelWrap,
 } from "@/components/ResourceList";
 import TimeAgo from "@/components/TimeAgo";
+import { SummaryItemCount, SummaryItemCountWrap, SummaryNoItems } from "@/components/Summary";
+import { getClientVisibilityEnterprise } from "@/utils/client";
+import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 import { match } from "ts-pattern";
 
@@ -134,4 +138,24 @@ export const LabelComponent = (props: { item: SecretStore }) => {
       )}
     </ResourceListLabelWrap>
   );
+};
+
+const DoSummary = ({ resp }: { resp: GetSecretStoreSummaryResponse }) => <SummaryItemCountWrap>
+  <SummaryItemCount count={resp.totalNumber} to="/enterprise/secretstores">Total</SummaryItemCount>
+  <SummaryItemCount count={resp.totalKubernetes} to="/enterprise/secretstores?type=KUBERNETES">Kubernetes</SummaryItemCount>
+  <SummaryItemCount count={resp.totalAzureKeyVault} to="/enterprise/secretstores?type=TYPE_AZURE_KEY_VAULT">Azure Key Vault</SummaryItemCount>
+  <SummaryItemCount count={resp.totalHashicorpVault} to="/enterprise/secretstores?type=TYPE_HASHICORP_VAULT">HashiCorp Vault</SummaryItemCount>
+  <SummaryItemCount count={resp.totalGCPKMS} to="/enterprise/secretstores?type=TYPE_GCP_KMS">Google Cloud KMS</SummaryItemCount>
+  <SummaryItemCount count={resp.totalAWSKMS} to="/enterprise/secretstores?type=TYPE_AWS_KMS">AWS KMS</SummaryItemCount>
+  <SummaryItemCount count={resp.totalOK} to="/enterprise/secretstores?state=OK">Ready</SummaryItemCount>
+  <SummaryItemCount count={resp.totalLoading} to="/enterprise/secretstores?state=LOADING">Loading</SummaryItemCount>
+  <SummaryItemCount count={resp.totalSynchronizing} to="/enterprise/secretstores?synchronizationState=SYNCING">Synchronizing</SummaryItemCount>
+  <SummaryItemCount count={resp.totalSynchronizationSuccess} to="/enterprise/secretstores?synchronizationState=SUCCESS">Synchronized</SummaryItemCount>
+  <SummaryItemCount count={resp.totalSynchronizationFailed} to="/enterprise/secretstores?synchronizationState=FAILED">Failed synchronization</SummaryItemCount>
+</SummaryItemCountWrap>;
+
+export const Summary = ({ showNoItems }: { showNoItems?: boolean }) => {
+  const query = useQuery({ queryKey: ["visibility", "enterprise", "summary", "SecretStore"], queryFn: async () => (await getClientVisibilityEnterprise().getSecretStoreSummary({})).response });
+  if (!query.data) return null;
+  return query.data.totalNumber > 0 ? <DoSummary resp={query.data} /> : showNoItems ? <SummaryNoItems /> : null;
 };

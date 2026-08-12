@@ -1,5 +1,9 @@
 import { CollectorExporter } from "@/apis/enterprisev1/enterprisev1";
+import { GetCollectorExporterSummaryResponse } from "@/apis/visibilityv1/enterprise/venterprisev1";
 import { ResourceListLabel, ResourceListLabelWrap } from "@/components/ResourceList";
+import { SummaryItemCount, SummaryItemCountWrap, SummaryNoItems } from "@/components/Summary";
+import { getClientVisibilityEnterprise } from "@/utils/client";
+import { useQuery } from "@tanstack/react-query";
 import { match } from "ts-pattern";
 
 export const getType = (item: CollectorExporter): string =>
@@ -37,4 +41,24 @@ export const getDestination = (item: CollectorExporter): string | undefined =>
 export const LabelComponent = (props: { item: CollectorExporter }) => {
   const destination = getDestination(props.item);
   return <ResourceListLabelWrap><ResourceListLabel label="Type">{getType(props.item)}</ResourceListLabel>{props.item.spec?.isDisabled && <ResourceListLabel>Disabled</ResourceListLabel>}{destination && <ResourceListLabel label="Destination">{destination}</ResourceListLabel>}</ResourceListLabelWrap>;
+};
+
+const exporterTypes: Array<[keyof GetCollectorExporterSummaryResponse, string, string]> = [
+  ["totalOTLP", "OTLP", "OTLP"], ["totalOTLPHTTP", "OTLP HTTP", "OTLP_HTTP"], ["totalClickhouse", "ClickHouse", "CLICKHOUSE"],
+  ["totalElasticsearch", "Elasticsearch", "ELASTICSEARCH"], ["totalLogzio", "Logz.io", "LOGZIO"], ["totalInfluxDB", "InfluxDB", "INFLUXDB"],
+  ["totalKafka", "Kafka", "KAFKA"], ["totalDatadog", "Datadog", "DATADOG"], ["totalSplunk", "Splunk", "SPLUNK"],
+  ["totalAzureMonitor", "Azure Monitor", "AZURE_MONITOR"], ["totalAzureDataExplorer", "Azure Data Explorer", "AZURE_DATA_EXPLORER"],
+  ["totalPrometheusRemoteWrite", "Prometheus", "PROMETHEUS_REMOTE_WRITE"],
+];
+
+const DoSummary = ({ resp }: { resp: GetCollectorExporterSummaryResponse }) => <SummaryItemCountWrap>
+  <SummaryItemCount count={resp.totalNumber} to="/enterprise/collectorexporters">Total</SummaryItemCount>
+  <SummaryItemCount count={resp.totalDisabled} to="/enterprise/collectorexporters?isDisabled=true">Disabled</SummaryItemCount>
+  {exporterTypes.map(([field, label, type]) => <SummaryItemCount key={field} count={resp[field]} to={`/enterprise/collectorexporters?type=${type}`}>{label}</SummaryItemCount>)}
+</SummaryItemCountWrap>;
+
+export const Summary = ({ showNoItems }: { showNoItems?: boolean }) => {
+  const query = useQuery({ queryKey: ["visibility", "enterprise", "summary", "CollectorExporter"], queryFn: async () => (await getClientVisibilityEnterprise().getCollectorExporterSummary({})).response });
+  if (!query.data) return null;
+  return query.data.totalNumber > 0 ? <DoSummary resp={query.data} /> : showNoItems ? <SummaryNoItems /> : null;
 };

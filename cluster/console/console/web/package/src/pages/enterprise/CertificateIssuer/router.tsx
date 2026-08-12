@@ -1,7 +1,7 @@
 import { ResourceComponentInfo } from "@/pages/utils/types";
 
 import Edit from "./Edit";
-import { ExtraComponent, LabelComponent } from "./List";
+import { ExtraComponent, LabelComponent, Summary } from "./List";
 import Main, { MainInfo } from "./Main";
 
 const resourceComponentInfo: ResourceComponentInfo = {
@@ -12,6 +12,7 @@ const resourceComponentInfo: ResourceComponentInfo = {
     labelComponent: LabelComponent,
     // @ts-ignore
     extraComponent: ExtraComponent,
+    SummaryComponent: Summary,
   },
   Item: {
     // @ts-ignore

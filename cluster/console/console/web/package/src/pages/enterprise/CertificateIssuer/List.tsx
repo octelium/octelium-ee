@@ -2,6 +2,10 @@ import {
   CertificateIssuer,
   CertificateIssuer_Status_State,
 } from "@/apis/enterprisev1/enterprisev1";
+import { GetCertificateIssuerSummaryResponse } from "@/apis/visibilityv1/enterprise/venterprisev1";
+import { SummaryItemCount, SummaryItemCountWrap, SummaryNoItems } from "@/components/Summary";
+import { getClientVisibilityEnterprise } from "@/utils/client";
+import { useQuery } from "@tanstack/react-query";
 import {
   ResourceListLabel,
   ResourceListLabelWrap,
@@ -86,4 +90,18 @@ export const LabelComponent = (props: { item: CertificateIssuer }) => {
 export const ExtraComponent = (props: { item: CertificateIssuer }) => {
   const domain = getDomain();
   return <ItemDetails item={props.item} domain={domain} />;
+};
+
+const DoSummary = ({ resp }: { resp: GetCertificateIssuerSummaryResponse }) => <SummaryItemCountWrap>
+  <SummaryItemCount count={resp.totalNumber} to="/enterprise/certificateissuers">Total</SummaryItemCount>
+  <SummaryItemCount count={resp.totalACME} to="/enterprise/certificateissuers?type=ACME">ACME</SummaryItemCount>
+  <SummaryItemCount count={resp.totalPreparing} to="/enterprise/certificateissuers?state=PREPARING">Preparing</SummaryItemCount>
+  <SummaryItemCount count={resp.totalReady} to="/enterprise/certificateissuers?state=READY">Ready</SummaryItemCount>
+  <SummaryItemCount count={resp.totalNotReady} to="/enterprise/certificateissuers?state=NOT_READY">Not ready</SummaryItemCount>
+</SummaryItemCountWrap>;
+
+export const Summary = ({ showNoItems }: { showNoItems?: boolean }) => {
+  const query = useQuery({ queryKey: ["visibility", "enterprise", "summary", "CertificateIssuer"], queryFn: async () => (await getClientVisibilityEnterprise().getCertificateIssuerSummary({})).response });
+  if (!query.data) return null;
+  return query.data.totalNumber > 0 ? <DoSummary resp={query.data} /> : showNoItems ? <SummaryNoItems /> : null;
 };

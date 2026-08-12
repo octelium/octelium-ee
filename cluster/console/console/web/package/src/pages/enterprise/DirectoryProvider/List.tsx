@@ -2,17 +2,17 @@ import {
   DirectoryProvider,
   DirectoryProvider_Status_Synchronization,
   DirectoryProvider_Status_Synchronization_State,
-  ListDirectoryProviderGroupOptions,
-  ListDirectoryProviderUserOptions,
 } from "@/apis/enterprisev1/enterprisev1";
-import { CommonListOptions } from "@/apis/metav1/metav1";
+import { GetDirectoryProviderSummaryResponse, ListDirectoryProviderGroupOptions, ListDirectoryProviderUserOptions } from "@/apis/visibilityv1/enterprise/venterprisev1";
+import { CommonListOptions } from "@/apis/visibilityv1/meta/vmetav1";
 import {
   ResourceListLabel,
   ResourceListLabelWrap,
 } from "@/components/ResourceList";
 import TimeAgo from "@/components/TimeAgo";
+import { SummaryItemCount, SummaryItemCountWrap, SummaryNoItems } from "@/components/Summary";
 import { getDomain } from "@/utils";
-import { getClientEnterprise } from "@/utils/client";
+import { getClientVisibilityEnterprise } from "@/utils/client";
 import { getResourceRef } from "@/utils/pb";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
@@ -97,7 +97,7 @@ export const DirectoryProviderInventoryLabels = (props: {
     queryKey: ["enterprise.directoryProviderUser.count", identity],
     queryFn: async () =>
       (
-        await getClientEnterprise().listDirectoryProviderUser(
+        await getClientVisibilityEnterprise().listDirectoryProviderUser(
           ListDirectoryProviderUserOptions.create({
             common,
             directoryProviderRef: getResourceRef(props.item),
@@ -113,7 +113,7 @@ export const DirectoryProviderInventoryLabels = (props: {
     queryKey: ["enterprise.directoryProviderGroup.count", identity],
     queryFn: async () =>
       (
-        await getClientEnterprise().listDirectoryProviderGroup(
+        await getClientVisibilityEnterprise().listDirectoryProviderGroup(
           ListDirectoryProviderGroupOptions.create({
             common,
             directoryProviderRef: getResourceRef(props.item),
@@ -187,4 +187,23 @@ export const LabelComponent = (props: { item: DirectoryProvider }) => {
 export const ExtraComponent = (props: { item: DirectoryProvider }) => {
   const domain = getDomain();
   return <ItemDetails item={props.item} domain={domain} />;
+};
+
+const DoSummary = ({ resp }: { resp: GetDirectoryProviderSummaryResponse }) => <SummaryItemCountWrap>
+  <SummaryItemCount count={resp.totalNumber} to="/enterprise/directoryproviders">Total</SummaryItemCount>
+  <SummaryItemCount count={resp.totalDisabled} to="/enterprise/directoryproviders?isDisabled=true">Disabled</SummaryItemCount>
+  <SummaryItemCount count={resp.totalSCIM} to="/enterprise/directoryproviders?type=SCIM">SCIM</SummaryItemCount>
+  <SummaryItemCount count={resp.totalGoogleWorkspace} to="/enterprise/directoryproviders?type=GOOGLE_WORKSPACE">Google Workspace</SummaryItemCount>
+  <SummaryItemCount count={resp.totalKeycloak} to="/enterprise/directoryproviders?type=KEYCLOAK">Keycloak</SummaryItemCount>
+  <SummaryItemCount count={resp.totalSynchronizing} to="/enterprise/directoryproviders?synchronizationState=SYNCING">Synchronizing</SummaryItemCount>
+  <SummaryItemCount count={resp.totalSynchronizationSuccess} to="/enterprise/directoryproviders?synchronizationState=SUCCESS">Synchronized</SummaryItemCount>
+  <SummaryItemCount count={resp.totalSynchronizationFailed} to="/enterprise/directoryproviders?synchronizationState=FAILED">Failed synchronization</SummaryItemCount>
+  <SummaryItemCount count={resp.totalUser}>Synced users</SummaryItemCount>
+  <SummaryItemCount count={resp.totalGroup}>Synced groups</SummaryItemCount>
+</SummaryItemCountWrap>;
+
+export const Summary = ({ showNoItems }: { showNoItems?: boolean }) => {
+  const query = useQuery({ queryKey: ["visibility", "enterprise", "summary", "DirectoryProvider"], queryFn: async () => (await getClientVisibilityEnterprise().getDirectoryProviderSummary({})).response });
+  if (!query.data) return null;
+  return query.data.totalNumber > 0 ? <DoSummary resp={query.data} /> : showNoItems ? <SummaryNoItems /> : null;
 };
