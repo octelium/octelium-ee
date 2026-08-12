@@ -1,4 +1,5 @@
 import { ResourceComponentInfo } from "@/pages/utils/types";
+import { Secret, Secret_Spec } from "@/apis/enterprisev1/enterprisev1";
 
 import Edit from "./Edit";
 import { ExtraComponent, LabelComponent, Summary } from "./List";
@@ -19,6 +20,13 @@ const resourceComponentInfo: ResourceComponentInfo = {
     Edit: Edit,
     // @ts-ignore
     Main: Main,
+    createResource: () => Secret.create({
+      apiVersion: "enterprise/v1",
+      kind: "Secret",
+      metadata: {},
+      spec: Secret_Spec.create(),
+      status: {},
+    }),
   },
 };
 

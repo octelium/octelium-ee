@@ -463,21 +463,21 @@ export const getPB = (arg: Resource) => getPBFromAPI(getAPI(arg) as API);
 export const getPBFromAPI = (api: API) =>
   match(api)
     .with("core", () => CoreP)
-    .with("enterprise", () => VisibilityEnterpriseP)
+    .with("enterprise", () => EnterpriseP)
     .with("access", () => AccessP)
     .otherwise(() => undefined);
 
 export const getPBResourceListFromAPI = (api: API) =>
   match(api)
     .with("core", () => VisibilityCoreP)
-    .with("enterprise", () => EnterpriseP)
+    .with("enterprise", () => VisibilityEnterpriseP)
     .with("access", () => VisibilityAccessP)
     .otherwise(() => undefined);
 
 export const getClient = (api: API) =>
   match(api)
     .with("core", () => getClientCore())
-    .with("enterprise", () => getClientVisibilityEnterprise())
+    .with("enterprise", () => getClientEnterprise())
     .with("access", () => getClientAccess())
     .otherwise(() => undefined);
 
@@ -496,7 +496,7 @@ export const getPathClient = (path: string) => {
 export const getClientResourceList = (api: API) =>
   match(api)
     .with("core", () => getClientVisibilityCore())
-    .with("enterprise", () => getClientEnterprise())
+    .with("enterprise", () => getClientVisibilityEnterprise())
     .with("access", () => getClientVisibilityAccess())
     .otherwise(() => undefined);
 
