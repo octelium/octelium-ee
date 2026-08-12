@@ -85,6 +85,7 @@ func (s *ServerReviewer) CreateReview(ctx context.Context, req *accessv1.Review)
 			UserRef:    umetav1.GetObjectReference(i.User),
 			RequestRef: umetav1.GetObjectReference(request),
 			SetAt:      pbutils.Now(),
+			StepIndex:  currentReviewStep(request),
 		},
 	}
 

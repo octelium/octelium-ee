@@ -33,11 +33,9 @@ func Phases() []suite.Phase {
 		{Name: "AccessSingleStepReview", Run: testAccessSingleStepReview},
 		{Name: "AccessMultiStepQuorum", Run: testAccessMultiStepQuorum},
 		{Name: "AccessRejectCancelRevoke", Run: testAccessRejectCancelRevoke},
-		{Name: "AccessStepTimeout", Run: testAccessStepTimeout},
-		{Name: "AccessStepTimeoutRejects", Run: testAccessStepTimeoutRejects},
-		{Name: "AccessExpiry", Run: testAccessExpiry},
+		{Name: "AccessTimeouts", Run: testAccessTimeouts},
 		{Name: "AccessAPIScoping", Run: testAccessAPIScoping},
-		{Name: "AccessAuditTrail", Run: testAccessAuditTrail},
+		{Name: "AccessActorTrail", Run: testAccessActorTrail},
 		{Name: "AccessPortal", Run: testAccessPortal},
 		{Name: "ConsolePortal", Run: testConsolePortal},
 

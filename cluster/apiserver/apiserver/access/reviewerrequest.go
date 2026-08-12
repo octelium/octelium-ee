@@ -115,10 +115,7 @@ func (s *ServerReviewer) canReviewRequest(ctx context.Context,
 		return false, nil
 	}
 
-	currentStep := int32(0)
-	if req.Status.Review != nil {
-		currentStep = req.Status.Review.CurrentStep
-	}
+	currentStep := currentReviewStep(req)
 
 	if currentStep < 0 || int(currentStep) >= len(actionReview.Steps) {
 		return false, nil
@@ -174,4 +171,12 @@ func (s *ServerReviewer) userMatchesReviewerGroup(ctx context.Context,
 	}
 
 	return false, nil
+}
+
+func currentReviewStep(req *accessv1.Request) int32 {
+	if req == nil || req.Status == nil || req.Status.Review == nil {
+		return 0
+	}
+
+	return req.Status.Review.CurrentStep
 }

@@ -155,7 +155,7 @@ func waitAccessLogGrows(t *testing.T, h *eeharness.H, by uint32) {
 
 	var attempts int
 
-	h.Eventually(t, "the access log count to grow", eeharness.IngestionBudget,
+	h.Eventually(t, "the access log count to grow", eeharness.TimeoutBudget,
 		func(ctx context.Context) error {
 			cur, err := accessLogCount(ctx, h)
 			if err != nil {

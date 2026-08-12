@@ -26,6 +26,7 @@ const (
 	SyncBudget        = 3 * time.Minute
 	PropagationBudget = 90 * time.Second
 	IngestionBudget   = 3 * time.Minute
+	TimeoutBudget     = 7 * time.Minute
 )
 
 type H struct {

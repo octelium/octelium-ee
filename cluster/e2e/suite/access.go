@@ -78,11 +78,16 @@ func (c *accessCast) autoApproveRule(name string) *accessv1.Policy_Spec_Rule {
 
 func (c *accessCast) reviewRule(name string,
 	steps ...*accessv1.Policy_Spec_Rule_Action_Review_Step) *accessv1.Policy_Spec_Rule {
+	return c.reviewRuleFor(name, c.alphaCatalog, steps...)
+}
+
+func (c *accessCast) reviewRuleFor(name string, cat *accessv1.Catalog,
+	steps ...*accessv1.Policy_Spec_Rule_Action_Review_Step) *accessv1.Policy_Spec_Rule {
 	return &accessv1.Policy_Spec_Rule{
 		Name:      name,
 		Priority:  0,
 		Effect:    accessv1.Policy_Spec_Rule_REVIEW,
-		Condition: eeharness.CatalogResource(c.alphaCatalog),
+		Condition: eeharness.CatalogResource(cat),
 		Action: &accessv1.Policy_Spec_Rule_Action{
 			Type: &accessv1.Policy_Spec_Rule_Action_Review_{
 				Review: &accessv1.Policy_Spec_Rule_Action_Review{Steps: steps},
@@ -353,90 +358,91 @@ func testAccessRejectCancelRevoke(t *testing.T, ch *harness.H) {
 	})
 }
 
-func testAccessStepTimeout(t *testing.T, ch *harness.H) {
+func testAccessTimeouts(t *testing.T, ch *harness.H) {
 	h := eeharness.Wrap(ch)
 
 	c := newAccessCast(t, h)
 
-	h.CreateAccessPolicy(t, c.reviewRule("timeout-next",
-		&accessv1.Policy_Spec_Rule_Action_Review_Step{
-			Reviewers: []*accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer{
-				eeharness.UserReviewer(c.rita.User),
+	rejectCatalog := h.CreateCatalog(t, []string{c.alpha.Metadata.Name}, nil)
+	expiryCatalog := h.CreateCatalog(t, []string{c.alpha.Metadata.Name}, nil)
+
+	h.CreateAccessPolicy(t,
+		c.reviewRuleFor("timeout-next", c.alphaCatalog,
+			&accessv1.Policy_Spec_Rule_Action_Review_Step{
+				Reviewers: []*accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer{
+					eeharness.UserReviewer(c.rita.User),
+				},
+				ApprovalRequirement: accessv1.Policy_Spec_Rule_Action_Review_Step_ANY,
+				Timeout:             eeharness.Seconds(30),
+				OnTimeout: accessv1.
+					Policy_Spec_Rule_Action_Review_Step_ON_TIMEOUT_GOTO_NEXT_STEP,
 			},
-			ApprovalRequirement: accessv1.Policy_Spec_Rule_Action_Review_Step_ANY,
-			Timeout:             eeharness.Seconds(30),
-			OnTimeout: accessv1.
-				Policy_Spec_Rule_Action_Review_Step_ON_TIMEOUT_GOTO_NEXT_STEP,
-		},
-		&accessv1.Policy_Spec_Rule_Action_Review_Step{
-			Reviewers: []*accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer{
-				eeharness.UserReviewer(c.raj.User),
+			&accessv1.Policy_Spec_Rule_Action_Review_Step{
+				Reviewers: []*accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer{
+					eeharness.UserReviewer(c.raj.User),
+				},
+				ApprovalRequirement: accessv1.Policy_Spec_Rule_Action_Review_Step_ANY,
+			}),
+		c.reviewRuleFor("timeout-reject", rejectCatalog,
+			&accessv1.Policy_Spec_Rule_Action_Review_Step{
+				Reviewers: []*accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer{
+					eeharness.UserReviewer(c.rita.User),
+				},
+				ApprovalRequirement: accessv1.Policy_Spec_Rule_Action_Review_Step_ANY,
+				Timeout:             eeharness.Seconds(30),
+				OnTimeout:           accessv1.Policy_Spec_Rule_Action_Review_Step_ON_TIMEOUT_REJECT,
+			}),
+		&accessv1.Policy_Spec_Rule{
+			Name:      "auto-approve-short",
+			Priority:  0,
+			Effect:    accessv1.Policy_Spec_Rule_AUTO_APPROVE,
+			Condition: eeharness.CatalogResource(expiryCatalog),
+			Authorization: &accessv1.Policy_Spec_Rule_Authorization{
+				InlinePolicies:    harness.InlineAllowAny("granted"),
+				MaxAccessDuration: eeharness.Seconds(60),
 			},
-			ApprovalRequirement: accessv1.Policy_Spec_Rule_Action_Review_Step_ANY,
-		}))
-
-	req := h.CreateRequest(t, c.alice,
-		eeharness.CatalogRequest(c.alphaCatalog, eeharness.Minutes(5)))
-
-	h.WaitRequestState(t, req, accessv1.Request_Status_State_PENDING, eeharness.RequestBudget)
-
-	h.WaitRequestStep(t, req, 1, 3*time.Minute)
-}
-
-func testAccessStepTimeoutRejects(t *testing.T, ch *harness.H) {
-	h := eeharness.Wrap(ch)
-
-	c := newAccessCast(t, h)
-
-	h.CreateAccessPolicy(t, c.reviewRule("timeout-reject",
-		&accessv1.Policy_Spec_Rule_Action_Review_Step{
-			Reviewers: []*accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer{
-				eeharness.UserReviewer(c.rita.User),
-			},
-			ApprovalRequirement: accessv1.Policy_Spec_Rule_Action_Review_Step_ANY,
-			Timeout:             eeharness.Seconds(30),
-			OnTimeout:           accessv1.Policy_Spec_Rule_Action_Review_Step_ON_TIMEOUT_REJECT,
-		}))
-
-	req := h.CreateRequest(t, c.alice,
-		eeharness.CatalogRequest(c.alphaCatalog, eeharness.Minutes(5)))
-
-	h.WaitRequestState(t, req, accessv1.Request_Status_State_REJECTED, 3*time.Minute)
-
-	h.Probe(t, c.alice.User, c.alpha).MustStayDenied(t, settleWindow)
-}
-
-func testAccessExpiry(t *testing.T, ch *harness.H) {
-	h := eeharness.Wrap(ch)
-
-	c := newAccessCast(t, h)
-
-	h.CreateAccessPolicy(t, &accessv1.Policy_Spec_Rule{
-		Name:      "auto-approve-short",
-		Priority:  0,
-		Effect:    accessv1.Policy_Spec_Rule_AUTO_APPROVE,
-		Condition: eeharness.CatalogResource(c.alphaCatalog),
-		Authorization: &accessv1.Policy_Spec_Rule_Authorization{
-			InlinePolicies:    harness.InlineAllowAny("granted"),
-			MaxAccessDuration: eeharness.Seconds(60),
-		},
-	})
+		})
 
 	probe := h.Probe(t, c.alice.User, c.alpha)
 	probe.MustBeDenied(t)
 
-	req := h.CreateRequest(t, c.alice,
-		eeharness.CatalogRequest(c.alphaCatalog, eeharness.Seconds(60)))
+	nextReq := h.CreateRequest(t, c.alice,
+		eeharness.CatalogRequest(c.alphaCatalog, eeharness.Minutes(5)))
+	rejectReq := h.CreateRequest(t, c.alice,
+		eeharness.CatalogRequest(rejectCatalog, eeharness.Minutes(5)))
+	expiryReq := h.CreateRequest(t, c.alice,
+		eeharness.CatalogRequest(expiryCatalog, eeharness.Seconds(60)))
 
-	approved := h.WaitRequestState(t, req,
+	h.WaitRequestState(t, nextReq,
+		accessv1.Request_Status_State_PENDING, eeharness.RequestBudget)
+	h.WaitRequestState(t, rejectReq,
+		accessv1.Request_Status_State_PENDING, eeharness.RequestBudget)
+
+	approved := h.WaitRequestState(t, expiryReq,
 		accessv1.Request_Status_State_APPROVED, eeharness.RequestBudget)
-	require.NotNil(t, approved.Status.AccessEndsAt)
 
-	probe.MustBeAllowed(t)
+	t.Run("TheApprovalCarriesAnAccessDeadline", func(t *testing.T) {
+		require.NotNil(t, approved.Status.AccessEndsAt)
+		assert.True(t, approved.Status.AccessEndsAt.AsTime().
+			Before(time.Now().Add(2*time.Minute)))
+	})
+
+	t.Run("TheDataPlaneGrantsAccess", func(t *testing.T) {
+		probe.MustBeAllowed(t)
+	})
+
+	t.Run("TheStepAdvancesOnTimeout", func(t *testing.T) {
+		h.WaitRequestStep(t, nextReq, 1, eeharness.TimeoutBudget)
+	})
+
+	t.Run("TheRequestIsRejectedOnTimeout", func(t *testing.T) {
+		h.WaitRequestState(t, rejectReq,
+			accessv1.Request_Status_State_REJECTED, eeharness.TimeoutBudget)
+	})
 
 	t.Run("TheRequestExpires", func(t *testing.T) {
-		expired := h.WaitRequestState(t, req,
-			accessv1.Request_Status_State_EXPIRED, 4*time.Minute)
+		expired := h.WaitRequestState(t, expiryReq,
+			accessv1.Request_Status_State_EXPIRED, eeharness.TimeoutBudget)
 		assert.Nil(t, expired.Status.PolicyTriggerRef)
 	})
 

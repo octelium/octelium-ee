@@ -9,8 +9,6 @@
 package suite
 
 import (
-	"context"
-	"fmt"
 	"net/http"
 	"testing"
 
@@ -18,11 +16,9 @@ import (
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
-	"github.com/octelium/octelium/apis/main/visibilityv1"
 	"github.com/octelium/octelium/cluster/e2e/harness"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/grpcerr"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -118,12 +114,12 @@ func testAccessAPIScoping(t *testing.T, ch *harness.H) {
 	})
 }
 
-func testAccessAuditTrail(t *testing.T, ch *harness.H) {
+func testAccessActorTrail(t *testing.T, ch *harness.H) {
 	h := eeharness.Wrap(ch)
 
 	c := newAccessCast(t, h)
 
-	h.CreateAccessPolicy(t, c.reviewRule("audit",
+	h.CreateAccessPolicy(t, c.reviewRule("actor-trail",
 		&accessv1.Policy_Spec_Rule_Action_Review_Step{
 			Reviewers: []*accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer{
 				eeharness.UserReviewer(c.rita.User),
@@ -135,42 +131,48 @@ func testAccessAuditTrail(t *testing.T, ch *harness.H) {
 		eeharness.CatalogRequest(c.alphaCatalog, eeharness.Minutes(5)))
 	h.WaitRequestState(t, req, accessv1.Request_Status_State_PENDING, eeharness.RequestBudget)
 
-	h.Review(t, c.rita, req, accessv1.Review_Spec_DECISION_APPROVE)
+	review := h.Review(t, c.rita, req, accessv1.Review_Spec_DECISION_APPROVE)
 	h.WaitRequestState(t, req, accessv1.Request_Status_State_APPROVED, eeharness.RequestBudget)
 
-	t.Run("TheRequesterIsAudited", func(t *testing.T) {
-		waitAuditLogMethod(t, h, c.alice, "CreateRequest")
+	t.Run("TheRequestRecordsTheRequester", func(t *testing.T) {
+		cur := h.GetRequest(t, req)
+
+		require.NotNil(t, cur.Metadata.ActorRef)
+		assert.Equal(t, "Session", cur.Metadata.ActorRef.Kind)
+		assert.NotEmpty(t, cur.Metadata.ActorRef.Uid)
+		assert.Equal(t, "octelium.api.main.access.v1.UserService/CreateRequest",
+			cur.Metadata.ActorOperation)
+
+		assert.Equal(t, c.alice.User.Metadata.Uid, sessionUser(t, h, cur.Metadata.ActorRef.Uid))
 	})
 
-	t.Run("TheReviewerIsAudited", func(t *testing.T) {
-		waitAuditLogMethod(t, h, c.rita, "CreateReview")
+	t.Run("TheReviewRecordsTheReviewer", func(t *testing.T) {
+		require.NotNil(t, review.Metadata.ActorRef)
+		assert.Equal(t, "Session", review.Metadata.ActorRef.Kind)
+		assert.Equal(t, "octelium.api.main.access.v1.ReviewerService/CreateReview",
+			review.Metadata.ActorOperation)
+
+		assert.Equal(t, c.rita.User.Metadata.Uid,
+			sessionUser(t, h, review.Metadata.ActorRef.Uid))
+	})
+
+	t.Run("TheRequesterIsNotTheReviewer", func(t *testing.T) {
+		cur := h.GetRequest(t, req)
+		assert.NotEqual(t, cur.Metadata.ActorRef.Uid, review.Metadata.ActorRef.Uid)
 	})
 }
 
-func waitAuditLogMethod(t *testing.T, h *eeharness.H, a *eeharness.Actor, method string) {
+func sessionUser(t *testing.T, h *eeharness.H, sessionUID string) string {
 	t.Helper()
 
-	h.Eventually(t, fmt.Sprintf("the audit log to carry %s", method), eeharness.IngestionBudget,
-		func(ctx context.Context) error {
-			res, err := h.AuditLogC().ListAuditLog(ctx, &visibilityv1.ListAuditLogRequest{
-				UserRef: umetav1.GetObjectReference(a.User),
-			})
-			if err != nil {
-				return err
-			}
+	ctx, cancel := h.Ctx(t)
+	defer cancel()
 
-			for _, itm := range res.Items {
-				if itm.Entry.Method == method {
-					if itm.Entry.UserRef.Uid != a.User.Metadata.Uid {
-						return errors.Errorf("the entry belongs to another User")
-					}
-					return nil
-				}
-			}
+	sess, err := h.CoreC().GetSession(ctx, &metav1.GetOptions{Uid: sessionUID})
+	require.Nil(t, err)
+	require.NotNil(t, sess.Status.UserRef)
 
-			return errors.Errorf("no %s entry among %d audit log entries",
-				method, len(res.Items))
-		})
+	return sess.Status.UserRef.Uid
 }
 
 func testAccessPortal(t *testing.T, ch *harness.H) {
