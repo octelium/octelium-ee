@@ -25,3 +25,7 @@ func (s *ServerMetric) ListMetricDescriptors(ctx context.Context, req *vmetricsv
 func (s *ServerMetric) ListMetricCatalog(ctx context.Context, req *vmetricsv1.ListMetricCatalogRequest) (*vmetricsv1.ListMetricCatalogResponse, error) {
 	return s.c.ListMetricCatalog(ctx, req)
 }
+
+func (s *ServerMetric) GetMetricsCapabilities(ctx context.Context, req *vmetricsv1.GetMetricsCapabilitiesRequest) (*vmetricsv1.GetMetricsCapabilitiesResponse, error) {
+	return s.c.GetMetricsCapabilities(ctx, req)
+}
