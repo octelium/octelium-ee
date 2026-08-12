@@ -113,20 +113,20 @@ func (s *server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 			usr, err = coreSrv.UpdateUser(ctx, oUsr)
 			if err != nil {
-				s.setErrorInternal(w, err)
+				s.setErrorFromAPI(w, err)
 				return
 			}
 		} else {
 			usr, err = coreSrv.CreateUser(ctx, usr)
 			if err != nil {
-				s.setErrorInternal(w, err)
+				s.setErrorFromAPI(w, err)
 				return
 			}
 		}
 	} else {
 		usr, err = coreSrv.CreateUser(ctx, usr)
 		if err != nil {
-			s.setErrorInternal(w, err)
+			s.setErrorFromAPI(w, err)
 			return
 		}
 	}
@@ -159,12 +159,7 @@ func (s *server) handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 	reqCtx := middlewares.GetCtxRequestContext(ctx)
 	dpUsr, err := s.getDPUserFromPath(r)
 	if err != nil {
-		if grpcerr.IsNotFound(err) {
-			s.setErrorBadRequestWithErr(w, err)
-			return
-		}
-
-		s.setErrorInternal(w, err)
+		s.setErrorFromAPI(w, err)
 		return
 	}
 
@@ -197,7 +192,7 @@ func (s *server) handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	usr, err = coreSrv.UpdateUser(ctx, usr)
 	if err != nil {
-		s.setErrorInternal(w, err)
+		s.setErrorFromAPI(w, err)
 		return
 	}
 
@@ -227,7 +222,7 @@ func (s *server) handleDeleteUser(w http.ResponseWriter, r *http.Request) {
 	dpUsr, err := s.getDPUserFromPath(r)
 	if err != nil {
 		if !grpcerr.IsNotFound(err) {
-			s.setErrorInternal(w, err)
+			s.setErrorFromAPI(w, err)
 			return
 		}
 
@@ -345,11 +340,7 @@ func (s *server) handleGetUser(w http.ResponseWriter, r *http.Request) {
 
 	dpUsr, err := s.getDPUserFromPath(r)
 	if err != nil {
-		if grpcerr.IsNotFound(err) {
-			s.setErrorBadRequestWithErr(w, err)
-			return
-		}
-		s.setErrorInternal(w, err)
+		s.setErrorFromAPI(w, err)
 		return
 	}
 
@@ -440,11 +431,7 @@ func (s *server) handlePatchUser(w http.ResponseWriter, r *http.Request) {
 
 	dpUsr, err := s.getDPUserFromPath(r)
 	if err != nil {
-		if grpcerr.IsNotFound(err) {
-			s.setError(w, 404, "User not found")
-			return
-		}
-		s.setErrorInternal(w, err)
+		s.setErrorFromAPI(w, err)
 		return
 	}
 
@@ -542,13 +529,13 @@ func (s *server) handlePatchUser(w http.ResponseWriter, r *http.Request) {
 
 	usr, err = coreSrv.UpdateUser(ctx, usr)
 	if err != nil {
-		s.setErrorInternal(w, err)
+		s.setErrorFromAPI(w, err)
 		return
 	}
 
 	dpUsr, err = s.octeliumC.EnterpriseC().UpdateDirectoryProviderUser(ctx, dpUsr)
 	if err != nil {
-		s.setErrorInternal(w, err)
+		s.setErrorFromAPI(w, err)
 		return
 	}
 
@@ -620,13 +607,13 @@ func (s *server) setUser(ctx context.Context,
 func (s *server) getUID(r *http.Request) (string, error) {
 	parts := strings.Split(r.URL.Path, "/")
 	if len(parts) < 1 {
-		return "", errors.Errorf("Invalid URL path")
+		return "", grpcutils.InvalidArg("Invalid URL path")
 	}
 
 	slices.Reverse(parts)
 	uid := parts[0]
 	if !govalidator.IsUUIDv4(uid) {
-		return "", errors.Errorf("Invalid UID")
+		return "", grpcutils.InvalidArg("Invalid UID")
 	}
 
 	return uid, nil

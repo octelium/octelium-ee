@@ -449,6 +449,8 @@ func (s *server) handlePatchGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var memberErr error
+
 	for _, op := range req.Operations {
 		switch strings.ToLower(op.Op) {
 		case "replace":
@@ -488,6 +490,7 @@ func (s *server) handlePatchGroup(w http.ResponseWriter, r *http.Request) {
 					if err := s.addGroupToUser(ctx, value, group, reqCtx.DirectoryProvider); err != nil {
 						zap.L().Warn("Could not add Group to User",
 							zap.Any("member", mem), zap.String("groupUID", group.Metadata.Uid), zap.Error(err))
+						memberErr = err
 					}
 				}
 			}
@@ -500,6 +503,7 @@ func (s *server) handlePatchGroup(w http.ResponseWriter, r *http.Request) {
 					if err := s.removeGroupFromUser(ctx, uid, group); err != nil {
 						zap.L().Warn("Could not remove Group from User via path filter",
 							zap.String("memberUID", uid), zap.String("groupUID", group.Metadata.Uid), zap.Error(err))
+						memberErr = err
 					}
 				} else {
 					partsSingle := strings.Split(op.Path, "'")
@@ -508,6 +512,7 @@ func (s *server) handlePatchGroup(w http.ResponseWriter, r *http.Request) {
 						if err := s.removeGroupFromUser(ctx, uid, group); err != nil {
 							zap.L().Warn("Could not remove Group from User via path filter",
 								zap.String("memberUID", uid), zap.String("groupUID", group.Metadata.Uid), zap.Error(err))
+							memberErr = err
 						}
 					}
 				}
@@ -541,6 +546,7 @@ func (s *server) handlePatchGroup(w http.ResponseWriter, r *http.Request) {
 					if err := s.removeGroupFromUser(ctx, value, group); err != nil {
 						zap.L().Warn("Could not remove Group from User via value payload",
 							zap.Any("member", mem), zap.String("groupUID", group.Metadata.Uid), zap.Error(err))
+						memberErr = err
 					}
 				}
 			}
@@ -548,6 +554,11 @@ func (s *server) handlePatchGroup(w http.ResponseWriter, r *http.Request) {
 			s.setErrorBadRequestWithErr(w, errors.Errorf("Invalid patch operation type"))
 			return
 		}
+	}
+
+	if memberErr != nil {
+		s.setErrorFromAPI(w, memberErr)
+		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)

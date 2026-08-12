@@ -34,6 +34,7 @@ import (
 	"github.com/octelium/octelium/cluster/common/httputils"
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/common/pbutils"
+	"github.com/octelium/octelium/pkg/grpcerr"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -456,7 +457,27 @@ func (s *server) setErrorInternal(w http.ResponseWriter, err error) {
 
 func (s *server) setErrorBadRequestWithErr(w http.ResponseWriter, err error) {
 	zap.L().Debug("returning bad request", zap.Error(err))
-	s.setError(w, http.StatusBadRequest, "Internal error")
+	s.setError(w, http.StatusBadRequest, "Invalid request")
+}
+
+func (s *server) setErrorNotFound(w http.ResponseWriter, err error) {
+	zap.L().Debug("returning not found", zap.Error(err))
+	s.setError(w, http.StatusNotFound, "Resource not found")
+}
+
+func (s *server) setErrorFromAPI(w http.ResponseWriter, err error) {
+	switch {
+	case grpcerr.IsNotFound(err):
+		s.setErrorNotFound(w, err)
+	case grpcerr.IsInvalidArg(err), grpcerr.IsCanceled(err), grpcerr.IsDeadlineExceeded(err):
+		s.setErrorBadRequestWithErr(w, err)
+	case grpcerr.IsUnauthorized(err), grpcerr.IsPermissionDenied(err),
+		grpcerr.IsUnauthenticated(err):
+		zap.L().Debug("returning forbidden", zap.Error(err))
+		s.setError(w, http.StatusForbidden, "Not allowed")
+	default:
+		s.setErrorInternal(w, err)
+	}
 }
 
 func Run(ctx context.Context) error {
