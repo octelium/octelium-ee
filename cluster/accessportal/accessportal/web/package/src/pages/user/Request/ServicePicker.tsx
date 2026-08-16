@@ -62,7 +62,7 @@ const ServiceCard = (props: {
     <button
       onClick={props.onClick}
       className={twMerge(
-        "w-full flex items-center gap-3 text-left rounded-lg border px-3 py-2.5 transition-[border-color,box-shadow,background-color] duration-150",
+        "w-full min-w-0 flex items-center gap-3 text-left rounded-lg border px-3 py-2.5 transition-[border-color,box-shadow,background-color] duration-150",
         props.selected
           ? "border-slate-900 bg-slate-50 shadow-[0_2px_8px_rgba(15,23,42,0.10)]"
           : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50",
@@ -171,7 +171,7 @@ const ServicePicker = (props: {
   }, {});
 
   return (
-    <div className="w-full flex flex-col gap-3">
+    <div className="w-full min-w-0 flex flex-col gap-3">
       <div className="relative">
         <Search
           size={13}

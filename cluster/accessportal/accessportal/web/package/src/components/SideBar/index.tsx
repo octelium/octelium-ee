@@ -3,6 +3,8 @@ import * as React from "react";
 import { NavLink } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 
+import RightSidebar from "./RightSidebar";
+
 type NavItem = {
   to: string;
   label: string;
@@ -61,10 +63,14 @@ const Sidebar = (props: { onNavigate?: () => void }) => (
       ))}
     </nav>
 
-    <div className="shrink-0 px-5 py-4 border-t border-slate-100">
+    <div className="shrink-0 px-5 py-3">
       <span className="text-[0.66rem] font-semibold text-slate-400">
         Zero Trust Access
       </span>
+    </div>
+
+    <div className="shrink-0 border-t border-slate-100 px-3 py-3">
+      <RightSidebar />
     </div>
   </div>
 );

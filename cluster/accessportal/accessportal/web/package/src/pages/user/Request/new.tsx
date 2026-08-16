@@ -226,7 +226,7 @@ const NewRequest = () => {
     .slice(0, 16);
 
   return (
-    <div className="w-full">
+    <div className="w-full min-w-0">
       <div className="mb-6">
         <Eyebrow>Access</Eyebrow>
         <h1 className="text-[1.35rem] font-bold text-slate-900 leading-tight">
@@ -237,9 +237,9 @@ const NewRequest = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-5 items-start">
-        <div className="flex flex-col gap-4">
-          <Card className="p-4">
+      <div className="grid min-w-0 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-5 items-start">
+        <div className="flex min-w-0 flex-col gap-4">
+          <Card className="min-w-0 p-4">
             <div className="flex items-center justify-between gap-3 mb-3">
               <div>
                 <Eyebrow>Request for</Eyebrow>
@@ -304,7 +304,7 @@ const NewRequest = () => {
             )}
           </Card>
 
-          <Card className="p-4">
+          <Card className="min-w-0 p-4">
           <div className="flex items-center gap-1 mb-3">
             <TabButton
               active={tab === "service"}
@@ -402,7 +402,7 @@ const NewRequest = () => {
           </Card>
         </div>
 
-        <Card className="p-5 lg:sticky lg:top-20">
+        <Card className="min-w-0 p-5 lg:sticky lg:top-20">
           <div className="flex flex-col gap-4">
             <div>
               <Eyebrow>Request details</Eyebrow>

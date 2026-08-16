@@ -1,5 +1,5 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
-import { Pagination } from "@mantine/core";
+import { Pagination, Select } from "@mantine/core";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { ChevronRight, ClipboardCheck, RefreshCw, Search } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -167,16 +167,21 @@ const Queue = () => {
             className="w-full pl-8 pr-3 h-9 text-[0.78rem] font-semibold text-slate-700 bg-white border border-slate-200 rounded-md shadow-[0_1px_3px_rgba(15,23,42,0.05)] outline-none focus:border-slate-400 transition-all placeholder:text-slate-400"
           />
         </div>
-        <select
+        <Select
           value={queueFilter}
-          onChange={(event) => setFilter("filter", event.target.value)}
+          onChange={(value) => setFilter("filter", value ?? "pending")}
           aria-label="Filter review queue"
-          className="h-9 rounded-md border border-slate-200 bg-white px-3 text-[0.75rem] font-bold text-slate-600 outline-none focus:border-slate-400"
-        >
-          <option value="pending">Awaiting review</option>
-          <option value="decided">Recently decided</option>
-          <option value="all">All requests</option>
-        </select>
+          allowDeselect={false}
+          className="min-w-[170px]"
+          comboboxProps={{
+            transitionProps: { transition: "pop", duration: 180 },
+          }}
+          data={[
+            { value: "pending", label: "Awaiting review" },
+            { value: "decided", label: "Recently decided" },
+            { value: "all", label: "All requests" },
+          ]}
+        />
         <button
           type="button"
           onClick={() => qry.refetch()}

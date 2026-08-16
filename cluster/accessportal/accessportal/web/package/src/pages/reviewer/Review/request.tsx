@@ -8,6 +8,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import TimeAgo from "@/components/TimeAgo";
+import RequestContext from "@/components/Access/RequestContext";
 import {
   Badge,
   Card,
@@ -22,13 +23,12 @@ import {
 } from "../../../ui";
 import {
   requestResourceLabel,
-  requestSubjectName,
   durationToParts,
   shortName,
   statusMeta,
   urgencyMeta,
 } from "../../../utils";
-import { getReviewerClient, getUserClient } from "../../../utils/client";
+import { getReviewerClient } from "../../../utils/client";
 
 const ReviewRequest = () => {
   const { name } = useParams<{ name: string }>();
@@ -44,18 +44,6 @@ const ReviewRequest = () => {
       const { response } = await getReviewerClient().getRequest(
         MetaP.GetOptions.create({ name: name! }),
       );
-      return response;
-    },
-  });
-
-  const subjectName = qry.data ? requestSubjectName(qry.data) : "";
-  const subjectQry = useQuery({
-    queryKey: ["reviewer", "getSubjectUser", subjectName],
-    enabled: !!subjectName,
-    queryFn: async () => {
-      const { response } = await getUserClient().getSubjectUser({
-        userRef: MetaP.ObjectReference.create({ name: subjectName }),
-      });
       return response;
     },
   });
@@ -145,11 +133,6 @@ const ReviewRequest = () => {
               <KeyValue label="Type">{resource.kind}</KeyValue>
               <KeyValue label="Urgency">{urgency.label}</KeyValue>
               <KeyValue label="Duration">{duration.amount} {duration.unit}</KeyValue>
-              {subjectName && (
-                <KeyValue label="Access for">
-                  <span className="font-mono">{subjectQry.data?.displayName || subjectName}</span>
-                </KeyValue>
-              )}
               <KeyValue label="Requested">
                 {item.status?.state?.createdAt ? (
                   <TimeAgo rfc3339={item.status.state.createdAt} />
@@ -175,6 +158,8 @@ const ReviewRequest = () => {
               )}
             </div>
           </Card>
+
+          <RequestContext request={item} />
 
           {item.status?.lastStates && item.status.lastStates.length > 1 && (
             <Card className="p-5">

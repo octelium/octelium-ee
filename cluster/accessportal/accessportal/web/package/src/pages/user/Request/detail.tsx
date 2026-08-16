@@ -8,6 +8,7 @@ import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import TimeAgo, { TimeRemaining } from "@/components/TimeAgo";
+import RequestContext from "@/components/Access/RequestContext";
 import {
   Badge,
   Card,
@@ -21,7 +22,6 @@ import {
 import {
   durationToParts,
   requestResourceLabel,
-  requestSubjectName,
   statusMeta,
   urgencyMeta,
 } from "../../../utils";
@@ -39,18 +39,6 @@ const RequestDetail = () => {
       const { response } = await getUserClient().getRequest(
         MetaP.GetOptions.create({ name: name! }),
       );
-      return response;
-    },
-  });
-
-  const subjectName = qry.data ? requestSubjectName(qry.data) : "";
-  const subjectQry = useQuery({
-    queryKey: ["user", "getSubjectUser", subjectName],
-    enabled: !!subjectName,
-    queryFn: async () => {
-      const { response } = await getUserClient().getSubjectUser({
-        userRef: MetaP.ObjectReference.create({ name: subjectName }),
-      });
       return response;
     },
   });
@@ -138,16 +126,6 @@ const RequestDetail = () => {
             <KeyValue label="Duration">
               {duration.amount} {duration.unit}
             </KeyValue>
-            {subjectName && (
-              <KeyValue label="Access for">
-                <span className="font-mono">{subjectQry.data?.displayName || subjectName}</span>
-                {subjectQry.data?.email && (
-                  <span className="block text-[0.7rem] font-medium text-slate-400 mt-0.5">
-                    {subjectQry.data.email}
-                  </span>
-                )}
-              </KeyValue>
-            )}
             <KeyValue label="Requested">
               {item.status?.state?.createdAt ? (
                 <TimeAgo rfc3339={item.status.state.createdAt} />
@@ -169,6 +147,8 @@ const RequestDetail = () => {
             )}
           </div>
         </Card>
+
+        <RequestContext request={item} />
 
         {(item.status?.approvalStartAt ||
           item.status?.approvalEndAt ||

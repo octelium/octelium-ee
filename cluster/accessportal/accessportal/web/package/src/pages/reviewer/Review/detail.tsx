@@ -8,6 +8,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import TimeAgo from "@/components/TimeAgo";
+import RequestContext from "@/components/Access/RequestContext";
 import {
   Badge,
   Card,
@@ -40,6 +41,18 @@ const ReviewDetail = () => {
     queryFn: async () => {
       const { response } = await getReviewerClient().getReview(
         MetaP.GetOptions.create({ name: name! }),
+      );
+      return response;
+    },
+  });
+
+  const requestName = qry.data?.status?.requestRef?.name ?? "";
+  const requestQry = useQuery({
+    queryKey: ["reviewer", "getRequestForReview", requestName],
+    enabled: !!requestName,
+    queryFn: async () => {
+      const { response } = await getReviewerClient().getRequest(
+        MetaP.GetOptions.create({ name: requestName }),
       );
       return response;
     },
@@ -137,6 +150,7 @@ const ReviewDetail = () => {
       />
 
       <div className="flex flex-col gap-4">
+        {requestQry.data && <RequestContext request={requestQry.data} heading="Request under review" />}
         <Card className="p-5">
           <div className="flex items-center justify-between mb-3">
             <SectionTitle>Decision</SectionTitle>

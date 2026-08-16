@@ -1,5 +1,5 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
-import { Button, Pagination } from "@mantine/core";
+import { Button, Pagination, Select } from "@mantine/core";
 import {
   keepPreviousData,
   useMutation,
@@ -225,20 +225,25 @@ const Requests = () => {
             className="w-full pl-8 pr-3 h-9 text-[0.78rem] font-semibold text-slate-700 bg-white border border-slate-200 rounded-md shadow-[0_1px_3px_rgba(15,23,42,0.05)] outline-none focus:border-slate-400 transition-all placeholder:text-slate-400"
           />
         </div>
-        <select
+        <Select
           value={statusFilter}
-          onChange={(event) => setFilter("status", event.target.value)}
+          onChange={(value) => setFilter("status", value ?? "all")}
           aria-label="Filter requests by status"
-          className="h-9 rounded-md border border-slate-200 bg-white px-3 text-[0.75rem] font-bold text-slate-600 outline-none focus:border-slate-400"
-        >
-          <option value="all">All statuses</option>
-          <option value="pending">Pending</option>
-          <option value="approved">Approved</option>
-          <option value="rejected">Rejected</option>
-          <option value="revoked">Revoked</option>
-          <option value="expired">Expired</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
+          allowDeselect={false}
+          className="min-w-[160px]"
+          comboboxProps={{
+            transitionProps: { transition: "pop", duration: 180 },
+          }}
+          data={[
+            { value: "all", label: "All statuses" },
+            { value: "pending", label: "Pending" },
+            { value: "approved", label: "Approved" },
+            { value: "rejected", label: "Rejected" },
+            { value: "revoked", label: "Revoked" },
+            { value: "expired", label: "Expired" },
+            { value: "cancelled", label: "Cancelled" },
+          ]}
+        />
         <Button
           variant="default"
           size="sm"

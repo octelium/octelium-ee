@@ -26,8 +26,8 @@ export default () => {
     : `https://${getDomain()}/authenticators`;
 
   return (
-    <div className="flex flex-col h-full w-full">
-      <div className="flex flex-col gap-2 mt-12">
+    <div className="flex flex-col w-full">
+      <div className="flex flex-col gap-2">
         <Button
           variant="outline"
           component="a"

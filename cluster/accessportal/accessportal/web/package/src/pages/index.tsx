@@ -1,6 +1,5 @@
 import Footer from "@/components/Footer";
 import SideBar from "@/components/SideBar";
-import RightSidebar from "@/components/SideBar/RightSidebar";
 import TopBar from "@/components/TopBar";
 import { Toaster } from "@/components/ui/sonner";
 import { setStatus } from "@/features/settings/slice";
@@ -61,11 +60,6 @@ export default () => {
             breakpoint: "sm",
             collapsed: { mobile: !opened },
           }}
-          aside={{
-            width: 300,
-            breakpoint: "md",
-            collapsed: { desktop: false, mobile: true },
-          }}
           padding="md"
         >
           <AppShell.Header
@@ -96,13 +90,6 @@ export default () => {
             <Outlet />
           </AppShell.Main>
 
-          <AppShell.Aside
-            p="md"
-            className="!bg-transparent"
-            style={{ zIndex: 10, marginTop: 60 }}
-          >
-            <RightSidebar />
-          </AppShell.Aside>
         </AppShell>
       </div>
 
