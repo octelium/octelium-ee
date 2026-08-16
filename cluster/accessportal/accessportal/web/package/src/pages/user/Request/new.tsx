@@ -1,17 +1,21 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
+import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import * as MetaP from "@/apis/metav1/metav1";
 import { Button, Select, Textarea } from "@mantine/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Boxes, Layers, Search, Send } from "lucide-react";
+import { Boxes, Layers, Search, Send, UserRound } from "lucide-react";
 import * as React from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { twMerge } from "tailwind-merge";
 
 import DurationInput from "../../../components/DurationInput";
-import { Badge, Card, EmptyState, Eyebrow, Field, Loading } from "../../../ui";
+import { Avatar, Badge, Card, ConfirmDialog, EmptyState, ErrorState, Eyebrow, Field, Loading } from "../../../ui";
+import { durationToParts } from "../../../utils";
 import { getUserClient } from "../../../utils/client";
+import { useAppSelector } from "../../../utils/hooks";
 import ServicePicker from "./ServicePicker";
+import SubjectPicker from "./SubjectPicker";
 
 type Selection =
   | { kind: "service"; name: string; label: string }
@@ -24,6 +28,7 @@ const TabButton = (props: {
   children: React.ReactNode;
 }) => (
   <button
+    type="button"
     onClick={props.onClick}
     className={twMerge(
       "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.76rem] font-bold transition-colors duration-150",
@@ -70,11 +75,16 @@ const CatalogCard = (props: {
 const NewRequest = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const settings = useAppSelector((state) => state.settings);
   const [searchParams] = useSearchParams();
   const deepLinkApplied = React.useRef(false);
   const [tab, setTab] = React.useState<"service" | "catalog">("service");
   const [catalogQuery, setCatalogQuery] = React.useState("");
   const [selection, setSelection] = React.useState<Selection | undefined>();
+  const [requestFor, setRequestFor] = React.useState<"self" | "subject">("self");
+  const [subject, setSubject] = React.useState<AccessP.SubjectUser | undefined>();
+  const [deadline, setDeadline] = React.useState<Date | null>(null);
+  const [submitOpen, setSubmitOpen] = React.useState(false);
 
   const [urgency, setUrgency] = React.useState<AccessP.Request_Spec_Urgency>(
     AccessP.Request_Spec_Urgency.NORMAL,
@@ -87,14 +97,24 @@ const NewRequest = () => {
   const catalogsQry = useQuery({
     queryKey: ["user", "listCatalog"],
     queryFn: async () => {
-      const { response } = await getUserClient().listCatalog(
-        AccessP.ListUserCatalogOptions.create({}),
-      );
-      return response;
+      const items: AccessP.Catalog[] = [];
+      let page = 0;
+      for (;;) {
+        const { response } = await getUserClient().listCatalog(
+          AccessP.ListUserCatalogOptions.create({
+            common: { page, itemsPerPage: 500 },
+          }),
+        );
+        items.push(...response.items);
+        if (!response.listResponseMeta?.hasMore) break;
+        page += 1;
+        if (page > 1000) break;
+      }
+      return { items };
     },
   });
 
-  const catalogs = (catalogsQry.data?.items ?? []) as AccessP.Catalog[];
+  const catalogs = catalogsQry.data?.items ?? [];
 
   React.useEffect(() => {
     if (deepLinkApplied.current) return;
@@ -122,6 +142,9 @@ const NewRequest = () => {
   const createMutation = useMutation({
     mutationFn: async () => {
       if (!selection) throw new Error("Select a resource to request access to");
+      if (requestFor === "subject" && !subject) {
+        throw new Error("Select the user who should receive access");
+      }
 
       const resource: AccessP.Request_Spec_Resource =
         selection.kind === "service"
@@ -152,15 +175,32 @@ const NewRequest = () => {
           urgency,
           justification,
           duration,
+          deadline: deadline ? Timestamp.fromDate(deadline) : undefined,
           resource,
+          ...(requestFor === "subject" && subject
+            ? {
+                subject: AccessP.Request_Spec_Subject.create({
+                  type: {
+                    oneofKind: "userRef",
+                    userRef: MetaP.ObjectReference.create({
+                      name: subject.userRef?.name,
+                    }),
+                  },
+                }),
+              }
+            : {}),
         },
       });
 
-      const { response } = await getUserClient().createRequest(req);
+      const { response } =
+        requestFor === "subject"
+          ? await getUserClient().createRequestForSubject(req)
+          : await getUserClient().createRequest(req);
       return response;
     },
     onSuccess: (response) => {
       toast.success("Access request submitted");
+      setSubmitOpen(false);
       queryClient.invalidateQueries({ queryKey: ["user", "listRequest"] });
       navigate(`/user/requests/${response.metadata!.name}`);
     },
@@ -176,6 +216,14 @@ const NewRequest = () => {
       c.metadata?.name.toLowerCase().includes(cq) ||
       c.metadata?.displayName?.toLowerCase().includes(cq),
   );
+  const deadlineInput = deadline
+    ? new Date(deadline.getTime() - deadline.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 16)
+    : "";
+  const minimumDeadline = new Date(Date.now() - new Date().getTimezoneOffset() * 60000)
+    .toISOString()
+    .slice(0, 16);
 
   return (
     <div className="w-full">
@@ -190,7 +238,73 @@ const NewRequest = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-5 items-start">
-        <Card className="p-4">
+        <div className="flex flex-col gap-4">
+          <Card className="p-4">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div>
+                <Eyebrow>Request for</Eyebrow>
+                <p className="text-[0.75rem] font-medium text-slate-500 mt-1">
+                  Choose who will receive this access.
+                </p>
+              </div>
+              <div className="flex items-center gap-1 rounded-lg bg-slate-100 p-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRequestFor("self");
+                    setSubject(undefined);
+                  }}
+                  className={twMerge(
+                    "px-2.5 py-1.5 rounded-md text-[0.7rem] font-bold transition-colors",
+                    requestFor === "self"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-500 hover:text-slate-800",
+                  )}
+                >
+                  Myself
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRequestFor("subject")}
+                  className={twMerge(
+                    "px-2.5 py-1.5 rounded-md text-[0.7rem] font-bold transition-colors",
+                    requestFor === "subject"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-500 hover:text-slate-800",
+                  )}
+                >
+                  Another user
+                </button>
+              </div>
+            </div>
+
+            {requestFor === "self" ? (
+              <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2.5">
+                <Avatar
+                  src={settings.status?.user?.metadata?.picURL}
+                  name={
+                    settings.status?.user?.metadata?.displayName ||
+                    settings.status?.user?.metadata?.name
+                  }
+                  size="sm"
+                />
+                <div className="min-w-0">
+                  <p className="text-[0.8rem] font-bold text-slate-700 truncate">
+                    {settings.status?.user?.metadata?.displayName ||
+                      settings.status?.user?.metadata?.name ||
+                      "My account"}
+                  </p>
+                  <p className="text-[0.68rem] font-medium text-slate-400 truncate">
+                    {settings.status?.user?.spec?.email || "Your own access"}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <SubjectPicker value={subject} onChange={setSubject} />
+            )}
+          </Card>
+
+          <Card className="p-4">
           <div className="flex items-center gap-1 mb-3">
             <TabButton
               active={tab === "service"}
@@ -243,6 +357,11 @@ const NewRequest = () => {
 
               {catalogsQry.isLoading ? (
                 <Loading />
+              ) : catalogsQry.isError ? (
+                <ErrorState
+                  title="Could not load catalogs"
+                  onRetry={() => catalogsQry.refetch()}
+                />
               ) : filteredCatalogs.length === 0 ? (
                 <EmptyState
                   icon={<Layers size={20} strokeWidth={2} />}
@@ -280,29 +399,41 @@ const NewRequest = () => {
               )}
             </div>
           )}
-        </Card>
+          </Card>
+        </div>
 
         <Card className="p-5 lg:sticky lg:top-20">
           <div className="flex flex-col gap-4">
             <div>
               <Eyebrow>Request details</Eyebrow>
-              {selection ? (
-                <div className="mt-2 flex items-center gap-2">
-                  <span className="text-[0.85rem] font-bold text-slate-800 truncate">
-                    {selection.label}
-                  </span>
-                  <Badge tone="slate">
-                    {selection.kind === "service" ? "Service" : "Catalog"}
-                  </Badge>
-                </div>
-              ) : (
-                <p className="mt-2 text-[0.76rem] font-semibold text-slate-400">
-                  Select a {tab} on the left to request access.
-                </p>
-              )}
+              <div className="mt-2 flex flex-col gap-2">
+                {requestFor === "subject" && subject && (
+                  <div className="flex items-center gap-2 text-[0.75rem] font-semibold text-slate-600">
+                    <UserRound size={13} className="text-slate-400" />
+                    <span>For {subject.displayName || subject.userRef?.name}</span>
+                  </div>
+                )}
+                {selection ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[0.85rem] font-bold text-slate-800 truncate">
+                      {selection.label}
+                    </span>
+                    <Badge tone="slate">
+                      {selection.kind === "service" ? "Service" : "Catalog"}
+                    </Badge>
+                  </div>
+                ) : (
+                  <p className="text-[0.76rem] font-semibold text-slate-400">
+                    Select a {tab} on the left to request access.
+                  </p>
+                )}
+              </div>
             </div>
 
-            <Field label="Urgency">
+            <Field
+              label="Urgency"
+              description="Higher urgency can help reviewers prioritize the request"
+            >
               <Select
                 allowDeselect={false}
                 data={[
@@ -358,9 +489,33 @@ const NewRequest = () => {
 
             <Field
               label="Duration"
-              description="How long you need the access for"
+              description={`How long you need access for (about ${durationToParts(duration).amount} ${durationToParts(duration).unit})`}
             >
               <DurationInput value={duration} onChange={setDuration} />
+            </Field>
+
+            <Field
+              label="Deadline"
+              description="Optional: stop this request from being approved after a specific time"
+            >
+              <div className="flex items-center gap-2">
+                <input
+                  type="datetime-local"
+                  min={minimumDeadline}
+                  value={deadlineInput}
+                  onChange={(event) => setDeadline(event.target.value ? new Date(event.target.value) : null)}
+                  className="w-full h-9 rounded-md border border-slate-200 bg-white px-3 text-[0.76rem] font-semibold text-slate-700 outline-none focus:border-slate-400"
+                />
+                {deadline && (
+                  <button
+                    type="button"
+                    onClick={() => setDeadline(null)}
+                    className="shrink-0 text-[0.7rem] font-bold text-slate-400 hover:text-slate-700"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
             </Field>
 
             <Field
@@ -382,15 +537,26 @@ const NewRequest = () => {
               variant="filled"
               color="dark"
               leftSection={<Send size={14} strokeWidth={2.5} />}
-              disabled={!selection}
+              disabled={!selection || (requestFor === "subject" && !subject)}
               loading={createMutation.isPending}
-              onClick={() => createMutation.mutate()}
+              onClick={() => setSubmitOpen(true)}
             >
               Submit Request
             </Button>
           </div>
         </Card>
       </div>
+
+      <ConfirmDialog
+        opened={submitOpen}
+        onClose={() => setSubmitOpen(false)}
+        onConfirm={() => createMutation.mutate()}
+        title="Submit access request?"
+        description={`Request ${selection?.label ?? "access"}${requestFor === "subject" && subject ? ` for ${subject.displayName || subject.userRef?.name}` : " for yourself"}.`}
+        confirmLabel="Submit request"
+        danger={false}
+        loading={createMutation.isPending}
+      />
     </div>
   );
 };

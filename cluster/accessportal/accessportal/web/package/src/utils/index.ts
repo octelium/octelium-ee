@@ -127,6 +127,7 @@ export function slugify(input: string): string {
 }
 
 import * as AccessP from "@/apis/accessv1/accessv1";
+import * as CoreP from "@/apis/corev1/corev1";
 import * as MetaP from "@/apis/metav1/metav1";
 import * as UserP from "@/apis/userv1/userv1";
 import { match } from "ts-pattern";
@@ -299,7 +300,42 @@ export const serviceModeMeta = (
       label: "DNS",
       tone: "amber" as Tone,
     }))
+    .with(UserP.Service_Spec_Type.SOCKS5, () => ({
+      label: "SOCKS5",
+      tone: "violet" as Tone,
+    }))
+    .with(UserP.Service_Spec_Type.RDP_WEB, () => ({
+      label: "RDP Web",
+      tone: "blue" as Tone,
+    }))
+    .with(UserP.Service_Spec_Type.MCP, () => ({
+      label: "MCP",
+      tone: "violet" as Tone,
+    }))
+    .with(UserP.Service_Spec_Type.LLM, () => ({
+      label: "LLM",
+      tone: "violet" as Tone,
+    }))
     .otherwise(() => ({ label: "Service", tone: "slate" as Tone }));
+
+export const userTypeMeta = (
+  type?: CoreP.User_Spec_Type,
+): { label: string; tone: Tone } =>
+  match(type)
+    .with(CoreP.User_Spec_Type.HUMAN, () => ({
+      label: "Human",
+      tone: "blue" as Tone,
+    }))
+    .with(CoreP.User_Spec_Type.WORKLOAD, () => ({
+      label: "Workload",
+      tone: "violet" as Tone,
+    }))
+    .otherwise(() => ({ label: "User", tone: "slate" as Tone }));
+
+export const requestSubjectName = (item: AccessP.Request): string => {
+  const subject = item.spec?.subject?.type;
+  return subject?.oneofKind === "userRef" ? subject.userRef.name : "";
+};
 
 const DURATION_UNITS = ["minutes", "hours", "days"] as const;
 export type DurationUnit = (typeof DURATION_UNITS)[number];

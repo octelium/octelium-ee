@@ -1,4 +1,5 @@
-import { Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, RefreshCw, UserRound } from "lucide-react";
+import { Button, Modal } from "@mantine/core";
 import * as React from "react";
 import { twMerge } from "tailwind-merge";
 import { Tone, toneClasses } from "../utils";
@@ -76,6 +77,38 @@ export const Badge = (props: {
   </span>
 );
 
+export const Avatar = (props: {
+  src?: string;
+  name?: string;
+  size?: "sm" | "md";
+}) => {
+  const initials = (props.name ?? "User")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+  const size = props.size === "sm" ? "w-8 h-8" : "w-10 h-10";
+
+  return (
+    <div
+      className={twMerge(
+        "rounded-full overflow-hidden shrink-0 flex items-center justify-center bg-slate-800 text-white",
+        size,
+      )}
+    >
+      {props.src ? (
+        <img src={props.src} alt={props.name ?? "User"} className="w-full h-full object-cover" />
+      ) : initials ? (
+        <span className="text-[0.62rem] font-bold">{initials}</span>
+      ) : (
+        <UserRound size={15} strokeWidth={2} />
+      )}
+    </div>
+  );
+};
+
 export const SectionTitle = (props: { children: React.ReactNode }) => (
   <h2 className="text-[0.8rem] font-bold text-slate-700 mb-3">
     {props.children}
@@ -146,4 +179,62 @@ export const EmptyState = (props: {
     )}
     {props.action && <div className="mt-4">{props.action}</div>}
   </div>
+);
+
+export const ErrorState = (props: {
+  title?: string;
+  description?: string;
+  onRetry?: () => void;
+}) => (
+  <Card className="p-8">
+    <div className="w-full flex flex-col items-center justify-center text-center">
+      <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-red-50 text-red-500 mb-3">
+        <AlertCircle size={20} strokeWidth={2} />
+      </div>
+      <p className="text-[0.9rem] font-bold text-slate-700">
+        {props.title ?? "Something went wrong"}
+      </p>
+      <p className="text-[0.78rem] font-medium text-slate-400 mt-1 max-w-sm">
+        {props.description ?? "We could not load this data. Please try again."}
+      </p>
+      {props.onRetry && (
+        <button
+          className="mt-4 inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[0.78rem] font-bold text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+          onClick={props.onRetry}
+          type="button"
+        >
+          <RefreshCw size={13} strokeWidth={2.5} />
+          Try again
+        </button>
+      )}
+    </div>
+  </Card>
+);
+
+export const ConfirmDialog = (props: {
+  opened: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title: string;
+  description: string;
+  confirmLabel: string;
+  loading?: boolean;
+  danger?: boolean;
+}) => (
+  <Modal opened={props.opened} onClose={props.onClose} centered title={props.title}>
+    <p className="text-[0.82rem] font-medium text-slate-600">{props.description}</p>
+    <div className="flex items-center justify-end gap-2 mt-6">
+      <Button variant="default" onClick={props.onClose} disabled={props.loading}>
+        Cancel
+      </Button>
+      <Button
+        variant="filled"
+        color={props.danger === false ? "dark" : "red"}
+        loading={props.loading}
+        onClick={props.onConfirm}
+      >
+        {props.confirmLabel}
+      </Button>
+    </div>
+  </Modal>
 );

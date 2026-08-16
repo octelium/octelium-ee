@@ -1,9 +1,10 @@
-import { getDomain } from "@/utils";
+import { getDomain, isDev } from "@/utils";
 import { getClientAuth } from "@/utils/client";
 import { Button, Modal } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useMutation } from "@tanstack/react-query";
 import { Loader2, LockKeyhole, LogOut, X } from "lucide-react";
+import { toast } from "sonner";
 
 export default () => {
   const [opened, { open, close }] = useDisclosure(false);
@@ -15,7 +16,14 @@ export default () => {
     onSuccess: () => {
       window.location.reload();
     },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Could not log out");
+    },
   });
+
+  const authenticatorsHref = isDev()
+    ? `${window.location.origin}/authenticators`
+    : `https://${getDomain()}/authenticators`;
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -23,7 +31,7 @@ export default () => {
         <Button
           variant="outline"
           component="a"
-          href={`https://${getDomain()}/authenticators`}
+          href={authenticatorsHref}
           leftSection={
             <LockKeyhole size={14} strokeWidth={2.5} className="shrink-0" />
           }
@@ -71,6 +79,7 @@ export default () => {
             </div>
             <button
               onClick={close}
+              aria-label="Close logout dialog"
               className="flex items-center justify-center w-6 h-6 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors duration-150 cursor-pointer"
             >
               <X size={13} strokeWidth={2.5} />

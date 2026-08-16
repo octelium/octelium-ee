@@ -4,15 +4,17 @@ import {
   Boxes,
   Database,
   Globe,
+  Monitor,
   Network,
   Search,
   Server,
+  ShieldCheck,
   Terminal,
 } from "lucide-react";
 import * as React from "react";
 import { twMerge } from "tailwind-merge";
 
-import { Badge, EmptyState, Loading } from "../../../ui";
+import { Badge, EmptyState, ErrorState, Loading } from "../../../ui";
 import { namespaceFromName, serviceModeMeta, shortName } from "../../../utils";
 import { getUserMainClient } from "../../../utils/client";
 
@@ -32,7 +34,13 @@ const modeIcon = (mode?: UserP.Service_Spec_Type) => {
     case UserP.Service_Spec_Type.TCP:
     case UserP.Service_Spec_Type.UDP:
     case UserP.Service_Spec_Type.GRPC:
+    case UserP.Service_Spec_Type.MCP:
+    case UserP.Service_Spec_Type.LLM:
       return Network;
+    case UserP.Service_Spec_Type.SOCKS5:
+      return ShieldCheck;
+    case UserP.Service_Spec_Type.RDP_WEB:
+      return Monitor;
     default:
       return Server;
   }
@@ -46,7 +54,7 @@ const ServiceCard = (props: {
   const s = props.service;
   const name = s.metadata!.name;
   const display = s.metadata!.displayName || shortName(name);
-  const ns = namespaceFromName(name);
+  const ns = s.status?.namespace || namespaceFromName(name);
   const mode = serviceModeMeta(s.spec?.type);
   const Icon = modeIcon(s.spec?.type);
 
@@ -78,11 +86,19 @@ const ServiceCard = (props: {
         <div className="text-[0.7rem] font-semibold text-slate-400 font-mono truncate">
           {name}
         </div>
+        <div className="flex items-center gap-2 mt-1 text-[0.66rem] font-semibold text-slate-400 truncate">
+          {s.spec?.port ? <span>Port {s.spec.port}</span> : null}
+          {s.status?.primaryHostname ? (
+            <span className="font-mono truncate">{s.status.primaryHostname}</span>
+          ) : null}
+        </div>
       </div>
 
       <div className="flex items-center gap-1.5 shrink-0">
         {ns && <Badge tone="slate">{ns}</Badge>}
         <Badge tone={mode.tone}>{mode.label}</Badge>
+        {s.spec?.isTLS && <Badge tone="emerald">TLS</Badge>}
+        {s.spec?.isPublic && <Badge tone="amber">Public</Badge>}
       </div>
     </button>
   );
@@ -93,9 +109,10 @@ const ServicePicker = (props: {
   onChange: (service: UserP.Service) => void;
 }) => {
   const [query, setQuery] = React.useState("");
+  const [namespace, setNamespace] = React.useState("");
 
   const qry = useQuery({
-    queryKey: ["userapi", "listService"],
+    queryKey: ["userapi", "listService", namespace],
     queryFn: async () => {
       const items: UserP.Service[] = [];
       let page = 0;
@@ -103,6 +120,7 @@ const ServicePicker = (props: {
         const { response } = await getUserMainClient().listService(
           UserP.ListServiceOptions.create({
             common: { page, itemsPerPage: 500 },
+            namespace,
           }),
         );
         items.push(...response.items);
@@ -114,6 +132,26 @@ const ServicePicker = (props: {
     },
   });
 
+  const namespacesQry = useQuery({
+    queryKey: ["userapi", "listNamespace"],
+    queryFn: async () => {
+      const items: UserP.Namespace[] = [];
+      let page = 0;
+      for (;;) {
+        const { response } = await getUserMainClient().listNamespace(
+          UserP.ListNamespaceOptions.create({
+            common: { page, itemsPerPage: 500 },
+          }),
+        );
+        items.push(...response.items);
+        if (!response.listResponseMeta?.hasMore) break;
+        page += 1;
+        if (page > 1000) break;
+      }
+      return items;
+    },
+  });
+
   const services = (qry.data?.items ?? []) as UserP.Service[];
   const q = query.toLowerCase().trim();
   const filtered = services.filter(
@@ -122,6 +160,15 @@ const ServicePicker = (props: {
       s.metadata?.name.toLowerCase().includes(q) ||
       s.metadata?.displayName?.toLowerCase().includes(q),
   );
+
+  const namespaceNames = namespacesQry.data
+    ?.map((item) => item.metadata?.name)
+    .filter((name): name is string => !!name) ?? [];
+  const namespaceServiceCounts = services.reduce<Record<string, number>>((counts, service) => {
+    const name = service.status?.namespace || namespaceFromName(service.metadata?.name);
+    if (name) counts[name] = (counts[name] ?? 0) + 1;
+    return counts;
+  }, {});
 
   return (
     <div className="w-full flex flex-col gap-3">
@@ -139,8 +186,51 @@ const ServicePicker = (props: {
         />
       </div>
 
-      {qry.isLoading ? (
+      {namespaceNames.length > 0 && (
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+          <button
+            type="button"
+            onClick={() => setNamespace("")}
+            className={twMerge(
+              "shrink-0 px-2.5 py-1 rounded-md text-[0.68rem] font-bold border transition-colors",
+              !namespace
+                ? "bg-slate-900 text-white border-slate-900"
+                : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50",
+            )}
+          >
+            All namespaces
+          </button>
+          {namespaceNames.map((name) => (
+            <button
+              type="button"
+              key={name}
+              onClick={() => setNamespace(name)}
+              className={twMerge(
+                "shrink-0 px-2.5 py-1 rounded-md text-[0.68rem] font-bold border transition-colors",
+                namespace === name
+                  ? "bg-slate-900 text-white border-slate-900"
+                  : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50",
+              )}
+            >
+              <span>{name}</span>
+              {namespaceServiceCounts[name] !== undefined && (
+                <span className="ml-1 opacity-70">{namespaceServiceCounts[name]}</span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {qry.isLoading || namespacesQry.isLoading ? (
         <Loading label="Loading services..." />
+      ) : qry.isError || namespacesQry.isError ? (
+        <ErrorState
+          title="Could not load services"
+          onRetry={() => {
+            void qry.refetch();
+            void namespacesQry.refetch();
+          }}
+        />
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={<Server size={20} strokeWidth={2} />}

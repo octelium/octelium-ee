@@ -1,17 +1,13 @@
 /// <reference types="vite-plugin-svgr/client" />
 
 import Logo from "@/assets/l03.svg?react";
-import { setUseListSearch } from "@/features/settings/slice";
-import { useAppDispatch, useAppSelector } from "@/utils/hooks";
-import * as React from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAppSelector } from "@/utils/hooks";
+import { Link, useNavigate } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 
 const TopBar = () => {
   const navigate = useNavigate();
   const settings = useAppSelector((state) => state.settings);
-  const location = useLocation();
-  const dispatch = useAppDispatch();
 
   const picURL =
     settings.status?.session?.metadata?.picURL ??
@@ -20,16 +16,6 @@ const TopBar = () => {
   const displayName =
     settings.status?.user?.metadata?.displayName ??
     settings.status?.user?.metadata?.name;
-
-  React.useEffect(() => {
-    dispatch(
-      setUseListSearch({
-        useListSearch:
-          location.pathname.startsWith("/core/") &&
-          /^\/core\/[^\/]+$/.test(location.pathname),
-      }),
-    );
-  }, [location.pathname, dispatch]);
 
   return (
     <nav className="w-full h-[60px] flex items-center px-4 gap-4">
@@ -45,6 +31,7 @@ const TopBar = () => {
 
       <button
         onClick={() => navigate("/settings")}
+        aria-label={displayName ? `Open settings for ${displayName}` : "Open settings"}
         className="flex-none flex items-center gap-2 group cursor-pointer"
         title={displayName ? `Settings — ${displayName}` : "Settings"}
       >

@@ -11,6 +11,8 @@ import TimeAgo from "@/components/TimeAgo";
 import {
   Badge,
   Card,
+  ConfirmDialog,
+  ErrorState,
   Eyebrow,
   Field,
   KeyValue,
@@ -20,25 +22,40 @@ import {
 } from "../../../ui";
 import {
   requestResourceLabel,
+  requestSubjectName,
+  durationToParts,
   shortName,
   statusMeta,
   urgencyMeta,
 } from "../../../utils";
-import { getReviewerClient } from "../../../utils/client";
+import { getReviewerClient, getUserClient } from "../../../utils/client";
 
 const ReviewRequest = () => {
   const { name } = useParams<{ name: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [justification, setJustification] = React.useState("");
+  const [decisionToSubmit, setDecisionToSubmit] = React.useState<AccessP.Review_Spec_Decision>();
 
   const qry = useQuery({
     queryKey: ["reviewer", "getRequest", name],
     enabled: !!name,
     queryFn: async () => {
-      const { response } = await getReviewerClient().getRequest({
-        name: name!,
-      } as any);
+      const { response } = await getReviewerClient().getRequest(
+        MetaP.GetOptions.create({ name: name! }),
+      );
+      return response;
+    },
+  });
+
+  const subjectName = qry.data ? requestSubjectName(qry.data) : "";
+  const subjectQry = useQuery({
+    queryKey: ["reviewer", "getSubjectUser", subjectName],
+    enabled: !!subjectName,
+    queryFn: async () => {
+      const { response } = await getUserClient().getSubjectUser({
+        userRef: MetaP.ObjectReference.create({ name: subjectName }),
+      });
       return response;
     },
   });
@@ -72,6 +89,9 @@ const ReviewRequest = () => {
   });
 
   if (qry.isLoading) return <Loading label="Loading request..." />;
+  if (qry.isError) {
+    return <ErrorState title="Could not load this request" onRetry={() => qry.refetch()} />;
+  }
   if (!qry.data) {
     return (
       <Card className="p-8 text-center text-[0.82rem] font-semibold text-slate-500">
@@ -84,6 +104,7 @@ const ReviewRequest = () => {
   const resource = requestResourceLabel(item);
   const status = statusMeta(item.status?.state?.status);
   const urgency = urgencyMeta(item.spec?.urgency);
+  const duration = durationToParts(item.spec?.duration);
   const requester = shortName(item.status?.userRef?.name);
   const isPending =
     item.status?.state?.status === AccessP.Request_Status_State_Status.PENDING;
@@ -114,7 +135,7 @@ const ReviewRequest = () => {
         <div className="flex flex-col gap-4">
           <Card className="p-5">
             <SectionTitle>Request</SectionTitle>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <KeyValue label="Requester">
                 <span className="font-mono">{requester || "—"}</span>
               </KeyValue>
@@ -123,6 +144,12 @@ const ReviewRequest = () => {
               </KeyValue>
               <KeyValue label="Type">{resource.kind}</KeyValue>
               <KeyValue label="Urgency">{urgency.label}</KeyValue>
+              <KeyValue label="Duration">{duration.amount} {duration.unit}</KeyValue>
+              {subjectName && (
+                <KeyValue label="Access for">
+                  <span className="font-mono">{subjectQry.data?.displayName || subjectName}</span>
+                </KeyValue>
+              )}
               <KeyValue label="Requested">
                 {item.status?.state?.createdAt ? (
                   <TimeAgo rfc3339={item.status.state.createdAt} />
@@ -137,15 +164,43 @@ const ReviewRequest = () => {
                   </span>
                 </KeyValue>
               )}
+              {item.spec?.deadline && (
+                <KeyValue label="Deadline"><TimeAgo rfc3339={item.spec.deadline} /></KeyValue>
+              )}
+              {item.status?.policyRef?.name && (
+                <KeyValue label="Policy"><span className="font-mono">{item.status.policyRef.name}</span></KeyValue>
+              )}
+              {item.status?.rule?.name && (
+                <KeyValue label="Matched rule"><span className="font-mono">{item.status.rule.name}</span></KeyValue>
+              )}
             </div>
           </Card>
+
+          {item.status?.lastStates && item.status.lastStates.length > 1 && (
+            <Card className="p-5">
+              <SectionTitle>Status history</SectionTitle>
+              <div className="flex flex-col gap-2">
+                {item.status.lastStates.map((state, index) => {
+                  const stateMeta = statusMeta(state.status);
+                  return (
+                    <div key={`${state.status}-${index}`} className="flex items-center gap-3 px-3 py-2 rounded-lg border border-slate-200 bg-slate-50/60">
+                      <span className={`w-2 h-2 rounded-full ${stateMeta.tone === "emerald" ? "bg-emerald-500" : stateMeta.tone === "red" ? "bg-red-500" : stateMeta.tone === "amber" ? "bg-amber-500" : "bg-slate-400"}`} />
+                      <span className="text-[0.78rem] font-bold text-slate-700">{stateMeta.label}</span>
+                      {state.createdAt && <span className="ml-auto text-[0.7rem] font-semibold text-slate-400"><TimeAgo rfc3339={state.createdAt} /></span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+          )}
 
           {review && review.lastSteps.length > 0 && (
             <Card className="p-5">
               <SectionTitle>Review progress</SectionTitle>
               <div className="flex flex-col gap-2">
                 {review.lastSteps.map((step, idx) => {
-                  const isCurrent = step.stepIndex === review.currentStep;
+                const isCurrent = step.stepIndex === review.currentStep;
+                const isComplete = step.stepIndex < review.currentStep;
                   return (
                     <div
                       key={idx}
@@ -153,15 +208,19 @@ const ReviewRequest = () => {
                     >
                       <div
                         className={
-                          isCurrent
-                            ? "flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-600"
-                            : "flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-600"
+                        isCurrent
+                          ? "flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-600"
+                          : isComplete
+                            ? "flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-600"
+                            : "flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-400"
                         }
                       >
-                        {isCurrent ? (
-                          <Clock size={12} strokeWidth={2.5} />
-                        ) : (
-                          <Check size={12} strokeWidth={2.5} />
+                      {isCurrent ? (
+                        <Clock size={12} strokeWidth={2.5} />
+                      ) : isComplete ? (
+                        <Check size={12} strokeWidth={2.5} />
+                      ) : (
+                        <span className="text-[0.65rem] font-bold">{step.stepIndex + 1}</span>
                         )}
                       </div>
                       <span className="text-[0.78rem] font-bold text-slate-700">
@@ -176,6 +235,11 @@ const ReviewRequest = () => {
                   );
                 })}
               </div>
+              {review.currentStepStartedAt && (
+                <p className="text-[0.7rem] font-medium text-slate-400 mt-3">
+                  Current step started <TimeAgo rfc3339={review.currentStepStartedAt} />
+                </p>
+              )}
             </Card>
           )}
         </div>
@@ -210,9 +274,7 @@ const ReviewRequest = () => {
                       AccessP.Review_Spec_Decision.APPROVE
                   }
                   disabled={decideMutation.isPending}
-                  onClick={() =>
-                    decideMutation.mutate(AccessP.Review_Spec_Decision.APPROVE)
-                  }
+                  onClick={() => setDecisionToSubmit(AccessP.Review_Spec_Decision.APPROVE)}
                 >
                   Approve
                 </Button>
@@ -227,9 +289,13 @@ const ReviewRequest = () => {
                       AccessP.Review_Spec_Decision.REJECT
                   }
                   disabled={decideMutation.isPending}
-                  onClick={() =>
-                    decideMutation.mutate(AccessP.Review_Spec_Decision.REJECT)
-                  }
+                  onClick={() => {
+                    if (!justification.trim()) {
+                      toast.error("Add a reason before rejecting this request");
+                      return;
+                    }
+                    setDecisionToSubmit(AccessP.Review_Spec_Decision.REJECT);
+                  }}
                 >
                   Reject
                 </Button>
@@ -242,6 +308,23 @@ const ReviewRequest = () => {
           )}
         </Card>
       </div>
+
+      <ConfirmDialog
+        opened={decisionToSubmit !== undefined}
+        onClose={() => setDecisionToSubmit(undefined)}
+        onConfirm={() => {
+          if (decisionToSubmit !== undefined) decideMutation.mutate(decisionToSubmit);
+        }}
+        title={decisionToSubmit === AccessP.Review_Spec_Decision.REJECT ? "Reject request?" : "Approve request?"}
+        description={
+          decisionToSubmit === AccessP.Review_Spec_Decision.REJECT
+            ? "This decision will reject the access request and notify the requester."
+            : "This decision will approve this review step and may grant access if all required steps are complete."
+        }
+        confirmLabel={decisionToSubmit === AccessP.Review_Spec_Decision.REJECT ? "Reject request" : "Approve request"}
+        danger={decisionToSubmit === AccessP.Review_Spec_Decision.REJECT}
+        loading={decideMutation.isPending}
+      />
     </div>
   );
 };

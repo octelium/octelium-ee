@@ -1,4 +1,5 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
+import * as MetaP from "@/apis/metav1/metav1";
 import { Button, SegmentedControl, Textarea } from "@mantine/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Check, Trash2, X } from "lucide-react";
@@ -10,6 +11,8 @@ import TimeAgo from "@/components/TimeAgo";
 import {
   Badge,
   Card,
+  ConfirmDialog,
+  ErrorState,
   Field,
   KeyValue,
   Loading,
@@ -23,6 +26,7 @@ const ReviewDetail = () => {
   const { name } = useParams<{ name: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [cancelOpen, setCancelOpen] = React.useState(false);
 
   const [decision, setDecision] = React.useState<AccessP.Review_Spec_Decision>(
     AccessP.Review_Spec_Decision.APPROVE,
@@ -34,9 +38,9 @@ const ReviewDetail = () => {
     queryKey: ["reviewer", "getReview", name],
     enabled: !!name,
     queryFn: async () => {
-      const { response } = await getReviewerClient().getReview({
-        name: name!,
-      } as any);
+      const { response } = await getReviewerClient().getReview(
+        MetaP.GetOptions.create({ name: name! }),
+      );
       return response;
     },
   });
@@ -78,6 +82,7 @@ const ReviewDetail = () => {
     },
     onSuccess: () => {
       toast.success("Review cancelled");
+      setCancelOpen(false);
       queryClient.invalidateQueries({ queryKey: ["reviewer", "listReview"] });
       navigate("/reviewer/reviews");
     },
@@ -87,6 +92,9 @@ const ReviewDetail = () => {
   });
 
   if (qry.isLoading) return <Loading label="Loading review..." />;
+  if (qry.isError) {
+    return <ErrorState title="Could not load this review" onRetry={() => qry.refetch()} />;
+  }
   if (!qry.data) {
     return (
       <Card className="p-8 text-center text-[0.82rem] font-semibold text-slate-500">
@@ -120,7 +128,7 @@ const ReviewDetail = () => {
               color="red"
               leftSection={<Trash2 size={13} strokeWidth={2.5} />}
               loading={cancelMutation.isPending}
-              onClick={() => cancelMutation.mutate()}
+              onClick={() => setCancelOpen(true)}
             >
               Cancel
             </Button>
@@ -182,7 +190,16 @@ const ReviewDetail = () => {
                   color="dark"
                   leftSection={<Check size={14} strokeWidth={2.5} />}
                   loading={updateMutation.isPending}
-                  onClick={() => updateMutation.mutate()}
+                  onClick={() => {
+                    if (
+                      decision === AccessP.Review_Spec_Decision.REJECT &&
+                      !justification.trim()
+                    ) {
+                      toast.error("Add a reason before saving a rejection");
+                      return;
+                    }
+                    updateMutation.mutate();
+                  }}
                 >
                   Save
                 </Button>
@@ -203,9 +220,7 @@ const ReviewDetail = () => {
           ) : (
             <div className="grid grid-cols-2 gap-4">
               <KeyValue label="Decision">
-                <span className={decisionMeta(item.spec?.decision).tone}>
-                  {meta.label}
-                </span>
+                <Badge tone={meta.tone}>{meta.label}</Badge>
               </KeyValue>
               <KeyValue label="Request">
                 <span className="font-mono">{request || "—"}</span>
@@ -227,8 +242,35 @@ const ReviewDetail = () => {
               )}
             </div>
           )}
+
+          {!editing && item.status?.lastRevisions && item.status.lastRevisions.length > 0 && (
+            <div className="border-t border-slate-100 mt-5 pt-5">
+              <SectionTitle>Decision history</SectionTitle>
+              <div className="flex flex-col gap-2">
+                {item.status.lastRevisions.map((revision, index) => {
+                  const revisionMeta = decisionMeta(revision.spec?.decision);
+                  return (
+                    <div key={index} className="flex items-center gap-3 px-3 py-2 rounded-lg border border-slate-200 bg-slate-50/60">
+                      <Badge tone={revisionMeta.tone}>{revisionMeta.label}</Badge>
+                      {revision.setAt && <span className="ml-auto text-[0.7rem] font-semibold text-slate-400"><TimeAgo rfc3339={revision.setAt} /></span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </Card>
       </div>
+
+      <ConfirmDialog
+        opened={cancelOpen}
+        onClose={() => setCancelOpen(false)}
+        onConfirm={() => cancelMutation.mutate()}
+        title="Cancel review?"
+        description="This review will be removed and the request may no longer reflect your decision."
+        confirmLabel="Cancel review"
+        loading={cancelMutation.isPending}
+      />
     </div>
   );
 };
