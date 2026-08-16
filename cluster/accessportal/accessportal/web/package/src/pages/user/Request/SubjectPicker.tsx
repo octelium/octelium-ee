@@ -38,6 +38,7 @@ const SubjectPicker = (props: {
       );
       return response;
     },
+    enabled: debouncedQuery.length > 0,
     placeholderData: (previous) => previous,
   });
 
@@ -70,8 +71,12 @@ const SubjectPicker = (props: {
       ) : (qry.data?.items.length ?? 0) === 0 ? (
         <EmptyState
           icon={<UserRound size={20} strokeWidth={2} />}
-          title="No users found"
-          description={query ? "Try a different name or email." : "There are no users available for delegated requests."}
+          title={query ? "No users found" : "Search for a user"}
+          description={
+            query
+              ? "Try a different name or email."
+              : "Enter a name or email to find the user who should receive access."
+          }
         />
       ) : (
         <div className="flex flex-col gap-2">
