@@ -31,7 +31,7 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
 
 const Sidebar = (props: { onNavigate?: () => void }) => (
   <div className="flex flex-col h-full w-full">
-    <nav className="flex-1 overflow-y-auto px-3 py-5 flex flex-col gap-6">
+    <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-5 flex flex-col gap-6">
       {NAV_GROUPS.map((group) => (
         <div key={group.label} className="flex flex-col gap-1">
           <span className="px-3 mb-1 text-[0.62rem] font-bold uppercase tracking-[0.1em] text-slate-400">
@@ -62,12 +62,6 @@ const Sidebar = (props: { onNavigate?: () => void }) => (
         </div>
       ))}
     </nav>
-
-    <div className="shrink-0 px-5 py-3">
-      <span className="text-[0.66rem] font-semibold text-slate-400">
-        Zero Trust Access
-      </span>
-    </div>
 
     <div className="shrink-0 border-t border-slate-100 px-3 py-3">
       <RightSidebar />

@@ -81,7 +81,12 @@ export default () => {
           <AppShell.Navbar
             p="md"
             className="!bg-transparent"
-            style={{ zIndex: 10, marginTop: 60 }}
+            style={{
+              zIndex: 10,
+              marginTop: 60,
+              height: "calc(100vh - 60px)",
+              minHeight: 0,
+            }}
           >
             <SideBar />
           </AppShell.Navbar>
