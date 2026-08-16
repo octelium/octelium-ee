@@ -120,7 +120,10 @@ func Run(ctx context.Context) error {
 
 	accessMainSrv := access.NewServerMain(octeliumC)
 	accessReviewSrv := access.NewServerReviewer(octeliumC)
-	accessUserSrv := access.NewServerUser(octeliumC)
+	accessUserSrv, err := access.NewServerUser(ctx, octeliumC)
+	if err != nil {
+		return err
+	}
 
 	visibilityv1.RegisterAccessLogServiceServer(s, srvVisibilityAccessLog)
 	visibilityv1.RegisterAuthenticationLogServiceServer(s, srvVisibilityAuthenticationLog)

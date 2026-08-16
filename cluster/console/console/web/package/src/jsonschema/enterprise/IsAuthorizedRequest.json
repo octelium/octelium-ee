@@ -440,6 +440,11 @@
                     "additionalProperties": false,
                     "description": "MCP is the Model Context Protocol specific details."
                 },
+                "llm": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.LLM",
+                    "additionalProperties": false,
+                    "description": "LLM is the LLM gateway specific details."
+                },
                 "ip": {
                     "type": "string"
                 }
@@ -491,6 +496,11 @@
                                         "required": [
                                             "mcp"
                                         ]
+                                    },
+                                    {
+                                        "required": [
+                                            "llm"
+                                        ]
                                     }
                                 ]
                             }
@@ -533,6 +543,11 @@
                         {
                             "required": [
                                 "mcp"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "llm"
                             ]
                         }
                     ]
@@ -670,6 +685,96 @@
             "additionalProperties": false,
             "type": "object",
             "title": "Kubernetes"
+        },
+        "octelium.api.main.core.v1.RequestContext.Request.LLM": {
+            "properties": {
+                "http": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.HTTP",
+                    "additionalProperties": false,
+                    "description": "HTTP is the underlying HTTP request details. The entire request body is available at `ctx.request.llm.http.bodyMap` which is used to access the messages (i.e. `ctx.request.llm.http.bodyMap.messages`) as well as any other field that is not normalized here."
+                },
+                "protocol": {
+                    "enum": [
+                        "PROTOCOL_UNSET",
+                        "OPENAI",
+                        "ANTHROPIC"
+                    ],
+                    "type": "string",
+                    "title": "Protocol"
+                },
+                "operation": {
+                    "enum": [
+                        "OPERATION_UNSET",
+                        "CHAT_COMPLETIONS",
+                        "RESPONSES",
+                        "COMPLETIONS",
+                        "EMBEDDINGS",
+                        "MODERATIONS",
+                        "MODELS_LIST",
+                        "MODELS_GET",
+                        "MESSAGES",
+                        "COUNT_TOKENS"
+                    ],
+                    "type": "string",
+                    "title": "Operation"
+                },
+                "model": {
+                    "type": "string",
+                    "description": "Model is the model name requested by the downstream, verbatim. It is empty for the operations that carry no model (e.g. `MODELS_LIST`)."
+                },
+                "stream": {
+                    "type": "boolean",
+                    "description": "Stream is set for the requests that ask for a streamed response."
+                },
+                "estimatedInputTokens": {
+                    "type": "integer",
+                    "description": "EstimatedInputTokens is Octelium's own conservative pre-flight input token estimate. It is NOT a provider-accurate token count and it must never be treated as a billing truth. Read the EstimateQuality field alongside it."
+                },
+                "estimateQuality": {
+                    "enum": [
+                        "ESTIMATE_QUALITY_UNSET",
+                        "COMPLETE",
+                        "PARTIAL",
+                        "UNAVAILABLE"
+                    ],
+                    "type": "string",
+                    "title": "Estimate Quality"
+                },
+                "maxOutputTokens": {
+                    "type": "integer",
+                    "description": "MaxOutputTokens is the maximum output token count requested by the downstream itself. It is zero whenever the request declares none."
+                },
+                "hasTools": {
+                    "type": "boolean",
+                    "description": "HasTools is set for the requests that declare tools."
+                },
+                "toolCount": {
+                    "type": "integer",
+                    "description": "ToolCount is the number of the tools declared by the request."
+                },
+                "toolNames": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "ToolNames is the bounded list of the names of the tools declared by the request."
+                },
+                "inputItemCount": {
+                    "type": "integer",
+                    "description": "InputItemCount is the number of the input items (i.e. the messages or the embedding inputs) of the request."
+                },
+                "hasImageInput": {
+                    "type": "boolean",
+                    "description": "HasImageInput is set for the requests that carry image input."
+                },
+                "hasAudioInput": {
+                    "type": "boolean",
+                    "description": "HasAudioInput is set for the requests that carry audio input."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "LLM"
         },
         "octelium.api.main.core.v1.RequestContext.Request.MCP": {
             "properties": {

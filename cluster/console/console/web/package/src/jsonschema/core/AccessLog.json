@@ -79,7 +79,8 @@
                         "DNS",
                         "SOCKS5",
                         "RDP_WEB",
-                        "MCP"
+                        "MCP",
+                        "LLM"
                     ],
                     "type": "string",
                     "title": "Mode"
@@ -369,6 +370,11 @@
                     "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Info.MCP",
                     "additionalProperties": false,
                     "description": "MCP sets the Model Context Protocol-specific entry details"
+                },
+                "llm": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Info.LLM",
+                    "additionalProperties": false,
+                    "description": "LLM sets the LLM-gateway-specific entry details"
                 }
             },
             "additionalProperties": false,
@@ -433,6 +439,11 @@
                                         "required": [
                                             "mcp"
                                         ]
+                                    },
+                                    {
+                                        "required": [
+                                            "llm"
+                                        ]
                                     }
                                 ]
                             }
@@ -490,6 +501,11 @@
                         {
                             "required": [
                                 "mcp"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "llm"
                             ]
                         }
                     ]
@@ -734,6 +750,123 @@
             "additionalProperties": false,
             "type": "object",
             "title": "Kubernetes"
+        },
+        "octelium.api.main.core.v1.AccessLog.Entry.Info.LLM": {
+            "properties": {
+                "http": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP",
+                    "additionalProperties": false,
+                    "description": "HTTP shows the underlying HTTP information of the request/response"
+                },
+                "type": {
+                    "enum": [
+                        "TYPE_UNSET",
+                        "COMPLETE",
+                        "STREAM_START",
+                        "STREAM_END"
+                    ],
+                    "type": "string",
+                    "title": "Type"
+                },
+                "protocol": {
+                    "enum": [
+                        "PROTOCOL_UNSET",
+                        "OPENAI",
+                        "ANTHROPIC"
+                    ],
+                    "type": "string",
+                    "title": "Protocol"
+                },
+                "operation": {
+                    "enum": [
+                        "OPERATION_UNSET",
+                        "CHAT_COMPLETIONS",
+                        "RESPONSES",
+                        "COMPLETIONS",
+                        "EMBEDDINGS",
+                        "MODERATIONS",
+                        "MODELS_LIST",
+                        "MODELS_GET",
+                        "MESSAGES",
+                        "COUNT_TOKENS"
+                    ],
+                    "type": "string",
+                    "title": "Operation"
+                },
+                "requestedModel": {
+                    "type": "string",
+                    "description": "RequestedModel is the model name requested by the downstream. Note that it is read from the request itself and it is therefore also set for the requests that are eventually rejected by Octelium."
+                },
+                "model": {
+                    "type": "string",
+                    "description": "Model is the model name reported by the upstream provider itself. It can differ from the RequestedModel whenever the request used an alias or an unpinned model name."
+                },
+                "stream": {
+                    "type": "boolean",
+                    "description": "Stream is set for the requests that asked for a streamed response"
+                },
+                "usage": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Usage",
+                    "additionalProperties": false,
+                    "description": "Usage is the token usage of the request/response"
+                },
+                "estimatedInputTokens": {
+                    "type": "integer",
+                    "description": "EstimatedInputTokens is Octelium's own pre-flight input token estimate. It is always set for the parsed inference requests regardless of the Usage field."
+                },
+                "responseID": {
+                    "type": "string",
+                    "description": "ResponseID is the response identifier reported by the upstream provider itself"
+                },
+                "finishReason": {
+                    "type": "string",
+                    "description": "FinishReason is the completion status reported by the upstream provider itself (e.g. \"stop\", \"length\", \"tool_calls\")"
+                },
+                "timeToFirstToken": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false,
+                    "description": "TimeToFirstToken is the duration between accepting the request and the first generated content of a streamed response"
+                },
+                "eventCount": {
+                    "type": "integer",
+                    "description": "EventCount is the number of the `text/event-stream` events of the response"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "LLM"
+        },
+        "octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Usage": {
+            "properties": {
+                "source": {
+                    "enum": [
+                        "SOURCE_UNSET",
+                        "PROVIDER",
+                        "ESTIMATED",
+                        "PARTIAL"
+                    ],
+                    "type": "string",
+                    "title": "Source"
+                },
+                "inputTokens": {
+                    "type": "integer"
+                },
+                "outputTokens": {
+                    "type": "integer"
+                },
+                "totalTokens": {
+                    "type": "integer"
+                },
+                "cachedInputTokens": {
+                    "type": "integer"
+                },
+                "reasoningTokens": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Usage"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.MCP": {
             "properties": {
@@ -1401,6 +1534,123 @@
             "additionalProperties": false,
             "type": "object",
             "title": "UDP"
+        },
+        "octelium.api.main.meta.v1.Duration": {
+            "properties": {
+                "milliseconds": {
+                    "type": "integer",
+                    "description": "Milliseconds is the duration set in milliseconds"
+                },
+                "seconds": {
+                    "type": "integer",
+                    "description": "Seconds is the duration set in seconds"
+                },
+                "minutes": {
+                    "type": "integer",
+                    "description": "Minutes is the duration set in minutes"
+                },
+                "hours": {
+                    "type": "integer",
+                    "description": "Hours is the duration set in hours"
+                },
+                "days": {
+                    "type": "integer",
+                    "description": "Days is the duration set in days"
+                },
+                "weeks": {
+                    "type": "integer",
+                    "description": "Weeks is the duration set in weeks"
+                },
+                "months": {
+                    "type": "integer",
+                    "description": "Months is the duration set in months"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "milliseconds"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "seconds"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "minutes"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "hours"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "days"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "weeks"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "months"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "milliseconds"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "seconds"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "minutes"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "hours"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "days"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "weeks"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "months"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Duration"
         },
         "octelium.api.main.meta.v1.LogMetadata": {
             "properties": {

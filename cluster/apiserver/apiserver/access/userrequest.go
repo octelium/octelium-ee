@@ -26,6 +26,14 @@ import (
 )
 
 func (s *ServerUser) CreateRequest(ctx context.Context, req *accessv1.Request) (*accessv1.Request, error) {
+	return s.doCreateRequest(ctx, req, false)
+}
+
+func (s *ServerUser) CreateRequestForSubject(ctx context.Context, req *accessv1.Request) (*accessv1.Request, error) {
+	return s.doCreateRequest(ctx, req, true)
+}
+
+func (s *ServerUser) doCreateRequest(ctx context.Context, req *accessv1.Request, forSubject bool) (*accessv1.Request, error) {
 	i, err := userctx.GetUserCtx(ctx)
 	if err != nil {
 		return nil, err
@@ -43,7 +51,11 @@ func (s *ServerUser) CreateRequest(ctx context.Context, req *accessv1.Request) (
 	}
 
 	spec := pbutils.Clone(req.Spec).(*accessv1.Request_Spec)
-	if spec.Subject == nil || spec.Subject.GetUserRef() == nil {
+	if forSubject {
+		if spec.Subject == nil || spec.Subject.GetUserRef() == nil {
+			return nil, grpcutils.InvalidArg("Subject UserRef must be set")
+		}
+	} else {
 		spec.Subject = &accessv1.Request_Spec_Subject{
 			Type: &accessv1.Request_Spec_Subject_UserRef{
 				UserRef: umetav1.GetObjectReference(i.User),

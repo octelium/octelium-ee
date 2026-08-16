@@ -41,7 +41,8 @@ func TestUserRequest(t *testing.T) {
 	usrSrv := user.NewServer(tst.C.OcteliumC)
 
 	mainSrv := NewServerMain(tst.C.OcteliumC)
-	srv := NewServerUser(tst.C.OcteliumC)
+	srv, err := NewServerUser(ctx, tst.C.OcteliumC)
+	assert.Nil(t, err, "%+v", err)
 
 	usr, err := tstuser.NewUser(tst.C.OcteliumC, adminSrv, usrSrv, nil)
 	assert.Nil(t, err)

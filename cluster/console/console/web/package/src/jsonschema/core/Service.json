@@ -348,7 +348,8 @@
                         "DNS",
                         "SOCKS5",
                         "RDP_WEB",
-                        "MCP"
+                        "MCP",
+                        "LLM"
                     ],
                     "type": "string",
                     "title": "Mode"
@@ -488,6 +489,11 @@
                     "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.MCP",
                     "additionalProperties": false,
                     "description": "MCP sets Model Context Protocol-specific configuration"
+                },
+                "llm": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM",
+                    "additionalProperties": false,
+                    "description": "LLM sets LLM-gateway-specific configuration"
                 }
             },
             "additionalProperties": false,
@@ -537,6 +543,11 @@
                                         "required": [
                                             "mcp"
                                         ]
+                                    },
+                                    {
+                                        "required": [
+                                            "llm"
+                                        ]
                                     }
                                 ]
                             }
@@ -579,6 +590,11 @@
                         {
                             "required": [
                                 "mcp"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "llm"
                             ]
                         }
                     ]
@@ -2326,6 +2342,187 @@
                 }
             ],
             "title": "Kubeconfig"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.LLM": {
+            "properties": {
+                "protocol": {
+                    "enum": [
+                        "PROTOCOL_UNSET",
+                        "OPENAI",
+                        "ANTHROPIC"
+                    ],
+                    "type": "string",
+                    "title": "Protocol"
+                },
+                "allowedOperations": {
+                    "items": {
+                        "enum": [
+                            "OPERATION_UNSET",
+                            "CHAT_COMPLETIONS",
+                            "RESPONSES",
+                            "COMPLETIONS",
+                            "EMBEDDINGS",
+                            "MODERATIONS",
+                            "MODELS_LIST",
+                            "MODELS_GET",
+                            "MESSAGES",
+                            "COUNT_TOKENS"
+                        ]
+                    },
+                    "type": "array",
+                    "title": "Operation"
+                },
+                "models": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Models",
+                    "additionalProperties": false,
+                    "description": "Models sets the model name allow and deny lists. Note that these lists are static guardrails, the identity-aware model access control is done by the Policies via the `ctx.request.llm.model` field."
+                },
+                "limits": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Limits",
+                    "additionalProperties": false,
+                    "description": "Limits sets the request parsing and semantic limits. These fields have to be set in the \"default\" or global Configuration (as opposed to named dynamic Configs) in order to actually work."
+                },
+                "auth": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Auth",
+                    "additionalProperties": false,
+                    "description": "Auth sets authentication-to-upstream specific configuration. This is where the upstream provider credentials (e.g. the OpenAI API key as a bearer token or the Anthropic API key as the `x-api-key` custom header) are set. Octelium never forwards the downstream credentials to the upstream provider."
+                },
+                "header": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Header",
+                    "additionalProperties": false,
+                    "description": "Header sets request and response header manipulation options"
+                },
+                "path": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Path",
+                    "additionalProperties": false,
+                    "description": "Path sets the upstream request path options"
+                },
+                "plugins": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Plugins is the list of plugins. The Cache plugin is unsupported for LLM Services since generic HTTP caching understands neither the authorization scope nor the model, tool and sampling parameters that make up a correct inference cache key."
+                },
+                "isUpstreamHTTP2": {
+                    "type": "boolean",
+                    "description": "IsUpstreamHTTP2 sets HTTP connections to the upstream to HTTP/2. Not enabled by default."
+                },
+                "listenHTTP2": {
+                    "type": "boolean",
+                    "description": "ListenHTTP2 sets the Service to listen to HTTP 2.0 connections. This is only enabled by default for Services using TLS. This field has to be enabled in the \"default\" or global Configuration (as opposed to named dynamic Configs) in order to actually work."
+                },
+                "visibility": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Visibility",
+                    "additionalProperties": false,
+                    "description": "Visibility sets the visibility/access logging specific options"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "LLM"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.LLM.Limits": {
+            "properties": {
+                "maxRequestBytes": {
+                    "type": "integer",
+                    "description": "MaxRequestBytes is the maximum size in bytes of the request body that is buffered and parsed. Zero uses the default value. This value is always bounded by an internal hard limit."
+                },
+                "maxStreamEventBytes": {
+                    "type": "integer",
+                    "description": "MaxStreamEventBytes is the maximum size in bytes of a single `text/event-stream` response event that is parsed. Larger events are still forwarded to the downstream as is, they are simply not inspected. Zero uses the default value."
+                },
+                "maxEstimatedInputTokens": {
+                    "type": "integer",
+                    "description": "MaxEstimatedInputTokens rejects the requests whose pre-flight estimated input token count is above this value. Note that this count is a conservative heuristic calculated by Octelium itself, it is not a provider-accurate token count. Read the `ctx.request.llm.estimateQuality` field to know whether the estimate accounted for the entire input."
+                },
+                "maxOutputTokens": {
+                    "type": "integer",
+                    "description": "MaxOutputTokens rejects the requests whose own requested maximum output token count is above this value."
+                },
+                "maxTools": {
+                    "type": "integer",
+                    "description": "MaxTools rejects the requests that declare more tools than this value."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Limits"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.LLM.Models": {
+            "properties": {
+                "allow": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Allow is the list of the allowed model names. An entry is either an exact model name (e.g. \"gpt-4o\") or a prefix pattern ending with a `*` (e.g. \"claude-*\"). If not set, which is the default, every model name is allowed. Note that model names are always strings since the providers introduce, version and retire their models independently of Octelium."
+                },
+                "deny": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Deny is the list of the denied model names using the same matching rules as the Allow list. It is evaluated after the Allow list and it wins whenever both of them match."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Models"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.LLM.Visibility": {
+            "properties": {
+                "enableRequestBody": {
+                    "type": "boolean",
+                    "description": "EnableRequestBody records the request body, which contains the prompt, in the AccessLogs. It is disabled by default since the prompts are far more sensitive than typical HTTP request bodies: they routinely contain secrets, PII, source code and proprietary data."
+                },
+                "enableRequestBodyMap": {
+                    "type": "boolean",
+                    "description": "EnableRequestBodyMap records the serialized request body in the AccessLogs. It is disabled by default for the same reason."
+                },
+                "enableResponseBody": {
+                    "type": "boolean",
+                    "description": "EnableResponseBody records the response body, which contains the generated completion, in the AccessLogs. It is disabled by default. Note that it is only recorded for the responses that are not streamed."
+                },
+                "enableResponseBodyMap": {
+                    "type": "boolean",
+                    "description": "EnableResponseBodyMap records the serialized response body in the AccessLogs. It is disabled by default."
+                },
+                "includeRequestHeaders": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "includeResponseHeaders": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "includeAllRequestHeaders": {
+                    "type": "boolean"
+                },
+                "includeAllResponseHeaders": {
+                    "type": "boolean"
+                },
+                "excludeRequestHeaders": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "excludeResponseHeaders": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Visibility"
         },
         "octelium.api.main.core.v1.Service.Spec.Config.MCP": {
             "properties": {

@@ -264,9 +264,14 @@ func Run(ctx context.Context) error {
 	}
 
 	{
+		accessUserSrv, err := access.NewServerUser(ctx, octeliumC)
+		if err != nil {
+			return err
+		}
+
 		accessv1.RegisterMainServiceServer(s, access.NewServerMain(octeliumC))
 		accessv1.RegisterReviewerServiceServer(s, access.NewServerReviewer(octeliumC))
-		accessv1.RegisterUserServiceServer(s, access.NewServerUser(octeliumC))
+		accessv1.RegisterUserServiceServer(s, accessUserSrv)
 	}
 
 	go func() {

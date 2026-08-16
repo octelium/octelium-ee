@@ -17,6 +17,7 @@ import (
 	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uaccessv1"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
+	"github.com/octelium/octelium/apis/cluster/caccessv1"
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
@@ -1281,4 +1282,13 @@ func (s *srvAccess) ListReview(ctx context.Context, req *vaccessv1.ListReviewOpt
 	}
 
 	return ret.(*accessv1.ReviewList), nil
+}
+
+type srvClusterAccess struct {
+	s *Server
+	caccessv1.UnimplementedInternalServiceServer
+}
+
+func (s *srvClusterAccess) ListSubjectUser(ctx context.Context, req *caccessv1.ListSubjectUserRequest) (*corev1.UserList, error) {
+	return s.s.listSubjectUser(ctx, req)
 }

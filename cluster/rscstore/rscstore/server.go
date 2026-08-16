@@ -18,6 +18,7 @@ import (
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
 	watchersee "github.com/octelium/octelium-ee/cluster/common/watchers"
+	"github.com/octelium/octelium/apis/cluster/caccessv1"
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
@@ -195,6 +196,10 @@ func (s *Server) initGRPC(ctx context.Context) error {
 	})
 
 	vaccessv1.RegisterResourceServiceServer(grpcSrv, &srvAccess{
+		s: s,
+	})
+
+	caccessv1.RegisterInternalServiceServer(grpcSrv, &srvClusterAccess{
 		s: s,
 	})
 

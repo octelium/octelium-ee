@@ -982,7 +982,8 @@
                         "DNS",
                         "SOCKS5",
                         "RDP_WEB",
-                        "MCP"
+                        "MCP",
+                        "LLM"
                     ],
                     "type": "string",
                     "title": "Mode"

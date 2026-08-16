@@ -739,13 +739,16 @@ var MainService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	UserService_CreateRequest_FullMethodName      = "/octelium.api.main.access.v1.UserService/CreateRequest"
-	UserService_UpdateRequest_FullMethodName      = "/octelium.api.main.access.v1.UserService/UpdateRequest"
-	UserService_GetRequest_FullMethodName         = "/octelium.api.main.access.v1.UserService/GetRequest"
-	UserService_CancelRequest_FullMethodName      = "/octelium.api.main.access.v1.UserService/CancelRequest"
-	UserService_ListRequest_FullMethodName        = "/octelium.api.main.access.v1.UserService/ListRequest"
-	UserService_ListCatalog_FullMethodName        = "/octelium.api.main.access.v1.UserService/ListCatalog"
-	UserService_ListCatalogService_FullMethodName = "/octelium.api.main.access.v1.UserService/ListCatalogService"
+	UserService_CreateRequest_FullMethodName           = "/octelium.api.main.access.v1.UserService/CreateRequest"
+	UserService_CreateRequestForSubject_FullMethodName = "/octelium.api.main.access.v1.UserService/CreateRequestForSubject"
+	UserService_UpdateRequest_FullMethodName           = "/octelium.api.main.access.v1.UserService/UpdateRequest"
+	UserService_GetRequest_FullMethodName              = "/octelium.api.main.access.v1.UserService/GetRequest"
+	UserService_CancelRequest_FullMethodName           = "/octelium.api.main.access.v1.UserService/CancelRequest"
+	UserService_ListRequest_FullMethodName             = "/octelium.api.main.access.v1.UserService/ListRequest"
+	UserService_ListCatalog_FullMethodName             = "/octelium.api.main.access.v1.UserService/ListCatalog"
+	UserService_ListCatalogService_FullMethodName      = "/octelium.api.main.access.v1.UserService/ListCatalogService"
+	UserService_ListSubjectUser_FullMethodName         = "/octelium.api.main.access.v1.UserService/ListSubjectUser"
+	UserService_GetSubjectUser_FullMethodName          = "/octelium.api.main.access.v1.UserService/GetSubjectUser"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -753,12 +756,15 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type UserServiceClient interface {
 	CreateRequest(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Request, error)
+	CreateRequestForSubject(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Request, error)
 	UpdateRequest(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Request, error)
 	GetRequest(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*Request, error)
 	CancelRequest(ctx context.Context, in *CancelRequestRequest, opts ...grpc.CallOption) (*metav1.OperationResult, error)
 	ListRequest(ctx context.Context, in *ListUserRequestOptions, opts ...grpc.CallOption) (*RequestList, error)
 	ListCatalog(ctx context.Context, in *ListUserCatalogOptions, opts ...grpc.CallOption) (*CatalogList, error)
 	ListCatalogService(ctx context.Context, in *ListUserCatalogServiceOptions, opts ...grpc.CallOption) (*userv1.ServiceList, error)
+	ListSubjectUser(ctx context.Context, in *ListSubjectUserOptions, opts ...grpc.CallOption) (*SubjectUserList, error)
+	GetSubjectUser(ctx context.Context, in *GetSubjectUserRequest, opts ...grpc.CallOption) (*SubjectUser, error)
 }
 
 type userServiceClient struct {
@@ -773,6 +779,16 @@ func (c *userServiceClient) CreateRequest(ctx context.Context, in *Request, opts
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Request)
 	err := c.cc.Invoke(ctx, UserService_CreateRequest_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) CreateRequestForSubject(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Request, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Request)
+	err := c.cc.Invoke(ctx, UserService_CreateRequestForSubject_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -839,17 +855,40 @@ func (c *userServiceClient) ListCatalogService(ctx context.Context, in *ListUser
 	return out, nil
 }
 
+func (c *userServiceClient) ListSubjectUser(ctx context.Context, in *ListSubjectUserOptions, opts ...grpc.CallOption) (*SubjectUserList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SubjectUserList)
+	err := c.cc.Invoke(ctx, UserService_ListSubjectUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) GetSubjectUser(ctx context.Context, in *GetSubjectUserRequest, opts ...grpc.CallOption) (*SubjectUser, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SubjectUser)
+	err := c.cc.Invoke(ctx, UserService_GetSubjectUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
 type UserServiceServer interface {
 	CreateRequest(context.Context, *Request) (*Request, error)
+	CreateRequestForSubject(context.Context, *Request) (*Request, error)
 	UpdateRequest(context.Context, *Request) (*Request, error)
 	GetRequest(context.Context, *metav1.GetOptions) (*Request, error)
 	CancelRequest(context.Context, *CancelRequestRequest) (*metav1.OperationResult, error)
 	ListRequest(context.Context, *ListUserRequestOptions) (*RequestList, error)
 	ListCatalog(context.Context, *ListUserCatalogOptions) (*CatalogList, error)
 	ListCatalogService(context.Context, *ListUserCatalogServiceOptions) (*userv1.ServiceList, error)
+	ListSubjectUser(context.Context, *ListSubjectUserOptions) (*SubjectUserList, error)
+	GetSubjectUser(context.Context, *GetSubjectUserRequest) (*SubjectUser, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -862,6 +901,9 @@ type UnimplementedUserServiceServer struct{}
 
 func (UnimplementedUserServiceServer) CreateRequest(context.Context, *Request) (*Request, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateRequest not implemented")
+}
+func (UnimplementedUserServiceServer) CreateRequestForSubject(context.Context, *Request) (*Request, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateRequestForSubject not implemented")
 }
 func (UnimplementedUserServiceServer) UpdateRequest(context.Context, *Request) (*Request, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateRequest not implemented")
@@ -880,6 +922,12 @@ func (UnimplementedUserServiceServer) ListCatalog(context.Context, *ListUserCata
 }
 func (UnimplementedUserServiceServer) ListCatalogService(context.Context, *ListUserCatalogServiceOptions) (*userv1.ServiceList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListCatalogService not implemented")
+}
+func (UnimplementedUserServiceServer) ListSubjectUser(context.Context, *ListSubjectUserOptions) (*SubjectUserList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListSubjectUser not implemented")
+}
+func (UnimplementedUserServiceServer) GetSubjectUser(context.Context, *GetSubjectUserRequest) (*SubjectUser, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSubjectUser not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -916,6 +964,24 @@ func _UserService_CreateRequest_Handler(srv interface{}, ctx context.Context, de
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserServiceServer).CreateRequest(ctx, req.(*Request))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_CreateRequestForSubject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).CreateRequestForSubject(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_CreateRequestForSubject_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).CreateRequestForSubject(ctx, req.(*Request))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1028,6 +1094,42 @@ func _UserService_ListCatalogService_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_ListSubjectUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListSubjectUserOptions)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).ListSubjectUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_ListSubjectUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).ListSubjectUser(ctx, req.(*ListSubjectUserOptions))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_GetSubjectUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSubjectUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetSubjectUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetSubjectUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetSubjectUser(ctx, req.(*GetSubjectUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1038,6 +1140,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateRequest",
 			Handler:    _UserService_CreateRequest_Handler,
+		},
+		{
+			MethodName: "CreateRequestForSubject",
+			Handler:    _UserService_CreateRequestForSubject_Handler,
 		},
 		{
 			MethodName: "UpdateRequest",
@@ -1062,6 +1168,14 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListCatalogService",
 			Handler:    _UserService_ListCatalogService_Handler,
+		},
+		{
+			MethodName: "ListSubjectUser",
+			Handler:    _UserService_ListSubjectUser_Handler,
+		},
+		{
+			MethodName: "GetSubjectUser",
+			Handler:    _UserService_GetSubjectUser_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
