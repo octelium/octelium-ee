@@ -201,9 +201,7 @@ export interface User {
  */
 export interface User_Spec {
     /**
-     * Groups is the list of Group names that this User belongs to. You must not
-     * add the `root` Group as it's only used by the `root` User or the `all`
-     * Group as it's already added by the Cluster automatically.
+     * Groups is the list of Group names that this User belongs to.
      *
      * @generated from protobuf field: repeated string groups = 1
      */
@@ -688,6 +686,34 @@ export interface Service_Spec_Config {
          * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.Kubernetes kubernetes = 8
          */
         kubernetes: Service_Spec_Config_Kubernetes;
+    } | {
+        oneofKind: "socks5";
+        /**
+         * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.SOCKS5 socks5 = 11
+         */
+        socks5: Service_Spec_Config_SOCKS5;
+    } | {
+        oneofKind: "rdp";
+        /**
+         * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.RDP rdp = 12
+         */
+        rdp: Service_Spec_Config_RDP;
+    } | {
+        oneofKind: "mcp";
+        /**
+         * MCP sets Model Context Protocol-specific configuration
+         *
+         * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.MCP mcp = 13
+         */
+        mcp: Service_Spec_Config_MCP;
+    } | {
+        oneofKind: "llm";
+        /**
+         * LLM sets LLM-gateway-specific configuration
+         *
+         * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.LLM llm = 14
+         */
+        llm: Service_Spec_Config_LLM;
     } | {
         oneofKind: undefined;
     };
@@ -1907,6 +1933,550 @@ export interface Service_Spec_Config_HTTP_Visibility {
     excludeResponseHeaders: string[];
 }
 /**
+ * @generated from protobuf message octelium.api.main.core.v1.Service.Spec.Config.MCP
+ */
+export interface Service_Spec_Config_MCP {
+    /**
+     * Endpoint is the canonical MCP endpoint path (e.g. `/mcp`). Any
+     * request whose path does not exactly match it is rejected. If not
+     * set, which is the default, every request path is accepted and
+     * forwarded to the upstream as is. This is needed since many MCP
+     * servers are served at the root path. This field has to be set in the
+     * "default" or global Configuration (as opposed to named dynamic
+     * Configs) in order to actually work.
+     *
+     * @generated from protobuf field: string endpoint = 1
+     */
+    endpoint: string;
+    /**
+     * Protocol sets the MCP protocol validation options. These fields have
+     * to be set in the "default" or global Configuration (as opposed to
+     * named dynamic Configs) in order to actually work.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.MCP.Protocol protocol = 2
+     */
+    protocol?: Service_Spec_Config_MCP_Protocol;
+    /**
+     * Limits sets the MCP request parsing limits. These fields have to be
+     * set in the "default" or global Configuration (as opposed to named
+     * dynamic Configs) in order to actually work.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.MCP.Limits limits = 3
+     */
+    limits?: Service_Spec_Config_MCP_Limits;
+    /**
+     * Auth sets authentication-to-upstream specific configuration
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.HTTP.Auth auth = 4
+     */
+    auth?: Service_Spec_Config_HTTP_Auth;
+    /**
+     * Header sets request and response header manipulation options. Note
+     * that the MCP reserved headers (i.e. `MCP-Protocol-Version`,
+     * `Mcp-Method`, `Mcp-Name` and `Mcp-Param-*`) can be manipulated here
+     * too. Octelium never uses them to make authorization decisions, which
+     * are always made from the JSON-RPC request body itself, however the
+     * upstream MCP server rejects the requests whose headers do not match
+     * the body.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.HTTP.Header header = 5
+     */
+    header?: Service_Spec_Config_HTTP_Header;
+    /**
+     * Path sets the upstream request path options
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.HTTP.Path path = 6
+     */
+    path?: Service_Spec_Config_HTTP_Path;
+    /**
+     * Plugins is the list of plugins. The Cache plugin is unsupported for
+     * MCP Services since generic HTTP caching understands neither the
+     * authorization scope nor the MCP cache invalidation semantics. Note
+     * that a Plugin that rewrites the JSON-RPC request body (e.g. Lua,
+     * ExtProc) should also rewrite the corresponding MCP reserved headers
+     * whenever the downstream sets them, otherwise the upstream MCP server
+     * rejects the request since the headers no longer match the body.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin plugins = 7
+     */
+    plugins: Service_Spec_Config_HTTP_Plugin[];
+    /**
+     * IsUpstreamHTTP2 sets HTTP connections to the upstream to HTTP/2. Not
+     * enabled by default.
+     *
+     * @generated from protobuf field: bool isUpstreamHTTP2 = 8
+     */
+    isUpstreamHTTP2: boolean;
+    /**
+     * ListenHTTP2 sets the Service to listen to HTTP 2.0 connections. This
+     * is only enabled by default for Services using TLS. This field has to
+     * be enabled in the "default" or global Configuration (as opposed to
+     * named dynamic Configs) in order to actually work.
+     *
+     * @generated from protobuf field: bool listenHTTP2 = 9
+     */
+    listenHTTP2: boolean;
+    /**
+     * Origin sets the `Origin` request header validation options. This
+     * field has to be set in the "default" or global Configuration (as
+     * opposed to named dynamic Configs) in order to actually work.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.MCP.Origin origin = 10
+     */
+    origin?: Service_Spec_Config_MCP_Origin;
+    /**
+     * Visibility sets the visibility/access logging specific options
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.MCP.Visibility visibility = 11
+     */
+    visibility?: Service_Spec_Config_MCP_Visibility;
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.Service.Spec.Config.MCP.Protocol
+ */
+export interface Service_Spec_Config_MCP_Protocol {
+    /**
+     * Versions is an optional allowlist of the accepted MCP protocol
+     * versions (e.g. "2026-07-28"). If not set, which is the default,
+     * every version is accepted. Octelium does not maintain its own set
+     * of supported MCP protocol versions.
+     *
+     * @generated from protobuf field: repeated string versions = 1
+     */
+    versions: string[];
+    /**
+     * RequireVersion rejects the requests that do not declare a protocol
+     * version in either the `MCP-Protocol-Version` request header or the
+     * request body's `_meta` field. It is disabled by default since the
+     * header was only introduced in the 2025-06-18 revision.
+     *
+     * @generated from protobuf field: bool requireVersion = 2
+     */
+    requireVersion: boolean;
+    /**
+     * RejectUnknownMethods rejects any JSON-RPC method that is unknown
+     * to Octelium. It is disabled by default. Keeping it disabled lets
+     * the official MCP extensions as well as the newer protocol
+     * revisions reach the upstream while still being visible to Policies
+     * via the `ctx.request.mcp.method` field.
+     *
+     * @generated from protobuf field: bool rejectUnknownMethods = 3
+     */
+    rejectUnknownMethods: boolean;
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.Service.Spec.Config.MCP.Limits
+ */
+export interface Service_Spec_Config_MCP_Limits {
+    /**
+     * MaxRequestBytes is the maximum size in bytes of the JSON-RPC
+     * request body that is buffered and parsed. Zero uses the default
+     * value. This value is always bounded by an internal hard limit.
+     *
+     * @generated from protobuf field: uint32 maxRequestBytes = 1
+     */
+    maxRequestBytes: number;
+    /**
+     * MaxStreamEventBytes is the maximum size in bytes of a single
+     * `text/event-stream` response event that is parsed. Larger events
+     * are still forwarded to the downstream as is, they are simply not
+     * inspected. Zero uses the default value.
+     *
+     * @generated from protobuf field: uint32 maxStreamEventBytes = 2
+     */
+    maxStreamEventBytes: number;
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.Service.Spec.Config.MCP.Origin
+ */
+export interface Service_Spec_Config_MCP_Origin {
+    /**
+     * Allowed is the list of the additional allowed `Origin` request
+     * header values (e.g. "https://example.com"). A request whose Origin
+     * matches the Service's own origin is always accepted and it does
+     * not need to be listed here. Requests that carry no Origin request
+     * header at all, which is the case for nearly every non-browser MCP
+     * client (e.g. IDEs, AI agents, CLI tools), are always accepted.
+     *
+     * @generated from protobuf field: repeated string allowed = 1
+     */
+    allowed: string[];
+    /**
+     * Disable disables the `Origin` request header validation entirely.
+     * This validation protects the upstream MCP server from DNS
+     * rebinding attacks and it is enabled by default.
+     *
+     * @generated from protobuf field: bool disable = 2
+     */
+    disable: boolean;
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.Service.Spec.Config.MCP.Visibility
+ */
+export interface Service_Spec_Config_MCP_Visibility {
+    /**
+     * DisableRequestBody disables recording the JSON-RPC request body in
+     * the AccessLogs. The request body is recorded by default since
+     * inspecting the MCP request is the whole point of using MCP mode as
+     * opposed to HTTP mode.
+     *
+     * @generated from protobuf field: bool disableRequestBody = 1
+     */
+    disableRequestBody: boolean;
+    /**
+     * DisableResponseBody disables recording the JSON-RPC response body,
+     * which includes the individual `text/event-stream` response events,
+     * in the AccessLogs. The response body is recorded by default.
+     *
+     * @generated from protobuf field: bool disableResponseBody = 2
+     */
+    disableResponseBody: boolean;
+    /**
+     * @generated from protobuf field: repeated string includeRequestHeaders = 3
+     */
+    includeRequestHeaders: string[];
+    /**
+     * @generated from protobuf field: repeated string includeResponseHeaders = 4
+     */
+    includeResponseHeaders: string[];
+    /**
+     * @generated from protobuf field: bool includeAllRequestHeaders = 5
+     */
+    includeAllRequestHeaders: boolean;
+    /**
+     * @generated from protobuf field: bool includeAllResponseHeaders = 6
+     */
+    includeAllResponseHeaders: boolean;
+    /**
+     * @generated from protobuf field: repeated string excludeRequestHeaders = 7
+     */
+    excludeRequestHeaders: string[];
+    /**
+     * @generated from protobuf field: repeated string excludeResponseHeaders = 8
+     */
+    excludeResponseHeaders: string[];
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.Service.Spec.Config.LLM
+ */
+export interface Service_Spec_Config_LLM {
+    /**
+     * Protocol is the inference API protocol spoken by both the
+     * downstreams and the upstream. If not set, which is the default, the
+     * OPENAI protocol is used. Note that Octelium currently proxies the
+     * requests to the upstream in the same protocol that it accepts them
+     * from the downstreams, it does not translate between the protocols.
+     * This field has to be set in the "default" or global Configuration
+     * (as opposed to named dynamic Configs) in order to actually work.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.LLM.Protocol protocol = 1
+     */
+    protocol: Service_Spec_Config_LLM_Protocol;
+    /**
+     * AllowedOperations is the list of the allowed operations. If not set,
+     * which is the default, every operation supported by the Protocol is
+     * allowed. Note that the requests whose paths are unknown to Octelium
+     * are always rejected regardless of this field.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.core.v1.Service.Spec.Config.LLM.Operation allowedOperations = 2
+     */
+    allowedOperations: Service_Spec_Config_LLM_Operation[];
+    /**
+     * Models sets the model name allow and deny lists. Note that these
+     * lists are static guardrails, the identity-aware model access control
+     * is done by the Policies via the `ctx.request.llm.model` field.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.LLM.Models models = 3
+     */
+    models?: Service_Spec_Config_LLM_Models;
+    /**
+     * Limits sets the request parsing and semantic limits. These fields
+     * have to be set in the "default" or global Configuration (as opposed
+     * to named dynamic Configs) in order to actually work.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.LLM.Limits limits = 4
+     */
+    limits?: Service_Spec_Config_LLM_Limits;
+    /**
+     * Auth sets authentication-to-upstream specific configuration. This is
+     * where the upstream provider credentials (e.g. the OpenAI API key as
+     * a bearer token or the Anthropic API key as the `x-api-key` custom
+     * header) are set. Octelium never forwards the downstream credentials
+     * to the upstream provider.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.HTTP.Auth auth = 5
+     */
+    auth?: Service_Spec_Config_HTTP_Auth;
+    /**
+     * Header sets request and response header manipulation options
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.HTTP.Header header = 6
+     */
+    header?: Service_Spec_Config_HTTP_Header;
+    /**
+     * Path sets the upstream request path options
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.HTTP.Path path = 7
+     */
+    path?: Service_Spec_Config_HTTP_Path;
+    /**
+     * Plugins is the list of plugins. The Cache plugin is unsupported for
+     * LLM Services since generic HTTP caching understands neither the
+     * authorization scope nor the model, tool and sampling parameters that
+     * make up a correct inference cache key.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin plugins = 8
+     */
+    plugins: Service_Spec_Config_HTTP_Plugin[];
+    /**
+     * IsUpstreamHTTP2 sets HTTP connections to the upstream to HTTP/2. Not
+     * enabled by default.
+     *
+     * @generated from protobuf field: bool isUpstreamHTTP2 = 9
+     */
+    isUpstreamHTTP2: boolean;
+    /**
+     * ListenHTTP2 sets the Service to listen to HTTP 2.0 connections. This
+     * is only enabled by default for Services using TLS. This field has to
+     * be enabled in the "default" or global Configuration (as opposed to
+     * named dynamic Configs) in order to actually work.
+     *
+     * @generated from protobuf field: bool listenHTTP2 = 10
+     */
+    listenHTTP2: boolean;
+    /**
+     * Visibility sets the visibility/access logging specific options
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.LLM.Visibility visibility = 11
+     */
+    visibility?: Service_Spec_Config_LLM_Visibility;
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.Service.Spec.Config.LLM.Models
+ */
+export interface Service_Spec_Config_LLM_Models {
+    /**
+     * Allow is the list of the allowed model names. An entry is either
+     * an exact model name (e.g. "gpt-4o") or a prefix pattern ending
+     * with a `*` (e.g. "claude-*"). If not set, which is the default,
+     * every model name is allowed. Note that model names are always
+     * strings since the providers introduce, version and retire their
+     * models independently of Octelium.
+     *
+     * @generated from protobuf field: repeated string allow = 1
+     */
+    allow: string[];
+    /**
+     * Deny is the list of the denied model names using the same matching
+     * rules as the Allow list. It is evaluated after the Allow list and
+     * it wins whenever both of them match.
+     *
+     * @generated from protobuf field: repeated string deny = 2
+     */
+    deny: string[];
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.Service.Spec.Config.LLM.Limits
+ */
+export interface Service_Spec_Config_LLM_Limits {
+    /**
+     * MaxRequestBytes is the maximum size in bytes of the request body
+     * that is buffered and parsed. Zero uses the default value. This
+     * value is always bounded by an internal hard limit.
+     *
+     * @generated from protobuf field: uint32 maxRequestBytes = 1
+     */
+    maxRequestBytes: number;
+    /**
+     * MaxStreamEventBytes is the maximum size in bytes of a single
+     * `text/event-stream` response event that is parsed. Larger events
+     * are still forwarded to the downstream as is, they are simply not
+     * inspected. Zero uses the default value.
+     *
+     * @generated from protobuf field: uint32 maxStreamEventBytes = 2
+     */
+    maxStreamEventBytes: number;
+    /**
+     * MaxEstimatedInputTokens rejects the requests whose pre-flight
+     * estimated input token count is above this value. Note that this
+     * count is a conservative heuristic calculated by Octelium itself,
+     * it is not a provider-accurate token count. Read the
+     * `ctx.request.llm.estimateQuality` field to know whether the
+     * estimate accounted for the entire input.
+     *
+     * @generated from protobuf field: uint64 maxEstimatedInputTokens = 3
+     */
+    maxEstimatedInputTokens: number;
+    /**
+     * MaxOutputTokens rejects the requests whose own requested maximum
+     * output token count is above this value.
+     *
+     * @generated from protobuf field: uint64 maxOutputTokens = 4
+     */
+    maxOutputTokens: number;
+    /**
+     * MaxTools rejects the requests that declare more tools than this
+     * value.
+     *
+     * @generated from protobuf field: uint32 maxTools = 5
+     */
+    maxTools: number;
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.Service.Spec.Config.LLM.Visibility
+ */
+export interface Service_Spec_Config_LLM_Visibility {
+    /**
+     * EnableRequestBody records the request body, which contains the
+     * prompt, in the AccessLogs. It is disabled by default since the
+     * prompts are far more sensitive than typical HTTP request bodies:
+     * they routinely contain secrets, PII, source code and proprietary
+     * data.
+     *
+     * @generated from protobuf field: bool enableRequestBody = 1
+     */
+    enableRequestBody: boolean;
+    /**
+     * EnableRequestBodyMap records the serialized request body in the
+     * AccessLogs. It is disabled by default for the same reason.
+     *
+     * @generated from protobuf field: bool enableRequestBodyMap = 2
+     */
+    enableRequestBodyMap: boolean;
+    /**
+     * EnableResponseBody records the response body, which contains the
+     * generated completion, in the AccessLogs. It is disabled by
+     * default. Note that it is only recorded for the responses that are
+     * not streamed.
+     *
+     * @generated from protobuf field: bool enableResponseBody = 3
+     */
+    enableResponseBody: boolean;
+    /**
+     * EnableResponseBodyMap records the serialized response body in the
+     * AccessLogs. It is disabled by default.
+     *
+     * @generated from protobuf field: bool enableResponseBodyMap = 4
+     */
+    enableResponseBodyMap: boolean;
+    /**
+     * @generated from protobuf field: repeated string includeRequestHeaders = 5
+     */
+    includeRequestHeaders: string[];
+    /**
+     * @generated from protobuf field: repeated string includeResponseHeaders = 6
+     */
+    includeResponseHeaders: string[];
+    /**
+     * @generated from protobuf field: bool includeAllRequestHeaders = 7
+     */
+    includeAllRequestHeaders: boolean;
+    /**
+     * @generated from protobuf field: bool includeAllResponseHeaders = 8
+     */
+    includeAllResponseHeaders: boolean;
+    /**
+     * @generated from protobuf field: repeated string excludeRequestHeaders = 9
+     */
+    excludeRequestHeaders: string[];
+    /**
+     * @generated from protobuf field: repeated string excludeResponseHeaders = 10
+     */
+    excludeResponseHeaders: string[];
+}
+/**
+ * @generated from protobuf enum octelium.api.main.core.v1.Service.Spec.Config.LLM.Protocol
+ */
+export enum Service_Spec_Config_LLM_Protocol {
+    /**
+     * PROTOCOL_UNSET falls back to the default behavior which is
+     * currently OPENAI
+     *
+     * @generated from protobuf enum value: PROTOCOL_UNSET = 0;
+     */
+    PROTOCOL_UNSET = 0,
+    /**
+     * OPENAI is the OpenAI REST API. It is also used by every
+     * OpenAI-compatible provider and server (e.g. vLLM, Ollama, Azure
+     * OpenAI as well as the OpenAI-compatible surfaces of Gemini and
+     * AWS Bedrock).
+     *
+     * @generated from protobuf enum value: OPENAI = 1;
+     */
+    OPENAI = 1,
+    /**
+     * ANTHROPIC is the native Anthropic Messages API.
+     *
+     * @generated from protobuf enum value: ANTHROPIC = 2;
+     */
+    ANTHROPIC = 2
+}
+/**
+ * @generated from protobuf enum octelium.api.main.core.v1.Service.Spec.Config.LLM.Operation
+ */
+export enum Service_Spec_Config_LLM_Operation {
+    /**
+     * OPERATION_UNSET is not used
+     *
+     * @generated from protobuf enum value: OPERATION_UNSET = 0;
+     */
+    OPERATION_UNSET = 0,
+    /**
+     * CHAT_COMPLETIONS is `POST /v1/chat/completions`
+     *
+     * @generated from protobuf enum value: CHAT_COMPLETIONS = 1;
+     */
+    CHAT_COMPLETIONS = 1,
+    /**
+     * RESPONSES is `POST /v1/responses`
+     *
+     * @generated from protobuf enum value: RESPONSES = 2;
+     */
+    RESPONSES = 2,
+    /**
+     * COMPLETIONS is the legacy `POST /v1/completions`
+     *
+     * @generated from protobuf enum value: COMPLETIONS = 3;
+     */
+    COMPLETIONS = 3,
+    /**
+     * EMBEDDINGS is `POST /v1/embeddings`
+     *
+     * @generated from protobuf enum value: EMBEDDINGS = 4;
+     */
+    EMBEDDINGS = 4,
+    /**
+     * MODERATIONS is `POST /v1/moderations`
+     *
+     * @generated from protobuf enum value: MODERATIONS = 5;
+     */
+    MODERATIONS = 5,
+    /**
+     * MODELS_LIST is `GET /v1/models`
+     *
+     * @generated from protobuf enum value: MODELS_LIST = 6;
+     */
+    MODELS_LIST = 6,
+    /**
+     * MODELS_GET is `GET /v1/models/{model}`
+     *
+     * @generated from protobuf enum value: MODELS_GET = 7;
+     */
+    MODELS_GET = 7,
+    /**
+     * MESSAGES is `POST /v1/messages`
+     *
+     * @generated from protobuf enum value: MESSAGES = 8;
+     */
+    MESSAGES = 8,
+    /**
+     * COUNT_TOKENS is `POST /v1/messages/count_tokens`
+     *
+     * @generated from protobuf enum value: COUNT_TOKENS = 9;
+     */
+    COUNT_TOKENS = 9
+}
+/**
  * @generated from protobuf message octelium.api.main.core.v1.Service.Spec.Config.SSH
  */
 export interface Service_Spec_Config_SSH {
@@ -2387,6 +2957,132 @@ export interface Service_Spec_Config_Kubernetes_Kubeconfig {
      * @generated from protobuf field: string context = 2
      */
     context: string;
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.Service.Spec.Config.SOCKS5
+ */
+export interface Service_Spec_Config_SOCKS5 {
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.SOCKS5.Auth auth = 1
+     */
+    auth?: Service_Spec_Config_SOCKS5_Auth;
+    /**
+     * @generated from protobuf field: bool isEmbeddedMode = 2
+     */
+    isEmbeddedMode: boolean;
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.Service.Spec.Config.SOCKS5.Auth
+ */
+export interface Service_Spec_Config_SOCKS5_Auth {
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "noAuth";
+        /**
+         * @generated from protobuf field: bool noAuth = 1
+         */
+        noAuth: boolean;
+    } | {
+        oneofKind: "usernamePassword";
+        /**
+         * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.SOCKS5.Auth.UsernamePassword usernamePassword = 2
+         */
+        usernamePassword: Service_Spec_Config_SOCKS5_Auth_UsernamePassword;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.Service.Spec.Config.SOCKS5.Auth.UsernamePassword
+ */
+export interface Service_Spec_Config_SOCKS5_Auth_UsernamePassword {
+    /**
+     * @generated from protobuf field: string username = 1
+     */
+    username: string;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.SOCKS5.Auth.UsernamePassword.Password password = 2
+     */
+    password?: Service_Spec_Config_SOCKS5_Auth_UsernamePassword_Password;
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.Service.Spec.Config.SOCKS5.Auth.UsernamePassword.Password
+ */
+export interface Service_Spec_Config_SOCKS5_Auth_UsernamePassword_Password {
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "fromSecret";
+        /**
+         * @generated from protobuf field: string fromSecret = 1
+         */
+        fromSecret: string;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.Service.Spec.Config.RDP
+ */
+export interface Service_Spec_Config_RDP {
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.RDP.Auth auth = 1
+     */
+    auth?: Service_Spec_Config_RDP_Auth;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.RDP.UpstreamTLS upstreamTLS = 2
+     */
+    upstreamTLS?: Service_Spec_Config_RDP_UpstreamTLS;
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.Service.Spec.Config.RDP.Auth
+ */
+export interface Service_Spec_Config_RDP_Auth {
+    /**
+     * @generated from protobuf field: string user = 1
+     */
+    user: string;
+    /**
+     * @generated from protobuf field: string domain = 2
+     */
+    domain: string;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.RDP.Auth.Password password = 3
+     */
+    password?: Service_Spec_Config_RDP_Auth_Password;
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.Service.Spec.Config.RDP.Auth.Password
+ */
+export interface Service_Spec_Config_RDP_Auth_Password {
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "fromSecret";
+        /**
+         * @generated from protobuf field: string fromSecret = 1
+         */
+        fromSecret: string;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.Service.Spec.Config.RDP.UpstreamTLS
+ */
+export interface Service_Spec_Config_RDP_UpstreamTLS {
+    /**
+     * @generated from protobuf field: repeated string pinnedCertSHA256 = 1
+     */
+    pinnedCertSHA256: string[];
+    /**
+     * @generated from protobuf field: bool allowAnyCert = 2
+     */
+    allowAnyCert: boolean;
 }
 /**
  * @generated from protobuf message octelium.api.main.core.v1.Service.Spec.Config.Upstream
@@ -3045,7 +3741,32 @@ export enum Service_Spec_Mode {
      *
      * @generated from protobuf enum value: DNS = 10;
      */
-    DNS = 10
+    DNS = 10,
+    /**
+     * @generated from protobuf enum value: SOCKS5 = 11;
+     */
+    SOCKS5 = 11,
+    /**
+     * @generated from protobuf enum value: RDP_WEB = 12;
+     */
+    RDP_WEB = 12,
+    /**
+     * MCP is the Model Context Protocol mode. MCP Services are HTTP-based:
+     * they reuse the entire HTTP dataplane and additionally understand the
+     * MCP JSON-RPC semantics for access control, access logging and metrics.
+     *
+     * @generated from protobuf enum value: MCP = 13;
+     */
+    MCP = 13,
+    /**
+     * LLM is the LLM gateway mode. LLM Services are HTTP-based: they reuse
+     * the entire HTTP dataplane and additionally understand the inference
+     * API semantics (i.e. the operation, the model, the streaming mode and
+     * the token usage) for access control, access logging and metrics.
+     *
+     * @generated from protobuf enum value: LLM = 14;
+     */
+    LLM = 14
 }
 /**
  * @generated from protobuf message octelium.api.main.core.v1.Service.Status
@@ -3606,6 +4327,14 @@ export interface Session_Status_Connection {
      * @generated from protobuf field: int32 eSSHPort = 13
      */
     eSSHPort: number;
+    /**
+     * @generated from protobuf field: bool eSOCKS5Enable = 14
+     */
+    eSOCKS5Enable: boolean;
+    /**
+     * @generated from protobuf field: int32 eSOCKS5Port = 15
+     */
+    eSOCKS5Port: number;
 }
 /**
  * @generated from protobuf message octelium.api.main.core.v1.Session.Status.Connection.ServiceOptions
@@ -4488,6 +5217,27 @@ export interface Credential_Status {
      * @generated from protobuf field: bool isLocked = 7
      */
     isLocked: boolean;
+    /**
+     * PKCE is set when the Credential is issued to a client login flow that
+     * supplied a code challenge.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Credential.Status.PKCE pkce = 8
+     */
+    pkce?: Credential_Status_PKCE;
+}
+/**
+ * PKCE binds the Credential to a code challenge supplied by the client
+ * that initiated the login.
+ *
+ * @generated from protobuf message octelium.api.main.core.v1.Credential.Status.PKCE
+ */
+export interface Credential_Status_PKCE {
+    /**
+     * CodeChallenge is the SHA256 digest of the code verifier.
+     *
+     * @generated from protobuf field: bytes codeChallenge = 1
+     */
+    codeChallenge: Uint8Array;
 }
 /**
  * @generated from protobuf message octelium.api.main.core.v1.CredentialList
@@ -4763,6 +5513,280 @@ export interface Device_Status {
      * @generated from protobuf field: repeated string macAddresses = 8
      */
     macAddresses: string[];
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture posture = 9
+     */
+    posture?: Device_Status_Posture;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Binding binding = 10
+     */
+    binding?: Device_Status_Binding;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.ProbeAttempt probeAttempt = 11
+     */
+    probeAttempt?: Device_Status_ProbeAttempt;
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.Device.Status.Posture
+ */
+export interface Device_Status_Posture {
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture.RiskLevel riskLevel = 1
+     */
+    riskLevel: Device_Status_Posture_RiskLevel;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture.SignalState diskEncryption = 2
+     */
+    diskEncryption: Device_Status_Posture_SignalState;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture.SignalState compliant = 3
+     */
+    compliant: Device_Status_Posture_SignalState;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Posture.SignalState threatFree = 4
+     */
+    threatFree: Device_Status_Posture_SignalState;
+    /**
+     * @generated from protobuf field: map<string, octelium.api.main.core.v1.Device.Status.Posture.SignalState> signals = 5
+     */
+    signals: {
+        [key: string]: Device_Status_Posture_SignalState;
+    };
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp lastSyncAt = 6
+     */
+    lastSyncAt?: Timestamp;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp lastSeenAt = 7
+     */
+    lastSeenAt?: Timestamp;
+    /**
+     * The PDP MUST treat posture with expiresAt in the past as absent.
+     * The device watcher additionally clears expired posture as hygiene.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp expiresAt = 8
+     */
+    expiresAt?: Timestamp;
+    /**
+     * @generated from protobuf field: google.protobuf.Struct attrs = 9
+     */
+    attrs?: Struct;
+}
+/**
+ * @generated from protobuf enum octelium.api.main.core.v1.Device.Status.Posture.RiskLevel
+ */
+export enum Device_Status_Posture_RiskLevel {
+    /**
+     * @generated from protobuf enum value: RISK_LEVEL_UNKNOWN = 0;
+     */
+    RISK_LEVEL_UNKNOWN = 0,
+    /**
+     * @generated from protobuf enum value: LOW = 1;
+     */
+    LOW = 1,
+    /**
+     * @generated from protobuf enum value: MEDIUM = 2;
+     */
+    MEDIUM = 2,
+    /**
+     * @generated from protobuf enum value: HIGH = 3;
+     */
+    HIGH = 3,
+    /**
+     * @generated from protobuf enum value: CRITICAL = 4;
+     */
+    CRITICAL = 4
+}
+/**
+ * SignalState semantics under the single-provider model: adapters MUST
+ * set NOT_APPLICABLE for every named signal outside their provider's
+ * domain (an EDR adapter sets compliant = NOT_APPLICABLE, an MDM
+ * adapter sets threatFree = NOT_APPLICABLE). SIGNAL_STATE_UNKNOWN is
+ * reserved for "the provider should know this but did not report it"
+ * and fails closed in policy. Leaving a signal UNKNOWN when it is
+ * actually out-of-domain will lock devices out under any policy that
+ * requires that signal.
+ *
+ * @generated from protobuf enum octelium.api.main.core.v1.Device.Status.Posture.SignalState
+ */
+export enum Device_Status_Posture_SignalState {
+    /**
+     * @generated from protobuf enum value: SIGNAL_STATE_UNKNOWN = 0;
+     */
+    SIGNAL_STATE_UNKNOWN = 0,
+    /**
+     * @generated from protobuf enum value: PASS = 1;
+     */
+    PASS = 1,
+    /**
+     * @generated from protobuf enum value: FAIL = 2;
+     */
+    FAIL = 2,
+    /**
+     * @generated from protobuf enum value: NOT_APPLICABLE = 3;
+     */
+    NOT_APPLICABLE = 3
+}
+/**
+ * Binding is the singular, quasi-permanent link between this Device and
+ * one DeviceManager. ownerRef lives here and only here; Posture validity
+ * is defined as binding.state == ACCEPTED, so Posture does not carry a
+ * duplicate ownerRef that could diverge.
+ *
+ * ACCEPTED and REJECTED are both sticky: reconciliation never overwrites
+ * them, and only ResetDeviceBinding / ResetDeviceManagerBindings (or
+ * DeviceManager deletion, which auto-resets) clears them. There is no
+ * PENDING or EXPIRED state: attempt lifecycle belongs to ProbeAttempt,
+ * and an unbound Device simply has no Binding, so nothing dead-ends.
+ *
+ * @generated from protobuf message octelium.api.main.core.v1.Device.Status.Binding
+ */
+export interface Device_Status_Binding {
+    /**
+     * @generated from protobuf field: string uid = 1
+     */
+    uid: string;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference ownerRef = 2
+     */
+    ownerRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: string externalID = 3
+     */
+    externalID: string;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Binding.State state = 4
+     */
+    state: Device_Status_Binding_State;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.Binding.AcceptanceMethod acceptanceMethod = 5
+     */
+    acceptanceMethod: Device_Status_Binding_AcceptanceMethod;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp acceptedAt = 6
+     */
+    acceptedAt?: Timestamp;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp expiresAt = 7
+     */
+    expiresAt?: Timestamp;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp lastVerifiedAt = 8
+     */
+    lastVerifiedAt?: Timestamp;
+    /**
+     * @generated from protobuf field: uint32 verificationFailures = 9
+     */
+    verificationFailures: number;
+}
+/**
+ * @generated from protobuf enum octelium.api.main.core.v1.Device.Status.Binding.State
+ */
+export enum Device_Status_Binding_State {
+    /**
+     * @generated from protobuf enum value: STATE_UNKNOWN = 0;
+     */
+    STATE_UNKNOWN = 0,
+    /**
+     * WAITING_APPROVAL means a unique candidate exists and MANUAL
+     * approval mode requires administrator action before acceptance.
+     * Expiry (per expiresAt) clears the Binding rather than tombstoning
+     * it, so a later attempt can retry.
+     *
+     * @generated from protobuf enum value: WAITING_APPROVAL = 1;
+     */
+    WAITING_APPROVAL = 1,
+    /**
+     * @generated from protobuf enum value: ACCEPTED = 2;
+     */
+    ACCEPTED = 2,
+    /**
+     * REJECTED is a sticky record that this Device must not bind to
+     * ownerRef, set by administrator rejection or by losing a uniqueness
+     * claim to another Device. Cleared only by reset.
+     *
+     * @generated from protobuf enum value: REJECTED = 3;
+     */
+    REJECTED = 3,
+    /**
+     * AMBIGUOUS means candidate selection could not resolve uniquely:
+     * multiple DeviceManagers matched at equal priority, a provider
+     * inventory matched non-uniquely, or probe and identity sources
+     * disagreed within one DeviceManager. The specifics are in message.
+     * Recomputed on each reconcile; clears itself once resolved.
+     *
+     * @generated from protobuf enum value: AMBIGUOUS = 4;
+     */
+    AMBIGUOUS = 4
+}
+/**
+ * @generated from protobuf enum octelium.api.main.core.v1.Device.Status.Binding.AcceptanceMethod
+ */
+export enum Device_Status_Binding_AcceptanceMethod {
+    /**
+     * @generated from protobuf enum value: ACCEPTANCE_METHOD_UNKNOWN = 0;
+     */
+    ACCEPTANCE_METHOD_UNKNOWN = 0,
+    /**
+     * @generated from protobuf enum value: AUTOMATIC = 1;
+     */
+    AUTOMATIC = 1,
+    /**
+     * @generated from protobuf enum value: EMAIL = 2;
+     */
+    EMAIL = 2,
+    /**
+     * @generated from protobuf enum value: MANUAL = 3;
+     */
+    MANUAL = 3
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.Device.Status.ProbeAttempt
+ */
+export interface Device_Status_ProbeAttempt {
+    /**
+     * @generated from protobuf field: string uid = 1
+     */
+    uid: string;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp startedAt = 2
+     */
+    startedAt?: Timestamp;
+    /**
+     * @generated from protobuf field: repeated octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe probes = 3
+     */
+    probes: ClusterConfig_Status_Device_Probe[];
+    /**
+     * @generated from protobuf field: repeated octelium.api.main.core.v1.Device.Status.ProbeAttempt.Result results = 4
+     */
+    results: Device_Status_ProbeAttempt_Result[];
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.Device.Status.ProbeAttempt.Result
+ */
+export interface Device_Status_ProbeAttempt_Result {
+    /**
+     * @generated from protobuf field: string probeID = 1
+     */
+    probeID: string;
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "output";
+        /**
+         * @generated from protobuf field: bytes output = 2
+         */
+        output: Uint8Array;
+    } | {
+        oneofKind: "error";
+        /**
+         * @generated from protobuf field: string error = 3
+         */
+        error: string;
+    } | {
+        oneofKind: undefined;
+    };
 }
 /**
  * @generated from protobuf enum octelium.api.main.core.v1.Device.Status.OSType
@@ -5519,6 +6543,28 @@ export interface AccessLog_Entry_Info {
          * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Info.DNS dns = 9
          */
         dns: AccessLog_Entry_Info_DNS;
+    } | {
+        oneofKind: "socks5";
+        /**
+         * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5 socks5 = 10
+         */
+        socks5: AccessLog_Entry_Info_SOCKS5;
+    } | {
+        oneofKind: "mcp";
+        /**
+         * MCP sets the Model Context Protocol-specific entry details
+         *
+         * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Info.MCP mcp = 11
+         */
+        mcp: AccessLog_Entry_Info_MCP;
+    } | {
+        oneofKind: "llm";
+        /**
+         * LLM sets the LLM-gateway-specific entry details
+         *
+         * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Info.LLM llm = 12
+         */
+        llm: AccessLog_Entry_Info_LLM;
     } | {
         oneofKind: undefined;
     };
@@ -6502,6 +7548,450 @@ export enum AccessLog_Entry_Info_DNS_Type {
     TYPE_OTHER = 6
 }
 /**
+ * @generated from protobuf message octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5
+ */
+export interface AccessLog_Entry_Info_SOCKS5 {
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5.Type type = 1
+     */
+    type: AccessLog_Entry_Info_SOCKS5_Type;
+    /**
+     * @generated from protobuf field: string host = 2
+     */
+    host: string;
+    /**
+     * @generated from protobuf field: uint32 port = 3
+     */
+    port: number;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5.AddressType addressType = 4
+     */
+    addressType: AccessLog_Entry_Info_SOCKS5_AddressType;
+    /**
+     * @generated from protobuf field: uint64 receivedBytes = 5
+     */
+    receivedBytes: number;
+    /**
+     * @generated from protobuf field: uint64 sentBytes = 6
+     */
+    sentBytes: number;
+    /**
+     * @generated from protobuf field: string upstreamHost = 7
+     */
+    upstreamHost: string;
+    /**
+     * @generated from protobuf field: uint32 upstreamPort = 8
+     */
+    upstreamPort: number;
+}
+/**
+ * @generated from protobuf enum octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5.Type
+ */
+export enum AccessLog_Entry_Info_SOCKS5_Type {
+    /**
+     * @generated from protobuf enum value: TYPE_UNSPECIFIED = 0;
+     */
+    TYPE_UNSPECIFIED = 0,
+    /**
+     * @generated from protobuf enum value: CONNECT = 1;
+     */
+    CONNECT = 1,
+    /**
+     * @generated from protobuf enum value: SESSION_END = 2;
+     */
+    SESSION_END = 2
+}
+/**
+ * @generated from protobuf enum octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5.AddressType
+ */
+export enum AccessLog_Entry_Info_SOCKS5_AddressType {
+    /**
+     * @generated from protobuf enum value: ADDRESS_TYPE_UNSPECIFIED = 0;
+     */
+    ADDRESS_TYPE_UNSPECIFIED = 0,
+    /**
+     * @generated from protobuf enum value: IPV4 = 1;
+     */
+    IPV4 = 1,
+    /**
+     * @generated from protobuf enum value: DOMAIN = 2;
+     */
+    DOMAIN = 2,
+    /**
+     * @generated from protobuf enum value: IPV6 = 3;
+     */
+    IPV6 = 3
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.AccessLog.Entry.Info.MCP
+ */
+export interface AccessLog_Entry_Info_MCP {
+    /**
+     * HTTP shows the underlying HTTP information of the request/response
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP http = 1
+     */
+    http?: AccessLog_Entry_Info_HTTP;
+    /**
+     * Type is the MCP-specific log entry type
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Info.MCP.Type type = 2
+     */
+    type: AccessLog_Entry_Info_MCP_Type;
+    /**
+     * ProtocolVersion is the MCP protocol version declared by the request
+     * (e.g. "2026-07-28"). Note that it is read from the request itself
+     * and it is therefore also set for the requests that are eventually
+     * rejected by Octelium.
+     *
+     * @generated from protobuf field: string protocolVersion = 3
+     */
+    protocolVersion: string;
+    /**
+     * Method is the JSON-RPC method of the request (e.g. `tools/call`)
+     *
+     * @generated from protobuf field: string method = 4
+     */
+    method: string;
+    /**
+     * Name is the logical MCP target of the method whenever it has one
+     * (i.e. the tool name, the prompt name or the resource URI)
+     *
+     * @generated from protobuf field: string name = 5
+     */
+    name: string;
+    /**
+     * RequestID is the JSON-RPC request `id` normalized into a string
+     *
+     * @generated from protobuf field: string requestID = 6
+     */
+    requestID: string;
+    /**
+     * IsNotification is set for JSON-RPC notification requests
+     *
+     * @generated from protobuf field: bool isNotification = 7
+     */
+    isNotification: boolean;
+    /**
+     * ResultType is the `resultType` discriminator of a successful result
+     * (e.g. "complete", "input_required"). It is a string rather than an
+     * enum since MCP extensions can define further values.
+     *
+     * @generated from protobuf field: string resultType = 8
+     */
+    resultType: string;
+    /**
+     * IsProtocolError is set when the response carried a JSON-RPC `error`
+     *
+     * @generated from protobuf field: bool isProtocolError = 9
+     */
+    isProtocolError: boolean;
+    /**
+     * ErrorCode is the JSON-RPC error code of the response (e.g. -32601
+     * for `Method not found` or -32020 for `HeaderMismatch`)
+     *
+     * @generated from protobuf field: int32 errorCode = 10
+     */
+    errorCode: number;
+    /**
+     * ErrorMessage is the JSON-RPC error message of the response
+     *
+     * @generated from protobuf field: string errorMessage = 11
+     */
+    errorMessage: string;
+    /**
+     * IsToolError is set when the method is `tools/call` and the
+     * successful result carried an `isError` value. This is a different
+     * layer from the ErrorCode field: the call succeeded at the protocol
+     * layer while the tool itself failed.
+     *
+     * @generated from protobuf field: bool isToolError = 12
+     */
+    isToolError: boolean;
+    /**
+     * EventCount is the number of the `text/event-stream` events of the
+     * response
+     *
+     * @generated from protobuf field: uint64 eventCount = 13
+     */
+    eventCount: number;
+    /**
+     * NotificationCount is the number of the JSON-RPC notifications, such
+     * as progress notifications, of the response stream
+     *
+     * @generated from protobuf field: uint64 notificationCount = 14
+     */
+    notificationCount: number;
+    /**
+     * TTLMs is the `ttlMs` cache freshness hint of the result, if set
+     *
+     * @generated from protobuf field: uint64 ttlMs = 15
+     */
+    ttlMs: number;
+    /**
+     * CacheScope is the `cacheScope` of the result, if set (e.g. "public")
+     *
+     * @generated from protobuf field: string cacheScope = 16
+     */
+    cacheScope: string;
+    /**
+     * Client is the client information reported by the downstream itself.
+     * It is NOT an identity.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Info.MCP.Client client = 17
+     */
+    client?: AccessLog_Entry_Info_MCP_Client;
+    /**
+     * SessionID is the value of the `Mcp-Session-Id` header used by the
+     * protocol revisions between 2025-03-26 and 2025-11-25. It is an MCP
+     * transport identifier that is unrelated to the Octelium Session as
+     * well as to the AccessLog entry's own sessionID field.
+     *
+     * @generated from protobuf field: string sessionID = 18
+     */
+    sessionID: string;
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.AccessLog.Entry.Info.MCP.Client
+ */
+export interface AccessLog_Entry_Info_MCP_Client {
+    /**
+     * Name is the name reported by the downstream client itself
+     *
+     * @generated from protobuf field: string name = 1
+     */
+    name: string;
+    /**
+     * Version is the version reported by the downstream client itself
+     *
+     * @generated from protobuf field: string version = 2
+     */
+    version: string;
+    /**
+     * Title is the human-readable title reported by the downstream
+     * client itself
+     *
+     * @generated from protobuf field: string title = 3
+     */
+    title: string;
+}
+/**
+ * @generated from protobuf enum octelium.api.main.core.v1.AccessLog.Entry.Info.MCP.Type
+ */
+export enum AccessLog_Entry_Info_MCP_Type {
+    /**
+     * TYPE_UNSET is not used
+     *
+     * @generated from protobuf enum value: TYPE_UNSET = 0;
+     */
+    TYPE_UNSET = 0,
+    /**
+     * COMPLETE is a request that received a finite response
+     *
+     * @generated from protobuf enum value: COMPLETE = 1;
+     */
+    COMPLETE = 1,
+    /**
+     * STREAM_START is the beginning of a `text/event-stream` response
+     *
+     * @generated from protobuf enum value: STREAM_START = 2;
+     */
+    STREAM_START = 2,
+    /**
+     * STREAM_END is the end of a `text/event-stream` response
+     *
+     * @generated from protobuf enum value: STREAM_END = 3;
+     */
+    STREAM_END = 3
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.AccessLog.Entry.Info.LLM
+ */
+export interface AccessLog_Entry_Info_LLM {
+    /**
+     * HTTP shows the underlying HTTP information of the request/response
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP http = 1
+     */
+    http?: AccessLog_Entry_Info_HTTP;
+    /**
+     * Type is the LLM-specific log entry type
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Type type = 2
+     */
+    type: AccessLog_Entry_Info_LLM_Type;
+    /**
+     * Protocol is the inference API protocol of the request
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.LLM.Protocol protocol = 3
+     */
+    protocol: Service_Spec_Config_LLM_Protocol;
+    /**
+     * Operation is the normalized inference operation of the request
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.LLM.Operation operation = 4
+     */
+    operation: Service_Spec_Config_LLM_Operation;
+    /**
+     * RequestedModel is the model name requested by the downstream. Note
+     * that it is read from the request itself and it is therefore also set
+     * for the requests that are eventually rejected by Octelium.
+     *
+     * @generated from protobuf field: string requestedModel = 5
+     */
+    requestedModel: string;
+    /**
+     * Model is the model name reported by the upstream provider itself. It
+     * can differ from the RequestedModel whenever the request used an
+     * alias or an unpinned model name.
+     *
+     * @generated from protobuf field: string model = 6
+     */
+    model: string;
+    /**
+     * Stream is set for the requests that asked for a streamed response
+     *
+     * @generated from protobuf field: bool stream = 7
+     */
+    stream: boolean;
+    /**
+     * Usage is the token usage of the request/response
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Usage usage = 8
+     */
+    usage?: AccessLog_Entry_Info_LLM_Usage;
+    /**
+     * EstimatedInputTokens is Octelium's own pre-flight input token
+     * estimate. It is always set for the parsed inference requests
+     * regardless of the Usage field.
+     *
+     * @generated from protobuf field: uint64 estimatedInputTokens = 9
+     */
+    estimatedInputTokens: number;
+    /**
+     * ResponseID is the response identifier reported by the upstream
+     * provider itself
+     *
+     * @generated from protobuf field: string responseID = 10
+     */
+    responseID: string;
+    /**
+     * FinishReason is the completion status reported by the upstream
+     * provider itself (e.g. "stop", "length", "tool_calls")
+     *
+     * @generated from protobuf field: string finishReason = 11
+     */
+    finishReason: string;
+    /**
+     * TimeToFirstToken is the duration between accepting the request and
+     * the first generated content of a streamed response
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration timeToFirstToken = 12
+     */
+    timeToFirstToken?: Duration;
+    /**
+     * EventCount is the number of the `text/event-stream` events of the
+     * response
+     *
+     * @generated from protobuf field: uint64 eventCount = 13
+     */
+    eventCount: number;
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Usage
+ */
+export interface AccessLog_Entry_Info_LLM_Usage {
+    /**
+     * Source shows where the token counts came from
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Usage.Source source = 1
+     */
+    source: AccessLog_Entry_Info_LLM_Usage_Source;
+    /**
+     * @generated from protobuf field: uint64 inputTokens = 2
+     */
+    inputTokens: number;
+    /**
+     * @generated from protobuf field: uint64 outputTokens = 3
+     */
+    outputTokens: number;
+    /**
+     * @generated from protobuf field: uint64 totalTokens = 4
+     */
+    totalTokens: number;
+    /**
+     * @generated from protobuf field: uint64 cachedInputTokens = 5
+     */
+    cachedInputTokens: number;
+    /**
+     * @generated from protobuf field: uint64 reasoningTokens = 6
+     */
+    reasoningTokens: number;
+}
+/**
+ * @generated from protobuf enum octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Usage.Source
+ */
+export enum AccessLog_Entry_Info_LLM_Usage_Source {
+    /**
+     * SOURCE_UNSET means that no token usage could be determined at
+     * all
+     *
+     * @generated from protobuf enum value: SOURCE_UNSET = 0;
+     */
+    SOURCE_UNSET = 0,
+    /**
+     * PROVIDER is the exact token usage reported by the upstream
+     * provider itself
+     *
+     * @generated from protobuf enum value: PROVIDER = 1;
+     */
+    PROVIDER = 1,
+    /**
+     * ESTIMATED is Octelium's own pre-flight input token estimate. It
+     * is used whenever the provider reports no usage at all and it
+     * must never be treated as a billing truth.
+     *
+     * @generated from protobuf enum value: ESTIMATED = 2;
+     */
+    ESTIMATED = 2,
+    /**
+     * PARTIAL is the provider-reported token usage of a stream that
+     * ended before the final usage was received
+     *
+     * @generated from protobuf enum value: PARTIAL = 3;
+     */
+    PARTIAL = 3
+}
+/**
+ * @generated from protobuf enum octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Type
+ */
+export enum AccessLog_Entry_Info_LLM_Type {
+    /**
+     * TYPE_UNSET is not used
+     *
+     * @generated from protobuf enum value: TYPE_UNSET = 0;
+     */
+    TYPE_UNSET = 0,
+    /**
+     * COMPLETE is a request that received a finite response
+     *
+     * @generated from protobuf enum value: COMPLETE = 1;
+     */
+    COMPLETE = 1,
+    /**
+     * STREAM_START is the beginning of a `text/event-stream` response
+     *
+     * @generated from protobuf enum value: STREAM_START = 2;
+     */
+    STREAM_START = 2,
+    /**
+     * STREAM_END is the end of a `text/event-stream` response
+     *
+     * @generated from protobuf enum value: STREAM_END = 3;
+     */
+    STREAM_END = 3
+}
+/**
  * @generated from protobuf message octelium.api.main.core.v1.AccessLog.Entry.Common
  */
 export interface AccessLog_Entry_Common {
@@ -7477,6 +8967,10 @@ export interface Gateway_Status {
      * @generated from protobuf field: string hostname = 8
      */
     hostname: string;
+    /**
+     * @generated from protobuf field: optional int32 index = 9
+     */
+    index?: number;
 }
 /**
  * @generated from protobuf message octelium.api.main.core.v1.Gateway.Status.WireGuard
@@ -8378,6 +9872,18 @@ export interface ClusterConfig_Status {
      * @generated from protobuf field: octelium.api.main.core.v1.ClusterConfig.Status.SecretManager secretManager = 4
      */
     secretManager?: ClusterConfig_Status_SecretManager;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.ClusterConfig.Status.Device device = 5
+     */
+    device?: ClusterConfig_Status_Device;
+    /**
+     * Installation is the set of installation-time options that were supplied
+     * via the Cluster bootstrap configuration upon the Cluster installation or
+     * the latest upgrade.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.ClusterConfig.Status.Installation installation = 6
+     */
+    installation?: ClusterConfig_Status_Installation;
 }
 /**
  * @generated from protobuf message octelium.api.main.core.v1.ClusterConfig.Status.NetworkConfig
@@ -8567,6 +10073,236 @@ export interface ClusterConfig_Status_SecretManager {
 export interface ClusterConfig_Status_SecretManager_TLS {
 }
 /**
+ * @generated from protobuf message octelium.api.main.core.v1.ClusterConfig.Status.Device
+ */
+export interface ClusterConfig_Status_Device {
+    /**
+     * @generated from protobuf field: repeated octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe probes = 1
+     */
+    probes: ClusterConfig_Status_Device_Probe[];
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe
+ */
+export interface ClusterConfig_Status_Device_Probe {
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference ownerRef = 1
+     */
+    ownerRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Device.Status.OSType osType = 2
+     */
+    osType: Device_Status_OSType;
+    /**
+     * @generated from protobuf field: bool requireElevation = 3
+     */
+    requireElevation: boolean;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Condition condition = 4
+     */
+    condition?: Condition;
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "runCommand";
+        /**
+         * @generated from protobuf field: octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.RunCommand runCommand = 5
+         */
+        runCommand: ClusterConfig_Status_Device_Probe_RunCommand;
+    } | {
+        oneofKind: "readFile";
+        /**
+         * @generated from protobuf field: octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ReadFile readFile = 6
+         */
+        readFile: ClusterConfig_Status_Device_Probe_ReadFile;
+    } | {
+        oneofKind: "readRegistry";
+        /**
+         * @generated from protobuf field: octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ReadRegistry readRegistry = 7
+         */
+        readRegistry: ClusterConfig_Status_Device_Probe_ReadRegistry;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.RunCommand
+ */
+export interface ClusterConfig_Status_Device_Probe_RunCommand {
+    /**
+     * @generated from protobuf field: string command = 1
+     */
+    command: string;
+    /**
+     * @generated from protobuf field: repeated string args = 2
+     */
+    args: string[];
+    /**
+     * @generated from protobuf field: uint32 timeoutSeconds = 3
+     */
+    timeoutSeconds: number;
+    /**
+     * @generated from protobuf field: uint32 maxOutputBytes = 4
+     */
+    maxOutputBytes: number;
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ReadFile
+ */
+export interface ClusterConfig_Status_Device_Probe_ReadFile {
+    /**
+     * @generated from protobuf field: string path = 1
+     */
+    path: string;
+    /**
+     * @generated from protobuf field: uint32 maxBytes = 2
+     */
+    maxBytes: number;
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ReadRegistry
+ */
+export interface ClusterConfig_Status_Device_Probe_ReadRegistry {
+    /**
+     * @generated from protobuf field: string key = 1
+     */
+    key: string;
+    /**
+     * @generated from protobuf field: string name = 2
+     */
+    name: string;
+}
+/**
+ * Installation contains the installation-time options that were supplied
+ * via the Cluster bootstrap configuration and that are remembered by the
+ * Cluster so that they do not have to be re-supplied on every upgrade.
+ *
+ * @generated from protobuf message octelium.api.main.core.v1.ClusterConfig.Status.Installation
+ */
+export interface ClusterConfig_Status_Installation {
+    /**
+     * SPIFFE sets the SPIFFE/SPIRE-specific configuration.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.ClusterConfig.Status.Installation.SPIFFE spiffe = 1
+     */
+    spiffe?: ClusterConfig_Status_Installation_SPIFFE;
+    /**
+     * CNI sets the Kubernetes cluster CNI-specific configuration.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.ClusterConfig.Status.Installation.CNI cni = 2
+     */
+    cni?: ClusterConfig_Status_Installation_CNI;
+    /**
+     * Ingress sets the Cluster Ingress-specific configuration.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.ClusterConfig.Status.Installation.Ingress ingress = 3
+     */
+    ingress?: ClusterConfig_Status_Installation_Ingress;
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.ClusterConfig.Status.Installation.SPIFFE
+ */
+export interface ClusterConfig_Status_Installation_SPIFFE {
+    /**
+     * Enable enables the SPIFFE mode where the Cluster components
+     * authenticate to each other using X.509 SVIDs that are obtained from
+     * the SPIRE Agent Workload API instead of the Cluster's own internal
+     * credentials.
+     *
+     * @generated from protobuf field: bool enable = 1
+     */
+    enable: boolean;
+    /**
+     * TrustDomain is the SPIFFE trust domain (e.g. `example.com`) that the
+     * Cluster components' SVIDs must belong to. If it is not set, the
+     * Cluster adopts the trust domain of the SVID that is served by the
+     * SPIRE Agent itself.
+     *
+     * @generated from protobuf field: string trustDomain = 2
+     */
+    trustDomain: string;
+    /**
+     * CSIDriver sets the SPIFFE CSI driver-specific configuration.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.ClusterConfig.Status.Installation.SPIFFE.CSIDriver csiDriver = 3
+     */
+    csiDriver?: ClusterConfig_Status_Installation_SPIFFE_CSIDriver;
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.ClusterConfig.Status.Installation.SPIFFE.CSIDriver
+ */
+export interface ClusterConfig_Status_Installation_SPIFFE_CSIDriver {
+    /**
+     * Name is the name of the SPIFFE CSI driver that is used to mount
+     * the SPIRE Agent Workload API socket inside the Cluster components'
+     * Pods. By default it is set to `csi.spiffe.io`.
+     *
+     * @generated from protobuf field: string name = 1
+     */
+    name: string;
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.ClusterConfig.Status.Installation.CNI
+ */
+export interface ClusterConfig_Status_Installation_CNI {
+    /**
+     * ConfDirType sets the host path of the Multus delegate CNI
+     * configuration directory, either directly or by deriving it from the
+     * Kubernetes cluster's CNI configuration directory. If it is not set
+     * at all, the path defaults to `/etc/cni/multus/net.d`.
+     *
+     * @generated from protobuf oneof: confDirType
+     */
+    confDirType: {
+        oneofKind: "confDir";
+        /**
+         * ConfDir is the host path of the Kubernetes cluster's CNI
+         * configuration directory (e.g. `/var/lib/rancher/k3s/agent/etc/cni`
+         * for k3s clusters). The Multus delegate CNI configuration directory
+         * is derived from it as `<confDir>/multus/net.d`.
+         *
+         * @generated from protobuf field: string confDir = 1
+         */
+        confDir: string;
+    } | {
+        oneofKind: "multusConfDir";
+        /**
+         * MultusConfDir directly sets the host path of the Multus delegate
+         * CNI configuration directory (i.e. Multus's own `confDir`).
+         *
+         * @generated from protobuf field: string multusConfDir = 2
+         */
+        multusConfDir: string;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.ClusterConfig.Status.Installation.Ingress
+ */
+export interface ClusterConfig_Status_Installation_Ingress {
+    /**
+     * FrontProxy sets the front proxy mode-specific configuration.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.ClusterConfig.Status.Installation.Ingress.FrontProxy frontProxy = 1
+     */
+    frontProxy?: ClusterConfig_Status_Installation_Ingress_FrontProxy;
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.ClusterConfig.Status.Installation.Ingress.FrontProxy
+ */
+export interface ClusterConfig_Status_Installation_Ingress_FrontProxy {
+    /**
+     * Enable enables the front proxy mode where the Cluster's Ingress
+     * sits behind an external L7 proxy/load balancer that terminates
+     * TLS.
+     *
+     * @generated from protobuf field: bool enable = 1
+     */
+    enable: boolean;
+}
+/**
  * @generated from protobuf message octelium.api.main.core.v1.RequestContext
  */
 export interface RequestContext {
@@ -8658,6 +10394,28 @@ export interface RequestContext_Request {
          * @generated from protobuf field: octelium.api.main.core.v1.RequestContext.Request.DNS dns = 6
          */
         dns: RequestContext_Request_DNS;
+    } | {
+        oneofKind: "socks5";
+        /**
+         * @generated from protobuf field: octelium.api.main.core.v1.RequestContext.Request.SOCKS5 socks5 = 8
+         */
+        socks5: RequestContext_Request_SOCKS5;
+    } | {
+        oneofKind: "mcp";
+        /**
+         * MCP is the Model Context Protocol specific details.
+         *
+         * @generated from protobuf field: octelium.api.main.core.v1.RequestContext.Request.MCP mcp = 9
+         */
+        mcp: RequestContext_Request_MCP;
+    } | {
+        oneofKind: "llm";
+        /**
+         * LLM is the LLM gateway specific details.
+         *
+         * @generated from protobuf field: octelium.api.main.core.v1.RequestContext.Request.LLM llm = 10
+         */
+        llm: RequestContext_Request_LLM;
     } | {
         oneofKind: undefined;
     };
@@ -8918,6 +10676,299 @@ export interface RequestContext_Request_DNS {
     typeID: number;
 }
 /**
+ * @generated from protobuf message octelium.api.main.core.v1.RequestContext.Request.SOCKS5
+ */
+export interface RequestContext_Request_SOCKS5 {
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "connect";
+        /**
+         * @generated from protobuf field: octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect connect = 1
+         */
+        connect: RequestContext_Request_SOCKS5_Connect;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect
+ */
+export interface RequestContext_Request_SOCKS5_Connect {
+    /**
+     * @generated from protobuf field: string host = 1
+     */
+    host: string;
+    /**
+     * @generated from protobuf field: uint32 port = 2
+     */
+    port: number;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect.AddressType addressType = 3
+     */
+    addressType: RequestContext_Request_SOCKS5_Connect_AddressType;
+}
+/**
+ * @generated from protobuf enum octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect.AddressType
+ */
+export enum RequestContext_Request_SOCKS5_Connect_AddressType {
+    /**
+     * @generated from protobuf enum value: ADDRESS_TYPE_UNSPECIFIED = 0;
+     */
+    ADDRESS_TYPE_UNSPECIFIED = 0,
+    /**
+     * @generated from protobuf enum value: IPV4 = 1;
+     */
+    IPV4 = 1,
+    /**
+     * @generated from protobuf enum value: DOMAIN = 2;
+     */
+    DOMAIN = 2,
+    /**
+     * @generated from protobuf enum value: IPV6 = 3;
+     */
+    IPV6 = 3
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.RequestContext.Request.MCP
+ */
+export interface RequestContext_Request_MCP {
+    /**
+     * HTTP is the underlying HTTP request details. The entire JSON-RPC
+     * request body is available at `ctx.request.mcp.http.bodyMap` which is
+     * used to access the tool arguments (i.e.
+     * `ctx.request.mcp.http.bodyMap.params.arguments`) as well as any other
+     * field that is not normalized here.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.RequestContext.Request.HTTP http = 1
+     */
+    http?: RequestContext_Request_HTTP;
+    /**
+     * ProtocolVersion is the MCP protocol version declared by the request
+     * (e.g. "2026-07-28"). It is read from the request body's
+     * `io.modelcontextprotocol/protocolVersion` metadata field or from the
+     * `MCP-Protocol-Version` request header, and it is only set once both
+     * values are validated to match whenever both of them are present. It is
+     * empty for the protocol revisions that do not declare a version.
+     *
+     * @generated from protobuf field: string protocolVersion = 2
+     */
+    protocolVersion: string;
+    /**
+     * Method is the JSON-RPC method of the request body (e.g. `tools/call`,
+     * `resources/read`, `server/discover`).
+     *
+     * @generated from protobuf field: string method = 3
+     */
+    method: string;
+    /**
+     * Name is the logical MCP target of the method whenever it has one. It
+     * is the tool name for `tools/call`, the prompt name for `prompts/get`
+     * and the resource URI for `resources/read`. It is empty for the methods
+     * that have no target such as the `*\/list` methods.
+     *
+     * @generated from protobuf field: string name = 4
+     */
+    name: string;
+    /**
+     * RequestID is the JSON-RPC request `id` normalized into a string. It is
+     * controlled by the downstream and therefore it must never be used as a
+     * security identifier.
+     *
+     * @generated from protobuf field: string requestID = 5
+     */
+    requestID: string;
+    /**
+     * IsNotification is set for JSON-RPC notifications (i.e. request bodies
+     * that carry no `id` and expect no response).
+     *
+     * @generated from protobuf field: bool isNotification = 6
+     */
+    isNotification: boolean;
+    /**
+     * Client is the client information reported by the downstream itself. It
+     * is useful for auditing and debugging and it is NOT an identity. Use
+     * the authenticated User, Session, Device and Groups for access control.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.RequestContext.Request.MCP.Client client = 7
+     */
+    client?: RequestContext_Request_MCP_Client;
+    /**
+     * Capabilities is the list of the capability identifiers declared by the
+     * downstream for this request (e.g. "elicitation"). It is self-reported.
+     *
+     * @generated from protobuf field: repeated string capabilities = 8
+     */
+    capabilities: string[];
+    /**
+     * SessionID is the value of the `Mcp-Session-Id` request header used by
+     * the protocol revisions between 2025-03-26 and 2025-11-25. It is an MCP
+     * transport identifier that is unrelated to the Octelium Session.
+     *
+     * @generated from protobuf field: string sessionID = 9
+     */
+    sessionID: string;
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.RequestContext.Request.MCP.Client
+ */
+export interface RequestContext_Request_MCP_Client {
+    /**
+     * Name is the name reported by the downstream client itself
+     *
+     * @generated from protobuf field: string name = 1
+     */
+    name: string;
+    /**
+     * Version is the version reported by the downstream client itself
+     *
+     * @generated from protobuf field: string version = 2
+     */
+    version: string;
+    /**
+     * Title is the human-readable title reported by the downstream client
+     * itself
+     *
+     * @generated from protobuf field: string title = 3
+     */
+    title: string;
+}
+/**
+ * @generated from protobuf message octelium.api.main.core.v1.RequestContext.Request.LLM
+ */
+export interface RequestContext_Request_LLM {
+    /**
+     * HTTP is the underlying HTTP request details. The entire request body
+     * is available at `ctx.request.llm.http.bodyMap` which is used to access
+     * the messages (i.e. `ctx.request.llm.http.bodyMap.messages`) as well as
+     * any other field that is not normalized here.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.RequestContext.Request.HTTP http = 1
+     */
+    http?: RequestContext_Request_HTTP;
+    /**
+     * Protocol is the inference API protocol of the request.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.LLM.Protocol protocol = 2
+     */
+    protocol: Service_Spec_Config_LLM_Protocol;
+    /**
+     * Operation is the normalized inference operation of the request (e.g.
+     * `CHAT_COMPLETIONS`, `EMBEDDINGS`, `MESSAGES`). It is derived from the
+     * canonicalized request path and method.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.LLM.Operation operation = 3
+     */
+    operation: Service_Spec_Config_LLM_Operation;
+    /**
+     * Model is the model name requested by the downstream, verbatim. It is
+     * empty for the operations that carry no model (e.g. `MODELS_LIST`).
+     *
+     * @generated from protobuf field: string model = 4
+     */
+    model: string;
+    /**
+     * Stream is set for the requests that ask for a streamed response.
+     *
+     * @generated from protobuf field: bool stream = 5
+     */
+    stream: boolean;
+    /**
+     * EstimatedInputTokens is Octelium's own conservative pre-flight input
+     * token estimate. It is NOT a provider-accurate token count and it must
+     * never be treated as a billing truth. Read the EstimateQuality field
+     * alongside it.
+     *
+     * @generated from protobuf field: uint64 estimatedInputTokens = 6
+     */
+    estimatedInputTokens: number;
+    /**
+     * EstimateQuality shows whether the EstimatedInputTokens field accounted
+     * for the entire input of the request.
+     *
+     * @generated from protobuf field: octelium.api.main.core.v1.RequestContext.Request.LLM.EstimateQuality estimateQuality = 7
+     */
+    estimateQuality: RequestContext_Request_LLM_EstimateQuality;
+    /**
+     * MaxOutputTokens is the maximum output token count requested by the
+     * downstream itself. It is zero whenever the request declares none.
+     *
+     * @generated from protobuf field: uint64 maxOutputTokens = 8
+     */
+    maxOutputTokens: number;
+    /**
+     * HasTools is set for the requests that declare tools.
+     *
+     * @generated from protobuf field: bool hasTools = 9
+     */
+    hasTools: boolean;
+    /**
+     * ToolCount is the number of the tools declared by the request.
+     *
+     * @generated from protobuf field: uint32 toolCount = 10
+     */
+    toolCount: number;
+    /**
+     * ToolNames is the bounded list of the names of the tools declared by
+     * the request.
+     *
+     * @generated from protobuf field: repeated string toolNames = 11
+     */
+    toolNames: string[];
+    /**
+     * InputItemCount is the number of the input items (i.e. the messages or
+     * the embedding inputs) of the request.
+     *
+     * @generated from protobuf field: uint32 inputItemCount = 12
+     */
+    inputItemCount: number;
+    /**
+     * HasImageInput is set for the requests that carry image input.
+     *
+     * @generated from protobuf field: bool hasImageInput = 13
+     */
+    hasImageInput: boolean;
+    /**
+     * HasAudioInput is set for the requests that carry audio input.
+     *
+     * @generated from protobuf field: bool hasAudioInput = 14
+     */
+    hasAudioInput: boolean;
+}
+/**
+ * @generated from protobuf enum octelium.api.main.core.v1.RequestContext.Request.LLM.EstimateQuality
+ */
+export enum RequestContext_Request_LLM_EstimateQuality {
+    /**
+     * ESTIMATE_QUALITY_UNSET is not used
+     *
+     * @generated from protobuf enum value: ESTIMATE_QUALITY_UNSET = 0;
+     */
+    ESTIMATE_QUALITY_UNSET = 0,
+    /**
+     * COMPLETE means that the entire input of the request was text that
+     * Octelium could account for
+     *
+     * @generated from protobuf enum value: COMPLETE = 1;
+     */
+    COMPLETE = 1,
+    /**
+     * PARTIAL means that the request carried non-text input (e.g. images
+     * or audio) that was reserved at a flat rate rather than measured
+     *
+     * @generated from protobuf enum value: PARTIAL = 2;
+     */
+    PARTIAL = 2,
+    /**
+     * UNAVAILABLE means that no estimate could be calculated at all, which
+     * is the case for the operations that carry no prompt
+     *
+     * @generated from protobuf enum value: UNAVAILABLE = 3;
+     */
+    UNAVAILABLE = 3
+}
+/**
  * @generated from protobuf message octelium.api.main.core.v1.PolicyTrigger
  */
 export interface PolicyTrigger {
@@ -9041,6 +11092,30 @@ export interface PolicyTrigger_Status_PreCondition {
          * @generated from protobuf field: octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.All all = 8
          */
         all: PolicyTrigger_Status_PreCondition_All;
+    } | {
+        oneofKind: "serviceRef";
+        /**
+         * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference serviceRef = 9
+         */
+        serviceRef: ObjectReference;
+    } | {
+        oneofKind: "namespaceRef";
+        /**
+         * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference namespaceRef = 10
+         */
+        namespaceRef: ObjectReference;
+    } | {
+        oneofKind: "groupRef";
+        /**
+         * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference groupRef = 11
+         */
+        groupRef: ObjectReference;
+    } | {
+        oneofKind: "deviceRef";
+        /**
+         * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference deviceRef = 12
+         */
+        deviceRef: ObjectReference;
     } | {
         oneofKind: undefined;
     };
@@ -9461,6 +11536,47 @@ export interface Authenticator_Status_Info_TOTP {
      * @generated from protobuf field: octelium.api.main.core.v1.Authenticator.Status.EncryptedData sharedSecret = 1
      */
     sharedSecret?: Authenticator_Status_EncryptedData;
+    /**
+     * @generated from protobuf field: uint32 periodSeconds = 2
+     */
+    periodSeconds: number;
+    /**
+     * @generated from protobuf field: uint32 digits = 3
+     */
+    digits: number;
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Authenticator.Status.Info.TOTP.Algorithm algorithm = 4
+     */
+    algorithm: Authenticator_Status_Info_TOTP_Algorithm;
+    /**
+     * @generated from protobuf field: uint64 lastAcceptedTimeStep = 5
+     */
+    lastAcceptedTimeStep: number;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp lastAcceptedAt = 6
+     */
+    lastAcceptedAt?: Timestamp;
+}
+/**
+ * @generated from protobuf enum octelium.api.main.core.v1.Authenticator.Status.Info.TOTP.Algorithm
+ */
+export enum Authenticator_Status_Info_TOTP_Algorithm {
+    /**
+     * @generated from protobuf enum value: ALGORITHM_UNSET = 0;
+     */
+    ALGORITHM_UNSET = 0,
+    /**
+     * @generated from protobuf enum value: SHA1 = 1;
+     */
+    SHA1 = 1,
+    /**
+     * @generated from protobuf enum value: SHA256 = 2;
+     */
+    SHA256 = 2,
+    /**
+     * @generated from protobuf enum value: SHA512 = 3;
+     */
+    SHA512 = 3
 }
 /**
  * @generated from protobuf message octelium.api.main.core.v1.Authenticator.Status.Info.TPM
@@ -9528,6 +11644,10 @@ export interface Authenticator_Status_AuthenticationAttempt {
      * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference sessionRef = 5
      */
     sessionRef?: ObjectReference;
+    /**
+     * @generated from protobuf field: google.protobuf.Timestamp completedAt = 6
+     */
+    completedAt?: Timestamp;
 }
 /**
  * @generated from protobuf enum octelium.api.main.core.v1.Authenticator.Status.Type
@@ -11058,7 +13178,11 @@ class Service_Spec_Config$Type extends MessageType<Service_Spec_Config> {
             { no: 5, name: "ssh", kind: "message", oneof: "type", T: () => Service_Spec_Config_SSH },
             { no: 6, name: "postgres", kind: "message", oneof: "type", T: () => Service_Spec_Config_Postgres },
             { no: 7, name: "mysql", kind: "message", oneof: "type", T: () => Service_Spec_Config_MySQL },
-            { no: 8, name: "kubernetes", kind: "message", oneof: "type", T: () => Service_Spec_Config_Kubernetes }
+            { no: 8, name: "kubernetes", kind: "message", oneof: "type", T: () => Service_Spec_Config_Kubernetes },
+            { no: 11, name: "socks5", kind: "message", oneof: "type", T: () => Service_Spec_Config_SOCKS5 },
+            { no: 12, name: "rdp", kind: "message", oneof: "type", T: () => Service_Spec_Config_RDP },
+            { no: 13, name: "mcp", kind: "message", oneof: "type", T: () => Service_Spec_Config_MCP },
+            { no: 14, name: "llm", kind: "message", oneof: "type", T: () => Service_Spec_Config_LLM }
         ]);
     }
     create(value?: PartialMessage<Service_Spec_Config>): Service_Spec_Config {
@@ -11120,6 +13244,30 @@ class Service_Spec_Config$Type extends MessageType<Service_Spec_Config> {
                         kubernetes: Service_Spec_Config_Kubernetes.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).kubernetes)
                     };
                     break;
+                case /* octelium.api.main.core.v1.Service.Spec.Config.SOCKS5 socks5 */ 11:
+                    message.type = {
+                        oneofKind: "socks5",
+                        socks5: Service_Spec_Config_SOCKS5.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).socks5)
+                    };
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Config.RDP rdp */ 12:
+                    message.type = {
+                        oneofKind: "rdp",
+                        rdp: Service_Spec_Config_RDP.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).rdp)
+                    };
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Config.MCP mcp */ 13:
+                    message.type = {
+                        oneofKind: "mcp",
+                        mcp: Service_Spec_Config_MCP.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).mcp)
+                    };
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Config.LLM llm */ 14:
+                    message.type = {
+                        oneofKind: "llm",
+                        llm: Service_Spec_Config_LLM.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).llm)
+                    };
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -11162,6 +13310,18 @@ class Service_Spec_Config$Type extends MessageType<Service_Spec_Config> {
         /* octelium.api.main.core.v1.Service.Spec.Config.TLS tls = 10; */
         if (message.tls)
             Service_Spec_Config_TLS.internalBinaryWrite(message.tls, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.Service.Spec.Config.SOCKS5 socks5 = 11; */
+        if (message.type.oneofKind === "socks5")
+            Service_Spec_Config_SOCKS5.internalBinaryWrite(message.type.socks5, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.Service.Spec.Config.RDP rdp = 12; */
+        if (message.type.oneofKind === "rdp")
+            Service_Spec_Config_RDP.internalBinaryWrite(message.type.rdp, writer.tag(12, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.Service.Spec.Config.MCP mcp = 13; */
+        if (message.type.oneofKind === "mcp")
+            Service_Spec_Config_MCP.internalBinaryWrite(message.type.mcp, writer.tag(13, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.Service.Spec.Config.LLM llm = 14; */
+        if (message.type.oneofKind === "llm")
+            Service_Spec_Config_LLM.internalBinaryWrite(message.type.llm, writer.tag(14, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -13984,6 +16144,784 @@ class Service_Spec_Config_HTTP_Visibility$Type extends MessageType<Service_Spec_
  */
 export const Service_Spec_Config_HTTP_Visibility = new Service_Spec_Config_HTTP_Visibility$Type();
 // @generated message type with reflection information, may provide speed optimized methods
+class Service_Spec_Config_MCP$Type extends MessageType<Service_Spec_Config_MCP> {
+    constructor() {
+        super("octelium.api.main.core.v1.Service.Spec.Config.MCP", [
+            { no: 1, name: "endpoint", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "protocol", kind: "message", T: () => Service_Spec_Config_MCP_Protocol },
+            { no: 3, name: "limits", kind: "message", T: () => Service_Spec_Config_MCP_Limits },
+            { no: 4, name: "auth", kind: "message", T: () => Service_Spec_Config_HTTP_Auth },
+            { no: 5, name: "header", kind: "message", T: () => Service_Spec_Config_HTTP_Header },
+            { no: 6, name: "path", kind: "message", T: () => Service_Spec_Config_HTTP_Path },
+            { no: 7, name: "plugins", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Service_Spec_Config_HTTP_Plugin },
+            { no: 8, name: "isUpstreamHTTP2", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 9, name: "listenHTTP2", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 10, name: "origin", kind: "message", T: () => Service_Spec_Config_MCP_Origin },
+            { no: 11, name: "visibility", kind: "message", T: () => Service_Spec_Config_MCP_Visibility }
+        ]);
+    }
+    create(value?: PartialMessage<Service_Spec_Config_MCP>): Service_Spec_Config_MCP {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.endpoint = "";
+        message.plugins = [];
+        message.isUpstreamHTTP2 = false;
+        message.listenHTTP2 = false;
+        if (value !== undefined)
+            reflectionMergePartial<Service_Spec_Config_MCP>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Service_Spec_Config_MCP): Service_Spec_Config_MCP {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string endpoint */ 1:
+                    message.endpoint = reader.string();
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Config.MCP.Protocol protocol */ 2:
+                    message.protocol = Service_Spec_Config_MCP_Protocol.internalBinaryRead(reader, reader.uint32(), options, message.protocol);
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Config.MCP.Limits limits */ 3:
+                    message.limits = Service_Spec_Config_MCP_Limits.internalBinaryRead(reader, reader.uint32(), options, message.limits);
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Config.HTTP.Auth auth */ 4:
+                    message.auth = Service_Spec_Config_HTTP_Auth.internalBinaryRead(reader, reader.uint32(), options, message.auth);
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Config.HTTP.Header header */ 5:
+                    message.header = Service_Spec_Config_HTTP_Header.internalBinaryRead(reader, reader.uint32(), options, message.header);
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Config.HTTP.Path path */ 6:
+                    message.path = Service_Spec_Config_HTTP_Path.internalBinaryRead(reader, reader.uint32(), options, message.path);
+                    break;
+                case /* repeated octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin plugins */ 7:
+                    message.plugins.push(Service_Spec_Config_HTTP_Plugin.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* bool isUpstreamHTTP2 */ 8:
+                    message.isUpstreamHTTP2 = reader.bool();
+                    break;
+                case /* bool listenHTTP2 */ 9:
+                    message.listenHTTP2 = reader.bool();
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Config.MCP.Origin origin */ 10:
+                    message.origin = Service_Spec_Config_MCP_Origin.internalBinaryRead(reader, reader.uint32(), options, message.origin);
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Config.MCP.Visibility visibility */ 11:
+                    message.visibility = Service_Spec_Config_MCP_Visibility.internalBinaryRead(reader, reader.uint32(), options, message.visibility);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Service_Spec_Config_MCP, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string endpoint = 1; */
+        if (message.endpoint !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.endpoint);
+        /* octelium.api.main.core.v1.Service.Spec.Config.MCP.Protocol protocol = 2; */
+        if (message.protocol)
+            Service_Spec_Config_MCP_Protocol.internalBinaryWrite(message.protocol, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.Service.Spec.Config.MCP.Limits limits = 3; */
+        if (message.limits)
+            Service_Spec_Config_MCP_Limits.internalBinaryWrite(message.limits, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.Service.Spec.Config.HTTP.Auth auth = 4; */
+        if (message.auth)
+            Service_Spec_Config_HTTP_Auth.internalBinaryWrite(message.auth, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.Service.Spec.Config.HTTP.Header header = 5; */
+        if (message.header)
+            Service_Spec_Config_HTTP_Header.internalBinaryWrite(message.header, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.Service.Spec.Config.HTTP.Path path = 6; */
+        if (message.path)
+            Service_Spec_Config_HTTP_Path.internalBinaryWrite(message.path, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin plugins = 7; */
+        for (let i = 0; i < message.plugins.length; i++)
+            Service_Spec_Config_HTTP_Plugin.internalBinaryWrite(message.plugins[i], writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* bool isUpstreamHTTP2 = 8; */
+        if (message.isUpstreamHTTP2 !== false)
+            writer.tag(8, WireType.Varint).bool(message.isUpstreamHTTP2);
+        /* bool listenHTTP2 = 9; */
+        if (message.listenHTTP2 !== false)
+            writer.tag(9, WireType.Varint).bool(message.listenHTTP2);
+        /* octelium.api.main.core.v1.Service.Spec.Config.MCP.Origin origin = 10; */
+        if (message.origin)
+            Service_Spec_Config_MCP_Origin.internalBinaryWrite(message.origin, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.Service.Spec.Config.MCP.Visibility visibility = 11; */
+        if (message.visibility)
+            Service_Spec_Config_MCP_Visibility.internalBinaryWrite(message.visibility, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.Service.Spec.Config.MCP
+ */
+export const Service_Spec_Config_MCP = new Service_Spec_Config_MCP$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Service_Spec_Config_MCP_Protocol$Type extends MessageType<Service_Spec_Config_MCP_Protocol> {
+    constructor() {
+        super("octelium.api.main.core.v1.Service.Spec.Config.MCP.Protocol", [
+            { no: 1, name: "versions", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "requireVersion", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 3, name: "rejectUnknownMethods", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Service_Spec_Config_MCP_Protocol>): Service_Spec_Config_MCP_Protocol {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.versions = [];
+        message.requireVersion = false;
+        message.rejectUnknownMethods = false;
+        if (value !== undefined)
+            reflectionMergePartial<Service_Spec_Config_MCP_Protocol>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Service_Spec_Config_MCP_Protocol): Service_Spec_Config_MCP_Protocol {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated string versions */ 1:
+                    message.versions.push(reader.string());
+                    break;
+                case /* bool requireVersion */ 2:
+                    message.requireVersion = reader.bool();
+                    break;
+                case /* bool rejectUnknownMethods */ 3:
+                    message.rejectUnknownMethods = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Service_Spec_Config_MCP_Protocol, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated string versions = 1; */
+        for (let i = 0; i < message.versions.length; i++)
+            writer.tag(1, WireType.LengthDelimited).string(message.versions[i]);
+        /* bool requireVersion = 2; */
+        if (message.requireVersion !== false)
+            writer.tag(2, WireType.Varint).bool(message.requireVersion);
+        /* bool rejectUnknownMethods = 3; */
+        if (message.rejectUnknownMethods !== false)
+            writer.tag(3, WireType.Varint).bool(message.rejectUnknownMethods);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.Service.Spec.Config.MCP.Protocol
+ */
+export const Service_Spec_Config_MCP_Protocol = new Service_Spec_Config_MCP_Protocol$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Service_Spec_Config_MCP_Limits$Type extends MessageType<Service_Spec_Config_MCP_Limits> {
+    constructor() {
+        super("octelium.api.main.core.v1.Service.Spec.Config.MCP.Limits", [
+            { no: 1, name: "maxRequestBytes", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 2, name: "maxStreamEventBytes", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Service_Spec_Config_MCP_Limits>): Service_Spec_Config_MCP_Limits {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.maxRequestBytes = 0;
+        message.maxStreamEventBytes = 0;
+        if (value !== undefined)
+            reflectionMergePartial<Service_Spec_Config_MCP_Limits>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Service_Spec_Config_MCP_Limits): Service_Spec_Config_MCP_Limits {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* uint32 maxRequestBytes */ 1:
+                    message.maxRequestBytes = reader.uint32();
+                    break;
+                case /* uint32 maxStreamEventBytes */ 2:
+                    message.maxStreamEventBytes = reader.uint32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Service_Spec_Config_MCP_Limits, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* uint32 maxRequestBytes = 1; */
+        if (message.maxRequestBytes !== 0)
+            writer.tag(1, WireType.Varint).uint32(message.maxRequestBytes);
+        /* uint32 maxStreamEventBytes = 2; */
+        if (message.maxStreamEventBytes !== 0)
+            writer.tag(2, WireType.Varint).uint32(message.maxStreamEventBytes);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.Service.Spec.Config.MCP.Limits
+ */
+export const Service_Spec_Config_MCP_Limits = new Service_Spec_Config_MCP_Limits$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Service_Spec_Config_MCP_Origin$Type extends MessageType<Service_Spec_Config_MCP_Origin> {
+    constructor() {
+        super("octelium.api.main.core.v1.Service.Spec.Config.MCP.Origin", [
+            { no: 1, name: "allowed", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "disable", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Service_Spec_Config_MCP_Origin>): Service_Spec_Config_MCP_Origin {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.allowed = [];
+        message.disable = false;
+        if (value !== undefined)
+            reflectionMergePartial<Service_Spec_Config_MCP_Origin>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Service_Spec_Config_MCP_Origin): Service_Spec_Config_MCP_Origin {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated string allowed */ 1:
+                    message.allowed.push(reader.string());
+                    break;
+                case /* bool disable */ 2:
+                    message.disable = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Service_Spec_Config_MCP_Origin, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated string allowed = 1; */
+        for (let i = 0; i < message.allowed.length; i++)
+            writer.tag(1, WireType.LengthDelimited).string(message.allowed[i]);
+        /* bool disable = 2; */
+        if (message.disable !== false)
+            writer.tag(2, WireType.Varint).bool(message.disable);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.Service.Spec.Config.MCP.Origin
+ */
+export const Service_Spec_Config_MCP_Origin = new Service_Spec_Config_MCP_Origin$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Service_Spec_Config_MCP_Visibility$Type extends MessageType<Service_Spec_Config_MCP_Visibility> {
+    constructor() {
+        super("octelium.api.main.core.v1.Service.Spec.Config.MCP.Visibility", [
+            { no: 1, name: "disableRequestBody", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 2, name: "disableResponseBody", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 3, name: "includeRequestHeaders", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "includeResponseHeaders", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 5, name: "includeAllRequestHeaders", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 6, name: "includeAllResponseHeaders", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 7, name: "excludeRequestHeaders", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 8, name: "excludeResponseHeaders", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Service_Spec_Config_MCP_Visibility>): Service_Spec_Config_MCP_Visibility {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.disableRequestBody = false;
+        message.disableResponseBody = false;
+        message.includeRequestHeaders = [];
+        message.includeResponseHeaders = [];
+        message.includeAllRequestHeaders = false;
+        message.includeAllResponseHeaders = false;
+        message.excludeRequestHeaders = [];
+        message.excludeResponseHeaders = [];
+        if (value !== undefined)
+            reflectionMergePartial<Service_Spec_Config_MCP_Visibility>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Service_Spec_Config_MCP_Visibility): Service_Spec_Config_MCP_Visibility {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bool disableRequestBody */ 1:
+                    message.disableRequestBody = reader.bool();
+                    break;
+                case /* bool disableResponseBody */ 2:
+                    message.disableResponseBody = reader.bool();
+                    break;
+                case /* repeated string includeRequestHeaders */ 3:
+                    message.includeRequestHeaders.push(reader.string());
+                    break;
+                case /* repeated string includeResponseHeaders */ 4:
+                    message.includeResponseHeaders.push(reader.string());
+                    break;
+                case /* bool includeAllRequestHeaders */ 5:
+                    message.includeAllRequestHeaders = reader.bool();
+                    break;
+                case /* bool includeAllResponseHeaders */ 6:
+                    message.includeAllResponseHeaders = reader.bool();
+                    break;
+                case /* repeated string excludeRequestHeaders */ 7:
+                    message.excludeRequestHeaders.push(reader.string());
+                    break;
+                case /* repeated string excludeResponseHeaders */ 8:
+                    message.excludeResponseHeaders.push(reader.string());
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Service_Spec_Config_MCP_Visibility, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bool disableRequestBody = 1; */
+        if (message.disableRequestBody !== false)
+            writer.tag(1, WireType.Varint).bool(message.disableRequestBody);
+        /* bool disableResponseBody = 2; */
+        if (message.disableResponseBody !== false)
+            writer.tag(2, WireType.Varint).bool(message.disableResponseBody);
+        /* repeated string includeRequestHeaders = 3; */
+        for (let i = 0; i < message.includeRequestHeaders.length; i++)
+            writer.tag(3, WireType.LengthDelimited).string(message.includeRequestHeaders[i]);
+        /* repeated string includeResponseHeaders = 4; */
+        for (let i = 0; i < message.includeResponseHeaders.length; i++)
+            writer.tag(4, WireType.LengthDelimited).string(message.includeResponseHeaders[i]);
+        /* bool includeAllRequestHeaders = 5; */
+        if (message.includeAllRequestHeaders !== false)
+            writer.tag(5, WireType.Varint).bool(message.includeAllRequestHeaders);
+        /* bool includeAllResponseHeaders = 6; */
+        if (message.includeAllResponseHeaders !== false)
+            writer.tag(6, WireType.Varint).bool(message.includeAllResponseHeaders);
+        /* repeated string excludeRequestHeaders = 7; */
+        for (let i = 0; i < message.excludeRequestHeaders.length; i++)
+            writer.tag(7, WireType.LengthDelimited).string(message.excludeRequestHeaders[i]);
+        /* repeated string excludeResponseHeaders = 8; */
+        for (let i = 0; i < message.excludeResponseHeaders.length; i++)
+            writer.tag(8, WireType.LengthDelimited).string(message.excludeResponseHeaders[i]);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.Service.Spec.Config.MCP.Visibility
+ */
+export const Service_Spec_Config_MCP_Visibility = new Service_Spec_Config_MCP_Visibility$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Service_Spec_Config_LLM$Type extends MessageType<Service_Spec_Config_LLM> {
+    constructor() {
+        super("octelium.api.main.core.v1.Service.Spec.Config.LLM", [
+            { no: 1, name: "protocol", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Config.LLM.Protocol", Service_Spec_Config_LLM_Protocol] },
+            { no: 2, name: "allowedOperations", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.core.v1.Service.Spec.Config.LLM.Operation", Service_Spec_Config_LLM_Operation] },
+            { no: 3, name: "models", kind: "message", T: () => Service_Spec_Config_LLM_Models },
+            { no: 4, name: "limits", kind: "message", T: () => Service_Spec_Config_LLM_Limits },
+            { no: 5, name: "auth", kind: "message", T: () => Service_Spec_Config_HTTP_Auth },
+            { no: 6, name: "header", kind: "message", T: () => Service_Spec_Config_HTTP_Header },
+            { no: 7, name: "path", kind: "message", T: () => Service_Spec_Config_HTTP_Path },
+            { no: 8, name: "plugins", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Service_Spec_Config_HTTP_Plugin },
+            { no: 9, name: "isUpstreamHTTP2", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 10, name: "listenHTTP2", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 11, name: "visibility", kind: "message", T: () => Service_Spec_Config_LLM_Visibility }
+        ]);
+    }
+    create(value?: PartialMessage<Service_Spec_Config_LLM>): Service_Spec_Config_LLM {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.protocol = 0;
+        message.allowedOperations = [];
+        message.plugins = [];
+        message.isUpstreamHTTP2 = false;
+        message.listenHTTP2 = false;
+        if (value !== undefined)
+            reflectionMergePartial<Service_Spec_Config_LLM>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Service_Spec_Config_LLM): Service_Spec_Config_LLM {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.core.v1.Service.Spec.Config.LLM.Protocol protocol */ 1:
+                    message.protocol = reader.int32();
+                    break;
+                case /* repeated octelium.api.main.core.v1.Service.Spec.Config.LLM.Operation allowedOperations */ 2:
+                    if (wireType === WireType.LengthDelimited)
+                        for (let e = reader.int32() + reader.pos; reader.pos < e;)
+                            message.allowedOperations.push(reader.int32());
+                    else
+                        message.allowedOperations.push(reader.int32());
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Config.LLM.Models models */ 3:
+                    message.models = Service_Spec_Config_LLM_Models.internalBinaryRead(reader, reader.uint32(), options, message.models);
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Config.LLM.Limits limits */ 4:
+                    message.limits = Service_Spec_Config_LLM_Limits.internalBinaryRead(reader, reader.uint32(), options, message.limits);
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Config.HTTP.Auth auth */ 5:
+                    message.auth = Service_Spec_Config_HTTP_Auth.internalBinaryRead(reader, reader.uint32(), options, message.auth);
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Config.HTTP.Header header */ 6:
+                    message.header = Service_Spec_Config_HTTP_Header.internalBinaryRead(reader, reader.uint32(), options, message.header);
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Config.HTTP.Path path */ 7:
+                    message.path = Service_Spec_Config_HTTP_Path.internalBinaryRead(reader, reader.uint32(), options, message.path);
+                    break;
+                case /* repeated octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin plugins */ 8:
+                    message.plugins.push(Service_Spec_Config_HTTP_Plugin.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* bool isUpstreamHTTP2 */ 9:
+                    message.isUpstreamHTTP2 = reader.bool();
+                    break;
+                case /* bool listenHTTP2 */ 10:
+                    message.listenHTTP2 = reader.bool();
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Config.LLM.Visibility visibility */ 11:
+                    message.visibility = Service_Spec_Config_LLM_Visibility.internalBinaryRead(reader, reader.uint32(), options, message.visibility);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Service_Spec_Config_LLM, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.core.v1.Service.Spec.Config.LLM.Protocol protocol = 1; */
+        if (message.protocol !== 0)
+            writer.tag(1, WireType.Varint).int32(message.protocol);
+        /* repeated octelium.api.main.core.v1.Service.Spec.Config.LLM.Operation allowedOperations = 2; */
+        if (message.allowedOperations.length) {
+            writer.tag(2, WireType.LengthDelimited).fork();
+            for (let i = 0; i < message.allowedOperations.length; i++)
+                writer.int32(message.allowedOperations[i]);
+            writer.join();
+        }
+        /* octelium.api.main.core.v1.Service.Spec.Config.LLM.Models models = 3; */
+        if (message.models)
+            Service_Spec_Config_LLM_Models.internalBinaryWrite(message.models, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.Service.Spec.Config.LLM.Limits limits = 4; */
+        if (message.limits)
+            Service_Spec_Config_LLM_Limits.internalBinaryWrite(message.limits, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.Service.Spec.Config.HTTP.Auth auth = 5; */
+        if (message.auth)
+            Service_Spec_Config_HTTP_Auth.internalBinaryWrite(message.auth, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.Service.Spec.Config.HTTP.Header header = 6; */
+        if (message.header)
+            Service_Spec_Config_HTTP_Header.internalBinaryWrite(message.header, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.Service.Spec.Config.HTTP.Path path = 7; */
+        if (message.path)
+            Service_Spec_Config_HTTP_Path.internalBinaryWrite(message.path, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin plugins = 8; */
+        for (let i = 0; i < message.plugins.length; i++)
+            Service_Spec_Config_HTTP_Plugin.internalBinaryWrite(message.plugins[i], writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* bool isUpstreamHTTP2 = 9; */
+        if (message.isUpstreamHTTP2 !== false)
+            writer.tag(9, WireType.Varint).bool(message.isUpstreamHTTP2);
+        /* bool listenHTTP2 = 10; */
+        if (message.listenHTTP2 !== false)
+            writer.tag(10, WireType.Varint).bool(message.listenHTTP2);
+        /* octelium.api.main.core.v1.Service.Spec.Config.LLM.Visibility visibility = 11; */
+        if (message.visibility)
+            Service_Spec_Config_LLM_Visibility.internalBinaryWrite(message.visibility, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.Service.Spec.Config.LLM
+ */
+export const Service_Spec_Config_LLM = new Service_Spec_Config_LLM$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Service_Spec_Config_LLM_Models$Type extends MessageType<Service_Spec_Config_LLM_Models> {
+    constructor() {
+        super("octelium.api.main.core.v1.Service.Spec.Config.LLM.Models", [
+            { no: 1, name: "allow", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "deny", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Service_Spec_Config_LLM_Models>): Service_Spec_Config_LLM_Models {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.allow = [];
+        message.deny = [];
+        if (value !== undefined)
+            reflectionMergePartial<Service_Spec_Config_LLM_Models>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Service_Spec_Config_LLM_Models): Service_Spec_Config_LLM_Models {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated string allow */ 1:
+                    message.allow.push(reader.string());
+                    break;
+                case /* repeated string deny */ 2:
+                    message.deny.push(reader.string());
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Service_Spec_Config_LLM_Models, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated string allow = 1; */
+        for (let i = 0; i < message.allow.length; i++)
+            writer.tag(1, WireType.LengthDelimited).string(message.allow[i]);
+        /* repeated string deny = 2; */
+        for (let i = 0; i < message.deny.length; i++)
+            writer.tag(2, WireType.LengthDelimited).string(message.deny[i]);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.Service.Spec.Config.LLM.Models
+ */
+export const Service_Spec_Config_LLM_Models = new Service_Spec_Config_LLM_Models$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Service_Spec_Config_LLM_Limits$Type extends MessageType<Service_Spec_Config_LLM_Limits> {
+    constructor() {
+        super("octelium.api.main.core.v1.Service.Spec.Config.LLM.Limits", [
+            { no: 1, name: "maxRequestBytes", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 2, name: "maxStreamEventBytes", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 3, name: "maxEstimatedInputTokens", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 4, name: "maxOutputTokens", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 5, name: "maxTools", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Service_Spec_Config_LLM_Limits>): Service_Spec_Config_LLM_Limits {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.maxRequestBytes = 0;
+        message.maxStreamEventBytes = 0;
+        message.maxEstimatedInputTokens = 0;
+        message.maxOutputTokens = 0;
+        message.maxTools = 0;
+        if (value !== undefined)
+            reflectionMergePartial<Service_Spec_Config_LLM_Limits>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Service_Spec_Config_LLM_Limits): Service_Spec_Config_LLM_Limits {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* uint32 maxRequestBytes */ 1:
+                    message.maxRequestBytes = reader.uint32();
+                    break;
+                case /* uint32 maxStreamEventBytes */ 2:
+                    message.maxStreamEventBytes = reader.uint32();
+                    break;
+                case /* uint64 maxEstimatedInputTokens */ 3:
+                    message.maxEstimatedInputTokens = reader.uint64().toNumber();
+                    break;
+                case /* uint64 maxOutputTokens */ 4:
+                    message.maxOutputTokens = reader.uint64().toNumber();
+                    break;
+                case /* uint32 maxTools */ 5:
+                    message.maxTools = reader.uint32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Service_Spec_Config_LLM_Limits, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* uint32 maxRequestBytes = 1; */
+        if (message.maxRequestBytes !== 0)
+            writer.tag(1, WireType.Varint).uint32(message.maxRequestBytes);
+        /* uint32 maxStreamEventBytes = 2; */
+        if (message.maxStreamEventBytes !== 0)
+            writer.tag(2, WireType.Varint).uint32(message.maxStreamEventBytes);
+        /* uint64 maxEstimatedInputTokens = 3; */
+        if (message.maxEstimatedInputTokens !== 0)
+            writer.tag(3, WireType.Varint).uint64(message.maxEstimatedInputTokens);
+        /* uint64 maxOutputTokens = 4; */
+        if (message.maxOutputTokens !== 0)
+            writer.tag(4, WireType.Varint).uint64(message.maxOutputTokens);
+        /* uint32 maxTools = 5; */
+        if (message.maxTools !== 0)
+            writer.tag(5, WireType.Varint).uint32(message.maxTools);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.Service.Spec.Config.LLM.Limits
+ */
+export const Service_Spec_Config_LLM_Limits = new Service_Spec_Config_LLM_Limits$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Service_Spec_Config_LLM_Visibility$Type extends MessageType<Service_Spec_Config_LLM_Visibility> {
+    constructor() {
+        super("octelium.api.main.core.v1.Service.Spec.Config.LLM.Visibility", [
+            { no: 1, name: "enableRequestBody", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 2, name: "enableRequestBodyMap", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 3, name: "enableResponseBody", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 4, name: "enableResponseBodyMap", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 5, name: "includeRequestHeaders", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 6, name: "includeResponseHeaders", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 7, name: "includeAllRequestHeaders", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 8, name: "includeAllResponseHeaders", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 9, name: "excludeRequestHeaders", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 10, name: "excludeResponseHeaders", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Service_Spec_Config_LLM_Visibility>): Service_Spec_Config_LLM_Visibility {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.enableRequestBody = false;
+        message.enableRequestBodyMap = false;
+        message.enableResponseBody = false;
+        message.enableResponseBodyMap = false;
+        message.includeRequestHeaders = [];
+        message.includeResponseHeaders = [];
+        message.includeAllRequestHeaders = false;
+        message.includeAllResponseHeaders = false;
+        message.excludeRequestHeaders = [];
+        message.excludeResponseHeaders = [];
+        if (value !== undefined)
+            reflectionMergePartial<Service_Spec_Config_LLM_Visibility>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Service_Spec_Config_LLM_Visibility): Service_Spec_Config_LLM_Visibility {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bool enableRequestBody */ 1:
+                    message.enableRequestBody = reader.bool();
+                    break;
+                case /* bool enableRequestBodyMap */ 2:
+                    message.enableRequestBodyMap = reader.bool();
+                    break;
+                case /* bool enableResponseBody */ 3:
+                    message.enableResponseBody = reader.bool();
+                    break;
+                case /* bool enableResponseBodyMap */ 4:
+                    message.enableResponseBodyMap = reader.bool();
+                    break;
+                case /* repeated string includeRequestHeaders */ 5:
+                    message.includeRequestHeaders.push(reader.string());
+                    break;
+                case /* repeated string includeResponseHeaders */ 6:
+                    message.includeResponseHeaders.push(reader.string());
+                    break;
+                case /* bool includeAllRequestHeaders */ 7:
+                    message.includeAllRequestHeaders = reader.bool();
+                    break;
+                case /* bool includeAllResponseHeaders */ 8:
+                    message.includeAllResponseHeaders = reader.bool();
+                    break;
+                case /* repeated string excludeRequestHeaders */ 9:
+                    message.excludeRequestHeaders.push(reader.string());
+                    break;
+                case /* repeated string excludeResponseHeaders */ 10:
+                    message.excludeResponseHeaders.push(reader.string());
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Service_Spec_Config_LLM_Visibility, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bool enableRequestBody = 1; */
+        if (message.enableRequestBody !== false)
+            writer.tag(1, WireType.Varint).bool(message.enableRequestBody);
+        /* bool enableRequestBodyMap = 2; */
+        if (message.enableRequestBodyMap !== false)
+            writer.tag(2, WireType.Varint).bool(message.enableRequestBodyMap);
+        /* bool enableResponseBody = 3; */
+        if (message.enableResponseBody !== false)
+            writer.tag(3, WireType.Varint).bool(message.enableResponseBody);
+        /* bool enableResponseBodyMap = 4; */
+        if (message.enableResponseBodyMap !== false)
+            writer.tag(4, WireType.Varint).bool(message.enableResponseBodyMap);
+        /* repeated string includeRequestHeaders = 5; */
+        for (let i = 0; i < message.includeRequestHeaders.length; i++)
+            writer.tag(5, WireType.LengthDelimited).string(message.includeRequestHeaders[i]);
+        /* repeated string includeResponseHeaders = 6; */
+        for (let i = 0; i < message.includeResponseHeaders.length; i++)
+            writer.tag(6, WireType.LengthDelimited).string(message.includeResponseHeaders[i]);
+        /* bool includeAllRequestHeaders = 7; */
+        if (message.includeAllRequestHeaders !== false)
+            writer.tag(7, WireType.Varint).bool(message.includeAllRequestHeaders);
+        /* bool includeAllResponseHeaders = 8; */
+        if (message.includeAllResponseHeaders !== false)
+            writer.tag(8, WireType.Varint).bool(message.includeAllResponseHeaders);
+        /* repeated string excludeRequestHeaders = 9; */
+        for (let i = 0; i < message.excludeRequestHeaders.length; i++)
+            writer.tag(9, WireType.LengthDelimited).string(message.excludeRequestHeaders[i]);
+        /* repeated string excludeResponseHeaders = 10; */
+        for (let i = 0; i < message.excludeResponseHeaders.length; i++)
+            writer.tag(10, WireType.LengthDelimited).string(message.excludeResponseHeaders[i]);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.Service.Spec.Config.LLM.Visibility
+ */
+export const Service_Spec_Config_LLM_Visibility = new Service_Spec_Config_LLM_Visibility$Type();
+// @generated message type with reflection information, may provide speed optimized methods
 class Service_Spec_Config_SSH$Type extends MessageType<Service_Spec_Config_SSH> {
     constructor() {
         super("octelium.api.main.core.v1.Service.Spec.Config.SSH", [
@@ -15108,6 +18046,444 @@ class Service_Spec_Config_Kubernetes_Kubeconfig$Type extends MessageType<Service
  * @generated MessageType for protobuf message octelium.api.main.core.v1.Service.Spec.Config.Kubernetes.Kubeconfig
  */
 export const Service_Spec_Config_Kubernetes_Kubeconfig = new Service_Spec_Config_Kubernetes_Kubeconfig$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Service_Spec_Config_SOCKS5$Type extends MessageType<Service_Spec_Config_SOCKS5> {
+    constructor() {
+        super("octelium.api.main.core.v1.Service.Spec.Config.SOCKS5", [
+            { no: 1, name: "auth", kind: "message", T: () => Service_Spec_Config_SOCKS5_Auth },
+            { no: 2, name: "isEmbeddedMode", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Service_Spec_Config_SOCKS5>): Service_Spec_Config_SOCKS5 {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.isEmbeddedMode = false;
+        if (value !== undefined)
+            reflectionMergePartial<Service_Spec_Config_SOCKS5>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Service_Spec_Config_SOCKS5): Service_Spec_Config_SOCKS5 {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.core.v1.Service.Spec.Config.SOCKS5.Auth auth */ 1:
+                    message.auth = Service_Spec_Config_SOCKS5_Auth.internalBinaryRead(reader, reader.uint32(), options, message.auth);
+                    break;
+                case /* bool isEmbeddedMode */ 2:
+                    message.isEmbeddedMode = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Service_Spec_Config_SOCKS5, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.core.v1.Service.Spec.Config.SOCKS5.Auth auth = 1; */
+        if (message.auth)
+            Service_Spec_Config_SOCKS5_Auth.internalBinaryWrite(message.auth, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* bool isEmbeddedMode = 2; */
+        if (message.isEmbeddedMode !== false)
+            writer.tag(2, WireType.Varint).bool(message.isEmbeddedMode);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.Service.Spec.Config.SOCKS5
+ */
+export const Service_Spec_Config_SOCKS5 = new Service_Spec_Config_SOCKS5$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Service_Spec_Config_SOCKS5_Auth$Type extends MessageType<Service_Spec_Config_SOCKS5_Auth> {
+    constructor() {
+        super("octelium.api.main.core.v1.Service.Spec.Config.SOCKS5.Auth", [
+            { no: 1, name: "noAuth", kind: "scalar", oneof: "type", T: 8 /*ScalarType.BOOL*/ },
+            { no: 2, name: "usernamePassword", kind: "message", oneof: "type", T: () => Service_Spec_Config_SOCKS5_Auth_UsernamePassword }
+        ]);
+    }
+    create(value?: PartialMessage<Service_Spec_Config_SOCKS5_Auth>): Service_Spec_Config_SOCKS5_Auth {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<Service_Spec_Config_SOCKS5_Auth>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Service_Spec_Config_SOCKS5_Auth): Service_Spec_Config_SOCKS5_Auth {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bool noAuth */ 1:
+                    message.type = {
+                        oneofKind: "noAuth",
+                        noAuth: reader.bool()
+                    };
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Config.SOCKS5.Auth.UsernamePassword usernamePassword */ 2:
+                    message.type = {
+                        oneofKind: "usernamePassword",
+                        usernamePassword: Service_Spec_Config_SOCKS5_Auth_UsernamePassword.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).usernamePassword)
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Service_Spec_Config_SOCKS5_Auth, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bool noAuth = 1; */
+        if (message.type.oneofKind === "noAuth")
+            writer.tag(1, WireType.Varint).bool(message.type.noAuth);
+        /* octelium.api.main.core.v1.Service.Spec.Config.SOCKS5.Auth.UsernamePassword usernamePassword = 2; */
+        if (message.type.oneofKind === "usernamePassword")
+            Service_Spec_Config_SOCKS5_Auth_UsernamePassword.internalBinaryWrite(message.type.usernamePassword, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.Service.Spec.Config.SOCKS5.Auth
+ */
+export const Service_Spec_Config_SOCKS5_Auth = new Service_Spec_Config_SOCKS5_Auth$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Service_Spec_Config_SOCKS5_Auth_UsernamePassword$Type extends MessageType<Service_Spec_Config_SOCKS5_Auth_UsernamePassword> {
+    constructor() {
+        super("octelium.api.main.core.v1.Service.Spec.Config.SOCKS5.Auth.UsernamePassword", [
+            { no: 1, name: "username", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "password", kind: "message", T: () => Service_Spec_Config_SOCKS5_Auth_UsernamePassword_Password }
+        ]);
+    }
+    create(value?: PartialMessage<Service_Spec_Config_SOCKS5_Auth_UsernamePassword>): Service_Spec_Config_SOCKS5_Auth_UsernamePassword {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.username = "";
+        if (value !== undefined)
+            reflectionMergePartial<Service_Spec_Config_SOCKS5_Auth_UsernamePassword>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Service_Spec_Config_SOCKS5_Auth_UsernamePassword): Service_Spec_Config_SOCKS5_Auth_UsernamePassword {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string username */ 1:
+                    message.username = reader.string();
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Config.SOCKS5.Auth.UsernamePassword.Password password */ 2:
+                    message.password = Service_Spec_Config_SOCKS5_Auth_UsernamePassword_Password.internalBinaryRead(reader, reader.uint32(), options, message.password);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Service_Spec_Config_SOCKS5_Auth_UsernamePassword, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string username = 1; */
+        if (message.username !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.username);
+        /* octelium.api.main.core.v1.Service.Spec.Config.SOCKS5.Auth.UsernamePassword.Password password = 2; */
+        if (message.password)
+            Service_Spec_Config_SOCKS5_Auth_UsernamePassword_Password.internalBinaryWrite(message.password, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.Service.Spec.Config.SOCKS5.Auth.UsernamePassword
+ */
+export const Service_Spec_Config_SOCKS5_Auth_UsernamePassword = new Service_Spec_Config_SOCKS5_Auth_UsernamePassword$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Service_Spec_Config_SOCKS5_Auth_UsernamePassword_Password$Type extends MessageType<Service_Spec_Config_SOCKS5_Auth_UsernamePassword_Password> {
+    constructor() {
+        super("octelium.api.main.core.v1.Service.Spec.Config.SOCKS5.Auth.UsernamePassword.Password", [
+            { no: 1, name: "fromSecret", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Service_Spec_Config_SOCKS5_Auth_UsernamePassword_Password>): Service_Spec_Config_SOCKS5_Auth_UsernamePassword_Password {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<Service_Spec_Config_SOCKS5_Auth_UsernamePassword_Password>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Service_Spec_Config_SOCKS5_Auth_UsernamePassword_Password): Service_Spec_Config_SOCKS5_Auth_UsernamePassword_Password {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string fromSecret */ 1:
+                    message.type = {
+                        oneofKind: "fromSecret",
+                        fromSecret: reader.string()
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Service_Spec_Config_SOCKS5_Auth_UsernamePassword_Password, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string fromSecret = 1; */
+        if (message.type.oneofKind === "fromSecret")
+            writer.tag(1, WireType.LengthDelimited).string(message.type.fromSecret);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.Service.Spec.Config.SOCKS5.Auth.UsernamePassword.Password
+ */
+export const Service_Spec_Config_SOCKS5_Auth_UsernamePassword_Password = new Service_Spec_Config_SOCKS5_Auth_UsernamePassword_Password$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Service_Spec_Config_RDP$Type extends MessageType<Service_Spec_Config_RDP> {
+    constructor() {
+        super("octelium.api.main.core.v1.Service.Spec.Config.RDP", [
+            { no: 1, name: "auth", kind: "message", T: () => Service_Spec_Config_RDP_Auth },
+            { no: 2, name: "upstreamTLS", kind: "message", T: () => Service_Spec_Config_RDP_UpstreamTLS }
+        ]);
+    }
+    create(value?: PartialMessage<Service_Spec_Config_RDP>): Service_Spec_Config_RDP {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Service_Spec_Config_RDP>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Service_Spec_Config_RDP): Service_Spec_Config_RDP {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.core.v1.Service.Spec.Config.RDP.Auth auth */ 1:
+                    message.auth = Service_Spec_Config_RDP_Auth.internalBinaryRead(reader, reader.uint32(), options, message.auth);
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Config.RDP.UpstreamTLS upstreamTLS */ 2:
+                    message.upstreamTLS = Service_Spec_Config_RDP_UpstreamTLS.internalBinaryRead(reader, reader.uint32(), options, message.upstreamTLS);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Service_Spec_Config_RDP, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.core.v1.Service.Spec.Config.RDP.Auth auth = 1; */
+        if (message.auth)
+            Service_Spec_Config_RDP_Auth.internalBinaryWrite(message.auth, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.Service.Spec.Config.RDP.UpstreamTLS upstreamTLS = 2; */
+        if (message.upstreamTLS)
+            Service_Spec_Config_RDP_UpstreamTLS.internalBinaryWrite(message.upstreamTLS, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.Service.Spec.Config.RDP
+ */
+export const Service_Spec_Config_RDP = new Service_Spec_Config_RDP$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Service_Spec_Config_RDP_Auth$Type extends MessageType<Service_Spec_Config_RDP_Auth> {
+    constructor() {
+        super("octelium.api.main.core.v1.Service.Spec.Config.RDP.Auth", [
+            { no: 1, name: "user", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "domain", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "password", kind: "message", T: () => Service_Spec_Config_RDP_Auth_Password }
+        ]);
+    }
+    create(value?: PartialMessage<Service_Spec_Config_RDP_Auth>): Service_Spec_Config_RDP_Auth {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.user = "";
+        message.domain = "";
+        if (value !== undefined)
+            reflectionMergePartial<Service_Spec_Config_RDP_Auth>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Service_Spec_Config_RDP_Auth): Service_Spec_Config_RDP_Auth {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string user */ 1:
+                    message.user = reader.string();
+                    break;
+                case /* string domain */ 2:
+                    message.domain = reader.string();
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Config.RDP.Auth.Password password */ 3:
+                    message.password = Service_Spec_Config_RDP_Auth_Password.internalBinaryRead(reader, reader.uint32(), options, message.password);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Service_Spec_Config_RDP_Auth, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string user = 1; */
+        if (message.user !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.user);
+        /* string domain = 2; */
+        if (message.domain !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.domain);
+        /* octelium.api.main.core.v1.Service.Spec.Config.RDP.Auth.Password password = 3; */
+        if (message.password)
+            Service_Spec_Config_RDP_Auth_Password.internalBinaryWrite(message.password, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.Service.Spec.Config.RDP.Auth
+ */
+export const Service_Spec_Config_RDP_Auth = new Service_Spec_Config_RDP_Auth$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Service_Spec_Config_RDP_Auth_Password$Type extends MessageType<Service_Spec_Config_RDP_Auth_Password> {
+    constructor() {
+        super("octelium.api.main.core.v1.Service.Spec.Config.RDP.Auth.Password", [
+            { no: 1, name: "fromSecret", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Service_Spec_Config_RDP_Auth_Password>): Service_Spec_Config_RDP_Auth_Password {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<Service_Spec_Config_RDP_Auth_Password>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Service_Spec_Config_RDP_Auth_Password): Service_Spec_Config_RDP_Auth_Password {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string fromSecret */ 1:
+                    message.type = {
+                        oneofKind: "fromSecret",
+                        fromSecret: reader.string()
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Service_Spec_Config_RDP_Auth_Password, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string fromSecret = 1; */
+        if (message.type.oneofKind === "fromSecret")
+            writer.tag(1, WireType.LengthDelimited).string(message.type.fromSecret);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.Service.Spec.Config.RDP.Auth.Password
+ */
+export const Service_Spec_Config_RDP_Auth_Password = new Service_Spec_Config_RDP_Auth_Password$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Service_Spec_Config_RDP_UpstreamTLS$Type extends MessageType<Service_Spec_Config_RDP_UpstreamTLS> {
+    constructor() {
+        super("octelium.api.main.core.v1.Service.Spec.Config.RDP.UpstreamTLS", [
+            { no: 1, name: "pinnedCertSHA256", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "allowAnyCert", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Service_Spec_Config_RDP_UpstreamTLS>): Service_Spec_Config_RDP_UpstreamTLS {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.pinnedCertSHA256 = [];
+        message.allowAnyCert = false;
+        if (value !== undefined)
+            reflectionMergePartial<Service_Spec_Config_RDP_UpstreamTLS>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Service_Spec_Config_RDP_UpstreamTLS): Service_Spec_Config_RDP_UpstreamTLS {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated string pinnedCertSHA256 */ 1:
+                    message.pinnedCertSHA256.push(reader.string());
+                    break;
+                case /* bool allowAnyCert */ 2:
+                    message.allowAnyCert = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Service_Spec_Config_RDP_UpstreamTLS, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated string pinnedCertSHA256 = 1; */
+        for (let i = 0; i < message.pinnedCertSHA256.length; i++)
+            writer.tag(1, WireType.LengthDelimited).string(message.pinnedCertSHA256[i]);
+        /* bool allowAnyCert = 2; */
+        if (message.allowAnyCert !== false)
+            writer.tag(2, WireType.Varint).bool(message.allowAnyCert);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.Service.Spec.Config.RDP.UpstreamTLS
+ */
+export const Service_Spec_Config_RDP_UpstreamTLS = new Service_Spec_Config_RDP_UpstreamTLS$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class Service_Spec_Config_Upstream$Type extends MessageType<Service_Spec_Config_Upstream> {
     constructor() {
@@ -17957,7 +21333,9 @@ class Session_Status_Connection$Type extends MessageType<Session_Status_Connecti
             { no: 10, name: "publishedServices", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Session_Status_Connection_PublishedService },
             { no: 11, name: "ignoreDNS", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
             { no: 12, name: "eSSHEnable", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
-            { no: 13, name: "eSSHPort", kind: "scalar", T: 5 /*ScalarType.INT32*/ }
+            { no: 13, name: "eSSHPort", kind: "scalar", T: 5 /*ScalarType.INT32*/ },
+            { no: 14, name: "eSOCKS5Enable", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 15, name: "eSOCKS5Port", kind: "scalar", T: 5 /*ScalarType.INT32*/ }
         ]);
     }
     create(value?: PartialMessage<Session_Status_Connection>): Session_Status_Connection {
@@ -17972,6 +21350,8 @@ class Session_Status_Connection$Type extends MessageType<Session_Status_Connecti
         message.ignoreDNS = false;
         message.eSSHEnable = false;
         message.eSSHPort = 0;
+        message.eSOCKS5Enable = false;
+        message.eSOCKS5Port = 0;
         if (value !== undefined)
             reflectionMergePartial<Session_Status_Connection>(this, message, value);
         return message;
@@ -18019,6 +21399,12 @@ class Session_Status_Connection$Type extends MessageType<Session_Status_Connecti
                     break;
                 case /* int32 eSSHPort */ 13:
                     message.eSSHPort = reader.int32();
+                    break;
+                case /* bool eSOCKS5Enable */ 14:
+                    message.eSOCKS5Enable = reader.bool();
+                    break;
+                case /* int32 eSOCKS5Port */ 15:
+                    message.eSOCKS5Port = reader.int32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -18071,6 +21457,12 @@ class Session_Status_Connection$Type extends MessageType<Session_Status_Connecti
         /* int32 eSSHPort = 13; */
         if (message.eSSHPort !== 0)
             writer.tag(13, WireType.Varint).int32(message.eSSHPort);
+        /* bool eSOCKS5Enable = 14; */
+        if (message.eSOCKS5Enable !== false)
+            writer.tag(14, WireType.Varint).bool(message.eSOCKS5Enable);
+        /* int32 eSOCKS5Port = 15; */
+        if (message.eSOCKS5Port !== 0)
+            writer.tag(15, WireType.Varint).int32(message.eSOCKS5Port);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -19804,7 +23196,8 @@ class Credential_Status$Type extends MessageType<Credential_Status> {
             { no: 4, name: "lastRotationAt", kind: "message", T: () => Timestamp },
             { no: 5, name: "totalRotations", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
             { no: 6, name: "totalAuthentications", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 7, name: "isLocked", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 7, name: "isLocked", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 8, name: "pkce", kind: "message", T: () => Credential_Status_PKCE }
         ]);
     }
     create(value?: PartialMessage<Credential_Status>): Credential_Status {
@@ -19844,6 +23237,9 @@ class Credential_Status$Type extends MessageType<Credential_Status> {
                 case /* bool isLocked */ 7:
                     message.isLocked = reader.bool();
                     break;
+                case /* octelium.api.main.core.v1.Credential.Status.PKCE pkce */ 8:
+                    message.pkce = Credential_Status_PKCE.internalBinaryRead(reader, reader.uint32(), options, message.pkce);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -19877,6 +23273,9 @@ class Credential_Status$Type extends MessageType<Credential_Status> {
         /* bool isLocked = 7; */
         if (message.isLocked !== false)
             writer.tag(7, WireType.Varint).bool(message.isLocked);
+        /* octelium.api.main.core.v1.Credential.Status.PKCE pkce = 8; */
+        if (message.pkce)
+            Credential_Status_PKCE.internalBinaryWrite(message.pkce, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -19887,6 +23286,53 @@ class Credential_Status$Type extends MessageType<Credential_Status> {
  * @generated MessageType for protobuf message octelium.api.main.core.v1.Credential.Status
  */
 export const Credential_Status = new Credential_Status$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Credential_Status_PKCE$Type extends MessageType<Credential_Status_PKCE> {
+    constructor() {
+        super("octelium.api.main.core.v1.Credential.Status.PKCE", [
+            { no: 1, name: "codeChallenge", kind: "scalar", T: 12 /*ScalarType.BYTES*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Credential_Status_PKCE>): Credential_Status_PKCE {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.codeChallenge = new Uint8Array(0);
+        if (value !== undefined)
+            reflectionMergePartial<Credential_Status_PKCE>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Credential_Status_PKCE): Credential_Status_PKCE {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bytes codeChallenge */ 1:
+                    message.codeChallenge = reader.bytes();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Credential_Status_PKCE, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bytes codeChallenge = 1; */
+        if (message.codeChallenge.length)
+            writer.tag(1, WireType.LengthDelimited).bytes(message.codeChallenge);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.Credential.Status.PKCE
+ */
+export const Credential_Status_PKCE = new Credential_Status_PKCE$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class CredentialList$Type extends MessageType<CredentialList> {
     constructor() {
@@ -20474,7 +23920,10 @@ class Device_Status$Type extends MessageType<Device_Status> {
             { no: 5, name: "id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 6, name: "serialNumber", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 7, name: "isLocked", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
-            { no: 8, name: "macAddresses", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
+            { no: 8, name: "macAddresses", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 9, name: "posture", kind: "message", T: () => Device_Status_Posture },
+            { no: 10, name: "binding", kind: "message", T: () => Device_Status_Binding },
+            { no: 11, name: "probeAttempt", kind: "message", T: () => Device_Status_ProbeAttempt }
         ]);
     }
     create(value?: PartialMessage<Device_Status>): Device_Status {
@@ -20518,6 +23967,15 @@ class Device_Status$Type extends MessageType<Device_Status> {
                     break;
                 case /* repeated string macAddresses */ 8:
                     message.macAddresses.push(reader.string());
+                    break;
+                case /* octelium.api.main.core.v1.Device.Status.Posture posture */ 9:
+                    message.posture = Device_Status_Posture.internalBinaryRead(reader, reader.uint32(), options, message.posture);
+                    break;
+                case /* octelium.api.main.core.v1.Device.Status.Binding binding */ 10:
+                    message.binding = Device_Status_Binding.internalBinaryRead(reader, reader.uint32(), options, message.binding);
+                    break;
+                case /* octelium.api.main.core.v1.Device.Status.ProbeAttempt probeAttempt */ 11:
+                    message.probeAttempt = Device_Status_ProbeAttempt.internalBinaryRead(reader, reader.uint32(), options, message.probeAttempt);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -20575,6 +24033,15 @@ class Device_Status$Type extends MessageType<Device_Status> {
         /* repeated string macAddresses = 8; */
         for (let i = 0; i < message.macAddresses.length; i++)
             writer.tag(8, WireType.LengthDelimited).string(message.macAddresses[i]);
+        /* octelium.api.main.core.v1.Device.Status.Posture posture = 9; */
+        if (message.posture)
+            Device_Status_Posture.internalBinaryWrite(message.posture, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.Device.Status.Binding binding = 10; */
+        if (message.binding)
+            Device_Status_Binding.internalBinaryWrite(message.binding, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.Device.Status.ProbeAttempt probeAttempt = 11; */
+        if (message.probeAttempt)
+            Device_Status_ProbeAttempt.internalBinaryWrite(message.probeAttempt, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -20585,6 +24052,374 @@ class Device_Status$Type extends MessageType<Device_Status> {
  * @generated MessageType for protobuf message octelium.api.main.core.v1.Device.Status
  */
 export const Device_Status = new Device_Status$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Device_Status_Posture$Type extends MessageType<Device_Status_Posture> {
+    constructor() {
+        super("octelium.api.main.core.v1.Device.Status.Posture", [
+            { no: 1, name: "riskLevel", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.RiskLevel", Device_Status_Posture_RiskLevel] },
+            { no: 2, name: "diskEncryption", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.SignalState", Device_Status_Posture_SignalState] },
+            { no: 3, name: "compliant", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.SignalState", Device_Status_Posture_SignalState] },
+            { no: 4, name: "threatFree", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.SignalState", Device_Status_Posture_SignalState] },
+            { no: 5, name: "signals", kind: "map", K: 9 /*ScalarType.STRING*/, V: { kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Posture.SignalState", Device_Status_Posture_SignalState] } },
+            { no: 6, name: "lastSyncAt", kind: "message", T: () => Timestamp },
+            { no: 7, name: "lastSeenAt", kind: "message", T: () => Timestamp },
+            { no: 8, name: "expiresAt", kind: "message", T: () => Timestamp },
+            { no: 9, name: "attrs", kind: "message", T: () => Struct }
+        ]);
+    }
+    create(value?: PartialMessage<Device_Status_Posture>): Device_Status_Posture {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.riskLevel = 0;
+        message.diskEncryption = 0;
+        message.compliant = 0;
+        message.threatFree = 0;
+        message.signals = {};
+        if (value !== undefined)
+            reflectionMergePartial<Device_Status_Posture>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Device_Status_Posture): Device_Status_Posture {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.core.v1.Device.Status.Posture.RiskLevel riskLevel */ 1:
+                    message.riskLevel = reader.int32();
+                    break;
+                case /* octelium.api.main.core.v1.Device.Status.Posture.SignalState diskEncryption */ 2:
+                    message.diskEncryption = reader.int32();
+                    break;
+                case /* octelium.api.main.core.v1.Device.Status.Posture.SignalState compliant */ 3:
+                    message.compliant = reader.int32();
+                    break;
+                case /* octelium.api.main.core.v1.Device.Status.Posture.SignalState threatFree */ 4:
+                    message.threatFree = reader.int32();
+                    break;
+                case /* map<string, octelium.api.main.core.v1.Device.Status.Posture.SignalState> signals */ 5:
+                    this.binaryReadMap5(message.signals, reader, options);
+                    break;
+                case /* google.protobuf.Timestamp lastSyncAt */ 6:
+                    message.lastSyncAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.lastSyncAt);
+                    break;
+                case /* google.protobuf.Timestamp lastSeenAt */ 7:
+                    message.lastSeenAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.lastSeenAt);
+                    break;
+                case /* google.protobuf.Timestamp expiresAt */ 8:
+                    message.expiresAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.expiresAt);
+                    break;
+                case /* google.protobuf.Struct attrs */ 9:
+                    message.attrs = Struct.internalBinaryRead(reader, reader.uint32(), options, message.attrs);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    private binaryReadMap5(map: Device_Status_Posture["signals"], reader: IBinaryReader, options: BinaryReadOptions): void {
+        let len = reader.uint32(), end = reader.pos + len, key: keyof Device_Status_Posture["signals"] | undefined, val: Device_Status_Posture["signals"][any] | undefined;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case 1:
+                    key = reader.string();
+                    break;
+                case 2:
+                    val = reader.int32();
+                    break;
+                default: throw new globalThis.Error("unknown map entry field for octelium.api.main.core.v1.Device.Status.Posture.signals");
+            }
+        }
+        map[key ?? ""] = val ?? 0;
+    }
+    internalBinaryWrite(message: Device_Status_Posture, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.core.v1.Device.Status.Posture.RiskLevel riskLevel = 1; */
+        if (message.riskLevel !== 0)
+            writer.tag(1, WireType.Varint).int32(message.riskLevel);
+        /* octelium.api.main.core.v1.Device.Status.Posture.SignalState diskEncryption = 2; */
+        if (message.diskEncryption !== 0)
+            writer.tag(2, WireType.Varint).int32(message.diskEncryption);
+        /* octelium.api.main.core.v1.Device.Status.Posture.SignalState compliant = 3; */
+        if (message.compliant !== 0)
+            writer.tag(3, WireType.Varint).int32(message.compliant);
+        /* octelium.api.main.core.v1.Device.Status.Posture.SignalState threatFree = 4; */
+        if (message.threatFree !== 0)
+            writer.tag(4, WireType.Varint).int32(message.threatFree);
+        /* map<string, octelium.api.main.core.v1.Device.Status.Posture.SignalState> signals = 5; */
+        for (let k of globalThis.Object.keys(message.signals))
+            writer.tag(5, WireType.LengthDelimited).fork().tag(1, WireType.LengthDelimited).string(k).tag(2, WireType.Varint).int32(message.signals[k]).join();
+        /* google.protobuf.Timestamp lastSyncAt = 6; */
+        if (message.lastSyncAt)
+            Timestamp.internalBinaryWrite(message.lastSyncAt, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp lastSeenAt = 7; */
+        if (message.lastSeenAt)
+            Timestamp.internalBinaryWrite(message.lastSeenAt, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp expiresAt = 8; */
+        if (message.expiresAt)
+            Timestamp.internalBinaryWrite(message.expiresAt, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Struct attrs = 9; */
+        if (message.attrs)
+            Struct.internalBinaryWrite(message.attrs, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.Device.Status.Posture
+ */
+export const Device_Status_Posture = new Device_Status_Posture$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Device_Status_Binding$Type extends MessageType<Device_Status_Binding> {
+    constructor() {
+        super("octelium.api.main.core.v1.Device.Status.Binding", [
+            { no: 1, name: "uid", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "ownerRef", kind: "message", T: () => ObjectReference },
+            { no: 3, name: "externalID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "state", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Binding.State", Device_Status_Binding_State] },
+            { no: 5, name: "acceptanceMethod", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.Binding.AcceptanceMethod", Device_Status_Binding_AcceptanceMethod] },
+            { no: 6, name: "acceptedAt", kind: "message", T: () => Timestamp },
+            { no: 7, name: "expiresAt", kind: "message", T: () => Timestamp },
+            { no: 8, name: "lastVerifiedAt", kind: "message", T: () => Timestamp },
+            { no: 9, name: "verificationFailures", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Device_Status_Binding>): Device_Status_Binding {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.uid = "";
+        message.externalID = "";
+        message.state = 0;
+        message.acceptanceMethod = 0;
+        message.verificationFailures = 0;
+        if (value !== undefined)
+            reflectionMergePartial<Device_Status_Binding>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Device_Status_Binding): Device_Status_Binding {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string uid */ 1:
+                    message.uid = reader.string();
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference ownerRef */ 2:
+                    message.ownerRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.ownerRef);
+                    break;
+                case /* string externalID */ 3:
+                    message.externalID = reader.string();
+                    break;
+                case /* octelium.api.main.core.v1.Device.Status.Binding.State state */ 4:
+                    message.state = reader.int32();
+                    break;
+                case /* octelium.api.main.core.v1.Device.Status.Binding.AcceptanceMethod acceptanceMethod */ 5:
+                    message.acceptanceMethod = reader.int32();
+                    break;
+                case /* google.protobuf.Timestamp acceptedAt */ 6:
+                    message.acceptedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.acceptedAt);
+                    break;
+                case /* google.protobuf.Timestamp expiresAt */ 7:
+                    message.expiresAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.expiresAt);
+                    break;
+                case /* google.protobuf.Timestamp lastVerifiedAt */ 8:
+                    message.lastVerifiedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.lastVerifiedAt);
+                    break;
+                case /* uint32 verificationFailures */ 9:
+                    message.verificationFailures = reader.uint32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Device_Status_Binding, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string uid = 1; */
+        if (message.uid !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.uid);
+        /* octelium.api.main.meta.v1.ObjectReference ownerRef = 2; */
+        if (message.ownerRef)
+            ObjectReference.internalBinaryWrite(message.ownerRef, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* string externalID = 3; */
+        if (message.externalID !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.externalID);
+        /* octelium.api.main.core.v1.Device.Status.Binding.State state = 4; */
+        if (message.state !== 0)
+            writer.tag(4, WireType.Varint).int32(message.state);
+        /* octelium.api.main.core.v1.Device.Status.Binding.AcceptanceMethod acceptanceMethod = 5; */
+        if (message.acceptanceMethod !== 0)
+            writer.tag(5, WireType.Varint).int32(message.acceptanceMethod);
+        /* google.protobuf.Timestamp acceptedAt = 6; */
+        if (message.acceptedAt)
+            Timestamp.internalBinaryWrite(message.acceptedAt, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp expiresAt = 7; */
+        if (message.expiresAt)
+            Timestamp.internalBinaryWrite(message.expiresAt, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp lastVerifiedAt = 8; */
+        if (message.lastVerifiedAt)
+            Timestamp.internalBinaryWrite(message.lastVerifiedAt, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* uint32 verificationFailures = 9; */
+        if (message.verificationFailures !== 0)
+            writer.tag(9, WireType.Varint).uint32(message.verificationFailures);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.Device.Status.Binding
+ */
+export const Device_Status_Binding = new Device_Status_Binding$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Device_Status_ProbeAttempt$Type extends MessageType<Device_Status_ProbeAttempt> {
+    constructor() {
+        super("octelium.api.main.core.v1.Device.Status.ProbeAttempt", [
+            { no: 1, name: "uid", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "startedAt", kind: "message", T: () => Timestamp },
+            { no: 3, name: "probes", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ClusterConfig_Status_Device_Probe },
+            { no: 4, name: "results", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Device_Status_ProbeAttempt_Result }
+        ]);
+    }
+    create(value?: PartialMessage<Device_Status_ProbeAttempt>): Device_Status_ProbeAttempt {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.uid = "";
+        message.probes = [];
+        message.results = [];
+        if (value !== undefined)
+            reflectionMergePartial<Device_Status_ProbeAttempt>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Device_Status_ProbeAttempt): Device_Status_ProbeAttempt {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string uid */ 1:
+                    message.uid = reader.string();
+                    break;
+                case /* google.protobuf.Timestamp startedAt */ 2:
+                    message.startedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.startedAt);
+                    break;
+                case /* repeated octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe probes */ 3:
+                    message.probes.push(ClusterConfig_Status_Device_Probe.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* repeated octelium.api.main.core.v1.Device.Status.ProbeAttempt.Result results */ 4:
+                    message.results.push(Device_Status_ProbeAttempt_Result.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Device_Status_ProbeAttempt, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string uid = 1; */
+        if (message.uid !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.uid);
+        /* google.protobuf.Timestamp startedAt = 2; */
+        if (message.startedAt)
+            Timestamp.internalBinaryWrite(message.startedAt, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe probes = 3; */
+        for (let i = 0; i < message.probes.length; i++)
+            ClusterConfig_Status_Device_Probe.internalBinaryWrite(message.probes[i], writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.core.v1.Device.Status.ProbeAttempt.Result results = 4; */
+        for (let i = 0; i < message.results.length; i++)
+            Device_Status_ProbeAttempt_Result.internalBinaryWrite(message.results[i], writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.Device.Status.ProbeAttempt
+ */
+export const Device_Status_ProbeAttempt = new Device_Status_ProbeAttempt$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Device_Status_ProbeAttempt_Result$Type extends MessageType<Device_Status_ProbeAttempt_Result> {
+    constructor() {
+        super("octelium.api.main.core.v1.Device.Status.ProbeAttempt.Result", [
+            { no: 1, name: "probeID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "output", kind: "scalar", oneof: "type", T: 12 /*ScalarType.BYTES*/ },
+            { no: 3, name: "error", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Device_Status_ProbeAttempt_Result>): Device_Status_ProbeAttempt_Result {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.probeID = "";
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<Device_Status_ProbeAttempt_Result>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Device_Status_ProbeAttempt_Result): Device_Status_ProbeAttempt_Result {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string probeID */ 1:
+                    message.probeID = reader.string();
+                    break;
+                case /* bytes output */ 2:
+                    message.type = {
+                        oneofKind: "output",
+                        output: reader.bytes()
+                    };
+                    break;
+                case /* string error */ 3:
+                    message.type = {
+                        oneofKind: "error",
+                        error: reader.string()
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Device_Status_ProbeAttempt_Result, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string probeID = 1; */
+        if (message.probeID !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.probeID);
+        /* bytes output = 2; */
+        if (message.type.oneofKind === "output")
+            writer.tag(2, WireType.LengthDelimited).bytes(message.type.output);
+        /* string error = 3; */
+        if (message.type.oneofKind === "error")
+            writer.tag(3, WireType.LengthDelimited).string(message.type.error);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.Device.Status.ProbeAttempt.Result
+ */
+export const Device_Status_ProbeAttempt_Result = new Device_Status_ProbeAttempt_Result$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class DeviceList$Type extends MessageType<DeviceList> {
     constructor() {
@@ -22416,7 +26251,10 @@ class AccessLog_Entry_Info$Type extends MessageType<AccessLog_Entry_Info> {
             { no: 6, name: "kubernetes", kind: "message", oneof: "type", T: () => AccessLog_Entry_Info_Kubernetes },
             { no: 7, name: "grpc", kind: "message", oneof: "type", T: () => AccessLog_Entry_Info_GRPC },
             { no: 8, name: "mysql", kind: "message", oneof: "type", T: () => AccessLog_Entry_Info_MySQL },
-            { no: 9, name: "dns", kind: "message", oneof: "type", T: () => AccessLog_Entry_Info_DNS }
+            { no: 9, name: "dns", kind: "message", oneof: "type", T: () => AccessLog_Entry_Info_DNS },
+            { no: 10, name: "socks5", kind: "message", oneof: "type", T: () => AccessLog_Entry_Info_SOCKS5 },
+            { no: 11, name: "mcp", kind: "message", oneof: "type", T: () => AccessLog_Entry_Info_MCP },
+            { no: 12, name: "llm", kind: "message", oneof: "type", T: () => AccessLog_Entry_Info_LLM }
         ]);
     }
     create(value?: PartialMessage<AccessLog_Entry_Info>): AccessLog_Entry_Info {
@@ -22485,6 +26323,24 @@ class AccessLog_Entry_Info$Type extends MessageType<AccessLog_Entry_Info> {
                         dns: AccessLog_Entry_Info_DNS.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).dns)
                     };
                     break;
+                case /* octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5 socks5 */ 10:
+                    message.type = {
+                        oneofKind: "socks5",
+                        socks5: AccessLog_Entry_Info_SOCKS5.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).socks5)
+                    };
+                    break;
+                case /* octelium.api.main.core.v1.AccessLog.Entry.Info.MCP mcp */ 11:
+                    message.type = {
+                        oneofKind: "mcp",
+                        mcp: AccessLog_Entry_Info_MCP.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).mcp)
+                    };
+                    break;
+                case /* octelium.api.main.core.v1.AccessLog.Entry.Info.LLM llm */ 12:
+                    message.type = {
+                        oneofKind: "llm",
+                        llm: AccessLog_Entry_Info_LLM.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).llm)
+                    };
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -22524,6 +26380,15 @@ class AccessLog_Entry_Info$Type extends MessageType<AccessLog_Entry_Info> {
         /* octelium.api.main.core.v1.AccessLog.Entry.Info.DNS dns = 9; */
         if (message.type.oneofKind === "dns")
             AccessLog_Entry_Info_DNS.internalBinaryWrite(message.type.dns, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5 socks5 = 10; */
+        if (message.type.oneofKind === "socks5")
+            AccessLog_Entry_Info_SOCKS5.internalBinaryWrite(message.type.socks5, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.AccessLog.Entry.Info.MCP mcp = 11; */
+        if (message.type.oneofKind === "mcp")
+            AccessLog_Entry_Info_MCP.internalBinaryWrite(message.type.mcp, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.AccessLog.Entry.Info.LLM llm = 12; */
+        if (message.type.oneofKind === "llm")
+            AccessLog_Entry_Info_LLM.internalBinaryWrite(message.type.llm, writer.tag(12, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -24189,6 +28054,580 @@ class AccessLog_Entry_Info_DNS$Type extends MessageType<AccessLog_Entry_Info_DNS
  * @generated MessageType for protobuf message octelium.api.main.core.v1.AccessLog.Entry.Info.DNS
  */
 export const AccessLog_Entry_Info_DNS = new AccessLog_Entry_Info_DNS$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class AccessLog_Entry_Info_SOCKS5$Type extends MessageType<AccessLog_Entry_Info_SOCKS5> {
+    constructor() {
+        super("octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5", [
+            { no: 1, name: "type", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5.Type", AccessLog_Entry_Info_SOCKS5_Type] },
+            { no: 2, name: "host", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "port", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 4, name: "addressType", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5.AddressType", AccessLog_Entry_Info_SOCKS5_AddressType] },
+            { no: 5, name: "receivedBytes", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 6, name: "sentBytes", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 7, name: "upstreamHost", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 8, name: "upstreamPort", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+        ]);
+    }
+    create(value?: PartialMessage<AccessLog_Entry_Info_SOCKS5>): AccessLog_Entry_Info_SOCKS5 {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = 0;
+        message.host = "";
+        message.port = 0;
+        message.addressType = 0;
+        message.receivedBytes = 0;
+        message.sentBytes = 0;
+        message.upstreamHost = "";
+        message.upstreamPort = 0;
+        if (value !== undefined)
+            reflectionMergePartial<AccessLog_Entry_Info_SOCKS5>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: AccessLog_Entry_Info_SOCKS5): AccessLog_Entry_Info_SOCKS5 {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5.Type type */ 1:
+                    message.type = reader.int32();
+                    break;
+                case /* string host */ 2:
+                    message.host = reader.string();
+                    break;
+                case /* uint32 port */ 3:
+                    message.port = reader.uint32();
+                    break;
+                case /* octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5.AddressType addressType */ 4:
+                    message.addressType = reader.int32();
+                    break;
+                case /* uint64 receivedBytes */ 5:
+                    message.receivedBytes = reader.uint64().toNumber();
+                    break;
+                case /* uint64 sentBytes */ 6:
+                    message.sentBytes = reader.uint64().toNumber();
+                    break;
+                case /* string upstreamHost */ 7:
+                    message.upstreamHost = reader.string();
+                    break;
+                case /* uint32 upstreamPort */ 8:
+                    message.upstreamPort = reader.uint32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: AccessLog_Entry_Info_SOCKS5, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5.Type type = 1; */
+        if (message.type !== 0)
+            writer.tag(1, WireType.Varint).int32(message.type);
+        /* string host = 2; */
+        if (message.host !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.host);
+        /* uint32 port = 3; */
+        if (message.port !== 0)
+            writer.tag(3, WireType.Varint).uint32(message.port);
+        /* octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5.AddressType addressType = 4; */
+        if (message.addressType !== 0)
+            writer.tag(4, WireType.Varint).int32(message.addressType);
+        /* uint64 receivedBytes = 5; */
+        if (message.receivedBytes !== 0)
+            writer.tag(5, WireType.Varint).uint64(message.receivedBytes);
+        /* uint64 sentBytes = 6; */
+        if (message.sentBytes !== 0)
+            writer.tag(6, WireType.Varint).uint64(message.sentBytes);
+        /* string upstreamHost = 7; */
+        if (message.upstreamHost !== "")
+            writer.tag(7, WireType.LengthDelimited).string(message.upstreamHost);
+        /* uint32 upstreamPort = 8; */
+        if (message.upstreamPort !== 0)
+            writer.tag(8, WireType.Varint).uint32(message.upstreamPort);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5
+ */
+export const AccessLog_Entry_Info_SOCKS5 = new AccessLog_Entry_Info_SOCKS5$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class AccessLog_Entry_Info_MCP$Type extends MessageType<AccessLog_Entry_Info_MCP> {
+    constructor() {
+        super("octelium.api.main.core.v1.AccessLog.Entry.Info.MCP", [
+            { no: 1, name: "http", kind: "message", T: () => AccessLog_Entry_Info_HTTP },
+            { no: 2, name: "type", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Info.MCP.Type", AccessLog_Entry_Info_MCP_Type] },
+            { no: 3, name: "protocolVersion", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "method", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 5, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 6, name: "requestID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 7, name: "isNotification", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 8, name: "resultType", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 9, name: "isProtocolError", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 10, name: "errorCode", kind: "scalar", T: 5 /*ScalarType.INT32*/ },
+            { no: 11, name: "errorMessage", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 12, name: "isToolError", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 13, name: "eventCount", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 14, name: "notificationCount", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 15, name: "ttlMs", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 16, name: "cacheScope", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 17, name: "client", kind: "message", T: () => AccessLog_Entry_Info_MCP_Client },
+            { no: 18, name: "sessionID", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<AccessLog_Entry_Info_MCP>): AccessLog_Entry_Info_MCP {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = 0;
+        message.protocolVersion = "";
+        message.method = "";
+        message.name = "";
+        message.requestID = "";
+        message.isNotification = false;
+        message.resultType = "";
+        message.isProtocolError = false;
+        message.errorCode = 0;
+        message.errorMessage = "";
+        message.isToolError = false;
+        message.eventCount = 0;
+        message.notificationCount = 0;
+        message.ttlMs = 0;
+        message.cacheScope = "";
+        message.sessionID = "";
+        if (value !== undefined)
+            reflectionMergePartial<AccessLog_Entry_Info_MCP>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: AccessLog_Entry_Info_MCP): AccessLog_Entry_Info_MCP {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP http */ 1:
+                    message.http = AccessLog_Entry_Info_HTTP.internalBinaryRead(reader, reader.uint32(), options, message.http);
+                    break;
+                case /* octelium.api.main.core.v1.AccessLog.Entry.Info.MCP.Type type */ 2:
+                    message.type = reader.int32();
+                    break;
+                case /* string protocolVersion */ 3:
+                    message.protocolVersion = reader.string();
+                    break;
+                case /* string method */ 4:
+                    message.method = reader.string();
+                    break;
+                case /* string name */ 5:
+                    message.name = reader.string();
+                    break;
+                case /* string requestID */ 6:
+                    message.requestID = reader.string();
+                    break;
+                case /* bool isNotification */ 7:
+                    message.isNotification = reader.bool();
+                    break;
+                case /* string resultType */ 8:
+                    message.resultType = reader.string();
+                    break;
+                case /* bool isProtocolError */ 9:
+                    message.isProtocolError = reader.bool();
+                    break;
+                case /* int32 errorCode */ 10:
+                    message.errorCode = reader.int32();
+                    break;
+                case /* string errorMessage */ 11:
+                    message.errorMessage = reader.string();
+                    break;
+                case /* bool isToolError */ 12:
+                    message.isToolError = reader.bool();
+                    break;
+                case /* uint64 eventCount */ 13:
+                    message.eventCount = reader.uint64().toNumber();
+                    break;
+                case /* uint64 notificationCount */ 14:
+                    message.notificationCount = reader.uint64().toNumber();
+                    break;
+                case /* uint64 ttlMs */ 15:
+                    message.ttlMs = reader.uint64().toNumber();
+                    break;
+                case /* string cacheScope */ 16:
+                    message.cacheScope = reader.string();
+                    break;
+                case /* octelium.api.main.core.v1.AccessLog.Entry.Info.MCP.Client client */ 17:
+                    message.client = AccessLog_Entry_Info_MCP_Client.internalBinaryRead(reader, reader.uint32(), options, message.client);
+                    break;
+                case /* string sessionID */ 18:
+                    message.sessionID = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: AccessLog_Entry_Info_MCP, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP http = 1; */
+        if (message.http)
+            AccessLog_Entry_Info_HTTP.internalBinaryWrite(message.http, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.AccessLog.Entry.Info.MCP.Type type = 2; */
+        if (message.type !== 0)
+            writer.tag(2, WireType.Varint).int32(message.type);
+        /* string protocolVersion = 3; */
+        if (message.protocolVersion !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.protocolVersion);
+        /* string method = 4; */
+        if (message.method !== "")
+            writer.tag(4, WireType.LengthDelimited).string(message.method);
+        /* string name = 5; */
+        if (message.name !== "")
+            writer.tag(5, WireType.LengthDelimited).string(message.name);
+        /* string requestID = 6; */
+        if (message.requestID !== "")
+            writer.tag(6, WireType.LengthDelimited).string(message.requestID);
+        /* bool isNotification = 7; */
+        if (message.isNotification !== false)
+            writer.tag(7, WireType.Varint).bool(message.isNotification);
+        /* string resultType = 8; */
+        if (message.resultType !== "")
+            writer.tag(8, WireType.LengthDelimited).string(message.resultType);
+        /* bool isProtocolError = 9; */
+        if (message.isProtocolError !== false)
+            writer.tag(9, WireType.Varint).bool(message.isProtocolError);
+        /* int32 errorCode = 10; */
+        if (message.errorCode !== 0)
+            writer.tag(10, WireType.Varint).int32(message.errorCode);
+        /* string errorMessage = 11; */
+        if (message.errorMessage !== "")
+            writer.tag(11, WireType.LengthDelimited).string(message.errorMessage);
+        /* bool isToolError = 12; */
+        if (message.isToolError !== false)
+            writer.tag(12, WireType.Varint).bool(message.isToolError);
+        /* uint64 eventCount = 13; */
+        if (message.eventCount !== 0)
+            writer.tag(13, WireType.Varint).uint64(message.eventCount);
+        /* uint64 notificationCount = 14; */
+        if (message.notificationCount !== 0)
+            writer.tag(14, WireType.Varint).uint64(message.notificationCount);
+        /* uint64 ttlMs = 15; */
+        if (message.ttlMs !== 0)
+            writer.tag(15, WireType.Varint).uint64(message.ttlMs);
+        /* string cacheScope = 16; */
+        if (message.cacheScope !== "")
+            writer.tag(16, WireType.LengthDelimited).string(message.cacheScope);
+        /* octelium.api.main.core.v1.AccessLog.Entry.Info.MCP.Client client = 17; */
+        if (message.client)
+            AccessLog_Entry_Info_MCP_Client.internalBinaryWrite(message.client, writer.tag(17, WireType.LengthDelimited).fork(), options).join();
+        /* string sessionID = 18; */
+        if (message.sessionID !== "")
+            writer.tag(18, WireType.LengthDelimited).string(message.sessionID);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.AccessLog.Entry.Info.MCP
+ */
+export const AccessLog_Entry_Info_MCP = new AccessLog_Entry_Info_MCP$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class AccessLog_Entry_Info_MCP_Client$Type extends MessageType<AccessLog_Entry_Info_MCP_Client> {
+    constructor() {
+        super("octelium.api.main.core.v1.AccessLog.Entry.Info.MCP.Client", [
+            { no: 1, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "version", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "title", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<AccessLog_Entry_Info_MCP_Client>): AccessLog_Entry_Info_MCP_Client {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.name = "";
+        message.version = "";
+        message.title = "";
+        if (value !== undefined)
+            reflectionMergePartial<AccessLog_Entry_Info_MCP_Client>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: AccessLog_Entry_Info_MCP_Client): AccessLog_Entry_Info_MCP_Client {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string name */ 1:
+                    message.name = reader.string();
+                    break;
+                case /* string version */ 2:
+                    message.version = reader.string();
+                    break;
+                case /* string title */ 3:
+                    message.title = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: AccessLog_Entry_Info_MCP_Client, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string name = 1; */
+        if (message.name !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.name);
+        /* string version = 2; */
+        if (message.version !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.version);
+        /* string title = 3; */
+        if (message.title !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.title);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.AccessLog.Entry.Info.MCP.Client
+ */
+export const AccessLog_Entry_Info_MCP_Client = new AccessLog_Entry_Info_MCP_Client$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class AccessLog_Entry_Info_LLM$Type extends MessageType<AccessLog_Entry_Info_LLM> {
+    constructor() {
+        super("octelium.api.main.core.v1.AccessLog.Entry.Info.LLM", [
+            { no: 1, name: "http", kind: "message", T: () => AccessLog_Entry_Info_HTTP },
+            { no: 2, name: "type", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Type", AccessLog_Entry_Info_LLM_Type] },
+            { no: 3, name: "protocol", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Config.LLM.Protocol", Service_Spec_Config_LLM_Protocol] },
+            { no: 4, name: "operation", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Config.LLM.Operation", Service_Spec_Config_LLM_Operation] },
+            { no: 5, name: "requestedModel", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 6, name: "model", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 7, name: "stream", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 8, name: "usage", kind: "message", T: () => AccessLog_Entry_Info_LLM_Usage },
+            { no: 9, name: "estimatedInputTokens", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 10, name: "responseID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 11, name: "finishReason", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 12, name: "timeToFirstToken", kind: "message", T: () => Duration },
+            { no: 13, name: "eventCount", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
+        ]);
+    }
+    create(value?: PartialMessage<AccessLog_Entry_Info_LLM>): AccessLog_Entry_Info_LLM {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = 0;
+        message.protocol = 0;
+        message.operation = 0;
+        message.requestedModel = "";
+        message.model = "";
+        message.stream = false;
+        message.estimatedInputTokens = 0;
+        message.responseID = "";
+        message.finishReason = "";
+        message.eventCount = 0;
+        if (value !== undefined)
+            reflectionMergePartial<AccessLog_Entry_Info_LLM>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: AccessLog_Entry_Info_LLM): AccessLog_Entry_Info_LLM {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP http */ 1:
+                    message.http = AccessLog_Entry_Info_HTTP.internalBinaryRead(reader, reader.uint32(), options, message.http);
+                    break;
+                case /* octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Type type */ 2:
+                    message.type = reader.int32();
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Config.LLM.Protocol protocol */ 3:
+                    message.protocol = reader.int32();
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Config.LLM.Operation operation */ 4:
+                    message.operation = reader.int32();
+                    break;
+                case /* string requestedModel */ 5:
+                    message.requestedModel = reader.string();
+                    break;
+                case /* string model */ 6:
+                    message.model = reader.string();
+                    break;
+                case /* bool stream */ 7:
+                    message.stream = reader.bool();
+                    break;
+                case /* octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Usage usage */ 8:
+                    message.usage = AccessLog_Entry_Info_LLM_Usage.internalBinaryRead(reader, reader.uint32(), options, message.usage);
+                    break;
+                case /* uint64 estimatedInputTokens */ 9:
+                    message.estimatedInputTokens = reader.uint64().toNumber();
+                    break;
+                case /* string responseID */ 10:
+                    message.responseID = reader.string();
+                    break;
+                case /* string finishReason */ 11:
+                    message.finishReason = reader.string();
+                    break;
+                case /* octelium.api.main.meta.v1.Duration timeToFirstToken */ 12:
+                    message.timeToFirstToken = Duration.internalBinaryRead(reader, reader.uint32(), options, message.timeToFirstToken);
+                    break;
+                case /* uint64 eventCount */ 13:
+                    message.eventCount = reader.uint64().toNumber();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: AccessLog_Entry_Info_LLM, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP http = 1; */
+        if (message.http)
+            AccessLog_Entry_Info_HTTP.internalBinaryWrite(message.http, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Type type = 2; */
+        if (message.type !== 0)
+            writer.tag(2, WireType.Varint).int32(message.type);
+        /* octelium.api.main.core.v1.Service.Spec.Config.LLM.Protocol protocol = 3; */
+        if (message.protocol !== 0)
+            writer.tag(3, WireType.Varint).int32(message.protocol);
+        /* octelium.api.main.core.v1.Service.Spec.Config.LLM.Operation operation = 4; */
+        if (message.operation !== 0)
+            writer.tag(4, WireType.Varint).int32(message.operation);
+        /* string requestedModel = 5; */
+        if (message.requestedModel !== "")
+            writer.tag(5, WireType.LengthDelimited).string(message.requestedModel);
+        /* string model = 6; */
+        if (message.model !== "")
+            writer.tag(6, WireType.LengthDelimited).string(message.model);
+        /* bool stream = 7; */
+        if (message.stream !== false)
+            writer.tag(7, WireType.Varint).bool(message.stream);
+        /* octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Usage usage = 8; */
+        if (message.usage)
+            AccessLog_Entry_Info_LLM_Usage.internalBinaryWrite(message.usage, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* uint64 estimatedInputTokens = 9; */
+        if (message.estimatedInputTokens !== 0)
+            writer.tag(9, WireType.Varint).uint64(message.estimatedInputTokens);
+        /* string responseID = 10; */
+        if (message.responseID !== "")
+            writer.tag(10, WireType.LengthDelimited).string(message.responseID);
+        /* string finishReason = 11; */
+        if (message.finishReason !== "")
+            writer.tag(11, WireType.LengthDelimited).string(message.finishReason);
+        /* octelium.api.main.meta.v1.Duration timeToFirstToken = 12; */
+        if (message.timeToFirstToken)
+            Duration.internalBinaryWrite(message.timeToFirstToken, writer.tag(12, WireType.LengthDelimited).fork(), options).join();
+        /* uint64 eventCount = 13; */
+        if (message.eventCount !== 0)
+            writer.tag(13, WireType.Varint).uint64(message.eventCount);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.AccessLog.Entry.Info.LLM
+ */
+export const AccessLog_Entry_Info_LLM = new AccessLog_Entry_Info_LLM$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class AccessLog_Entry_Info_LLM_Usage$Type extends MessageType<AccessLog_Entry_Info_LLM_Usage> {
+    constructor() {
+        super("octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Usage", [
+            { no: 1, name: "source", kind: "enum", T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Usage.Source", AccessLog_Entry_Info_LLM_Usage_Source] },
+            { no: 2, name: "inputTokens", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 3, name: "outputTokens", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 4, name: "totalTokens", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 5, name: "cachedInputTokens", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 6, name: "reasoningTokens", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
+        ]);
+    }
+    create(value?: PartialMessage<AccessLog_Entry_Info_LLM_Usage>): AccessLog_Entry_Info_LLM_Usage {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.source = 0;
+        message.inputTokens = 0;
+        message.outputTokens = 0;
+        message.totalTokens = 0;
+        message.cachedInputTokens = 0;
+        message.reasoningTokens = 0;
+        if (value !== undefined)
+            reflectionMergePartial<AccessLog_Entry_Info_LLM_Usage>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: AccessLog_Entry_Info_LLM_Usage): AccessLog_Entry_Info_LLM_Usage {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Usage.Source source */ 1:
+                    message.source = reader.int32();
+                    break;
+                case /* uint64 inputTokens */ 2:
+                    message.inputTokens = reader.uint64().toNumber();
+                    break;
+                case /* uint64 outputTokens */ 3:
+                    message.outputTokens = reader.uint64().toNumber();
+                    break;
+                case /* uint64 totalTokens */ 4:
+                    message.totalTokens = reader.uint64().toNumber();
+                    break;
+                case /* uint64 cachedInputTokens */ 5:
+                    message.cachedInputTokens = reader.uint64().toNumber();
+                    break;
+                case /* uint64 reasoningTokens */ 6:
+                    message.reasoningTokens = reader.uint64().toNumber();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: AccessLog_Entry_Info_LLM_Usage, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Usage.Source source = 1; */
+        if (message.source !== 0)
+            writer.tag(1, WireType.Varint).int32(message.source);
+        /* uint64 inputTokens = 2; */
+        if (message.inputTokens !== 0)
+            writer.tag(2, WireType.Varint).uint64(message.inputTokens);
+        /* uint64 outputTokens = 3; */
+        if (message.outputTokens !== 0)
+            writer.tag(3, WireType.Varint).uint64(message.outputTokens);
+        /* uint64 totalTokens = 4; */
+        if (message.totalTokens !== 0)
+            writer.tag(4, WireType.Varint).uint64(message.totalTokens);
+        /* uint64 cachedInputTokens = 5; */
+        if (message.cachedInputTokens !== 0)
+            writer.tag(5, WireType.Varint).uint64(message.cachedInputTokens);
+        /* uint64 reasoningTokens = 6; */
+        if (message.reasoningTokens !== 0)
+            writer.tag(6, WireType.Varint).uint64(message.reasoningTokens);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Usage
+ */
+export const AccessLog_Entry_Info_LLM_Usage = new AccessLog_Entry_Info_LLM_Usage$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class AccessLog_Entry_Common$Type extends MessageType<AccessLog_Entry_Common> {
     constructor() {
@@ -26111,7 +30550,8 @@ class Gateway_Status$Type extends MessageType<Gateway_Status> {
             { no: 5, name: "wireguard", kind: "message", T: () => Gateway_Status_WireGuard },
             { no: 6, name: "quicv0", kind: "message", T: () => Gateway_Status_QUICV0 },
             { no: 7, name: "publicIPs", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
-            { no: 8, name: "hostname", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 8, name: "hostname", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 9, name: "index", kind: "scalar", opt: true, T: 5 /*ScalarType.INT32*/ }
         ]);
     }
     create(value?: PartialMessage<Gateway_Status>): Gateway_Status {
@@ -26152,6 +30592,9 @@ class Gateway_Status$Type extends MessageType<Gateway_Status> {
                 case /* string hostname */ 8:
                     message.hostname = reader.string();
                     break;
+                case /* optional int32 index */ 9:
+                    message.index = reader.int32();
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -26188,6 +30631,9 @@ class Gateway_Status$Type extends MessageType<Gateway_Status> {
         /* string hostname = 8; */
         if (message.hostname !== "")
             writer.tag(8, WireType.LengthDelimited).string(message.hostname);
+        /* optional int32 index = 9; */
+        if (message.index !== undefined)
+            writer.tag(9, WireType.Varint).int32(message.index);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -28532,7 +32978,9 @@ class ClusterConfig_Status$Type extends MessageType<ClusterConfig_Status> {
             { no: 1, name: "domain", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "network", kind: "message", T: () => ClusterConfig_Status_Network },
             { no: 3, name: "networkConfig", kind: "message", T: () => ClusterConfig_Status_NetworkConfig },
-            { no: 4, name: "secretManager", kind: "message", T: () => ClusterConfig_Status_SecretManager }
+            { no: 4, name: "secretManager", kind: "message", T: () => ClusterConfig_Status_SecretManager },
+            { no: 5, name: "device", kind: "message", T: () => ClusterConfig_Status_Device },
+            { no: 6, name: "installation", kind: "message", T: () => ClusterConfig_Status_Installation }
         ]);
     }
     create(value?: PartialMessage<ClusterConfig_Status>): ClusterConfig_Status {
@@ -28559,6 +33007,12 @@ class ClusterConfig_Status$Type extends MessageType<ClusterConfig_Status> {
                 case /* octelium.api.main.core.v1.ClusterConfig.Status.SecretManager secretManager */ 4:
                     message.secretManager = ClusterConfig_Status_SecretManager.internalBinaryRead(reader, reader.uint32(), options, message.secretManager);
                     break;
+                case /* octelium.api.main.core.v1.ClusterConfig.Status.Device device */ 5:
+                    message.device = ClusterConfig_Status_Device.internalBinaryRead(reader, reader.uint32(), options, message.device);
+                    break;
+                case /* octelium.api.main.core.v1.ClusterConfig.Status.Installation installation */ 6:
+                    message.installation = ClusterConfig_Status_Installation.internalBinaryRead(reader, reader.uint32(), options, message.installation);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -28583,6 +33037,12 @@ class ClusterConfig_Status$Type extends MessageType<ClusterConfig_Status> {
         /* octelium.api.main.core.v1.ClusterConfig.Status.SecretManager secretManager = 4; */
         if (message.secretManager)
             ClusterConfig_Status_SecretManager.internalBinaryWrite(message.secretManager, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.ClusterConfig.Status.Device device = 5; */
+        if (message.device)
+            ClusterConfig_Status_Device.internalBinaryWrite(message.device, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.ClusterConfig.Status.Installation installation = 6; */
+        if (message.installation)
+            ClusterConfig_Status_Installation.internalBinaryWrite(message.installation, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -29064,6 +33524,656 @@ class ClusterConfig_Status_SecretManager_TLS$Type extends MessageType<ClusterCon
  */
 export const ClusterConfig_Status_SecretManager_TLS = new ClusterConfig_Status_SecretManager_TLS$Type();
 // @generated message type with reflection information, may provide speed optimized methods
+class ClusterConfig_Status_Device$Type extends MessageType<ClusterConfig_Status_Device> {
+    constructor() {
+        super("octelium.api.main.core.v1.ClusterConfig.Status.Device", [
+            { no: 1, name: "probes", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => ClusterConfig_Status_Device_Probe }
+        ]);
+    }
+    create(value?: PartialMessage<ClusterConfig_Status_Device>): ClusterConfig_Status_Device {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.probes = [];
+        if (value !== undefined)
+            reflectionMergePartial<ClusterConfig_Status_Device>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ClusterConfig_Status_Device): ClusterConfig_Status_Device {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe probes */ 1:
+                    message.probes.push(ClusterConfig_Status_Device_Probe.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ClusterConfig_Status_Device, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe probes = 1; */
+        for (let i = 0; i < message.probes.length; i++)
+            ClusterConfig_Status_Device_Probe.internalBinaryWrite(message.probes[i], writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.ClusterConfig.Status.Device
+ */
+export const ClusterConfig_Status_Device = new ClusterConfig_Status_Device$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ClusterConfig_Status_Device_Probe$Type extends MessageType<ClusterConfig_Status_Device_Probe> {
+    constructor() {
+        super("octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe", [
+            { no: 1, name: "ownerRef", kind: "message", T: () => ObjectReference },
+            { no: 2, name: "osType", kind: "enum", T: () => ["octelium.api.main.core.v1.Device.Status.OSType", Device_Status_OSType] },
+            { no: 3, name: "requireElevation", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 4, name: "condition", kind: "message", T: () => Condition },
+            { no: 5, name: "runCommand", kind: "message", oneof: "type", T: () => ClusterConfig_Status_Device_Probe_RunCommand },
+            { no: 6, name: "readFile", kind: "message", oneof: "type", T: () => ClusterConfig_Status_Device_Probe_ReadFile },
+            { no: 7, name: "readRegistry", kind: "message", oneof: "type", T: () => ClusterConfig_Status_Device_Probe_ReadRegistry }
+        ]);
+    }
+    create(value?: PartialMessage<ClusterConfig_Status_Device_Probe>): ClusterConfig_Status_Device_Probe {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.osType = 0;
+        message.requireElevation = false;
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<ClusterConfig_Status_Device_Probe>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ClusterConfig_Status_Device_Probe): ClusterConfig_Status_Device_Probe {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference ownerRef */ 1:
+                    message.ownerRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.ownerRef);
+                    break;
+                case /* octelium.api.main.core.v1.Device.Status.OSType osType */ 2:
+                    message.osType = reader.int32();
+                    break;
+                case /* bool requireElevation */ 3:
+                    message.requireElevation = reader.bool();
+                    break;
+                case /* octelium.api.main.core.v1.Condition condition */ 4:
+                    message.condition = Condition.internalBinaryRead(reader, reader.uint32(), options, message.condition);
+                    break;
+                case /* octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.RunCommand runCommand */ 5:
+                    message.type = {
+                        oneofKind: "runCommand",
+                        runCommand: ClusterConfig_Status_Device_Probe_RunCommand.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).runCommand)
+                    };
+                    break;
+                case /* octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ReadFile readFile */ 6:
+                    message.type = {
+                        oneofKind: "readFile",
+                        readFile: ClusterConfig_Status_Device_Probe_ReadFile.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).readFile)
+                    };
+                    break;
+                case /* octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ReadRegistry readRegistry */ 7:
+                    message.type = {
+                        oneofKind: "readRegistry",
+                        readRegistry: ClusterConfig_Status_Device_Probe_ReadRegistry.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).readRegistry)
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ClusterConfig_Status_Device_Probe, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.ObjectReference ownerRef = 1; */
+        if (message.ownerRef)
+            ObjectReference.internalBinaryWrite(message.ownerRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.Device.Status.OSType osType = 2; */
+        if (message.osType !== 0)
+            writer.tag(2, WireType.Varint).int32(message.osType);
+        /* bool requireElevation = 3; */
+        if (message.requireElevation !== false)
+            writer.tag(3, WireType.Varint).bool(message.requireElevation);
+        /* octelium.api.main.core.v1.Condition condition = 4; */
+        if (message.condition)
+            Condition.internalBinaryWrite(message.condition, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.RunCommand runCommand = 5; */
+        if (message.type.oneofKind === "runCommand")
+            ClusterConfig_Status_Device_Probe_RunCommand.internalBinaryWrite(message.type.runCommand, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ReadFile readFile = 6; */
+        if (message.type.oneofKind === "readFile")
+            ClusterConfig_Status_Device_Probe_ReadFile.internalBinaryWrite(message.type.readFile, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ReadRegistry readRegistry = 7; */
+        if (message.type.oneofKind === "readRegistry")
+            ClusterConfig_Status_Device_Probe_ReadRegistry.internalBinaryWrite(message.type.readRegistry, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe
+ */
+export const ClusterConfig_Status_Device_Probe = new ClusterConfig_Status_Device_Probe$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ClusterConfig_Status_Device_Probe_RunCommand$Type extends MessageType<ClusterConfig_Status_Device_Probe_RunCommand> {
+    constructor() {
+        super("octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.RunCommand", [
+            { no: 1, name: "command", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "args", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "timeoutSeconds", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 4, name: "maxOutputBytes", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ClusterConfig_Status_Device_Probe_RunCommand>): ClusterConfig_Status_Device_Probe_RunCommand {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.command = "";
+        message.args = [];
+        message.timeoutSeconds = 0;
+        message.maxOutputBytes = 0;
+        if (value !== undefined)
+            reflectionMergePartial<ClusterConfig_Status_Device_Probe_RunCommand>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ClusterConfig_Status_Device_Probe_RunCommand): ClusterConfig_Status_Device_Probe_RunCommand {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string command */ 1:
+                    message.command = reader.string();
+                    break;
+                case /* repeated string args */ 2:
+                    message.args.push(reader.string());
+                    break;
+                case /* uint32 timeoutSeconds */ 3:
+                    message.timeoutSeconds = reader.uint32();
+                    break;
+                case /* uint32 maxOutputBytes */ 4:
+                    message.maxOutputBytes = reader.uint32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ClusterConfig_Status_Device_Probe_RunCommand, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string command = 1; */
+        if (message.command !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.command);
+        /* repeated string args = 2; */
+        for (let i = 0; i < message.args.length; i++)
+            writer.tag(2, WireType.LengthDelimited).string(message.args[i]);
+        /* uint32 timeoutSeconds = 3; */
+        if (message.timeoutSeconds !== 0)
+            writer.tag(3, WireType.Varint).uint32(message.timeoutSeconds);
+        /* uint32 maxOutputBytes = 4; */
+        if (message.maxOutputBytes !== 0)
+            writer.tag(4, WireType.Varint).uint32(message.maxOutputBytes);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.RunCommand
+ */
+export const ClusterConfig_Status_Device_Probe_RunCommand = new ClusterConfig_Status_Device_Probe_RunCommand$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ClusterConfig_Status_Device_Probe_ReadFile$Type extends MessageType<ClusterConfig_Status_Device_Probe_ReadFile> {
+    constructor() {
+        super("octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ReadFile", [
+            { no: 1, name: "path", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "maxBytes", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ClusterConfig_Status_Device_Probe_ReadFile>): ClusterConfig_Status_Device_Probe_ReadFile {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.path = "";
+        message.maxBytes = 0;
+        if (value !== undefined)
+            reflectionMergePartial<ClusterConfig_Status_Device_Probe_ReadFile>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ClusterConfig_Status_Device_Probe_ReadFile): ClusterConfig_Status_Device_Probe_ReadFile {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string path */ 1:
+                    message.path = reader.string();
+                    break;
+                case /* uint32 maxBytes */ 2:
+                    message.maxBytes = reader.uint32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ClusterConfig_Status_Device_Probe_ReadFile, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string path = 1; */
+        if (message.path !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.path);
+        /* uint32 maxBytes = 2; */
+        if (message.maxBytes !== 0)
+            writer.tag(2, WireType.Varint).uint32(message.maxBytes);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ReadFile
+ */
+export const ClusterConfig_Status_Device_Probe_ReadFile = new ClusterConfig_Status_Device_Probe_ReadFile$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ClusterConfig_Status_Device_Probe_ReadRegistry$Type extends MessageType<ClusterConfig_Status_Device_Probe_ReadRegistry> {
+    constructor() {
+        super("octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ReadRegistry", [
+            { no: 1, name: "key", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ClusterConfig_Status_Device_Probe_ReadRegistry>): ClusterConfig_Status_Device_Probe_ReadRegistry {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.key = "";
+        message.name = "";
+        if (value !== undefined)
+            reflectionMergePartial<ClusterConfig_Status_Device_Probe_ReadRegistry>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ClusterConfig_Status_Device_Probe_ReadRegistry): ClusterConfig_Status_Device_Probe_ReadRegistry {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string key */ 1:
+                    message.key = reader.string();
+                    break;
+                case /* string name */ 2:
+                    message.name = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ClusterConfig_Status_Device_Probe_ReadRegistry, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string key = 1; */
+        if (message.key !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.key);
+        /* string name = 2; */
+        if (message.name !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.name);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ReadRegistry
+ */
+export const ClusterConfig_Status_Device_Probe_ReadRegistry = new ClusterConfig_Status_Device_Probe_ReadRegistry$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ClusterConfig_Status_Installation$Type extends MessageType<ClusterConfig_Status_Installation> {
+    constructor() {
+        super("octelium.api.main.core.v1.ClusterConfig.Status.Installation", [
+            { no: 1, name: "spiffe", kind: "message", T: () => ClusterConfig_Status_Installation_SPIFFE },
+            { no: 2, name: "cni", kind: "message", T: () => ClusterConfig_Status_Installation_CNI },
+            { no: 3, name: "ingress", kind: "message", T: () => ClusterConfig_Status_Installation_Ingress }
+        ]);
+    }
+    create(value?: PartialMessage<ClusterConfig_Status_Installation>): ClusterConfig_Status_Installation {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<ClusterConfig_Status_Installation>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ClusterConfig_Status_Installation): ClusterConfig_Status_Installation {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.core.v1.ClusterConfig.Status.Installation.SPIFFE spiffe */ 1:
+                    message.spiffe = ClusterConfig_Status_Installation_SPIFFE.internalBinaryRead(reader, reader.uint32(), options, message.spiffe);
+                    break;
+                case /* octelium.api.main.core.v1.ClusterConfig.Status.Installation.CNI cni */ 2:
+                    message.cni = ClusterConfig_Status_Installation_CNI.internalBinaryRead(reader, reader.uint32(), options, message.cni);
+                    break;
+                case /* octelium.api.main.core.v1.ClusterConfig.Status.Installation.Ingress ingress */ 3:
+                    message.ingress = ClusterConfig_Status_Installation_Ingress.internalBinaryRead(reader, reader.uint32(), options, message.ingress);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ClusterConfig_Status_Installation, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.core.v1.ClusterConfig.Status.Installation.SPIFFE spiffe = 1; */
+        if (message.spiffe)
+            ClusterConfig_Status_Installation_SPIFFE.internalBinaryWrite(message.spiffe, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.ClusterConfig.Status.Installation.CNI cni = 2; */
+        if (message.cni)
+            ClusterConfig_Status_Installation_CNI.internalBinaryWrite(message.cni, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.ClusterConfig.Status.Installation.Ingress ingress = 3; */
+        if (message.ingress)
+            ClusterConfig_Status_Installation_Ingress.internalBinaryWrite(message.ingress, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.ClusterConfig.Status.Installation
+ */
+export const ClusterConfig_Status_Installation = new ClusterConfig_Status_Installation$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ClusterConfig_Status_Installation_SPIFFE$Type extends MessageType<ClusterConfig_Status_Installation_SPIFFE> {
+    constructor() {
+        super("octelium.api.main.core.v1.ClusterConfig.Status.Installation.SPIFFE", [
+            { no: 1, name: "enable", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 2, name: "trustDomain", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "csiDriver", kind: "message", T: () => ClusterConfig_Status_Installation_SPIFFE_CSIDriver }
+        ]);
+    }
+    create(value?: PartialMessage<ClusterConfig_Status_Installation_SPIFFE>): ClusterConfig_Status_Installation_SPIFFE {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.enable = false;
+        message.trustDomain = "";
+        if (value !== undefined)
+            reflectionMergePartial<ClusterConfig_Status_Installation_SPIFFE>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ClusterConfig_Status_Installation_SPIFFE): ClusterConfig_Status_Installation_SPIFFE {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bool enable */ 1:
+                    message.enable = reader.bool();
+                    break;
+                case /* string trustDomain */ 2:
+                    message.trustDomain = reader.string();
+                    break;
+                case /* octelium.api.main.core.v1.ClusterConfig.Status.Installation.SPIFFE.CSIDriver csiDriver */ 3:
+                    message.csiDriver = ClusterConfig_Status_Installation_SPIFFE_CSIDriver.internalBinaryRead(reader, reader.uint32(), options, message.csiDriver);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ClusterConfig_Status_Installation_SPIFFE, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bool enable = 1; */
+        if (message.enable !== false)
+            writer.tag(1, WireType.Varint).bool(message.enable);
+        /* string trustDomain = 2; */
+        if (message.trustDomain !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.trustDomain);
+        /* octelium.api.main.core.v1.ClusterConfig.Status.Installation.SPIFFE.CSIDriver csiDriver = 3; */
+        if (message.csiDriver)
+            ClusterConfig_Status_Installation_SPIFFE_CSIDriver.internalBinaryWrite(message.csiDriver, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.ClusterConfig.Status.Installation.SPIFFE
+ */
+export const ClusterConfig_Status_Installation_SPIFFE = new ClusterConfig_Status_Installation_SPIFFE$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ClusterConfig_Status_Installation_SPIFFE_CSIDriver$Type extends MessageType<ClusterConfig_Status_Installation_SPIFFE_CSIDriver> {
+    constructor() {
+        super("octelium.api.main.core.v1.ClusterConfig.Status.Installation.SPIFFE.CSIDriver", [
+            { no: 1, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ClusterConfig_Status_Installation_SPIFFE_CSIDriver>): ClusterConfig_Status_Installation_SPIFFE_CSIDriver {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.name = "";
+        if (value !== undefined)
+            reflectionMergePartial<ClusterConfig_Status_Installation_SPIFFE_CSIDriver>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ClusterConfig_Status_Installation_SPIFFE_CSIDriver): ClusterConfig_Status_Installation_SPIFFE_CSIDriver {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string name */ 1:
+                    message.name = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ClusterConfig_Status_Installation_SPIFFE_CSIDriver, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string name = 1; */
+        if (message.name !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.name);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.ClusterConfig.Status.Installation.SPIFFE.CSIDriver
+ */
+export const ClusterConfig_Status_Installation_SPIFFE_CSIDriver = new ClusterConfig_Status_Installation_SPIFFE_CSIDriver$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ClusterConfig_Status_Installation_CNI$Type extends MessageType<ClusterConfig_Status_Installation_CNI> {
+    constructor() {
+        super("octelium.api.main.core.v1.ClusterConfig.Status.Installation.CNI", [
+            { no: 1, name: "confDir", kind: "scalar", oneof: "confDirType", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "multusConfDir", kind: "scalar", oneof: "confDirType", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ClusterConfig_Status_Installation_CNI>): ClusterConfig_Status_Installation_CNI {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.confDirType = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<ClusterConfig_Status_Installation_CNI>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ClusterConfig_Status_Installation_CNI): ClusterConfig_Status_Installation_CNI {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string confDir */ 1:
+                    message.confDirType = {
+                        oneofKind: "confDir",
+                        confDir: reader.string()
+                    };
+                    break;
+                case /* string multusConfDir */ 2:
+                    message.confDirType = {
+                        oneofKind: "multusConfDir",
+                        multusConfDir: reader.string()
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ClusterConfig_Status_Installation_CNI, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string confDir = 1; */
+        if (message.confDirType.oneofKind === "confDir")
+            writer.tag(1, WireType.LengthDelimited).string(message.confDirType.confDir);
+        /* string multusConfDir = 2; */
+        if (message.confDirType.oneofKind === "multusConfDir")
+            writer.tag(2, WireType.LengthDelimited).string(message.confDirType.multusConfDir);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.ClusterConfig.Status.Installation.CNI
+ */
+export const ClusterConfig_Status_Installation_CNI = new ClusterConfig_Status_Installation_CNI$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ClusterConfig_Status_Installation_Ingress$Type extends MessageType<ClusterConfig_Status_Installation_Ingress> {
+    constructor() {
+        super("octelium.api.main.core.v1.ClusterConfig.Status.Installation.Ingress", [
+            { no: 1, name: "frontProxy", kind: "message", T: () => ClusterConfig_Status_Installation_Ingress_FrontProxy }
+        ]);
+    }
+    create(value?: PartialMessage<ClusterConfig_Status_Installation_Ingress>): ClusterConfig_Status_Installation_Ingress {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<ClusterConfig_Status_Installation_Ingress>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ClusterConfig_Status_Installation_Ingress): ClusterConfig_Status_Installation_Ingress {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.core.v1.ClusterConfig.Status.Installation.Ingress.FrontProxy frontProxy */ 1:
+                    message.frontProxy = ClusterConfig_Status_Installation_Ingress_FrontProxy.internalBinaryRead(reader, reader.uint32(), options, message.frontProxy);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ClusterConfig_Status_Installation_Ingress, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.core.v1.ClusterConfig.Status.Installation.Ingress.FrontProxy frontProxy = 1; */
+        if (message.frontProxy)
+            ClusterConfig_Status_Installation_Ingress_FrontProxy.internalBinaryWrite(message.frontProxy, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.ClusterConfig.Status.Installation.Ingress
+ */
+export const ClusterConfig_Status_Installation_Ingress = new ClusterConfig_Status_Installation_Ingress$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ClusterConfig_Status_Installation_Ingress_FrontProxy$Type extends MessageType<ClusterConfig_Status_Installation_Ingress_FrontProxy> {
+    constructor() {
+        super("octelium.api.main.core.v1.ClusterConfig.Status.Installation.Ingress.FrontProxy", [
+            { no: 1, name: "enable", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ClusterConfig_Status_Installation_Ingress_FrontProxy>): ClusterConfig_Status_Installation_Ingress_FrontProxy {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.enable = false;
+        if (value !== undefined)
+            reflectionMergePartial<ClusterConfig_Status_Installation_Ingress_FrontProxy>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ClusterConfig_Status_Installation_Ingress_FrontProxy): ClusterConfig_Status_Installation_Ingress_FrontProxy {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bool enable */ 1:
+                    message.enable = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ClusterConfig_Status_Installation_Ingress_FrontProxy, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bool enable = 1; */
+        if (message.enable !== false)
+            writer.tag(1, WireType.Varint).bool(message.enable);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.ClusterConfig.Status.Installation.Ingress.FrontProxy
+ */
+export const ClusterConfig_Status_Installation_Ingress_FrontProxy = new ClusterConfig_Status_Installation_Ingress_FrontProxy$Type();
+// @generated message type with reflection information, may provide speed optimized methods
 class RequestContext$Type extends MessageType<RequestContext> {
     constructor() {
         super("octelium.api.main.core.v1.RequestContext", [
@@ -29162,6 +34272,9 @@ class RequestContext_Request$Type extends MessageType<RequestContext_Request> {
             { no: 4, name: "grpc", kind: "message", oneof: "type", T: () => RequestContext_Request_GRPC },
             { no: 5, name: "postgres", kind: "message", oneof: "type", T: () => RequestContext_Request_Postgres },
             { no: 6, name: "dns", kind: "message", oneof: "type", T: () => RequestContext_Request_DNS },
+            { no: 8, name: "socks5", kind: "message", oneof: "type", T: () => RequestContext_Request_SOCKS5 },
+            { no: 9, name: "mcp", kind: "message", oneof: "type", T: () => RequestContext_Request_MCP },
+            { no: 10, name: "llm", kind: "message", oneof: "type", T: () => RequestContext_Request_LLM },
             { no: 7, name: "ip", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
         ]);
     }
@@ -29214,6 +34327,24 @@ class RequestContext_Request$Type extends MessageType<RequestContext_Request> {
                         dns: RequestContext_Request_DNS.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).dns)
                     };
                     break;
+                case /* octelium.api.main.core.v1.RequestContext.Request.SOCKS5 socks5 */ 8:
+                    message.type = {
+                        oneofKind: "socks5",
+                        socks5: RequestContext_Request_SOCKS5.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).socks5)
+                    };
+                    break;
+                case /* octelium.api.main.core.v1.RequestContext.Request.MCP mcp */ 9:
+                    message.type = {
+                        oneofKind: "mcp",
+                        mcp: RequestContext_Request_MCP.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).mcp)
+                    };
+                    break;
+                case /* octelium.api.main.core.v1.RequestContext.Request.LLM llm */ 10:
+                    message.type = {
+                        oneofKind: "llm",
+                        llm: RequestContext_Request_LLM.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).llm)
+                    };
+                    break;
                 case /* string ip */ 7:
                     message.ip = reader.string();
                     break;
@@ -29250,6 +34381,15 @@ class RequestContext_Request$Type extends MessageType<RequestContext_Request> {
         /* string ip = 7; */
         if (message.ip !== "")
             writer.tag(7, WireType.LengthDelimited).string(message.ip);
+        /* octelium.api.main.core.v1.RequestContext.Request.SOCKS5 socks5 = 8; */
+        if (message.type.oneofKind === "socks5")
+            RequestContext_Request_SOCKS5.internalBinaryWrite(message.type.socks5, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.RequestContext.Request.MCP mcp = 9; */
+        if (message.type.oneofKind === "mcp")
+            RequestContext_Request_MCP.internalBinaryWrite(message.type.mcp, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.RequestContext.Request.LLM llm = 10; */
+        if (message.type.oneofKind === "llm")
+            RequestContext_Request_LLM.internalBinaryWrite(message.type.llm, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -29994,6 +35134,441 @@ class RequestContext_Request_DNS$Type extends MessageType<RequestContext_Request
  */
 export const RequestContext_Request_DNS = new RequestContext_Request_DNS$Type();
 // @generated message type with reflection information, may provide speed optimized methods
+class RequestContext_Request_SOCKS5$Type extends MessageType<RequestContext_Request_SOCKS5> {
+    constructor() {
+        super("octelium.api.main.core.v1.RequestContext.Request.SOCKS5", [
+            { no: 1, name: "connect", kind: "message", oneof: "type", T: () => RequestContext_Request_SOCKS5_Connect }
+        ]);
+    }
+    create(value?: PartialMessage<RequestContext_Request_SOCKS5>): RequestContext_Request_SOCKS5 {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<RequestContext_Request_SOCKS5>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: RequestContext_Request_SOCKS5): RequestContext_Request_SOCKS5 {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect connect */ 1:
+                    message.type = {
+                        oneofKind: "connect",
+                        connect: RequestContext_Request_SOCKS5_Connect.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).connect)
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: RequestContext_Request_SOCKS5, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect connect = 1; */
+        if (message.type.oneofKind === "connect")
+            RequestContext_Request_SOCKS5_Connect.internalBinaryWrite(message.type.connect, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.RequestContext.Request.SOCKS5
+ */
+export const RequestContext_Request_SOCKS5 = new RequestContext_Request_SOCKS5$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class RequestContext_Request_SOCKS5_Connect$Type extends MessageType<RequestContext_Request_SOCKS5_Connect> {
+    constructor() {
+        super("octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect", [
+            { no: 1, name: "host", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "port", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 3, name: "addressType", kind: "enum", T: () => ["octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect.AddressType", RequestContext_Request_SOCKS5_Connect_AddressType] }
+        ]);
+    }
+    create(value?: PartialMessage<RequestContext_Request_SOCKS5_Connect>): RequestContext_Request_SOCKS5_Connect {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.host = "";
+        message.port = 0;
+        message.addressType = 0;
+        if (value !== undefined)
+            reflectionMergePartial<RequestContext_Request_SOCKS5_Connect>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: RequestContext_Request_SOCKS5_Connect): RequestContext_Request_SOCKS5_Connect {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string host */ 1:
+                    message.host = reader.string();
+                    break;
+                case /* uint32 port */ 2:
+                    message.port = reader.uint32();
+                    break;
+                case /* octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect.AddressType addressType */ 3:
+                    message.addressType = reader.int32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: RequestContext_Request_SOCKS5_Connect, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string host = 1; */
+        if (message.host !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.host);
+        /* uint32 port = 2; */
+        if (message.port !== 0)
+            writer.tag(2, WireType.Varint).uint32(message.port);
+        /* octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect.AddressType addressType = 3; */
+        if (message.addressType !== 0)
+            writer.tag(3, WireType.Varint).int32(message.addressType);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect
+ */
+export const RequestContext_Request_SOCKS5_Connect = new RequestContext_Request_SOCKS5_Connect$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class RequestContext_Request_MCP$Type extends MessageType<RequestContext_Request_MCP> {
+    constructor() {
+        super("octelium.api.main.core.v1.RequestContext.Request.MCP", [
+            { no: 1, name: "http", kind: "message", T: () => RequestContext_Request_HTTP },
+            { no: 2, name: "protocolVersion", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "method", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 5, name: "requestID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 6, name: "isNotification", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 7, name: "client", kind: "message", T: () => RequestContext_Request_MCP_Client },
+            { no: 8, name: "capabilities", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 9, name: "sessionID", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<RequestContext_Request_MCP>): RequestContext_Request_MCP {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.protocolVersion = "";
+        message.method = "";
+        message.name = "";
+        message.requestID = "";
+        message.isNotification = false;
+        message.capabilities = [];
+        message.sessionID = "";
+        if (value !== undefined)
+            reflectionMergePartial<RequestContext_Request_MCP>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: RequestContext_Request_MCP): RequestContext_Request_MCP {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.core.v1.RequestContext.Request.HTTP http */ 1:
+                    message.http = RequestContext_Request_HTTP.internalBinaryRead(reader, reader.uint32(), options, message.http);
+                    break;
+                case /* string protocolVersion */ 2:
+                    message.protocolVersion = reader.string();
+                    break;
+                case /* string method */ 3:
+                    message.method = reader.string();
+                    break;
+                case /* string name */ 4:
+                    message.name = reader.string();
+                    break;
+                case /* string requestID */ 5:
+                    message.requestID = reader.string();
+                    break;
+                case /* bool isNotification */ 6:
+                    message.isNotification = reader.bool();
+                    break;
+                case /* octelium.api.main.core.v1.RequestContext.Request.MCP.Client client */ 7:
+                    message.client = RequestContext_Request_MCP_Client.internalBinaryRead(reader, reader.uint32(), options, message.client);
+                    break;
+                case /* repeated string capabilities */ 8:
+                    message.capabilities.push(reader.string());
+                    break;
+                case /* string sessionID */ 9:
+                    message.sessionID = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: RequestContext_Request_MCP, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.core.v1.RequestContext.Request.HTTP http = 1; */
+        if (message.http)
+            RequestContext_Request_HTTP.internalBinaryWrite(message.http, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* string protocolVersion = 2; */
+        if (message.protocolVersion !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.protocolVersion);
+        /* string method = 3; */
+        if (message.method !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.method);
+        /* string name = 4; */
+        if (message.name !== "")
+            writer.tag(4, WireType.LengthDelimited).string(message.name);
+        /* string requestID = 5; */
+        if (message.requestID !== "")
+            writer.tag(5, WireType.LengthDelimited).string(message.requestID);
+        /* bool isNotification = 6; */
+        if (message.isNotification !== false)
+            writer.tag(6, WireType.Varint).bool(message.isNotification);
+        /* octelium.api.main.core.v1.RequestContext.Request.MCP.Client client = 7; */
+        if (message.client)
+            RequestContext_Request_MCP_Client.internalBinaryWrite(message.client, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* repeated string capabilities = 8; */
+        for (let i = 0; i < message.capabilities.length; i++)
+            writer.tag(8, WireType.LengthDelimited).string(message.capabilities[i]);
+        /* string sessionID = 9; */
+        if (message.sessionID !== "")
+            writer.tag(9, WireType.LengthDelimited).string(message.sessionID);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.RequestContext.Request.MCP
+ */
+export const RequestContext_Request_MCP = new RequestContext_Request_MCP$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class RequestContext_Request_MCP_Client$Type extends MessageType<RequestContext_Request_MCP_Client> {
+    constructor() {
+        super("octelium.api.main.core.v1.RequestContext.Request.MCP.Client", [
+            { no: 1, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "version", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "title", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<RequestContext_Request_MCP_Client>): RequestContext_Request_MCP_Client {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.name = "";
+        message.version = "";
+        message.title = "";
+        if (value !== undefined)
+            reflectionMergePartial<RequestContext_Request_MCP_Client>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: RequestContext_Request_MCP_Client): RequestContext_Request_MCP_Client {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string name */ 1:
+                    message.name = reader.string();
+                    break;
+                case /* string version */ 2:
+                    message.version = reader.string();
+                    break;
+                case /* string title */ 3:
+                    message.title = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: RequestContext_Request_MCP_Client, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string name = 1; */
+        if (message.name !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.name);
+        /* string version = 2; */
+        if (message.version !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.version);
+        /* string title = 3; */
+        if (message.title !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.title);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.RequestContext.Request.MCP.Client
+ */
+export const RequestContext_Request_MCP_Client = new RequestContext_Request_MCP_Client$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class RequestContext_Request_LLM$Type extends MessageType<RequestContext_Request_LLM> {
+    constructor() {
+        super("octelium.api.main.core.v1.RequestContext.Request.LLM", [
+            { no: 1, name: "http", kind: "message", T: () => RequestContext_Request_HTTP },
+            { no: 2, name: "protocol", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Config.LLM.Protocol", Service_Spec_Config_LLM_Protocol] },
+            { no: 3, name: "operation", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Config.LLM.Operation", Service_Spec_Config_LLM_Operation] },
+            { no: 4, name: "model", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 5, name: "stream", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 6, name: "estimatedInputTokens", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 7, name: "estimateQuality", kind: "enum", T: () => ["octelium.api.main.core.v1.RequestContext.Request.LLM.EstimateQuality", RequestContext_Request_LLM_EstimateQuality] },
+            { no: 8, name: "maxOutputTokens", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 9, name: "hasTools", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 10, name: "toolCount", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 11, name: "toolNames", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 12, name: "inputItemCount", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 13, name: "hasImageInput", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 14, name: "hasAudioInput", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<RequestContext_Request_LLM>): RequestContext_Request_LLM {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.protocol = 0;
+        message.operation = 0;
+        message.model = "";
+        message.stream = false;
+        message.estimatedInputTokens = 0;
+        message.estimateQuality = 0;
+        message.maxOutputTokens = 0;
+        message.hasTools = false;
+        message.toolCount = 0;
+        message.toolNames = [];
+        message.inputItemCount = 0;
+        message.hasImageInput = false;
+        message.hasAudioInput = false;
+        if (value !== undefined)
+            reflectionMergePartial<RequestContext_Request_LLM>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: RequestContext_Request_LLM): RequestContext_Request_LLM {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.core.v1.RequestContext.Request.HTTP http */ 1:
+                    message.http = RequestContext_Request_HTTP.internalBinaryRead(reader, reader.uint32(), options, message.http);
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Config.LLM.Protocol protocol */ 2:
+                    message.protocol = reader.int32();
+                    break;
+                case /* octelium.api.main.core.v1.Service.Spec.Config.LLM.Operation operation */ 3:
+                    message.operation = reader.int32();
+                    break;
+                case /* string model */ 4:
+                    message.model = reader.string();
+                    break;
+                case /* bool stream */ 5:
+                    message.stream = reader.bool();
+                    break;
+                case /* uint64 estimatedInputTokens */ 6:
+                    message.estimatedInputTokens = reader.uint64().toNumber();
+                    break;
+                case /* octelium.api.main.core.v1.RequestContext.Request.LLM.EstimateQuality estimateQuality */ 7:
+                    message.estimateQuality = reader.int32();
+                    break;
+                case /* uint64 maxOutputTokens */ 8:
+                    message.maxOutputTokens = reader.uint64().toNumber();
+                    break;
+                case /* bool hasTools */ 9:
+                    message.hasTools = reader.bool();
+                    break;
+                case /* uint32 toolCount */ 10:
+                    message.toolCount = reader.uint32();
+                    break;
+                case /* repeated string toolNames */ 11:
+                    message.toolNames.push(reader.string());
+                    break;
+                case /* uint32 inputItemCount */ 12:
+                    message.inputItemCount = reader.uint32();
+                    break;
+                case /* bool hasImageInput */ 13:
+                    message.hasImageInput = reader.bool();
+                    break;
+                case /* bool hasAudioInput */ 14:
+                    message.hasAudioInput = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: RequestContext_Request_LLM, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.core.v1.RequestContext.Request.HTTP http = 1; */
+        if (message.http)
+            RequestContext_Request_HTTP.internalBinaryWrite(message.http, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.core.v1.Service.Spec.Config.LLM.Protocol protocol = 2; */
+        if (message.protocol !== 0)
+            writer.tag(2, WireType.Varint).int32(message.protocol);
+        /* octelium.api.main.core.v1.Service.Spec.Config.LLM.Operation operation = 3; */
+        if (message.operation !== 0)
+            writer.tag(3, WireType.Varint).int32(message.operation);
+        /* string model = 4; */
+        if (message.model !== "")
+            writer.tag(4, WireType.LengthDelimited).string(message.model);
+        /* bool stream = 5; */
+        if (message.stream !== false)
+            writer.tag(5, WireType.Varint).bool(message.stream);
+        /* uint64 estimatedInputTokens = 6; */
+        if (message.estimatedInputTokens !== 0)
+            writer.tag(6, WireType.Varint).uint64(message.estimatedInputTokens);
+        /* octelium.api.main.core.v1.RequestContext.Request.LLM.EstimateQuality estimateQuality = 7; */
+        if (message.estimateQuality !== 0)
+            writer.tag(7, WireType.Varint).int32(message.estimateQuality);
+        /* uint64 maxOutputTokens = 8; */
+        if (message.maxOutputTokens !== 0)
+            writer.tag(8, WireType.Varint).uint64(message.maxOutputTokens);
+        /* bool hasTools = 9; */
+        if (message.hasTools !== false)
+            writer.tag(9, WireType.Varint).bool(message.hasTools);
+        /* uint32 toolCount = 10; */
+        if (message.toolCount !== 0)
+            writer.tag(10, WireType.Varint).uint32(message.toolCount);
+        /* repeated string toolNames = 11; */
+        for (let i = 0; i < message.toolNames.length; i++)
+            writer.tag(11, WireType.LengthDelimited).string(message.toolNames[i]);
+        /* uint32 inputItemCount = 12; */
+        if (message.inputItemCount !== 0)
+            writer.tag(12, WireType.Varint).uint32(message.inputItemCount);
+        /* bool hasImageInput = 13; */
+        if (message.hasImageInput !== false)
+            writer.tag(13, WireType.Varint).bool(message.hasImageInput);
+        /* bool hasAudioInput = 14; */
+        if (message.hasAudioInput !== false)
+            writer.tag(14, WireType.Varint).bool(message.hasAudioInput);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.core.v1.RequestContext.Request.LLM
+ */
+export const RequestContext_Request_LLM = new RequestContext_Request_LLM$Type();
+// @generated message type with reflection information, may provide speed optimized methods
 class PolicyTrigger$Type extends MessageType<PolicyTrigger> {
     constructor() {
         super("octelium.api.main.core.v1.PolicyTrigger", [
@@ -30195,7 +35770,11 @@ class PolicyTrigger_Status_PreCondition$Type extends MessageType<PolicyTrigger_S
             { no: 5, name: "matchAny", kind: "scalar", oneof: "type", T: 8 /*ScalarType.BOOL*/ },
             { no: 6, name: "condition", kind: "message", oneof: "type", T: () => Condition },
             { no: 7, name: "any", kind: "message", oneof: "type", T: () => PolicyTrigger_Status_PreCondition_Any },
-            { no: 8, name: "all", kind: "message", oneof: "type", T: () => PolicyTrigger_Status_PreCondition_All }
+            { no: 8, name: "all", kind: "message", oneof: "type", T: () => PolicyTrigger_Status_PreCondition_All },
+            { no: 9, name: "serviceRef", kind: "message", oneof: "type", T: () => ObjectReference },
+            { no: 10, name: "namespaceRef", kind: "message", oneof: "type", T: () => ObjectReference },
+            { no: 11, name: "groupRef", kind: "message", oneof: "type", T: () => ObjectReference },
+            { no: 12, name: "deviceRef", kind: "message", oneof: "type", T: () => ObjectReference }
         ]);
     }
     create(value?: PartialMessage<PolicyTrigger_Status_PreCondition>): PolicyTrigger_Status_PreCondition {
@@ -30258,6 +35837,30 @@ class PolicyTrigger_Status_PreCondition$Type extends MessageType<PolicyTrigger_S
                         all: PolicyTrigger_Status_PreCondition_All.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).all)
                     };
                     break;
+                case /* octelium.api.main.meta.v1.ObjectReference serviceRef */ 9:
+                    message.type = {
+                        oneofKind: "serviceRef",
+                        serviceRef: ObjectReference.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).serviceRef)
+                    };
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference namespaceRef */ 10:
+                    message.type = {
+                        oneofKind: "namespaceRef",
+                        namespaceRef: ObjectReference.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).namespaceRef)
+                    };
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference groupRef */ 11:
+                    message.type = {
+                        oneofKind: "groupRef",
+                        groupRef: ObjectReference.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).groupRef)
+                    };
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference deviceRef */ 12:
+                    message.type = {
+                        oneofKind: "deviceRef",
+                        deviceRef: ObjectReference.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).deviceRef)
+                    };
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -30294,6 +35897,18 @@ class PolicyTrigger_Status_PreCondition$Type extends MessageType<PolicyTrigger_S
         /* octelium.api.main.core.v1.PolicyTrigger.Status.PreCondition.All all = 8; */
         if (message.type.oneofKind === "all")
             PolicyTrigger_Status_PreCondition_All.internalBinaryWrite(message.type.all, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference serviceRef = 9; */
+        if (message.type.oneofKind === "serviceRef")
+            ObjectReference.internalBinaryWrite(message.type.serviceRef, writer.tag(9, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference namespaceRef = 10; */
+        if (message.type.oneofKind === "namespaceRef")
+            ObjectReference.internalBinaryWrite(message.type.namespaceRef, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference groupRef = 11; */
+        if (message.type.oneofKind === "groupRef")
+            ObjectReference.internalBinaryWrite(message.type.groupRef, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference deviceRef = 12; */
+        if (message.type.oneofKind === "deviceRef")
+            ObjectReference.internalBinaryWrite(message.type.deviceRef, writer.tag(12, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -31245,11 +36860,20 @@ export const Authenticator_Status_Info_FIDO = new Authenticator_Status_Info_FIDO
 class Authenticator_Status_Info_TOTP$Type extends MessageType<Authenticator_Status_Info_TOTP> {
     constructor() {
         super("octelium.api.main.core.v1.Authenticator.Status.Info.TOTP", [
-            { no: 1, name: "sharedSecret", kind: "message", T: () => Authenticator_Status_EncryptedData }
+            { no: 1, name: "sharedSecret", kind: "message", T: () => Authenticator_Status_EncryptedData },
+            { no: 2, name: "periodSeconds", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 3, name: "digits", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 4, name: "algorithm", kind: "enum", T: () => ["octelium.api.main.core.v1.Authenticator.Status.Info.TOTP.Algorithm", Authenticator_Status_Info_TOTP_Algorithm] },
+            { no: 5, name: "lastAcceptedTimeStep", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 6, name: "lastAcceptedAt", kind: "message", T: () => Timestamp }
         ]);
     }
     create(value?: PartialMessage<Authenticator_Status_Info_TOTP>): Authenticator_Status_Info_TOTP {
         const message = globalThis.Object.create((this.messagePrototype!));
+        message.periodSeconds = 0;
+        message.digits = 0;
+        message.algorithm = 0;
+        message.lastAcceptedTimeStep = 0;
         if (value !== undefined)
             reflectionMergePartial<Authenticator_Status_Info_TOTP>(this, message, value);
         return message;
@@ -31261,6 +36885,21 @@ class Authenticator_Status_Info_TOTP$Type extends MessageType<Authenticator_Stat
             switch (fieldNo) {
                 case /* octelium.api.main.core.v1.Authenticator.Status.EncryptedData sharedSecret */ 1:
                     message.sharedSecret = Authenticator_Status_EncryptedData.internalBinaryRead(reader, reader.uint32(), options, message.sharedSecret);
+                    break;
+                case /* uint32 periodSeconds */ 2:
+                    message.periodSeconds = reader.uint32();
+                    break;
+                case /* uint32 digits */ 3:
+                    message.digits = reader.uint32();
+                    break;
+                case /* octelium.api.main.core.v1.Authenticator.Status.Info.TOTP.Algorithm algorithm */ 4:
+                    message.algorithm = reader.int32();
+                    break;
+                case /* uint64 lastAcceptedTimeStep */ 5:
+                    message.lastAcceptedTimeStep = reader.uint64().toNumber();
+                    break;
+                case /* google.protobuf.Timestamp lastAcceptedAt */ 6:
+                    message.lastAcceptedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.lastAcceptedAt);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -31277,6 +36916,21 @@ class Authenticator_Status_Info_TOTP$Type extends MessageType<Authenticator_Stat
         /* octelium.api.main.core.v1.Authenticator.Status.EncryptedData sharedSecret = 1; */
         if (message.sharedSecret)
             Authenticator_Status_EncryptedData.internalBinaryWrite(message.sharedSecret, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* uint32 periodSeconds = 2; */
+        if (message.periodSeconds !== 0)
+            writer.tag(2, WireType.Varint).uint32(message.periodSeconds);
+        /* uint32 digits = 3; */
+        if (message.digits !== 0)
+            writer.tag(3, WireType.Varint).uint32(message.digits);
+        /* octelium.api.main.core.v1.Authenticator.Status.Info.TOTP.Algorithm algorithm = 4; */
+        if (message.algorithm !== 0)
+            writer.tag(4, WireType.Varint).int32(message.algorithm);
+        /* uint64 lastAcceptedTimeStep = 5; */
+        if (message.lastAcceptedTimeStep !== 0)
+            writer.tag(5, WireType.Varint).uint64(message.lastAcceptedTimeStep);
+        /* google.protobuf.Timestamp lastAcceptedAt = 6; */
+        if (message.lastAcceptedAt)
+            Timestamp.internalBinaryWrite(message.lastAcceptedAt, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -31428,7 +37082,8 @@ class Authenticator_Status_AuthenticationAttempt$Type extends MessageType<Authen
             { no: 2, name: "encryptedChallengeRequest", kind: "message", T: () => Authenticator_Status_EncryptedData },
             { no: 3, name: "encryptedDataMap", kind: "map", K: 9 /*ScalarType.STRING*/, V: { kind: "message", T: () => Authenticator_Status_EncryptedData } },
             { no: 4, name: "dataMap", kind: "map", K: 9 /*ScalarType.STRING*/, V: { kind: "scalar", T: 12 /*ScalarType.BYTES*/ } },
-            { no: 5, name: "sessionRef", kind: "message", T: () => ObjectReference }
+            { no: 5, name: "sessionRef", kind: "message", T: () => ObjectReference },
+            { no: 6, name: "completedAt", kind: "message", T: () => Timestamp }
         ]);
     }
     create(value?: PartialMessage<Authenticator_Status_AuthenticationAttempt>): Authenticator_Status_AuthenticationAttempt {
@@ -31458,6 +37113,9 @@ class Authenticator_Status_AuthenticationAttempt$Type extends MessageType<Authen
                     break;
                 case /* octelium.api.main.meta.v1.ObjectReference sessionRef */ 5:
                     message.sessionRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.sessionRef);
+                    break;
+                case /* google.protobuf.Timestamp completedAt */ 6:
+                    message.completedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.completedAt);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -31522,6 +37180,9 @@ class Authenticator_Status_AuthenticationAttempt$Type extends MessageType<Authen
         /* octelium.api.main.meta.v1.ObjectReference sessionRef = 5; */
         if (message.sessionRef)
             ObjectReference.internalBinaryWrite(message.sessionRef, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp completedAt = 6; */
+        if (message.completedAt)
+            Timestamp.internalBinaryWrite(message.completedAt, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

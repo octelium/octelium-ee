@@ -22,6 +22,10 @@ import type { CancelReviewRequest } from "./accessv1";
 import type { ListReviewerReviewOptions } from "./accessv1";
 import type { ListReviewerRequestOptions } from "./accessv1";
 import { UserService } from "./accessv1";
+import type { SubjectUser } from "./accessv1";
+import type { GetSubjectUserRequest } from "./accessv1";
+import type { SubjectUserList } from "./accessv1";
+import type { ListSubjectUserOptions } from "./accessv1";
 import type { ServiceList } from "../userv1/userv1";
 import type { ListUserCatalogServiceOptions } from "./accessv1";
 import type { ListUserCatalogOptions } from "./accessv1";
@@ -33,6 +37,7 @@ import { MainService } from "./accessv1";
 import type { Review } from "./accessv1";
 import type { ReviewList } from "./accessv1";
 import type { ListReviewOptions } from "./accessv1";
+import type { RevokeRequestRequest } from "./accessv1";
 import type { RequestList } from "./accessv1";
 import type { ListRequestOptions } from "./accessv1";
 import type { Request } from "./accessv1";
@@ -104,6 +109,10 @@ export interface IMainServiceClient {
      * @generated from protobuf rpc: ListRequest
      */
     listRequest(input: ListRequestOptions, options?: RpcOptions): UnaryCall<ListRequestOptions, RequestList>;
+    /**
+     * @generated from protobuf rpc: RevokeRequest
+     */
+    revokeRequest(input: RevokeRequestRequest, options?: RpcOptions): UnaryCall<RevokeRequestRequest, OperationResult>;
     /**
      * @generated from protobuf rpc: ListReview
      */
@@ -218,24 +227,31 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<ListRequestOptions, RequestList>("unary", this._transport, method, opt, input);
     }
     /**
+     * @generated from protobuf rpc: RevokeRequest
+     */
+    revokeRequest(input: RevokeRequestRequest, options?: RpcOptions): UnaryCall<RevokeRequestRequest, OperationResult> {
+        const method = this.methods[13], opt = this._transport.mergeOptions(options);
+        return stackIntercept<RevokeRequestRequest, OperationResult>("unary", this._transport, method, opt, input);
+    }
+    /**
      * @generated from protobuf rpc: ListReview
      */
     listReview(input: ListReviewOptions, options?: RpcOptions): UnaryCall<ListReviewOptions, ReviewList> {
-        const method = this.methods[13], opt = this._transport.mergeOptions(options);
+        const method = this.methods[14], opt = this._transport.mergeOptions(options);
         return stackIntercept<ListReviewOptions, ReviewList>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: GetReview
      */
     getReview(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, Review> {
-        const method = this.methods[14], opt = this._transport.mergeOptions(options);
+        const method = this.methods[15], opt = this._transport.mergeOptions(options);
         return stackIntercept<GetOptions, Review>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: DeleteReview
      */
     deleteReview(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult> {
-        const method = this.methods[15], opt = this._transport.mergeOptions(options);
+        const method = this.methods[16], opt = this._transport.mergeOptions(options);
         return stackIntercept<DeleteOptions, OperationResult>("unary", this._transport, method, opt, input);
     }
 }
@@ -247,6 +263,10 @@ export interface IUserServiceClient {
      * @generated from protobuf rpc: CreateRequest
      */
     createRequest(input: Request, options?: RpcOptions): UnaryCall<Request, Request>;
+    /**
+     * @generated from protobuf rpc: CreateRequestForSubject
+     */
+    createRequestForSubject(input: Request, options?: RpcOptions): UnaryCall<Request, Request>;
     /**
      * @generated from protobuf rpc: UpdateRequest
      */
@@ -271,6 +291,14 @@ export interface IUserServiceClient {
      * @generated from protobuf rpc: ListCatalogService
      */
     listCatalogService(input: ListUserCatalogServiceOptions, options?: RpcOptions): UnaryCall<ListUserCatalogServiceOptions, ServiceList>;
+    /**
+     * @generated from protobuf rpc: ListSubjectUser
+     */
+    listSubjectUser(input: ListSubjectUserOptions, options?: RpcOptions): UnaryCall<ListSubjectUserOptions, SubjectUserList>;
+    /**
+     * @generated from protobuf rpc: GetSubjectUser
+     */
+    getSubjectUser(input: GetSubjectUserRequest, options?: RpcOptions): UnaryCall<GetSubjectUserRequest, SubjectUser>;
 }
 /**
  * @generated from protobuf service octelium.api.main.access.v1.UserService
@@ -289,46 +317,67 @@ export class UserServiceClient implements IUserServiceClient, ServiceInfo {
         return stackIntercept<Request, Request>("unary", this._transport, method, opt, input);
     }
     /**
+     * @generated from protobuf rpc: CreateRequestForSubject
+     */
+    createRequestForSubject(input: Request, options?: RpcOptions): UnaryCall<Request, Request> {
+        const method = this.methods[1], opt = this._transport.mergeOptions(options);
+        return stackIntercept<Request, Request>("unary", this._transport, method, opt, input);
+    }
+    /**
      * @generated from protobuf rpc: UpdateRequest
      */
     updateRequest(input: Request, options?: RpcOptions): UnaryCall<Request, Request> {
-        const method = this.methods[1], opt = this._transport.mergeOptions(options);
+        const method = this.methods[2], opt = this._transport.mergeOptions(options);
         return stackIntercept<Request, Request>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: GetRequest
      */
     getRequest(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, Request> {
-        const method = this.methods[2], opt = this._transport.mergeOptions(options);
+        const method = this.methods[3], opt = this._transport.mergeOptions(options);
         return stackIntercept<GetOptions, Request>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: CancelRequest
      */
     cancelRequest(input: CancelRequestRequest, options?: RpcOptions): UnaryCall<CancelRequestRequest, OperationResult> {
-        const method = this.methods[3], opt = this._transport.mergeOptions(options);
+        const method = this.methods[4], opt = this._transport.mergeOptions(options);
         return stackIntercept<CancelRequestRequest, OperationResult>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: ListRequest
      */
     listRequest(input: ListUserRequestOptions, options?: RpcOptions): UnaryCall<ListUserRequestOptions, RequestList> {
-        const method = this.methods[4], opt = this._transport.mergeOptions(options);
+        const method = this.methods[5], opt = this._transport.mergeOptions(options);
         return stackIntercept<ListUserRequestOptions, RequestList>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: ListCatalog
      */
     listCatalog(input: ListUserCatalogOptions, options?: RpcOptions): UnaryCall<ListUserCatalogOptions, CatalogList> {
-        const method = this.methods[5], opt = this._transport.mergeOptions(options);
+        const method = this.methods[6], opt = this._transport.mergeOptions(options);
         return stackIntercept<ListUserCatalogOptions, CatalogList>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: ListCatalogService
      */
     listCatalogService(input: ListUserCatalogServiceOptions, options?: RpcOptions): UnaryCall<ListUserCatalogServiceOptions, ServiceList> {
-        const method = this.methods[6], opt = this._transport.mergeOptions(options);
+        const method = this.methods[7], opt = this._transport.mergeOptions(options);
         return stackIntercept<ListUserCatalogServiceOptions, ServiceList>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * @generated from protobuf rpc: ListSubjectUser
+     */
+    listSubjectUser(input: ListSubjectUserOptions, options?: RpcOptions): UnaryCall<ListSubjectUserOptions, SubjectUserList> {
+        const method = this.methods[8], opt = this._transport.mergeOptions(options);
+        return stackIntercept<ListSubjectUserOptions, SubjectUserList>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * @generated from protobuf rpc: GetSubjectUser
+     */
+    getSubjectUser(input: GetSubjectUserRequest, options?: RpcOptions): UnaryCall<GetSubjectUserRequest, SubjectUser> {
+        const method = this.methods[9], opt = this._transport.mergeOptions(options);
+        return stackIntercept<GetSubjectUserRequest, SubjectUser>("unary", this._transport, method, opt, input);
     }
 }
 /**
