@@ -344,6 +344,48 @@ func testAccessRejectCancelRevoke(t *testing.T, ch *harness.H) {
 		h.WaitRequestState(t, req,
 			accessv1.Request_Status_State_PENDING, eeharness.RequestBudget)
 
+		review := h.Review(t, c.rita, req, accessv1.Review_Spec_DECISION_APPROVE)
+		h.WaitRequestState(t, req,
+			accessv1.Request_Status_State_APPROVED, eeharness.RequestBudget)
+
+		probe.MustBeAllowed(t)
+
+		_, err := h.AccessC().RevokeRequest(ctx,
+			&accessv1.RevokeRequestRequest{RequestRef: umetav1.GetObjectReference(req)})
+		require.Nil(t, err)
+
+		revoked := h.WaitRequestState(t, req,
+			accessv1.Request_Status_State_REVOKED, eeharness.RequestBudget)
+		assert.Nil(t, revoked.Status.PolicyTriggerRef)
+
+		probe.MustBeDenied(t)
+
+		t.Run("TheAuditTrailSurvives", func(t *testing.T) {
+			require.NotNil(t, revoked.Status.Review)
+			require.True(t, len(revoked.Status.Review.LastSteps) > 0)
+			assert.Equal(t, review.Metadata.Uid,
+				revoked.Status.Review.LastSteps[0].ReviewRef.Uid)
+
+			states := []accessv1.Request_Status_State_Status{}
+			for _, itm := range revoked.Status.LastStates {
+				states = append(states, itm.Status)
+			}
+			assert.Contains(t, states, accessv1.Request_Status_State_APPROVED)
+		})
+
+		t.Run("RevokingAgainIsANoOp", func(t *testing.T) {
+			_, err := h.AccessC().RevokeRequest(ctx,
+				&accessv1.RevokeRequestRequest{RequestRef: umetav1.GetObjectReference(req)})
+			require.Nil(t, err)
+		})
+	})
+
+	t.Run("Deletion", func(t *testing.T) {
+		req := h.CreateRequest(t, c.alice,
+			eeharness.CatalogRequest(c.alphaCatalog, eeharness.Minutes(5)))
+		h.WaitRequestState(t, req,
+			accessv1.Request_Status_State_PENDING, eeharness.RequestBudget)
+
 		h.Review(t, c.rita, req, accessv1.Review_Spec_DECISION_APPROVE)
 		h.WaitRequestState(t, req,
 			accessv1.Request_Status_State_APPROVED, eeharness.RequestBudget)

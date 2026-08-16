@@ -10,10 +10,13 @@ package watcher
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
+	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/controllers/requests"
 	"github.com/octelium/octelium/apis/main/accessv1"
+	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
@@ -89,6 +92,156 @@ func (w *Watcher) listRequests(ctx context.Context) ([]*accessv1.Request, error)
 
 		page = page + 1
 	}
+}
+
+func (w *Watcher) runPolicyTriggers(ctx context.Context) {
+	zap.L().Debug("Starting access Request PolicyTrigger watcher")
+
+	doRun := func() error {
+		ptList, err := w.listPolicyTriggers(ctx)
+		if err != nil {
+			return err
+		}
+
+		for _, pt := range ptList {
+			if err := w.doCheckPolicyTrigger(ctx, pt); err != nil {
+				zap.L().Warn("Could not doCheckPolicyTrigger", zap.Error(err), zap.Any("policyTrigger", pt))
+			}
+		}
+
+		return nil
+	}
+
+	tickerCh := time.NewTicker(5 * time.Minute)
+	defer tickerCh.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-tickerCh.C:
+			if err := doRun(); err != nil {
+				zap.L().Error("Could not run access Request PolicyTrigger watcher doFn", zap.Error(err))
+			}
+		}
+	}
+}
+
+func (w *Watcher) listPolicyTriggers(ctx context.Context) ([]*corev1.PolicyTrigger, error) {
+	var ret []*corev1.PolicyTrigger
+	var page uint32
+
+	for {
+		itmList, err := w.octeliumC.CoreC().ListPolicyTrigger(ctx, &rmetav1.ListOptions{
+			Paginate:     true,
+			ItemsPerPage: 500,
+			Page:         page,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		ret = append(ret, itmList.Items...)
+
+		if itmList.ListResponseMeta == nil || !itmList.ListResponseMeta.HasMore {
+			return ret, nil
+		}
+
+		page = page + 1
+	}
+}
+
+func (w *Watcher) doCheckPolicyTrigger(ctx context.Context, pt *corev1.PolicyTrigger) error {
+	if pt == nil || pt.Metadata == nil || pt.Status == nil {
+		return nil
+	}
+
+	if !strings.HasPrefix(pt.Metadata.Name, requests.PolicyTriggerNamePrefix) {
+		return nil
+	}
+
+	isOrphan, err := w.isOrphanPolicyTrigger(ctx, pt)
+	if err != nil {
+		return err
+	}
+	if !isOrphan {
+		return nil
+	}
+
+	zap.L().Debug("Deleting orphan access Request PolicyTrigger", zap.Any("policyTrigger", pt))
+
+	_, err = w.octeliumC.CoreC().DeletePolicyTrigger(ctx, &rmetav1.DeleteOptions{
+		Uid: pt.Metadata.Uid,
+	})
+	if err != nil && !grpcerr.IsNotFound(err) {
+		return err
+	}
+
+	return nil
+}
+
+func (w *Watcher) isOrphanPolicyTrigger(ctx context.Context, pt *corev1.PolicyTrigger) (bool, error) {
+	if isPolicyTriggerExpired(pt) {
+		return true, nil
+	}
+
+	if pt.Status.OwnerRef == nil || pt.Status.OwnerRef.Uid == "" {
+		return true, nil
+	}
+
+	req, err := w.octeliumC.AccessC().GetRequest(ctx, &rmetav1.GetOptions{
+		Uid: pt.Status.OwnerRef.Uid,
+	})
+	if err != nil {
+		if grpcerr.IsNotFound(err) {
+			return true, nil
+		}
+		return false, err
+	}
+
+	if req.Status.State == nil {
+		return false, nil
+	}
+
+	switch req.Status.State.Status {
+	case accessv1.Request_Status_State_REJECTED,
+		accessv1.Request_Status_State_REVOKED,
+		accessv1.Request_Status_State_EXPIRED,
+		accessv1.Request_Status_State_CANCELLED:
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func isPolicyTriggerExpired(pt *corev1.PolicyTrigger) bool {
+	if pt.Status.PreCondition == nil {
+		return false
+	}
+
+	all := pt.Status.PreCondition.GetAll()
+	if all == nil {
+		return false
+	}
+
+	now := time.Now()
+
+	for _, itm := range all.Of {
+		if itm == nil {
+			continue
+		}
+
+		notAfter := itm.GetNotAfter()
+		if notAfter == nil || !notAfter.IsValid() {
+			continue
+		}
+
+		if !notAfter.AsTime().After(now) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (w *Watcher) doCheckRequest(ctx context.Context, req *accessv1.Request) error {
@@ -277,4 +430,5 @@ func setRequestState(req *accessv1.Request, status accessv1.Request_Status_State
 
 func (w *Watcher) Run(ctx context.Context) {
 	go w.runRequests(ctx)
+	go w.runPolicyTriggers(ctx)
 }

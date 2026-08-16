@@ -1065,6 +1065,15 @@ export interface CancelRequestRequest {
     requestRef?: ObjectReference;
 }
 /**
+ * @generated from protobuf message octelium.api.main.access.v1.RevokeRequestRequest
+ */
+export interface RevokeRequestRequest {
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference requestRef = 1
+     */
+    requestRef?: ObjectReference;
+}
+/**
  * @generated from protobuf message octelium.api.main.access.v1.CancelReviewRequest
  */
 export interface CancelReviewRequest {
@@ -3911,6 +3920,52 @@ class CancelRequestRequest$Type extends MessageType<CancelRequestRequest> {
  */
 export const CancelRequestRequest = new CancelRequestRequest$Type();
 // @generated message type with reflection information, may provide speed optimized methods
+class RevokeRequestRequest$Type extends MessageType<RevokeRequestRequest> {
+    constructor() {
+        super("octelium.api.main.access.v1.RevokeRequestRequest", [
+            { no: 1, name: "requestRef", kind: "message", T: () => ObjectReference }
+        ]);
+    }
+    create(value?: PartialMessage<RevokeRequestRequest>): RevokeRequestRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<RevokeRequestRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: RevokeRequestRequest): RevokeRequestRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference requestRef */ 1:
+                    message.requestRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.requestRef);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: RevokeRequestRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.ObjectReference requestRef = 1; */
+        if (message.requestRef)
+            ObjectReference.internalBinaryWrite(message.requestRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.RevokeRequestRequest
+ */
+export const RevokeRequestRequest = new RevokeRequestRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
 class CancelReviewRequest$Type extends MessageType<CancelReviewRequest> {
     constructor() {
         super("octelium.api.main.access.v1.CancelReviewRequest", [
@@ -3973,6 +4028,7 @@ export const MainService = new ServiceType("octelium.api.main.access.v1.MainServ
     { name: "GetRequest", options: {}, I: GetOptions, O: Request },
     { name: "DeleteRequest", options: {}, I: DeleteOptions, O: OperationResult },
     { name: "ListRequest", options: {}, I: ListRequestOptions, O: RequestList },
+    { name: "RevokeRequest", options: {}, I: RevokeRequestRequest, O: OperationResult },
     { name: "ListReview", options: {}, I: ListReviewOptions, O: ReviewList },
     { name: "GetReview", options: {}, I: GetOptions, O: Review },
     { name: "DeleteReview", options: {}, I: DeleteOptions, O: OperationResult }

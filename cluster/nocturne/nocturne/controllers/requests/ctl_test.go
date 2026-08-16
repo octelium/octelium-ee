@@ -256,10 +256,11 @@ func TestRequestAutoApproveNoAuthorization(t *testing.T) {
 
 	all := pt.Status.PreCondition.GetAll()
 	assert.NotNil(t, all)
-	assert.Equal(t, 2, len(all.Of))
+	assert.Equal(t, 3, len(all.Of))
 	assert.NotNil(t, all.Of[0].GetUserRef())
 	assert.NotNil(t, all.Of[1].GetServiceRef())
 	assert.Equal(t, svc.Metadata.Uid, all.Of[1].GetServiceRef().Uid)
+	assert.NotNil(t, all.Of[2].GetNotAfter())
 }
 
 func TestRequestAutoApproveNoDuration(t *testing.T) {
@@ -281,7 +282,9 @@ func TestRequestAutoApproveNoDuration(t *testing.T) {
 	reqG := converge(t, ctx, ctrl, octeliumC, req.Metadata.Uid)
 
 	assert.Equal(t, accessv1.Request_Status_State_APPROVED, reqG.Status.State.Status)
-	assert.Nil(t, reqG.Status.AccessEndsAt)
+	assert.NotNil(t, reqG.Status.AccessEndsAt)
+	assert.Equal(t, reqG.Status.ApprovalEndAt.AsTime().Add(defaultMaxAccessDuration),
+		reqG.Status.AccessEndsAt.AsTime())
 	assert.NotNil(t, reqG.Status.PolicyTriggerRef)
 
 	pt, err := octeliumC.CoreC().GetPolicyTrigger(ctx, &rmetav1.GetOptions{
@@ -291,10 +294,12 @@ func TestRequestAutoApproveNoDuration(t *testing.T) {
 
 	all := pt.Status.PreCondition.GetAll()
 	assert.NotNil(t, all)
-	assert.Equal(t, 2, len(all.Of))
+	assert.Equal(t, 3, len(all.Of))
 	assert.NotNil(t, all.Of[0].GetUserRef())
 	assert.NotNil(t, all.Of[1].GetServiceRef())
 	assert.Equal(t, svc.Metadata.Uid, all.Of[1].GetServiceRef().Uid)
+	assert.NotNil(t, all.Of[2].GetNotAfter())
+	assert.Equal(t, reqG.Status.AccessEndsAt.AsTime(), all.Of[2].GetNotAfter().AsTime())
 }
 
 func TestRequestReview(t *testing.T) {
@@ -691,7 +696,7 @@ func TestRequestGetAccessDuration(t *testing.T) {
 		&accessv1.Request{Spec: &accessv1.Request_Spec{}},
 		&accessv1.Policy_Spec_Rule_Authorization{},
 	)
-	assert.Equal(t, time.Duration(0), none)
+	assert.Equal(t, defaultMaxAccessDuration, none)
 
 	maxOnly := ctrl.getAccessDuration(
 		&accessv1.Request{Spec: &accessv1.Request_Spec{}},
@@ -704,6 +709,18 @@ func TestRequestGetAccessDuration(t *testing.T) {
 		&accessv1.Policy_Spec_Rule_Authorization{},
 	)
 	assert.Equal(t, 3*time.Hour, reqOnly)
+
+	clampedToDefault := ctrl.getAccessDuration(
+		&accessv1.Request{Spec: &accessv1.Request_Spec{Duration: durationHours(72)}},
+		&accessv1.Policy_Spec_Rule_Authorization{},
+	)
+	assert.Equal(t, defaultMaxAccessDuration, clampedToDefault)
+
+	aboveDefault := ctrl.getAccessDuration(
+		&accessv1.Request{Spec: &accessv1.Request_Spec{Duration: durationHours(72)}},
+		&accessv1.Policy_Spec_Rule_Authorization{MaxAccessDuration: durationHours(96)},
+	)
+	assert.Equal(t, 72*time.Hour, aboveDefault)
 
 	clamped := ctrl.getAccessDuration(
 		&accessv1.Request{Spec: &accessv1.Request_Spec{Duration: durationHours(5)}},
@@ -787,4 +804,52 @@ func TestRequestDeleteIsNotUndoneByALateReconcile(t *testing.T) {
 
 	assert.Nil(t, ctrl.OnUpdate(ctx, reqG, reqG))
 	assert.False(t, policyTriggerExists(t, ctx, octeliumC, reqG))
+}
+
+func TestRequestReconcileIsIdempotent(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	req := autoApprovedRequest(t, ctx, ctrl, octeliumC)
+
+	for i := 0; i < 4; i++ {
+		before := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
+
+		ptBefore, err := octeliumC.CoreC().GetPolicyTrigger(ctx, &rmetav1.GetOptions{
+			Name: policyTriggerName(before),
+		})
+		assert.Nil(t, err, "%+v", err)
+
+		assert.Nil(t, ctrl.OnAdd(ctx, before), "pass %d", i)
+
+		after := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
+
+		ptAfter, err := octeliumC.CoreC().GetPolicyTrigger(ctx, &rmetav1.GetOptions{
+			Name: policyTriggerName(before),
+		})
+		assert.Nil(t, err, "%+v", err)
+
+		assert.Equal(t, before.Metadata.ResourceVersion, after.Metadata.ResourceVersion, "pass %d", i)
+		assert.Equal(t, ptBefore.Metadata.ResourceVersion, ptAfter.Metadata.ResourceVersion, "pass %d", i)
+	}
+}
+
+func TestRequestRefsHaveNoResourceVersion(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	req := autoApprovedRequest(t, ctx, ctrl, octeliumC)
+
+	assert.Empty(t, req.Status.PolicyTriggerRef.ResourceVersion)
+	assert.Empty(t, req.Status.PolicyRef.ResourceVersion)
+
+	pt, err := octeliumC.CoreC().GetPolicyTrigger(ctx, &rmetav1.GetOptions{
+		Name: policyTriggerName(req),
+	})
+	assert.Nil(t, err, "%+v", err)
+
+	assert.Empty(t, pt.Status.OwnerRef.ResourceVersion)
+
+	all := pt.Status.PreCondition.GetAll()
+	assert.NotNil(t, all)
+	assert.Empty(t, all.Of[0].GetUserRef().ResourceVersion)
+	assert.Empty(t, all.Of[1].GetServiceRef().ResourceVersion)
 }

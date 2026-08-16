@@ -16,6 +16,7 @@ import (
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
+	"github.com/octelium/octelium/cluster/common/urscsrv"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/grpcerr"
@@ -211,39 +212,35 @@ func (c *Controller) getCurrentStepReviews(
 	}
 
 	currentStep := req.Status.Review.CurrentStep
+
+	revList, err := c.octeliumC.AccessC().ListReview(ctx, &rmetav1.ListOptions{
+		Filters: []*rmetav1.ListOptions_Filter{
+			urscsrv.FilterFieldEQValStr("status.requestRef.uid", req.Metadata.Uid),
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	ret := []*accessv1.Review{}
-	seen := map[string]struct{}{}
+	hasCurr := false
 
-	for _, step := range req.Status.Review.LastSteps {
-		if step == nil || step.StepIndex != currentStep {
+	for _, rev := range revList.Items {
+		if rev == nil || rev.Status.StepIndex != currentStep {
 			continue
 		}
 
-		if step.ReviewRef == nil || step.ReviewRef.Uid == "" {
-			continue
-		}
-
-		if _, ok := seen[step.ReviewRef.Uid]; ok {
-			continue
-		}
-		seen[step.ReviewRef.Uid] = struct{}{}
-
-		if curr != nil && curr.Metadata.Uid == step.ReviewRef.Uid {
+		if curr != nil && curr.Metadata.Uid == rev.Metadata.Uid {
 			ret = append(ret, curr)
+			hasCurr = true
 			continue
-		}
-
-		rev, err := c.octeliumC.AccessC().GetReview(ctx, &rmetav1.GetOptions{
-			Uid: step.ReviewRef.Uid,
-		})
-		if err != nil {
-			if grpcerr.IsNotFound(err) {
-				continue
-			}
-			return nil, err
 		}
 
 		ret = append(ret, rev)
+	}
+
+	if curr != nil && !hasCurr && curr.Status.StepIndex == currentStep {
+		ret = append(ret, curr)
 	}
 
 	return ret, nil
@@ -304,34 +301,107 @@ func (c *Controller) isStepApprovedAll(
 		return false, nil
 	}
 
-	for _, reviewer := range step.Reviewers {
-		if reviewer == nil {
-			return false, nil
+	reviewerUIDs, err := c.getStepReviewerUIDs(ctx, step)
+	if err != nil {
+		return false, err
+	}
+
+	if len(reviewerUIDs) == 0 {
+		return false, nil
+	}
+
+	approvals := map[string]struct{}{}
+
+	for _, rev := range reviews {
+		if rev.Spec.Decision != accessv1.Review_Spec_DECISION_APPROVE {
+			continue
 		}
 
-		found := false
-		for _, rev := range reviews {
-			if rev.Spec.Decision != accessv1.Review_Spec_DECISION_APPROVE {
-				continue
-			}
-
-			ok, err := c.userMatchesReviewer(ctx, rev.Status.UserRef, reviewer)
-			if err != nil {
-				return false, err
-			}
-
-			if ok {
-				found = true
-				break
-			}
+		if rev.Status.UserRef == nil || rev.Status.UserRef.Uid == "" {
+			continue
 		}
 
-		if !found {
+		approvals[rev.Status.UserRef.Uid] = struct{}{}
+	}
+
+	for _, uid := range reviewerUIDs {
+		if _, ok := approvals[uid]; !ok {
 			return false, nil
 		}
 	}
 
 	return true, nil
+}
+
+func (c *Controller) getStepReviewerUIDs(
+	ctx context.Context,
+	step *accessv1.Policy_Spec_Rule_Action_Review_Step,
+) ([]string, error) {
+	seen := map[string]struct{}{}
+	ret := []string{}
+
+	addUID := func(uid string) {
+		if uid == "" {
+			return
+		}
+
+		if _, ok := seen[uid]; ok {
+			return
+		}
+		seen[uid] = struct{}{}
+
+		ret = append(ret, uid)
+	}
+
+	for _, reviewer := range step.Reviewers {
+		if reviewer == nil {
+			return nil, nil
+		}
+
+		switch reviewer.Type.(type) {
+		case *accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_User_:
+			addUID(reviewer.GetUser().GetUserRef().GetUid())
+
+		case *accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_Group_:
+			usrs, err := c.getGroupUsers(ctx, reviewer.GetGroup().GetGroupRef())
+			if err != nil {
+				return nil, err
+			}
+
+			for _, usr := range usrs {
+				addUID(usr.Metadata.Uid)
+			}
+
+		default:
+			return nil, nil
+		}
+	}
+
+	return ret, nil
+}
+
+func (c *Controller) getGroupUsers(
+	ctx context.Context,
+	groupRef *metav1.ObjectReference,
+) ([]*corev1.User, error) {
+	grp, err := c.getGroup(ctx, groupRef)
+	if err != nil {
+		return nil, err
+	}
+	if grp == nil {
+		return nil, nil
+	}
+
+	usrList, err := c.octeliumC.CoreC().ListUser(ctx, &rmetav1.ListOptions{
+		Filters: []*rmetav1.ListOptions_Filter{
+			urscsrv.FilterFieldIncludesValStr("spec.groups", grp.Metadata.Name),
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return usrList.Items, nil
 }
 
 func (c *Controller) isStepApprovedCount(

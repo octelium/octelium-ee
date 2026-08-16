@@ -1156,6 +1156,11 @@
                     "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.SOCKS5",
                     "additionalProperties": false
                 },
+                "mcp": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.MCP",
+                    "additionalProperties": false,
+                    "description": "MCP is the Model Context Protocol specific details."
+                },
                 "ip": {
                     "type": "string"
                 }
@@ -1202,6 +1207,11 @@
                                         "required": [
                                             "socks5"
                                         ]
+                                    },
+                                    {
+                                        "required": [
+                                            "mcp"
+                                        ]
                                     }
                                 ]
                             }
@@ -1239,6 +1249,11 @@
                         {
                             "required": [
                                 "socks5"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "mcp"
                             ]
                         }
                     ]
@@ -1376,6 +1391,73 @@
             "additionalProperties": false,
             "type": "object",
             "title": "Kubernetes"
+        },
+        "octelium.api.main.core.v1.RequestContext.Request.MCP": {
+            "properties": {
+                "http": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.HTTP",
+                    "additionalProperties": false,
+                    "description": "HTTP is the underlying HTTP request details. The entire JSON-RPC request body is available at `ctx.request.mcp.http.bodyMap` which is used to access the tool arguments (i.e. `ctx.request.mcp.http.bodyMap.params.arguments`) as well as any other field that is not normalized here."
+                },
+                "protocolVersion": {
+                    "type": "string",
+                    "description": "ProtocolVersion is the MCP protocol version declared by the request (e.g. \"2026-07-28\"). It is read from the request body's `io.modelcontextprotocol/protocolVersion` metadata field or from the `MCP-Protocol-Version` request header, and it is only set once both values are validated to match whenever both of them are present. It is empty for the protocol revisions that do not declare a version."
+                },
+                "method": {
+                    "type": "string",
+                    "description": "Method is the JSON-RPC method of the request body (e.g. `tools/call`, `resources/read`, `server/discover`)."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the logical MCP target of the method whenever it has one. It is the tool name for `tools/call`, the prompt name for `prompts/get` and the resource URI for `resources/read`. It is empty for the methods that have no target such as the `*/list` methods."
+                },
+                "requestID": {
+                    "type": "string",
+                    "description": "RequestID is the JSON-RPC request `id` normalized into a string. It is controlled by the downstream and therefore it must never be used as a security identifier."
+                },
+                "isNotification": {
+                    "type": "boolean",
+                    "description": "IsNotification is set for JSON-RPC notifications (i.e. request bodies that carry no `id` and expect no response)."
+                },
+                "client": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.MCP.Client",
+                    "additionalProperties": false,
+                    "description": "Client is the client information reported by the downstream itself. It is useful for auditing and debugging and it is NOT an identity. Use the authenticated User, Session, Device and Groups for access control."
+                },
+                "capabilities": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Capabilities is the list of the capability identifiers declared by the downstream for this request (e.g. \"elicitation\"). It is self-reported."
+                },
+                "sessionID": {
+                    "type": "string",
+                    "description": "SessionID is the value of the `Mcp-Session-Id` request header used by the protocol revisions between 2025-03-26 and 2025-11-25. It is an MCP transport identifier that is unrelated to the Octelium Session."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "MCP"
+        },
+        "octelium.api.main.core.v1.RequestContext.Request.MCP.Client": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name reported by the downstream client itself"
+                },
+                "version": {
+                    "type": "string",
+                    "description": "Version is the version reported by the downstream client itself"
+                },
+                "title": {
+                    "type": "string",
+                    "description": "Title is the human-readable title reported by the downstream client itself"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Client"
         },
         "octelium.api.main.core.v1.RequestContext.Request.Postgres": {
             "properties": {
@@ -1832,7 +1914,8 @@
                         "WEB",
                         "DNS",
                         "SOCKS5",
-                        "RDP_WEB"
+                        "RDP_WEB",
+                        "MCP"
                     ],
                     "type": "string",
                     "title": "Mode"
@@ -1967,6 +2050,11 @@
                 "rdp": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.RDP",
                     "additionalProperties": false
+                },
+                "mcp": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.MCP",
+                    "additionalProperties": false,
+                    "description": "MCP sets Model Context Protocol-specific configuration"
                 }
             },
             "additionalProperties": false,
@@ -2011,6 +2099,11 @@
                                         "required": [
                                             "rdp"
                                         ]
+                                    },
+                                    {
+                                        "required": [
+                                            "mcp"
+                                        ]
                                     }
                                 ]
                             }
@@ -2048,6 +2141,11 @@
                         {
                             "required": [
                                 "rdp"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "mcp"
                             ]
                         }
                     ]
@@ -3795,6 +3893,168 @@
                 }
             ],
             "title": "Kubeconfig"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.MCP": {
+            "properties": {
+                "endpoint": {
+                    "type": "string",
+                    "description": "Endpoint is the canonical MCP endpoint path (e.g. `/mcp`). Any request whose path does not exactly match it is rejected. If not set, which is the default, every request path is accepted and forwarded to the upstream as is. This is needed since many MCP servers are served at the root path. This field has to be set in the \"default\" or global Configuration (as opposed to named dynamic Configs) in order to actually work."
+                },
+                "protocol": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.MCP.Protocol",
+                    "additionalProperties": false,
+                    "description": "Protocol sets the MCP protocol validation options. These fields have to be set in the \"default\" or global Configuration (as opposed to named dynamic Configs) in order to actually work."
+                },
+                "limits": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.MCP.Limits",
+                    "additionalProperties": false,
+                    "description": "Limits sets the MCP request parsing limits. These fields have to be set in the \"default\" or global Configuration (as opposed to named dynamic Configs) in order to actually work."
+                },
+                "auth": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Auth",
+                    "additionalProperties": false,
+                    "description": "Auth sets authentication-to-upstream specific configuration"
+                },
+                "header": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Header",
+                    "additionalProperties": false,
+                    "description": "Header sets request and response header manipulation options. Note that the MCP reserved headers (i.e. `MCP-Protocol-Version`, `Mcp-Method`, `Mcp-Name` and `Mcp-Param-*`) can be manipulated here too. Octelium never uses them to make authorization decisions, which are always made from the JSON-RPC request body itself, however the upstream MCP server rejects the requests whose headers do not match the body."
+                },
+                "path": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Path",
+                    "additionalProperties": false,
+                    "description": "Path sets the upstream request path options"
+                },
+                "plugins": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Plugins is the list of plugins. The Cache plugin is unsupported for MCP Services since generic HTTP caching understands neither the authorization scope nor the MCP cache invalidation semantics. Note that a Plugin that rewrites the JSON-RPC request body (e.g. Lua, ExtProc) should also rewrite the corresponding MCP reserved headers whenever the downstream sets them, otherwise the upstream MCP server rejects the request since the headers no longer match the body."
+                },
+                "isUpstreamHTTP2": {
+                    "type": "boolean",
+                    "description": "IsUpstreamHTTP2 sets HTTP connections to the upstream to HTTP/2. Not enabled by default."
+                },
+                "listenHTTP2": {
+                    "type": "boolean",
+                    "description": "ListenHTTP2 sets the Service to listen to HTTP 2.0 connections. This is only enabled by default for Services using TLS. This field has to be enabled in the \"default\" or global Configuration (as opposed to named dynamic Configs) in order to actually work."
+                },
+                "origin": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.MCP.Origin",
+                    "additionalProperties": false,
+                    "description": "Origin sets the `Origin` request header validation options. This field has to be set in the \"default\" or global Configuration (as opposed to named dynamic Configs) in order to actually work."
+                },
+                "visibility": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.MCP.Visibility",
+                    "additionalProperties": false,
+                    "description": "Visibility sets the visibility/access logging specific options"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "MCP"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.MCP.Limits": {
+            "properties": {
+                "maxRequestBytes": {
+                    "type": "integer",
+                    "description": "MaxRequestBytes is the maximum size in bytes of the JSON-RPC request body that is buffered and parsed. Zero uses the default value. This value is always bounded by an internal hard limit."
+                },
+                "maxStreamEventBytes": {
+                    "type": "integer",
+                    "description": "MaxStreamEventBytes is the maximum size in bytes of a single `text/event-stream` response event that is parsed. Larger events are still forwarded to the downstream as is, they are simply not inspected. Zero uses the default value."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Limits"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.MCP.Origin": {
+            "properties": {
+                "allowed": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Allowed is the list of the additional allowed `Origin` request header values (e.g. \"https://example.com\"). A request whose Origin matches the Service's own origin is always accepted and it does not need to be listed here. Requests that carry no Origin request header at all, which is the case for nearly every non-browser MCP client (e.g. IDEs, AI agents, CLI tools), are always accepted."
+                },
+                "disable": {
+                    "type": "boolean",
+                    "description": "Disable disables the `Origin` request header validation entirely. This validation protects the upstream MCP server from DNS rebinding attacks and it is enabled by default."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Origin"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.MCP.Protocol": {
+            "properties": {
+                "versions": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Versions is an optional allowlist of the accepted MCP protocol versions (e.g. \"2026-07-28\"). If not set, which is the default, every version is accepted. Octelium does not maintain its own set of supported MCP protocol versions."
+                },
+                "requireVersion": {
+                    "type": "boolean",
+                    "description": "RequireVersion rejects the requests that do not declare a protocol version in either the `MCP-Protocol-Version` request header or the request body's `_meta` field. It is disabled by default since the header was only introduced in the 2025-06-18 revision."
+                },
+                "rejectUnknownMethods": {
+                    "type": "boolean",
+                    "description": "RejectUnknownMethods rejects any JSON-RPC method that is unknown to Octelium. It is disabled by default. Keeping it disabled lets the official MCP extensions as well as the newer protocol revisions reach the upstream while still being visible to Policies via the `ctx.request.mcp.method` field."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Protocol"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.MCP.Visibility": {
+            "properties": {
+                "disableRequestBody": {
+                    "type": "boolean",
+                    "description": "DisableRequestBody disables recording the JSON-RPC request body in the AccessLogs. The request body is recorded by default since inspecting the MCP request is the whole point of using MCP mode as opposed to HTTP mode."
+                },
+                "disableResponseBody": {
+                    "type": "boolean",
+                    "description": "DisableResponseBody disables recording the JSON-RPC response body, which includes the individual `text/event-stream` response events, in the AccessLogs. The response body is recorded by default."
+                },
+                "includeRequestHeaders": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "includeResponseHeaders": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "includeAllRequestHeaders": {
+                    "type": "boolean"
+                },
+                "includeAllResponseHeaders": {
+                    "type": "boolean"
+                },
+                "excludeRequestHeaders": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "excludeResponseHeaders": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Visibility"
         },
         "octelium.api.main.core.v1.Service.Spec.Config.MySQL": {
             "properties": {

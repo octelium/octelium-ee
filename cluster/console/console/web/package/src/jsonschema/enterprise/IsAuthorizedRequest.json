@@ -435,6 +435,11 @@
                     "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.SOCKS5",
                     "additionalProperties": false
                 },
+                "mcp": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.MCP",
+                    "additionalProperties": false,
+                    "description": "MCP is the Model Context Protocol specific details."
+                },
                 "ip": {
                     "type": "string"
                 }
@@ -481,6 +486,11 @@
                                         "required": [
                                             "socks5"
                                         ]
+                                    },
+                                    {
+                                        "required": [
+                                            "mcp"
+                                        ]
                                     }
                                 ]
                             }
@@ -518,6 +528,11 @@
                         {
                             "required": [
                                 "socks5"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "mcp"
                             ]
                         }
                     ]
@@ -655,6 +670,73 @@
             "additionalProperties": false,
             "type": "object",
             "title": "Kubernetes"
+        },
+        "octelium.api.main.core.v1.RequestContext.Request.MCP": {
+            "properties": {
+                "http": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.HTTP",
+                    "additionalProperties": false,
+                    "description": "HTTP is the underlying HTTP request details. The entire JSON-RPC request body is available at `ctx.request.mcp.http.bodyMap` which is used to access the tool arguments (i.e. `ctx.request.mcp.http.bodyMap.params.arguments`) as well as any other field that is not normalized here."
+                },
+                "protocolVersion": {
+                    "type": "string",
+                    "description": "ProtocolVersion is the MCP protocol version declared by the request (e.g. \"2026-07-28\"). It is read from the request body's `io.modelcontextprotocol/protocolVersion` metadata field or from the `MCP-Protocol-Version` request header, and it is only set once both values are validated to match whenever both of them are present. It is empty for the protocol revisions that do not declare a version."
+                },
+                "method": {
+                    "type": "string",
+                    "description": "Method is the JSON-RPC method of the request body (e.g. `tools/call`, `resources/read`, `server/discover`)."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the logical MCP target of the method whenever it has one. It is the tool name for `tools/call`, the prompt name for `prompts/get` and the resource URI for `resources/read`. It is empty for the methods that have no target such as the `*/list` methods."
+                },
+                "requestID": {
+                    "type": "string",
+                    "description": "RequestID is the JSON-RPC request `id` normalized into a string. It is controlled by the downstream and therefore it must never be used as a security identifier."
+                },
+                "isNotification": {
+                    "type": "boolean",
+                    "description": "IsNotification is set for JSON-RPC notifications (i.e. request bodies that carry no `id` and expect no response)."
+                },
+                "client": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.MCP.Client",
+                    "additionalProperties": false,
+                    "description": "Client is the client information reported by the downstream itself. It is useful for auditing and debugging and it is NOT an identity. Use the authenticated User, Session, Device and Groups for access control."
+                },
+                "capabilities": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Capabilities is the list of the capability identifiers declared by the downstream for this request (e.g. \"elicitation\"). It is self-reported."
+                },
+                "sessionID": {
+                    "type": "string",
+                    "description": "SessionID is the value of the `Mcp-Session-Id` request header used by the protocol revisions between 2025-03-26 and 2025-11-25. It is an MCP transport identifier that is unrelated to the Octelium Session."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "MCP"
+        },
+        "octelium.api.main.core.v1.RequestContext.Request.MCP.Client": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name reported by the downstream client itself"
+                },
+                "version": {
+                    "type": "string",
+                    "description": "Version is the version reported by the downstream client itself"
+                },
+                "title": {
+                    "type": "string",
+                    "description": "Title is the human-readable title reported by the downstream client itself"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Client"
         },
         "octelium.api.main.core.v1.RequestContext.Request.Postgres": {
             "properties": {

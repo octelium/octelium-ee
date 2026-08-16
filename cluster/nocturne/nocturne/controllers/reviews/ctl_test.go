@@ -15,6 +15,7 @@ import (
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/tests"
 	"github.com/octelium/octelium/apis/main/accessv1"
+	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
@@ -55,6 +56,43 @@ func userReviewer(ref *metav1.ObjectReference) *accessv1.Policy_Spec_Rule_Action
 			},
 		},
 	}
+}
+
+func groupReviewer(ref *metav1.ObjectReference) *accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer {
+	return &accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer{
+		Type: &accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_Group_{
+			Group: &accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_Group{
+				GroupRef: ref,
+			},
+		},
+	}
+}
+
+func createGroup(t *testing.T, ctx context.Context, octeliumC octeliumc.ClientInterface) *corev1.Group {
+	grp, err := octeliumC.CoreC().CreateGroup(ctx, &corev1.Group{
+		Metadata: &metav1.Metadata{
+			Name: utilrand.GetRandomStringCanonical(8),
+		},
+		Spec:   &corev1.Group_Spec{},
+		Status: &corev1.Group_Status{},
+	})
+	assert.Nil(t, err, "%+v", err)
+	return grp
+}
+
+func createUser(t *testing.T, ctx context.Context, octeliumC octeliumc.ClientInterface, groups ...string) *corev1.User {
+	usr, err := octeliumC.CoreC().CreateUser(ctx, &corev1.User{
+		Metadata: &metav1.Metadata{
+			Name: utilrand.GetRandomStringCanonical(8),
+		},
+		Spec: &corev1.User_Spec{
+			Type:   corev1.User_Spec_HUMAN,
+			Groups: groups,
+		},
+		Status: &corev1.User_Status{},
+	})
+	assert.Nil(t, err, "%+v", err)
+	return usr
 }
 
 func anyStep(reviewers ...*accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer) *accessv1.Policy_Spec_Rule_Action_Review_Step {
@@ -440,4 +478,133 @@ func TestReviewDecisionUnset(t *testing.T) {
 		},
 	}
 	assert.Nil(t, ctrl.OnAdd(ctx, rev))
+}
+
+func TestReviewAllQuorumFromStore(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	userA := objRef("User")
+	userB := objRef("User")
+	req := createPendingRequest(t, ctx, octeliumC,
+		reviewRule(allStep(userReviewer(userA), userReviewer(userB))), 0)
+	reqRef := umetav1.GetObjectReference(req)
+
+	createReview(t, ctx, octeliumC, reqRef, userA, 0, accessv1.Review_Spec_DECISION_APPROVE)
+
+	revB := createReview(t, ctx, octeliumC, reqRef, userB, 0, accessv1.Review_Spec_DECISION_APPROVE)
+	assert.Nil(t, ctrl.OnAdd(ctx, revB))
+
+	reqG := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED, reqG.Status.State.Status)
+	assert.Equal(t, 1, len(reqG.Status.Review.LastSteps))
+}
+
+func TestReviewQuorumIgnoresOtherRequests(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	userA := objRef("User")
+	userB := objRef("User")
+
+	other := createPendingRequest(t, ctx, octeliumC,
+		reviewRule(allStep(userReviewer(userA), userReviewer(userB))), 0)
+	createReview(t, ctx, octeliumC, umetav1.GetObjectReference(other), userA, 0,
+		accessv1.Review_Spec_DECISION_APPROVE)
+
+	req := createPendingRequest(t, ctx, octeliumC,
+		reviewRule(allStep(userReviewer(userA), userReviewer(userB))), 0)
+
+	revB := createReview(t, ctx, octeliumC, umetav1.GetObjectReference(req), userB, 0,
+		accessv1.Review_Spec_DECISION_APPROVE)
+	assert.Nil(t, ctrl.OnAdd(ctx, revB))
+
+	assert.Equal(t, accessv1.Request_Status_State_PENDING,
+		getRequest(t, ctx, octeliumC, req.Metadata.Uid).Status.State.Status)
+}
+
+func TestReviewAllQuorumGroupMembers(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	grp := createGroup(t, ctx, octeliumC)
+	usrA := createUser(t, ctx, octeliumC, grp.Metadata.Name)
+	usrB := createUser(t, ctx, octeliumC, grp.Metadata.Name)
+
+	req := createPendingRequest(t, ctx, octeliumC,
+		reviewRule(allStep(groupReviewer(umetav1.GetObjectReference(grp)))), 0)
+	reqRef := umetav1.GetObjectReference(req)
+
+	revA := createReview(t, ctx, octeliumC, reqRef, umetav1.GetObjectReference(usrA), 0,
+		accessv1.Review_Spec_DECISION_APPROVE)
+	assert.Nil(t, ctrl.OnAdd(ctx, revA))
+	assert.Equal(t, accessv1.Request_Status_State_PENDING,
+		getRequest(t, ctx, octeliumC, req.Metadata.Uid).Status.State.Status)
+
+	revB := createReview(t, ctx, octeliumC, reqRef, umetav1.GetObjectReference(usrB), 0,
+		accessv1.Review_Spec_DECISION_APPROVE)
+	assert.Nil(t, ctrl.OnAdd(ctx, revB))
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED,
+		getRequest(t, ctx, octeliumC, req.Metadata.Uid).Status.State.Status)
+}
+
+func TestReviewAllQuorumGroupAndUserOverlap(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	grp := createGroup(t, ctx, octeliumC)
+	usrA := createUser(t, ctx, octeliumC, grp.Metadata.Name)
+	usrB := createUser(t, ctx, octeliumC, grp.Metadata.Name)
+
+	req := createPendingRequest(t, ctx, octeliumC,
+		reviewRule(allStep(
+			userReviewer(umetav1.GetObjectReference(usrA)),
+			groupReviewer(umetav1.GetObjectReference(grp)))), 0)
+	reqRef := umetav1.GetObjectReference(req)
+
+	revA := createReview(t, ctx, octeliumC, reqRef, umetav1.GetObjectReference(usrA), 0,
+		accessv1.Review_Spec_DECISION_APPROVE)
+	assert.Nil(t, ctrl.OnAdd(ctx, revA))
+	assert.Equal(t, accessv1.Request_Status_State_PENDING,
+		getRequest(t, ctx, octeliumC, req.Metadata.Uid).Status.State.Status)
+
+	revB := createReview(t, ctx, octeliumC, reqRef, umetav1.GetObjectReference(usrB), 0,
+		accessv1.Review_Spec_DECISION_APPROVE)
+	assert.Nil(t, ctrl.OnAdd(ctx, revB))
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED,
+		getRequest(t, ctx, octeliumC, req.Metadata.Uid).Status.State.Status)
+}
+
+func TestReviewAllQuorumEmptyGroup(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	grp := createGroup(t, ctx, octeliumC)
+	usr := createUser(t, ctx, octeliumC, grp.Metadata.Name)
+	emptyGrp := createGroup(t, ctx, octeliumC)
+
+	req := createPendingRequest(t, ctx, octeliumC,
+		reviewRule(allStep(
+			groupReviewer(umetav1.GetObjectReference(grp)),
+			groupReviewer(umetav1.GetObjectReference(emptyGrp)))), 0)
+
+	rev := createReview(t, ctx, octeliumC, umetav1.GetObjectReference(req),
+		umetav1.GetObjectReference(usr), 0, accessv1.Review_Spec_DECISION_APPROVE)
+	assert.Nil(t, ctrl.OnAdd(ctx, rev))
+
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED,
+		getRequest(t, ctx, octeliumC, req.Metadata.Uid).Status.State.Status)
+}
+
+func TestReviewAnyQuorumGroupSingleMember(t *testing.T) {
+	ctx, ctrl, octeliumC := newControllerTest(t)
+
+	grp := createGroup(t, ctx, octeliumC)
+	usrA := createUser(t, ctx, octeliumC, grp.Metadata.Name)
+	createUser(t, ctx, octeliumC, grp.Metadata.Name)
+
+	req := createPendingRequest(t, ctx, octeliumC,
+		reviewRule(anyStep(groupReviewer(umetav1.GetObjectReference(grp)))), 0)
+
+	rev := createReview(t, ctx, octeliumC, umetav1.GetObjectReference(req),
+		umetav1.GetObjectReference(usrA), 0, accessv1.Review_Spec_DECISION_APPROVE)
+	assert.Nil(t, ctrl.OnAdd(ctx, rev))
+
+	assert.Equal(t, accessv1.Request_Status_State_APPROVED,
+		getRequest(t, ctx, octeliumC, req.Metadata.Uid).Status.State.Status)
 }

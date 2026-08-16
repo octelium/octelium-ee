@@ -29,6 +29,9 @@ import (
 
 const maxRequestStateHistory = 100
 const defaultAccessRequestAllowPriority = -1
+const defaultMaxAccessDuration = 24 * time.Hour
+
+const PolicyTriggerNamePrefix = "access-request-"
 
 type Controller struct {
 	octeliumC octeliumc.ClientInterface
@@ -116,7 +119,7 @@ func (c *Controller) initializeRequest(ctx context.Context, req *accessv1.Reques
 		return nil
 	}
 
-	req.Status.PolicyRef = umetav1.GetObjectReference(pol)
+	req.Status.PolicyRef = objectRef(pol)
 	req.Status.Rule = pbutils.Clone(rule).(*accessv1.Policy_Spec_Rule)
 
 	switch rule.Effect {
@@ -374,10 +377,10 @@ func (c *Controller) ensurePolicyTrigger(ctx context.Context, req *accessv1.Requ
 			return err
 		}
 		if !exists {
-			return c.deletePolicyTrigger(ctx, umetav1.GetObjectReference(pt))
+			return c.deletePolicyTrigger(ctx, objectRef(pt))
 		}
 
-		req.Status.PolicyTriggerRef = umetav1.GetObjectReference(pt)
+		req.Status.PolicyTriggerRef = objectRef(pt)
 		return nil
 	}
 
@@ -390,11 +393,11 @@ func (c *Controller) ensurePolicyTrigger(ctx context.Context, req *accessv1.Requ
 			return err
 		}
 
-		req.Status.PolicyTriggerRef = umetav1.GetObjectReference(pt)
+		req.Status.PolicyTriggerRef = objectRef(pt)
 		return nil
 	}
 
-	req.Status.PolicyTriggerRef = umetav1.GetObjectReference(ptExisting)
+	req.Status.PolicyTriggerRef = objectRef(ptExisting)
 	return nil
 }
 
@@ -442,7 +445,7 @@ func (c *Controller) buildPolicyTrigger(
 	preConditionItems := []*corev1.PolicyTrigger_Status_PreCondition{
 		{
 			Type: &corev1.PolicyTrigger_Status_PreCondition_UserRef{
-				UserRef: pbutils.Clone(subjectRef).(*metav1.ObjectReference),
+				UserRef: cloneRef(subjectRef),
 			},
 		},
 		targetPreCondition,
@@ -474,7 +477,7 @@ func (c *Controller) buildPolicyTrigger(
 		},
 		Spec: &corev1.PolicyTrigger_Spec{},
 		Status: &corev1.PolicyTrigger_Status{
-			OwnerRef: umetav1.GetObjectReference(req),
+			OwnerRef: objectRef(req),
 			PreCondition: &corev1.PolicyTrigger_Status_PreCondition{
 				Type: &corev1.PolicyTrigger_Status_PreCondition_All_{
 					All: &corev1.PolicyTrigger_Status_PreCondition_All{
@@ -552,7 +555,7 @@ func (c *Controller) buildCatalogTargetPreCondition(
 			return nil, err
 		}
 
-		preConditions = append(preConditions, servicePreCondition(umetav1.GetObjectReference(svc)))
+		preConditions = append(preConditions, servicePreCondition(objectRef(svc)))
 	}
 
 	for _, nsName := range catalog.Spec.ResourceCollection.Service.Namespaces {
@@ -570,7 +573,7 @@ func (c *Controller) buildCatalogTargetPreCondition(
 			return nil, err
 		}
 
-		preConditions = append(preConditions, namespacePreCondition(umetav1.GetObjectReference(ns)))
+		preConditions = append(preConditions, namespacePreCondition(objectRef(ns)))
 	}
 
 	if len(preConditions) == 0 {
@@ -697,23 +700,18 @@ func (c *Controller) getAccessDuration(
 ) time.Duration {
 	reqDuration := umetav1.ToDuration(req.Spec.Duration).ToGo()
 
-	var maxDuration time.Duration
+	maxDuration := defaultMaxAccessDuration
 	if authz != nil {
-		maxDuration = umetav1.ToDuration(authz.MaxAccessDuration).ToGo()
+		if authzDuration := umetav1.ToDuration(authz.MaxAccessDuration).ToGo(); authzDuration > 0 {
+			maxDuration = authzDuration
+		}
 	}
 
-	switch {
-	case reqDuration <= 0 && maxDuration <= 0:
-		return 0
-	case reqDuration <= 0:
+	if reqDuration <= 0 || reqDuration > maxDuration {
 		return maxDuration
-	case maxDuration <= 0:
-		return reqDuration
-	case reqDuration > maxDuration:
-		return maxDuration
-	default:
-		return reqDuration
 	}
+
+	return reqDuration
 }
 
 func (c *Controller) getCatalog(ctx context.Context, ref *metav1.ObjectReference) (*accessv1.Catalog, error) {
@@ -823,7 +821,7 @@ func buildDefaultAccessRequestInlinePolicy() *corev1.InlinePolicy {
 func servicePreCondition(ref *metav1.ObjectReference) *corev1.PolicyTrigger_Status_PreCondition {
 	return &corev1.PolicyTrigger_Status_PreCondition{
 		Type: &corev1.PolicyTrigger_Status_PreCondition_ServiceRef{
-			ServiceRef: pbutils.Clone(ref).(*metav1.ObjectReference),
+			ServiceRef: cloneRef(ref),
 		},
 	}
 }
@@ -831,7 +829,7 @@ func servicePreCondition(ref *metav1.ObjectReference) *corev1.PolicyTrigger_Stat
 func namespacePreCondition(ref *metav1.ObjectReference) *corev1.PolicyTrigger_Status_PreCondition {
 	return &corev1.PolicyTrigger_Status_PreCondition{
 		Type: &corev1.PolicyTrigger_Status_PreCondition_NamespaceRef{
-			NamespaceRef: pbutils.Clone(ref).(*metav1.ObjectReference),
+			NamespaceRef: cloneRef(ref),
 		},
 	}
 }
@@ -879,10 +877,25 @@ func refEqual(a, b *metav1.ObjectReference) bool {
 	return a != nil && b != nil && a.Uid != "" && b.Uid != "" && a.Uid == b.Uid
 }
 
-func policyTriggerName(req *accessv1.Request) string {
-	if req.Metadata.Uid != "" {
-		return fmt.Sprintf("access-request-%s", req.Metadata.Uid)
+func objectRef(itm umetav1.ResourceObjectI) *metav1.ObjectReference {
+	return cloneRef(umetav1.GetObjectReference(itm))
+}
+
+func cloneRef(ref *metav1.ObjectReference) *metav1.ObjectReference {
+	if ref == nil {
+		return nil
 	}
 
-	return fmt.Sprintf("access-request-%s", req.Metadata.Name)
+	ret := pbutils.Clone(ref).(*metav1.ObjectReference)
+	ret.ResourceVersion = ""
+
+	return ret
+}
+
+func policyTriggerName(req *accessv1.Request) string {
+	if req.Metadata.Uid != "" {
+		return fmt.Sprintf("%s%s", PolicyTriggerNamePrefix, req.Metadata.Uid)
+	}
+
+	return fmt.Sprintf("%s%s", PolicyTriggerNamePrefix, req.Metadata.Name)
 }

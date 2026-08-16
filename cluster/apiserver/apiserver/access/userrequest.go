@@ -206,7 +206,7 @@ func (s *ServerUser) CancelRequest(ctx context.Context, req *accessv1.CancelRequ
 		return nil, err
 	}
 
-	setUserRequestState(item, accessv1.Request_Status_State_CANCELLED)
+	setRequestState(item, accessv1.Request_Status_State_CANCELLED)
 
 	if _, err := s.octeliumC.AccessC().UpdateRequest(ctx, item); err != nil {
 		return nil, serr.InternalWithErr(err)
@@ -359,7 +359,7 @@ func checkUserRequestPending(req *accessv1.Request) error {
 
 const maxRequestStates = 100
 
-func setUserRequestState(req *accessv1.Request, status accessv1.Request_Status_State_Status) {
+func setRequestState(req *accessv1.Request, status accessv1.Request_Status_State_Status) {
 	now := pbutils.Now()
 
 	if req.Status.State != nil && req.Status.State.Status == status {

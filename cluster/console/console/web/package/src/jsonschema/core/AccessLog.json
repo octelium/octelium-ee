@@ -78,7 +78,8 @@
                         "WEB",
                         "DNS",
                         "SOCKS5",
-                        "RDP_WEB"
+                        "RDP_WEB",
+                        "MCP"
                     ],
                     "type": "string",
                     "title": "Mode"
@@ -363,6 +364,11 @@
                 "socks5": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5",
                     "additionalProperties": false
+                },
+                "mcp": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Info.MCP",
+                    "additionalProperties": false,
+                    "description": "MCP sets the Model Context Protocol-specific entry details"
                 }
             },
             "additionalProperties": false,
@@ -422,6 +428,11 @@
                                         "required": [
                                             "socks5"
                                         ]
+                                    },
+                                    {
+                                        "required": [
+                                            "mcp"
+                                        ]
                                     }
                                 ]
                             }
@@ -474,6 +485,11 @@
                         {
                             "required": [
                                 "socks5"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "mcp"
                             ]
                         }
                     ]
@@ -718,6 +734,112 @@
             "additionalProperties": false,
             "type": "object",
             "title": "Kubernetes"
+        },
+        "octelium.api.main.core.v1.AccessLog.Entry.Info.MCP": {
+            "properties": {
+                "http": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP",
+                    "additionalProperties": false,
+                    "description": "HTTP shows the underlying HTTP information of the request/response"
+                },
+                "type": {
+                    "enum": [
+                        "TYPE_UNSET",
+                        "COMPLETE",
+                        "STREAM_START",
+                        "STREAM_END"
+                    ],
+                    "type": "string",
+                    "title": "Type"
+                },
+                "protocolVersion": {
+                    "type": "string",
+                    "description": "ProtocolVersion is the MCP protocol version declared by the request (e.g. \"2026-07-28\"). Note that it is read from the request itself and it is therefore also set for the requests that are eventually rejected by Octelium."
+                },
+                "method": {
+                    "type": "string",
+                    "description": "Method is the JSON-RPC method of the request (e.g. `tools/call`)"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the logical MCP target of the method whenever it has one (i.e. the tool name, the prompt name or the resource URI)"
+                },
+                "requestID": {
+                    "type": "string",
+                    "description": "RequestID is the JSON-RPC request `id` normalized into a string"
+                },
+                "isNotification": {
+                    "type": "boolean",
+                    "description": "IsNotification is set for JSON-RPC notification requests"
+                },
+                "resultType": {
+                    "type": "string",
+                    "description": "ResultType is the `resultType` discriminator of a successful result (e.g. \"complete\", \"input_required\"). It is a string rather than an enum since MCP extensions can define further values."
+                },
+                "isProtocolError": {
+                    "type": "boolean",
+                    "description": "IsProtocolError is set when the response carried a JSON-RPC `error`"
+                },
+                "errorCode": {
+                    "type": "integer",
+                    "description": "ErrorCode is the JSON-RPC error code of the response (e.g. -32601 for `Method not found` or -32020 for `HeaderMismatch`)"
+                },
+                "errorMessage": {
+                    "type": "string",
+                    "description": "ErrorMessage is the JSON-RPC error message of the response"
+                },
+                "isToolError": {
+                    "type": "boolean",
+                    "description": "IsToolError is set when the method is `tools/call` and the successful result carried an `isError` value. This is a different layer from the ErrorCode field: the call succeeded at the protocol layer while the tool itself failed."
+                },
+                "eventCount": {
+                    "type": "integer",
+                    "description": "EventCount is the number of the `text/event-stream` events of the response"
+                },
+                "notificationCount": {
+                    "type": "integer",
+                    "description": "NotificationCount is the number of the JSON-RPC notifications, such as progress notifications, of the response stream"
+                },
+                "ttlMs": {
+                    "type": "integer",
+                    "description": "TTLMs is the `ttlMs` cache freshness hint of the result, if set"
+                },
+                "cacheScope": {
+                    "type": "string",
+                    "description": "CacheScope is the `cacheScope` of the result, if set (e.g. \"public\")"
+                },
+                "client": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Info.MCP.Client",
+                    "additionalProperties": false,
+                    "description": "Client is the client information reported by the downstream itself. It is NOT an identity."
+                },
+                "sessionID": {
+                    "type": "string",
+                    "description": "SessionID is the value of the `Mcp-Session-Id` header used by the protocol revisions between 2025-03-26 and 2025-11-25. It is an MCP transport identifier that is unrelated to the Octelium Session as well as to the AccessLog entry's own sessionID field."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "MCP"
+        },
+        "octelium.api.main.core.v1.AccessLog.Entry.Info.MCP.Client": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name reported by the downstream client itself"
+                },
+                "version": {
+                    "type": "string",
+                    "description": "Version is the version reported by the downstream client itself"
+                },
+                "title": {
+                    "type": "string",
+                    "description": "Title is the human-readable title reported by the downstream client itself"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Client"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL": {
             "properties": {

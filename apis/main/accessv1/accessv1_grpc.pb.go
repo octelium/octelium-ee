@@ -42,6 +42,7 @@ const (
 	MainService_GetRequest_FullMethodName    = "/octelium.api.main.access.v1.MainService/GetRequest"
 	MainService_DeleteRequest_FullMethodName = "/octelium.api.main.access.v1.MainService/DeleteRequest"
 	MainService_ListRequest_FullMethodName   = "/octelium.api.main.access.v1.MainService/ListRequest"
+	MainService_RevokeRequest_FullMethodName = "/octelium.api.main.access.v1.MainService/RevokeRequest"
 	MainService_ListReview_FullMethodName    = "/octelium.api.main.access.v1.MainService/ListReview"
 	MainService_GetReview_FullMethodName     = "/octelium.api.main.access.v1.MainService/GetReview"
 	MainService_DeleteReview_FullMethodName  = "/octelium.api.main.access.v1.MainService/DeleteReview"
@@ -64,6 +65,7 @@ type MainServiceClient interface {
 	GetRequest(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*Request, error)
 	DeleteRequest(ctx context.Context, in *metav1.DeleteOptions, opts ...grpc.CallOption) (*metav1.OperationResult, error)
 	ListRequest(ctx context.Context, in *ListRequestOptions, opts ...grpc.CallOption) (*RequestList, error)
+	RevokeRequest(ctx context.Context, in *RevokeRequestRequest, opts ...grpc.CallOption) (*metav1.OperationResult, error)
 	ListReview(ctx context.Context, in *ListReviewOptions, opts ...grpc.CallOption) (*ReviewList, error)
 	GetReview(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*Review, error)
 	DeleteReview(ctx context.Context, in *metav1.DeleteOptions, opts ...grpc.CallOption) (*metav1.OperationResult, error)
@@ -207,6 +209,16 @@ func (c *mainServiceClient) ListRequest(ctx context.Context, in *ListRequestOpti
 	return out, nil
 }
 
+func (c *mainServiceClient) RevokeRequest(ctx context.Context, in *RevokeRequestRequest, opts ...grpc.CallOption) (*metav1.OperationResult, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(metav1.OperationResult)
+	err := c.cc.Invoke(ctx, MainService_RevokeRequest_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *mainServiceClient) ListReview(ctx context.Context, in *ListReviewOptions, opts ...grpc.CallOption) (*ReviewList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ReviewList)
@@ -254,6 +266,7 @@ type MainServiceServer interface {
 	GetRequest(context.Context, *metav1.GetOptions) (*Request, error)
 	DeleteRequest(context.Context, *metav1.DeleteOptions) (*metav1.OperationResult, error)
 	ListRequest(context.Context, *ListRequestOptions) (*RequestList, error)
+	RevokeRequest(context.Context, *RevokeRequestRequest) (*metav1.OperationResult, error)
 	ListReview(context.Context, *ListReviewOptions) (*ReviewList, error)
 	GetReview(context.Context, *metav1.GetOptions) (*Review, error)
 	DeleteReview(context.Context, *metav1.DeleteOptions) (*metav1.OperationResult, error)
@@ -305,6 +318,9 @@ func (UnimplementedMainServiceServer) DeleteRequest(context.Context, *metav1.Del
 }
 func (UnimplementedMainServiceServer) ListRequest(context.Context, *ListRequestOptions) (*RequestList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListRequest not implemented")
+}
+func (UnimplementedMainServiceServer) RevokeRequest(context.Context, *RevokeRequestRequest) (*metav1.OperationResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RevokeRequest not implemented")
 }
 func (UnimplementedMainServiceServer) ListReview(context.Context, *ListReviewOptions) (*ReviewList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListReview not implemented")
@@ -570,6 +586,24 @@ func _MainService_ListRequest_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MainService_RevokeRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevokeRequestRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MainServiceServer).RevokeRequest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MainService_RevokeRequest_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MainServiceServer).RevokeRequest(ctx, req.(*RevokeRequestRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _MainService_ListReview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListReviewOptions)
 	if err := dec(in); err != nil {
@@ -682,6 +716,10 @@ var MainService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListRequest",
 			Handler:    _MainService_ListRequest_Handler,
+		},
+		{
+			MethodName: "RevokeRequest",
+			Handler:    _MainService_RevokeRequest_Handler,
 		},
 		{
 			MethodName: "ListReview",

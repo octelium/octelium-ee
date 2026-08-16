@@ -62,6 +62,53 @@ func (s *ServerMain) DeleteRequest(ctx context.Context, req *metav1.DeleteOption
 	return &metav1.OperationResult{}, nil
 }
 
+func (s *ServerMain) RevokeRequest(ctx context.Context, req *accessv1.RevokeRequestRequest) (*metav1.OperationResult, error) {
+	if req == nil || req.RequestRef == nil {
+		return nil, grpcutils.InvalidArg("RequestRef must be set")
+	}
+
+	if err := apivalidation.CheckObjectRef(req.RequestRef, &apivalidation.CheckGetOptionsOpts{}); err != nil {
+		return nil, err
+	}
+
+	item, err := s.octeliumC.AccessC().GetRequest(ctx, apivalidation.ObjectReferenceToRGetOptions(req.RequestRef))
+	if err != nil {
+		return nil, serr.K8sNotFoundOrInternalWithErr(err)
+	}
+
+	if item.Status.State != nil &&
+		item.Status.State.Status == accessv1.Request_Status_State_REVOKED {
+		return &metav1.OperationResult{}, nil
+	}
+
+	if err := checkRequestRevocable(item); err != nil {
+		return nil, err
+	}
+
+	setRequestState(item, accessv1.Request_Status_State_REVOKED)
+
+	if _, err := s.octeliumC.AccessC().UpdateRequest(ctx, item); err != nil {
+		return nil, serr.InternalWithErr(err)
+	}
+
+	return &metav1.OperationResult{}, nil
+}
+
+func checkRequestRevocable(req *accessv1.Request) error {
+	if req.Status.State == nil {
+		return nil
+	}
+
+	switch req.Status.State.Status {
+	case accessv1.Request_Status_State_STATUS_UNKNOWN,
+		accessv1.Request_Status_State_PENDING,
+		accessv1.Request_Status_State_APPROVED:
+		return nil
+	}
+
+	return grpcutils.InvalidArg("Only pending or approved Requests can be revoked")
+}
+
 func (s *ServerMain) validateRequest(ctx context.Context, req *accessv1.Request) error {
 	if req.Spec == nil {
 		return grpcutils.InvalidArg("Nil Spec")

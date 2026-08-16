@@ -17,6 +17,7 @@ import (
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
+	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
 )
@@ -96,4 +97,104 @@ func TestMainRequest(t *testing.T) {
 		Uid: req.Metadata.Uid,
 	})
 	assert.NotNil(t, err)
+}
+
+func newMainRequest(t *testing.T, ctx context.Context, tst *tests.T,
+	status accessv1.Request_Status_State_Status) *accessv1.Request {
+	req, err := tst.C.OcteliumC.AccessC().CreateRequest(ctx, &accessv1.Request{
+		Metadata: &metav1.Metadata{
+			Name: utilrand.GetRandomStringCanonical(8),
+		},
+		Spec: &accessv1.Request_Spec{
+			Urgency: accessv1.Request_Spec_NORMAL,
+		},
+		Status: &accessv1.Request_Status{
+			State: &accessv1.Request_Status_State{
+				CreatedAt: pbutils.Now(),
+				Status:    status,
+			},
+		},
+	})
+	assert.Nil(t, err, "%+v", err)
+	return req
+}
+
+func TestMainRevokeRequest(t *testing.T) {
+	ctx := context.Background()
+
+	tst, err := tests.Initialize(nil)
+	assert.Nil(t, err)
+	t.Cleanup(func() {
+		tst.Destroy()
+	})
+
+	mainSrv := NewServerMain(tst.C.OcteliumC)
+
+	{
+		req := newMainRequest(t, ctx, tst, accessv1.Request_Status_State_APPROVED)
+
+		_, err := mainSrv.RevokeRequest(ctx, &accessv1.RevokeRequestRequest{
+			RequestRef: umetav1.GetObjectReference(req),
+		})
+		assert.Nil(t, err, "%+v", err)
+
+		reqG, err := mainSrv.GetRequest(ctx, &metav1.GetOptions{Uid: req.Metadata.Uid})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, accessv1.Request_Status_State_REVOKED, reqG.Status.State.Status)
+		assert.NotNil(t, reqG.Status.ApprovalEndAt)
+		assert.Equal(t, 1, len(reqG.Status.LastStates))
+		assert.Equal(t, accessv1.Request_Status_State_APPROVED, reqG.Status.LastStates[0].Status)
+
+		_, err = mainSrv.RevokeRequest(ctx, &accessv1.RevokeRequestRequest{
+			RequestRef: umetav1.GetObjectReference(reqG),
+		})
+		assert.Nil(t, err, "%+v", err)
+
+		reqG, err = mainSrv.GetRequest(ctx, &metav1.GetOptions{Uid: req.Metadata.Uid})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, 1, len(reqG.Status.LastStates))
+	}
+
+	{
+		req := newMainRequest(t, ctx, tst, accessv1.Request_Status_State_PENDING)
+
+		_, err := mainSrv.RevokeRequest(ctx, &accessv1.RevokeRequestRequest{
+			RequestRef: umetav1.GetObjectReference(req),
+		})
+		assert.Nil(t, err, "%+v", err)
+
+		reqG, err := mainSrv.GetRequest(ctx, &metav1.GetOptions{Uid: req.Metadata.Uid})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, accessv1.Request_Status_State_REVOKED, reqG.Status.State.Status)
+	}
+
+	for _, status := range []accessv1.Request_Status_State_Status{
+		accessv1.Request_Status_State_REJECTED,
+		accessv1.Request_Status_State_EXPIRED,
+		accessv1.Request_Status_State_CANCELLED,
+	} {
+		req := newMainRequest(t, ctx, tst, status)
+
+		_, err := mainSrv.RevokeRequest(ctx, &accessv1.RevokeRequestRequest{
+			RequestRef: umetav1.GetObjectReference(req),
+		})
+		assert.NotNil(t, err)
+		assert.True(t, grpcerr.IsInvalidArg(err), "%s", status)
+	}
+
+	{
+		_, err := mainSrv.RevokeRequest(ctx, &accessv1.RevokeRequestRequest{})
+		assert.NotNil(t, err)
+		assert.True(t, grpcerr.IsInvalidArg(err))
+	}
+
+	{
+		_, err := mainSrv.RevokeRequest(ctx, &accessv1.RevokeRequestRequest{
+			RequestRef: &metav1.ObjectReference{
+				Name: utilrand.GetRandomStringCanonical(8),
+			},
+		})
+		assert.NotNil(t, err)
+		assert.True(t, grpcerr.IsNotFound(err))
+	}
 }
