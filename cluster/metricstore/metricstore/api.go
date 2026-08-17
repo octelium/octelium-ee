@@ -336,46 +336,11 @@ func attributeSources(mask int) []vmetricsv1.MetricAttributeDescriptor_Source {
 	return ret
 }
 
-func metricAttributeFilterCapability(key string) (bool, string) {
-	if key == "octelium.component.type" || key == "octelium.component.namespace" || key == "octelium.component.name" {
-		return true, ""
-	}
-	for _, prefix := range []string{"octelium.vigil.svc.", "service.", "deployment.", "http.", "rpc.", "net."} {
-		if strings.HasPrefix(key, prefix) {
-			return true, ""
-		}
-	}
-	return false, "attribute key is not in the metric filter allowlist"
+func metricAttributeFilterCapability(_ string) (bool, string) {
+	return true, ""
 }
 
-func metricAttributeGroupCapability(key string, estimatedDistinct uint64) (bool, string) {
-	allowed := map[string]struct{}{
-		"octelium.component.type":           {},
-		"octelium.component.namespace":      {},
-		"octelium.component.name":           {},
-		"octelium.vigil.svc.name":           {},
-		"octelium.vigil.svc.namespace.name": {},
-		"octelium.vigil.svc.region.name":    {},
-		"octelium.vigil.svc.mode":           {},
-		"reason":                            {},
-		"state":                             {},
-		"http.method":                       {},
-		"http.request.method":               {},
-		"http.response.status_code":         {},
-		"rpc.system":                        {},
-		"rpc.service":                       {},
-		"rpc.method":                        {},
-		"net.transport":                     {},
-		"service.name":                      {},
-		"service.namespace":                 {},
-		"deployment.environment":            {},
-	}
-	if _, ok := allowed[key]; !ok {
-		return false, "attribute key is not in the low-cardinality groupBy allowlist"
-	}
-	if estimatedDistinct > maxSeriesPerQuery*10 {
-		return false, "observed attribute cardinality exceeds the groupBy safety threshold"
-	}
+func metricAttributeGroupCapability(_ string, _ uint64) (bool, string) {
 	return true, ""
 }
 
@@ -492,7 +457,7 @@ func (s *srvMetric) ListMetricCatalog(ctx context.Context,
 			Description: "Current number of goroutines across selected components",
 			Metric: &vmetricsv1.MetricSelector{
 				Selector: &vmetricsv1.MetricSelector_Name{Name: "process.goroutines"},
-				Kind:     vmetricsv1.MetricDescriptor_UP_DOWN_COUNTER,
+				Kind:     vmetricsv1.MetricDescriptor_GAUGE,
 			},
 			DefaultOperation: &vmetricsv1.QueryOperation{
 				Type: &vmetricsv1.QueryOperation_Gauge{Gauge: &vmetricsv1.GaugeOperation{
@@ -510,7 +475,7 @@ func (s *srvMetric) ListMetricCatalog(ctx context.Context,
 			Description: "Current heap allocation across selected components",
 			Metric: &vmetricsv1.MetricSelector{
 				Selector: &vmetricsv1.MetricSelector_Name{Name: "process.mem.heap_alloc"},
-				Kind:     vmetricsv1.MetricDescriptor_UP_DOWN_COUNTER,
+				Kind:     vmetricsv1.MetricDescriptor_GAUGE,
 			},
 			DefaultOperation: &vmetricsv1.QueryOperation{
 				Type: &vmetricsv1.QueryOperation_Gauge{Gauge: &vmetricsv1.GaugeOperation{
@@ -524,7 +489,8 @@ func (s *srvMetric) ListMetricCatalog(ctx context.Context,
 		},
 	)
 
-	if catalogMatchesComponent(req, "octovigil", "rscserver", "portal", "authserver", "vigil") {
+	if req != nil && req.Component != nil &&
+		catalogMatchesComponent(req, "rscserver", "vigil") {
 		items = append(items,
 			&vmetricsv1.MetricCatalogItem{
 				Id:          "requests_rate",
@@ -577,7 +543,68 @@ func (s *srvMetric) ListMetricCatalog(ctx context.Context,
 					}},
 				},
 				DefaultGroupBy:           []string{"octelium.component.type", "octelium.component.namespace"},
-				Unit:                     "ms",
+				Unit:                     requestDurationCatalogUnit(req),
+				DefaultSeriesAggregation: vmetricsv1.QueryMetricsRequest_MERGE,
+				DefaultStep:              durationPB(time.Minute),
+			},
+		)
+	}
+
+	if req != nil && req.Component != nil &&
+		catalogMatchesComponent(req, "octovigil") {
+		items = append(items,
+			&vmetricsv1.MetricCatalogItem{
+				Id:          "authorization_requests_rate",
+				DisplayName: "Authorization rate",
+				Description: "Per-second authorization request rate",
+				Metric: &vmetricsv1.MetricSelector{
+					Selector: &vmetricsv1.MetricSelector_Name{Name: "authorization.req.total"},
+					Kind:     vmetricsv1.MetricDescriptor_COUNTER,
+				},
+				DefaultOperation: &vmetricsv1.QueryOperation{
+					Type: &vmetricsv1.QueryOperation_Counter{Counter: &vmetricsv1.CounterOperation{
+						Function: vmetricsv1.CounterOperation_RATE,
+					}},
+				},
+				DefaultGroupBy:           []string{"octelium.component.name"},
+				Unit:                     "requests/s",
+				DefaultSeriesAggregation: vmetricsv1.QueryMetricsRequest_SUM,
+				DefaultStep:              durationPB(time.Minute),
+			},
+			&vmetricsv1.MetricCatalogItem{
+				Id:          "active_authorization_requests",
+				DisplayName: "Active authorizations",
+				Description: "Current authorization requests",
+				Metric: &vmetricsv1.MetricSelector{
+					Selector: &vmetricsv1.MetricSelector_Name{Name: "authorization.req.active"},
+					Kind:     vmetricsv1.MetricDescriptor_UP_DOWN_COUNTER,
+				},
+				DefaultOperation: &vmetricsv1.QueryOperation{
+					Type: &vmetricsv1.QueryOperation_Gauge{Gauge: &vmetricsv1.GaugeOperation{
+						Function: vmetricsv1.GaugeOperation_LAST,
+					}},
+				},
+				DefaultGroupBy:           []string{"octelium.component.name"},
+				Unit:                     "requests",
+				DefaultSeriesAggregation: vmetricsv1.QueryMetricsRequest_SUM,
+				DefaultStep:              durationPB(time.Minute),
+			},
+			&vmetricsv1.MetricCatalogItem{
+				Id:          "authorization_p95_latency",
+				DisplayName: "Authorization p95 latency",
+				Description: "p95 authorization request duration",
+				Metric: &vmetricsv1.MetricSelector{
+					Selector: &vmetricsv1.MetricSelector_Name{Name: "authorization.req.duration"},
+					Kind:     vmetricsv1.MetricDescriptor_HISTOGRAM,
+				},
+				DefaultOperation: &vmetricsv1.QueryOperation{
+					Type: &vmetricsv1.QueryOperation_Histogram{Histogram: &vmetricsv1.HistogramOperation{
+						Function:  vmetricsv1.HistogramOperation_QUANTILE,
+						Quantiles: []float64{0.95},
+					}},
+				},
+				DefaultGroupBy:           []string{"octelium.component.name"},
+				Unit:                     "us",
 				DefaultSeriesAggregation: vmetricsv1.QueryMetricsRequest_MERGE,
 				DefaultStep:              durationPB(time.Minute),
 			},
@@ -585,6 +612,13 @@ func (s *srvMetric) ListMetricCatalog(ctx context.Context,
 	}
 
 	return &vmetricsv1.ListMetricCatalogResponse{Items: items}, nil
+}
+
+func requestDurationCatalogUnit(req *vmetricsv1.ListMetricCatalogRequest) string {
+	if req != nil && req.Component != nil && req.Component.Type == "rscserver" {
+		return "us"
+	}
+	return "ms"
 }
 
 func catalogMatchesComponent(req *vmetricsv1.ListMetricCatalogRequest, componentTypes ...string) bool {

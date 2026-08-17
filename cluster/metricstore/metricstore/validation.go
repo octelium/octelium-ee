@@ -340,7 +340,7 @@ func validateQueryForDescriptor(q *querySpec, descriptor *vmetricsv1.MetricDescr
 	}
 	for _, key := range q.groupBy {
 		attribute := attributes[key]
-		if attribute == nil || !attribute.Groupable {
+		if attribute != nil && !attribute.Groupable {
 			reason := "attribute is not groupable"
 			if attribute != nil && attribute.GroupUnsupportedReason != "" {
 				reason = attribute.GroupUnsupportedReason
@@ -350,7 +350,7 @@ func validateQueryForDescriptor(q *querySpec, descriptor *vmetricsv1.MetricDescr
 	}
 	for _, filter := range q.filters {
 		attribute := attributes[filter.Key]
-		if attribute == nil || !attribute.Filterable {
+		if attribute != nil && !attribute.Filterable {
 			reason := "attribute is not filterable"
 			if attribute != nil && attribute.FilterUnsupportedReason != "" {
 				reason = attribute.FilterUnsupportedReason
@@ -364,6 +364,9 @@ func validateQueryForDescriptor(q *querySpec, descriptor *vmetricsv1.MetricDescr
 		}
 		values = append(values, filter.Values...)
 		for _, value := range values {
+			if attribute == nil {
+				continue
+			}
 			if attributeKindToProto(protoAttributeKind(value)) != attribute.ValueKind {
 				return status.Errorf(codes.InvalidArgument,
 					"filter value kind does not match attribute %s", filter.Key)

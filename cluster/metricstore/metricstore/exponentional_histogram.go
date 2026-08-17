@@ -108,10 +108,13 @@ func (s *srvMetric) queryExponentialHistogram(ctx context.Context, query *queryS
 				prev, ok := previous[point.seriesID]
 				if !ok {
 					previous[point.seriesID] = point
-					continue
+					if point.startTimestamp == nil || point.startTimestamp.Before(query.from) {
+						continue
+					}
+				} else {
+					delta = deltaExponentialHistogramPoint(prev, point)
+					previous[point.seriesID] = point
 				}
-				delta = deltaExponentialHistogramPoint(prev, point)
-				previous[point.seriesID] = point
 			}
 
 			bucketIndex := int64(point.timestamp.Sub(query.from) / query.step)
@@ -174,22 +177,16 @@ func loadExponentialHistogramQueryRows(ctx context.Context, conn *sql.Conn, quer
 
 	if temporality == vmetricsv1.MetricDescriptor_CUMULATIVE {
 		return conn.QueryContext(ctx, `
-WITH previous_deduplicated AS (
-	SELECT * EXCLUDE (dedupe_row)
-	FROM (
-		SELECT
-			p.*,
-			ROW_NUMBER() OVER (PARTITION BY p.point_id ORDER BY p.ingested_at ASC) AS dedupe_row
-		FROM metric_exponential_histogram_points p
-		JOIN selected_metric_series m ON m.series_id = p.series_id
-		WHERE p.timestamp < ? AND p.ingested_at <= ?
-	)
-	WHERE dedupe_row = 1
-), previous_ranked AS (
+WITH previous_ranked AS (
 	SELECT
 		p.*,
-		ROW_NUMBER() OVER (PARTITION BY p.series_id ORDER BY p.timestamp DESC, p.point_id DESC) AS row_number
-	FROM previous_deduplicated p
+		ROW_NUMBER() OVER (
+			PARTITION BY p.series_id
+			ORDER BY p.timestamp DESC, p.point_id DESC, p.ingested_at ASC
+		) AS row_number
+	FROM metric_exponential_histogram_points p
+	JOIN selected_metric_series m ON m.series_id = p.series_id
+	WHERE p.timestamp < ? AND p.ingested_at <= ?
 ), range_deduplicated AS (
 	SELECT * EXCLUDE (dedupe_row)
 	FROM (

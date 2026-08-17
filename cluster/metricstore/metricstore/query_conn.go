@@ -13,7 +13,6 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
-	"time"
 
 	duckdb "github.com/duckdb/duckdb-go/v2"
 	"google.golang.org/grpc/codes"
@@ -70,19 +69,29 @@ CREATE OR REPLACE TEMP TABLE selected_metric_series (
 
 func ensureRawRowLimit(ctx context.Context, conn *sql.Conn, table string, query *querySpec,
 	includePrevious bool, limit int) error {
-	from := query.from
-	if includePrevious {
-		from = time.Unix(0, 0).UTC()
-	}
-
 	var count int64
-	statement := `SELECT COUNT(*)
+	statement := `SELECT COUNT(DISTINCT p.point_id)
 FROM ` + table + ` p
 JOIN selected_metric_series m ON m.series_id = p.series_id
 WHERE p.timestamp >= ? AND p.timestamp < ? AND p.ingested_at <= ?`
-	if err := conn.QueryRowContext(ctx, statement, metricTimeToDB(from), metricTimeToDB(query.to),
+	if err := conn.QueryRowContext(ctx, statement, metricTimeToDB(query.from), metricTimeToDB(query.to),
 		metricTimeToDB(query.snapshot)).Scan(&count); err != nil {
 		return err
+	}
+	if includePrevious {
+		var previous int64
+		statement = `SELECT COUNT(*) FROM (
+			SELECT p.series_id
+			FROM ` + table + ` p
+			JOIN selected_metric_series m ON m.series_id = p.series_id
+			WHERE p.timestamp < ? AND p.ingested_at <= ?
+			GROUP BY p.series_id
+		)`
+		if err := conn.QueryRowContext(ctx, statement, metricTimeToDB(query.from),
+			metricTimeToDB(query.snapshot)).Scan(&previous); err != nil {
+			return err
+		}
+		count += previous
 	}
 	if count > int64(limit) {
 		return status.Error(codes.ResourceExhausted, "metric query scans too many raw points")

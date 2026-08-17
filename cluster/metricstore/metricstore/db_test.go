@@ -104,6 +104,36 @@ func TestHistogramIngestQueryRoundTrip(t *testing.T) {
 	assert.Equal(t, uint64(6), raw.count)
 }
 
+func TestNumberPointReplacementIsIdempotent(t *testing.T) {
+	db := newTestDuckDB(t)
+	ctx := context.Background()
+	now := time.Now().UTC().Truncate(time.Second)
+	value := int64(1)
+	point := numberPointRecord{
+		pointID: "point-1", timestamp: now, ingestedAt: now,
+		seriesID: "series-1", intValue: &value,
+	}
+
+	conn, err := db.Conn(ctx)
+	require.NoError(t, err)
+	defer conn.Close()
+
+	require.NoError(t, replaceNumberPoints(ctx, conn, []numberPointRecord{point}))
+	point.ingestedAt = now.Add(time.Second)
+	updatedValue := int64(2)
+	point.intValue = &updatedValue
+	require.NoError(t, replaceNumberPoints(ctx, conn, []numberPointRecord{point}))
+
+	var count int
+	var storedValue int64
+	require.NoError(t, conn.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM metric_number_points WHERE point_id = ?`, point.pointID).Scan(&count))
+	require.NoError(t, conn.QueryRowContext(ctx,
+		`SELECT number_int FROM metric_number_points WHERE point_id = ?`, point.pointID).Scan(&storedValue))
+	assert.Equal(t, 1, count)
+	assert.Equal(t, value, storedValue)
+}
+
 func TestExponentialHistogramIngestQueryRoundTrip(t *testing.T) {
 	db := newTestDuckDB(t)
 	ctx := context.Background()

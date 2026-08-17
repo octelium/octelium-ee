@@ -70,7 +70,7 @@ func newServer(ctx context.Context, octeliumC octeliumc.ClientInterface) (*Serve
 	}
 
 	db.SetMaxOpenConns(4)
-	db.SetMaxIdleConns(0)
+	db.SetMaxIdleConns(4)
 	db.SetConnMaxLifetime(0)
 
 	workerCtx, workerCancel := context.WithCancel(context.Background())

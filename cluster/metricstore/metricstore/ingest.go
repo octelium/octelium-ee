@@ -70,6 +70,7 @@ type srvMetric struct {
 }
 
 type pendingMetricExport struct {
+	ctx            context.Context
 	metrics        pmetric.Metrics
 	dataPoints     int64
 	estimatedBytes int64
@@ -155,6 +156,7 @@ func (s *srvMetric) Export(ctx context.Context, req pmetricotlp.ExportRequest) (
 	req.Metrics().CopyTo(metrics)
 
 	item := &pendingMetricExport{
+		ctx:            ctx,
 		metrics:        metrics,
 		dataPoints:     points,
 		estimatedBytes: estimatedBytes,
@@ -449,6 +451,10 @@ func (s *srvMetric) processPendingExports(items []*pendingMetricExport) {
 	valid := make([]*pendingMetricExport, 0, len(items))
 
 	for _, item := range items {
+		if err := item.ctx.Err(); err != nil {
+			s.finishPendingExport(item, err)
+			continue
+		}
 		itemBatch, err := buildMetricWriteBatch(item.metrics)
 		if err != nil {
 			s.finishPendingExport(item, err)
@@ -1177,7 +1183,11 @@ func replaceNumberPoints(ctx context.Context, conn *sql.Conn, points []numberPoi
 	}); err != nil {
 		return err
 	}
-	if _, err := conn.ExecContext(ctx, `INSERT INTO metric_number_points SELECT * FROM metric_number_staging`); err != nil {
+	if _, err := conn.ExecContext(ctx, `INSERT INTO metric_number_points
+SELECT s.* FROM metric_number_staging s
+WHERE NOT EXISTS (
+	SELECT 1 FROM metric_number_points p WHERE p.point_id = s.point_id
+)`); err != nil {
 		return err
 	}
 	_, err := conn.ExecContext(ctx, `DELETE FROM metric_number_staging`)
@@ -1210,9 +1220,12 @@ INSERT INTO metric_histogram_points (
 	count, has_sum, sum, min, max, bucket_counts
 )
 SELECT
-	point_id, timestamp, ingested_at, start_timestamp, series_id,
-	count, has_sum, sum, min, max, CAST(bucket_counts AS JSON)
-FROM metric_histogram_staging
+	s.point_id, s.timestamp, s.ingested_at, s.start_timestamp, s.series_id,
+	s.count, s.has_sum, s.sum, s.min, s.max, CAST(s.bucket_counts AS JSON)
+FROM metric_histogram_staging s
+WHERE NOT EXISTS (
+	SELECT 1 FROM metric_histogram_points p WHERE p.point_id = s.point_id
+)
 `); err != nil {
 		return err
 	}
@@ -1249,10 +1262,13 @@ INSERT INTO metric_exponential_histogram_points (
 	positive_offset, positive_counts, negative_offset, negative_counts
 )
 SELECT
-	point_id, timestamp, ingested_at, start_timestamp, series_id,
-	count, has_sum, sum, min, max, scale, zero_count, zero_threshold,
-	positive_offset, CAST(positive_counts AS JSON), negative_offset, CAST(negative_counts AS JSON)
-FROM metric_exponential_histogram_staging
+	s.point_id, s.timestamp, s.ingested_at, s.start_timestamp, s.series_id,
+	s.count, s.has_sum, s.sum, s.min, s.max, s.scale, s.zero_count, s.zero_threshold,
+	s.positive_offset, CAST(s.positive_counts AS JSON), s.negative_offset, CAST(s.negative_counts AS JSON)
+FROM metric_exponential_histogram_staging s
+WHERE NOT EXISTS (
+	SELECT 1 FROM metric_exponential_histogram_points p WHERE p.point_id = s.point_id
+)
 `); err != nil {
 		return err
 	}

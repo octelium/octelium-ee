@@ -157,6 +157,7 @@ func (s *srvMetric) queryCounter(ctx context.Context, query *querySpec,
 				metricTimeToDB(query.from), metricTimeToDB(query.snapshot),
 				metricTimeToDB(query.from), metricTimeToDB(query.to), metricTimeToDB(query.snapshot),
 				metricTimeToDB(query.from), query.step.Nanoseconds(), metricTimeToDB(query.from),
+				metricTimeToDB(query.from),
 			)
 		}
 
@@ -357,18 +358,7 @@ ORDER BY output_id, bucket_idx
 func counterCumulativeSQL(query *querySpec) string {
 	aggregation := numberSeriesAggregationExpression(query.req.SeriesAggregation)
 	return `
-WITH previous_deduplicated AS (
-	SELECT * EXCLUDE (dedupe_row)
-	FROM (
-		SELECT
-			p.*,
-			ROW_NUMBER() OVER (PARTITION BY p.point_id ORDER BY p.ingested_at ASC) AS dedupe_row
-		FROM metric_number_points p
-		JOIN selected_metric_series m ON m.series_id = p.series_id
-		WHERE p.timestamp < ? AND p.ingested_at <= ?
-	)
-	WHERE dedupe_row = 1
-), previous_ranked AS (
+WITH previous_ranked AS (
 	SELECT
 		p.series_id,
 		p.timestamp,
@@ -376,9 +366,11 @@ WITH previous_deduplicated AS (
 		COALESCE(p.number_double, CAST(p.number_int AS DOUBLE)) AS value,
 		ROW_NUMBER() OVER (
 			PARTITION BY p.series_id
-			ORDER BY p.timestamp DESC, p.point_id DESC
+			ORDER BY p.timestamp DESC, p.point_id DESC, p.ingested_at ASC
 		) AS row_number
-	FROM previous_deduplicated p
+	FROM metric_number_points p
+	JOIN selected_metric_series m ON m.series_id = p.series_id
+	WHERE p.timestamp < ? AND p.ingested_at <= ?
 ), range_deduplicated AS (
 	SELECT * EXCLUDE (dedupe_row)
 	FROM (
@@ -416,6 +408,7 @@ WITH previous_deduplicated AS (
 		p.series_id,
 		` + bucketIndexExpression() + ` AS bucket_idx,
 		CASE
+			WHEN p.previous_value IS NULL AND p.start_timestamp IS NOT NULL AND p.start_timestamp >= ? THEN p.value
 			WHEN p.previous_value IS NULL THEN NULL
 			WHEN p.start_timestamp IS DISTINCT FROM p.previous_start_timestamp THEN p.value
 			WHEN p.value >= p.previous_value THEN p.value - p.previous_value

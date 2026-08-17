@@ -123,6 +123,9 @@ func (s *srvMetric) selectOutputSeries(ctx context.Context, query *querySpec,
 		labels := item.labels
 		if query.req.SeriesAggregation != vmetricsv1.QueryMetricsRequest_NONE {
 			labels = pickStoredAttributes(item.labels, query.groupBy)
+			if len(labels) != len(query.groupBy) {
+				continue
+			}
 		}
 		labelsKey := storedAttributesKey(labels)
 		key := labelsKey
