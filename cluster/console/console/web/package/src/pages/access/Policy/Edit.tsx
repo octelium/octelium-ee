@@ -23,7 +23,9 @@ import {
 } from "@mantine/core";
 import {
   Braces,
+  Check,
   Combine,
+  Hash,
   Library,
   ListChecks,
   PanelTop,
@@ -485,6 +487,78 @@ const ConditionEdit = (props: {
   );
 };
 
+const ChoiceButtonGrid = <T extends string,>(props: {
+  label: string;
+  description: string;
+  value?: T;
+  columns: 2 | 3;
+  options: Array<{
+    value: T;
+    label: string;
+    description: string;
+    icon: LucideIcon;
+  }>;
+  onChange: (value: T) => void;
+}) => (
+  <div>
+    <div className="mb-2">
+      <p className="text-[0.72rem] font-bold text-slate-700">{props.label}</p>
+      <p className="mt-0.5 text-[0.66rem] font-semibold text-slate-400">
+        {props.description}
+      </p>
+    </div>
+    <div
+      role="radiogroup"
+      aria-label={props.label}
+      className={twMerge(
+        "grid grid-cols-1 gap-2",
+        props.columns === 2 ? "sm:grid-cols-2" : "sm:grid-cols-3",
+      )}
+    >
+      {props.options.map(({ value, label, description, icon: Icon }) => {
+        const active = props.value === value;
+        return (
+          <button
+            key={value}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            onClick={() => {
+              if (!active) props.onChange(value);
+            }}
+            className={twMerge(
+              "flex min-w-0 items-start gap-2.5 rounded-xl border px-3 py-2.5 text-left outline-none transition-[border-color,background-color,box-shadow] duration-500 focus-visible:ring-2 focus-visible:ring-blue-500/30",
+              active
+                ? "border-slate-700 bg-slate-800 text-white shadow-sm"
+                : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50/70",
+            )}
+          >
+            <Icon
+              size={15}
+              strokeWidth={2.2}
+              className={twMerge(
+                "mt-0.5 shrink-0",
+                active ? "text-slate-200" : "text-slate-400",
+              )}
+            />
+            <span className="min-w-0">
+              <span className="block text-[0.72rem] font-bold">{label}</span>
+              <span
+                className={twMerge(
+                  "mt-0.5 block text-[0.63rem] font-semibold leading-4",
+                  active ? "text-slate-300" : "text-slate-400",
+                )}
+              >
+                {description}
+              </span>
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  </div>
+);
+
 const ReviewStepEdit = (props: {
   step: AccessP.Policy_Spec_Rule_Action_Review_Step;
   onUpdate: () => void;
@@ -529,29 +603,40 @@ const ReviewStepEdit = (props: {
               onUpdate();
             }}
           >
-            <Group grow align="flex-start">
-              <Select
-                label="Reviewer type"
-                required
-                description="Set the reviewer as a User or a Group"
-                data={[
-                  { label: "User", value: "user" },
-                  { label: "Group", value: "group" },
-                ]}
-                value={reviewer.type.oneofKind}
-                onChange={(v) => {
-                  reviewer.type = match(v)
-                    .with("group", () => ({
-                      oneofKind: "group" as const,
-                      group: { groupRef: MetaP.ObjectReference.create() },
-                    }))
-                    .otherwise(() => ({
-                      oneofKind: "user" as const,
-                      user: { userRef: MetaP.ObjectReference.create() },
-                    }));
-                  onUpdate();
-                }}
-              />
+            <ChoiceButtonGrid
+              label="Reviewer type"
+              description="Choose whether a User or any member of a Group can review"
+              columns={2}
+              value={reviewer.type.oneofKind || undefined}
+              options={[
+                {
+                  value: "user",
+                  label: "User",
+                  description: "Assign one specific reviewer",
+                  icon: User,
+                },
+                {
+                  value: "group",
+                  label: "Group",
+                  description: "Allow a reviewer group",
+                  icon: Users,
+                },
+              ]}
+              onChange={(value) => {
+                reviewer.type =
+                  value === "group"
+                    ? {
+                        oneofKind: "group",
+                        group: { groupRef: MetaP.ObjectReference.create() },
+                      }
+                    : {
+                        oneofKind: "user",
+                        user: { userRef: MetaP.ObjectReference.create() },
+                      };
+                onUpdate();
+              }}
+            />
+            <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50/50 p-3">
               {reviewer.type.oneofKind === "user" && (
                 <SelectResource
                   api="core"
@@ -586,54 +671,54 @@ const ReviewStepEdit = (props: {
                   }}
                 />
               )}
-            </Group>
+            </div>
           </EditItem>
         ))}
       </ItemMessage>
 
-      <Group grow>
-        <Select
-          label="Approval Requirement"
-          required
-          description="Set how many reviewers must approve"
-          data={[
-            {
-              label: "Any",
-              value:
-                AccessP.Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement[
-                  AccessP
-                    .Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement.ANY
-                ],
-            },
-            {
-              label: "All",
-              value:
-                AccessP.Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement[
-                  AccessP
-                    .Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement.ALL
-                ],
-            },
-            {
-              label: "Count",
-              value:
-                AccessP.Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement[
-                  AccessP
-                    .Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement
-                    .COUNT
-                ],
-            },
-          ]}
+      <div className="mt-4">
+        <ChoiceButtonGrid
+          label="Approval requirement"
+          description="Choose how many assigned reviewers must approve this step"
+          columns={3}
           value={
             AccessP.Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement[
               step.approvalRequirement
             ]
           }
-          onChange={(v) => {
-            if (!v) return;
+          options={[
+            {
+              value: "ANY",
+              label: "Any reviewer",
+              description: "One approval completes the step",
+              icon: Check,
+            },
+            {
+              value: "ALL",
+              label: "All reviewers",
+              description: "Every reviewer must approve",
+              icon: Users,
+            },
+            {
+              value: "COUNT",
+              label: "Required count",
+              description: "Use a specific approval threshold",
+              icon: Hash,
+            },
+          ]}
+          onChange={(value) => {
             step.approvalRequirement =
-              AccessP.Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement[
-                v as "ANY"
-              ];
+              value === "ALL"
+                ? AccessP.Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement
+                    .ALL
+                : value === "COUNT"
+                  ? AccessP
+                      .Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement
+                      .COUNT
+                  : AccessP
+                      .Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement
+                      .ANY;
+            if (value !== "COUNT") step.approvalCount = 0;
             onUpdate();
           }}
         />
@@ -641,62 +726,68 @@ const ReviewStepEdit = (props: {
         {step.approvalRequirement ===
           AccessP.Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement
             .COUNT && (
-          <NumberInput
-            label="Approval Count"
-            description="Set the number of required approvals"
-            min={0}
-            value={step.approvalCount}
+          <div className="mt-3 max-w-sm rounded-xl border border-slate-200 bg-slate-50/50 p-3">
+            <NumberInput
+              label="Required approvals"
+              description="Set the number of approvals needed to complete this step"
+              min={1}
+              max={Math.max(1, step.reviewers.length)}
+              value={step.approvalCount}
+              onChange={(v) => {
+                step.approvalCount = strToNum(v);
+                onUpdate();
+              }}
+            />
+          </div>
+        )}
+
+        <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <Select
+            label="On Timeout"
+            description="Set the behavior when the step times out"
+            data={[
+              {
+                label: "Go to next step",
+                value:
+                  AccessP.Policy_Spec_Rule_Action_Review_Step_OnTimeout[
+                    AccessP.Policy_Spec_Rule_Action_Review_Step_OnTimeout
+                      .GOTO_NEXT_STEP
+                  ],
+              },
+              {
+                label: "Reject",
+                value:
+                  AccessP.Policy_Spec_Rule_Action_Review_Step_OnTimeout[
+                    AccessP.Policy_Spec_Rule_Action_Review_Step_OnTimeout.REJECT
+                  ],
+              },
+            ]}
+            value={
+              AccessP.Policy_Spec_Rule_Action_Review_Step_OnTimeout[
+                step.onTimeout
+              ]
+            }
             onChange={(v) => {
-              step.approvalCount = strToNum(v);
+              if (!v) return;
+              step.onTimeout =
+                AccessP.Policy_Spec_Rule_Action_Review_Step_OnTimeout[
+                  v as "REJECT"
+                ];
               onUpdate();
             }}
           />
-        )}
 
-        <Select
-          label="On Timeout"
-          description="Set the behavior when the step times out"
-          data={[
-            {
-              label: "Go to next step",
-              value:
-                AccessP.Policy_Spec_Rule_Action_Review_Step_OnTimeout[
-                  AccessP.Policy_Spec_Rule_Action_Review_Step_OnTimeout
-                    .GOTO_NEXT_STEP
-                ],
-            },
-            {
-              label: "Reject",
-              value:
-                AccessP.Policy_Spec_Rule_Action_Review_Step_OnTimeout[
-                  AccessP.Policy_Spec_Rule_Action_Review_Step_OnTimeout.REJECT
-                ],
-            },
-          ]}
-          value={
-            AccessP.Policy_Spec_Rule_Action_Review_Step_OnTimeout[
-              step.onTimeout
-            ]
-          }
-          onChange={(v) => {
-            if (!v) return;
-            step.onTimeout =
-              AccessP.Policy_Spec_Rule_Action_Review_Step_OnTimeout[
-                v as "REJECT"
-              ];
-            onUpdate();
-          }}
-        />
-      </Group>
+          <DurationPicker
+            value={step.timeout}
+            title="Timeout"
+            onChange={(v) => {
+              step.timeout = v;
+              onUpdate();
+            }}
+          />
+        </div>
+      </div>
 
-      <DurationPicker
-        value={step.timeout}
-        title="Timeout"
-        onChange={(v) => {
-          step.timeout = v;
-          onUpdate();
-        }}
-      />
     </div>
   );
 };
