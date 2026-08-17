@@ -1,10 +1,9 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import * as MetaP from "@/apis/metav1/metav1";
-import { Button, Select, Textarea } from "@mantine/core";
+import { Button, SegmentedControl, Select, Textarea } from "@mantine/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Boxes,
   Layers,
   PanelRightOpen,
   Search,
@@ -18,6 +17,7 @@ import { twMerge } from "tailwind-merge";
 
 import DurationInput from "../../../components/DurationInput";
 import CatalogDetailsDrawer from "../../../components/Catalog/CatalogDetailsDrawer";
+import TimestampPicker from "../../../components/TimestampPicker";
 import { Avatar, Badge, Card, ConfirmDialog, EmptyState, ErrorState, Eyebrow, Field, Loading } from "../../../ui";
 import { durationToParts } from "../../../utils";
 import { getUserClient } from "../../../utils/client";
@@ -28,27 +28,6 @@ import SubjectPicker from "./SubjectPicker";
 type Selection =
   | { kind: "service"; name: string; label: string }
   | { kind: "catalog"; name: string; label: string };
-
-const TabButton = (props: {
-  active: boolean;
-  onClick: () => void;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-}) => (
-  <button
-    type="button"
-    onClick={props.onClick}
-    className={twMerge(
-      "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.76rem] font-bold transition-colors duration-150",
-      props.active
-        ? "bg-slate-900 text-white"
-        : "text-slate-500 hover:text-slate-900 hover:bg-slate-100",
-    )}
-  >
-    {props.icon}
-    {props.children}
-  </button>
-);
 
 const CatalogCard = (props: {
   title: string;
@@ -108,7 +87,7 @@ const NewRequest = () => {
   const [selection, setSelection] = React.useState<Selection | undefined>();
   const [requestFor, setRequestFor] = React.useState<"self" | "subject">("self");
   const [subject, setSubject] = React.useState<AccessP.SubjectUser | undefined>();
-  const [deadline, setDeadline] = React.useState<Date | null>(null);
+  const [deadline, setDeadline] = React.useState<Timestamp>();
   const [submitOpen, setSubmitOpen] = React.useState(false);
 
   const [urgency, setUrgency] = React.useState<AccessP.Request_Spec_Urgency>(
@@ -200,7 +179,7 @@ const NewRequest = () => {
           urgency,
           justification,
           duration,
-          deadline: deadline ? Timestamp.fromDate(deadline) : undefined,
+          deadline,
           resource,
           ...(requestFor === "subject" && subject
             ? {
@@ -241,15 +220,6 @@ const NewRequest = () => {
       c.metadata?.name.toLowerCase().includes(cq) ||
       c.metadata?.displayName?.toLowerCase().includes(cq),
   );
-  const deadlineInput = deadline
-    ? new Date(deadline.getTime() - deadline.getTimezoneOffset() * 60000)
-        .toISOString()
-        .slice(0, 16)
-    : "";
-  const minimumDeadline = new Date(Date.now() - new Date().getTimezoneOffset() * 60000)
-    .toISOString()
-    .slice(0, 16);
-
   return (
     <div className="w-full min-w-0">
       <div className="mb-6">
@@ -272,35 +242,22 @@ const NewRequest = () => {
                   Choose who will receive this access.
                 </p>
               </div>
-              <div className="flex items-center gap-1 rounded-lg bg-slate-100 p-1">
-                <button
-                  type="button"
-                  onClick={() => {
+              <SegmentedControl
+                size="sm"
+                value={requestFor}
+                onChange={(value) => {
+                  if (value === "self") {
                     setRequestFor("self");
                     setSubject(undefined);
-                  }}
-                  className={twMerge(
-                    "px-2.5 py-1.5 rounded-md text-[0.7rem] font-bold transition-colors",
-                    requestFor === "self"
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-500 hover:text-slate-800",
-                  )}
-                >
-                  Myself
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRequestFor("subject")}
-                  className={twMerge(
-                    "px-2.5 py-1.5 rounded-md text-[0.7rem] font-bold transition-colors",
-                    requestFor === "subject"
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-500 hover:text-slate-800",
-                  )}
-                >
-                  Another user
-                </button>
-              </div>
+                  } else {
+                    setRequestFor("subject");
+                  }
+                }}
+                data={[
+                  { value: "self", label: "Myself" },
+                  { value: "subject", label: "Another user" },
+                ]}
+              />
             </div>
 
             {requestFor === "self" ? (
@@ -330,28 +287,19 @@ const NewRequest = () => {
           </Card>
 
           <Card className="min-w-0 p-4">
-          <div className="flex items-center gap-1 mb-3">
-            <TabButton
-              active={tab === "service"}
-              onClick={() => {
-                setTab("service");
-                setSelection(undefined);
-              }}
-              icon={<Boxes size={14} strokeWidth={2.5} />}
-            >
-              Services
-            </TabButton>
-            <TabButton
-              active={tab === "catalog"}
-              onClick={() => {
-                setTab("catalog");
-                setSelection(undefined);
-              }}
-              icon={<Layers size={14} strokeWidth={2.5} />}
-            >
-              Catalogs
-            </TabButton>
-          </div>
+          <SegmentedControl
+            fullWidth
+            className="mb-3"
+            value={tab}
+            onChange={(value) => {
+              setTab(value as "service" | "catalog");
+              setSelection(undefined);
+            }}
+            data={[
+              { value: "service", label: "Services" },
+              { value: "catalog", label: "Catalogs" },
+            ]}
+          />
 
           {tab === "service" ? (
             <ServicePicker
@@ -520,29 +468,14 @@ const NewRequest = () => {
               <DurationInput value={duration} onChange={setDuration} />
             </Field>
 
-            <Field
+            <TimestampPicker
               label="Deadline"
               description="Optional: stop this request from being approved after a specific time"
-            >
-              <div className="flex items-center gap-2">
-                <input
-                  type="datetime-local"
-                  min={minimumDeadline}
-                  value={deadlineInput}
-                  onChange={(event) => setDeadline(event.target.value ? new Date(event.target.value) : null)}
-                  className="w-full h-9 rounded-md border border-slate-200 bg-white px-3 text-[0.76rem] font-semibold text-slate-700 outline-none focus:border-slate-400"
-                />
-                {deadline && (
-                  <button
-                    type="button"
-                    onClick={() => setDeadline(null)}
-                    className="shrink-0 text-[0.7rem] font-bold text-slate-400 hover:text-slate-700"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-            </Field>
+              placeholder="No deadline"
+              value={deadline}
+              isFuture
+              onChange={setDeadline}
+            />
 
             <Field
               label="Justification"
