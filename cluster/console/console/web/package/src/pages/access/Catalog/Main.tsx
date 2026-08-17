@@ -1,20 +1,32 @@
 import * as AccessC from "@/apis/accessv1/accessv1";
+import { ObjectReference } from "@/apis/metav1/metav1";
 import InfoItem from "@/components/InfoItem";
+import { ResourceListLabel } from "@/components/ResourceList";
 import { ResourceMainInfo } from "@/pages/utils/types";
 
-const Pills = (props: { values: string[] }) => {
+const LinkedResources = (props: {
+  values: string[];
+  kind: "Service" | "Namespace";
+}) => {
   if (props.values.length === 0) {
-    return <span className="text-[0.75rem] text-slate-400">None</span>;
+    return (
+      <span className="text-[0.72rem] font-semibold text-slate-400">
+        No {props.kind.toLowerCase()}s configured
+      </span>
+    );
   }
+
   return (
     <div className="flex flex-wrap gap-1.5">
-      {props.values.map((v, idx) => (
-        <span
-          key={idx}
-          className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-[0.72rem] font-mono font-semibold text-slate-700"
-        >
-          {v}
-        </span>
+      {props.values.map((name) => (
+        <ResourceListLabel
+          key={`${props.kind}-${name}`}
+          itemRef={ObjectReference.create({
+            apiVersion: "core/v1",
+            kind: props.kind,
+            name,
+          })}
+        />
       ))}
     </div>
   );
@@ -55,12 +67,22 @@ export const MainInfo = (props: {
       {
         label: "Services",
         span: "full" as const,
-        value: <Pills values={service?.services ?? []} />,
+        value: (
+          <LinkedResources
+            kind="Service"
+            values={service?.services.filter(Boolean) ?? []}
+          />
+        ),
       },
       {
         label: "Namespaces",
         span: "full" as const,
-        value: <Pills values={service?.namespaces ?? []} />,
+        value: (
+          <LinkedResources
+            kind="Namespace"
+            values={service?.namespaces.filter(Boolean) ?? []}
+          />
+        ),
       },
     ],
   };

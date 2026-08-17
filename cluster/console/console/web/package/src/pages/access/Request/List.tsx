@@ -1,6 +1,7 @@
 import {
   Request,
 } from "@/apis/accessv1/accessv1";
+import { ObjectReference } from "@/apis/metav1/metav1";
 import { GetRequestSummaryResponse } from "@/apis/visibilityv1/access/vaccessv1";
 import {
   ResourceListLabel,
@@ -19,6 +20,42 @@ import { getStatusMeta, getUrgencyLabel } from "./utils";
 export const LabelComponent = (props: { item: Request }) => {
   const { item } = props;
   const meta = getStatusMeta(item.status?.state?.status);
+  const requesterRef = item.status?.userRef
+    ? ObjectReference.create({
+        ...item.status.userRef,
+        apiVersion: item.status.userRef.apiVersion || "core/v1",
+        kind: item.status.userRef.kind || "User",
+      })
+    : undefined;
+  const policyRef = item.status?.policyRef
+    ? ObjectReference.create({
+        ...item.status.policyRef,
+        apiVersion: item.status.policyRef.apiVersion || "access/v1",
+        kind: item.status.policyRef.kind || "Policy",
+      })
+    : undefined;
+  const subjectRef =
+    item.spec?.subject?.type.oneofKind === "userRef"
+      ? item.spec.subject.type.userRef
+      : undefined;
+  const resourceRef =
+    item.spec?.resource?.type.oneofKind === "serviceRef"
+      ? ObjectReference.create({
+          ...item.spec.resource.type.serviceRef,
+          apiVersion:
+            item.spec.resource.type.serviceRef.apiVersion || "core/v1",
+          kind: item.spec.resource.type.serviceRef.kind || "Service",
+        })
+      : item.spec?.resource?.type.oneofKind === "catalog"
+        ? ObjectReference.create({
+            ...item.spec.resource.type.catalog.catalogRef,
+            apiVersion:
+              item.spec.resource.type.catalog.catalogRef?.apiVersion ||
+              "access/v1",
+            kind:
+              item.spec.resource.type.catalog.catalogRef?.kind || "Catalog",
+          })
+        : undefined;
 
   return (
     <ResourceListLabelWrap>
@@ -30,9 +67,27 @@ export const LabelComponent = (props: { item: Request }) => {
           {getUrgencyLabel(item.spec!.urgency)}
         </ResourceListLabel>
       )}
-      <ResourceListLabel itemRef={item.status!.userRef}></ResourceListLabel>
-      {item.status?.policyRef && (
-        <ResourceListLabel itemRef={item.status!.policyRef}></ResourceListLabel>
+      {(requesterRef?.name || requesterRef?.uid) && (
+        <ResourceListLabel
+          label="Requester"
+          itemRef={requesterRef}
+        />
+      )}
+      {(subjectRef?.name || subjectRef?.uid) && (
+        <ResourceListLabel
+          label="Subject"
+          itemRef={ObjectReference.create({
+            ...subjectRef,
+            apiVersion: subjectRef.apiVersion || "core/v1",
+            kind: subjectRef.kind || "User",
+          })}
+        />
+      )}
+      {(resourceRef?.name || resourceRef?.uid) && (
+        <ResourceListLabel label="Resource" itemRef={resourceRef} />
+      )}
+      {(policyRef?.name || policyRef?.uid) && (
+        <ResourceListLabel itemRef={policyRef} />
       )}
     </ResourceListLabelWrap>
   );
