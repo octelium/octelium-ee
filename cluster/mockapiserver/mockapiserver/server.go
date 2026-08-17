@@ -34,7 +34,9 @@ import (
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/main/userv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vaccessv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcorev1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/venterprisev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetricsv1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/cluster/apiserver/apiserver/admin"
@@ -203,7 +205,17 @@ func Run(ctx context.Context) error {
 	usrSrv := user.NewServer(octeliumC)
 	eeSrv := enterprise.NewServer(octeliumC)
 
-	accessRscSrv, err := visibility.NewServerResource(ctx, octeliumC)
+	visibilityRscSrv, err := visibility.NewServerResource(ctx, octeliumC)
+	if err != nil {
+		return err
+	}
+
+	visibilityEnterpriseRscSrv, err := visibility.NewServerResourceEnterprise(ctx, octeliumC)
+	if err != nil {
+		return err
+	}
+
+	visibilityAccessRscSrv, err := visibility.NewServerResourceAccess(ctx, octeliumC)
 	if err != nil {
 		return err
 	}
@@ -244,7 +256,9 @@ func Run(ctx context.Context) error {
 
 	vmetricsv1.RegisterMetricsServiceServer(s, &tstMetricsService{})
 
-	vcorev1.RegisterResourceServiceServer(s, accessRscSrv)
+	vcorev1.RegisterResourceServiceServer(s, visibilityRscSrv)
+	venterprisev1.RegisterResourceServiceServer(s, visibilityEnterpriseRscSrv)
+	vaccessv1.RegisterResourceServiceServer(s, visibilityAccessRscSrv)
 
 	{
 		pSrv, err := policyportal.NewServer(ctx, octeliumC)

@@ -126,7 +126,11 @@ const RequestContext = (props: {
               {serviceQuery.isLoading ? (
                 <span className="text-slate-400">Loading…</span>
               ) : (
-                <Badge tone={mode.tone}>{mode.label}</Badge>
+                <div className="flex flex-wrap gap-1.5">
+                  <Badge tone={mode.tone}>{mode.label}</Badge>
+                  {service?.spec?.isTLS && <Badge tone="emerald">TLS</Badge>}
+                  {service?.spec?.isPublic && <Badge tone="amber">Public</Badge>}
+                </div>
               )}
             </KeyValue>
             <KeyValue label="Connection">
@@ -138,16 +142,6 @@ const RequestContext = (props: {
             </KeyValue>
             <KeyValue label="Port">
               {service?.spec?.port || "—"}
-            </KeyValue>
-            <KeyValue label="Exposure">
-              <div className="flex flex-wrap gap-1.5">
-                <Badge tone={service?.spec?.isTLS ? "emerald" : "slate"}>
-                  {service?.spec?.isTLS ? "TLS" : "Plain"}
-                </Badge>
-                <Badge tone={service?.spec?.isPublic ? "amber" : "slate"}>
-                  {service?.spec?.isPublic ? "Public" : "Private"}
-                </Badge>
-              </div>
             </KeyValue>
           </>
         )}

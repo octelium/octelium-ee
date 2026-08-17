@@ -3,13 +3,21 @@ import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import * as MetaP from "@/apis/metav1/metav1";
 import { Button, Select, Textarea } from "@mantine/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Boxes, Layers, Search, Send, UserRound } from "lucide-react";
+import {
+  Boxes,
+  Layers,
+  PanelRightOpen,
+  Search,
+  Send,
+  UserRound,
+} from "lucide-react";
 import * as React from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { twMerge } from "tailwind-merge";
 
 import DurationInput from "../../../components/DurationInput";
+import CatalogDetailsDrawer from "../../../components/Catalog/CatalogDetailsDrawer";
 import { Avatar, Badge, Card, ConfirmDialog, EmptyState, ErrorState, Eyebrow, Field, Loading } from "../../../ui";
 import { durationToParts } from "../../../utils";
 import { getUserClient } from "../../../utils/client";
@@ -48,28 +56,44 @@ const CatalogCard = (props: {
   badge?: string;
   selected: boolean;
   onClick: () => void;
+  onDetails: () => void;
 }) => (
-  <button
-    onClick={props.onClick}
+  <div
     className={twMerge(
-      "w-full flex items-center gap-3 text-left rounded-lg border px-3 py-2.5 transition-[border-color,box-shadow,background-color] duration-150",
+      "w-full flex items-center gap-2 rounded-lg border px-3 py-2.5 transition-[border-color,box-shadow,background-color] duration-150",
       props.selected
         ? "border-slate-900 bg-slate-50 shadow-[0_2px_8px_rgba(15,23,42,0.10)]"
         : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50",
     )}
   >
-    <div className="flex-1 min-w-0">
-      <div className="text-[0.82rem] font-bold text-slate-800 truncate">
-        {props.title}
-      </div>
-      {props.subtitle && (
-        <div className="text-[0.7rem] font-semibold text-slate-400 truncate font-mono">
-          {props.subtitle}
+    <button
+      type="button"
+      onClick={props.onClick}
+      className="flex min-w-0 flex-1 items-center gap-3 text-left"
+    >
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-[0.82rem] font-bold text-slate-800">
+          {props.title}
         </div>
-      )}
-    </div>
-    {props.badge && <Badge tone="slate">{props.badge}</Badge>}
-  </button>
+        {props.subtitle && (
+          <div className="truncate font-mono text-[0.7rem] font-semibold text-slate-400">
+            {props.subtitle}
+          </div>
+        )}
+      </div>
+      {props.badge && <Badge tone="slate">{props.badge}</Badge>}
+    </button>
+    <button
+      type="button"
+      onClick={props.onDetails}
+      aria-label={`View details for ${props.title}`}
+      title="View catalog details"
+      className="flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 text-[0.68rem] font-bold text-slate-600 shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition-[border-color,background-color,color,box-shadow] hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 hover:shadow-sm"
+    >
+      <PanelRightOpen size={14} strokeWidth={2.4} />
+      <span>View details</span>
+    </button>
+  </div>
 );
 
 const NewRequest = () => {
@@ -80,6 +104,7 @@ const NewRequest = () => {
   const deepLinkApplied = React.useRef(false);
   const [tab, setTab] = React.useState<"service" | "catalog">("service");
   const [catalogQuery, setCatalogQuery] = React.useState("");
+  const [detailsCatalog, setDetailsCatalog] = React.useState<AccessP.Catalog>();
   const [selection, setSelection] = React.useState<Selection | undefined>();
   const [requestFor, setRequestFor] = React.useState<"self" | "subject">("self");
   const [subject, setSubject] = React.useState<AccessP.SubjectUser | undefined>();
@@ -392,6 +417,7 @@ const NewRequest = () => {
                             label: c.metadata!.displayName || c.metadata!.name,
                           })
                         }
+                        onDetails={() => setDetailsCatalog(c)}
                       />
                     );
                   })}
@@ -556,6 +582,12 @@ const NewRequest = () => {
         confirmLabel="Submit request"
         danger={false}
         loading={createMutation.isPending}
+      />
+
+      <CatalogDetailsDrawer
+        catalog={detailsCatalog}
+        opened={!!detailsCatalog}
+        onClose={() => setDetailsCatalog(undefined)}
       />
     </div>
   );
