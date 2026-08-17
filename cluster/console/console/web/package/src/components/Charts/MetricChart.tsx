@@ -103,7 +103,22 @@ export const eqBoolFilter = (key: string, value: boolean): AttributeFilter =>
 
 type ChartSeries = {
   name: string;
-  data: [number, number][];
+  data: [number, number | null][];
+};
+
+const NON_RETRYABLE_METRIC_CODES = new Set([
+  "ABORTED",
+  "CANCELLED",
+  "CANCELED",
+  "FAILED_PRECONDITION",
+  "INVALID_ARGUMENT",
+  "NOT_FOUND",
+  "RESOURCE_EXHAUSTED",
+]);
+
+export const retryMetricQuery = (failureCount: number, error: unknown) => {
+  const code = (error as { code?: string })?.code?.toUpperCase();
+  return failureCount < 2 && (!code || !NON_RETRYABLE_METRIC_CODES.has(code));
 };
 
 export type MetricChartProps = {
@@ -161,6 +176,37 @@ const timestampKey = (t?: Timestamp): string | undefined => {
 const durationKey = (d?: Duration): string | undefined => {
   if (!d) return undefined;
   return JSON.stringify(d);
+};
+
+export const durationToMillis = (duration?: Duration): number | undefined => {
+  switch (duration?.type?.oneofKind) {
+    case "milliseconds":
+      return duration.type.milliseconds;
+    case "seconds":
+      return duration.type.seconds * 1_000;
+    case "minutes":
+      return duration.type.minutes * 60_000;
+    case "hours":
+      return duration.type.hours * 3_600_000;
+    case "days":
+      return duration.type.days * 86_400_000;
+    case "weeks":
+      return duration.type.weeks * 604_800_000;
+    default:
+      return undefined;
+  }
+};
+
+const normalizeMetricStep = (duration: Duration, rangeMillis: number) => {
+  const current = durationToMillis(duration);
+  const minimum = Math.max(1_000, Math.ceil(rangeMillis / 5_000));
+  if (current !== undefined && current >= minimum) return duration;
+  return Duration.create({
+    type: {
+      oneofKind: "seconds",
+      seconds: Math.ceil(minimum / 1_000),
+    },
+  });
 };
 
 const operationKey = (op: QueryOperation): string => JSON.stringify(op);
@@ -340,6 +386,7 @@ const formatValue = (v: number, unit?: string): string => {
 const extractSeries = (
   series: TimeSeries[] | undefined,
   fallback: string,
+  stepMillis?: number,
 ): ChartSeries[] => {
   if (!series) return [];
 
@@ -349,7 +396,7 @@ const extractSeries = (
         return null;
       }
 
-      const data = s.points.number.points
+      const points = s.points.number.points
         .map((p): [number, number] | null => {
           const ts = tsToMillis(p.timestamp);
           const val = numberValue(p);
@@ -363,8 +410,21 @@ const extractSeries = (
         .filter((p): p is [number, number] => p !== null)
         .sort((a, b) => a[0] - b[0]);
 
-      if (data.length === 0) {
+      if (points.length === 0) {
         return null;
+      }
+
+      const data: [number, number | null][] = [];
+      for (const point of points) {
+        const previous = data.at(-1);
+        if (
+          stepMillis &&
+          previous &&
+          point[0] - previous[0] > stepMillis * 1.5
+        ) {
+          data.push([previous[0] + stepMillis, null]);
+        }
+        data.push(point);
       }
 
       return {
@@ -400,7 +460,21 @@ const MetricChart = (props: MetricChartProps) => {
   }, [durationKey(props.step)]);
 
   const supportsStep = !isRawCounterOperation(operation);
-  const effectiveStep = supportsStep ? (step ?? DEFAULT_STEP) : undefined;
+  const explicitRange =
+    tsToMillis(props.from) !== undefined && tsToMillis(props.to) !== undefined
+      ? tsToMillis(props.to)! - tsToMillis(props.from)!
+      : undefined;
+  const rangeMillis = Math.max(
+    1_000,
+    explicitRange ?? (props.lookbackSeconds ?? 6 * 3_600) * 1_000,
+  );
+  const effectiveStep = useMemo(
+    () =>
+      supportsStep
+        ? normalizeMetricStep(step ?? DEFAULT_STEP, rangeMillis)
+        : undefined,
+    [supportsStep, step, rangeMillis],
+  );
 
   const queryKey = useMemo(
     () => [
@@ -439,7 +513,7 @@ const MetricChart = (props: MetricChartProps) => {
     queryKey,
     enabled,
 
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       const now = new Date();
 
       const from =
@@ -467,24 +541,34 @@ const MetricChart = (props: MetricChartProps) => {
         limitBehavior: QueryMetricsRequest_LimitBehavior.TRUNCATE,
       });
 
-      const { response } = await getClientVisibilityMetrics().queryMetrics(req);
+      const { response } = await getClientVisibilityMetrics().queryMetrics(req, {
+        abort: signal,
+      });
       return response;
     },
 
     refetchInterval: autoRefresh ? refetchIntervalChart : false,
     refetchIntervalInBackground: false,
+    retry: retryMetricQuery,
   });
 
   const effectiveUnit =
     unit ?? qry.data?.result?.unit ?? qry.data?.sourceDescriptor?.unit;
 
   const series = useMemo(
-    () => extractSeries(qry.data?.series, title ?? metric),
-    [qry.data?.series, title, metric],
+    () =>
+      extractSeries(
+        qry.data?.series,
+        title ?? metric,
+        durationToMillis(qry.data?.step ?? effectiveStep),
+      ),
+    [qry.data?.series, qry.data?.step, effectiveStep, title, metric],
   );
 
   const statistics = useMemo(() => {
-    const points = series.flatMap((item) => item.data);
+    const points = series
+      .flatMap((item) => item.data)
+      .filter((point): point is [number, number] => point[1] !== null);
 
     if (points.length === 0) {
       return { average: 0, latest: 0, peak: 0, pointCount: 0 };
@@ -750,6 +834,12 @@ const MetricChart = (props: MetricChartProps) => {
               <span className="flex items-center gap-1.5 text-[0.65rem] font-semibold text-slate-400">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500" />
                 Updating
+              </span>
+            )}
+            {qry.isError && series.length > 0 && (
+              <span className="flex items-center gap-1.5 text-[0.65rem] font-semibold text-amber-600">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                Refresh failed · showing previous data
               </span>
             )}
           </div>

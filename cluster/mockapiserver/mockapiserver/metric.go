@@ -87,7 +87,7 @@ var mockComponentKeys = []string{
 	"octelium.component.name",
 }
 
-var mockVigilKeys = []string{
+var mockRequestKeys = []string{
 	"octelium.component.type",
 	"octelium.component.namespace",
 	"octelium.component.name",
@@ -95,27 +95,45 @@ var mockVigilKeys = []string{
 	"octelium.vigil.svc.namespace.name",
 	"octelium.vigil.svc.region.name",
 	"octelium.vigil.svc.mode",
-	"http.method",
+	"state",
+	"reason",
+	"req.http.method",
+	"req.http.status",
+	"req.mcp.method",
+	"req.mcp.protocol_version",
+	"req.llm.operation",
+	"req.llm.protocol",
+	"req.llm.stream",
+	"qtype",
+	"rcode_class",
+	"error",
+	"api",
+	"version",
+	"kind",
+	"op",
 }
+
+var mockAuthorizationKeys = append(append([]string{}, mockComponentKeys...),
+	"req.authorized", "req.error", "namespace", "service", "reason")
 
 var mockMetricMeta = map[string]mockMetricInfo{
 	"req.total": {
 		kind:            vmetricsv1.MetricDescriptor_COUNTER,
 		numberValueType: vmetricsv1.MetricDescriptor_INT64,
-		unit:            "requests",
+		unit:            "",
 		description:     "Total number of requests",
 		temporality:     vmetricsv1.MetricDescriptor_CUMULATIVE,
-		attributeKeys:   mockVigilKeys,
+		attributeKeys:   mockRequestKeys,
 		base:            220,
 		amp:             0.6,
 	},
 	"req.active": {
 		kind:            vmetricsv1.MetricDescriptor_UP_DOWN_COUNTER,
 		numberValueType: vmetricsv1.MetricDescriptor_INT64,
-		unit:            "requests",
+		unit:            "",
 		description:     "Number of active requests",
 		temporality:     vmetricsv1.MetricDescriptor_CUMULATIVE,
-		attributeKeys:   mockVigilKeys,
+		attributeKeys:   mockRequestKeys,
 		base:            36,
 		amp:             0.5,
 	},
@@ -125,42 +143,42 @@ var mockMetricMeta = map[string]mockMetricInfo{
 		unit:            "ms",
 		description:     "Request duration in milliseconds",
 		temporality:     vmetricsv1.MetricDescriptor_DELTA,
-		attributeKeys:   mockVigilKeys,
+		attributeKeys:   mockRequestKeys,
 		base:            220,
 		amp:             0.6,
 	},
 	"authorization.req.total": {
 		kind:            vmetricsv1.MetricDescriptor_COUNTER,
 		numberValueType: vmetricsv1.MetricDescriptor_INT64,
-		unit:            "requests",
+		unit:            "",
 		description:     "Total number of authorization requests",
 		temporality:     vmetricsv1.MetricDescriptor_CUMULATIVE,
-		attributeKeys:   mockComponentKeys,
+		attributeKeys:   mockAuthorizationKeys,
 		base:            180,
 		amp:             0.6,
 	},
 	"authorization.req.active": {
 		kind:            vmetricsv1.MetricDescriptor_UP_DOWN_COUNTER,
 		numberValueType: vmetricsv1.MetricDescriptor_INT64,
-		unit:            "requests",
+		unit:            "",
 		description:     "Number of active authorization requests",
 		temporality:     vmetricsv1.MetricDescriptor_CUMULATIVE,
-		attributeKeys:   mockComponentKeys,
+		attributeKeys:   mockAuthorizationKeys,
 		base:            22,
 		amp:             0.5,
 	},
 	"authorization.req.duration": {
 		kind:            vmetricsv1.MetricDescriptor_HISTOGRAM,
 		numberValueType: vmetricsv1.MetricDescriptor_DOUBLE,
-		unit:            "ms",
-		description:     "Authorization request duration in milliseconds",
+		unit:            "us",
+		description:     "Authorization request duration in microseconds",
 		temporality:     vmetricsv1.MetricDescriptor_DELTA,
-		attributeKeys:   mockComponentKeys,
+		attributeKeys:   mockAuthorizationKeys,
 		base:            180,
 		amp:             0.55,
 	},
 	"process.goroutines": {
-		kind:            vmetricsv1.MetricDescriptor_UP_DOWN_COUNTER,
+		kind:            vmetricsv1.MetricDescriptor_GAUGE,
 		numberValueType: vmetricsv1.MetricDescriptor_INT64,
 		unit:            "goroutines",
 		description:     "Number of goroutines",
@@ -179,7 +197,7 @@ var mockMetricMeta = map[string]mockMetricInfo{
 		base:            1,
 	},
 	"process.gomaxprocs": {
-		kind:            vmetricsv1.MetricDescriptor_UP_DOWN_COUNTER,
+		kind:            vmetricsv1.MetricDescriptor_GAUGE,
 		numberValueType: vmetricsv1.MetricDescriptor_INT64,
 		description:     "Current GOMAXPROCS setting",
 		temporality:     vmetricsv1.MetricDescriptor_CUMULATIVE,
@@ -187,7 +205,7 @@ var mockMetricMeta = map[string]mockMetricInfo{
 		base:            8,
 	},
 	"process.mem.heap_alloc": {
-		kind:            vmetricsv1.MetricDescriptor_UP_DOWN_COUNTER,
+		kind:            vmetricsv1.MetricDescriptor_GAUGE,
 		numberValueType: vmetricsv1.MetricDescriptor_INT64,
 		unit:            "bytes",
 		description:     "Bytes of allocated heap objects",
@@ -197,7 +215,7 @@ var mockMetricMeta = map[string]mockMetricInfo{
 		amp:             0.3,
 	},
 	"process.mem.total": {
-		kind:            vmetricsv1.MetricDescriptor_UP_DOWN_COUNTER,
+		kind:            vmetricsv1.MetricDescriptor_GAUGE,
 		numberValueType: vmetricsv1.MetricDescriptor_INT64,
 		unit:            "bytes",
 		description:     "Total bytes of memory mapped by the Go runtime",
@@ -207,7 +225,7 @@ var mockMetricMeta = map[string]mockMetricInfo{
 		amp:             0.15,
 	},
 	"process.mem.heap_released": {
-		kind:            vmetricsv1.MetricDescriptor_UP_DOWN_COUNTER,
+		kind:            vmetricsv1.MetricDescriptor_GAUGE,
 		numberValueType: vmetricsv1.MetricDescriptor_INT64,
 		unit:            "bytes",
 		description:     "Heap memory returned to the operating system",
@@ -217,7 +235,7 @@ var mockMetricMeta = map[string]mockMetricInfo{
 		amp:             0.2,
 	},
 	"process.mem.stacks": {
-		kind:            vmetricsv1.MetricDescriptor_UP_DOWN_COUNTER,
+		kind:            vmetricsv1.MetricDescriptor_GAUGE,
 		numberValueType: vmetricsv1.MetricDescriptor_INT64,
 		unit:            "bytes",
 		description:     "Memory used by goroutine stacks",
@@ -227,7 +245,7 @@ var mockMetricMeta = map[string]mockMetricInfo{
 		amp:             0.2,
 	},
 	"process.mem.heap_objects": {
-		kind:            vmetricsv1.MetricDescriptor_UP_DOWN_COUNTER,
+		kind:            vmetricsv1.MetricDescriptor_GAUGE,
 		numberValueType: vmetricsv1.MetricDescriptor_INT64,
 		description:     "Number of live heap objects",
 		temporality:     vmetricsv1.MetricDescriptor_CUMULATIVE,
@@ -264,7 +282,7 @@ var mockMetricMeta = map[string]mockMetricInfo{
 		amp:             0.4,
 	},
 	"process.gc.heap_goal": {
-		kind:            vmetricsv1.MetricDescriptor_UP_DOWN_COUNTER,
+		kind:            vmetricsv1.MetricDescriptor_GAUGE,
 		numberValueType: vmetricsv1.MetricDescriptor_INT64,
 		unit:            "bytes",
 		description:     "Target heap size for the next GC cycle",
@@ -641,7 +659,11 @@ func (s *tstMetricsService) ListMetricCatalog(
 		),
 	}
 
-	if mockComponentMatches(component, "vigil", "octovigil", "rscserver", "portal", "authserver") {
+	if component != nil && mockComponentMatches(component, "vigil", "rscserver") {
+		latencyUnit := "ms"
+		if component.Type == "rscserver" {
+			latencyUnit = "us"
+		}
 		items = append(items,
 			mockCatalogItem(
 				"requests_rate",
@@ -670,13 +692,13 @@ func (s *tstMetricsService) ListMetricCatalog(
 				"req.duration",
 				mockHistogramOp(vmetricsv1.HistogramOperation_QUANTILE, 0.95),
 				groupByType,
-				"ms",
+				latencyUnit,
 				vmetricsv1.QueryMetricsRequest_MERGE,
 			),
 		)
 	}
 
-	if mockComponentMatches(component, "octovigil") {
+	if component != nil && mockComponentMatches(component, "octovigil") {
 		items = append(items,
 			mockCatalogItem(
 				"authorization_requests_rate",
@@ -687,6 +709,26 @@ func (s *tstMetricsService) ListMetricCatalog(
 				groupByType,
 				"requests/s",
 				vmetricsv1.QueryMetricsRequest_SUM,
+			),
+			mockCatalogItem(
+				"active_authorization_requests",
+				"Active authorizations",
+				"Current authorization requests",
+				"authorization.req.active",
+				mockGaugeOp(vmetricsv1.GaugeOperation_LAST),
+				groupByType,
+				"requests",
+				vmetricsv1.QueryMetricsRequest_SUM,
+			),
+			mockCatalogItem(
+				"authorization_p95_latency",
+				"Authorization p95 latency",
+				"p95 authorization request duration",
+				"authorization.req.duration",
+				mockHistogramOp(vmetricsv1.HistogramOperation_QUANTILE, 0.95),
+				groupByType,
+				"us",
+				vmetricsv1.QueryMetricsRequest_MERGE,
 			),
 		)
 	}
@@ -1054,7 +1096,7 @@ func mockCartesianLabelSets(
 		for _, current := range ret {
 			for _, value := range values {
 				labels := append([]*vmetricsv1.Attribute{}, current...)
-				labels = append(labels, mockStringAttribute(key, value))
+				labels = append(labels, mockAttribute(key, value))
 				next = append(next, labels)
 				if len(next) >= limit {
 					break
@@ -1106,9 +1148,41 @@ func mockValuesForKey(
 	case "octelium.vigil.svc.region.name":
 		values = []string{"default", "edge"}
 	case "octelium.vigil.svc.mode":
-		values = []string{"HTTP", "TCP"}
-	case "http.method":
+		values = []string{"HTTP", "TCP", "SSH", "DNS", "POSTGRES"}
+	case "state":
+		values = []string{"ALLOWED", "DENIED"}
+	case "reason":
+		values = []string{"POLICY_MATCH", "NO_POLICY_MATCH", "SESSION_NOT_ACTIVE"}
+	case "req.http.method":
 		values = []string{"GET", "POST", "PUT", "DELETE"}
+	case "req.http.status":
+		values = []string{"2xx", "4xx", "5xx"}
+	case "req.mcp.method":
+		values = []string{"initialize", "tools/list", "tools/call"}
+	case "req.mcp.protocol_version":
+		values = []string{"2025-03-26", "2025-06-18"}
+	case "req.llm.operation":
+		values = []string{"chat", "responses", "embeddings"}
+	case "req.llm.protocol":
+		values = []string{"openai", "anthropic"}
+	case "req.llm.stream", "req.authorized", "req.error", "error":
+		values = []string{"true", "false"}
+	case "qtype":
+		values = []string{"A", "AAAA", "CNAME"}
+	case "rcode_class":
+		values = []string{"NOERROR", "NXDOMAIN", "SERVFAIL"}
+	case "api":
+		values = []string{"core", "enterprise", "access"}
+	case "version":
+		values = []string{"v1"}
+	case "kind":
+		values = []string{"Service", "User", "Session"}
+	case "op":
+		values = []string{"get", "list", "create", "update", "delete"}
+	case "namespace":
+		values = []string{"default", "production"}
+	case "service":
+		values = []string{"api", "web", "db-proxy"}
 	default:
 		values = []string{"series-a", "series-b", "series-c"}
 	}
@@ -1231,10 +1305,10 @@ func mockMetricComponentTypes(info mockMetricInfo) []string {
 	switch {
 	case strings.Contains(strings.ToLower(info.description), "authorization"):
 		return []string{"octovigil"}
-	case len(info.attributeKeys) == len(mockVigilKeys):
-		return []string{"vigil", "octovigil", "rscserver", "portal", "authserver"}
+	case len(info.attributeKeys) == len(mockRequestKeys):
+		return []string{"vigil", "rscserver"}
 	default:
-		return []string{"vigil", "octovigil", "rscserver", "portal", "authserver", "gateway"}
+		return []string{"vigil", "octovigil", "rscserver", "portal", "authserver", "gwagent"}
 	}
 }
 
@@ -1302,7 +1376,7 @@ func mockAttributeDescriptor(key string) *vmetricsv1.MetricAttributeDescriptor {
 
 	return &vmetricsv1.MetricAttributeDescriptor{
 		Key:                     key,
-		ValueKind:               vmetricsv1.AttributeValue_STRING,
+		ValueKind:               mockAttributeValueKind(key),
 		Sources:                 []vmetricsv1.MetricAttributeDescriptor_Source{source},
 		Filterable:              true,
 		Groupable:               true,
@@ -1376,6 +1450,32 @@ func mockStringAttribute(key, value string) *vmetricsv1.Attribute {
 	}
 }
 
+func mockBoolAttribute(key string, value bool) *vmetricsv1.Attribute {
+	return &vmetricsv1.Attribute{
+		Key: key,
+		Value: &vmetricsv1.AttributeValue{
+			Value: &vmetricsv1.AttributeValue_BoolValue{BoolValue: value},
+		},
+	}
+}
+
+func mockAttribute(key, value string) *vmetricsv1.Attribute {
+	if mockAttributeValueKind(key) == vmetricsv1.AttributeValue_BOOL {
+		boolValue, _ := strconv.ParseBool(value)
+		return mockBoolAttribute(key, boolValue)
+	}
+	return mockStringAttribute(key, value)
+}
+
+func mockAttributeValueKind(key string) vmetricsv1.AttributeValue_Kind {
+	switch key {
+	case "req.llm.stream", "req.authorized", "req.error", "error":
+		return vmetricsv1.AttributeValue_BOOL
+	default:
+		return vmetricsv1.AttributeValue_STRING
+	}
+}
+
 func mockAttributeStringValue(value *vmetricsv1.AttributeValue) (string, bool) {
 	if value == nil {
 		return "", false
@@ -1383,6 +1483,8 @@ func mockAttributeStringValue(value *vmetricsv1.AttributeValue) (string, bool) {
 	switch typed := value.Value.(type) {
 	case *vmetricsv1.AttributeValue_StringValue:
 		return typed.StringValue, true
+	case *vmetricsv1.AttributeValue_BoolValue:
+		return strconv.FormatBool(typed.BoolValue), true
 	default:
 		return "", false
 	}
@@ -1777,7 +1879,7 @@ func mockSortAttrs(attributes []*vmetricsv1.Attribute) {
 func mockGroupValues(key string) []string {
 	switch key {
 	case "octelium.component.type":
-		return []string{"vigil", "octovigil", "rscserver", "portal", "authserver", "gateway"}
+		return []string{"vigil", "octovigil", "rscserver", "portal", "authserver", "gwagent"}
 	case "octelium.component.namespace":
 		return []string{"octelium"}
 	case "octelium.component.name":
@@ -1789,9 +1891,33 @@ func mockGroupValues(key string) []string {
 	case "octelium.vigil.svc.region.name":
 		return []string{"default", "edge"}
 	case "octelium.vigil.svc.mode":
-		return []string{"HTTP", "TCP"}
-	case "http.method":
+		return []string{"HTTP", "TCP", "SSH", "DNS", "POSTGRES"}
+	case "state":
+		return []string{"ALLOWED", "DENIED"}
+	case "reason":
+		return []string{"POLICY_MATCH", "NO_POLICY_MATCH", "SESSION_NOT_ACTIVE"}
+	case "req.http.method":
 		return []string{"GET", "POST", "PUT", "DELETE"}
+	case "req.http.status":
+		return []string{"2xx", "4xx", "5xx"}
+	case "req.llm.stream", "req.authorized", "req.error", "error":
+		return []string{"true", "false"}
+	case "qtype":
+		return []string{"A", "AAAA", "CNAME"}
+	case "rcode_class":
+		return []string{"NOERROR", "NXDOMAIN", "SERVFAIL"}
+	case "api":
+		return []string{"core", "enterprise", "access"}
+	case "version":
+		return []string{"v1"}
+	case "kind":
+		return []string{"Service", "User", "Session"}
+	case "op":
+		return []string{"get", "list", "create", "update", "delete"}
+	case "namespace":
+		return []string{"default", "production"}
+	case "service":
+		return []string{"api", "web", "db-proxy"}
 	default:
 		return []string{"series-a", "series-b", "series-c"}
 	}

@@ -17,10 +17,12 @@ import {
 } from "@/apis/visibilityv1/metrics/vmetricsv1";
 import MetricChart, {
   counterOp,
+  durationToMillis,
   eqBoolFilter,
   eqFilter,
   gaugeOp,
   histogramOp,
+  retryMetricQuery,
 } from "@/components/Charts/MetricChart";
 import SelectResource from "@/components/ResourceLayout/SelectResource";
 import {
@@ -105,7 +107,7 @@ const ranges: Record<Range, number> = {
 };
 
 const duration = (value: Resolution, range: Range): Duration => {
-  const resolved =
+  let resolved =
     value === "auto"
       ? range === "15m"
         ? "10s"
@@ -115,6 +117,7 @@ const duration = (value: Resolution, range: Range): Duration => {
             ? "1m"
             : "5m"
       : value;
+  if (range === "24h" && resolved === "10s") resolved = "30s";
   if (resolved === "10s")
     return Duration.create({ type: { oneofKind: "seconds", seconds: 10 } });
   if (resolved === "30s")
@@ -146,6 +149,11 @@ const numericValue = (point?: {
     : point?.value.oneofKind === "asInt"
       ? Number(point.value.asInt)
       : undefined;
+
+const timestampMillis = (timestamp?: Timestamp) =>
+  timestamp
+    ? Number(timestamp.seconds) * 1_000 + Math.floor(timestamp.nanos / 1e6)
+    : undefined;
 
 const formatValue = (value: number | undefined, unit: string): string => {
   if (value === undefined || !Number.isFinite(value)) return "—";
@@ -206,7 +214,7 @@ const MetricStat = ({
       lookbackSeconds,
       JSON.stringify(step),
     ],
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       const now = new Date();
       const request = QueryMetricsRequest.create({
         metric: MetricSelector.create({
@@ -227,11 +235,12 @@ const MetricStat = ({
         limitPointsPerSeries: 500,
         limitBehavior: QueryMetricsRequest_LimitBehavior.TRUNCATE,
       });
-      return (await getClientVisibilityMetrics().queryMetrics(request))
+      return (await getClientVisibilityMetrics().queryMetrics(request, { abort: signal }))
         .response;
     },
     refetchInterval: autoRefresh ? refetchIntervalChart : false,
     refetchIntervalInBackground: false,
+    retry: retryMetricQuery,
   });
   const value = React.useMemo(() => {
     const points = query.data?.series[0]?.points;
@@ -245,8 +254,20 @@ const MetricStat = ({
     ) {
       return values.reduce((sum, item) => sum + item, 0);
     }
+    const latestPoint = points.number.points.at(-1);
+    const latestAt = timestampMillis(latestPoint?.timestamp);
+    const snapshotAt = timestampMillis(query.data?.snapshotTime);
+    const stepMillis = durationToMillis(query.data?.step ?? step);
+    if (
+      latestAt !== undefined &&
+      snapshotAt !== undefined &&
+      stepMillis !== undefined &&
+      snapshotAt - latestAt > stepMillis * 1.5
+    ) {
+      return operation.type.oneofKind === "counter" ? 0 : undefined;
+    }
     return values.at(-1);
-  }, [query.data, operation]);
+  }, [query.data, operation, step]);
 
   return (
     <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
@@ -268,8 +289,11 @@ const MetricStat = ({
         </span>
       </div>
       {query.isError && (
-        <div className="mt-2 text-[0.65rem] font-semibold text-red-500">
-          Metric unavailable
+        <div
+          className="mt-2 line-clamp-2 text-[0.65rem] font-semibold text-red-500"
+          title={query.error instanceof Error ? query.error.message : undefined}
+        >
+          {query.data ? "Refresh failed · showing previous value" : "Metric unavailable"}
         </div>
       )}
     </div>
@@ -302,6 +326,10 @@ const Metrics = () => {
     document.addEventListener("visibilitychange", update);
     return () => document.removeEventListener("visibilitychange", update);
   }, []);
+
+  React.useEffect(() => {
+    if (range === "24h" && resolution === "10s") setResolution("auto");
+  }, [range, resolution]);
 
   const lookbackSeconds = ranges[range];
   const step = React.useMemo(
@@ -446,7 +474,11 @@ const Metrics = () => {
               }
               data={[
                 { value: "auto", label: "Auto" },
-                { value: "10s", label: "10 seconds" },
+                {
+                  value: "10s",
+                  label: "10 seconds",
+                  disabled: range === "24h",
+                },
                 { value: "30s", label: "30 seconds" },
                 { value: "1m", label: "1 minute" },
                 { value: "5m", label: "5 minutes" },

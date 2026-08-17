@@ -95,9 +95,14 @@ export const getClientCluster = (): EnterpriseC.ClusterServiceClient => {
   return new EnterpriseC.ClusterServiceClient(getTransport());
 };
 
+let visibilityMetricsClient: VisibilityMetricsC.MetricsServiceClient | undefined;
+
 export const getClientVisibilityMetrics =
   (): VisibilityMetricsC.MetricsServiceClient => {
-    return new VisibilityMetricsC.MetricsServiceClient(getTransport());
+    visibilityMetricsClient ??= new VisibilityMetricsC.MetricsServiceClient(
+      getTransport(),
+    );
+    return visibilityMetricsClient;
   };
 
 export const refetchIntervalChart = 15000;
