@@ -3,6 +3,7 @@ import { ResourceComponentInfo } from "@/pages/utils/types";
 import Edit from "./Edit";
 import { ExtraComponent, LabelComponent, Summary } from "./List";
 import Main, { ItemInfo, MainInfo } from "./Main";
+import RevokeRequest from "./RevokeRequest";
 
 const resourceComponentInfo: ResourceComponentInfo = {
   API: "access",
@@ -20,6 +21,8 @@ const resourceComponentInfo: ResourceComponentInfo = {
     Edit: Edit,
     // @ts-ignore
     Main: Main,
+    // @ts-ignore
+    MainAction: RevokeRequest,
     // @ts-ignore
     itemInfo: ItemInfo,
   },

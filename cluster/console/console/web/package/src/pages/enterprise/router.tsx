@@ -62,6 +62,7 @@ const getResourceChildrenRouter = (arg: ResourceComponentInfo): RouteObject => {
       element: arg.Item.Main ? (
         <ResourceItemMainPage
           mainItemsGetter={arg.infoItemsGetter}
+          mainAction={arg.Item.MainAction}
           unDeletable={arg.unDeletable}
           cloneable={arg.cloneable}
         />

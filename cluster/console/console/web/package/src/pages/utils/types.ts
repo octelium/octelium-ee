@@ -23,6 +23,7 @@ export type ResourceComponentInfoList = {
 
 export type ResourceComponentInfoItem = {
   Main?: (props: { item: Resource }) => React.ReactNode;
+  MainAction?: (props: { item: Resource }) => React.ReactNode;
   Edit?: (props: {
     item: Resource;
     onUpdate: (item: Resource) => void;

@@ -95,6 +95,7 @@ const ResourceLoadError = (props: { error: unknown; retry: () => void }) => (
 
 const ResourceItemMainPage = (props: {
   mainItemsGetter?: (props: { item: Resource }) => ResourceMainInfo;
+  mainAction?: (props: { item: Resource }) => React.ReactNode;
   unDeletable?: boolean;
   cloneable?: boolean;
 }) => {
@@ -120,6 +121,7 @@ const ResourceItemMainPage = (props: {
         <ResourceMainContent
           resource={ctx.data}
           mainItemsGetter={props.mainItemsGetter}
+          mainAction={props.mainAction}
           unDeletable={props.unDeletable}
           cloneable={props.cloneable}
         />
@@ -131,6 +133,7 @@ const ResourceItemMainPage = (props: {
 const ResourceMainContent = (props: {
   resource: Resource;
   mainItemsGetter?: (props: { item: Resource }) => ResourceMainInfo;
+  mainAction?: (props: { item: Resource }) => React.ReactNode;
   unDeletable?: boolean;
   cloneable?: boolean;
 }) => {
@@ -221,6 +224,7 @@ const ResourceMainContent = (props: {
             role="toolbar"
             aria-label={`Actions for ${md.name}`}
           >
+            {props.mainAction && <props.mainAction item={item} />}
             <ResourceYAML item={item} size="xs" />
             {props.cloneable && <CloneResource item={item} />}
             {!props.unDeletable && (
