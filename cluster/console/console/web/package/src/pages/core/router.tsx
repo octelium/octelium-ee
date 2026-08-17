@@ -121,7 +121,7 @@ const getResourceChildrenRouter = (arg: ResourceComponentInfo): RouteObject => {
 
   if (
     match(arg.Kind)
-      .with("Service", () => true)
+      .with("Service", "Namespace", () => true)
       .otherwise(() => false)
   ) {
     children.push({
