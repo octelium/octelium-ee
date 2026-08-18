@@ -156,7 +156,7 @@ export const XTermSSHReplay: React.FC<XTermSSHReplayProps> = ({
     mountedRef.current = true;
 
     terminal.current = new Terminal({
-      convertEol: true,
+      convertEol: false,
       fontFamily:
         "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace",
       fontWeight: 450,
@@ -164,7 +164,7 @@ export const XTermSSHReplay: React.FC<XTermSSHReplayProps> = ({
       cursorBlink: false,
       scrollback: 5000,
       fontSize: 14,
-      lineHeight: 1.45,
+      lineHeight: 1.4,
       theme: {
         background: "#0f172a",
         foreground: "#e2e8f0",
