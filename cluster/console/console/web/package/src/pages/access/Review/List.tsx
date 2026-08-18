@@ -14,6 +14,14 @@ import {
 } from "@/components/Summary";
 import { getClientVisibilityAccess } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
+import {
+  CircleCheck,
+  CircleX,
+  Clock3,
+  ListChecks,
+  RotateCcw,
+  Users,
+} from "lucide-react";
 import { getDecisionMeta } from "./utils";
 
 export const LabelComponent = (props: { item: Review }) => {
@@ -43,12 +51,24 @@ const DoSummary = ({ resp }: { resp: GetReviewSummaryResponse }) => {
         <SummaryItemCount count={resp.totalNumber} to="/access/reviews">
           Total
         </SummaryItemCount>
-        <SummaryItemCount count={resp.totalPending} to="/access/reviews?isDecided=false">Pending</SummaryItemCount>
-        <SummaryItemCount count={resp.totalApproved} to="/access/reviews?decision=APPROVE">Approved</SummaryItemCount>
-        <SummaryItemCount count={resp.totalRejected} to="/access/reviews?decision=REJECT">Rejected</SummaryItemCount>
-        <SummaryItemCount count={resp.totalRevised}>Revised</SummaryItemCount>
-        <SummaryItemCount count={resp.totalUser}>Reviewers</SummaryItemCount>
-        <SummaryItemCount count={resp.totalRequest}>Requests</SummaryItemCount>
+        <SummaryItemCount count={resp.totalPending} to="/access/reviews?isDecided=false" icon={Clock3}>
+          Pending
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalApproved} to="/access/reviews?decision=APPROVE" icon={CircleCheck}>
+          Approved
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalRejected} to="/access/reviews?decision=REJECT" icon={CircleX}>
+          Rejected
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalRevised} icon={RotateCcw}>
+          Revised
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalUser} icon={Users}>
+          Reviewers
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalRequest} icon={ListChecks}>
+          Requests
+        </SummaryItemCount>
       </SummaryItemCountWrap>
     </div>
   );

@@ -12,6 +12,7 @@ import {
 } from "@/components/Summary";
 import { getClientVisibilityAccess } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
+import { Layers, Server } from "lucide-react";
 
 const countServices = (item: Catalog): number =>
   item.spec?.resourceCollection?.service?.services.length ?? 0;
@@ -44,8 +45,12 @@ const DoSummary = ({ resp }: { resp: GetCatalogSummaryResponse }) => {
         <SummaryItemCount count={resp.totalNumber} to="/access/catalogs">
           Total
         </SummaryItemCount>
-        <SummaryItemCount count={resp.totalService}>Services</SummaryItemCount>
-        <SummaryItemCount count={resp.totalNamespace}>Namespaces</SummaryItemCount>
+        <SummaryItemCount count={resp.totalService} icon={Server}>
+          Services
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalNamespace} icon={Layers}>
+          Namespaces
+        </SummaryItemCount>
       </SummaryItemCountWrap>
     </div>
   );

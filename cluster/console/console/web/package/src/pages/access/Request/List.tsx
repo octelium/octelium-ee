@@ -15,6 +15,21 @@ import {
 } from "@/components/Summary";
 import { getClientVisibilityAccess } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
+import {
+  AlertTriangle,
+  CalendarClock,
+  CircleCheck,
+  CircleX,
+  Clock3,
+  Layers,
+  ListChecks,
+  RotateCcw,
+  Server,
+  ShieldCheck,
+  Timer,
+  UserRound,
+  UsersRound,
+} from "lucide-react";
 import { getStatusMeta, getUrgencyLabel } from "./utils";
 
 export const LabelComponent = (props: { item: Request }) => {
@@ -105,21 +120,51 @@ const DoSummary = ({ resp }: { resp: GetRequestSummaryResponse }) => {
         <SummaryItemCount count={resp.totalNumber} to="/access/requests">
           Total
         </SummaryItemCount>
-        <SummaryItemCount count={resp.totalPending} to="/access/requests?state=PENDING">Pending</SummaryItemCount>
-        <SummaryItemCount count={resp.totalActive} to="/access/requests?isActive=true">Active</SummaryItemCount>
-        <SummaryItemCount count={resp.totalApproved} to="/access/requests?state=APPROVED">Approved</SummaryItemCount>
-        <SummaryItemCount count={resp.totalRejected} to="/access/requests?state=REJECTED">Rejected</SummaryItemCount>
-        <SummaryItemCount count={resp.totalRevoked} to="/access/requests?state=REVOKED">Revoked</SummaryItemCount>
-        <SummaryItemCount count={resp.totalExpired} to="/access/requests?state=EXPIRED">Expired</SummaryItemCount>
-        <SummaryItemCount count={resp.totalCancelled} to="/access/requests?state=CANCELLED">Cancelled</SummaryItemCount>
-        <SummaryItemCount count={resp.totalDeadlinePassed}>Past deadline</SummaryItemCount>
-        <SummaryItemCount count={resp.totalWithDeadline}>With deadline</SummaryItemCount>
-        <SummaryItemCount count={resp.totalUrgencyHigh + resp.totalUrgencyVeryHigh + resp.totalUrgencyHighest}>High urgency</SummaryItemCount>
-        <SummaryItemCount count={resp.totalUser}>Requesters</SummaryItemCount>
-        <SummaryItemCount count={resp.totalSubjectUser}>Subject users</SummaryItemCount>
-        <SummaryItemCount count={resp.totalService}>Services</SummaryItemCount>
-        <SummaryItemCount count={resp.totalCatalog}>Catalogs</SummaryItemCount>
-        <SummaryItemCount count={resp.totalPolicy}>Policies</SummaryItemCount>
+        <SummaryItemCount count={resp.totalPending} to="/access/requests?state=PENDING" icon={Clock3}>
+          Pending
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalActive} to="/access/requests?isActive=true" icon={Timer}>
+          Active
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalApproved} to="/access/requests?state=APPROVED" icon={CircleCheck}>
+          Approved
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalRejected} to="/access/requests?state=REJECTED" icon={CircleX}>
+          Rejected
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalRevoked} to="/access/requests?state=REVOKED" icon={RotateCcw}>
+          Revoked
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalExpired} to="/access/requests?state=EXPIRED" icon={CalendarClock}>
+          Expired
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalCancelled} to="/access/requests?state=CANCELLED" icon={CircleX}>
+          Cancelled
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalDeadlinePassed} icon={CalendarClock}>
+          Past deadline
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalWithDeadline} icon={Timer}>
+          With deadline
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalUrgencyHigh + resp.totalUrgencyVeryHigh + resp.totalUrgencyHighest} icon={AlertTriangle}>
+          High urgency
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalUser} icon={UserRound}>
+          Requesters
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalSubjectUser} icon={UsersRound}>
+          Subject users
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalService} icon={Server}>
+          Services
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalCatalog} icon={Layers}>
+          Catalogs
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalPolicy} icon={ShieldCheck}>
+          Policies
+        </SummaryItemCount>
       </SummaryItemCountWrap>
     </div>
   );

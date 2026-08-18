@@ -13,6 +13,16 @@ import {
 import { getDomain } from "@/utils";
 import { getClientVisibilityAccess } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
+import {
+  Ban,
+  Eye,
+  ListChecks,
+  ListOrdered,
+  ShieldCheck,
+  ShieldX,
+  Timer,
+  Users,
+} from "lucide-react";
 
 const ItemDetails = (props: { item: Policy; domain: string }) => {
   const { item } = props;
@@ -55,17 +65,34 @@ const DoSummary = ({ resp }: { resp: GetPolicySummaryResponse }) => {
         <SummaryItemCount
           count={resp.totalDisabled}
           to={`/access/policies?isDisabled=true`}
+          icon={Ban}
         >
           Disabled
         </SummaryItemCount>
-        <SummaryItemCount count={resp.totalRule}>Rules</SummaryItemCount>
-        <SummaryItemCount count={resp.totalRuleDeny} to="/access/policies?effect=DENY">Deny rules</SummaryItemCount>
-        <SummaryItemCount count={resp.totalRuleReview} to="/access/policies?effect=REVIEW">Review rules</SummaryItemCount>
-        <SummaryItemCount count={resp.totalRuleAutoApprove} to="/access/policies?effect=AUTO_APPROVE">Auto-approve rules</SummaryItemCount>
-        <SummaryItemCount count={resp.totalRuleAuthorization}>Authorization rules</SummaryItemCount>
-        <SummaryItemCount count={resp.totalRuleMaxAccessDuration}>Duration-limited rules</SummaryItemCount>
-        <SummaryItemCount count={resp.totalReviewStep}>Review steps</SummaryItemCount>
-        <SummaryItemCount count={resp.totalReviewer}>Reviewers</SummaryItemCount>
+        <SummaryItemCount count={resp.totalRule} icon={ListChecks}>
+          Rules
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalRuleDeny} to="/access/policies?effect=DENY" icon={ShieldX}>
+          Deny rules
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalRuleReview} to="/access/policies?effect=REVIEW" icon={Eye}>
+          Review rules
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalRuleAutoApprove} to="/access/policies?effect=AUTO_APPROVE" icon={ShieldCheck}>
+          Auto-approve rules
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalRuleAuthorization} icon={ShieldCheck}>
+          Authorization rules
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalRuleMaxAccessDuration} icon={Timer}>
+          Duration-limited rules
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalReviewStep} icon={ListOrdered}>
+          Review steps
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalReviewer} icon={Users}>
+          Reviewers
+        </SummaryItemCount>
       </SummaryItemCountWrap>
     </div>
   );
