@@ -15,7 +15,20 @@ import { SummaryItemCount, SummaryItemCountWrap, SummaryNoItems } from "@/compon
 import { getDomain } from "@/utils";
 import { getClientVisibilityEnterprise } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle2, Clock3, Loader2 } from "lucide-react";
+import {
+  AlertTriangle,
+  BadgeCheck,
+  CalendarClock,
+  CalendarX2,
+  CheckCircle2,
+  Clock3,
+  Layers,
+  Loader2,
+  PenLine,
+  Server,
+  Settings2,
+  Stamp,
+} from "lucide-react";
 import { match } from "ts-pattern";
 
 const ItemDetails = (props: { item: Certificate; domain: string }) => {
@@ -143,17 +156,17 @@ export const ExtraComponent = (props: { item: Certificate }) => {
 
 const DoSummary = ({ resp }: { resp: GetCertificateSummaryResponse }) => <SummaryItemCountWrap>
   <SummaryItemCount count={resp.totalNumber} to="/enterprise/certificates">Total</SummaryItemCount>
-  <SummaryItemCount count={resp.totalManaged} to="/enterprise/certificates?mode=MANAGED">Managed</SummaryItemCount>
-  <SummaryItemCount count={resp.totalManual} to="/enterprise/certificates?mode=MANUAL">Manual</SummaryItemCount>
-  <SummaryItemCount count={resp.totalIssuanceRequested} to="/enterprise/certificates?issuanceState=ISSUANCE_REQUESTED">Issuance requested</SummaryItemCount>
-  <SummaryItemCount count={resp.totalIssuing} to="/enterprise/certificates?issuanceState=ISSUING">Issuing</SummaryItemCount>
-  <SummaryItemCount count={resp.totalIssuanceSuccess} to="/enterprise/certificates?issuanceState=SUCCESS">Issued</SummaryItemCount>
-  <SummaryItemCount count={resp.totalIssuanceFailed} to="/enterprise/certificates?issuanceState=FAILED">Failed issuance</SummaryItemCount>
-  <SummaryItemCount count={resp.totalExpired} to="/enterprise/certificates?isExpired=true">Expired</SummaryItemCount>
-  <SummaryItemCount count={resp.totalExpiringSoon} to="/enterprise/certificates?isExpiringSoon=true">Expiring soon</SummaryItemCount>
-  <SummaryItemCount count={resp.totalService}>Services</SummaryItemCount>
-  <SummaryItemCount count={resp.totalNamespace}>Namespaces</SummaryItemCount>
-  <SummaryItemCount count={resp.totalCertificateIssuer}>Issuers</SummaryItemCount>
+  <SummaryItemCount count={resp.totalManaged} to="/enterprise/certificates?mode=MANAGED" icon={Settings2}>Managed</SummaryItemCount>
+  <SummaryItemCount count={resp.totalManual} to="/enterprise/certificates?mode=MANUAL" icon={PenLine}>Manual</SummaryItemCount>
+  <SummaryItemCount count={resp.totalIssuanceRequested} to="/enterprise/certificates?issuanceState=ISSUANCE_REQUESTED" icon={Clock3}>Issuance requested</SummaryItemCount>
+  <SummaryItemCount count={resp.totalIssuing} to="/enterprise/certificates?issuanceState=ISSUING" icon={Loader2}>Issuing</SummaryItemCount>
+  <SummaryItemCount count={resp.totalIssuanceSuccess} to="/enterprise/certificates?issuanceState=SUCCESS" icon={BadgeCheck}>Issued</SummaryItemCount>
+  <SummaryItemCount count={resp.totalIssuanceFailed} to="/enterprise/certificates?issuanceState=FAILED" icon={AlertTriangle}>Failed issuance</SummaryItemCount>
+  <SummaryItemCount count={resp.totalExpired} to="/enterprise/certificates?isExpired=true" icon={CalendarX2}>Expired</SummaryItemCount>
+  <SummaryItemCount count={resp.totalExpiringSoon} to="/enterprise/certificates?isExpiringSoon=true" icon={CalendarClock}>Expiring soon</SummaryItemCount>
+  <SummaryItemCount count={resp.totalService} icon={Server}>Services</SummaryItemCount>
+  <SummaryItemCount count={resp.totalNamespace} icon={Layers}>Namespaces</SummaryItemCount>
+  <SummaryItemCount count={resp.totalCertificateIssuer} icon={Stamp}>Issuers</SummaryItemCount>
 </SummaryItemCountWrap>;
 
 export const Summary = ({ showNoItems }: { showNoItems?: boolean }) => {

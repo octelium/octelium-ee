@@ -14,7 +14,10 @@ import TimeAgo from "@/components/TimeAgo";
 import { SummaryItemCount, SummaryItemCountWrap, SummaryNoItems } from "@/components/Summary";
 import { getClientVisibilityEnterprise } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, CircleX, Loader2, RefreshCw } from "lucide-react";
+import { FaAws } from "react-icons/fa6";
+import { SiHashicorp, SiKubernetes, SiGooglecloud } from "react-icons/si";
+import { VscAzure } from "react-icons/vsc";
 import { match } from "ts-pattern";
 
 export const getSecretStoreType = (item: SecretStore): string =>
@@ -142,16 +145,16 @@ export const LabelComponent = (props: { item: SecretStore }) => {
 
 const DoSummary = ({ resp }: { resp: GetSecretStoreSummaryResponse }) => <SummaryItemCountWrap>
   <SummaryItemCount count={resp.totalNumber} to="/enterprise/secretstores">Total</SummaryItemCount>
-  <SummaryItemCount count={resp.totalKubernetes} to="/enterprise/secretstores?type=KUBERNETES">Kubernetes</SummaryItemCount>
-  <SummaryItemCount count={resp.totalAzureKeyVault} to="/enterprise/secretstores?type=TYPE_AZURE_KEY_VAULT">Azure Key Vault</SummaryItemCount>
-  <SummaryItemCount count={resp.totalHashicorpVault} to="/enterprise/secretstores?type=TYPE_HASHICORP_VAULT">HashiCorp Vault</SummaryItemCount>
-  <SummaryItemCount count={resp.totalGCPKMS} to="/enterprise/secretstores?type=TYPE_GCP_KMS">Google Cloud KMS</SummaryItemCount>
-  <SummaryItemCount count={resp.totalAWSKMS} to="/enterprise/secretstores?type=TYPE_AWS_KMS">AWS KMS</SummaryItemCount>
-  <SummaryItemCount count={resp.totalOK} to="/enterprise/secretstores?state=OK">Ready</SummaryItemCount>
-  <SummaryItemCount count={resp.totalLoading} to="/enterprise/secretstores?state=LOADING">Loading</SummaryItemCount>
-  <SummaryItemCount count={resp.totalSynchronizing} to="/enterprise/secretstores?synchronizationState=SYNCING">Synchronizing</SummaryItemCount>
-  <SummaryItemCount count={resp.totalSynchronizationSuccess} to="/enterprise/secretstores?synchronizationState=SUCCESS">Synchronized</SummaryItemCount>
-  <SummaryItemCount count={resp.totalSynchronizationFailed} to="/enterprise/secretstores?synchronizationState=FAILED">Failed synchronization</SummaryItemCount>
+  <SummaryItemCount count={resp.totalKubernetes} to="/enterprise/secretstores?type=KUBERNETES" icon={SiKubernetes}>Kubernetes</SummaryItemCount>
+  <SummaryItemCount count={resp.totalAzureKeyVault} to="/enterprise/secretstores?type=TYPE_AZURE_KEY_VAULT" icon={VscAzure}>Azure Key Vault</SummaryItemCount>
+  <SummaryItemCount count={resp.totalHashicorpVault} to="/enterprise/secretstores?type=TYPE_HASHICORP_VAULT" icon={SiHashicorp}>HashiCorp Vault</SummaryItemCount>
+  <SummaryItemCount count={resp.totalGCPKMS} to="/enterprise/secretstores?type=TYPE_GCP_KMS" icon={SiGooglecloud}>Google Cloud KMS</SummaryItemCount>
+  <SummaryItemCount count={resp.totalAWSKMS} to="/enterprise/secretstores?type=TYPE_AWS_KMS" icon={FaAws}>AWS KMS</SummaryItemCount>
+  <SummaryItemCount count={resp.totalOK} to="/enterprise/secretstores?state=OK" icon={CheckCircle2}>Ready</SummaryItemCount>
+  <SummaryItemCount count={resp.totalLoading} to="/enterprise/secretstores?state=LOADING" icon={Loader2}>Loading</SummaryItemCount>
+  <SummaryItemCount count={resp.totalSynchronizing} to="/enterprise/secretstores?synchronizationState=SYNCING" icon={RefreshCw}>Synchronizing</SummaryItemCount>
+  <SummaryItemCount count={resp.totalSynchronizationSuccess} to="/enterprise/secretstores?synchronizationState=SUCCESS" icon={CheckCircle2}>Synchronized</SummaryItemCount>
+  <SummaryItemCount count={resp.totalSynchronizationFailed} to="/enterprise/secretstores?synchronizationState=FAILED" icon={CircleX}>Failed synchronization</SummaryItemCount>
 </SummaryItemCountWrap>;
 
 export const Summary = ({ showNoItems }: { showNoItems?: boolean }) => {

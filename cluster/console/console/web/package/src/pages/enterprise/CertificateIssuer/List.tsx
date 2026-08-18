@@ -11,7 +11,7 @@ import {
   ResourceListLabelWrap,
 } from "@/components/ResourceList";
 import { getDomain } from "@/utils";
-import { AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Globe2, Loader2 } from "lucide-react";
 import { match } from "ts-pattern";
 
 export const getType = (item: CertificateIssuer): string =>
@@ -94,10 +94,10 @@ export const ExtraComponent = (props: { item: CertificateIssuer }) => {
 
 const DoSummary = ({ resp }: { resp: GetCertificateIssuerSummaryResponse }) => <SummaryItemCountWrap>
   <SummaryItemCount count={resp.totalNumber} to="/enterprise/certificateissuers">Total</SummaryItemCount>
-  <SummaryItemCount count={resp.totalACME} to="/enterprise/certificateissuers?type=ACME">ACME</SummaryItemCount>
-  <SummaryItemCount count={resp.totalPreparing} to="/enterprise/certificateissuers?state=PREPARING">Preparing</SummaryItemCount>
-  <SummaryItemCount count={resp.totalReady} to="/enterprise/certificateissuers?state=READY">Ready</SummaryItemCount>
-  <SummaryItemCount count={resp.totalNotReady} to="/enterprise/certificateissuers?state=NOT_READY">Not ready</SummaryItemCount>
+  <SummaryItemCount count={resp.totalACME} to="/enterprise/certificateissuers?type=ACME" icon={Globe2}>ACME</SummaryItemCount>
+  <SummaryItemCount count={resp.totalPreparing} to="/enterprise/certificateissuers?state=PREPARING" icon={Loader2}>Preparing</SummaryItemCount>
+  <SummaryItemCount count={resp.totalReady} to="/enterprise/certificateissuers?state=READY" icon={CheckCircle2}>Ready</SummaryItemCount>
+  <SummaryItemCount count={resp.totalNotReady} to="/enterprise/certificateissuers?state=NOT_READY" icon={AlertTriangle}>Not ready</SummaryItemCount>
 </SummaryItemCountWrap>;
 
 export const Summary = ({ showNoItems }: { showNoItems?: boolean }) => {

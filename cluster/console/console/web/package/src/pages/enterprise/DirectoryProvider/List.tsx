@@ -15,7 +15,8 @@ import { getDomain } from "@/utils";
 import { getClientVisibilityEnterprise } from "@/utils/client";
 import { getResourceRef } from "@/utils/pb";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
+import { AlertTriangle, Ban, CheckCircle2, Loader2, RefreshCw, Users, UsersRound } from "lucide-react";
+import { SiGoogle, SiKeycloak } from "react-icons/si";
 import { match } from "ts-pattern";
 
 export const getType = (item: DirectoryProvider): string =>
@@ -191,15 +192,15 @@ export const ExtraComponent = (props: { item: DirectoryProvider }) => {
 
 const DoSummary = ({ resp }: { resp: GetDirectoryProviderSummaryResponse }) => <SummaryItemCountWrap>
   <SummaryItemCount count={resp.totalNumber} to="/enterprise/directoryproviders">Total</SummaryItemCount>
-  <SummaryItemCount count={resp.totalDisabled} to="/enterprise/directoryproviders?isDisabled=true">Disabled</SummaryItemCount>
-  <SummaryItemCount count={resp.totalSCIM} to="/enterprise/directoryproviders?type=SCIM">SCIM</SummaryItemCount>
-  <SummaryItemCount count={resp.totalGoogleWorkspace} to="/enterprise/directoryproviders?type=GOOGLE_WORKSPACE">Google Workspace</SummaryItemCount>
-  <SummaryItemCount count={resp.totalKeycloak} to="/enterprise/directoryproviders?type=KEYCLOAK">Keycloak</SummaryItemCount>
-  <SummaryItemCount count={resp.totalSynchronizing} to="/enterprise/directoryproviders?synchronizationState=SYNCING">Synchronizing</SummaryItemCount>
-  <SummaryItemCount count={resp.totalSynchronizationSuccess} to="/enterprise/directoryproviders?synchronizationState=SUCCESS">Synchronized</SummaryItemCount>
-  <SummaryItemCount count={resp.totalSynchronizationFailed} to="/enterprise/directoryproviders?synchronizationState=FAILED">Failed synchronization</SummaryItemCount>
-  <SummaryItemCount count={resp.totalUser}>Synced users</SummaryItemCount>
-  <SummaryItemCount count={resp.totalGroup}>Synced groups</SummaryItemCount>
+  <SummaryItemCount count={resp.totalDisabled} to="/enterprise/directoryproviders?isDisabled=true" icon={Ban}>Disabled</SummaryItemCount>
+  <SummaryItemCount count={resp.totalSCIM} to="/enterprise/directoryproviders?type=SCIM" icon={Users}>SCIM</SummaryItemCount>
+  <SummaryItemCount count={resp.totalGoogleWorkspace} to="/enterprise/directoryproviders?type=GOOGLE_WORKSPACE" icon={SiGoogle}>Google Workspace</SummaryItemCount>
+  <SummaryItemCount count={resp.totalKeycloak} to="/enterprise/directoryproviders?type=KEYCLOAK" icon={SiKeycloak}>Keycloak</SummaryItemCount>
+  <SummaryItemCount count={resp.totalSynchronizing} to="/enterprise/directoryproviders?synchronizationState=SYNCING" icon={RefreshCw}>Synchronizing</SummaryItemCount>
+  <SummaryItemCount count={resp.totalSynchronizationSuccess} to="/enterprise/directoryproviders?synchronizationState=SUCCESS" icon={CheckCircle2}>Synchronized</SummaryItemCount>
+  <SummaryItemCount count={resp.totalSynchronizationFailed} to="/enterprise/directoryproviders?synchronizationState=FAILED" icon={AlertTriangle}>Failed synchronization</SummaryItemCount>
+  <SummaryItemCount count={resp.totalUser} icon={Users}>Synced users</SummaryItemCount>
+  <SummaryItemCount count={resp.totalGroup} icon={UsersRound}>Synced groups</SummaryItemCount>
 </SummaryItemCountWrap>;
 
 export const Summary = ({ showNoItems }: { showNoItems?: boolean }) => {

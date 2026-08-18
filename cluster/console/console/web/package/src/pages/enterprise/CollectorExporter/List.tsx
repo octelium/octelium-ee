@@ -4,6 +4,17 @@ import { ResourceListLabel, ResourceListLabelWrap } from "@/components/ResourceL
 import { SummaryItemCount, SummaryItemCountWrap, SummaryNoItems } from "@/components/Summary";
 import { getClientVisibilityEnterprise } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
+import { Activity, Ban, Database, FileOutput, Globe2 } from "lucide-react";
+import {
+  SiApachekafka,
+  SiClickhouse,
+  SiDatadog,
+  SiElasticsearch,
+  SiInfluxdb,
+  SiPrometheus,
+  SiSplunk,
+} from "react-icons/si";
+import { VscAzure } from "react-icons/vsc";
 import { match } from "ts-pattern";
 
 export const getType = (item: CollectorExporter): string =>
@@ -43,18 +54,25 @@ export const LabelComponent = (props: { item: CollectorExporter }) => {
   return <ResourceListLabelWrap><ResourceListLabel label="Type">{getType(props.item)}</ResourceListLabel>{props.item.spec?.isDisabled && <ResourceListLabel>Disabled</ResourceListLabel>}{destination && <ResourceListLabel label="Destination">{destination}</ResourceListLabel>}</ResourceListLabelWrap>;
 };
 
-const exporterTypes: Array<[keyof GetCollectorExporterSummaryResponse, string, string]> = [
-  ["totalOTLP", "OTLP", "OTLP"], ["totalOTLPHTTP", "OTLP HTTP", "OTLP_HTTP"], ["totalClickhouse", "ClickHouse", "CLICKHOUSE"],
-  ["totalElasticsearch", "Elasticsearch", "ELASTICSEARCH"], ["totalLogzio", "Logz.io", "LOGZIO"], ["totalInfluxDB", "InfluxDB", "INFLUXDB"],
-  ["totalKafka", "Kafka", "KAFKA"], ["totalDatadog", "Datadog", "DATADOG"], ["totalSplunk", "Splunk", "SPLUNK"],
-  ["totalAzureMonitor", "Azure Monitor", "AZURE_MONITOR"], ["totalAzureDataExplorer", "Azure Data Explorer", "AZURE_DATA_EXPLORER"],
-  ["totalPrometheusRemoteWrite", "Prometheus", "PROMETHEUS_REMOTE_WRITE"],
+const exporterTypes = [
+  { field: "totalOTLP" as const, label: "OTLP", type: "OTLP", icon: Activity },
+  { field: "totalOTLPHTTP" as const, label: "OTLP HTTP", type: "OTLP_HTTP", icon: Globe2 },
+  { field: "totalClickhouse" as const, label: "ClickHouse", type: "CLICKHOUSE", icon: SiClickhouse },
+  { field: "totalElasticsearch" as const, label: "Elasticsearch", type: "ELASTICSEARCH", icon: SiElasticsearch },
+  { field: "totalLogzio" as const, label: "Logz.io", type: "LOGZIO", icon: FileOutput },
+  { field: "totalInfluxDB" as const, label: "InfluxDB", type: "INFLUXDB", icon: SiInfluxdb },
+  { field: "totalKafka" as const, label: "Kafka", type: "KAFKA", icon: SiApachekafka },
+  { field: "totalDatadog" as const, label: "Datadog", type: "DATADOG", icon: SiDatadog },
+  { field: "totalSplunk" as const, label: "Splunk", type: "SPLUNK", icon: SiSplunk },
+  { field: "totalAzureMonitor" as const, label: "Azure Monitor", type: "AZURE_MONITOR", icon: VscAzure },
+  { field: "totalAzureDataExplorer" as const, label: "Azure Data Explorer", type: "AZURE_DATA_EXPLORER", icon: Database },
+  { field: "totalPrometheusRemoteWrite" as const, label: "Prometheus", type: "PROMETHEUS_REMOTE_WRITE", icon: SiPrometheus },
 ];
 
 const DoSummary = ({ resp }: { resp: GetCollectorExporterSummaryResponse }) => <SummaryItemCountWrap>
   <SummaryItemCount count={resp.totalNumber} to="/enterprise/collectorexporters">Total</SummaryItemCount>
-  <SummaryItemCount count={resp.totalDisabled} to="/enterprise/collectorexporters?isDisabled=true">Disabled</SummaryItemCount>
-  {exporterTypes.map(([field, label, type]) => <SummaryItemCount key={field} count={resp[field]} to={`/enterprise/collectorexporters?type=${type}`}>{label}</SummaryItemCount>)}
+  <SummaryItemCount count={resp.totalDisabled} to="/enterprise/collectorexporters?isDisabled=true" icon={Ban}>Disabled</SummaryItemCount>
+  {exporterTypes.map(({ field, label, type, icon }) => <SummaryItemCount key={field} count={resp[field]} to={`/enterprise/collectorexporters?type=${type}`} icon={icon}>{label}</SummaryItemCount>)}
 </SummaryItemCountWrap>;
 
 export const Summary = ({ showNoItems }: { showNoItems?: boolean }) => {

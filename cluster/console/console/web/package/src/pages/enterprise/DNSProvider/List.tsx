@@ -7,6 +7,15 @@ import {
 import { SummaryItemCount, SummaryItemCountWrap, SummaryNoItems } from "@/components/Summary";
 import { getClientVisibilityEnterprise } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
+import { Globe2 } from "lucide-react";
+import { FaAws, FaLinode } from "react-icons/fa6";
+import {
+  SiCloudflare,
+  SiDigitalocean,
+  SiGooglecloud,
+  SiOvh,
+} from "react-icons/si";
+import { VscAzure } from "react-icons/vsc";
 import { match } from "ts-pattern";
 
 export const getDNSProviderType = (item: DNSProvider): string =>
@@ -61,14 +70,19 @@ export const LabelComponent = (props: { item: DNSProvider }) => {
   );
 };
 
-const providerTypes: Array<[keyof GetDNSProviderSummaryResponse, string, string]> = [
-  ["totalCloudflare", "Cloudflare", "CLOUDFLARE"], ["totalAWS", "AWS", "AWS"], ["totalDigitalOcean", "DigitalOcean", "DIGITALOCEAN"],
-  ["totalGoogle", "Google", "GOOGLE"], ["totalAzure", "Azure", "AZURE"], ["totalLinode", "Linode", "LINODE"], ["totalOVH", "OVH", "OVH"],
+const providerTypes = [
+  { field: "totalCloudflare" as const, label: "Cloudflare", type: "CLOUDFLARE", icon: SiCloudflare },
+  { field: "totalAWS" as const, label: "AWS", type: "AWS", icon: FaAws },
+  { field: "totalDigitalOcean" as const, label: "DigitalOcean", type: "DIGITALOCEAN", icon: SiDigitalocean },
+  { field: "totalGoogle" as const, label: "Google", type: "GOOGLE", icon: SiGooglecloud },
+  { field: "totalAzure" as const, label: "Azure", type: "AZURE", icon: VscAzure },
+  { field: "totalLinode" as const, label: "Linode", type: "LINODE", icon: FaLinode },
+  { field: "totalOVH" as const, label: "OVH", type: "OVH", icon: SiOvh },
 ];
 
 const DoSummary = ({ resp }: { resp: GetDNSProviderSummaryResponse }) => <SummaryItemCountWrap>
   <SummaryItemCount count={resp.totalNumber} to="/enterprise/dnsproviders">Total</SummaryItemCount>
-  {providerTypes.map(([field, label, type]) => <SummaryItemCount key={field} count={resp[field]} to={`/enterprise/dnsproviders?type=${type}`}>{label}</SummaryItemCount>)}
+  {providerTypes.map(({ field, label, type, icon }) => <SummaryItemCount key={field} count={resp[field]} to={`/enterprise/dnsproviders?type=${type}`} icon={icon}>{label}</SummaryItemCount>)}
 </SummaryItemCountWrap>;
 
 export const Summary = ({ showNoItems }: { showNoItems?: boolean }) => {
