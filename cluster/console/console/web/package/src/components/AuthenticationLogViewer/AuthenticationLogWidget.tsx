@@ -361,6 +361,10 @@ interface AuthenticationLogHealthWidgetProps {
   sessionRef?: ObjectReference;
   deviceRef?: ObjectReference;
   identityProviderRef?: ObjectReference;
+  credentialRef?: ObjectReference;
+  authenticatorRef?: ObjectReference;
+  periodMinutes?: number;
+  onPeriodChange?: (value: number) => void;
 }
 
 const getAuthenticationLogPath = (
@@ -372,6 +376,8 @@ const getAuthenticationLogPath = (
     ["sessionRef", props.sessionRef],
     ["deviceRef", props.deviceRef],
     ["identityProviderRef", props.identityProviderRef],
+    ["credentialRef", props.credentialRef],
+    ["authenticatorRef", props.authenticatorRef],
   ] as const;
 
   refs.forEach(([key, ref]) => {
@@ -386,7 +392,9 @@ const getAuthenticationLogPath = (
 const AuthenticationLogHealthWidget = (
   props: AuthenticationLogHealthWidgetProps,
 ) => {
-  const [periodMinutes, setPeriodMinutes] = useState(60);
+  const [localPeriodMinutes, setLocalPeriodMinutes] = useState(60);
+  const periodMinutes = props.periodMinutes ?? localPeriodMinutes;
+  const setPeriodMinutes = props.onPeriodChange ?? setLocalPeriodMinutes;
   const { curFrom, curTo, prevFrom, prevTo } = buildTimestamps(periodMinutes);
   const autoInterval = getAutoInterval(periodMinutes);
   const periodLabel =
@@ -397,11 +405,13 @@ const AuthenticationLogHealthWidget = (
     sessionRef: refKey(props.sessionRef),
     deviceRef: refKey(props.deviceRef),
     identityProviderRef: refKey(props.identityProviderRef),
+    credentialRef: refKey(props.credentialRef),
+    authenticatorRef: refKey(props.authenticatorRef),
   };
 
   const showTopUsers = !props.userRef && !props.sessionRef && !props.deviceRef;
   const showTopIdentityProviders = !props.identityProviderRef;
-  const showTopCredentials = true;
+  const showTopCredentials = !props.credentialRef;
 
   const curSummary = useQuery({
     queryKey: ["authLogSummary", "current", periodMinutes, refKeys],
@@ -415,6 +425,8 @@ const AuthenticationLogHealthWidget = (
             sessionRef: props.sessionRef,
             deviceRef: props.deviceRef,
             identityProviderRef: props.identityProviderRef,
+            credentialRef: props.credentialRef,
+            authenticatorRef: props.authenticatorRef,
           }),
         );
       return response;
@@ -434,6 +446,8 @@ const AuthenticationLogHealthWidget = (
             sessionRef: props.sessionRef,
             deviceRef: props.deviceRef,
             identityProviderRef: props.identityProviderRef,
+            credentialRef: props.credentialRef,
+            authenticatorRef: props.authenticatorRef,
           }),
         );
       return response;
@@ -454,6 +468,8 @@ const AuthenticationLogHealthWidget = (
             sessionRef: props.sessionRef,
             deviceRef: props.deviceRef,
             identityProviderRef: props.identityProviderRef,
+            credentialRef: props.credentialRef,
+            authenticatorRef: props.authenticatorRef,
           }),
         );
       return response;
@@ -471,6 +487,8 @@ const AuthenticationLogHealthWidget = (
             from: toTs(curFrom),
             to: toTs(curTo),
             identityProviderRef: props.identityProviderRef,
+            credentialRef: props.credentialRef,
+            authenticatorRef: props.authenticatorRef,
           }),
         );
       return response;
@@ -490,6 +508,9 @@ const AuthenticationLogHealthWidget = (
             userRef: props.userRef,
             sessionRef: props.sessionRef,
             deviceRef: props.deviceRef,
+            identityProviderRef: props.identityProviderRef,
+            credentialRef: props.credentialRef,
+            authenticatorRef: props.authenticatorRef,
           }),
         );
       return response;
@@ -510,6 +531,7 @@ const AuthenticationLogHealthWidget = (
             sessionRef: props.sessionRef,
             deviceRef: props.deviceRef,
             identityProviderRef: props.identityProviderRef,
+            authenticatorRef: props.authenticatorRef,
           }),
         );
       return response;
@@ -527,6 +549,14 @@ const AuthenticationLogHealthWidget = (
     topUsers.isLoading ||
     topIdentityProviders.isLoading ||
     topCredentials.isLoading;
+  const hasError = [
+    curSummary,
+    prevSummary,
+    dataPoint,
+    topUsers,
+    topIdentityProviders,
+    topCredentials,
+  ].some((query) => query.isError);
 
   const refetchAll = () => {
     curSummary.refetch();
@@ -548,6 +578,16 @@ const AuthenticationLogHealthWidget = (
       >
         <PeriodSelector value={periodMinutes} onChange={setPeriodMinutes} />
       </LogWidgetHeader>
+
+      {hasError && (
+        <div
+          role="alert"
+          className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[0.7rem] font-semibold text-amber-800"
+        >
+          Some authentication-log data could not be loaded. Showing the
+          available results; try refreshing to retry.
+        </div>
+      )}
 
       {isSummaryLoading ? (
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">

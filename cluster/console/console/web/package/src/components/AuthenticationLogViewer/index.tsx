@@ -611,6 +611,8 @@ const DoAuthenticationLogViewer = (props: {
   sessionRef?: ObjectReference;
   deviceRef?: ObjectReference;
   identityProviderRef?: ObjectReference;
+  credentialRef?: ObjectReference;
+  authenticatorRef?: ObjectReference;
   itemsPerPage?: number;
   from?: Timestamp;
 }) => {
@@ -627,6 +629,10 @@ const DoAuthenticationLogViewer = (props: {
     props.deviceRef?.name,
     props.identityProviderRef?.uid,
     props.identityProviderRef?.name,
+    props.credentialRef?.uid,
+    props.credentialRef?.name,
+    props.authenticatorRef?.uid,
+    props.authenticatorRef?.name,
     props.from?.seconds,
     props.from?.nanos,
   ]);
@@ -639,12 +645,57 @@ const DoAuthenticationLogViewer = (props: {
       props.sessionRef?.uid,
       props.deviceRef?.uid,
       props.identityProviderRef?.uid,
+      props.credentialRef?.uid,
+      props.authenticatorRef?.uid,
       page,
       props.from?.seconds,
       props.from?.nanos,
     ],
     queryFn: async () => {
-      if (isDev()) return getListAuthenticationLogResponseTest();
+      if (isDev()) {
+        const response = await getListAuthenticationLogResponseTest();
+        const matchesRef = (candidate?: ObjectReference, wanted?: ObjectReference) =>
+          !wanted ||
+          Boolean(
+            (candidate?.uid && wanted.uid && candidate.uid === wanted.uid) ||
+              (candidate?.name && wanted.name && candidate.name === wanted.name),
+          );
+        const items = response.items.filter(
+          (item) => {
+            const details = (item.entry?.authentication?.info as any)?.details;
+            const identityProviderRef =
+              details?.oneofKind === "identityProvider"
+                ? details.identityProvider?.identityProviderRef
+                : undefined;
+            const credentialRef =
+              details?.oneofKind === "credential"
+                ? details.credential?.credentialRef
+                : undefined;
+            const authenticatorRef =
+              details?.oneofKind === "authenticator"
+                ? details.authenticator?.authenticatorRef
+                : undefined;
+            return (
+              matchesRef(item.entry?.userRef, props.userRef) &&
+              matchesRef(item.entry?.sessionRef, props.sessionRef) &&
+              matchesRef(item.entry?.deviceRef, props.deviceRef) &&
+              matchesRef(identityProviderRef, props.identityProviderRef) &&
+              matchesRef(credentialRef, props.credentialRef) &&
+              matchesRef(authenticatorRef, props.authenticatorRef)
+            );
+          },
+        );
+        return ListAuthenticationLogResponse.create({
+          ...response,
+          items,
+          listResponseMeta: {
+            ...response.listResponseMeta,
+            totalCount: items.length,
+            itemsPerPage: items.length,
+            hasMore: false,
+          },
+        });
+      }
 
       const { response } =
         await getClientVisibilityAuthenticationLog().listAuthenticationLog(
@@ -653,6 +704,8 @@ const DoAuthenticationLogViewer = (props: {
             sessionRef: props.sessionRef,
             deviceRef: props.deviceRef,
             identityProviderRef: props.identityProviderRef,
+            credentialRef: props.credentialRef,
+            authenticatorRef: props.authenticatorRef,
             common: {
               page,
               itemsPerPage: props.itemsPerPage ?? 100,
@@ -664,14 +717,15 @@ const DoAuthenticationLogViewer = (props: {
     },
     refetchInterval: 60000,
   });
+  const totalCount = Number(
+    qry.data?.listResponseMeta?.totalCount ?? qry.data?.items.length ?? 0,
+  );
 
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-4">
         <span className="text-[0.68rem] font-semibold text-slate-400 tabular-nums">
-          {qry.data?.items.length
-            ? `${qry.data.items.length.toLocaleString()} entries`
-            : ""}
+          {totalCount ? `${totalCount.toLocaleString()} entries` : "No entries"}
         </span>
         <button
           onClick={() => {
@@ -689,6 +743,26 @@ const DoAuthenticationLogViewer = (props: {
           Refresh
         </button>
       </div>
+
+      {qry.isError && (
+        <div
+          role="alert"
+          className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[0.72rem] font-semibold text-red-700"
+        >
+          Authentication logs could not be loaded. Refresh to try again.
+        </div>
+      )}
+
+      {qry.isLoading && !qry.data && (
+        <div className="flex flex-col gap-2" aria-label="Loading authentication logs">
+          {[0, 1, 2].map((item) => (
+            <div
+              key={item}
+              className="h-20 animate-pulse rounded-lg border border-slate-200 bg-slate-50"
+            />
+          ))}
+        </div>
+      )}
 
       {qry.data?.items.map((x) => (
         <AuthenticationLogC key={x.metadata!.id} authLog={x} />
@@ -717,20 +791,35 @@ export const AuthenticationLogList = (props: {
   sessionRef?: ObjectReference;
   deviceRef?: ObjectReference;
   identityProviderRef?: ObjectReference;
+  credentialRef?: ObjectReference;
+  authenticatorRef?: ObjectReference;
   itemsPerPage?: number;
+  periodMinutes?: number;
 }) => {
-  const [from, setFrom] = React.useState<Timestamp>(
+  const [localFrom, setLocalFrom] = React.useState<Timestamp>(
     Timestamp.fromDate(dayjs().subtract(6, "hour").toDate()),
   );
+  const controlledFrom = React.useMemo(
+    () =>
+      props.periodMinutes === undefined
+        ? undefined
+        : Timestamp.fromDate(
+            dayjs().subtract(props.periodMinutes, "minute").toDate(),
+          ),
+    [props.periodMinutes],
+  );
+  const from = controlledFrom ?? localFrom;
 
   return (
     <div className="flex w-full flex-col gap-4">
-      <div className="flex items-center gap-3">
-        <span className="shrink-0 text-[0.72rem] font-bold uppercase tracking-[0.05em] text-slate-500">
-          Since
-        </span>
-        <SelectFromTimestamp onUpdate={setFrom} />
-      </div>
+      {props.periodMinutes === undefined && (
+        <div className="flex items-center gap-3">
+          <span className="shrink-0 text-[0.72rem] font-bold uppercase tracking-[0.05em] text-slate-500">
+            Since
+          </span>
+          <SelectFromTimestamp onUpdate={setLocalFrom} />
+        </div>
+      )}
       <DoAuthenticationLogViewer {...props} from={from} />
     </div>
   );

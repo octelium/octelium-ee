@@ -132,7 +132,14 @@ const getResourceChildrenRouter = (arg: ResourceComponentInfo): RouteObject => {
 
   if (
     match(arg.Kind)
-      .with("User", "Session", "IdentityProvider", "Authenticator", () => true)
+      .with(
+        "User",
+        "Session",
+        "IdentityProvider",
+        "Credential",
+        "Authenticator",
+        () => true,
+      )
       .otherwise(() => false)
   ) {
     children.push({
