@@ -299,6 +299,8 @@ interface AuditLogHealthWidgetProps {
   sessionRef?: ObjectReference;
   deviceRef?: ObjectReference;
   resourceRef?: ObjectReference;
+  periodMinutes?: number;
+  onPeriodChange?: (value: number) => void;
 }
 
 const getAuditLogPath = (props: AuditLogHealthWidgetProps) => {
@@ -320,7 +322,9 @@ const getAuditLogPath = (props: AuditLogHealthWidgetProps) => {
 };
 
 const AuditLogHealthWidget = (props: AuditLogHealthWidgetProps) => {
-  const [periodMinutes, setPeriodMinutes] = useState(60);
+  const [localPeriodMinutes, setLocalPeriodMinutes] = useState(60);
+  const periodMinutes = props.periodMinutes ?? localPeriodMinutes;
+  const setPeriodMinutes = props.onPeriodChange ?? setLocalPeriodMinutes;
   const { curFrom, curTo, prevFrom, prevTo } = buildTimestamps(periodMinutes);
   const autoInterval = getAutoInterval(periodMinutes);
   const periodLabel =
@@ -437,6 +441,13 @@ const AuditLogHealthWidget = (props: AuditLogHealthWidgetProps) => {
     dataPoint.isLoading ||
     topUsers.isLoading ||
     topSessions.isLoading;
+  const hasError = [
+    curSummary,
+    prevSummary,
+    dataPoint,
+    topUsers,
+    topSessions,
+  ].some((query) => query.isError);
 
   const refetchAll = () => {
     curSummary.refetch();
@@ -457,6 +468,16 @@ const AuditLogHealthWidget = (props: AuditLogHealthWidgetProps) => {
       >
         <PeriodSelector value={periodMinutes} onChange={setPeriodMinutes} />
       </LogWidgetHeader>
+
+      {hasError && (
+        <div
+          role="alert"
+          className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[0.7rem] font-semibold text-amber-800"
+        >
+          Some audit-log data could not be loaded. Showing the available
+          results; try refreshing to retry.
+        </div>
+      )}
 
       {isSummaryLoading ? (
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">

@@ -3,6 +3,7 @@ import { hasAccessLog, hasAuthenticationLog, Resource } from "@/utils/pb";
 import { SegmentedControl } from "@mantine/core";
 import {
   ChartNoAxesCombined,
+  Library,
   LayoutDashboard,
   Settings,
   ShieldEllipsis,
@@ -45,6 +46,13 @@ const METRICS_TAB: Tab = {
   path: "metrics",
 };
 
+const AUDIT_LOG_TAB: Tab = {
+  value: "auditlogs",
+  label: "Audit Logs",
+  icon: Library,
+  path: "auditlogs",
+};
+
 const getActiveTab = (pathname: string): string => {
   const segments = pathname.split("/").filter(Boolean);
   const last = segments.at(-1) ?? "";
@@ -53,6 +61,7 @@ const getActiveTab = (pathname: string): string => {
     .with("accesslogs", () => "accesslogs")
     .with("authenticationlogs", () => "authenticationlogs")
     .with("metrics", () => "metrics")
+    .with("auditlogs", () => "auditlogs")
     .otherwise(() => "main");
 };
 
@@ -74,6 +83,7 @@ const buildTabs = (resource: Resource): Tab[] => {
   }
   if (hasAccessLog(resource)) tabs.push(ACCESS_LOG_TAB);
   if (hasAuthenticationLog(resource)) tabs.push(AUTH_LOG_TAB);
+  tabs.push(AUDIT_LOG_TAB);
   return tabs;
 };
 

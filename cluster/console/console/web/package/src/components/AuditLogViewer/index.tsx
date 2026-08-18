@@ -385,10 +385,22 @@ const AuditLogViewer = (props: {
   deviceRef?: ObjectReference;
   itemsPerPage?: number;
   page?: number;
+  periodMinutes?: number;
+  onPeriodChange?: (value: number) => void;
 }) => {
-  const [from, setFrom] = React.useState<Timestamp>(
+  const [localFrom, setLocalFrom] = React.useState<Timestamp>(
     Timestamp.fromDate(dayjs().subtract(6, "hour").toDate()),
   );
+  const controlledFrom = React.useMemo(
+    () =>
+      props.periodMinutes === undefined
+        ? undefined
+        : Timestamp.fromDate(
+            dayjs().subtract(props.periodMinutes, "minute").toDate(),
+          ),
+    [props.periodMinutes],
+  );
+  const from = controlledFrom ?? localFrom;
 
   const qry = useQuery({
     queryKey: [
@@ -403,7 +415,32 @@ const AuditLogViewer = (props: {
       from ? Timestamp.toDate(from).toISOString() : undefined,
     ],
     queryFn: async () => {
-      if (isDev()) return getListAuditLogResponseTest();
+      if (isDev()) {
+        const response = await getListAuditLogResponseTest();
+        const matchesRef = (candidate?: ObjectReference) =>
+          !props.resourceRef ||
+          Boolean(
+            (candidate?.uid &&
+              props.resourceRef.uid &&
+              candidate.uid === props.resourceRef.uid) ||
+              (candidate?.name &&
+                props.resourceRef.name &&
+                candidate.name === props.resourceRef.name),
+          );
+        const items = response.items.filter((item) =>
+          matchesRef(item.entry?.resourceRef),
+        );
+        return ListAuditLogResponse.create({
+          ...response,
+          items,
+          listResponseMeta: {
+            ...response.listResponseMeta,
+            totalCount: items.length,
+            itemsPerPage: items.length,
+            hasMore: false,
+          },
+        });
+      }
 
       const { response } = await getClientVisibilityAuditLog().listAuditLog(
         ListAuditLogRequest.create({
@@ -422,22 +459,25 @@ const AuditLogViewer = (props: {
     },
     refetchInterval: 60000,
   });
+  const totalCount = Number(
+    qry.data?.listResponseMeta?.totalCount ?? qry.data?.items.length ?? 0,
+  );
 
   return (
     <div className="w-full flex flex-col gap-6">
-      <div className="flex items-center gap-3">
-        <span className="text-[0.72rem] font-bold uppercase tracking-[0.05em] text-slate-500 shrink-0">
-          Since
-        </span>
-        <SelectFromTimestamp onUpdate={setFrom} />
-      </div>
+      {props.periodMinutes === undefined && (
+        <div className="flex items-center gap-3">
+          <span className="text-[0.72rem] font-bold uppercase tracking-[0.05em] text-slate-500 shrink-0">
+            Since
+          </span>
+          <SelectFromTimestamp onUpdate={setLocalFrom} />
+        </div>
+      )}
 
       <div className="w-full">
         <div className="flex items-center justify-between mb-4">
           <span className="text-[0.68rem] font-semibold text-slate-400 tabular-nums">
-            {qry.data?.items.length
-              ? `${qry.data.items.length.toLocaleString()} entries`
-              : ""}
+            {totalCount ? `${totalCount.toLocaleString()} entries` : "No entries"}
           </span>
           <button
             onClick={() => qry.refetch()}
@@ -452,6 +492,26 @@ const AuditLogViewer = (props: {
             Refresh
           </button>
         </div>
+
+        {qry.isError && (
+          <div
+            role="alert"
+            className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[0.72rem] font-semibold text-red-700"
+          >
+            Audit logs could not be loaded. Refresh to try again.
+          </div>
+        )}
+
+        {qry.isLoading && !qry.data && (
+          <div className="flex flex-col gap-2" aria-label="Loading audit logs">
+            {[0, 1, 2].map((item) => (
+              <div
+                key={item}
+                className="h-20 animate-pulse rounded-lg border border-slate-200 bg-slate-50"
+              />
+            ))}
+          </div>
+        )}
 
         {qry.data?.items.map((x) => (
           <AuditLogC key={x.metadata!.id} auditLog={x} />
