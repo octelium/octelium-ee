@@ -158,34 +158,34 @@ export const XTermSSHReplay: React.FC<XTermSSHReplayProps> = ({
     terminal.current = new Terminal({
       convertEol: true,
       fontFamily:
-        "ui-monospace, SFMono-Regular, Menlo, Monaco, 'Ubuntu Mono', Consolas, monospace",
-      fontWeight: 400,
+        "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace",
+      fontWeight: 450,
       fontWeightBold: 700,
       cursorBlink: false,
       scrollback: 5000,
-      fontSize: 13,
-      lineHeight: 1.4,
+      fontSize: 14,
+      lineHeight: 1.45,
       theme: {
-        background: "#0d1117",
-        foreground: "#c9d1d9",
-        cursor: "#c9d1d9",
-        selectionBackground: "#264f78",
-        black: "#484f58",
-        red: "#ff7b72",
-        green: "#3fb950",
-        yellow: "#d29922",
-        blue: "#58a6ff",
-        magenta: "#bc8cff",
-        cyan: "#39c5cf",
-        white: "#b1bac4",
-        brightBlack: "#6e7681",
-        brightRed: "#ffa198",
-        brightGreen: "#56d364",
-        brightYellow: "#e3b341",
-        brightBlue: "#79c0ff",
-        brightMagenta: "#d2a8ff",
-        brightCyan: "#56d4dd",
-        brightWhite: "#f0f6fc",
+        background: "#0f172a",
+        foreground: "#e2e8f0",
+        cursor: "#f8fafc",
+        selectionBackground: "#334155",
+        black: "#475569",
+        red: "#fb7185",
+        green: "#34d399",
+        yellow: "#fbbf24",
+        blue: "#60a5fa",
+        magenta: "#c084fc",
+        cyan: "#22d3ee",
+        white: "#cbd5e1",
+        brightBlack: "#64748b",
+        brightRed: "#fda4af",
+        brightGreen: "#6ee7b7",
+        brightYellow: "#fde68a",
+        brightBlue: "#93c5fd",
+        brightMagenta: "#d8b4fe",
+        brightCyan: "#67e8f9",
+        brightWhite: "#f8fafc",
       },
     });
 
@@ -448,10 +448,10 @@ export const XTermSSHReplay: React.FC<XTermSSHReplayProps> = ({
       <div
         ref={terminalRef}
         className="h-[min(60vh,640px)] min-h-[320px] max-h-[720px]"
-        style={{ background: "#0d1117" }}
+        style={{ background: "#0f172a" }}
       />
 
-      <div className="bg-[#161b22] border-t border-slate-700 px-4 pt-2.5 pb-3 flex flex-col gap-2">
+      <div className="bg-[#111827] border-t border-slate-700 px-4 pt-2.5 pb-3 flex flex-col gap-2">
         <div className="flex items-center gap-2">
           <span className="text-[0.65rem] font-semibold text-slate-500 w-10 shrink-0 text-right tabular-nums">
             {formatTime(positionMs)}
