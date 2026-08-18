@@ -5,13 +5,21 @@ import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 
+type SummaryIcon = React.ElementType<{
+  className?: string;
+  size?: number | string;
+  strokeWidth?: number | string;
+}>;
+
 export const SummaryItemCount = (props: {
   children?: React.ReactNode;
   count?: number;
   to?: string;
   active?: boolean;
+  icon?: SummaryIcon;
 }) => {
-  const { count, children, active, to } = props;
+  const { count, children, active, to, icon } = props;
+  const Icon = icon;
   const prevCountRef = useRef<number | undefined>(undefined);
 
   if (!count || count < 1) return null;
@@ -80,15 +88,23 @@ export const SummaryItemCount = (props: {
             : "border-slate-200",
       )}
     >
+      {icon && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center text-slate-200/75 [&>svg]:h-12 [&>svg]:w-12"
+        >
+          {Icon && <Icon size={48} strokeWidth={1.5} />}
+        </div>
+      )}
       {to && !active ? (
         <Link
           to={to}
-          className="flex min-h-[76px] w-full flex-col justify-center gap-1 px-3.5 py-2.5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-500"
+          className="relative z-10 flex min-h-[76px] w-full flex-col justify-center gap-1 px-3.5 py-2.5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-500"
         >
           {content}
         </Link>
       ) : (
-        <div className="flex min-h-[76px] w-full flex-col justify-center gap-1 px-3.5 py-2.5">
+        <div className="relative z-10 flex min-h-[76px] w-full flex-col justify-center gap-1 px-3.5 py-2.5">
           {content}
         </div>
       )}

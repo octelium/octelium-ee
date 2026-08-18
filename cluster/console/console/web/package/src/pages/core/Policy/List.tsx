@@ -13,6 +13,7 @@ import {
 import { getDomain } from "@/utils";
 import { getClientVisibilityCore } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
+import { Ban, ListChecks, ShieldCheck, ShieldX } from "lucide-react";
 
 const ItemDetails = (props: { item: Policy; domain: string }) => {
   const { item } = props;
@@ -62,14 +63,17 @@ const DoSummary = (props: { resp: GetPolicySummaryResponse }) => {
         <SummaryItemCount
           count={resp.totalDisabled}
           to={`/core/policies?isDisabled=true`}
+          icon={Ban}
         >
           Disabled
         </SummaryItemCount>
-        <SummaryItemCount count={resp.totalRule}>Rules</SummaryItemCount>
-        <SummaryItemCount count={resp.totalRuleAllow}>
+        <SummaryItemCount count={resp.totalRule} icon={ListChecks}>
+          Rules
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalRuleAllow} icon={ShieldCheck}>
           Allowed Rules
         </SummaryItemCount>
-        <SummaryItemCount count={resp.totalRuleDenied}>
+        <SummaryItemCount count={resp.totalRuleDenied} icon={ShieldX}>
           Denied Rules
         </SummaryItemCount>
       </SummaryItemCountWrap>

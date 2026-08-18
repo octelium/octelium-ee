@@ -15,6 +15,19 @@ import { toURLWithQry } from "@/pages/utils";
 import { getDomain } from "@/utils";
 import { getClientVisibilityCore } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
+import {
+  CircleCheck,
+  CircleX,
+  Clock3,
+  Cpu,
+  Fingerprint,
+  KeyRound,
+  Laptop,
+  Monitor,
+  Radio,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { getType } from "./Main";
 import { match } from "ts-pattern";
@@ -102,6 +115,7 @@ const DoSummary = (props: { resp: GetAuthenticatorSummaryResponse }) => {
               CoreP.Authenticator_Status_Type.FIDO
             ]
           }
+          icon={Fingerprint}
         >
           FIDO
         </SummaryItemCount>
@@ -117,6 +131,7 @@ const DoSummary = (props: { resp: GetAuthenticatorSummaryResponse }) => {
             searchParams.get(`type`) ===
             CoreP.Authenticator_Status_Type[CoreP.Authenticator_Status_Type.TPM]
           }
+          icon={Cpu}
         >
           TPM
         </SummaryItemCount>
@@ -133,11 +148,16 @@ const DoSummary = (props: { resp: GetAuthenticatorSummaryResponse }) => {
               CoreP.Authenticator_Status_Type.TOTP
             ]
           }
+          icon={ShieldCheck}
         >
           TOTP
         </SummaryItemCount>
-        <SummaryItemCount count={resp.totalUser}>Users</SummaryItemCount>
-        <SummaryItemCount count={resp.totalDevice}>Devices</SummaryItemCount>
+        <SummaryItemCount count={resp.totalUser} icon={Users}>
+          Users
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalDevice} icon={Laptop}>
+          Devices
+        </SummaryItemCount>
 
         <SummaryItemCount
           count={resp.totalActive}
@@ -153,6 +173,7 @@ const DoSummary = (props: { resp: GetAuthenticatorSummaryResponse }) => {
               CoreP.Authenticator_Spec_State.ACTIVE
             ]
           }
+          icon={CircleCheck}
         >
           Active
         </SummaryItemCount>
@@ -170,6 +191,7 @@ const DoSummary = (props: { resp: GetAuthenticatorSummaryResponse }) => {
               CoreP.Authenticator_Spec_State.REJECTED
             ]
           }
+          icon={CircleX}
         >
           Rejected
         </SummaryItemCount>
@@ -187,20 +209,21 @@ const DoSummary = (props: { resp: GetAuthenticatorSummaryResponse }) => {
               CoreP.Authenticator_Spec_State.PENDING
             ]
           }
+          icon={Clock3}
         >
           Pending
         </SummaryItemCount>
 
-        <SummaryItemCount count={resp.totalFIDOPlatform}>
+        <SummaryItemCount count={resp.totalFIDOPlatform} icon={Monitor}>
           Platform FIDO
         </SummaryItemCount>
-        <SummaryItemCount count={resp.totalFIDORoaming}>
+        <SummaryItemCount count={resp.totalFIDORoaming} icon={Radio}>
           Roaming FIDO
         </SummaryItemCount>
-        <SummaryItemCount count={resp.totalFIDOIsHardware}>
+        <SummaryItemCount count={resp.totalFIDOIsHardware} icon={Cpu}>
           Hardware FIDO
         </SummaryItemCount>
-        <SummaryItemCount count={resp.totalFIDOIsPasskey}>
+        <SummaryItemCount count={resp.totalFIDOIsPasskey} icon={KeyRound}>
           Passkeys
         </SummaryItemCount>
       </SummaryItemCountWrap>

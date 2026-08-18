@@ -34,7 +34,20 @@ import {
   getServicePublicFQDN,
 } from "@/utils/octelium";
 import { getResourcePath, printServiceMode } from "@/utils/pb";
-import { Lock } from "lucide-react";
+import {
+  Boxes,
+  Braces,
+  Cable,
+  Database,
+  Globe2,
+  Lock,
+  Monitor,
+  Radio,
+  Search,
+  Shield,
+  SquareTerminal,
+  UserRoundX,
+} from "lucide-react";
 
 export const getType = (svc: Service): string => {
   return printServiceMode(svc.spec!.mode);
@@ -202,6 +215,7 @@ const DoSummary = (props: { resp: GetServiceSummaryResponse }) => {
             searchParams.get(`mode`) ===
             Service_Spec_Mode[Service_Spec_Mode.HTTP]
           }
+          icon={Globe2}
         >
           HTTP
         </SummaryItemCount>
@@ -214,6 +228,7 @@ const DoSummary = (props: { resp: GetServiceSummaryResponse }) => {
             searchParams.get(`mode`) ===
             Service_Spec_Mode[Service_Spec_Mode.TCP]
           }
+          icon={Cable}
         >
           TCP
         </SummaryItemCount>
@@ -226,6 +241,7 @@ const DoSummary = (props: { resp: GetServiceSummaryResponse }) => {
             searchParams.get(`mode`) ===
             Service_Spec_Mode[Service_Spec_Mode.SSH]
           }
+          icon={SquareTerminal}
         >
           SSH
         </SummaryItemCount>
@@ -238,6 +254,7 @@ const DoSummary = (props: { resp: GetServiceSummaryResponse }) => {
             searchParams.get(`mode`) ===
             Service_Spec_Mode[Service_Spec_Mode.WEB]
           }
+          icon={Globe2}
         >
           Web
         </SummaryItemCount>
@@ -250,6 +267,7 @@ const DoSummary = (props: { resp: GetServiceSummaryResponse }) => {
             searchParams.get(`mode`) ===
             Service_Spec_Mode[Service_Spec_Mode.KUBERNETES]
           }
+          icon={Boxes}
         >
           Kubernetes
         </SummaryItemCount>
@@ -262,6 +280,7 @@ const DoSummary = (props: { resp: GetServiceSummaryResponse }) => {
             searchParams.get(`mode`) ===
             Service_Spec_Mode[Service_Spec_Mode.POSTGRES]
           }
+          icon={Database}
         >
           PostgreSQL
         </SummaryItemCount>
@@ -274,6 +293,7 @@ const DoSummary = (props: { resp: GetServiceSummaryResponse }) => {
             searchParams.get(`mode`) ===
             Service_Spec_Mode[Service_Spec_Mode.MYSQL]
           }
+          icon={Database}
         >
           MySQL
         </SummaryItemCount>
@@ -286,6 +306,7 @@ const DoSummary = (props: { resp: GetServiceSummaryResponse }) => {
             searchParams.get(`mode`) ===
             Service_Spec_Mode[Service_Spec_Mode.GRPC]
           }
+          icon={Braces}
         >
           gRPC
         </SummaryItemCount>
@@ -298,6 +319,7 @@ const DoSummary = (props: { resp: GetServiceSummaryResponse }) => {
             searchParams.get(`mode`) ===
             Service_Spec_Mode[Service_Spec_Mode.DNS]
           }
+          icon={Search}
         >
           DNS
         </SummaryItemCount>
@@ -310,6 +332,7 @@ const DoSummary = (props: { resp: GetServiceSummaryResponse }) => {
             searchParams.get(`mode`) ===
             Service_Spec_Mode[Service_Spec_Mode.UDP]
           }
+          icon={Radio}
         >
           UDP
         </SummaryItemCount>
@@ -322,6 +345,7 @@ const DoSummary = (props: { resp: GetServiceSummaryResponse }) => {
             searchParams.get(`mode`) ===
             Service_Spec_Mode[Service_Spec_Mode.SOCKS5]
           }
+          icon={Shield}
         >
           SOCKS5
         </SummaryItemCount>
@@ -334,6 +358,7 @@ const DoSummary = (props: { resp: GetServiceSummaryResponse }) => {
             searchParams.get(`mode`) ===
             Service_Spec_Mode[Service_Spec_Mode.RDP_WEB]
           }
+          icon={Monitor}
         >
           RDP Web
         </SummaryItemCount>
@@ -343,6 +368,7 @@ const DoSummary = (props: { resp: GetServiceSummaryResponse }) => {
             isPublic: "true",
           })}
           active={searchParams.get(`isPublic`) === "true"}
+          icon={Globe2}
         >
           Public
         </SummaryItemCount>
@@ -352,6 +378,7 @@ const DoSummary = (props: { resp: GetServiceSummaryResponse }) => {
             isAnonymous: "true",
           })}
           active={searchParams.get(`isAnonymous`) === "true"}
+          icon={UserRoundX}
         >
           Anonymous
         </SummaryItemCount>

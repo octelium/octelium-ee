@@ -18,6 +18,7 @@ import { toURLWithQry } from "@/pages/utils";
 import { getDomain } from "@/utils";
 import { getClientVisibilityCore } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
+import { Ban, KeyRound, ShieldCheck, Users } from "lucide-react";
 import { MdTimer } from "react-icons/md";
 import { useSearchParams } from "react-router-dom";
 import { match } from "ts-pattern";
@@ -93,6 +94,7 @@ const DoSummary = (props: { resp: GetCredentialSummaryResponse }) => {
             searchParams.get(`type`) ===
             Credential_Spec_Type[Credential_Spec_Type.AUTH_TOKEN]
           }
+          icon={KeyRound}
         >
           Authentication Tokens
         </SummaryItemCount>
@@ -105,6 +107,7 @@ const DoSummary = (props: { resp: GetCredentialSummaryResponse }) => {
             searchParams.get(`type`) ===
             Credential_Spec_Type[Credential_Spec_Type.OAUTH2]
           }
+          icon={ShieldCheck}
         >
           OAuth2 Client Credentials
         </SummaryItemCount>
@@ -117,16 +120,20 @@ const DoSummary = (props: { resp: GetCredentialSummaryResponse }) => {
             searchParams.get(`type`) ===
             Credential_Spec_Type[Credential_Spec_Type.ACCESS_TOKEN]
           }
+          icon={KeyRound}
         >
           Access Token
         </SummaryItemCount>
-        <SummaryItemCount count={resp.totalUser}>Users</SummaryItemCount>
+        <SummaryItemCount count={resp.totalUser} icon={Users}>
+          Users
+        </SummaryItemCount>
         <SummaryItemCount
           count={resp.totalDisabled}
           to={toURLWithQry(`/core/credentials`, {
             isDisabled: "true",
           })}
           active={searchParams.get(`isDisabled`) === "true"}
+          icon={Ban}
         >
           Disabled
         </SummaryItemCount>

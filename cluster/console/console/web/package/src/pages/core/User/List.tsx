@@ -26,6 +26,7 @@ import { invalidateResourceListFromList } from "@/utils/pb";
 import { useQuery } from "@tanstack/react-query";
 import {
   Bot,
+  Ban,
   Mail,
   User as UserIcon,
 } from "lucide-react";
@@ -136,6 +137,7 @@ const DoSummary = (props: { resp: GetUserSummaryResponse }) => {
           active={
             searchParams.get(`type`) === User_Spec_Type[User_Spec_Type.HUMAN]
           }
+          icon={UserIcon}
         >
           Humans
         </SummaryItemCount>
@@ -147,6 +149,7 @@ const DoSummary = (props: { resp: GetUserSummaryResponse }) => {
           active={
             searchParams.get(`type`) === User_Spec_Type[User_Spec_Type.WORKLOAD]
           }
+          icon={Bot}
         >
           Workloads
         </SummaryItemCount>
@@ -156,6 +159,7 @@ const DoSummary = (props: { resp: GetUserSummaryResponse }) => {
             isDisabled: "true",
           })}
           active={searchParams.get(`isDisabled`) === "true"}
+          icon={Ban}
         >
           Disabled
         </SummaryItemCount>

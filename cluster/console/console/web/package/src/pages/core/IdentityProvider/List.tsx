@@ -17,6 +17,13 @@ import { toURLWithQry } from "@/pages/utils";
 import { getDomain } from "@/utils";
 import { getClientVisibilityCore } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
+import {
+  Ban,
+  Fingerprint,
+  Globe2,
+  KeyRound,
+} from "lucide-react";
+import { SiGithub } from "react-icons/si";
 import { useSearchParams } from "react-router-dom";
 import { match } from "ts-pattern";
 
@@ -76,6 +83,7 @@ const DoSummary = (props: { resp: GetIdentityProviderSummaryResponse }) => {
             isDisabled: "true",
           })}
           active={searchParams.get(`isDisabled`) === "true"}
+          icon={Ban}
         >
           Disabled
         </SummaryItemCount>
@@ -90,6 +98,7 @@ const DoSummary = (props: { resp: GetIdentityProviderSummaryResponse }) => {
             searchParams.get(`type`) ===
             IdentityProvider_Status_Type[IdentityProvider_Status_Type.GITHUB]
           }
+          icon={SiGithub}
         >
           GitHub
         </SummaryItemCount>
@@ -104,6 +113,7 @@ const DoSummary = (props: { resp: GetIdentityProviderSummaryResponse }) => {
             searchParams.get(`type`) ===
             IdentityProvider_Status_Type[IdentityProvider_Status_Type.OIDC]
           }
+          icon={Globe2}
         >
           OpenID Connect
         </SummaryItemCount>
@@ -118,6 +128,7 @@ const DoSummary = (props: { resp: GetIdentityProviderSummaryResponse }) => {
             searchParams.get(`type`) ===
             IdentityProvider_Status_Type[IdentityProvider_Status_Type.SAML]
           }
+          icon={KeyRound}
         >
           SAML 2.0
         </SummaryItemCount>
@@ -134,6 +145,7 @@ const DoSummary = (props: { resp: GetIdentityProviderSummaryResponse }) => {
               IdentityProvider_Status_Type.OIDC_IDENTITY_TOKEN
             ]
           }
+          icon={Fingerprint}
         >
           OIDC Identity Token
         </SummaryItemCount>

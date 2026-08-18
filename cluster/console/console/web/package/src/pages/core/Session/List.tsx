@@ -23,6 +23,17 @@ import { getClientVisibilityCore } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
 import { BsFillTerminalFill } from "react-icons/bs";
 import { IoBrowsers } from "react-icons/io5";
+import {
+  CircleCheck,
+  CircleX,
+  Clock3,
+  Globe2,
+  Laptop,
+  Monitor,
+  Terminal,
+  Users,
+  Wifi,
+} from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 
 export const getType = (svc: Session) => {
@@ -139,6 +150,7 @@ const DoSummary = (props: { resp: GetSessionSummaryResponse }) => {
             searchParams.get(`type`) ===
             Session_Status_Type[Session_Status_Type.CLIENT]
           }
+          icon={Terminal}
         >
           Clients
         </SummaryItemCount>
@@ -151,6 +163,7 @@ const DoSummary = (props: { resp: GetSessionSummaryResponse }) => {
             searchParams.get(`type`) ===
             Session_Status_Type[Session_Status_Type.CLIENTLESS]
           }
+          icon={Globe2}
         >
           Clientless
         </SummaryItemCount>
@@ -161,6 +174,7 @@ const DoSummary = (props: { resp: GetSessionSummaryResponse }) => {
             isBrowser: "true",
           })}
           active={searchParams.get(`isBrowser`) === "true"}
+          icon={Monitor}
         >
           Browsers
         </SummaryItemCount>
@@ -174,6 +188,7 @@ const DoSummary = (props: { resp: GetSessionSummaryResponse }) => {
             searchParams.get(`state`) ===
             Session_Spec_State[Session_Spec_State.ACTIVE]
           }
+          icon={CircleCheck}
         >
           Active
         </SummaryItemCount>
@@ -186,6 +201,7 @@ const DoSummary = (props: { resp: GetSessionSummaryResponse }) => {
             searchParams.get(`state`) ===
             Session_Spec_State[Session_Spec_State.REJECTED]
           }
+          icon={CircleX}
         >
           Rejected
         </SummaryItemCount>
@@ -198,6 +214,7 @@ const DoSummary = (props: { resp: GetSessionSummaryResponse }) => {
             searchParams.get(`state`) ===
             Session_Spec_State[Session_Spec_State.PENDING]
           }
+          icon={Clock3}
         >
           Pending
         </SummaryItemCount>
@@ -207,11 +224,16 @@ const DoSummary = (props: { resp: GetSessionSummaryResponse }) => {
             isConnected: "true",
           })}
           active={searchParams.get(`isConnected`) === "true"}
+          icon={Wifi}
         >
           Connected
         </SummaryItemCount>
-        <SummaryItemCount count={resp.totalUser}>Users</SummaryItemCount>
-        <SummaryItemCount count={resp.totalDevice}>Devices</SummaryItemCount>
+        <SummaryItemCount count={resp.totalUser} icon={Users}>
+          Users
+        </SummaryItemCount>
+        <SummaryItemCount count={resp.totalDevice} icon={Laptop}>
+          Devices
+        </SummaryItemCount>
       </SummaryItemCountWrap>
     </div>
   );

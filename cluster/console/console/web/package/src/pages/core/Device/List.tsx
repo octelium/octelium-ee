@@ -21,6 +21,13 @@ import { getClientVisibilityCore } from "@/utils/client";
 import { toURLWithQry } from "@/pages/utils";
 import { useSearchParams } from "react-router-dom";
 import PieChart from "@/components/Charts/PieChart";
+import {
+  CircleCheck,
+  CircleX,
+  Clock3,
+  Monitor,
+} from "lucide-react";
+import { SiApple, SiLinux } from "react-icons/si";
 
 export const getState = (itm: CoreP.Device): string => {
   return match(itm.spec?.state)
@@ -122,6 +129,7 @@ const DoSummary = (props: { resp: GetDeviceSummaryResponse }) => {
             searchParams.get(`state`) ===
             CoreP.Device_Spec_State[CoreP.Device_Spec_State.ACTIVE]
           }
+          icon={CircleCheck}
         >
           Active
         </SummaryItemCount>
@@ -134,6 +142,7 @@ const DoSummary = (props: { resp: GetDeviceSummaryResponse }) => {
             searchParams.get(`state`) ===
             CoreP.Device_Spec_State[CoreP.Device_Spec_State.REJECTED]
           }
+          icon={CircleX}
         >
           Rejected
         </SummaryItemCount>
@@ -146,6 +155,7 @@ const DoSummary = (props: { resp: GetDeviceSummaryResponse }) => {
             searchParams.get(`state`) ===
             CoreP.Device_Spec_State[CoreP.Device_Spec_State.PENDING]
           }
+          icon={Clock3}
         >
           Pending
         </SummaryItemCount>
@@ -159,6 +169,7 @@ const DoSummary = (props: { resp: GetDeviceSummaryResponse }) => {
             searchParams.get(`osType`) ===
             CoreP.Device_Status_OSType[CoreP.Device_Status_OSType.LINUX]
           }
+          icon={SiLinux}
         >
           Linux
         </SummaryItemCount>
@@ -172,6 +183,7 @@ const DoSummary = (props: { resp: GetDeviceSummaryResponse }) => {
             searchParams.get(`osType`) ===
             CoreP.Device_Status_OSType[CoreP.Device_Status_OSType.WINDOWS]
           }
+          icon={Monitor}
         >
           Windows
         </SummaryItemCount>
@@ -184,6 +196,7 @@ const DoSummary = (props: { resp: GetDeviceSummaryResponse }) => {
             searchParams.get(`osType`) ===
             CoreP.Device_Status_OSType[CoreP.Device_Status_OSType.MAC]
           }
+          icon={SiApple}
         >
           Mac OS
         </SummaryItemCount>
