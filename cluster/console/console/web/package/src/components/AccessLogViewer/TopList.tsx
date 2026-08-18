@@ -3,6 +3,7 @@ import { ObjectReference } from "@/apis/metav1/metav1";
 import {
   ListAccessLogTopServiceRequest,
   ListAccessLogTopSessionRequest,
+  ListAccessLogTopPolicyRequest,
   ListAccessLogTopUserRequest,
 } from "@/apis/visibilityv1/visibilityv1";
 import {
@@ -70,12 +71,13 @@ const AccessLogTopList = (props: {
     queryKey: ["visibility", "listAccessLogTopPolicy", { ...props }],
 
     queryFn: async () => {
-      const req = ListAccessLogTopServiceRequest.create({
+      const req = ListAccessLogTopPolicyRequest.create({
         userRef: props.userRef,
         sessionRef: props.sessionRef,
         regionRef: props.regionRef,
         deviceRef: props.deviceRef,
-        policyRef: props.policyRef,
+        serviceRef: props.serviceRef,
+        namespaceRef: props.namespaceRef,
         from: props.from,
         to: props.to,
       });
@@ -96,6 +98,8 @@ const AccessLogTopList = (props: {
         userRef: props.userRef,
         regionRef: props.regionRef,
         deviceRef: props.deviceRef,
+        serviceRef: props.serviceRef,
+        namespaceRef: props.namespaceRef,
         policyRef: props.policyRef,
         from: props.from,
         to: props.to,

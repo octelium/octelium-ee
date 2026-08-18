@@ -4,6 +4,7 @@ import {
   Boxes,
   Building2,
   Check,
+  ChartNoAxesCombined,
   ChevronDown,
   ClipboardCheck,
   Cpu,
@@ -103,6 +104,7 @@ const itemsVisibility = [
   { title: "Audit Logs", url: "/visibility/auditlogs", icon: Library },
   { title: "Component Logs", url: "/visibility/componentlogs", icon: Scroll },
   { title: "SSH Sessions", url: "/visibility/ssh", icon: SquareTerminal },
+  { title: "Metrics", url: "/visibility/metrics", icon: ChartNoAxesCombined },
 ];
 
 export const IconAuthenticationLog = ShieldUser;

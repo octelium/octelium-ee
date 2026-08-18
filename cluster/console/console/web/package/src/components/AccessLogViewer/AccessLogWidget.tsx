@@ -540,6 +540,8 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
             userRef: props.userRef,
             regionRef: props.regionRef,
             deviceRef: props.deviceRef,
+            serviceRef: props.serviceRef,
+            namespaceRef: props.namespaceRef,
             policyRef: props.policyRef,
           }),
         );

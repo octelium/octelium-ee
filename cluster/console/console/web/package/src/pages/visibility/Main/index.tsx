@@ -14,10 +14,16 @@ import ComponentLogSummary from "@/components/LogSummary/ComponentLogSummary";
 import TimestampPicker from "@/components/TimestampPicker";
 import { Group, SegmentedControl } from "@mantine/core";
 import { AnimatePresence, motion } from "framer-motion";
-import { BarChart3, ChevronRight, Layers } from "lucide-react";
+import {
+  BarChart3,
+  ChartNoAxesCombined,
+  ChevronRight,
+  Layers,
+} from "lucide-react";
 import * as React from "react";
 import { Link } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
+import MetricsPage from "../Metrics";
 import { Summary as AuthenticatorSummary } from "../../core/Authenticator/List";
 import { Summary as CredentialSummary } from "../../core/Credential/List";
 import { Summary as DeviceSummary } from "../../core/Device/List";
@@ -242,7 +248,7 @@ const ResourcesTab = () => (
   </motion.div>
 );
 
-type TabValue = "logs" | "resources";
+type TabValue = "logs" | "resources" | "metrics";
 
 export default () => {
   const [tab, setTab] = React.useState<TabValue>("logs");
@@ -273,6 +279,15 @@ export default () => {
                 </span>
               ),
             },
+            {
+              value: "metrics",
+              label: (
+                <span className="flex items-center justify-center gap-2 py-0.5">
+                  <ChartNoAxesCombined size={14} strokeWidth={2.5} />
+                  <span>Metrics</span>
+                </span>
+              ),
+            },
           ]}
           styles={{
             root: {
@@ -300,14 +315,20 @@ export default () => {
         />
 
         <span className="text-[0.68rem] font-semibold text-slate-400">
-          {tab === "logs" ? "Activity trends" : "Cluster resources"}
+          {tab === "logs"
+            ? "Activity trends"
+            : tab === "resources"
+              ? "Cluster resources"
+              : "Cluster metrics"}
         </span>
       </div>
       <AnimatePresence mode="wait">
         {tab === "logs" ? (
           <LogsTab key="logs" />
-        ) : (
+        ) : tab === "resources" ? (
           <ResourcesTab key="resources" />
+        ) : (
+          <MetricsPage key="metrics" />
         )}
       </AnimatePresence>
     </div>
