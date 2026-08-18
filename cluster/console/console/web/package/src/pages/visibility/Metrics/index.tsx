@@ -320,6 +320,8 @@ const Metrics = () => {
     () => document.visibilityState === "visible",
   );
   const queryClient = useQueryClient();
+  const showComponentFilters = view === "components";
+  const showServiceFilter = view === "traffic";
 
   React.useEffect(() => {
     const update = () => setVisible(document.visibilityState === "visible");
@@ -344,6 +346,7 @@ const Metrics = () => {
           namespace: componentNamespace ?? "",
         })
       : undefined;
+  const activeComponent = showComponentFilters ? selectedComponent : undefined;
   const vigil = ComponentSelector.create({
     type: "vigil",
     namespace: "octelium",
@@ -354,9 +357,8 @@ const Metrics = () => {
   });
   const rscserver = ComponentSelector.create({
     type: "rscserver",
-    namespace: componentNamespace ?? "",
   });
-  const serviceFilters = serviceName
+  const serviceFilters = showServiceFilter && serviceName
     ? [eqFilter("octelium.vigil.svc.name", serviceName)]
     : undefined;
   const allowedFilters = [
@@ -401,7 +403,7 @@ const Metrics = () => {
       ? undefined
       : [eqFilter("op", resourceOperation)];
   const componentOptions = componentNamespace
-    ? componentsByNamespace[componentNamespace]
+    ? (componentsByNamespace[componentNamespace] ?? [])
     : [...new Set(Object.values(componentsByNamespace).flat())].sort();
   const shared = {
     lookbackSeconds,
@@ -451,7 +453,7 @@ const Metrics = () => {
             </Tooltip>
           </div>
         </div>
-        <div className="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2 xl:grid-cols-[auto_auto_minmax(150px,.75fr)_minmax(180px,1fr)_minmax(220px,1.2fr)]">
+        <div className="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2 xl:grid-cols-[auto_auto_minmax(180px,1fr)_minmax(180px,1fr)]">
           <div>
             <div className="mb-1 text-[0.6rem] font-bold uppercase tracking-wide text-slate-400">
               Time range
@@ -485,49 +487,58 @@ const Metrics = () => {
               ]}
             />
           </div>
-          <Select
-            label="Namespace"
-            placeholder="All namespaces"
-            clearable
-            value={componentNamespace}
-            onChange={(value) => {
-              setComponentNamespace(value);
-              if (
-                componentType &&
-                value &&
-                !componentsByNamespace[value].includes(componentType)
-              )
-                setComponentType(null);
-            }}
-            data={[
-              { value: "octelium", label: "Octelium" },
-              { value: "octeliumee", label: "Octelium Enterprise" },
-              { value: "cordium", label: "Cordium" },
-            ]}
-          />
-          <Select
-            label="Component type"
-            placeholder="All components"
-            clearable
-            searchable
-            value={componentType}
-            onChange={setComponentType}
-            data={componentOptions}
-          />
-          <SelectResource
-            api="core"
-            kind="Service"
-            label="Vigil service"
-            clearable
-            defaultValue={serviceName}
-            onChange={(item) => {
-              setServiceName(item?.metadata?.name);
-              setServiceMode(
-                (item as { spec?: { mode?: Service_Spec_Mode } } | undefined)
-                  ?.spec?.mode,
-              );
-            }}
-          />
+          {showComponentFilters && (
+            <>
+              <Select
+                label="Component namespace"
+                placeholder="All component namespaces"
+                clearable
+                value={componentNamespace}
+                onChange={(value) => {
+                  setComponentNamespace(value);
+                  const availableTypes = value
+                    ? (componentsByNamespace[value] ?? [])
+                    : [...new Set(Object.values(componentsByNamespace).flat())];
+                  if (componentType && !availableTypes.includes(componentType))
+                    setComponentType(null);
+                }}
+                data={[
+                  { value: "octelium", label: "Core" },
+                  { value: "octeliumee", label: "Octelium Enterprise" },
+                  { value: "cordium", label: "Cordium" },
+                ]}
+              />
+              <Select
+                label="Component type"
+                placeholder={
+                  componentNamespace
+                    ? "All types in this namespace"
+                    : "All component types"
+                }
+                clearable
+                searchable
+                value={componentType}
+                onChange={setComponentType}
+                data={componentOptions}
+              />
+            </>
+          )}
+          {showServiceFilter && (
+            <SelectResource
+              api="core"
+              kind="Service"
+              label="Vigil service"
+              clearable
+              defaultValue={serviceName}
+              onChange={(item) => {
+                setServiceName(item?.metadata?.name);
+                setServiceMode(
+                  (item as { spec?: { mode?: Service_Spec_Mode } } | undefined)
+                    ?.spec?.mode,
+                );
+              }}
+            />
+          )}
         </div>
       </header>
 
@@ -556,7 +567,7 @@ const Metrics = () => {
               icon={<Activity size={16} />}
               lookbackSeconds={lookbackSeconds}
               step={step}
-              component={selectedComponent}
+              component={activeComponent}
               autoRefresh={refresh}
             />
             <MetricStat
@@ -567,7 +578,7 @@ const Metrics = () => {
               icon={<Gauge size={16} />}
               lookbackSeconds={lookbackSeconds}
               step={step}
-              component={selectedComponent}
+              component={activeComponent}
               autoRefresh={refresh}
             />
             <MetricStat
@@ -592,7 +603,7 @@ const Metrics = () => {
               icon={<Cpu size={16} />}
               lookbackSeconds={lookbackSeconds}
               step={step}
-              component={selectedComponent}
+              component={activeComponent}
               autoRefresh={refresh}
             />
           </div>
@@ -1063,10 +1074,7 @@ const Metrics = () => {
                 Resource Server requests
               </div>
               <div className="mt-1 text-xs font-medium text-slate-500">
-                Cluster resource API operations
-                {componentNamespace
-                  ? ` in ${componentNamespace}`
-                  : " across all namespaces"}
+                Cluster resource API operations across all component namespaces
               </div>
             </div>
             <SegmentedControl
@@ -1222,7 +1230,7 @@ const Metrics = () => {
               unit="cores"
               metric="process.cpu.seconds"
               operation={counterOp(CounterOperation_Function.RATE)}
-              component={selectedComponent}
+              component={activeComponent}
               groupBy={
                 componentType
                   ? ["octelium.component.name"]
@@ -1236,7 +1244,7 @@ const Metrics = () => {
               unit="bytes"
               metric="process.mem.heap_alloc"
               operation={gaugeOp(GaugeOperation_Function.LAST)}
-              component={selectedComponent}
+              component={activeComponent}
               groupBy={
                 componentType
                   ? ["octelium.component.name"]
@@ -1250,7 +1258,7 @@ const Metrics = () => {
               unit="bytes"
               metric="process.mem.total"
               operation={gaugeOp(GaugeOperation_Function.LAST)}
-              component={selectedComponent}
+              component={activeComponent}
               groupBy={
                 componentType
                   ? ["octelium.component.name"]
@@ -1264,7 +1272,7 @@ const Metrics = () => {
               unit="goroutines"
               metric="process.goroutines"
               operation={gaugeOp(GaugeOperation_Function.LAST)}
-              component={selectedComponent}
+              component={activeComponent}
               groupBy={
                 componentType
                   ? ["octelium.component.name"]
@@ -1294,7 +1302,7 @@ const Metrics = () => {
                   unit="bytes"
                   metric="process.mem.stacks"
                   operation={gaugeOp(GaugeOperation_Function.LAST)}
-                  component={selectedComponent}
+                  component={activeComponent}
                   groupBy={
                     componentType
                       ? ["octelium.component.name"]
@@ -1311,7 +1319,7 @@ const Metrics = () => {
                   unit="gc-cycles/s"
                   metric="process.gc.cycles"
                   operation={counterOp(CounterOperation_Function.RATE)}
-                  component={selectedComponent}
+                  component={activeComponent}
                   groupBy={
                     componentType
                       ? ["octelium.component.name"]
@@ -1328,7 +1336,7 @@ const Metrics = () => {
                   unit="bytes"
                   metric="process.gc.heap_goal"
                   operation={gaugeOp(GaugeOperation_Function.LAST)}
-                  component={selectedComponent}
+                  component={activeComponent}
                   groupBy={
                     componentType
                       ? ["octelium.component.name"]
@@ -1345,7 +1353,7 @@ const Metrics = () => {
                   unit="cores"
                   metric="process.cpu.gc_seconds"
                   operation={counterOp(CounterOperation_Function.RATE)}
-                  component={selectedComponent}
+                  component={activeComponent}
                   groupBy={
                     componentType
                       ? ["octelium.component.name"]
