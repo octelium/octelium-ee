@@ -38,7 +38,11 @@ import AccessLogSummary from "../LogSummary/AccessLogSummary";
 import { ResourceListLabel } from "../ResourceList";
 import TimeAgo from "../TimeAgo";
 import Editor from "./Editor";
-import { SelectFromTimestamp } from "./utils";
+import {
+  accessLogStatusValue,
+  AccessLogStatusFilter,
+  SelectFromTimestamp,
+} from "./utils";
 
 export function convertBytes(
   bytes: number,
@@ -861,6 +865,7 @@ const DoAccessLogViewer = (props: {
   policyRef?: ObjectReference;
   itemsPerPage?: number;
   from?: Timestamp;
+  status?: AccessLogStatusFilter;
 }) => {
   const [page, setPage] = React.useState(0);
 
@@ -883,12 +888,39 @@ const DoAccessLogViewer = (props: {
     props.policyRef?.name,
     props.from?.seconds,
     props.from?.nanos,
+    props.status,
   ]);
 
   const qry = useQuery({
     queryKey: ["visibility", "listAccessLog", { ...props, page }],
     queryFn: async () => {
-      if (isDev()) return getListAccessLogResponseTest();
+      if (isDev()) {
+        const response = await getListAccessLogResponseTest();
+        const items =
+          props.status === "allowed"
+            ? response.items.filter(
+                (item) =>
+                  item.entry?.common?.status ===
+                  AccessLog_Entry_Common_Status.ALLOWED,
+              )
+            : props.status === "denied"
+              ? response.items.filter(
+                  (item) =>
+                    item.entry?.common?.status ===
+                    AccessLog_Entry_Common_Status.DENIED,
+                )
+              : response.items;
+        return ListAccessLogResponse.create({
+          ...response,
+          items,
+          listResponseMeta: {
+            ...response.listResponseMeta,
+            totalCount: items.length,
+            itemsPerPage: items.length,
+            hasMore: false,
+          },
+        });
+      }
       const req = ListAccessLogRequest.create({
         userRef: props.userRef,
         sessionRef: props.sessionRef,
@@ -899,6 +931,7 @@ const DoAccessLogViewer = (props: {
         deviceRef: props.deviceRef,
         common: { page, itemsPerPage: props.itemsPerPage ?? 100 },
         from: props.from,
+        status: accessLogStatusValue(props.status ?? "all"),
       });
       const { response } =
         await getClientVisibilityAccessLog().listAccessLog(req);
@@ -906,14 +939,15 @@ const DoAccessLogViewer = (props: {
     },
     refetchInterval: 60000,
   });
+  const totalCount = Number(
+    qry.data?.listResponseMeta?.totalCount ?? qry.data?.items.length ?? 0,
+  );
 
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-4">
         <span className="text-[0.68rem] font-semibold text-slate-400 tabular-nums">
-          {qry.data?.items.length
-            ? `${qry.data.items.length.toLocaleString()} entries`
-            : ""}
+          {totalCount ? `${totalCount.toLocaleString()} entries` : "No entries"}
         </span>
         <button
           onClick={() => {
@@ -931,6 +965,26 @@ const DoAccessLogViewer = (props: {
           Refresh
         </button>
       </div>
+
+      {qry.isError && (
+        <div
+          role="alert"
+          className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[0.72rem] font-semibold text-red-700"
+        >
+          Access logs could not be loaded. Refresh to try again.
+        </div>
+      )}
+
+      {qry.isLoading && !qry.data && (
+        <div className="flex flex-col gap-2" aria-label="Loading access logs">
+          {[0, 1, 2].map((item) => (
+            <div
+              key={item}
+              className="h-20 animate-pulse rounded-lg border border-slate-200 bg-slate-50"
+            />
+          ))}
+        </div>
+      )}
 
       <div className="w-full">
         {qry.data?.items.map((x) => (
@@ -966,19 +1020,34 @@ export const AccessLogList = (props: {
   deviceRef?: ObjectReference;
   policyRef?: ObjectReference;
   itemsPerPage?: number;
+  periodMinutes?: number;
+  status?: AccessLogStatusFilter;
 }) => {
-  const [from, setFrom] = React.useState<Timestamp>(
+  const [localFrom, setLocalFrom] = React.useState<Timestamp>(
     Timestamp.fromDate(dayjs().subtract(6, "hour").toDate()),
   );
+  const controlledFrom = React.useMemo(
+    () =>
+      props.periodMinutes === undefined
+        ? undefined
+        : Timestamp.fromDate(
+            dayjs().subtract(props.periodMinutes, "minute").toDate(),
+          ),
+    [props.periodMinutes],
+  );
+  const from =
+    controlledFrom ?? localFrom;
 
   return (
     <div className="flex w-full flex-col gap-4">
-      <div className="flex items-center gap-3">
-        <span className="shrink-0 text-[0.72rem] font-bold uppercase tracking-[0.05em] text-slate-500">
-          Since
-        </span>
-        <SelectFromTimestamp onUpdate={setFrom} />
-      </div>
+      {props.periodMinutes === undefined && (
+        <div className="flex items-center gap-3">
+          <span className="shrink-0 text-[0.72rem] font-bold uppercase tracking-[0.05em] text-slate-500">
+            Since
+          </span>
+          <SelectFromTimestamp onUpdate={setLocalFrom} />
+        </div>
+      )}
       <DoAccessLogViewer {...props} from={from} />
     </div>
   );

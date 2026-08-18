@@ -1,10 +1,21 @@
 import * as React from "react";
 
+import { AccessLog_Entry_Common_Status } from "@/apis/corev1/corev1";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import { Select } from "@mantine/core";
 import dayjs from "dayjs";
 import { LuTimer } from "react-icons/lu";
 import { twMerge } from "tailwind-merge";
+
+export type AccessLogStatusFilter = "all" | "allowed" | "denied";
+
+export const accessLogStatusValue = (
+  status: AccessLogStatusFilter,
+): AccessLog_Entry_Common_Status => {
+  if (status === "allowed") return AccessLog_Entry_Common_Status.ALLOWED;
+  if (status === "denied") return AccessLog_Entry_Common_Status.DENIED;
+  return AccessLog_Entry_Common_Status.STATUS_UNSET;
+};
 
 export const timeRangePickList = [
   {

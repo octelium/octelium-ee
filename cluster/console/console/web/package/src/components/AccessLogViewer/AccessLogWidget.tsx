@@ -32,6 +32,10 @@ import { match } from "ts-pattern";
 import LineChart from "../Charts/LineChart";
 import { LogWidgetHeader } from "../LogWidget";
 import TopList from "../TopList";
+import {
+  accessLogStatusValue,
+  AccessLogStatusFilter,
+} from "./utils";
 
 interface PeriodOption {
   label: string;
@@ -339,6 +343,43 @@ const PeriodSelector = ({
   );
 };
 
+const StatusSelector = ({
+  value,
+  onChange,
+}: {
+  value: AccessLogStatusFilter;
+  onChange: (value: AccessLogStatusFilter) => void;
+}) => (
+  <div className="flex items-center rounded-md border border-slate-200 bg-white p-0.5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
+    {[
+      { value: "all" as const, label: "All" },
+      { value: "allowed" as const, label: "Allowed" },
+      { value: "denied" as const, label: "Denied" },
+    ].map((option) => {
+      const active = option.value === value;
+      return (
+        <button
+          type="button"
+          key={option.value}
+          onClick={() => onChange(option.value)}
+          className={twMerge(
+            "rounded px-2 py-1 text-[0.65rem] font-bold transition-colors duration-150",
+            active
+              ? option.value === "allowed"
+                ? "bg-emerald-500 text-white"
+                : option.value === "denied"
+                  ? "bg-red-500 text-white"
+                  : "bg-slate-900 text-white"
+              : "text-slate-500 hover:bg-slate-50 hover:text-slate-800",
+          )}
+        >
+          {option.label}
+        </button>
+      );
+    })}
+  </div>
+);
+
 interface AccessLogHealthWidgetProps {
   userRef?: ObjectReference;
   sessionRef?: ObjectReference;
@@ -347,6 +388,10 @@ interface AccessLogHealthWidgetProps {
   regionRef?: ObjectReference;
   deviceRef?: ObjectReference;
   policyRef?: ObjectReference;
+  periodMinutes?: number;
+  onPeriodChange?: (value: number) => void;
+  status?: AccessLogStatusFilter;
+  onStatusChange?: (value: AccessLogStatusFilter) => void;
 }
 
 const refKey = (ref?: ObjectReference) => ref?.uid ?? ref?.name ?? null;
@@ -377,11 +422,20 @@ const getAccessLogPath = (
 };
 
 const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
-  const [periodMinutes, setPeriodMinutes] = useState(60);
+  const [localPeriodMinutes, setLocalPeriodMinutes] = useState(60);
+  const [localStatus, setLocalStatus] = useState<AccessLogStatusFilter>("all");
+  const periodMinutes = props.periodMinutes ?? localPeriodMinutes;
+  const status = props.status ?? localStatus;
+  const setPeriodMinutes = props.onPeriodChange ?? setLocalPeriodMinutes;
+  const setStatus = props.onStatusChange ?? setLocalStatus;
   const { curFrom, curTo, prevFrom, prevTo } = buildTimestamps(periodMinutes);
   const autoInterval = getAutoInterval(periodMinutes);
   const periodLabel =
     ALL_PERIODS.find((o) => o.minutes === periodMinutes)?.label ?? "";
+  const scopedLogsPath = getAccessLogPath(
+    props,
+    status === "allowed" ? "ALLOWED" : status === "denied" ? "DENIED" : undefined,
+  );
 
   const refKeys = {
     userRef: refKey(props.userRef),
@@ -394,12 +448,12 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
   };
 
   const showTopUsers = !props.userRef && !props.deviceRef && !props.sessionRef;
-  const showTopServices = !props.serviceRef;
+  const showTopServices = !props.serviceRef && !props.namespaceRef;
   const showTopSessions = !props.sessionRef;
   const showTopPolicies = !props.policyRef;
 
   const curSummary = useQuery({
-    queryKey: ["accessLogSummary", "current", periodMinutes, refKeys],
+    queryKey: ["accessLogSummary", "current", periodMinutes, status, refKeys],
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAccessLog().getAccessLogSummary(
@@ -413,6 +467,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
             regionRef: props.regionRef,
             deviceRef: props.deviceRef,
             policyRef: props.policyRef,
+            status: accessLogStatusValue(status),
           }),
         );
       return response;
@@ -421,7 +476,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
   });
 
   const prevSummary = useQuery({
-    queryKey: ["accessLogSummary", "previous", periodMinutes, refKeys],
+    queryKey: ["accessLogSummary", "previous", periodMinutes, status, refKeys],
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAccessLog().getAccessLogSummary(
@@ -435,6 +490,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
             regionRef: props.regionRef,
             deviceRef: props.deviceRef,
             policyRef: props.policyRef,
+            status: accessLogStatusValue(status),
           }),
         );
       return response;
@@ -443,7 +499,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
   });
 
   const dataPoint = useQuery({
-    queryKey: ["accessLogDataPoint", periodMinutes, refKeys],
+    queryKey: ["accessLogDataPoint", periodMinutes, status, refKeys],
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAccessLog().getAccessLogDataPoint(
@@ -458,6 +514,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
             regionRef: props.regionRef,
             deviceRef: props.deviceRef,
             policyRef: props.policyRef,
+            status: accessLogStatusValue(status),
           }),
         );
       return response;
@@ -466,7 +523,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
   });
 
   const topUsers = useQuery({
-    queryKey: ["accessLogTopUser", periodMinutes, refKeys],
+    queryKey: ["accessLogTopUser", periodMinutes, status, refKeys],
     enabled: showTopUsers,
     queryFn: async () => {
       const { response } =
@@ -478,6 +535,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
             namespaceRef: props.namespaceRef,
             regionRef: props.regionRef,
             policyRef: props.policyRef,
+            status: accessLogStatusValue(status),
           }),
         );
       return response;
@@ -486,7 +544,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
   });
 
   const topServices = useQuery({
-    queryKey: ["accessLogTopService", periodMinutes, refKeys],
+    queryKey: ["accessLogTopService", periodMinutes, status, refKeys],
     enabled: showTopServices,
     queryFn: async () => {
       const { response } =
@@ -499,6 +557,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
             regionRef: props.regionRef,
             deviceRef: props.deviceRef,
             policyRef: props.policyRef,
+            status: accessLogStatusValue(status),
           }),
         );
       return response;
@@ -507,7 +566,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
   });
 
   const topPolicies = useQuery({
-    queryKey: ["accessLogTopPolicy", periodMinutes, refKeys],
+    queryKey: ["accessLogTopPolicy", periodMinutes, status, refKeys],
     enabled: showTopPolicies,
     queryFn: async () => {
       const { response } =
@@ -521,6 +580,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
             deviceRef: props.deviceRef,
             serviceRef: props.serviceRef,
             namespaceRef: props.namespaceRef,
+            status: accessLogStatusValue(status),
           }),
         );
       return response;
@@ -529,7 +589,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
   });
 
   const topSessions = useQuery({
-    queryKey: ["accessLogTopSession", periodMinutes, refKeys],
+    queryKey: ["accessLogTopSession", periodMinutes, status, refKeys],
     enabled: showTopSessions,
     queryFn: async () => {
       const { response } =
@@ -543,6 +603,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
             serviceRef: props.serviceRef,
             namespaceRef: props.namespaceRef,
             policyRef: props.policyRef,
+            status: accessLogStatusValue(status),
           }),
         );
       return response;
@@ -561,6 +622,15 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
     topServices.isLoading ||
     topPolicies.isLoading ||
     topSessions.isLoading;
+  const hasError = [
+    curSummary,
+    prevSummary,
+    dataPoint,
+    topUsers,
+    topServices,
+    topPolicies,
+    topSessions,
+  ].some((query) => query.isError);
 
   const refetchAll = () => {
     curSummary.refetch();
@@ -581,8 +651,21 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
         isLoading={isAnyLoading}
         onRefresh={refetchAll}
       >
-        <PeriodSelector value={periodMinutes} onChange={setPeriodMinutes} />
+        <div className="flex flex-wrap items-center justify-end gap-1.5">
+          <StatusSelector value={status} onChange={setStatus} />
+          <PeriodSelector value={periodMinutes} onChange={setPeriodMinutes} />
+        </div>
       </LogWidgetHeader>
+
+      {hasError && (
+        <div
+          role="alert"
+          className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[0.7rem] font-semibold text-amber-800"
+        >
+          Some access-log data could not be loaded. Showing the available
+          results; try refreshing to retry.
+        </div>
+      )}
 
       {isSummaryLoading ? (
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
@@ -705,7 +788,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
           {showTopUsers && topUsers.data && topUsers.data?.items.length > 0 && (
             <TopList
               title="Top Users"
-              to="/visibility/accesslogs"
+              to={scopedLogsPath}
               items={topUsers.data.items.map((x) => ({
                 resource: x.user!,
                 count: x.count,
@@ -717,7 +800,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
             topServices.data?.items.length > 0 && (
               <TopList
                 title="Top Services"
-                to="/visibility/accesslogs"
+                to={scopedLogsPath}
                 items={topServices.data.items.map((x) => ({
                   resource: x.service!,
                   count: x.count,
@@ -729,7 +812,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
             topPolicies.data?.items.length > 0 && (
               <TopList
                 title="Top Policies"
-                to="/visibility/accesslogs"
+                to={scopedLogsPath}
                 items={topPolicies.data.items.map((x) => ({
                   resource: x.policy!,
                   count: x.count,
@@ -741,7 +824,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
             topSessions.data?.items.length > 0 && (
               <TopList
                 title="Top Sessions"
-                to="/visibility/accesslogs"
+                to={scopedLogsPath}
                 items={topSessions.data.items.map((x) => ({
                   resource: x.session!,
                   count: x.count,
