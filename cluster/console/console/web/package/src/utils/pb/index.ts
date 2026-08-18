@@ -576,7 +576,7 @@ export const hasAuditLog = (resource: Resource): boolean =>
 export const hasSSHSessionLog = (resource: Resource): boolean => {
   if (resource.apiVersion !== "core/v1") return false;
   return match(resource.kind)
-    .with("User", "Session", "Device", "Namespace", "Region", () => true)
+    .with("User", "Session", "Device", "Namespace", () => true)
     .with(
       "Service",
       () =>

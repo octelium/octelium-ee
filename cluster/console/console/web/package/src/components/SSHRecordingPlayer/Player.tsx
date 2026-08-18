@@ -4,11 +4,12 @@ import { isDev } from "@/utils";
 import { getClientVisibilityAccessLog } from "@/utils/client";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
-import { Play, RotateCcw, Square } from "lucide-react";
+import { Gauge, Play, RotateCcw, Square } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { twMerge } from "tailwind-merge";
 
 const MAX_FRAME_DELAY_MS = 2000;
+const UI_UPDATE_INTERVAL_MS = 50;
 
 interface SSHFrame {
   content: Uint8Array<ArrayBufferLike>;
@@ -19,6 +20,7 @@ interface APIResponse {
   frames: SSHFrame[];
   hasMore: boolean;
   nextPage?: number;
+  total?: number;
 }
 
 interface XTermSSHReplayProps {
@@ -84,6 +86,7 @@ const generateMockPage = (page: number, fromMs?: number): APIResponse => {
     frames: pageFrames,
     hasMore,
     nextPage: hasMore ? page + 1 : undefined,
+    total: filtered.length,
   };
 };
 
@@ -102,11 +105,11 @@ const statusLabel = (s: PlaybackStatus): string =>
       ? `Loading page ${s.page}…`
       : s.type === "playing"
         ? `Frame ${s.current} / ${s.total}`
-        : s.type === "done"
-          ? "Playback complete"
-          : s.type === "stopped"
-            ? "Stopped"
-            : `Error: ${s.message}`;
+    : s.type === "done"
+      ? "Playback complete"
+      : s.type === "stopped"
+        ? "Stopped — press play to restart"
+        : `Error: ${s.message}`;
 
 const statusColor = (s: PlaybackStatus): string =>
   s.type === "error"
@@ -132,8 +135,13 @@ export const XTermSSHReplay: React.FC<XTermSSHReplayProps> = ({
   const terminal = useRef<Terminal | null>(null);
   const fitAddon = useRef<FitAddon | null>(null);
   const abortController = useRef<AbortController | null>(null);
+  const mountedRef = useRef(true);
+  const isScrubbingRef = useRef(false);
+  const lastUiUpdateRef = useRef(0);
+  const playbackSpeedRef = useRef(1);
 
   const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [playbackStatus, setPlaybackStatus] = useState<PlaybackStatus>({
     type: "idle",
   });
@@ -141,11 +149,11 @@ export const XTermSSHReplay: React.FC<XTermSSHReplayProps> = ({
   // Progress scrubbing state — all in milliseconds relative to session start
   const [durationMs, setDurationMs] = useState(0);
   const [positionMs, setPositionMs] = useState(0);
-  const [isScrubbing, setIsScrubbing] = useState(false);
   const sessionStartMs = useRef<number>(0);
 
   useEffect(() => {
     if (!terminalRef.current) return;
+    mountedRef.current = true;
 
     terminal.current = new Terminal({
       convertEol: true,
@@ -189,9 +197,20 @@ export const XTermSSHReplay: React.FC<XTermSSHReplayProps> = ({
     const handleResize = () => fitAddon.current?.fit();
     window.addEventListener("resize", handleResize);
 
+    const resizeObserver =
+      typeof ResizeObserver === "undefined"
+        ? undefined
+        : new ResizeObserver(handleResize);
+    resizeObserver?.observe(terminalRef.current);
+
     return () => {
+      mountedRef.current = false;
+      abortController.current?.abort();
+      abortController.current = null;
+      resizeObserver?.disconnect();
       window.removeEventListener("resize", handleResize);
       terminal.current?.dispose();
+      terminal.current = null;
     };
   }, []);
 
@@ -216,12 +235,19 @@ export const XTermSSHReplay: React.FC<XTermSSHReplayProps> = ({
         });
 
       return {
-        frames: response.items.map((x) => ({
-          content: x.data,
-          timestamp: Timestamp.toDate(x.timestamp!).getTime(),
-        })),
+        frames: response.items.flatMap((x) =>
+          x.timestamp
+            ? [
+                {
+                  content: x.data,
+                  timestamp: Timestamp.toDate(x.timestamp).getTime(),
+                },
+              ]
+            : [],
+        ),
         hasMore: response.listResponseMeta?.hasMore ?? false,
         nextPage: response.listResponseMeta?.hasMore ? page + 1 : undefined,
+        total: response.listResponseMeta?.totalCount,
       };
     },
     [sshSession.id],
@@ -229,96 +255,125 @@ export const XTermSSHReplay: React.FC<XTermSSHReplayProps> = ({
 
   const runPlayback = useCallback(
     async (fromMs?: number) => {
-      if (!terminal.current) return;
+      if (!terminal.current || !mountedRef.current) return;
 
       abortController.current?.abort();
-      abortController.current = new AbortController();
-      const signal = abortController.current.signal;
+      const controller = new AbortController();
+      abortController.current = controller;
+      const signal = controller.signal;
+
+      const isCurrentRun = () =>
+        mountedRef.current && abortController.current === controller;
 
       setIsPlaying(true);
       terminal.current.clear();
 
       try {
         let currentPage = initialPage;
-        const allFrames: SSHFrame[] = [];
+        let frameCount = 0;
+        let totalFrames: number | undefined;
+        let firstTimestamp: number | undefined;
+        let previousTimestamp: number | undefined;
+        let lastTimestamp: number | undefined;
 
         while (true) {
-          if (signal.aborted) break;
+          if (signal.aborted || !isCurrentRun()) break;
           setPlaybackStatus({ type: "loading", page: currentPage });
 
           const response = await fetchPage(currentPage, signal, fromMs);
-          allFrames.push(...response.frames);
+          totalFrames = response.total ?? totalFrames;
+
+          for (const frame of [...response.frames].sort(
+            (a, b) => a.timestamp - b.timestamp,
+          )) {
+            if (signal.aborted || !isCurrentRun()) break;
+
+            if (firstTimestamp == null) {
+              firstTimestamp = frame.timestamp;
+              if (fromMs == null) {
+                sessionStartMs.current = firstTimestamp;
+              }
+            }
+
+            const rawDelay =
+              previousTimestamp == null
+                ? 0
+                : Math.max(0, frame.timestamp - previousTimestamp);
+            const delay = Math.min(
+              rawDelay / playbackSpeedRef.current,
+              MAX_FRAME_DELAY_MS,
+            );
+
+            if (delay > 0) {
+              await new Promise<void>((resolve, reject) => {
+                const onAbort = () => {
+                  clearTimeout(id);
+                  reject(new DOMException("Aborted", "AbortError"));
+                };
+                const id = setTimeout(() => {
+                  signal.removeEventListener("abort", onAbort);
+                  resolve();
+                }, delay);
+                signal.addEventListener("abort", onAbort, { once: true });
+              });
+            }
+
+            if (!terminal.current || !isCurrentRun()) break;
+            terminal.current.write(frame.content);
+            previousTimestamp = frame.timestamp;
+            lastTimestamp = frame.timestamp;
+            frameCount += 1;
+
+            const elapsed = frame.timestamp - sessionStartMs.current;
+            const now = performance.now();
+            const shouldUpdate =
+              now - lastUiUpdateRef.current >= UI_UPDATE_INTERVAL_MS;
+            if (fromMs == null && firstTimestamp != null && shouldUpdate) {
+              setDurationMs(frame.timestamp - firstTimestamp);
+            }
+            if (!isScrubbingRef.current && shouldUpdate) {
+              setPositionMs(elapsed);
+            }
+            if (shouldUpdate) lastUiUpdateRef.current = now;
+
+            if (shouldUpdate) {
+              setPlaybackStatus({
+                type: "playing",
+                current: frameCount,
+                total: totalFrames ?? frameCount,
+              });
+            }
+          }
 
           if (!response.hasMore || !response.nextPage) break;
           currentPage = response.nextPage;
         }
 
+        if (!isCurrentRun()) return;
         if (signal.aborted) {
           setPlaybackStatus({ type: "stopped" });
           return;
         }
 
-        if (allFrames.length === 0) {
+        if (frameCount === 0 || firstTimestamp == null || lastTimestamp == null) {
           setPlaybackStatus({ type: "done" });
           return;
         }
 
-        allFrames.sort((a, b) => a.timestamp - b.timestamp);
-
-        const firstTs = allFrames[0].timestamp;
-        const lastTs = allFrames[allFrames.length - 1].timestamp;
-
-        // On first play (no seek) establish the session start and total duration
-        if (fromMs == null) {
-          sessionStartMs.current = firstTs;
-          setDurationMs(lastTs - firstTs);
-        }
-
-        let prevTimestamp = firstTs;
-
-        for (let i = 0; i < allFrames.length; i++) {
-          if (signal.aborted) break;
-
-          const frame = allFrames[i];
-          const rawDelay = frame.timestamp - prevTimestamp;
-          const delay = Math.min(rawDelay, MAX_FRAME_DELAY_MS);
-
-          if (delay > 0 && i > 0) {
-            await new Promise<void>((resolve, reject) => {
-              const id = setTimeout(resolve, delay);
-              signal.addEventListener(
-                "abort",
-                () => {
-                  clearTimeout(id);
-                  reject(new DOMException("Aborted", "AbortError"));
-                },
-                { once: true },
-              );
-            });
-          }
-
-          terminal.current!.write(frame.content);
-          prevTimestamp = frame.timestamp;
-
-          const elapsed = frame.timestamp - sessionStartMs.current;
-          if (!isScrubbing) {
-            setPositionMs(elapsed);
-          }
-
-          setPlaybackStatus({
-            type: "playing",
-            current: i + 1,
-            total: allFrames.length,
-          });
-        }
-
+        if (!isCurrentRun()) return;
         setPlaybackStatus(
           signal.aborted ? { type: "stopped" } : { type: "done" },
         );
         if (!signal.aborted) {
-          setPositionMs(durationMs);
+          if (fromMs == null) {
+            setDurationMs(lastTimestamp - firstTimestamp);
+          }
+          setPositionMs(
+            fromMs == null ? lastTimestamp - firstTimestamp : durationMs,
+          );
         }
       } catch (err: unknown) {
+        if (!isCurrentRun()) return;
         if (err instanceof DOMException && err.name === "AbortError") {
           setPlaybackStatus({ type: "stopped" });
         } else {
@@ -327,11 +382,13 @@ export const XTermSSHReplay: React.FC<XTermSSHReplayProps> = ({
           console.error("Playback error:", err);
         }
       } finally {
-        setIsPlaying(false);
-        abortController.current = null;
+        if (abortController.current === controller) {
+          setIsPlaying(false);
+          abortController.current = null;
+        }
       }
     },
-    [initialPage, fetchPage, isScrubbing, durationMs],
+    [initialPage, fetchPage, durationMs],
   );
 
   const handlePlayPause = useCallback(() => {
@@ -343,7 +400,10 @@ export const XTermSSHReplay: React.FC<XTermSSHReplayProps> = ({
   }, [isPlaying, runPlayback]);
 
   const resetTerminal = useCallback(() => {
-    abortController.current?.abort();
+    const controller = abortController.current;
+    abortController.current = null;
+    controller?.abort();
+    setIsPlaying(false);
     terminal.current?.clear();
     setPlaybackStatus({ type: "idle" });
     setPositionMs(0);
@@ -352,7 +412,7 @@ export const XTermSSHReplay: React.FC<XTermSSHReplayProps> = ({
   }, []);
 
   const handleScrubStart = useCallback(() => {
-    setIsScrubbing(true);
+    isScrubbingRef.current = true;
     if (isPlaying) {
       abortController.current?.abort();
     }
@@ -361,37 +421,39 @@ export const XTermSSHReplay: React.FC<XTermSSHReplayProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleScrubEnd = useCallback(() => {
+    if (!isScrubbingRef.current) return;
+    isScrubbingRef.current = false;
     const targetMs = Number(inputRef.current?.value ?? 0);
     setPositionMs(targetMs);
-    setIsScrubbing(false);
     const absoluteMs = sessionStartMs.current + targetMs;
     runPlayback(absoluteMs);
   }, [runPlayback]);
 
   const handleScrubMove = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (isScrubbing) {
+      if (isScrubbingRef.current) {
         setPositionMs(Number(e.target.value));
       }
     },
-    [isScrubbing],
+    [],
   );
 
   const progressPct =
-    durationMs > 0 ? Math.round((positionMs / durationMs) * 100) : 0;
+    durationMs > 0
+      ? Math.max(0, Math.min(100, Math.round((positionMs / durationMs) * 100)))
+      : 0;
 
   return (
     <div className="w-full flex flex-col rounded-xl overflow-hidden border border-slate-700 shadow-[0_4px_24px_rgba(1,4,9,0.4)]">
       <div
         ref={terminalRef}
-        className="flex-1 min-h-[400px]"
+        className="h-[min(60vh,640px)] min-h-[320px] max-h-[720px]"
         style={{ background: "#0d1117" }}
       />
 
       <div className="bg-[#161b22] border-t border-slate-700 px-4 pt-2.5 pb-3 flex flex-col gap-2">
-        {/* Progress bar */}
         <div className="flex items-center gap-2">
-          <span className="text-[0.65rem] font-semibold font-mono text-slate-500 w-10 shrink-0 text-right tabular-nums">
+          <span className="text-[0.65rem] font-semibold text-slate-500 w-10 shrink-0 text-right tabular-nums">
             {formatTime(positionMs)}
           </span>
 
@@ -410,26 +472,29 @@ export const XTermSSHReplay: React.FC<XTermSSHReplayProps> = ({
               step={100}
               value={positionMs}
               disabled={durationMs === 0}
-              onMouseDown={handleScrubStart}
-              onTouchStart={handleScrubStart}
+              aria-label="Replay position"
+              aria-valuetext={`${formatTime(positionMs)} of ${formatTime(durationMs)}`}
+              onPointerDown={handleScrubStart}
               onChange={handleScrubMove}
-              onMouseUp={handleScrubEnd}
-              onTouchEnd={handleScrubEnd}
-              className="relative w-full h-1 appearance-none bg-transparent cursor-pointer disabled:cursor-default disabled:opacity-40"
+              onPointerUp={handleScrubEnd}
+              onPointerCancel={handleScrubEnd}
+              onKeyUp={handleScrubEnd}
+              onBlur={handleScrubEnd}
+              className="relative w-full h-2 appearance-none bg-transparent cursor-pointer accent-emerald-500 disabled:cursor-default disabled:opacity-40"
               style={{
                 WebkitAppearance: "none",
               }}
             />
           </div>
 
-          <span className="text-[0.65rem] font-semibold font-mono text-slate-500 w-10 shrink-0 tabular-nums">
+          <span className="text-[0.65rem] font-semibold text-slate-500 w-10 shrink-0 tabular-nums">
             {formatTime(durationMs)}
           </span>
         </div>
 
-        {/* Controls row */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
+            type="button"
             onClick={handlePlayPause}
             className={twMerge(
               "flex items-center justify-center w-8 h-8 rounded-md cursor-pointer transition-colors duration-150",
@@ -438,6 +503,7 @@ export const XTermSSHReplay: React.FC<XTermSSHReplayProps> = ({
                 : "text-emerald-400 hover:text-emerald-300 hover:bg-emerald-400/10",
             )}
             title={isPlaying ? "Stop" : "Play"}
+            aria-label={isPlaying ? "Stop replay" : "Play replay"}
           >
             {isPlaying ? (
               <Square size={14} strokeWidth={2.5} />
@@ -447,18 +513,50 @@ export const XTermSSHReplay: React.FC<XTermSSHReplayProps> = ({
           </button>
 
           <button
+            type="button"
             onClick={resetTerminal}
             className="flex items-center justify-center w-8 h-8 rounded-md cursor-pointer text-slate-400 hover:text-slate-200 hover:bg-slate-400/10 transition-colors duration-150"
             title="Reset"
+            aria-label="Reset replay"
           >
             <RotateCcw size={13} strokeWidth={2.5} />
           </button>
 
+          <div className="flex items-center gap-1.5 rounded-md border border-slate-700 px-1.5 py-1 text-slate-400">
+            <Gauge size={12} strokeWidth={2.25} aria-hidden="true" />
+            <span className="sr-only">Playback speed</span>
+            {[0.5, 1, 2].map((speed) => (
+              <button
+                type="button"
+                key={speed}
+                onClick={() => {
+                  playbackSpeedRef.current = speed;
+                  setPlaybackSpeed(speed);
+                }}
+                aria-pressed={playbackSpeed === speed}
+                className={twMerge(
+                  "rounded px-1.5 py-0.5 text-[0.62rem] font-bold transition-colors duration-150",
+                  playbackSpeed === speed
+                    ? "bg-emerald-500 text-slate-950"
+                    : "text-slate-400 hover:bg-slate-700 hover:text-slate-100",
+                )}
+              >
+                {speed}x
+              </button>
+            ))}
+          </div>
+
+          <span className="hidden text-[0.62rem] font-semibold text-slate-500 sm:inline">
+            Long pauses are capped at 2s
+          </span>
+
           <div className="flex-1" />
 
           <span
+            role="status"
+            aria-live="polite"
             className={twMerge(
-              "text-[0.72rem] font-semibold font-mono",
+              "text-right text-[0.72rem] font-semibold",
               statusColor(playbackStatus),
             )}
           >

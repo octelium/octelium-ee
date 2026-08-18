@@ -154,11 +154,13 @@ export const timeRangePickList = [
 
 export const SelectFromTimestamp = (props: {
   onUpdate: (item: Timestamp) => void;
+  onClear?: () => void;
+  initialValue?: string;
   isFuture?: boolean;
   label?: string;
   description?: string;
 }) => {
-  const [from, setFrom] = React.useState<string | undefined>(undefined);
+  const [from, setFrom] = React.useState<string | undefined>(props.initialValue);
 
   return (
     <Select
@@ -174,6 +176,7 @@ export const SelectFromTimestamp = (props: {
       onChange={(v) => {
         if (!v) {
           setFrom(undefined);
+          props.onClear?.();
           return;
         }
 
