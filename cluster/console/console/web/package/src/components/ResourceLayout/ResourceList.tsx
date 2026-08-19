@@ -1,18 +1,21 @@
 import { getDomain } from "@/utils";
 import {
   getAPIKindFromPath,
+  getAPIFromAPIVersion,
   getClientResourceList,
   getClientResourceListP,
   getListKeyFromPath,
   getPBResourceListFromAPI,
   getRefNameQueryArgStr,
   getResourcePath,
+  getResourcePathFromAPIKind,
   hasAccessLog,
   hasAuditLog,
   hasAuthenticationLog,
   hasSSHSessionLog,
   Resource,
   ResourceList,
+  ResourceName,
 } from "@/utils/pb";
 import { ActionIcon, Button, Loader, Menu, Tooltip } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
@@ -298,13 +301,24 @@ const ResourceListC = (props: {
   const location = useLocation();
   const kindName = props.itemsList.kind.replace(/List$/, "");
   const totalCount = props.itemsList.listResponseMeta?.totalCount ?? 0;
+  const api = getAPIFromAPIVersion(props.itemsList.apiVersion);
+  const collectionName = api
+    ? getResourcePathFromAPIKind({
+        api,
+        kind: kindName as ResourceName,
+      })
+    : undefined;
+  const countLabel =
+    totalCount === 1
+      ? kindName.toLowerCase()
+      : collectionName || `${kindName.toLowerCase()}s`;
 
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-4">
         {totalCount > 0 ? (
           <span className="text-[0.72rem] font-semibold text-slate-400 tracking-wide">
-            {totalCount.toLocaleString()} {kindName.toLowerCase()}s
+            {totalCount.toLocaleString()} {countLabel}
           </span>
         ) : (
           <span />
