@@ -38,7 +38,6 @@ import {
   Boxes,
   Braces,
   Cable,
-  Database,
   Globe2,
   Lock,
   Monitor,
@@ -48,6 +47,8 @@ import {
   SquareTerminal,
   UserRoundX,
 } from "lucide-react";
+import { GrMysql } from "react-icons/gr";
+import { SiPostgresql } from "react-icons/si";
 
 export const getType = (svc: Service): string => {
   return printServiceMode(svc.spec!.mode);
@@ -196,7 +197,9 @@ export const ExtraComponent = (props: { item: Service }) => {
   return <ItemDetails item={item} domain={domain} />;
 };
 
-const DoSummary = (props: { resp: GetServiceSummaryResponse }) => {
+const DoSummary = (props: {
+  resp: GetServiceSummaryResponse;
+}) => {
   const { resp } = props;
   const [searchParams, _] = useSearchParams();
 
@@ -280,7 +283,7 @@ const DoSummary = (props: { resp: GetServiceSummaryResponse }) => {
             searchParams.get(`mode`) ===
             Service_Spec_Mode[Service_Spec_Mode.POSTGRES]
           }
-          icon={Database}
+          icon={SiPostgresql}
         >
           PostgreSQL
         </SummaryItemCount>
@@ -293,7 +296,7 @@ const DoSummary = (props: { resp: GetServiceSummaryResponse }) => {
             searchParams.get(`mode`) ===
             Service_Spec_Mode[Service_Spec_Mode.MYSQL]
           }
-          icon={Database}
+          icon={GrMysql}
         >
           MySQL
         </SummaryItemCount>
