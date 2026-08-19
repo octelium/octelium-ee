@@ -5,6 +5,7 @@ import routerCore from "./core/router";
 import routerEnterprise from "./enterprise/router";
 import Home from "./Home";
 import routerVisibility from "./visibility/router";
+import routerSettings from "./Settings/router";
 
 import Root from "./index";
 
@@ -18,7 +19,7 @@ export default (): RouteObject => {
         element: <Home />,
       },
 
-      // routerSettings(),
+      routerSettings(),
       routerCore(),
       routerEnterprise(),
       routerClusterMan(),

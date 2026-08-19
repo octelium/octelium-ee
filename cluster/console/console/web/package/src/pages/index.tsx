@@ -3,8 +3,13 @@ import SideBar from "@/components/SideBar";
 import RightSidebar from "@/components/SideBar/RightSidebar";
 import TopBar from "@/components/TopBar";
 import { Toaster } from "@/components/ui/sonner";
+import { setStatus } from "@/features/settings/slice";
+import { getClientUser } from "@/utils/client";
+import { useAppDispatch } from "@/utils/hooks";
 import { AppShell, Burger } from "@mantine/core";
 import { useDisclosure, useHeadroom } from "@mantine/hooks";
+import { useQuery } from "@tanstack/react-query";
+import * as React from "react";
 import { ScrollRestoration } from "react-router";
 import { Navigate, Outlet } from "react-router-dom";
 
@@ -13,6 +18,20 @@ import "@fontsource/ubuntu/500.css";
 import "@fontsource/ubuntu/700.css";
 
 export default () => {
+  const dispatch = useAppDispatch();
+  const statusQuery = useQuery({
+    queryKey: ["user", "status"],
+    queryFn: async () => (await getClientUser().getStatus({})).response,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+
+  React.useEffect(() => {
+    if (statusQuery.data) {
+      dispatch(setStatus({ status: statusQuery.data }));
+    }
+  }, [dispatch, statusQuery.data]);
+
   const urlSearchParams = new URLSearchParams(window.location.search);
   if (urlSearchParams.get("redirect")) {
     const val = urlSearchParams.get("redirect")!;
