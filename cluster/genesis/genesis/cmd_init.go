@@ -34,12 +34,7 @@ import (
 	k8smetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type InitOpts struct {
-	EnableSPIFFECSI         bool
-	SPIFFECSIDriver         string
-	SPIFFETrustDomain       string
-	EnableIngressFrontProxy bool
-}
+type InitOpts struct{}
 
 func (g *Genesis) RunInit(ctx context.Context, o *InitOpts) error {
 	zap.L().Info("Starting initializing the Cluster")
@@ -83,11 +78,9 @@ func (g *Genesis) RunInit(ctx context.Context, o *InitOpts) error {
 
 	if err := g.installComponents(ctx, &components.CommonOpts{
 		CommonOpts: gc.CommonOpts{
-			Region:                  rgn,
-			EnableSPIFFECSI:         o.EnableSPIFFECSI,
-			SPIFFECSIDriver:         o.SPIFFECSIDriver,
-			SPIFFETrustDomain:       o.SPIFFETrustDomain,
-			EnableIngressFrontProxy: o.EnableIngressFrontProxy,
+			K8sC:          g.k8sC,
+			ClusterConfig: clusterCfg,
+			Region:        rgn,
 		},
 	}, true); err != nil {
 		return err

@@ -47,6 +47,7 @@ type controller struct {
 	k8sC      kubernetes.Interface
 	req       *enterprisev1.ClusterConfig_Status_UpgradeRequest
 	domain    string
+	spiffe    *install.SPIFFEOpts
 }
 
 func newController(ctx context.Context, o *UpgradeClusterOpts) (*controller, error) {
@@ -66,6 +67,14 @@ func newController(ctx context.Context, o *UpgradeClusterOpts) (*controller, err
 	}
 
 	ret.domain = cc.Status.Domain
+
+	spiffe := cc.GetStatus().GetInstallation().GetSpiffe()
+	if spiffe.GetEnable() {
+		ret.spiffe = &install.SPIFFEOpts{
+			CSIDriver:   spiffe.GetCsiDriver().GetName(),
+			TrustDomain: spiffe.GetTrustDomain(),
+		}
+	}
 
 	return ret, nil
 }
@@ -156,7 +165,7 @@ func (c *controller) runUpgradeJob(ctx context.Context, pkg string, version stri
 		return errors.Errorf("empty upgrade version for package %s", pkg)
 	}
 
-	job := getGenesisJob(c.domain, vutils.GetMyRegionName(), pkg, version)
+	job := getGenesisJob(c.domain, vutils.GetMyRegionName(), pkg, version, c.spiffe)
 
 	if _, err := c.k8sC.BatchV1().Jobs(vutils.K8sNS).Create(ctx, job, k8smetav1.CreateOptions{}); err != nil {
 		return errors.Errorf("could not create upgrade job %s for package %s version %s: %+v",
@@ -296,7 +305,8 @@ func (c *controller) checkUpgradeJob(ctx context.Context, jobName string) error 
 	)
 }
 
-func getGenesisJob(domain string, regionName string, pkg string, version string) *batchv1.Job {
+func getGenesisJob(domain string, regionName string, pkg string, version string,
+	spiffe *install.SPIFFEOpts) *batchv1.Job {
 	labels := map[string]string{
 		"app":                         "octelium",
 		"octelium.com/component":      "genesis",
@@ -314,7 +324,15 @@ func getGenesisJob(domain string, regionName string, pkg string, version string)
 				ObjectMeta: k8smetav1.ObjectMeta{
 					Labels: labels,
 				},
-				Spec: install.GetGenesisPodSpec(domain, "upgrade", version, "octelium-nocturne", pkg, regionName),
+				Spec: install.GetGenesisPodSpec(&install.GenesisPodSpecOpts{
+					Domain:     domain,
+					Cmd:        "upgrade",
+					Version:    version,
+					SvcAccount: "octelium-nocturne",
+					Package:    pkg,
+					Region:     regionName,
+					SPIFFE:     spiffe,
+				}),
 			},
 		},
 	}

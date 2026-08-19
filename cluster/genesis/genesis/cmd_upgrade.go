@@ -19,12 +19,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type UpgradeOpts struct {
-	EnableSPIFFECSI         bool
-	SPIFFECSIDriver         string
-	SPIFFETrustDomain       string
-	EnableIngressFrontProxy bool
-}
+type UpgradeOpts struct{}
 
 func (g *Genesis) RunUpgrade(ctx context.Context, o *UpgradeOpts) error {
 
@@ -56,11 +51,9 @@ func (g *Genesis) RunUpgrade(ctx context.Context, o *UpgradeOpts) error {
 
 	if err := g.installComponents(ctx, &components.CommonOpts{
 		CommonOpts: gc.CommonOpts{
-			Region:                  region,
-			EnableSPIFFECSI:         o.EnableSPIFFECSI,
-			SPIFFECSIDriver:         o.SPIFFECSIDriver,
-			SPIFFETrustDomain:       o.SPIFFETrustDomain,
-			EnableIngressFrontProxy: o.EnableIngressFrontProxy,
+			K8sC:          g.k8sC,
+			ClusterConfig: cc,
+			Region:        region,
 		},
 	}, false); err != nil {
 		return err
