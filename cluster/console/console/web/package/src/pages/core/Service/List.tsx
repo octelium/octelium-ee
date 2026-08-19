@@ -36,6 +36,9 @@ import {
 import { getResourcePath, printServiceMode } from "@/utils/pb";
 import {
   Boxes,
+  Ban,
+  BrainCircuit,
+  Bot,
   Braces,
   Cable,
   Globe2,
@@ -366,6 +369,32 @@ const DoSummary = (props: {
           RDP Web
         </SummaryItemCount>
         <SummaryItemCount
+          count={resp.totalMCP}
+          to={toURLWithQry(`/core/services`, {
+            mode: Service_Spec_Mode[Service_Spec_Mode.MCP],
+          })}
+          active={
+            searchParams.get(`mode`) ===
+            Service_Spec_Mode[Service_Spec_Mode.MCP]
+          }
+          icon={Bot}
+        >
+          MCP
+        </SummaryItemCount>
+        <SummaryItemCount
+          count={resp.totalLLM}
+          to={toURLWithQry(`/core/services`, {
+            mode: Service_Spec_Mode[Service_Spec_Mode.LLM],
+          })}
+          active={
+            searchParams.get(`mode`) ===
+            Service_Spec_Mode[Service_Spec_Mode.LLM]
+          }
+          icon={BrainCircuit}
+        >
+          LLM / AI
+        </SummaryItemCount>
+        <SummaryItemCount
           count={resp.totalPublic}
           to={toURLWithQry(`/core/services`, {
             isPublic: "true",
@@ -384,6 +413,12 @@ const DoSummary = (props: {
           icon={UserRoundX}
         >
           Anonymous
+        </SummaryItemCount>
+        <SummaryItemCount
+          count={resp.totalDisabled}
+          icon={Ban}
+        >
+          Disabled
         </SummaryItemCount>
       </SummaryItemCountWrap>
     </div>
