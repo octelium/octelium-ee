@@ -855,10 +855,16 @@
                     "type": "integer"
                 },
                 "totalTokens": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "TotalTokens is the total token count reported by the upstream provider itself. Whenever the provider reports none, which is the case for the ANTHROPIC protocol, it is the sum of every other token count of this message."
                 },
-                "cachedInputTokens": {
-                    "type": "integer"
+                "cacheReadInputTokens": {
+                    "type": "integer",
+                    "description": "CacheReadInputTokens is the number of the input tokens that were read from the provider's prompt cache. Note that the providers account for it differently: it is a subset of the InputTokens field for the OPENAI protocol while it is additive to it for the ANTHROPIC one."
+                },
+                "cacheCreationInputTokens": {
+                    "type": "integer",
+                    "description": "CacheCreationInputTokens is the number of the input tokens that were written to the provider's prompt cache. It is only reported by the ANTHROPIC protocol and it is additive to the InputTokens field."
                 },
                 "reasoningTokens": {
                     "type": "integer"

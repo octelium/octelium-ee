@@ -232,6 +232,7 @@ func TestCoreListResourceSpecificFilters(t *testing.T) {
 			Mode:        corev1.Service_Spec_HTTP,
 			IsPublic:    true,
 			IsAnonymous: true,
+			IsDisabled:  true,
 		},
 		Status: &corev1.Service_Status{
 			NamespaceRef: namespaceRef,
@@ -353,6 +354,7 @@ func TestCoreListResourceSpecificFilters(t *testing.T) {
 			Mode:         corev1.Service_Spec_HTTP,
 			IsPublic:     true,
 			IsAnonymous:  true,
+			IsDisabled:   true,
 		})
 		assert.Nil(t, err, "%+v", err)
 		assert.Len(t, resp.Items, 1)
@@ -428,6 +430,7 @@ func TestCoreSimpleListMethodsAndPolicyFilter(t *testing.T) {
 
 	now := time.Now().UTC()
 	srvCore := &srvCore{s: env.srv}
+	regionRef := &metav1.ObjectReference{Name: "region-one", Uid: vutils.UUIDv4()}
 
 	insertRscStoreObject(t, env, &corev1.Group{
 		ApiVersion: ucorev1.APIVersion,
@@ -455,7 +458,17 @@ func TestCoreSimpleListMethodsAndPolicyFilter(t *testing.T) {
 		Kind:       ucorev1.KindGateway,
 		Metadata:   newRscStoreMetadata("visible-gateway", now),
 		Spec:       &corev1.Gateway_Spec{},
-		Status:     &corev1.Gateway_Status{},
+		Status:     &corev1.Gateway_Status{RegionRef: regionRef},
+	})
+	insertRscStoreObject(t, env, &corev1.Gateway{
+		ApiVersion: ucorev1.APIVersion,
+		Kind:       ucorev1.KindGateway,
+		Metadata:   newRscStoreMetadata("other-gateway", now.Add(time.Second)),
+		Spec:       &corev1.Gateway_Spec{},
+		Status: &corev1.Gateway_Status{RegionRef: &metav1.ObjectReference{
+			Name: "region-two",
+			Uid:  vutils.UUIDv4(),
+		}},
 	})
 	insertRscStoreObject(t, env, &corev1.Secret{
 		ApiVersion: ucorev1.APIVersion,
@@ -501,7 +514,7 @@ func TestCoreSimpleListMethodsAndPolicyFilter(t *testing.T) {
 	}
 
 	{
-		resp, err := srvCore.ListGateway(env.ctx, &vcorev1.ListGatewayOptions{})
+		resp, err := srvCore.ListGateway(env.ctx, &vcorev1.ListGatewayOptions{RegionRef: regionRef})
 		assert.Nil(t, err, "%+v", err)
 		assert.Len(t, resp.Items, 1)
 		assert.Equal(t, "visible-gateway", resp.Items[0].Metadata.Name)

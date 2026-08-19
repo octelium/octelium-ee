@@ -174,6 +174,11 @@ func (s *srvCore) ListService(ctx context.Context, req *vcorev1.ListServiceOptio
 			goqu.L(`json_extract(rsc, '$.spec.isAnonymous') = true`))
 	}
 
+	if req.IsDisabled {
+		doListReq.filters = append(doListReq.filters,
+			goqu.L(`json_extract(rsc, '$.spec.isDisabled') = true`))
+	}
+
 	ret, err := s.s.doList(ctx, doListReq)
 	if err != nil {
 		return nil, err
@@ -297,6 +302,12 @@ func (s *srvCore) ListGateway(ctx context.Context, req *vcorev1.ListGatewayOptio
 		version: ucorev1.Version,
 		kind:    ucorev1.KindGateway,
 		common:  req.Common,
+	}
+
+	var err error
+	doListReq.filters, err = appendRefFilter(doListReq.filters, req.RegionRef, nil, "status.regionRef")
+	if err != nil {
+		return nil, err
 	}
 
 	ret, err := s.s.doList(ctx, doListReq)

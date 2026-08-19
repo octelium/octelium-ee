@@ -289,6 +289,18 @@ export interface GetServiceSummaryResponse {
      * @generated from protobuf field: uint32 totalRDPWeb = 15
      */
     totalRDPWeb: number;
+    /**
+     * @generated from protobuf field: uint32 totalDisabled = 16
+     */
+    totalDisabled: number;
+    /**
+     * @generated from protobuf field: uint32 totalMCP = 17
+     */
+    totalMCP: number;
+    /**
+     * @generated from protobuf field: uint32 totalLLM = 18
+     */
+    totalLLM: number;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.core.v1.GetCredentialSummaryResponse
@@ -686,6 +698,10 @@ export interface ListServiceOptions {
      * @generated from protobuf field: bool isAnonymous = 6
      */
     isAnonymous: boolean;
+    /**
+     * @generated from protobuf field: bool isDisabled = 7
+     */
+    isDisabled: boolean;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.core.v1.ListUserOptions
@@ -822,6 +838,10 @@ export interface ListGatewayOptions {
      * @generated from protobuf field: octelium.api.main.visibility.meta.v1.CommonListOptions common = 1
      */
     common?: CommonListOptions;
+    /**
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference regionRef = 2
+     */
+    regionRef?: ObjectReference;
 }
 /**
  * @generated from protobuf message octelium.api.main.visibility.core.v1.ListRegionOptions
@@ -1806,7 +1826,10 @@ class GetServiceSummaryResponse$Type extends MessageType<GetServiceSummaryRespon
             { no: 12, name: "totalGRPC", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
             { no: 13, name: "totalWeb", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
             { no: 14, name: "totalSOCKS5", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 15, name: "totalRDPWeb", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
+            { no: 15, name: "totalRDPWeb", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 16, name: "totalDisabled", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 17, name: "totalMCP", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 18, name: "totalLLM", kind: "scalar", T: 13 /*ScalarType.UINT32*/ }
         ]);
     }
     create(value?: PartialMessage<GetServiceSummaryResponse>): GetServiceSummaryResponse {
@@ -1826,6 +1849,9 @@ class GetServiceSummaryResponse$Type extends MessageType<GetServiceSummaryRespon
         message.totalWeb = 0;
         message.totalSOCKS5 = 0;
         message.totalRDPWeb = 0;
+        message.totalDisabled = 0;
+        message.totalMCP = 0;
+        message.totalLLM = 0;
         if (value !== undefined)
             reflectionMergePartial<GetServiceSummaryResponse>(this, message, value);
         return message;
@@ -1879,6 +1905,15 @@ class GetServiceSummaryResponse$Type extends MessageType<GetServiceSummaryRespon
                     break;
                 case /* uint32 totalRDPWeb */ 15:
                     message.totalRDPWeb = reader.uint32();
+                    break;
+                case /* uint32 totalDisabled */ 16:
+                    message.totalDisabled = reader.uint32();
+                    break;
+                case /* uint32 totalMCP */ 17:
+                    message.totalMCP = reader.uint32();
+                    break;
+                case /* uint32 totalLLM */ 18:
+                    message.totalLLM = reader.uint32();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -1937,6 +1972,15 @@ class GetServiceSummaryResponse$Type extends MessageType<GetServiceSummaryRespon
         /* uint32 totalRDPWeb = 15; */
         if (message.totalRDPWeb !== 0)
             writer.tag(15, WireType.Varint).uint32(message.totalRDPWeb);
+        /* uint32 totalDisabled = 16; */
+        if (message.totalDisabled !== 0)
+            writer.tag(16, WireType.Varint).uint32(message.totalDisabled);
+        /* uint32 totalMCP = 17; */
+        if (message.totalMCP !== 0)
+            writer.tag(17, WireType.Varint).uint32(message.totalMCP);
+        /* uint32 totalLLM = 18; */
+        if (message.totalLLM !== 0)
+            writer.tag(18, WireType.Varint).uint32(message.totalLLM);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -2953,7 +2997,8 @@ class ListServiceOptions$Type extends MessageType<ListServiceOptions> {
             { no: 3, name: "regionRef", kind: "message", T: () => ObjectReference },
             { no: 4, name: "mode", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Mode", Service_Spec_Mode] },
             { no: 5, name: "isPublic", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
-            { no: 6, name: "isAnonymous", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+            { no: 6, name: "isAnonymous", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 7, name: "isDisabled", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
         ]);
     }
     create(value?: PartialMessage<ListServiceOptions>): ListServiceOptions {
@@ -2961,6 +3006,7 @@ class ListServiceOptions$Type extends MessageType<ListServiceOptions> {
         message.mode = 0;
         message.isPublic = false;
         message.isAnonymous = false;
+        message.isDisabled = false;
         if (value !== undefined)
             reflectionMergePartial<ListServiceOptions>(this, message, value);
         return message;
@@ -2987,6 +3033,9 @@ class ListServiceOptions$Type extends MessageType<ListServiceOptions> {
                     break;
                 case /* bool isAnonymous */ 6:
                     message.isAnonymous = reader.bool();
+                    break;
+                case /* bool isDisabled */ 7:
+                    message.isDisabled = reader.bool();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -3018,6 +3067,9 @@ class ListServiceOptions$Type extends MessageType<ListServiceOptions> {
         /* bool isAnonymous = 6; */
         if (message.isAnonymous !== false)
             writer.tag(6, WireType.Varint).bool(message.isAnonymous);
+        /* bool isDisabled = 7; */
+        if (message.isDisabled !== false)
+            writer.tag(7, WireType.Varint).bool(message.isDisabled);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -3476,7 +3528,8 @@ export const ListDeviceOptions = new ListDeviceOptions$Type();
 class ListGatewayOptions$Type extends MessageType<ListGatewayOptions> {
     constructor() {
         super("octelium.api.main.visibility.core.v1.ListGatewayOptions", [
-            { no: 1, name: "common", kind: "message", T: () => CommonListOptions }
+            { no: 1, name: "common", kind: "message", T: () => CommonListOptions },
+            { no: 2, name: "regionRef", kind: "message", T: () => ObjectReference }
         ]);
     }
     create(value?: PartialMessage<ListGatewayOptions>): ListGatewayOptions {
@@ -3493,6 +3546,9 @@ class ListGatewayOptions$Type extends MessageType<ListGatewayOptions> {
                 case /* octelium.api.main.visibility.meta.v1.CommonListOptions common */ 1:
                     message.common = CommonListOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
                     break;
+                case /* octelium.api.main.meta.v1.ObjectReference regionRef */ 2:
+                    message.regionRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.regionRef);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -3508,6 +3564,9 @@ class ListGatewayOptions$Type extends MessageType<ListGatewayOptions> {
         /* octelium.api.main.visibility.meta.v1.CommonListOptions common = 1; */
         if (message.common)
             CommonListOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference regionRef = 2; */
+        if (message.regionRef)
+            ObjectReference.internalBinaryWrite(message.regionRef, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

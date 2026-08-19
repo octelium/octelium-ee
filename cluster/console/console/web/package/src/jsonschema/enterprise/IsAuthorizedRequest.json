@@ -728,7 +728,7 @@
                 },
                 "estimatedInputTokens": {
                     "type": "integer",
-                    "description": "EstimatedInputTokens is Octelium's own conservative pre-flight input token estimate. It is NOT a provider-accurate token count and it must never be treated as a billing truth. Read the EstimateQuality field alongside it."
+                    "description": "EstimatedInputTokens is Octelium's own byte-based pre-flight input token estimate. It is neither a provider-accurate token count nor an upper bound of one and it must never be treated as a billing truth. Read the EstimateQuality field alongside it."
                 },
                 "estimateQuality": {
                     "enum": [

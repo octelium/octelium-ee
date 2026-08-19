@@ -291,14 +291,14 @@ func TestCoreSummaryCountsComprehensive(t *testing.T) {
 		map[string]any{"state": "REJECTED"},
 		map[string]any{"type": "CLIENT", "userRef": map[string]any{"uid": user2}}))
 
-	serviceModes := []string{"TCP", "UDP", "HTTP", "SSH", "KUBERNETES", "POSTGRES", "MYSQL", "DNS", "GRPC", "WEB", "SOCKS5", "RDP_WEB"}
+	serviceModes := []string{"TCP", "UDP", "HTTP", "SSH", "KUBERNETES", "POSTGRES", "MYSQL", "DNS", "GRPC", "WEB", "SOCKS5", "RDP_WEB", "MCP", "LLM"}
 	for idx, mode := range serviceModes {
 		insertRawRscStoreResource(t, env, ucorev1.KindService, newRawRscStoreResource(ucorev1.KindService,
 			fmt.Sprintf("service-%02d", idx), false,
-			map[string]any{"mode": mode, "isPublic": idx < 3, "isAnonymous": idx == 0}, nil))
+			map[string]any{"mode": mode, "isPublic": idx < 3, "isAnonymous": idx == 0, "isDisabled": idx == 1}, nil))
 	}
 	insertRawRscStoreResource(t, env, ucorev1.KindService, newRawRscStoreResource(ucorev1.KindService, "hidden-service", true,
-		map[string]any{"mode": "HTTP", "isPublic": true, "isAnonymous": true}, nil))
+		map[string]any{"mode": "HTTP", "isPublic": true, "isAnonymous": true, "isDisabled": true}, nil))
 
 	insertRawRscStoreResource(t, env, ucorev1.KindPolicy, newRawRscStoreResource(ucorev1.KindPolicy, "policy-one", false,
 		map[string]any{
@@ -406,7 +406,7 @@ func TestCoreSummaryCountsComprehensive(t *testing.T) {
 	{
 		resp, err := env.srv.getSummaryCoreService(env.ctx, &vcorev1.GetServiceSummaryRequest{})
 		assert.Nil(t, err, "%+v", err)
-		assert.Equal(t, uint32(12), resp.TotalNumber)
+		assert.Equal(t, uint32(14), resp.TotalNumber)
 		assert.Equal(t, uint32(3), resp.TotalPublic)
 		assert.Equal(t, uint32(1), resp.TotalAnonymous)
 		assert.Equal(t, uint32(1), resp.TotalTCP)
@@ -421,6 +421,9 @@ func TestCoreSummaryCountsComprehensive(t *testing.T) {
 		assert.Equal(t, uint32(1), resp.TotalWeb)
 		assert.Equal(t, uint32(1), resp.TotalSOCKS5)
 		assert.Equal(t, uint32(1), resp.TotalRDPWeb)
+		assert.Equal(t, uint32(1), resp.TotalMCP)
+		assert.Equal(t, uint32(1), resp.TotalLLM)
+		assert.Equal(t, uint32(1), resp.TotalDisabled)
 	}
 
 	{

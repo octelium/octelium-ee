@@ -1449,7 +1449,7 @@
                 },
                 "estimatedInputTokens": {
                     "type": "integer",
-                    "description": "EstimatedInputTokens is Octelium's own conservative pre-flight input token estimate. It is NOT a provider-accurate token count and it must never be treated as a billing truth. Read the EstimateQuality field alongside it."
+                    "description": "EstimatedInputTokens is Octelium's own byte-based pre-flight input token estimate. It is neither a provider-accurate token count nor an upper bound of one and it must never be treated as a billing truth. Read the EstimateQuality field alongside it."
                 },
                 "estimateQuality": {
                     "enum": [
@@ -4026,28 +4026,10 @@
                     "type": "string",
                     "title": "Protocol"
                 },
-                "allowedOperations": {
-                    "items": {
-                        "enum": [
-                            "OPERATION_UNSET",
-                            "CHAT_COMPLETIONS",
-                            "RESPONSES",
-                            "COMPLETIONS",
-                            "EMBEDDINGS",
-                            "MODERATIONS",
-                            "MODELS_LIST",
-                            "MODELS_GET",
-                            "MESSAGES",
-                            "COUNT_TOKENS"
-                        ]
-                    },
-                    "type": "array",
-                    "title": "Operation"
-                },
-                "models": {
-                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Models",
+                "model": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Model",
                     "additionalProperties": false,
-                    "description": "Models sets the model name allow and deny lists. Note that these lists are static guardrails, the identity-aware model access control is done by the Policies via the `ctx.request.llm.model` field."
+                    "description": "Model overwrites the model name requested by the downstream before the request is proxied to the upstream. If not set, which is the default, the requested model name is preserved as is. Note that the model access control itself is done by the Policies via the `ctx.request.llm.model` field which always carries the model name as requested by the downstream."
                 },
                 "limits": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Limits",
@@ -4107,7 +4089,7 @@
                 },
                 "maxEstimatedInputTokens": {
                     "type": "integer",
-                    "description": "MaxEstimatedInputTokens rejects the requests whose pre-flight estimated input token count is above this value. Note that this count is a conservative heuristic calculated by Octelium itself, it is not a provider-accurate token count. Read the `ctx.request.llm.estimateQuality` field to know whether the estimate accounted for the entire input."
+                    "description": "MaxEstimatedInputTokens rejects the requests whose pre-flight estimated input token count is above this value. Note that this count is a byte-based heuristic calculated by Octelium itself, it is neither a provider-accurate token count nor an upper bound of one. Read the `ctx.request.llm.estimateQuality` field to know whether the estimate accounted for the entire input. Use the MaxRequestBytes field whenever an exact ceiling is needed."
                 },
                 "maxOutputTokens": {
                     "type": "integer",
@@ -4122,26 +4104,52 @@
             "type": "object",
             "title": "Limits"
         },
-        "octelium.api.main.core.v1.Service.Spec.Config.LLM.Models": {
+        "octelium.api.main.core.v1.Service.Spec.Config.LLM.Model": {
             "properties": {
-                "allow": {
-                    "items": {
-                        "type": "string"
-                    },
-                    "type": "array",
-                    "description": "Allow is the list of the allowed model names. An entry is either an exact model name (e.g. \"gpt-4o\") or a prefix pattern ending with a `*` (e.g. \"claude-*\"). If not set, which is the default, every model name is allowed. Note that model names are always strings since the providers introduce, version and retire their models independently of Octelium."
+                "value": {
+                    "type": "string",
+                    "description": "Value overwrites the model name requested by the downstream with a static one."
                 },
-                "deny": {
-                    "items": {
-                        "type": "string"
-                    },
-                    "type": "array",
-                    "description": "Deny is the list of the denied model names using the same matching rules as the Allow list. It is evaluated after the Allow list and it wins whenever both of them match."
+                "eval": {
+                    "type": "string",
+                    "description": "Eval overwrites the model name requested by the downstream with the result of a CEL expression that is evaluated against the request context. An empty result preserves the requested model name."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Models"
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "value"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "eval"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "value"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "eval"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Model"
         },
         "octelium.api.main.core.v1.Service.Spec.Config.LLM.Visibility": {
             "properties": {

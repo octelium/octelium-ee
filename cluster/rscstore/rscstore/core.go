@@ -174,8 +174,11 @@ func (s *Server) getSummaryCoreService(ctx context.Context, req *vcorev1.GetServ
 			getModeCount(corev1.Service_Spec_WEB),
 			getModeCount(corev1.Service_Spec_SOCKS5),
 			getModeCount(corev1.Service_Spec_RDP_WEB),
+			getModeCount(corev1.Service_Spec_MCP),
+			getModeCount(corev1.Service_Spec_LLM),
 			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.isPublic') = true) AS count_public`),
 			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.isAnonymous') = true) AS count_anonymous`),
+			goqu.L(`COUNT(*) FILTER (WHERE json_extract(rsc, '$.spec.isDisabled') = true) AS count_disabled`),
 		)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -201,7 +204,8 @@ func (s *Server) getSummaryCoreService(ctx context.Context, req *vcorev1.GetServ
 			&ret.TotalPostgres, &ret.TotalMysql,
 			&ret.TotalDNS, &ret.TotalGRPC, &ret.TotalWeb,
 			&ret.TotalSOCKS5, &ret.TotalRDPWeb,
-			&ret.TotalPublic, &ret.TotalAnonymous)
+			&ret.TotalMCP, &ret.TotalLLM,
+			&ret.TotalPublic, &ret.TotalAnonymous, &ret.TotalDisabled)
 		if err != nil {
 			return nil, err
 		}
