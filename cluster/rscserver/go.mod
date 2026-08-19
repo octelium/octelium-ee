@@ -6,9 +6,9 @@ require (
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20260811052756-b07f6481066d
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260811052756-b07f6481066d
-	github.com/octelium/octelium/pkg v0.0.0-20260811052756-b07f6481066d
+	github.com/octelium/octelium/cluster/common v0.0.0-20260817113109-c74b537fbe02
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260817113109-c74b537fbe02
+	github.com/octelium/octelium/pkg v0.0.0-20260817113109-c74b537fbe02
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.8.1
 	go.uber.org/zap v1.28.0

@@ -4,11 +4,11 @@ go 1.26.5
 
 require (
 	github.com/go-resty/resty/v2 v2.17.2
-	github.com/octelium/octelium/apis v0.0.0-20260811052756-b07f6481066d
-	github.com/octelium/octelium/cluster/common v0.0.0-20260811052756-b07f6481066d
-	github.com/octelium/octelium/cluster/e2e v0.0.0-20260811052756-b07f6481066d
-	github.com/octelium/octelium/octelium-go v0.0.0-20260811052756-b07f6481066d
-	github.com/octelium/octelium/pkg v0.0.0-20260811052756-b07f6481066d
+	github.com/octelium/octelium/apis v0.0.0-20260817113109-c74b537fbe02
+	github.com/octelium/octelium/cluster/common v0.0.0-20260817113109-c74b537fbe02
+	github.com/octelium/octelium/cluster/e2e v0.0.0-20260817113109-c74b537fbe02
+	github.com/octelium/octelium/octelium-go v0.0.0-20260817113109-c74b537fbe02
+	github.com/octelium/octelium/pkg v0.0.0-20260817113109-c74b537fbe02
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/zap v1.28.0
@@ -78,8 +78,8 @@ require (
 	github.com/nats-io/nats.go v1.46.1 // indirect
 	github.com/nats-io/nkeys v0.4.11 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
-	github.com/octelium/octelium/client/common v0.0.0-20260811052756-b07f6481066d // indirect
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260811052756-b07f6481066d // indirect
+	github.com/octelium/octelium/client/common v0.0.0-20260817113109-c74b537fbe02 // indirect
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260817113109-c74b537fbe02 // indirect
 	github.com/openai/openai-go/v3 v3.2.0 // indirect
 	github.com/paulmach/orb v0.11.1 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect
