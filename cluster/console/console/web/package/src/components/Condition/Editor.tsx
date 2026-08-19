@@ -16,7 +16,7 @@ import { EditorState } from "@codemirror/state";
 import { drawSelection, EditorView, keymap } from "@codemirror/view";
 import { tags as t } from "@lezer/highlight";
 import CodeMirror from "@uiw/react-codemirror";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import RequestContext from "../../jsonschema/core/RequestContext.json";
 import { schemaAutocomplete } from "./celCompletion";
 import { regoHighlight, regoLanguage, regoTheme } from "./opa";
@@ -72,10 +72,34 @@ const singleLineFilter = EditorState.transactionFilter.of((tr) => {
 
 const inputDotTrigger = EditorView.inputHandler.of((view, _from, _to, text) => {
   if (text === ".") {
-    setTimeout(() => startCompletion(view), 0);
+    setTimeout(() => {
+      if (view.dom.isConnected) startCompletion(view);
+    }, 0);
   }
   return false;
 });
+
+const celKeymap = keymap.of([
+  {
+    key: "Enter",
+    run: (view) => {
+      if (completionStatus(view.state) === "active") {
+        return acceptCompletion(view);
+      }
+      return true;
+    },
+    preventDefault: true,
+  },
+  {
+    key: "Tab",
+    run: (view) =>
+      completionStatus(view.state) === "active"
+        ? acceptCompletion(view)
+        : false,
+  },
+  ...completionKeymap.filter((binding) => binding.key !== "Enter" && binding.key !== "Tab"),
+  ...historyKeymap,
+]);
 
 const celBaseTheme = EditorView.theme({
   "&": {
@@ -161,97 +185,95 @@ const celBaseTheme = EditorView.theme({
   },
 });
 
-let resolvedSchema: any = null;
+let resolvedSchemaPromise: Promise<any> | undefined;
+
+const getResolvedSchema = () =>
+  (resolvedSchemaPromise ??= $RefParser.dereference(RequestContext));
+
+const celBaseExtensions = [
+  celLanguage,
+  celHighlight,
+  celBaseTheme,
+  history(),
+  drawSelection(),
+  closeBrackets(),
+  inputDotTrigger,
+  singleLineFilter,
+  celKeymap,
+];
+
+const regoExtensions = [regoLanguage, regoHighlight, regoTheme];
 
 export const CELEditor = (props: {
   exp: string;
+  label?: string;
+  invalid?: boolean;
   onChange: (val: string) => void;
 }) => {
-  const [extensions, setExtensions] = useState<any[]>([]);
-  const initialized = useRef(false);
+  const [extensions, setExtensions] = useState<any[]>(celBaseExtensions);
+  const [completionError, setCompletionError] = useState(false);
 
   useEffect(() => {
-    if (initialized.current) return;
-    initialized.current = true;
-
+    let cancelled = false;
     async function init() {
-      if (!resolvedSchema) {
-        resolvedSchema = await $RefParser.dereference(RequestContext);
+      try {
+        const resolvedSchema = await getResolvedSchema();
+        if (cancelled) return;
+        setExtensions([
+          ...celBaseExtensions,
+          schemaAutocomplete({
+            type: "object",
+            properties: { ctx: resolvedSchema },
+          }),
+        ]);
+      } catch {
+        if (!cancelled) setCompletionError(true);
       }
-
-      const completionExtension = schemaAutocomplete({
-        type: "object",
-        properties: { ctx: resolvedSchema },
-      });
-
-      setExtensions([
-        celLanguage,
-        celHighlight,
-        celBaseTheme,
-        history(),
-        drawSelection(),
-        closeBrackets(),
-        completionExtension,
-        inputDotTrigger,
-        singleLineFilter,
-        keymap.of([
-          {
-            key: "Enter",
-            run: (view) => {
-              if (completionStatus(view.state) === "active") {
-                return acceptCompletion(view);
-              }
-              return true;
-            },
-            preventDefault: true,
-          },
-          {
-            key: "Tab",
-            run: (view) => {
-              if (completionStatus(view.state) !== null) {
-                return acceptCompletion(view);
-              }
-              return true;
-            },
-            preventDefault: true,
-          },
-          ...completionKeymap.filter(
-            (b) => b.key !== "Enter" && b.key !== "Tab",
-          ),
-          ...historyKeymap,
-        ]),
-      ]);
     }
 
-    init();
+    void init();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
     <div className="mt-3 w-full">
       <CodeMirror
         value={props.exp}
-        autoFocus
-        tabIndex={-1}
+        aria-label={props.label ?? "CEL expression"}
+        aria-invalid={props.invalid || undefined}
+        tabIndex={0}
         extensions={extensions}
         height="38px"
         basicSetup={false}
         onChange={(val) => props.onChange(val)}
       />
+      {completionError && (
+        <p className="mt-1 text-[0.65rem] font-semibold text-amber-700" role="status">
+          Context completion is unavailable, but the expression editor remains usable.
+        </p>
+      )}
     </div>
   );
 };
 
 export const OPAEditor = (props: {
   exp: string;
+  label?: string;
+  invalid?: boolean;
   onChange: (val: string) => void;
 }) => {
   return (
     <div className="mt-3 w-full rounded-lg overflow-hidden border border-slate-700">
       <CodeMirror
         value={props.exp}
-        autoFocus
-        extensions={[regoLanguage, regoHighlight, regoTheme]}
+        aria-label={props.label ?? "OPA/Rego policy"}
+        aria-invalid={props.invalid || undefined}
+        tabIndex={0}
+        extensions={regoExtensions}
         minHeight="160px"
+        maxHeight="420px"
         basicSetup={{
           lineNumbers: true,
           foldGutter: false,

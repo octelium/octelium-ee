@@ -92,7 +92,11 @@ const Cond = (props: {
   );
 
   React.useEffect(() => {
-    if (props.item) setLocalItem(Condition.clone(props.item));
+    setLocalItem(
+      props.item
+        ? Condition.clone(props.item)
+        : Condition.create({ type: { oneofKind: "matchAny", matchAny: true } }),
+    );
   }, [props.item]);
 
   const currentItem = props.item ?? localItem;
@@ -307,21 +311,21 @@ const LogicalGroup = (props: {
   onUpdate: (items: Condition[]) => void;
 }) => {
   const meta = TYPE_META[props.kind];
-  const [ids, setIDs] = useState(() => props.items.map(nextConditionID));
-
-  React.useEffect(() => {
-    setIDs((current) =>
-      props.items.map((_, index) => current[index] ?? nextConditionID()),
-    );
-  }, [props.items.length]);
+  const ids = React.useRef(props.items.map(nextConditionID));
+  while (ids.current.length < props.items.length) {
+    ids.current.push(nextConditionID());
+  }
+  if (ids.current.length > props.items.length) {
+    ids.current = ids.current.slice(0, props.items.length);
+  }
 
   const addCondition = () => {
-    setIDs((current) => [...current, nextConditionID()]);
+    ids.current.push(nextConditionID());
     props.onUpdate([...props.items, getNewCondition()]);
   };
 
   const removeCondition = (index: number) => {
-    setIDs((current) => current.filter((_, itemIndex) => itemIndex !== index));
+    ids.current.splice(index, 1);
     props.onUpdate(props.items.filter((_, itemIndex) => itemIndex !== index));
   };
 
@@ -349,7 +353,7 @@ const LogicalGroup = (props: {
       <div className="space-y-3">
         {props.items.map((item, index) => (
           <Cond
-            key={ids[index]}
+            key={ids.current[index]}
             item={item}
             depth={props.depth + 1}
             onChange={(updated) => {

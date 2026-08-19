@@ -28,7 +28,7 @@ const ConditionBuilderBtn = (props: {
   const [opened, { open, close }] = useDisclosure(false);
   const [draft, setDraft] = useState<BuilderCondition>(createDraft);
   const [mobileView, setMobileView] = useState<"build" | "preview">("build");
-  const [changed, setChanged] = useState(true);
+  const [changed, setChanged] = useState(false);
 
   const mutation = useMutation({
     mutationFn: async (request: BuilderCondition) => {
@@ -46,6 +46,9 @@ const ConditionBuilderBtn = (props: {
   const closeBuilder = () => {
     if (mutation.isPending) return;
     mutation.reset();
+    setDraft(createDraft());
+    setChanged(false);
+    setMobileView("build");
     close();
   };
 
@@ -57,6 +60,9 @@ const ConditionBuilderBtn = (props: {
         leftSection={<SlidersHorizontal size={13} strokeWidth={2.5} />}
         onClick={() => {
           mutation.reset();
+          setDraft(createDraft());
+          setChanged(false);
+          setMobileView("build");
           open();
         }}
       >
@@ -69,8 +75,8 @@ const ConditionBuilderBtn = (props: {
         size="min(1240px, calc(100vw - 24px))"
         padding={0}
         withCloseButton={false}
-        closeOnClickOutside={!mutation.isPending}
-        closeOnEscape={!mutation.isPending}
+        closeOnClickOutside={!mutation.isPending && !changed}
+        closeOnEscape={!mutation.isPending && !changed}
         centered
         overlayProps={{ backgroundOpacity: 0.25, blur: 1 }}
         transitionProps={{ transition: "pop", duration: 300 }}
@@ -84,7 +90,7 @@ const ConditionBuilderBtn = (props: {
           },
         }}
       >
-        <div className="flex h-[min(900px,calc(100dvh-32px))] min-h-[560px] flex-col bg-slate-50">
+        <div className="flex h-[min(900px,calc(100dvh-32px))] min-h-0 flex-col bg-slate-50">
           <header className="flex shrink-0 items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 py-3.5 sm:px-5">
             <div className="flex min-w-0 items-center gap-3">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm">
@@ -218,7 +224,7 @@ const ConditionBuilderBtn = (props: {
           </div>
 
           <footer className="flex shrink-0 items-center border-t border-slate-200 bg-white px-4 py-3 sm:px-5">
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 flex-1 items-center gap-2">
               <span
                 className={`h-1.5 w-1.5 rounded-full ${
                   changed ? "bg-amber-500" : "bg-slate-300"
@@ -232,6 +238,11 @@ const ConditionBuilderBtn = (props: {
                 {changed ? "Draft has unapplied changes" : "No changes yet"}
               </span>
             </div>
+            {mutation.isError && (
+              <p className="mr-3 text-[0.68rem] font-semibold text-red-600" role="alert">
+                The condition could not be applied. Try again.
+              </p>
+            )}
           </footer>
         </div>
       </Modal>

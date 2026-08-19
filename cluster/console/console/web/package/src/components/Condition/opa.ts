@@ -46,81 +46,84 @@ export const regoLanguage = StreamLanguage.define({
 
 export const regoHighlight = syntaxHighlighting(
   HighlightStyle.define([
-    { tag: t.keyword, color: "#ff7b72", fontWeight: "bold" },
-    { tag: t.variableName, color: "#d2a8ff" },
-    { tag: t.atom, color: "#79c0ff" },
-    { tag: t.number, color: "#ffa657" },
-    { tag: t.string, color: "#a5d6ff" },
-    { tag: t.comment, color: "#8b949e", fontStyle: "italic" },
-    { tag: t.operator, color: "#ff7b72" },
-    { tag: t.punctuation, color: "#c9d1d9" },
+    { tag: t.keyword, color: "#7c3aed", fontWeight: "bold" },
+    { tag: t.variableName, color: "#1e293b" },
+    { tag: t.atom, color: "#0369a1" },
+    { tag: t.number, color: "#0284c7" },
+    { tag: t.string, color: "#047857" },
+    { tag: t.comment, color: "#64748b", fontStyle: "italic" },
+    { tag: t.operator, color: "#475569", fontWeight: "bold" },
+    { tag: t.punctuation, color: "#475569" },
   ]),
 );
 
 export const regoTheme = EditorView.theme(
   {
     "&": {
-      backgroundColor: "#0d1117 !important",
-      color: "#c9d1d9",
+      backgroundColor: "#ffffff !important",
+      color: "#1e293b",
+      border: "1px solid #e2e8f0",
+      borderRadius: "8px",
+      boxShadow: "0 1px 3px rgba(15,23,42,0.05)",
     },
     "&.cm-editor": {
-      backgroundColor: "#0d1117 !important",
+      backgroundColor: "#ffffff !important",
     },
     ".cm-scroller": {
-      backgroundColor: "#0d1117 !important",
+      backgroundColor: "#ffffff !important",
     },
     ".cm-content": {
-      backgroundColor: "#0d1117 !important",
+      backgroundColor: "#ffffff !important",
 
       fontSize: "13px",
-      caretColor: "#c9d1d9",
+      caretColor: "#0f172a",
       padding: "8px 0",
     },
     ".cm-line": {
-      backgroundColor: "#0d1117 !important",
+      backgroundColor: "#ffffff !important",
       padding: "0 12px",
-      color: "#c9d1d9",
+      color: "#1e293b",
     },
     ".cm-gutters": {
-      backgroundColor: "#0d1117 !important",
-      color: "#484f58",
+      backgroundColor: "#f8fafc !important",
+      color: "#94a3b8",
       border: "none",
-      borderRight: "1px solid #21262d",
+      borderRight: "1px solid #e2e8f0",
     },
     ".cm-gutter": {
-      backgroundColor: "#0d1117 !important",
+      backgroundColor: "#f8fafc !important",
     },
     ".cm-gutterElement": {
-      backgroundColor: "#0d1117 !important",
+      backgroundColor: "#f8fafc !important",
     },
     ".cm-activeLineGutter": {
-      backgroundColor: "#161b22 !important",
-      color: "#8b949e",
+      backgroundColor: "#e2e8f0 !important",
+      color: "#475569",
     },
     ".cm-activeLine": {
-      backgroundColor: "#161b22 !important",
+      backgroundColor: "#f8fafc !important",
     },
     ".cm-selectionBackground, ::selection": {
-      backgroundColor: "#264f78 !important",
+      backgroundColor: "#bfdbfe !important",
     },
     ".cm-cursor": {
-      borderLeftColor: "#c9d1d9",
+      borderLeftColor: "#0f172a",
     },
     ".cm-tooltip-autocomplete": {
-      backgroundColor: "#161b22 !important",
-      border: "1px solid #30363d",
+      backgroundColor: "#ffffff !important",
+      border: "1px solid #e2e8f0",
       borderRadius: "6px",
-      boxShadow: "0 8px 24px rgba(1,4,9,0.4)",
+      boxShadow: "0 8px 24px rgba(15,23,42,0.14)",
     },
     ".cm-tooltip-autocomplete ul li": {
       fontSize: "12px",
       padding: "3px 10px",
-      color: "#c9d1d9",
+      color: "#334155",
     },
     ".cm-tooltip-autocomplete ul li[aria-selected]": {
-      backgroundColor: "#1f6feb !important",
+      backgroundColor: "#0f172a !important",
       color: "#ffffff",
     },
   },
-  { dark: true },
+  { dark: false },
 );

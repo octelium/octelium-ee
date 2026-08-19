@@ -1,22 +1,21 @@
-import $RefParser from "@apidevtools/json-schema-ref-parser";
 import { autocompletion, Completion } from "@codemirror/autocomplete";
 
-async function loadResolvedSchema(urlOrObject: string | object) {
-  const parser = new $RefParser();
-  return await parser.dereference(urlOrObject);
-}
-
 function mergeSchemas(schemas: any[]): any {
-  return schemas.reduce(
-    (acc, cur) => {
-      if (cur.properties)
-        acc.properties = { ...acc.properties, ...cur.properties };
-      if (cur.enum)
-        acc.enum = Array.from(new Set([...(acc.enum || []), ...cur.enum]));
-      return acc;
-    },
-    { properties: {}, enum: [] },
+  const normalized = schemas.map(normalizeSchema);
+  const properties = Object.assign(
+    {},
+    ...normalized.map((schema) => schema.properties ?? {}),
   );
+  const enumValues = Array.from(
+    new Set(normalized.flatMap((schema) => schema.enum ?? [])),
+  );
+  const first = normalized.find((schema) => Object.keys(schema).length > 0) ?? {};
+
+  return {
+    ...first,
+    ...(Object.keys(properties).length > 0 ? { properties } : {}),
+    ...(enumValues.length > 0 ? { enum: enumValues } : {}),
+  };
 }
 
 function normalizeSchema(node: any): any {
@@ -52,11 +51,40 @@ function completionsFromSchema(schema: any): Completion[] {
   return completions;
 }
 
+const CEL_BUILTINS: Completion[] = [
+  "has",
+  "exists",
+  "size",
+  "type",
+  "int",
+  "uint",
+  "double",
+  "string",
+  "bool",
+  "duration",
+  "timestamp",
+].map((label) => ({
+  label,
+  type: "function",
+  info: "CEL built-in",
+}));
+
 function getSchemaAtPath(root: any, path: string[]): any | undefined {
   let current: any = root;
   for (const key of path) {
     const norm = normalizeSchema(current);
-    current = norm?.properties?.[key];
+    if (norm.type === "array" && norm.items) {
+      current = /^\d+$/.test(key)
+        ? norm.items
+        : normalizeSchema(norm.items)?.properties?.[key];
+    } else {
+      current = norm?.properties?.[key];
+      if (!current && norm?.additionalProperties) {
+        current = norm.additionalProperties === true
+          ? {}
+          : norm.additionalProperties;
+      }
+    }
     if (!current) return undefined;
   }
   return normalizeSchema(current);
@@ -81,7 +109,10 @@ export function schemaAutocomplete(schema: any) {
         const parentSchema = getSchemaAtPath(schema, parts);
         if (!parentSchema) return null;
 
-        const options = completionsFromSchema(parentSchema).filter((opt) =>
+        const options = [
+          ...completionsFromSchema(parentSchema),
+          ...(parts.length === 0 ? CEL_BUILTINS : []),
+        ].filter((opt) =>
           opt.label.toLowerCase().startsWith(prefix.toLowerCase()),
         );
 
