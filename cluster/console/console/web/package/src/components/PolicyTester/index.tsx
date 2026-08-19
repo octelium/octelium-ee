@@ -7,7 +7,7 @@ import { ObjectReference } from "@/apis/metav1/metav1";
 import { onError } from "@/utils";
 import { getClientPolicyPortal } from "@/utils/client";
 import { getResourceRef } from "@/utils/pb";
-import { Button, Select } from "@mantine/core";
+import { Button, SegmentedControl } from "@mantine/core";
 import { useMutation } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -39,28 +39,6 @@ import RequestContextEditor, {
 
 type DownstreamKind = "userRef" | "sessionRef" | "deviceRef";
 type UpstreamKind = "serviceRef" | "namespaceRef";
-
-const fieldStyles = {
-  label: {
-    color: "#475569",
-    fontSize: "0.68rem",
-    fontWeight: 700,
-    letterSpacing: "0.04em",
-    marginBottom: "5px",
-  },
-  input: {
-    minHeight: "38px",
-    borderColor: "#e2e8f0",
-    borderRadius: "8px",
-    color: "#1e293b",
-    fontSize: "0.78rem",
-    fontWeight: 600,
-  },
-  option: {
-    fontSize: "0.78rem",
-    fontWeight: 600,
-  },
-};
 
 const downstreamReference = (request: IsAuthorizedRequest) => {
   switch (request.downstream.oneofKind) {
@@ -295,21 +273,30 @@ const PolicyTester = () => {
             description="Choose who is requesting access"
             icon={UserRound}
           >
-            <Select
-              label="Identity type"
-              value={downstreamKind}
-              allowDeselect={false}
-              data={[
-                { label: "User", value: "userRef" },
-                { label: "Session", value: "sessionRef" },
-                { label: "Device", value: "deviceRef" },
-              ]}
-              styles={fieldStyles}
-              onChange={(value) =>
-                value && setDownstreamKind(value as DownstreamKind)
-              }
-            />
+            <div>
+              <div className="mb-2">
+                <p className="text-[0.72rem] font-bold text-slate-700">
+                  Identity type
+                </p>
+                <p className="mt-0.5 text-[0.66rem] font-semibold text-slate-400">
+                  Choose the identity that is making the request
+                </p>
+              </div>
+              <SegmentedControl
+                fullWidth
+                value={downstreamKind}
+                data={[
+                  { label: "User", value: "userRef" },
+                  { label: "Session", value: "sessionRef" },
+                  { label: "Device", value: "deviceRef" },
+                ]}
+                onChange={(value) =>
+                  setDownstreamKind(value as DownstreamKind)
+                }
+              />
+            </div>
             <SelectResource
+              key={downstreamKind}
               api="core"
               kind={
                 downstreamKind === "userRef"
@@ -351,20 +338,27 @@ const PolicyTester = () => {
             description="Choose what is being accessed"
             icon={Server}
           >
-            <Select
-              label="Resource type"
-              value={upstreamKind}
-              allowDeselect={false}
-              data={[
-                { label: "Service", value: "serviceRef" },
-                { label: "Namespace", value: "namespaceRef" },
-              ]}
-              styles={fieldStyles}
-              onChange={(value) =>
-                value && setUpstreamKind(value as UpstreamKind)
-              }
-            />
+            <div>
+              <div className="mb-2">
+                <p className="text-[0.72rem] font-bold text-slate-700">
+                  Resource type
+                </p>
+                <p className="mt-0.5 text-[0.66rem] font-semibold text-slate-400">
+                  Choose the resource being accessed
+                </p>
+              </div>
+              <SegmentedControl
+                fullWidth
+                value={upstreamKind}
+                data={[
+                  { label: "Service", value: "serviceRef" },
+                  { label: "Namespace", value: "namespaceRef" },
+                ]}
+                onChange={(value) => setUpstreamKind(value as UpstreamKind)}
+              />
+            </div>
             <SelectResource
+              key={upstreamKind}
               api="core"
               kind={upstreamKind === "serviceRef" ? "Service" : "Namespace"}
               label="Resource"
