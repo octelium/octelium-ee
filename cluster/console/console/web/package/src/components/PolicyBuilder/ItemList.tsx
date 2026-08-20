@@ -12,7 +12,14 @@ import {
   printResourceNameWithDisplay,
   printServiceMode,
 } from "@/utils/pb";
-import { Group, Select, Switch, TagsInput, TextInput } from "@mantine/core";
+import {
+  Group,
+  SegmentedControl,
+  Select,
+  Switch,
+  TagsInput,
+  TextInput,
+} from "@mantine/core";
 import type { ReactNode } from "react";
 import { match } from "ts-pattern";
 import SelectResource from "../ResourceLayout/SelectResource";
@@ -202,6 +209,282 @@ const makeTextItem = (
         }
       />
     ),
+  },
+});
+
+const STRING_MATCH_OPTIONS = [
+  { value: "exact", label: "Exact" },
+  { value: "prefix", label: "Prefix" },
+  { value: "suffix", label: "Suffix" },
+  { value: "contains", label: "Contains" },
+  { value: "in", label: "One of" },
+];
+
+const NUMERIC_MATCH_OPTIONS = [
+  { value: "exact", label: "Equals" },
+  { value: "lessThan", label: "<" },
+  { value: "lessThanOrEqual", label: "≤" },
+  { value: "greaterThan", label: ">" },
+  { value: "greaterThanOrEqual", label: "≥" },
+];
+
+const formatEnumLabel = (enumObj: Record<string, string | number>, value: number) => {
+  const key = enumObj[value];
+  if (typeof key !== "string") return "Unset";
+  return key
+    .replace(/^(TYPE|PROTOCOL|OPERATION|ESTIMATE_QUALITY|ADDRESS_TYPE)_/, "")
+    .replace(/_UNSET$/, "")
+    .replaceAll("_", " ")
+    .toLowerCase()
+    .replace(/(^|\s)\S/g, (letter) => letter.toUpperCase()) || "Unset";
+};
+
+const makeStringMatch = (kind: string, value: string | string[]): any => ({
+  type: {
+    oneofKind: kind,
+    [kind]: kind === "in" ? { values: value as string[] } : value as string,
+  },
+});
+
+const stringMatchText = (match?: any): string => {
+  const kind = match?.type?.oneofKind;
+  if (!kind) return "Any string";
+  if (kind === "in") return (match.type.in.values ?? []).join(", ") || "One of (none)";
+  return `${kind === "exact" ? "" : `${kind} `}${match.type[kind] ?? ""}`;
+};
+
+const StringMatchEditor = (props: {
+  value?: any;
+  label?: string;
+  onChange: (value: any) => void;
+}) => {
+  const kind = props.value?.type?.oneofKind ?? "exact";
+  const current = kind === "in"
+    ? (props.value?.type?.in?.values ?? [])
+    : (props.value?.type?.[kind] ?? "");
+  return (
+    <div className="space-y-2">
+      <SegmentedControl
+        fullWidth
+        size="xs"
+        value={kind}
+        data={STRING_MATCH_OPTIONS}
+        onChange={(next) =>
+          props.onChange(makeStringMatch(next, next === "in" ? [] : ""))
+        }
+      />
+      {kind === "in" ? (
+        <TagsInput
+          label={props.label ?? "Values"}
+          placeholder="Add an allowed value"
+          value={current}
+          onChange={(values) => props.onChange(makeStringMatch(kind, values))}
+        />
+      ) : (
+        <TextInput
+          label={props.label ?? "Value"}
+          placeholder="Enter a value"
+          value={current}
+          onChange={(event) =>
+            props.onChange(makeStringMatch(kind, event.currentTarget.value))
+          }
+        />
+      )}
+    </div>
+  );
+};
+
+const makeStringMatchItem = (
+  type: string,
+  title: string,
+  tags: string[],
+  label = "Match value",
+): ItemDef => ({
+  type,
+  title,
+  tags,
+  makeDefault: () =>
+    Expression.create({
+      type: { oneofKind: type, [type]: { match: makeStringMatch("exact", "") } } as any,
+    }),
+  components: {
+    Value: ({ item }) => {
+      if (item.type.oneofKind !== type) return null;
+      return <>{stringMatchText((item.type as any)[type].match)}</>;
+    },
+    Edit: ({ item, onUpdate }) => {
+      const matchValue =
+        item?.type.oneofKind === type
+          ? (item.type as any)[type].match
+          : undefined;
+      return (
+        <StringMatchEditor
+          label={label}
+          value={matchValue}
+          onChange={(match) =>
+            onUpdate(
+              Expression.create({
+                type: { oneofKind: type, [type]: { match } } as any,
+              }),
+            )
+          }
+        />
+      );
+    },
+  },
+});
+
+const makeNumericMatch = (kind: string, value: number) => ({
+  type: { oneofKind: kind, [kind]: value },
+});
+
+const numericMatchText = (match?: any): string => {
+  const kind = match?.type?.oneofKind;
+  if (!kind) return "Any number";
+  const symbol: Record<string, string> = {
+    exact: "=",
+    lessThan: "<",
+    lessThanOrEqual: "≤",
+    greaterThan: ">",
+    greaterThanOrEqual: "≥",
+  };
+  return `${symbol[kind] ?? kind} ${match.type[kind] ?? 0}`;
+};
+
+const NumericMatchEditor = (props: {
+  value?: any;
+  label?: string;
+  onChange: (value: any) => void;
+}) => {
+  const kind = props.value?.type?.oneofKind ?? "exact";
+  const current = props.value?.type?.[kind] ?? 0;
+  return (
+    <div className="space-y-2">
+      <SegmentedControl
+        fullWidth
+        size="xs"
+        value={kind}
+        data={NUMERIC_MATCH_OPTIONS}
+        onChange={(next) => props.onChange(makeNumericMatch(next, 0))}
+      />
+      <TextInput
+        label={props.label ?? "Value"}
+        type="number"
+        inputMode="numeric"
+        value={String(current)}
+        onChange={(event) =>
+          props.onChange(
+            makeNumericMatch(kind, Number(event.currentTarget.value) || 0),
+          )
+        }
+      />
+    </div>
+  );
+};
+
+const makeNumericMatchItem = (
+  type: string,
+  title: string,
+  tags: string[],
+  label = "Value",
+  extraKey?: string,
+): ItemDef => ({
+  type,
+  title,
+  tags,
+  makeDefault: () =>
+    Expression.create({
+      type: {
+        oneofKind: type,
+        [type]: { match: makeNumericMatch("exact", 0), ...(extraKey ? { [extraKey]: false } : {}) },
+      } as any,
+    }),
+  components: {
+    Value: ({ item }) => {
+      if (item.type.oneofKind !== type) return null;
+      const value = (item.type as any)[type];
+      return <>{numericMatchText(value.match)}</>;
+    },
+    Edit: ({ item, onUpdate }) => {
+      const value =
+        item?.type.oneofKind === type ? (item.type as any)[type] : undefined;
+      const emit = (match: any, extra = value?.[extraKey ?? ""]) =>
+        onUpdate(
+          Expression.create({
+            type: {
+              oneofKind: type,
+              [type]: { match, ...(extraKey ? { [extraKey]: extra } : {}) },
+            } as any,
+          }),
+        );
+      return (
+        <div className="space-y-3">
+          <NumericMatchEditor
+            label={label}
+            value={value?.match}
+            onChange={(match) => emit(match)}
+          />
+          {extraKey === "requireComplete" && (
+            <Switch
+              label="Require a complete estimate"
+              checked={Boolean(value?.requireComplete)}
+              onChange={(event) => emit(value?.match ?? makeNumericMatch("exact", 0), event.currentTarget.checked)}
+            />
+          )}
+        </div>
+      );
+    },
+  },
+});
+
+const makeEnumItem = (
+  type: string,
+  title: string,
+  tags: string[],
+  field: string,
+  enumObj: Record<string, number> & Record<number, string>,
+  values: number[],
+  label: string,
+): ItemDef => ({
+  type,
+  title,
+  tags,
+  makeDefault: () =>
+    Expression.create({
+      type: { oneofKind: type, [type]: { [field]: values[0] } } as any,
+    }),
+  components: {
+    Value: ({ item }) => {
+      if (item.type.oneofKind !== type) return null;
+      return <>{formatEnumLabel(enumObj, (item.type as any)[type][field])}</>;
+    },
+    Edit: ({ item, onUpdate }) => {
+      const current =
+        item?.type.oneofKind === type
+          ? (item.type as any)[type][field]
+          : values[0];
+      return (
+        <Select
+          label={label}
+          data={values.map((value) => ({
+            value: String(value),
+            label: formatEnumLabel(enumObj, value),
+          }))}
+          value={String(current)}
+          onChange={(next) =>
+            next &&
+            onUpdate(
+              Expression.create({
+                type: {
+                  oneofKind: type,
+                  [type]: { [field]: Number(next) },
+                } as any,
+              }),
+            )
+          }
+        />
+      );
+    },
   },
 });
 
@@ -1010,37 +1293,23 @@ export const itemList: ItemDef[] = [
     "00000000-0000-0000-0000-000000000000",
   ),
 
-  makeTextItem(
-    "requestHTTPPathExact",
-    "Request HTTP exact path",
+  makeStringMatchItem(
+    "requestHTTPPath",
+    "Request HTTP path",
     ["http", "request", "path", "url"],
-    "value",
-    "Exact path",
-    "/api/v1",
+    "Path",
   ),
-  makeTextItem(
-    "requestHTTPPathPrefix",
-    "Request HTTP path prefix",
-    ["http", "request", "path", "prefix", "url"],
-    "value",
-    "Path prefix",
-    "/api/v1",
-  ),
-  makeTextItem(
+  makeStringMatchItem(
     "requestHTTPMethod",
     "Request HTTP method",
     ["http", "request", "method", "verb"],
-    "value",
     "HTTP method",
-    "GET",
   ),
-  makeTextItem(
+  makeStringMatchItem(
     "requestHTTPHasHeader",
     "Request HTTP header exists",
     ["http", "request", "header"],
-    "value",
     "Header name",
-    "User-Agent",
   ),
   makeTextItem(
     "requestIP",
@@ -1059,6 +1328,45 @@ export const itemList: ItemDef[] = [
     "1.2.3.0/24",
   ),
 
+  makeStringMatchItem(
+    "requestHTTPHost",
+    "Request HTTP host",
+    ["http", "request", "host"],
+    "Host",
+  ),
+  makeStringMatchItem(
+    "requestHTTPProtocol",
+    "Request HTTP protocol",
+    ["http", "request", "protocol"],
+    "Protocol",
+  ),
+  makeStringMatchItem(
+    "requestHTTPScheme",
+    "Request HTTP scheme",
+    ["http", "request", "scheme"],
+    "Scheme",
+  ),
+  makeStringMatchItem(
+    "requestHTTPURI",
+    "Request HTTP URI",
+    ["http", "request", "uri", "url"],
+    "URI",
+  ),
+  makeNumericMatchItem(
+    "requestHTTPSize",
+    "Request HTTP size",
+    ["http", "request", "size", "bytes"],
+    "Size in bytes",
+  ),
+  makeTextItem(
+    "requestHTTPHasQueryParam",
+    "Request HTTP query parameter exists",
+    ["http", "request", "query", "parameter"],
+    "name",
+    "Parameter name",
+    "tenant",
+  ),
+
   {
     type: "requestHTTPHeaderValue",
     title: "Request HTTP header value",
@@ -1067,51 +1375,237 @@ export const itemList: ItemDef[] = [
       Expression.create({
         type: {
           oneofKind: "requestHTTPHeaderValue",
-          requestHTTPHeaderValue: { header: "", value: "" },
+          requestHTTPHeaderValue: {
+            header: makeStringMatch("exact", ""),
+            value: makeStringMatch("exact", ""),
+          },
         },
       }),
     components: {
       Value: ({ item }) => {
         if (item.type.oneofKind !== "requestHTTPHeaderValue") return null;
         const { header, value } = item.type.requestHTTPHeaderValue;
-        return <>{`${header} = ${value}`}</>;
+        return <>{`${stringMatchText(header)} = ${stringMatchText(value)}`}</>;
       },
       Edit: ({ item, onUpdate }) => {
         const cur =
           item?.type.oneofKind === "requestHTTPHeaderValue"
             ? item.type.requestHTTPHeaderValue
             : undefined;
-        const header = cur?.header ?? "";
-        const val = cur?.value ?? "";
-        const emit = (h: string, v: string) =>
+        const emit = (header: any, value: any) =>
           onUpdate(
             Expression.create({
               type: {
                 oneofKind: "requestHTTPHeaderValue",
-                requestHTTPHeaderValue: { header: h, value: v },
+                requestHTTPHeaderValue: { header, value },
               },
             }),
           );
 
         return (
-          <Group grow>
-            <TextInput
-              label="Header"
-              placeholder="User-Agent"
-              value={header}
-              onChange={(e) => emit(e.target.value, val)}
+          <div className="space-y-4">
+            <StringMatchEditor
+              label="Header name"
+              value={cur?.header}
+              onChange={(header) => emit(header, cur?.value ?? makeStringMatch("exact", ""))}
             />
-            <TextInput
-              label="Value"
-              placeholder="Mozilla/5.0"
-              value={val}
-              onChange={(e) => emit(header, e.target.value)}
+            <StringMatchEditor
+              label="Header value"
+              value={cur?.value}
+              onChange={(value) => emit(cur?.header ?? makeStringMatch("exact", ""), value)}
             />
-          </Group>
+          </div>
         );
       },
     },
   },
+
+  {
+    type: "requestHTTPQueryParamValue",
+    title: "Request HTTP query parameter value",
+    tags: ["http", "request", "query", "parameter", "value"],
+    makeDefault: () =>
+      Expression.create({
+        type: {
+          oneofKind: "requestHTTPQueryParamValue",
+          requestHTTPQueryParamValue: {
+            name: "",
+            match: makeStringMatch("exact", ""),
+          },
+        },
+      }),
+    components: {
+      Value: ({ item }) => {
+        if (item.type.oneofKind !== "requestHTTPQueryParamValue") return null;
+        const value = item.type.requestHTTPQueryParamValue;
+        return <>{`${value.name}: ${stringMatchText(value.match)}`}</>;
+      },
+      Edit: ({ item, onUpdate }) => {
+        const value =
+          item?.type.oneofKind === "requestHTTPQueryParamValue"
+            ? item.type.requestHTTPQueryParamValue
+            : undefined;
+        const emit = (name: string, match: any) =>
+          onUpdate(
+            Expression.create({
+              type: {
+                oneofKind: "requestHTTPQueryParamValue",
+                requestHTTPQueryParamValue: { name, match },
+              },
+            }),
+          );
+        return (
+          <div className="space-y-4">
+            <TextInput
+              label="Parameter name"
+              placeholder="tenant"
+              value={value?.name ?? ""}
+              onChange={(event) =>
+                emit(event.currentTarget.value, value?.match ?? makeStringMatch("exact", ""))
+              }
+            />
+            <StringMatchEditor
+              label="Parameter value"
+              value={value?.match}
+              onChange={(match) => emit(value?.name ?? "", match)}
+            />
+          </div>
+        );
+      },
+    },
+  },
+
+  makeMarkerItem("requestSSH", "SSH request", ["ssh", "request"]),
+  makeStringMatchItem(
+    "requestSSHUser",
+    "Request SSH user",
+    ["ssh", "request", "user"],
+    "SSH user",
+  ),
+
+  makeMarkerItem(
+    "requestKubernetes",
+    "Kubernetes request",
+    ["kubernetes", "api", "request"],
+  ),
+  ...([
+    ["requestKubernetesVerb", "Kubernetes verb", "verb"],
+    ["requestKubernetesAPIPrefix", "Kubernetes API prefix", "API prefix"],
+    ["requestKubernetesAPIGroup", "Kubernetes API group", "API group"],
+    ["requestKubernetesAPIVersion", "Kubernetes API version", "API version"],
+    ["requestKubernetesNamespace", "Kubernetes namespace", "Namespace"],
+    ["requestKubernetesResource", "Kubernetes resource", "Resource"],
+    ["requestKubernetesSubresource", "Kubernetes subresource", "Subresource"],
+    ["requestKubernetesName", "Kubernetes resource name", "Resource name"],
+  ] as [string, string, string][]).map(([type, title, label]) =>
+    makeStringMatchItem(type, title, ["kubernetes", "api", "request"], label),
+  ),
+
+  makeMarkerItem("requestGRPC", "gRPC request", ["grpc", "request"]),
+  ...([
+    ["requestGRPCMethod", "gRPC method", "Method"],
+    ["requestGRPCService", "gRPC service", "Service"],
+    ["requestGRPCServiceFullName", "gRPC service full name", "Full service name"],
+    ["requestGRPCPackage", "gRPC package", "Package"],
+  ] as [string, string, string][]).map(([type, title, label]) =>
+    makeStringMatchItem(type, title, ["grpc", "request"], label),
+  ),
+
+  makeMarkerItem(
+    "requestPostgresConnect",
+    "PostgreSQL connection",
+    ["postgres", "postgresql", "request", "connect"],
+  ),
+  ...([
+    ["requestPostgresConnectUser", "PostgreSQL connection user", "User"],
+    ["requestPostgresConnectDatabase", "PostgreSQL connection database", "Database"],
+    ["requestPostgresConnectApplicationName", "PostgreSQL application name", "Application name"],
+  ] as [string, string, string][]).map(([type, title, label]) =>
+    makeStringMatchItem(type, title, ["postgres", "postgresql", "request"], label),
+  ),
+  makeMarkerItem("requestPostgresQuery", "PostgreSQL query", ["postgres", "postgresql", "request", "query"]),
+  makeStringMatchItem(
+    "requestPostgresQueryText",
+    "PostgreSQL query text",
+    ["postgres", "postgresql", "request", "query"],
+    "Query text",
+  ),
+  makeMarkerItem("requestPostgresParse", "PostgreSQL parse", ["postgres", "postgresql", "request", "parse"]),
+  makeStringMatchItem("requestPostgresParseName", "PostgreSQL parse name", ["postgres", "postgresql", "request", "parse"], "Statement name"),
+  makeStringMatchItem("requestPostgresParseQuery", "PostgreSQL parse query", ["postgres", "postgresql", "request", "parse"], "Query"),
+
+  makeMarkerItem("requestDNS", "DNS request", ["dns", "request"]),
+  makeStringMatchItem("requestDNSName", "DNS name", ["dns", "request", "name"], "Name"),
+  makeNumericMatchItem("requestDNSTypeID", "DNS type ID", ["dns", "request", "type"], "Type ID"),
+
+  makeMarkerItem("requestSOCKS5", "SOCKS5 request", ["socks5", "request"]),
+  makeStringMatchItem("requestSOCKS5Host", "SOCKS5 host", ["socks5", "request", "host"], "Host"),
+  makeNumericMatchItem("requestSOCKS5Port", "SOCKS5 port", ["socks5", "request", "port"], "Port"),
+  makeEnumItem(
+    "requestSOCKS5AddressType",
+    "SOCKS5 address type",
+    ["socks5", "request", "address"],
+    "addressType",
+    CoreP.RequestContext_Request_SOCKS5_Connect_AddressType as any,
+    [
+      CoreP.RequestContext_Request_SOCKS5_Connect_AddressType.IPV4,
+      CoreP.RequestContext_Request_SOCKS5_Connect_AddressType.DOMAIN,
+      CoreP.RequestContext_Request_SOCKS5_Connect_AddressType.IPV6,
+    ],
+    "Address type",
+  ),
+
+  makeStringMatchItem("requestMCPProtocolVersion", "MCP protocol version", ["mcp", "request", "protocol"], "Protocol version"),
+  makeStringMatchItem("requestMCPMethod", "MCP method", ["mcp", "request", "method"], "Method"),
+  makeStringMatchItem("requestMCPToolName", "MCP tool name", ["mcp", "request", "tool"], "Tool name"),
+  makeStringMatchItem("requestMCPPromptName", "MCP prompt name", ["mcp", "request", "prompt"], "Prompt name"),
+  makeStringMatchItem("requestMCPResourceURI", "MCP resource URI", ["mcp", "request", "resource"], "Resource URI"),
+  makeMarkerItem("requestMCPIsNotification", "MCP notification", ["mcp", "request", "notification"]),
+
+  makeEnumItem(
+    "requestLLMProtocol",
+    "LLM protocol",
+    ["llm", "ai", "request", "protocol"],
+    "protocol",
+    CoreP.Service_Spec_Config_LLM_Protocol as any,
+    [
+      CoreP.Service_Spec_Config_LLM_Protocol.OPENAI,
+      CoreP.Service_Spec_Config_LLM_Protocol.ANTHROPIC,
+    ],
+    "Protocol",
+  ),
+  makeEnumItem(
+    "requestLLMOperation",
+    "LLM operation",
+    ["llm", "ai", "request", "operation"],
+    "operation",
+    CoreP.RequestContext_Request_LLM_Operation as any,
+    [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    "Operation",
+  ),
+  makeStringMatchItem("requestLLMModel", "LLM model", ["llm", "ai", "request", "model"], "Model"),
+  makeMarkerItem("requestLLMStream", "LLM streaming request", ["llm", "ai", "request", "stream"]),
+  makeNumericMatchItem("requestLLMEstimatedInputTokens", "LLM estimated input tokens", ["llm", "ai", "request", "tokens"], "Token count", "requireComplete"),
+  makeEnumItem(
+    "requestLLMEstimateQuality",
+    "LLM estimate quality",
+    ["llm", "ai", "request", "tokens"],
+    "quality",
+    CoreP.RequestContext_Request_LLM_EstimateQuality as any,
+    [
+      CoreP.RequestContext_Request_LLM_EstimateQuality.COMPLETE,
+      CoreP.RequestContext_Request_LLM_EstimateQuality.PARTIAL,
+      CoreP.RequestContext_Request_LLM_EstimateQuality.UNAVAILABLE,
+    ],
+    "Estimate quality",
+  ),
+  makeNumericMatchItem("requestLLMMaxOutputTokens", "LLM maximum output tokens", ["llm", "ai", "request", "tokens"], "Token count"),
+  makeMarkerItem("requestLLMHasTools", "LLM request has tools", ["llm", "ai", "request", "tools"]),
+  makeNumericMatchItem("requestLLMToolCount", "LLM tool count", ["llm", "ai", "request", "tools"], "Tool count"),
+  makeStringMatchItem("requestLLMToolName", "LLM tool name", ["llm", "ai", "request", "tools"], "Tool name"),
+  makeNumericMatchItem("requestLLMInputItemCount", "LLM input item count", ["llm", "ai", "request", "input"], "Item count"),
+  makeMarkerItem("requestLLMHasImageInput", "LLM request has image input", ["llm", "ai", "request", "input"]),
+  makeMarkerItem("requestLLMHasAudioInput", "LLM request has audio input", ["llm", "ai", "request", "input"]),
 
   makeMarkerItem(
     "apiServerReadOnlyMethods",
