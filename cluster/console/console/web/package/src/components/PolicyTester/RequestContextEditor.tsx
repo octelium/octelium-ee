@@ -826,6 +826,421 @@ const MCPBodyEditor = (props: {
   );
 };
 
+type LLMMessage = { role: string; content: string };
+
+const llmMessageOperations = new Set([
+  Core.RequestContext_Request_LLM_Operation.CHAT_COMPLETIONS,
+  Core.RequestContext_Request_LLM_Operation.MESSAGES,
+  Core.RequestContext_Request_LLM_Operation.COUNT_TOKENS,
+]);
+
+const llmStreamableOperations = new Set([
+  Core.RequestContext_Request_LLM_Operation.CHAT_COMPLETIONS,
+  Core.RequestContext_Request_LLM_Operation.RESPONSES,
+  Core.RequestContext_Request_LLM_Operation.COMPLETIONS,
+  Core.RequestContext_Request_LLM_Operation.MESSAGES,
+]);
+
+const llmBodyOperations = new Set([
+  Core.RequestContext_Request_LLM_Operation.CHAT_COMPLETIONS,
+  Core.RequestContext_Request_LLM_Operation.RESPONSES,
+  Core.RequestContext_Request_LLM_Operation.COMPLETIONS,
+  Core.RequestContext_Request_LLM_Operation.EMBEDDINGS,
+  Core.RequestContext_Request_LLM_Operation.MODERATIONS,
+  Core.RequestContext_Request_LLM_Operation.MESSAGES,
+  Core.RequestContext_Request_LLM_Operation.COUNT_TOKENS,
+]);
+
+const llmInputOperations = new Set([
+  Core.RequestContext_Request_LLM_Operation.RESPONSES,
+  Core.RequestContext_Request_LLM_Operation.EMBEDDINGS,
+  Core.RequestContext_Request_LLM_Operation.MODERATIONS,
+]);
+
+const llmMaxOutputOperations = new Set([
+  Core.RequestContext_Request_LLM_Operation.CHAT_COMPLETIONS,
+  Core.RequestContext_Request_LLM_Operation.RESPONSES,
+  Core.RequestContext_Request_LLM_Operation.COMPLETIONS,
+  Core.RequestContext_Request_LLM_Operation.MESSAGES,
+]);
+
+const llmToolOperations = new Set([
+  Core.RequestContext_Request_LLM_Operation.CHAT_COMPLETIONS,
+  Core.RequestContext_Request_LLM_Operation.RESPONSES,
+  Core.RequestContext_Request_LLM_Operation.MESSAGES,
+]);
+
+const llmOperationLabel = (operation: number) => {
+  const labels: Record<number, string> = {
+    [Core.RequestContext_Request_LLM_Operation.CHAT_COMPLETIONS]: "OpenAI chat completions",
+    [Core.RequestContext_Request_LLM_Operation.RESPONSES]: "OpenAI responses",
+    [Core.RequestContext_Request_LLM_Operation.COMPLETIONS]: "OpenAI completions",
+    [Core.RequestContext_Request_LLM_Operation.EMBEDDINGS]: "OpenAI embeddings",
+    [Core.RequestContext_Request_LLM_Operation.MODERATIONS]: "OpenAI moderations",
+    [Core.RequestContext_Request_LLM_Operation.MODELS_LIST]: "Model listing",
+    [Core.RequestContext_Request_LLM_Operation.MODELS_GET]: "Model details",
+    [Core.RequestContext_Request_LLM_Operation.MESSAGES]: "Anthropic messages",
+    [Core.RequestContext_Request_LLM_Operation.COUNT_TOKENS]: "Anthropic count tokens",
+  };
+  return labels[operation] ?? "Custom LLM operation";
+};
+
+const LLMBodyEditor = (props: {
+  value: Core.RequestContext_Request_LLM;
+  bodyMap?: Struct;
+  onApply: (body: JsonObject) => void;
+}) => {
+  const [opened, setOpened] = React.useState(false);
+  const [revision, setRevision] = React.useState(0);
+  const [extras, setExtras] = React.useState<JsonObject>({});
+  const [messages, setMessages] = React.useState<LLMMessage[]>([]);
+  const [inputText, setInputText] = React.useState("");
+  const [promptText, setPromptText] = React.useState("");
+  const [instructions, setInstructions] = React.useState("");
+  const [system, setSystem] = React.useState("");
+
+  const operation = props.value.operation;
+  const isMessagesOperation = llmMessageOperations.has(operation);
+  const isInputOperation = llmInputOperations.has(operation);
+  const supportsMaxOutput = llmMaxOutputOperations.has(operation);
+  const isStreamable = llmStreamableOperations.has(operation);
+  const isOpenAI = props.value.protocol === Core.Service_Spec_Config_LLM_Protocol.OPENAI;
+
+  const openEditor = () => {
+    const current = jsonObject(
+      props.bodyMap ? Struct.toJson(props.bodyMap) : undefined,
+    );
+    const nextExtras = { ...current };
+    const existingMessages = Array.isArray(nextExtras.messages)
+      ? nextExtras.messages
+          .filter(isJsonObject)
+          .map((message) => ({
+            role: String(message.role ?? "user"),
+            content:
+              typeof message.content === "string"
+                ? message.content
+                : JSON.stringify(message.content ?? ""),
+          }))
+      : [];
+    const currentInput = nextExtras.input;
+    const currentPrompt = nextExtras.prompt;
+    const currentInstructions = nextExtras.instructions;
+    const currentSystem = nextExtras.system;
+
+    delete nextExtras.model;
+    delete nextExtras.stream;
+    delete nextExtras.max_tokens;
+    delete nextExtras.max_completion_tokens;
+    delete nextExtras.max_output_tokens;
+    delete nextExtras.messages;
+    delete nextExtras.input;
+    delete nextExtras.prompt;
+    delete nextExtras.instructions;
+    delete nextExtras.system;
+    setExtras(nextExtras);
+    setMessages(
+      existingMessages.length > 0
+        ? existingMessages
+        : isMessagesOperation
+          ? [{ role: "user", content: "" }]
+          : [],
+    );
+    setInputText(currentInput === undefined ? "" : jsonValueInput(currentInput));
+    setPromptText(currentPrompt === undefined ? "" : jsonValueInput(currentPrompt));
+    setInstructions(typeof currentInstructions === "string" ? currentInstructions : "");
+    setSystem(typeof currentSystem === "string" ? currentSystem : "");
+    setRevision((currentRevision) => currentRevision + 1);
+    setOpened(true);
+  };
+
+  const body = React.useMemo(() => {
+    const result: JsonObject = { ...extras };
+    if (props.value.model) result.model = props.value.model;
+
+    if (isStreamable) result.stream = props.value.stream;
+    if (supportsMaxOutput && props.value.maxOutputTokens > 0) {
+      result[
+        operation === Core.RequestContext_Request_LLM_Operation.MESSAGES
+          ? "max_tokens"
+          : operation === Core.RequestContext_Request_LLM_Operation.COMPLETIONS
+            ? "max_tokens"
+            : operation === Core.RequestContext_Request_LLM_Operation.CHAT_COMPLETIONS
+            ? "max_completion_tokens"
+            : "max_output_tokens"
+      ] = props.value.maxOutputTokens;
+    }
+
+    if (operation === Core.RequestContext_Request_LLM_Operation.CHAT_COMPLETIONS ||
+        operation === Core.RequestContext_Request_LLM_Operation.MESSAGES ||
+        operation === Core.RequestContext_Request_LLM_Operation.COUNT_TOKENS) {
+      result.messages = messages.map((message) => ({
+        role: message.role,
+        content: parseJsonValue(message.content),
+      }));
+    }
+    if (isInputOperation && inputText.trim()) {
+      result.input = parseJsonValue(inputText);
+    }
+    if (operation === Core.RequestContext_Request_LLM_Operation.COMPLETIONS && promptText.trim()) {
+      result.prompt = parseJsonValue(promptText);
+    }
+    if (operation === Core.RequestContext_Request_LLM_Operation.RESPONSES && instructions.trim()) {
+      result.instructions = instructions;
+    }
+    if (operation === Core.RequestContext_Request_LLM_Operation.MESSAGES && system.trim()) {
+      result.system = system;
+    }
+    if (llmToolOperations.has(operation) && props.value.toolNames.length > 0 && result.tools === undefined) {
+      result.tools = isOpenAI
+        ? props.value.toolNames.map((name) => ({
+            type: "function",
+            function: { name, parameters: { type: "object" } },
+          }))
+        : props.value.toolNames.map((name) => ({
+            name,
+            input_schema: { type: "object" },
+          }));
+    }
+    return result;
+  }, [
+    extras,
+    inputText,
+    instructions,
+    isInputOperation,
+    isOpenAI,
+    isStreamable,
+    messages,
+    operation,
+    promptText,
+    props.value.maxOutputTokens,
+    props.value.model,
+    props.value.stream,
+    props.value.toolNames,
+    supportsMaxOutput,
+    system,
+  ]);
+
+  return (
+    <>
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-3">
+        <div className="flex items-start gap-2.5">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
+            <Braces size={13} strokeWidth={2.25} />
+          </span>
+          <div>
+            <p className="text-[0.68rem] font-bold text-slate-700">LLM JSON request body</p>
+            <p className="mt-0.5 text-[0.63rem] font-semibold text-slate-400">
+              Build the {llmOperationLabel(operation)} payload from the selected context
+            </p>
+          </div>
+        </div>
+        <Button
+          type="button"
+          size="compact-xs"
+          variant="default"
+          leftSection={<Braces size={11} />}
+          onClick={openEditor}
+        >
+          Configure body
+        </Button>
+      </div>
+
+      <Drawer
+        opened={opened}
+        onClose={() => setOpened(false)}
+        position="right"
+        size="min(820px, 100vw)"
+        title="Build LLM JSON request"
+        overlayProps={{ backgroundOpacity: 0.2, blur: 1 }}
+        transitionProps={{ transition: "slide-left", duration: 500, exitDuration: 500 }}
+        styles={{
+          header: { borderBottom: "1px solid #e2e8f0", minHeight: "56px" },
+          body: { backgroundColor: "#f8fafc", padding: "16px" },
+        }}
+      >
+        <div className="space-y-4">
+          <div className="rounded-xl border border-violet-100 bg-violet-50/60 px-3.5 py-3">
+            <p className="text-[0.68rem] font-bold text-violet-800">Synchronized LLM context</p>
+            <p className="mt-1 text-[0.63rem] font-semibold leading-relaxed text-violet-700/70">
+              Protocol, operation, model, stream state, token limits, and tool names come from the LLM fields above. Provider-specific fields remain editable below.
+            </p>
+          </div>
+
+          {isMessagesOperation && (
+            <div className="rounded-xl border border-slate-200 bg-white p-3.5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[0.68rem] font-bold text-slate-700">
+                    {operation === Core.RequestContext_Request_LLM_Operation.MESSAGES ? "Anthropic messages" : "Conversation messages"}
+                  </p>
+                  <p className="mt-0.5 text-[0.63rem] font-semibold text-slate-400">
+                    Add the ordered messages sent to the model
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  size="compact-xs"
+                  variant="default"
+                  leftSection={<Plus size={11} />}
+                  onClick={() => setMessages((current) => [...current, { role: "user", content: "" }])}
+                >
+                  Add message
+                </Button>
+              </div>
+              <div className="mt-3 space-y-3">
+                {messages.length === 0 ? (
+                  <p className="rounded-lg bg-slate-50 px-3 py-2 text-[0.65rem] font-semibold text-slate-400">
+                    No messages added
+                  </p>
+                ) : (
+                  messages.map((message, index) => (
+                    <div key={`${revision}-message-${index}`} className="grid gap-2 sm:grid-cols-[150px_minmax(0,1fr)_30px]">
+                      <Select
+                        label={index === 0 ? "Role" : undefined}
+                        value={message.role}
+                        data={[
+                          { value: "system", label: "System" },
+                          { value: "user", label: "User" },
+                          { value: "assistant", label: "Assistant" },
+                        ]}
+                        allowDeselect={false}
+                        styles={fieldStyles}
+                        onChange={(role) =>
+                          role && setMessages((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, role } : item))
+                        }
+                      />
+                      <Textarea
+                        label={index === 0 ? "Content" : undefined}
+                        placeholder="Write text or enter a JSON content array"
+                        autosize
+                        minRows={2}
+                        maxRows={8}
+                        value={message.content}
+                        styles={fieldStyles}
+                        onChange={(event) => {
+                          const content = event.currentTarget.value;
+                          setMessages((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, content } : item));
+                        }}
+                      />
+                      <ActionIcon
+                        type="button"
+                        variant="subtle"
+                        color="red"
+                        aria-label="Remove message"
+                        className="mt-6"
+                        onClick={() => setMessages((current) => current.filter((_, itemIndex) => itemIndex !== index))}
+                      >
+                        <X size={13} />
+                      </ActionIcon>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
+          {isInputOperation && (
+            <Textarea
+              label="Input"
+              description={
+                operation === Core.RequestContext_Request_LLM_Operation.RESPONSES
+                  ? "Text or a JSON input array for the Responses API"
+                  : "Text or a JSON array of input values"
+              }
+              placeholder={
+                operation === Core.RequestContext_Request_LLM_Operation.RESPONSES
+                  ? "Ask the model to summarize this document"
+                  : "Enter text or a JSON array of inputs"
+              }
+              autosize
+              minRows={3}
+              maxRows={10}
+              value={inputText}
+              styles={fieldStyles}
+              onChange={(event) => setInputText(event.currentTarget.value)}
+            />
+          )}
+
+          {operation === Core.RequestContext_Request_LLM_Operation.COMPLETIONS && (
+            <Textarea
+              label="Prompt"
+              description="Prompt text or a JSON prompt array"
+              placeholder="Complete this sentence…"
+              autosize
+              minRows={3}
+              maxRows={10}
+              value={promptText}
+              styles={fieldStyles}
+              onChange={(event) => setPromptText(event.currentTarget.value)}
+            />
+          )}
+
+          {operation === Core.RequestContext_Request_LLM_Operation.RESPONSES && (
+            <Textarea
+              label="Instructions"
+              placeholder="You are a concise assistant."
+              autosize
+              minRows={2}
+              maxRows={6}
+              value={instructions}
+              styles={fieldStyles}
+              onChange={(event) => setInstructions(event.currentTarget.value)}
+            />
+          )}
+
+          {operation === Core.RequestContext_Request_LLM_Operation.MESSAGES && (
+            <Textarea
+              label="System prompt"
+              placeholder="You are a helpful assistant."
+              autosize
+              minRows={2}
+              maxRows={6}
+              value={system}
+              styles={fieldStyles}
+              onChange={(event) => setSystem(event.currentTarget.value)}
+            />
+          )}
+
+          <JsonObjectEditor
+            key={`llm-extra-${revision}`}
+            title="Additional JSON fields"
+            description="Add provider-specific options such as temperature, top_p, metadata, or tool schemas"
+            value={extras}
+            onChange={setExtras}
+          />
+
+          <div className="rounded-xl border border-slate-200 bg-slate-900 p-3.5 text-slate-100">
+            <div className="mb-2 flex items-center gap-2">
+              <Braces size={13} className="text-violet-300" />
+              <p className="text-[0.68rem] font-bold">JSON preview</p>
+            </div>
+            <pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words text-[0.66rem] font-medium leading-relaxed text-slate-300">
+              {JSON.stringify(body, null, 2)}
+            </pre>
+          </div>
+
+          <div className="flex justify-end gap-2 border-t border-slate-200 pt-3">
+            <Button type="button" variant="default" onClick={() => setOpened(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              color="dark"
+              leftSection={<Check size={12} />}
+              onClick={() => {
+                props.onApply(body);
+                setOpened(false);
+              }}
+            >
+              Apply JSON body
+            </Button>
+          </div>
+        </div>
+      </Drawer>
+    </>
+  );
+};
+
 const HTTPFields = ({
   value,
   onChange,
@@ -1238,7 +1653,7 @@ const LLMFields = ({
     { label: "OpenAI", value: String(Core.Service_Spec_Config_LLM_Protocol.OPENAI) },
     { label: "Anthropic", value: String(Core.Service_Spec_Config_LLM_Protocol.ANTHROPIC) },
   ];
-  const operationData = [
+  const operationOptions = [
     ["Chat completions", Core.RequestContext_Request_LLM_Operation.CHAT_COMPLETIONS],
     ["Responses", Core.RequestContext_Request_LLM_Operation.RESPONSES],
     ["Completions", Core.RequestContext_Request_LLM_Operation.COMPLETIONS],
@@ -1248,12 +1663,28 @@ const LLMFields = ({
     ["Models get", Core.RequestContext_Request_LLM_Operation.MODELS_GET],
     ["Messages", Core.RequestContext_Request_LLM_Operation.MESSAGES],
     ["Count tokens", Core.RequestContext_Request_LLM_Operation.COUNT_TOKENS],
-  ].map(([label, operation]) => ({ label: String(label), value: String(operation) }));
+  ];
+  const anthropicOperations = new Set([
+    Core.RequestContext_Request_LLM_Operation.MESSAGES,
+    Core.RequestContext_Request_LLM_Operation.COUNT_TOKENS,
+    Core.RequestContext_Request_LLM_Operation.MODELS_LIST,
+    Core.RequestContext_Request_LLM_Operation.MODELS_GET,
+  ]);
+  const operationData = operationOptions
+    .filter(([, operation]) =>
+      value.protocol === Core.Service_Spec_Config_LLM_Protocol.ANTHROPIC
+        ? anthropicOperations.has(operation as number)
+        : !anthropicOperations.has(operation as number) ||
+            operation === Core.RequestContext_Request_LLM_Operation.MODELS_LIST ||
+            operation === Core.RequestContext_Request_LLM_Operation.MODELS_GET,
+    )
+    .map(([label, operation]) => ({ label: String(label), value: String(operation) }));
   const qualityData = [
     ["Complete", Core.RequestContext_Request_LLM_EstimateQuality.COMPLETE],
     ["Partial", Core.RequestContext_Request_LLM_EstimateQuality.PARTIAL],
     ["Unavailable", Core.RequestContext_Request_LLM_EstimateQuality.UNAVAILABLE],
   ].map(([label, quality]) => ({ label: String(label), value: String(quality) }));
+  const supportsBody = llmBodyOperations.has(value.operation);
 
   return (
     <div className="space-y-4">
@@ -1264,11 +1695,24 @@ const LLMFields = ({
           data={protocolData}
           allowDeselect={false}
           styles={fieldStyles}
-          onChange={(protocol) =>
+          onChange={(protocol) => {
+            if (!protocol) return;
+            const nextProtocol = Number(protocol);
             onChange((llm) => {
-              llm.protocol = Number(protocol);
-            })
-          }
+              llm.protocol = nextProtocol;
+              const nextIsAnthropic =
+                nextProtocol === Core.Service_Spec_Config_LLM_Protocol.ANTHROPIC;
+              if (
+                nextIsAnthropic !== anthropicOperations.has(llm.operation) &&
+                llm.operation !== Core.RequestContext_Request_LLM_Operation.MODELS_LIST &&
+                llm.operation !== Core.RequestContext_Request_LLM_Operation.MODELS_GET
+              ) {
+                llm.operation = nextIsAnthropic
+                  ? Core.RequestContext_Request_LLM_Operation.MESSAGES
+                  : Core.RequestContext_Request_LLM_Operation.CHAT_COMPLETIONS;
+              }
+            });
+          }}
         />
         <Select
           label="Operation"
@@ -1411,6 +1855,21 @@ const LLMFields = ({
           })
         }
       />
+
+      {supportsBody && (
+        <LLMBodyEditor
+          value={value}
+          bodyMap={value.http?.bodyMap}
+          onApply={(body) =>
+            onChange((llm) => {
+              const http = llm.http ?? createHTTP();
+              http.bodyMap = Struct.fromJson(body as any);
+              http.body = new TextEncoder().encode(JSON.stringify(body));
+              llm.http = http;
+            })
+          }
+        />
+      )}
 
       <NestedHTTP
         value={value.http}
