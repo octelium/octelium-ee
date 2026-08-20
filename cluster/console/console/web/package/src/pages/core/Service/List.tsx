@@ -52,6 +52,7 @@ import {
 } from "lucide-react";
 import { GrMysql } from "react-icons/gr";
 import { SiPostgresql } from "react-icons/si";
+import { VscMcp } from "react-icons/vsc";
 
 export const getType = (svc: Service): string => {
   return printServiceMode(svc.spec!.mode);
@@ -377,7 +378,7 @@ const DoSummary = (props: {
             searchParams.get(`mode`) ===
             Service_Spec_Mode[Service_Spec_Mode.MCP]
           }
-          icon={Bot}
+          icon={VscMcp}
         >
           MCP
         </SummaryItemCount>
