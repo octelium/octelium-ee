@@ -11,8 +11,9 @@ import {
   TagsInput,
   Textarea,
   TextInput,
+  Drawer,
 } from "@mantine/core";
-import { Plus, X } from "lucide-react";
+import { Braces, Check, Plus, X } from "lucide-react";
 import * as React from "react";
 
 export type RequestKind =
@@ -126,7 +127,11 @@ export const createRequestContext = (
       return Core.RequestContext_Request.create({
         type: {
           oneofKind: "mcp",
-          mcp: Core.RequestContext_Request_MCP.create(),
+          mcp: Core.RequestContext_Request_MCP.create({
+            protocolVersion: "2025-06-18",
+            method: "tools/call",
+            requestID: "1",
+          }),
         },
       });
     case "llm":
@@ -363,6 +368,461 @@ const StructEditor = ({
         }
       }}
     />
+  );
+};
+
+type JsonObject = Record<string, unknown>;
+
+const isJsonObject = (value: unknown): value is JsonObject =>
+  Boolean(value && typeof value === "object" && !Array.isArray(value));
+
+const jsonObject = (value: unknown): JsonObject =>
+  isJsonObject(value) ? value : {};
+
+const jsonValueInput = (value: unknown): string =>
+  typeof value === "string" ? value : JSON.stringify(value ?? "");
+
+const parseJsonValue = (value: string): unknown => {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return value;
+  }
+};
+
+const JsonObjectEditor = (props: {
+  title: string;
+  description: string;
+  value: JsonObject;
+  onChange: (value: JsonObject) => void;
+  emptyText?: string;
+}) => {
+  const [entries, setEntries] = React.useState(() =>
+    Object.entries(props.value).map(([key, value]) => ({
+      id: `${key}-${Math.random().toString(36).slice(2)}`,
+      key,
+      value: jsonValueInput(value),
+    })),
+  );
+
+  const commit = (next: typeof entries) => {
+    setEntries(next);
+    props.onChange(
+      Object.fromEntries(
+        next
+          .filter((entry) => entry.key.trim())
+          .map((entry) => [entry.key.trim(), parseJsonValue(entry.value)]),
+      ),
+    );
+  };
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-3.5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[0.68rem] font-bold text-slate-700">{props.title}</p>
+          <p className="mt-0.5 text-[0.63rem] font-semibold text-slate-400">
+            {props.description}
+          </p>
+        </div>
+        <Button
+          type="button"
+          size="compact-xs"
+          variant="default"
+          leftSection={<Plus size={11} strokeWidth={2.5} />}
+          onClick={() =>
+            commit([
+              ...entries,
+              {
+                id: `entry-${Date.now()}-${entries.length}`,
+                key: "",
+                value: "\"\"",
+              },
+            ])
+          }
+        >
+          Add key
+        </Button>
+      </div>
+
+      {entries.length === 0 ? (
+        <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-[0.65rem] font-semibold text-slate-400">
+          {props.emptyText ?? "No keys added"}
+        </p>
+      ) : (
+        <div className="mt-3 space-y-2">
+          {entries.map((entry, index) => (
+            <div
+              key={entry.id}
+              className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)_30px] items-center gap-2"
+            >
+              <TextInput
+                aria-label={`${props.title} key`}
+                placeholder="Key"
+                value={entry.key}
+                styles={fieldStyles}
+                onChange={(event) =>
+                  commit(
+                    entries.map((current, currentIndex) =>
+                      currentIndex === index
+                        ? { ...current, key: event.currentTarget.value }
+                        : current,
+                    ),
+                  )
+                }
+              />
+              <TextInput
+                aria-label={`${props.title} value`}
+                placeholder='Value, string, number, true, or JSON object'
+                value={entry.value}
+                styles={fieldStyles}
+                onChange={(event) =>
+                  commit(
+                    entries.map((current, currentIndex) =>
+                      currentIndex === index
+                        ? { ...current, value: event.currentTarget.value }
+                        : current,
+                    ),
+                  )
+                }
+              />
+              <ActionIcon
+                type="button"
+                variant="subtle"
+                color="red"
+                aria-label={`Remove ${props.title} key`}
+                onClick={() =>
+                  commit(entries.filter((_, currentIndex) => currentIndex !== index))
+                }
+              >
+                <X size={13} />
+              </ActionIcon>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const MCP_META_PROTOCOL_VERSION = "io.modelcontextprotocol/protocolVersion";
+const MCP_META_CLIENT_INFO = "io.modelcontextprotocol/clientInfo";
+const MCP_META_CLIENT_CAPABILITIES = "io.modelcontextprotocol/clientCapabilities";
+
+const mcpTargetMethods = new Set([
+  "tools/call",
+  "prompts/get",
+  "resources/read",
+  "resources/subscribe",
+  "resources/unsubscribe",
+  "completion/complete",
+]);
+
+const mcpArgumentMethods = new Set(["tools/call", "prompts/get"]);
+
+const mcpCursorMethods = new Set([
+  "tools/list",
+  "prompts/list",
+  "resources/list",
+  "resources/templates/list",
+]);
+
+const mcpMethodsWithoutAdditionalParams = new Set([
+  "server/discover",
+  "initialize",
+  "ping",
+  "tools/list",
+  "tools/call",
+  "prompts/list",
+  "prompts/get",
+  "resources/list",
+  "resources/read",
+  "resources/templates/list",
+  "resources/subscribe",
+  "resources/unsubscribe",
+  "roots/list",
+]);
+
+const requestIDValue = (value: string): unknown => {
+  const parsed = parseJsonValue(value);
+  return typeof parsed === "object" ? value : parsed;
+};
+
+const getMCPBody = (value: Core.RequestContext_Request_MCP, bodyMap?: Struct) => {
+  const body = jsonObject(bodyMap ? Struct.toJson(bodyMap) : undefined);
+  const params = jsonObject(body.params);
+  return {
+    params,
+    meta: jsonObject(params._meta),
+  };
+};
+
+const buildMCPBody = (
+  value: Core.RequestContext_Request_MCP,
+  paramsExtras: JsonObject,
+  argumentValues: JsonObject,
+  metadata: JsonObject,
+): JsonObject => {
+  const method = value.method.trim();
+  const params: JsonObject = { ...paramsExtras };
+
+  delete params.name;
+  delete params.uri;
+  delete params.arguments;
+  delete params.ref;
+  delete params.protocolVersion;
+  delete params.capabilities;
+  delete params.clientInfo;
+  delete params._meta;
+
+  if (method === "tools/call" || method === "prompts/get") {
+    params.name = value.name;
+    if (Object.keys(argumentValues).length > 0) params.arguments = argumentValues;
+  } else if (
+    method === "resources/read" ||
+    method === "resources/subscribe" ||
+    method === "resources/unsubscribe"
+  ) {
+    params.uri = value.name;
+  } else if (method === "completion/complete") {
+    params.ref = paramsExtras.ref ?? { name: value.name };
+  } else if (method === "initialize") {
+    params.protocolVersion = value.protocolVersion;
+    if (value.capabilities.length > 0) {
+      params.capabilities = Object.fromEntries(
+        value.capabilities.map((capability) => [capability, {}]),
+      );
+    }
+    if (value.client) {
+      params.clientInfo = {
+        name: value.client.name,
+        version: value.client.version,
+        ...(value.client.title ? { title: value.client.title } : {}),
+      };
+    }
+  }
+
+  const meta = { ...metadata };
+  delete meta[MCP_META_PROTOCOL_VERSION];
+  delete meta[MCP_META_CLIENT_INFO];
+  delete meta[MCP_META_CLIENT_CAPABILITIES];
+  if (value.protocolVersion && method !== "initialize") {
+    meta[MCP_META_PROTOCOL_VERSION] = value.protocolVersion;
+  }
+  if (method !== "initialize" && value.client) {
+    meta[MCP_META_CLIENT_INFO] = {
+      name: value.client.name,
+      version: value.client.version,
+      ...(value.client.title ? { title: value.client.title } : {}),
+    };
+  }
+  if (method !== "initialize" && value.capabilities.length > 0) {
+    meta[MCP_META_CLIENT_CAPABILITIES] = Object.fromEntries(
+      value.capabilities.map((capability) => [capability, {}]),
+    );
+  }
+  if (Object.keys(meta).length > 0) params._meta = meta;
+
+  const body: JsonObject = {
+    jsonrpc: "2.0",
+    method,
+  };
+  if (!value.isNotification && !method.startsWith("notifications/")) {
+    body.id = requestIDValue(value.requestID);
+  }
+  if (Object.keys(params).length > 0) body.params = params;
+  return body;
+};
+
+const MCPBodyEditor = (props: {
+  value: Core.RequestContext_Request_MCP;
+  bodyMap?: Struct;
+  onUpdate: (
+    update: (value: Core.RequestContext_Request_MCP) => void,
+  ) => void;
+  onApply: (body: JsonObject) => void;
+}) => {
+  const [opened, setOpened] = React.useState(false);
+  const [revision, setRevision] = React.useState(0);
+  const method = props.value.method;
+  const hasToolTarget = method === "tools/call";
+  const hasArguments = mcpArgumentMethods.has(method);
+  const hasCursor = mcpCursorMethods.has(method);
+  const hasAdditionalParams = !mcpMethodsWithoutAdditionalParams.has(method);
+  const [paramsExtras, setParamsExtras] = React.useState<JsonObject>({});
+  const [argumentValues, setArgumentValues] = React.useState<JsonObject>({});
+  const [metadata, setMetadata] = React.useState<JsonObject>({});
+
+  const openEditor = () => {
+    const current = getMCPBody(props.value, props.bodyMap);
+    const params = { ...current.params };
+    const argumentsValue = jsonObject(params.arguments);
+    delete params.name;
+    delete params.uri;
+    delete params.arguments;
+    if (props.value.method === "initialize") {
+      delete params.protocolVersion;
+      delete params.capabilities;
+      delete params.clientInfo;
+    }
+    const additionalMetadata = { ...current.meta };
+    delete additionalMetadata[MCP_META_PROTOCOL_VERSION];
+    delete additionalMetadata[MCP_META_CLIENT_INFO];
+    delete additionalMetadata[MCP_META_CLIENT_CAPABILITIES];
+    setParamsExtras(params);
+    setArgumentValues(argumentsValue);
+    setMetadata(additionalMetadata);
+    setRevision((currentRevision) => currentRevision + 1);
+    setOpened(true);
+  };
+
+  const body = buildMCPBody(
+    props.value,
+    paramsExtras,
+    argumentValues,
+    metadata,
+  );
+
+  return (
+    <>
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-3">
+        <div className="flex items-start gap-2.5">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+            <Braces size={13} strokeWidth={2.25} />
+          </span>
+          <div>
+            <p className="text-[0.68rem] font-bold text-slate-700">MCP JSON request body</p>
+            <p className="mt-0.5 text-[0.63rem] font-semibold text-slate-400">
+              Build a JSON-RPC body from the selected MCP context
+            </p>
+          </div>
+        </div>
+        <Button
+          type="button"
+          size="compact-xs"
+          variant="default"
+          leftSection={<Braces size={11} />}
+          onClick={openEditor}
+        >
+          Configure body
+        </Button>
+      </div>
+
+      <Drawer
+        opened={opened}
+        onClose={() => setOpened(false)}
+        position="right"
+        size="min(760px, 100vw)"
+        title="Build MCP JSON request"
+        overlayProps={{ backgroundOpacity: 0.2, blur: 1 }}
+        transitionProps={{ transition: "slide-left", duration: 500, exitDuration: 500 }}
+        styles={{
+          header: { borderBottom: "1px solid #e2e8f0", minHeight: "56px" },
+          body: { backgroundColor: "#f8fafc", padding: "16px" },
+        }}
+      >
+        <div className="space-y-4">
+          <div className="rounded-xl border border-blue-100 bg-blue-50/60 px-3.5 py-3">
+            <p className="text-[0.68rem] font-bold text-blue-800">Synchronized envelope</p>
+            <p className="mt-1 text-[0.63rem] font-semibold leading-relaxed text-blue-700/70">
+              The JSON-RPC method, protocol version, target name, request ID, and notification state come from the MCP fields you selected above.
+            </p>
+          </div>
+
+          {hasToolTarget && (
+            <div className="rounded-xl border border-slate-200 bg-white px-3.5 py-3">
+              <TextInput
+                label="Tool name"
+                description="Used to build this method's params object"
+                placeholder="get_weather"
+                value={props.value.name}
+                styles={fieldStyles}
+                onChange={(event) => {
+                  const name = event.currentTarget.value;
+                  props.onUpdate((mcp) => {
+                    mcp.name = name;
+                  });
+                }}
+              />
+            </div>
+          )}
+
+          {hasArguments && (
+            <JsonObjectEditor
+              key={`arguments-${revision}`}
+              title={method === "tools/call" ? "Tool arguments" : "Prompt arguments"}
+              description="Values accept strings, numbers, booleans, arrays, or JSON objects"
+              value={argumentValues}
+              onChange={setArgumentValues}
+              emptyText="No arguments added"
+            />
+          )}
+
+          {hasCursor && (
+            <div className="rounded-xl border border-slate-200 bg-white px-3.5 py-3">
+              <TextInput
+                label="Pagination cursor"
+                description="Optional cursor for this list method"
+                placeholder="Continue from a previous page"
+                value={String(paramsExtras.cursor ?? "")}
+                styles={fieldStyles}
+                onChange={(event) => {
+                  const cursor = event.currentTarget.value;
+                  setParamsExtras((current) => ({ ...current, cursor }));
+                }}
+              />
+            </div>
+          )}
+
+          {hasAdditionalParams && (
+            <JsonObjectEditor
+              key={`params-${revision}`}
+              title={method === "initialize" ? "Additional initialize params" : "Additional params"}
+              description="Add method-specific or custom MCP parameters"
+              value={paramsExtras}
+              onChange={setParamsExtras}
+            />
+          )}
+
+          <JsonObjectEditor
+            key={`metadata-${revision}`}
+            title="Additional _meta values"
+            description="Optional metadata included under params._meta"
+            value={metadata}
+            onChange={setMetadata}
+          />
+
+          <div className="rounded-xl border border-slate-200 bg-slate-900 p-3.5 text-slate-100">
+            <div className="mb-2 flex items-center gap-2">
+              <Braces size={13} className="text-blue-300" />
+              <p className="text-[0.68rem] font-bold">JSON preview</p>
+            </div>
+            <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words text-[0.66rem] font-medium leading-relaxed text-slate-300">
+              {JSON.stringify(body, null, 2)}
+            </pre>
+          </div>
+
+          <div className="flex justify-end gap-2 border-t border-slate-200 pt-3">
+            <Button type="button" variant="default" onClick={() => setOpened(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              color="dark"
+              leftSection={<Check size={12} />}
+              onClick={() => {
+                props.onApply(body);
+                setOpened(false);
+              }}
+            >
+              Apply JSON body
+            </Button>
+          </div>
+        </div>
+      </Drawer>
+    </>
   );
 };
 
@@ -641,8 +1101,35 @@ const MCPFields = ({
           })
         }
       />
+      {mcpTargetMethods.has(value.method) && (
+        <TextInput
+          label={
+            value.method === "tools/call"
+              ? "Tool name"
+              : value.method === "prompts/get"
+                ? "Prompt name"
+                : value.method === "completion/complete"
+                  ? "Completion reference"
+                  : "Resource URI"
+          }
+          placeholder={
+            value.method === "tools/call"
+              ? "get_weather"
+              : value.method === "prompts/get"
+                ? "review"
+                : "file:///example.txt"
+          }
+          value={value.name}
+          styles={fieldStyles}
+          onChange={(event) => {
+            const name = event.currentTarget.value;
+            onChange((mcp) => {
+              mcp.name = name;
+            });
+          }}
+        />
+      )}
       {[
-        ["Target name", "name", "search"],
         ["Request ID", "requestID", "42"],
         ["MCP session ID", "sessionID", "session-123"],
       ].map(([label, field, placeholder]) => (
@@ -701,6 +1188,20 @@ const MCPFields = ({
       onChange={(update) =>
         onChange((mcp) => {
           if (mcp.client) update(mcp.client);
+        })
+      }
+    />
+
+    <MCPBodyEditor
+      value={value}
+      bodyMap={value.http?.bodyMap}
+      onUpdate={(update) => onChange(update)}
+      onApply={(body) =>
+        onChange((mcp) => {
+          const http = mcp.http ?? createHTTP();
+          http.bodyMap = Struct.fromJson(body as any);
+          http.body = new TextEncoder().encode(JSON.stringify(body));
+          mcp.http = http;
         })
       }
     />
