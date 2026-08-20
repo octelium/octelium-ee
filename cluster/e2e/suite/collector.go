@@ -35,7 +35,7 @@ func testCollectorExportOTLP(t *testing.T, ch *harness.H) {
 	sink := h.Sink(t)
 	sink.Truncate(t)
 
-	sec := h.CreateEnterpriseSecret(t, utilrand.GetRandomStringCanonical(40))
+	sec := h.CreateEnterpriseSecret(t, sink.Token)
 	exp := h.CreateCollectorExporter(t, otlpExporter(sink.GRPCEndpoint, sec.Metadata.Name))
 
 	h.SetCollectorPipelines(t,
@@ -123,6 +123,69 @@ func testCollectorExportUnreachable(t *testing.T, ch *harness.H) {
 	t.Run("TheCollectorDoesNotCrashLoop", func(t *testing.T) {
 		assert.Equal(t, restartsBefore, h.EnterpriseRestarts(t, "collector"))
 	})
+}
+
+func testCollectorLiveUpdate(t *testing.T, ch *harness.H) {
+	h := eeharness.Wrap(ch)
+	h.Require(t, eescenario.CapOTLPSink)
+
+	sink := h.Sink(t)
+	sink.Truncate(t)
+
+	exp := h.CreateCollectorExporter(t,
+		otlpExporter("octelium-e2e-blackhole.e2e.svc:4317", ""))
+	h.SetCollectorPipelines(t, logsPipeline(h.Name(), exp.Metadata.Name))
+
+	restartsBefore := h.EnterpriseRestarts(t, "collector")
+	driveTraffic(t, h)
+	sink.MustStayEmpty(t, "logs.json", settleWindow)
+
+	exp.Spec.GetOtlp().Endpoint = sink.GRPCEndpoint
+	h.UpdateCollectorExporter(t, exp)
+	driveTraffic(t, h)
+	sink.WaitLogs(t, "resourceLogs", eeharness.IngestionBudget)
+
+	assert.Equal(t, restartsBefore, h.EnterpriseRestarts(t, "collector"))
+}
+
+func testCollectorOutageRecovery(t *testing.T, ch *harness.H) {
+	h := eeharness.Wrap(ch)
+	h.Require(t, eescenario.CapOTLPSink)
+
+	sink := h.Sink(t)
+	sink.Truncate(t)
+
+	exp := h.CreateCollectorExporter(t, otlpExporter(sink.GRPCEndpoint, ""))
+	h.SetCollectorPipelines(t, logsPipeline(h.Name(), exp.Metadata.Name))
+	driveTraffic(t, h)
+	sink.WaitLogs(t, "resourceLogs", eeharness.IngestionBudget)
+	sink.Truncate(t)
+
+	restartsBefore := h.EnterpriseRestarts(t, "collector")
+	restore := sink.Stop(t)
+	driveTraffic(t, h)
+	restore()
+
+	sink.WaitLogs(t, "resourceLogs", eeharness.IngestionBudget)
+	assert.Equal(t, restartsBefore, h.EnterpriseRestarts(t, "collector"))
+}
+
+func testCollectorSignalRouting(t *testing.T, ch *harness.H) {
+	h := eeharness.Wrap(ch)
+	h.Require(t, eescenario.CapOTLPSink)
+
+	sink := h.Sink(t)
+	sink.Truncate(t)
+
+	exp := h.CreateCollectorExporter(t, otlpExporter(sink.GRPCEndpoint, ""))
+	h.SetCollectorPipelines(t, logsPipeline(h.Name(), exp.Metadata.Name))
+	driveTraffic(t, h)
+	sink.WaitLogs(t, "resourceLogs", eeharness.IngestionBudget)
+
+	sink.Truncate(t)
+	driveTraffic(t, h)
+	sink.WaitLogs(t, "resourceLogs", eeharness.IngestionBudget)
+	sink.MustStayEmpty(t, "metrics.json", settleWindow)
 }
 
 func driveTraffic(t *testing.T, h *eeharness.H) {

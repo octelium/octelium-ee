@@ -41,7 +41,7 @@ func keycloakProvider(h *eeharness.H, k *eeharness.Keycloak,
 						},
 					},
 					Polling: &enterprisev1.DirectoryProvider_Spec_Keycloak_Polling{
-						Interval: eeharness.Minutes(1),
+						Interval: eeharness.Seconds(10),
 					},
 				},
 			},
@@ -87,6 +87,11 @@ func testKeycloakDirectoryProvider(t *testing.T, ch *harness.H) {
 	})
 
 	t.Run("MembershipMovesBetweenGroups", func(t *testing.T) {
+		localGroup := h.CreateGroup(t, nil)
+		managedUser := keycloakUser(t, h, dp, "kc-user-0@octelium.com")
+		managedUser.Spec.Groups = append(managedUser.Spec.Groups, localGroup.Metadata.Name)
+		h.UpdateUser(t, managedUser)
+
 		k.RemoveMember(t, users["kc-user-0"], engineering)
 		k.AddMember(t, users["kc-user-0"], security)
 
@@ -100,6 +105,7 @@ func testKeycloakDirectoryProvider(t *testing.T, ch *harness.H) {
 
 		assert.False(t, slices.Contains(before.Spec.Groups, engineeringName))
 		assert.True(t, slices.Contains(before.Spec.Groups, securityName))
+		assert.True(t, slices.Contains(before.Spec.Groups, localGroup.Metadata.Name))
 	})
 
 	t.Run("DisabledUserIsDisabled", func(t *testing.T) {
@@ -178,13 +184,53 @@ func testKeycloakBadCredentials(t *testing.T, ch *harness.H) {
 	assert.Equal(t, 0, len(h.DirectoryGroups(t, dp)))
 }
 
+func testKeycloakFailureRecovery(t *testing.T, ch *harness.H) {
+	h := eeharness.Wrap(ch)
+	h.Require(t, eescenario.CapKeycloak)
+
+	k := h.Keycloak(t)
+	k.SeedRealm(t)
+	k.CreateUser(t, "kc-recovery", "kc-recovery@octelium.com", "Recovery", "User")
+
+	sec := h.CreateEnterpriseSecret(t, k.Secret)
+	dp := h.CreateDirectoryProvider(t, keycloakProvider(h, k, sec.Metadata.Name))
+
+	h.SynchronizeDirectoryProvider(t, dp)
+	h.WaitDirectorySynchronized(t, dp,
+		enterprisev1.DirectoryProvider_Status_Synchronization_SUCCESS, eeharness.SyncBudget)
+
+	links := h.DirectoryUsers(t, dp)
+	require.Len(t, links, 1)
+	userUID := links[0].Status.UserRef.Uid
+
+	sec = h.UpdateEnterpriseSecret(t, sec, h.Name()+h.Name())
+	h.SynchronizeDirectoryProvider(t, dp)
+	h.WaitDirectorySynchronized(t, dp,
+		enterprisev1.DirectoryProvider_Status_Synchronization_FAILED, eeharness.SyncBudget)
+
+	links = h.DirectoryUsers(t, dp)
+	require.Len(t, links, 1)
+	assert.Equal(t, userUID, links[0].Status.UserRef.Uid)
+	_, err := h.CoreC().GetUser(t.Context(), &metav1.GetOptions{Uid: userUID})
+	require.Nil(t, err)
+
+	sec = h.UpdateEnterpriseSecret(t, sec, k.Secret)
+	h.SynchronizeDirectoryProvider(t, dp)
+	h.WaitDirectorySynchronized(t, dp,
+		enterprisev1.DirectoryProvider_Status_Synchronization_SUCCESS, eeharness.SyncBudget)
+
+	links = h.DirectoryUsers(t, dp)
+	require.Len(t, links, 1)
+	assert.Equal(t, userUID, links[0].Status.UserRef.Uid)
+}
+
 func testDirectoryProviderIsolation(t *testing.T, ch *harness.H) {
 	h := eeharness.Wrap(ch)
 	h.Require(t, eescenario.CapKeycloak)
 
 	k := h.Keycloak(t)
 	k.SeedRealm(t)
-	k.CreateUser(t, "shared", "shared@octelium.com", "Shared", "Name")
+	sharedID := k.CreateUser(t, "shared", "shared@octelium.com", "Shared", "Name")
 
 	sec := h.CreateEnterpriseSecret(t, k.Secret)
 	kcDP := h.CreateDirectoryProvider(t, keycloakProvider(h, k, sec.Metadata.Name))
@@ -204,6 +250,58 @@ func testDirectoryProviderIsolation(t *testing.T, ch *harness.H) {
 
 	assert.Equal(t, 1, len(h.DirectoryUsers(t, s.dp)))
 	assert.Equal(t, 1, len(h.DirectoryUsers(t, kcDP)))
+
+	scimLink := h.DirectoryUsers(t, s.dp)[0]
+	kcLink := h.DirectoryUsers(t, kcDP)[0]
+	assert.Equal(t, scimLink.Status.UserRef.Uid, kcLink.Status.UserRef.Uid)
+
+	k.DeleteUser(t, sharedID)
+	h.SynchronizeDirectoryProvider(t, kcDP)
+	h.WaitDirectorySynchronized(t, kcDP,
+		enterprisev1.DirectoryProvider_Status_Synchronization_SUCCESS, eeharness.SyncBudget)
+
+	assert.Empty(t, h.DirectoryUsers(t, kcDP))
+	require.Len(t, h.DirectoryUsers(t, s.dp), 1)
+	_, err := h.CoreC().GetUser(t.Context(),
+		&metav1.GetOptions{Uid: scimLink.Status.UserRef.Uid})
+	assert.Nil(t, err)
+}
+
+func testDirectoryLocalUserOwnership(t *testing.T, ch *harness.H) {
+	h := eeharness.Wrap(ch)
+	h.Require(t, eescenario.CapKeycloak)
+
+	k := h.Keycloak(t)
+	k.SeedRealm(t)
+
+	email := h.Name() + "@octelium.com"
+	local := h.CreateUser(t, &corev1.User{
+		Spec: &corev1.User_Spec{
+			Type:  corev1.User_Spec_HUMAN,
+			Email: email,
+		},
+	})
+	externalID := k.CreateUser(t, "kc-local", email, "Local", "User")
+
+	sec := h.CreateEnterpriseSecret(t, k.Secret)
+	dp := h.CreateDirectoryProvider(t, keycloakProvider(h, k, sec.Metadata.Name))
+	h.SynchronizeDirectoryProvider(t, dp)
+	h.WaitDirectorySynchronized(t, dp,
+		enterprisev1.DirectoryProvider_Status_Synchronization_SUCCESS, eeharness.SyncBudget)
+
+	links := h.DirectoryUsers(t, dp)
+	require.Len(t, links, 1)
+	assert.Equal(t, local.Metadata.Uid, links[0].Status.UserRef.Uid)
+
+	k.DeleteUser(t, externalID)
+	h.SynchronizeDirectoryProvider(t, dp)
+	h.WaitDirectorySynchronized(t, dp,
+		enterprisev1.DirectoryProvider_Status_Synchronization_SUCCESS, eeharness.SyncBudget)
+
+	assert.Empty(t, h.DirectoryUsers(t, dp))
+	got, err := h.CoreC().GetUser(t.Context(), &metav1.GetOptions{Uid: local.Metadata.Uid})
+	require.Nil(t, err)
+	assert.Equal(t, email, got.Spec.Email)
 }
 
 func keycloakUser(t *testing.T, h *eeharness.H,

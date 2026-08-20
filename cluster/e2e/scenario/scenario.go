@@ -84,6 +84,7 @@ func register(id string, o opts) {
 
 		ret.Hooks.PostInstall = []scenario.Step{
 			{Name: "octeliumee/install-package", Run: stepInstallPackage},
+			{Name: "octeliumee/e2e-tuning", Run: stepE2ETuning},
 			{Name: "octeliumee/readiness", Run: stepWaitDeployments},
 		}
 
@@ -189,4 +190,14 @@ func stepInstallPackage(ctx context.Context, r *scenario.Runner) error {
 
 	return r.Bash(ctx, fmt.Sprintf("octops install-package %s --package %s --kubeconfig %s%s",
 		r.Scenario.Domain, Package, r.State.KubeconfigPath, versionArg))
+}
+
+func stepE2ETuning(ctx context.Context, r *scenario.Runner) error {
+	return r.Bash(ctx, `kubectl set env --namespace octelium \
+deployment/octeliumee-nocturne \
+OCTELIUM_NOCTURNE_ACCESS_WATCH_INTERVAL=5s
+kubectl set env --namespace octelium \
+deployment/svc-dirsync-octelium \
+OCTELIUM_DIRSYNC_POLL_INTERVAL=2s \
+OCTELIUM_DIRSYNC_MIN_POLLING_INTERVAL=10s`)
 }

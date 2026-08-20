@@ -9,18 +9,24 @@
 package suite
 
 import (
+	"context"
 	"net/http"
 	"testing"
+	"time"
 
 	eeharness "github.com/octelium/octelium-ee/cluster/e2e/harness"
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
+	"github.com/octelium/octelium/apis/main/visibilityv1"
 	"github.com/octelium/octelium/cluster/e2e/harness"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
+	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/grpcerr"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -89,7 +95,7 @@ func testAccessAPIScoping(t *testing.T, ch *harness.H) {
 		assert.NotNil(t, err)
 	})
 
-	t.Run("CatalogListingIsScoped", func(t *testing.T) {
+	t.Run("CatalogsAndServicesAreAvailable", func(t *testing.T) {
 		_, err := h.AccessUserC(c.alice.Conn).ListCatalog(ctx,
 			&accessv1.ListUserCatalogOptions{})
 		assert.Nil(t, err)
@@ -118,6 +124,7 @@ func testAccessActorTrail(t *testing.T, ch *harness.H) {
 	h := eeharness.Wrap(ch)
 
 	c := newAccessCast(t, h)
+	from := pbutils.Timestamp(time.Now().Add(-time.Minute))
 
 	h.CreateAccessPolicy(t, c.reviewRule("actor-trail",
 		&accessv1.Policy_Spec_Rule_Action_Review_Step{
@@ -161,6 +168,42 @@ func testAccessActorTrail(t *testing.T, ch *harness.H) {
 
 		assert.NotEqual(t, req.Metadata.ActorRef.Uid, review.Metadata.ActorRef.Uid)
 	})
+
+	t.Run("TheAuditLogCarriesTheRequestActor", func(t *testing.T) {
+		waitAccessAudit(t, h, umetav1.GetObjectReference(req), from,
+			c.alice.User.Metadata.Uid,
+			"octelium.api.main.access.v1", "UserService", "CreateRequest")
+	})
+
+	t.Run("TheAuditLogCarriesTheReviewActor", func(t *testing.T) {
+		waitAccessAudit(t, h, umetav1.GetObjectReference(review), from,
+			c.rita.User.Metadata.Uid,
+			"octelium.api.main.access.v1", "ReviewerService", "CreateReview")
+	})
+}
+
+func waitAccessAudit(t *testing.T, h *eeharness.H, ref *metav1.ObjectReference,
+	from *timestamppb.Timestamp, userUID, pkg, service, method string) {
+	t.Helper()
+
+	h.Eventually(t, "the access audit entry to be ingested", eeharness.IngestionBudget,
+		func(ctx context.Context) error {
+			res, err := h.AuditLogC().ListAuditLog(ctx, &visibilityv1.ListAuditLogRequest{
+				ResourceRef: ref,
+				From:        from,
+			})
+			if err != nil {
+				return err
+			}
+			for _, itm := range res.Items {
+				if itm.Entry.UserRef != nil && itm.Entry.UserRef.Uid == userUID &&
+					itm.Entry.Package == pkg && itm.Entry.Service == service &&
+					itm.Entry.Method == method {
+					return nil
+				}
+			}
+			return errors.Errorf("the matching audit entry has not been ingested")
+		})
 }
 
 func sessionUser(t *testing.T, h *eeharness.H, sessionUID string) string {

@@ -50,6 +50,25 @@ func (h *H) CreateEnterpriseSecret(t *testing.T, value string) *enterprisev1.Sec
 	return ret
 }
 
+func (h *H) UpdateEnterpriseSecret(t *testing.T,
+	sec *enterprisev1.Secret, value string) *enterprisev1.Secret {
+	t.Helper()
+
+	sec.Data = &enterprisev1.Secret_Data{
+		Type: &enterprisev1.Secret_Data_Value{Value: value},
+	}
+
+	ctx, cancel := h.Ctx(t)
+	defer cancel()
+
+	ret, err := h.EnterpriseC().UpdateSecret(ctx, sec)
+	if err != nil {
+		t.Fatalf("Could not update the enterprise Secret: %+v", err)
+	}
+
+	return ret
+}
+
 func (h *H) CreateCoreSecret(t *testing.T, value string) *corev1.Secret {
 	t.Helper()
 
@@ -283,9 +302,16 @@ func (h *H) WaitSecretStoreSynchronized(t *testing.T,
 			if ss.Status.Type != typ {
 				return errors.Errorf("the SecretStore type is %s, want %s", ss.Status.Type, typ)
 			}
-			if ss.Status.Synchronization != nil {
-				return errors.Errorf("the SecretStore is still %s",
+			if ss.Status.Synchronization == nil {
+				return errors.Errorf("the SecretStore has no synchronization")
+			}
+			if ss.Status.Synchronization.State !=
+				enterprisev1.SecretStore_Status_Synchronization_SUCCESS {
+				return errors.Errorf("the SecretStore synchronization is %s",
 					ss.Status.Synchronization.State)
+			}
+			if ss.Status.Synchronization.CompletedAt == nil {
+				return errors.Errorf("the SecretStore synchronization is not completed")
 			}
 			if len(ss.Status.LastSynchronizations) < 1 {
 				return errors.Errorf("the SecretStore has no completed synchronization yet")
@@ -325,7 +351,11 @@ func (h *H) WaitDirectorySynchronized(t *testing.T,
 	budget time.Duration) {
 	t.Helper()
 
-	before := len(dp.Status.LastSynchronizations)
+	var before time.Time
+	if dp.Status != nil && dp.Status.Synchronization != nil &&
+		dp.Status.Synchronization.CreatedAt != nil {
+		before = dp.Status.Synchronization.CreatedAt.AsTime()
+	}
 
 	h.Eventually(t, "the DirectoryProvider synchronization to complete", budget,
 		func(ctx context.Context) error {
@@ -335,15 +365,19 @@ func (h *H) WaitDirectorySynchronized(t *testing.T,
 				return err
 			}
 
-			if cur.Status.Synchronization != nil {
-				return errors.Errorf("the DirectoryProvider is still %s",
-					cur.Status.Synchronization.State)
+			if cur.Status == nil || cur.Status.Synchronization == nil {
+				return errors.Errorf("the DirectoryProvider has no synchronization")
 			}
-			if len(cur.Status.LastSynchronizations) <= before {
-				return errors.Errorf("no new synchronization has completed yet")
+
+			sync := cur.Status.Synchronization
+			if sync.CreatedAt == nil || (!before.IsZero() && !sync.CreatedAt.AsTime().After(before)) {
+				return errors.Errorf("no new synchronization has started yet")
 			}
-			if got := cur.Status.LastSynchronizations[0].State; got != want {
-				return errors.Errorf("the last synchronization is %s, want %s", got, want)
+			if sync.State != want {
+				return errors.Errorf("the synchronization is %s, want %s", sync.State, want)
+			}
+			if sync.CompletedAt == nil {
+				return errors.Errorf("the synchronization has not completed")
 			}
 
 			return nil

@@ -25,7 +25,9 @@ import (
 )
 
 type secretConsumer struct {
-	probe func(t *testing.T)
+	probe    func(t *testing.T)
+	secret   *corev1.Secret
+	upstream *eeharness.NodeUpstream
 }
 
 func newSecretConsumer(t *testing.T, h *eeharness.H) *secretConsumer {
@@ -77,8 +79,28 @@ func newSecretConsumer(t *testing.T, h *eeharness.H) *secretConsumer {
 	probe.MustBeAllowed(t)
 
 	return &secretConsumer{
-		probe: func(t *testing.T) { probe.MustBeAllowed(t) },
+		probe:    func(t *testing.T) { probe.MustBeAllowed(t) },
+		secret:   sec,
+		upstream: upstream,
 	}
+}
+
+func (c *secretConsumer) rotate(t *testing.T, h *eeharness.H) {
+	t.Helper()
+
+	token := utilrand.GetRandomStringCanonical(32)
+	c.upstream.SetBearer(token)
+	c.secret.Data = &corev1.Secret_Data{
+		Type: &corev1.Secret_Data_Value{Value: token},
+	}
+
+	ctx, cancel := h.Ctx(t)
+	defer cancel()
+
+	secret, err := h.CoreC().UpdateSecret(ctx, c.secret)
+	require.Nil(t, err)
+	c.secret = secret
+	c.probe(t)
 }
 
 func testSecretDurability(t *testing.T, ch *harness.H) {
@@ -124,6 +146,15 @@ func testSecretDurability(t *testing.T, ch *harness.H) {
 	})
 }
 
+func testSecretLiveRotation(t *testing.T, ch *harness.H) {
+	h := eeharness.Wrap(ch)
+	consumer := newSecretConsumer(t, h)
+
+	restartsBefore := h.EnterpriseRestarts(t, "secretman")
+	consumer.rotate(t, h)
+	assert.Equal(t, restartsBefore, h.EnterpriseRestarts(t, "secretman"))
+}
+
 func testSecretStoreVault(t *testing.T, ch *harness.H) {
 	h := eeharness.Wrap(ch)
 	h.Require(t, eescenario.CapVault)
@@ -134,11 +165,14 @@ func testSecretStoreVault(t *testing.T, ch *harness.H) {
 	before := vault.KeyInfo(t)
 
 	t.Cleanup(func() {
-		h.SetSecretStoreSpec(t, "default", &enterprisev1.SecretStore_Spec{
+		ss := h.SetSecretStoreSpec(t, "default", &enterprisev1.SecretStore_Spec{
 			Type: &enterprisev1.SecretStore_Spec_Kubernetes_{
 				Kubernetes: &enterprisev1.SecretStore_Spec_Kubernetes{},
 			},
 		})
+		h.SynchronizeSecretStore(t, ss)
+		h.WaitSecretStoreSynchronized(t, "default",
+			enterprisev1.SecretStore_Status_KUBERNETES, eeharness.SyncBudget)
 	})
 
 	ss := h.SetSecretStoreSpec(t, "default", vault.SecretStoreSpec())
@@ -193,11 +227,14 @@ func testSecretStoreVaultFailure(t *testing.T, ch *harness.H) {
 	consumer := newSecretConsumer(t, h)
 
 	t.Cleanup(func() {
-		h.SetSecretStoreSpec(t, "default", &enterprisev1.SecretStore_Spec{
+		ss := h.SetSecretStoreSpec(t, "default", &enterprisev1.SecretStore_Spec{
 			Type: &enterprisev1.SecretStore_Spec_Kubernetes_{
 				Kubernetes: &enterprisev1.SecretStore_Spec_Kubernetes{},
 			},
 		})
+		h.SynchronizeSecretStore(t, ss)
+		h.WaitSecretStoreSynchronized(t, "default",
+			enterprisev1.SecretStore_Status_KUBERNETES, eeharness.SyncBudget)
 	})
 
 	ss := h.SetSecretStoreSpec(t, "default", &enterprisev1.SecretStore_Spec{
@@ -215,8 +252,8 @@ func testSecretStoreVaultFailure(t *testing.T, ch *harness.H) {
 		consumer.probe(t)
 	})
 
-	t.Run("SynchronizationDoesNotHang", func(t *testing.T) {
-		h.Eventually(t, "the SecretStore to leave the SYNCING state",
+	t.Run("SynchronizationFailsWithATerminalRecord", func(t *testing.T) {
+		h.Eventually(t, "the SecretStore synchronization to fail",
 			eeharness.SyncBudget, func(ctx context.Context) error {
 				cur, err := h.EnterpriseC().GetSecretStore(ctx,
 					&metav1.GetOptions{Name: "default"})
@@ -224,13 +261,21 @@ func testSecretStoreVaultFailure(t *testing.T, ch *harness.H) {
 					return err
 				}
 				if cur.Status.Synchronization == nil {
-					return nil
+					return errUnexpectedSyncState("missing")
 				}
-				if cur.Status.Synchronization.State ==
+				if cur.Status.Synchronization.State !=
 					enterprisev1.SecretStore_Status_Synchronization_FAILED {
-					return nil
+					return errUnexpectedSyncState(cur.Status.Synchronization.State.String())
 				}
-				return errUnexpectedSyncState(cur.Status.Synchronization.State.String())
+				if cur.Status.Synchronization.CompletedAt == nil {
+					return errUnexpectedSyncState("FAILED without completedAt")
+				}
+				if len(cur.Status.LastSynchronizations) < 1 ||
+					cur.Status.LastSynchronizations[0].State !=
+						enterprisev1.SecretStore_Status_Synchronization_FAILED {
+					return errUnexpectedSyncState("FAILED without history")
+				}
+				return nil
 			})
 	})
 }
@@ -241,11 +286,13 @@ func testSecretConsumersAfterRotation(t *testing.T, ch *harness.H) {
 
 	vault := h.Vault(t)
 	sink := h.Sink(t)
+	t.Cleanup(func() { sink.SetToken(t, sink.Token) })
 
-	token := utilrand.GetRandomStringCanonical(40)
+	token := sink.Token
 	sec := h.CreateEnterpriseSecret(t, token)
 
-	exp := h.CreateCollectorExporter(t, otlpExporter(sink.GRPCEndpoint, sec.Metadata.Name))
+	exp := h.CreateCollectorExporter(t,
+		otlpExporter(sink.AuthGRPCEndpoint, sec.Metadata.Name))
 	h.SetCollectorPipelines(t,
 		logsPipeline(h.Name(), exp.Metadata.Name),
 		metricsPipeline(h.Name(), exp.Metadata.Name))
@@ -271,5 +318,18 @@ func testSecretConsumersAfterRotation(t *testing.T, ch *harness.H) {
 
 		h.GetStatus(t, h.HTTPPublic("demo-nginx"), "/", http.StatusUnauthorized)
 		sink.WaitLogs(t, "resourceLogs", eeharness.IngestionBudget)
+	})
+
+	t.Run("ExporterReloadsAChangedSecret", func(t *testing.T) {
+		next := utilrand.GetRandomStringCanonical(40)
+		restartsBefore := h.EnterpriseRestarts(t, "collector")
+
+		sink.SetToken(t, next)
+		sink.Truncate(t)
+		sec = h.UpdateEnterpriseSecret(t, sec, next)
+
+		driveTraffic(t, h)
+		sink.WaitLogs(t, "resourceLogs", eeharness.IngestionBudget)
+		assert.Equal(t, restartsBefore, h.EnterpriseRestarts(t, "collector"))
 	})
 }

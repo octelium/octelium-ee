@@ -35,6 +35,9 @@ const (
 	StateKeycloakPass = "keycloakPassword"
 	StateSinkGRPC     = "otlpSinkGRPC"
 	StateSinkHTTP     = "otlpSinkHTTP"
+	StateSinkAuthGRPC = "otlpSinkAuthGRPC"
+	StateSinkAuthHTTP = "otlpSinkAuthHTTP"
+	StateSinkToken    = "otlpSinkToken"
 	StateSinkPod      = "otlpSinkPod"
 	StateSinkNS       = "otlpSinkNamespace"
 	StateSinkDir      = "otlpSinkDir"
@@ -55,6 +58,7 @@ const (
 
 	sinkDeployment = "otel-sink"
 	sinkDir        = "/data"
+	sinkToken      = "octelium-e2e-sink-token"
 )
 
 func init() {
@@ -249,6 +253,9 @@ metadata:
   namespace: %[1]s
 data:
   config.yaml: |
+    extensions:
+      bearertokenauth/server:
+        filename: %[2]s/auth-token
     receivers:
       otlp:
         protocols:
@@ -258,6 +265,18 @@ data:
           http:
             endpoint: 0.0.0.0:4318
             include_metadata: true
+      otlp/auth:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4319
+            include_metadata: true
+            auth:
+              authenticator: bearertokenauth/server
+          http:
+            endpoint: 0.0.0.0:4320
+            include_metadata: true
+            auth:
+              authenticator: bearertokenauth/server
     processors:
       batch:
         timeout: 1s
@@ -269,16 +288,17 @@ data:
       file/metrics:
         path: %[2]s/metrics.json
     service:
+      extensions: [bearertokenauth/server]
       telemetry:
         logs:
           level: debug
       pipelines:
         logs:
-          receivers: [otlp]
+          receivers: [otlp, otlp/auth]
           processors: [batch]
           exporters: [file/logs, debug]
         metrics:
-          receivers: [otlp]
+          receivers: [otlp, otlp/auth]
           processors: [batch]
           exporters: [file/metrics, debug]
 ---
@@ -301,13 +321,22 @@ spec:
     spec:
       securityContext:
         fsGroup: 10001
+      initContainers:
+        - name: auth-token
+          image: busybox:1.37
+          command: ["sh", "-c", "printf %%s %[4]s > %[2]s/auth-token"]
+          volumeMounts:
+            - name: data
+              mountPath: %[2]s
       containers:
         - name: collector
-          image: otel/opentelemetry-collector-contrib:0.115.1
+          image: otel/opentelemetry-collector-contrib:0.153.0
           args: ["--config=/etc/otel/config.yaml"]
           ports:
             - containerPort: 4317
             - containerPort: 4318
+            - containerPort: 4319
+            - containerPort: 4320
           volumeMounts:
             - name: config
               mountPath: /etc/otel
@@ -335,7 +364,13 @@ spec:
     - name: http
       port: 4318
       targetPort: 4318
-`, fixtureNS, sinkDir, sinkDeployment)); err != nil {
+    - name: grpc-auth
+      port: 4319
+      targetPort: 4319
+    - name: http-auth
+      port: 4320
+      targetPort: 4320
+`, fixtureNS, sinkDir, sinkDeployment, sinkToken)); err != nil {
 		return err
 	}
 
@@ -350,6 +385,9 @@ spec:
 	r.State.Set(StateSinkDir, sinkDir)
 	r.State.Set(StateSinkGRPC, fmt.Sprintf("otel-sink.%s.svc:4317", fixtureNS))
 	r.State.Set(StateSinkHTTP, fmt.Sprintf("http://otel-sink.%s.svc:4318", fixtureNS))
+	r.State.Set(StateSinkAuthGRPC, fmt.Sprintf("otel-sink.%s.svc:4319", fixtureNS))
+	r.State.Set(StateSinkAuthHTTP, fmt.Sprintf("http://otel-sink.%s.svc:4320", fixtureNS))
+	r.State.Set(StateSinkToken, sinkToken)
 
 	return r.SaveState()
 }

@@ -24,7 +24,7 @@ import (
 type NodeUpstream struct {
 	URL string
 
-	bearer   string
+	bearer   atomic.Value
 	requests atomic.Int64
 	srv      *http.Server
 	lis      net.Listener
@@ -32,12 +32,20 @@ type NodeUpstream struct {
 
 func (u *NodeUpstream) Requests() int64 { return u.requests.Load() }
 
+func (u *NodeUpstream) SetBearer(bearer string) { u.bearer.Store(bearer) }
+
+func (u *NodeUpstream) bearerValue() string {
+	val, _ := u.bearer.Load().(string)
+	return val
+}
+
 func (u *NodeUpstream) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	u.requests.Add(1)
 
-	if u.bearer != "" {
+	bearer := u.bearerValue()
+	if bearer != "" {
 		got := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
-		if got != u.bearer {
+		if got != bearer {
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}
@@ -52,10 +60,8 @@ func (h *H) StartNodeUpstream(t *testing.T, bearer string) *NodeUpstream {
 
 	port := h.Port()
 
-	ret := &NodeUpstream{
-		URL:    fmt.Sprintf("http://%s:%d", h.ExternalIP, port),
-		bearer: bearer,
-	}
+	ret := &NodeUpstream{URL: fmt.Sprintf("http://%s:%d", h.ExternalIP, port)}
+	ret.SetBearer(bearer)
 
 	lis, err := listenAllInterfaces(port)
 	if err != nil {
@@ -100,8 +106,8 @@ func (u *NodeUpstream) Reachable(ctx context.Context) error {
 		return err
 	}
 
-	if u.bearer != "" {
-		req.Header.Set("Authorization", "Bearer "+u.bearer)
+	if bearer := u.bearerValue(); bearer != "" {
+		req.Header.Set("Authorization", "Bearer "+bearer)
 	}
 
 	res, err := http.DefaultClient.Do(req)

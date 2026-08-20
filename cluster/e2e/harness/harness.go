@@ -16,7 +16,9 @@ import (
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vaccessv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcorev1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/venterprisev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetricsv1"
 	"github.com/octelium/octelium/cluster/e2e/harness"
 	"google.golang.org/grpc"
@@ -75,6 +77,14 @@ func (h *H) MetricsC() vmetricsv1.MetricsServiceClient {
 
 func (h *H) VisibilityCoreC() vcorev1.ResourceServiceClient {
 	return vcorev1.NewResourceServiceClient(h.Conn())
+}
+
+func (h *H) VisibilityAccessC() vaccessv1.ResourceServiceClient {
+	return vaccessv1.NewResourceServiceClient(h.Conn())
+}
+
+func (h *H) VisibilityEnterpriseC() venterprisev1.ResourceServiceClient {
+	return venterprisev1.NewResourceServiceClient(h.Conn())
 }
 
 func (h *H) AccessUserC(conn *grpc.ClientConn) accessv1.UserServiceClient {

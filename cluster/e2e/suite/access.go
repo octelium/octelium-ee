@@ -277,7 +277,7 @@ func testAccessMultiStepQuorum(t *testing.T, ch *harness.H) {
 	})
 
 	t.Run("AStepZeroReviewerCannotCloseStepOne", func(t *testing.T) {
-		_, err := h.AccessReviewerC(c.mallory.Conn).CreateReview(t.Context(),
+		_, err := h.AccessReviewerC(c.rita.Conn).CreateReview(t.Context(),
 			eeharness.ReviewOf(req, accessv1.Review_Spec_DECISION_APPROVE))
 		require.NotNil(t, err)
 		assert.True(t, grpcerr.IsUnauthorized(err))

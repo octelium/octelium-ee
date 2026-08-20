@@ -31,6 +31,8 @@ import (
 	"go.uber.org/zap"
 )
 
+const directoryOwnedAnnotation = "octelium.com/directory-provider-owned"
+
 const listPageSize = 300
 
 const maxNameLen = 40
@@ -249,6 +251,7 @@ func (r *Reconciler) upsertUser(ctx context.Context, u *User) (*corev1.User, err
 	}
 
 	var coreUsr *corev1.User
+	directoryOwned := false
 	if u.Email != "" {
 		usrList, err := r.octeliumC.CoreC().ListUser(ctx, &rmetav1.ListOptions{
 			Filters: []*rmetav1.ListOptions_Filter{
@@ -260,6 +263,7 @@ func (r *Reconciler) upsertUser(ctx context.Context, u *User) (*corev1.User, err
 		}
 		if len(usrList.Items) > 0 {
 			coreUsr = usrList.Items[0]
+			directoryOwned = r.isDirectoryOwnedUser(ctx, coreUsr.Metadata.Uid)
 		}
 	}
 
@@ -280,10 +284,15 @@ func (r *Reconciler) upsertUser(ctx context.Context, u *User) (*corev1.User, err
 		if err != nil {
 			return nil, err
 		}
+		directoryOwned = true
 	}
 
+	metadata := &metav1.Metadata{Name: name}
+	if directoryOwned {
+		metadata.Annotations = map[string]string{directoryOwnedAnnotation: "true"}
+	}
 	if _, err := r.octeliumC.EnterpriseC().CreateDirectoryProviderUser(ctx, &enterprisev1.DirectoryProviderUser{
-		Metadata: &metav1.Metadata{Name: name},
+		Metadata: metadata,
 		Spec:     &enterprisev1.DirectoryProviderUser_Spec{},
 		Status: &enterprisev1.DirectoryProviderUser_Status{
 			UserRef:              umetav1.GetObjectReference(coreUsr),
@@ -294,6 +303,26 @@ func (r *Reconciler) upsertUser(ctx context.Context, u *User) (*corev1.User, err
 	}
 
 	return coreUsr, nil
+}
+
+func (r *Reconciler) isDirectoryOwnedUser(ctx context.Context, uid string) bool {
+	links, err := r.octeliumC.EnterpriseC().ListDirectoryProviderUser(ctx, &rmetav1.ListOptions{
+		Filters: []*rmetav1.ListOptions_Filter{
+			urscsrv.FilterFieldEQValStr("status.userRef.uid", uid),
+		},
+	})
+	if err != nil {
+		return false
+	}
+
+	for _, link := range links.Items {
+		if link.Metadata != nil &&
+			link.Metadata.Annotations[directoryOwnedAnnotation] == "true" {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (r *Reconciler) applyUserSpec(usr *corev1.User, u *User) {
@@ -455,6 +484,15 @@ func (r *Reconciler) pruneGroups(ctx context.Context, desired map[string]struct{
 }
 
 func (r *Reconciler) deleteUser(ctx context.Context, dpUsr *enterprisev1.DirectoryProviderUser) {
+	owned := dpUsr.Metadata != nil &&
+		dpUsr.Metadata.Annotations[directoryOwnedAnnotation] == "true"
+	if !owned && dpUsr.Status != nil && dpUsr.Status.UserRef != nil {
+		if usr, err := r.octeliumC.CoreC().GetUser(ctx,
+			&rmetav1.GetOptions{Uid: dpUsr.Status.UserRef.Uid}); err == nil {
+			owned = usr.Metadata.Name == dpUsr.Metadata.Name
+		}
+	}
+
 	if _, err := r.octeliumC.EnterpriseC().DeleteDirectoryProviderUser(ctx, &rmetav1.DeleteOptions{
 		Uid: dpUsr.Metadata.Uid,
 	}); err != nil {
@@ -475,6 +513,9 @@ func (r *Reconciler) deleteUser(ctx context.Context, dpUsr *enterprisev1.Directo
 		},
 	})
 	if err == nil && len(others.Items) > 0 {
+		return
+	}
+	if !owned {
 		return
 	}
 

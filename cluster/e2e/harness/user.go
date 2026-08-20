@@ -194,3 +194,18 @@ func (p *Probe) MustStayDenied(t *testing.T, window time.Duration) {
 		return nil
 	})
 }
+
+func (p *Probe) MustStayAllowed(t *testing.T, window time.Duration) {
+	t.Helper()
+
+	p.h.Consistently(t, "the access to stay allowed", window, func(ctx context.Context) error {
+		got, err := p.Status(ctx)
+		if err != nil {
+			return err
+		}
+		if got != http.StatusOK {
+			return errors.Errorf("the request status is %d", got)
+		}
+		return nil
+	})
+}

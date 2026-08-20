@@ -12,6 +12,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -22,25 +23,62 @@ import (
 type Sink struct {
 	h *H
 
-	GRPCEndpoint string
-	HTTPEndpoint string
+	GRPCEndpoint     string
+	HTTPEndpoint     string
+	AuthGRPCEndpoint string
+	AuthHTTPEndpoint string
+	Token            string
 
 	pod       string
 	namespace string
 	dir       string
 }
 
+const sinkDeployment = "otel-sink"
+
 func (h *H) Sink(t *testing.T) *Sink {
 	t.Helper()
 
 	return &Sink{
-		h:            h,
-		GRPCEndpoint: h.StateValue(t, eescenario.StateSinkGRPC),
-		HTTPEndpoint: h.StateValue(t, eescenario.StateSinkHTTP),
-		pod:          h.StateValue(t, eescenario.StateSinkPod),
-		namespace:    h.StateValue(t, eescenario.StateSinkNS),
-		dir:          h.StateValue(t, eescenario.StateSinkDir),
+		h:                h,
+		GRPCEndpoint:     h.StateValue(t, eescenario.StateSinkGRPC),
+		HTTPEndpoint:     h.StateValue(t, eescenario.StateSinkHTTP),
+		AuthGRPCEndpoint: h.StateValue(t, eescenario.StateSinkAuthGRPC),
+		AuthHTTPEndpoint: h.StateValue(t, eescenario.StateSinkAuthHTTP),
+		Token:            h.StateValue(t, eescenario.StateSinkToken),
+		pod:              h.StateValue(t, eescenario.StateSinkPod),
+		namespace:        h.StateValue(t, eescenario.StateSinkNS),
+		dir:              h.StateValue(t, eescenario.StateSinkDir),
 	}
+}
+
+func (s *Sink) SetToken(t *testing.T, token string) {
+	t.Helper()
+
+	s.h.MustRun(t, fmt.Sprintf(
+		`kubectl exec -n %s %s -- sh -c 'printf %%s "$1" > %s/auth-token' sh %s`,
+		s.namespace, s.pod, s.dir, token))
+}
+
+func (s *Sink) Stop(t *testing.T) func() {
+	t.Helper()
+
+	s.h.MustRun(t, fmt.Sprintf(
+		`kubectl scale -n %s deployment/%s --replicas=0`, s.namespace, sinkDeployment))
+
+	var once sync.Once
+	restore := func() {
+		once.Do(func() {
+			s.h.MustRun(t, fmt.Sprintf(
+				`kubectl scale -n %s deployment/%s --replicas=1`, s.namespace, sinkDeployment))
+			s.h.MustRun(t, fmt.Sprintf(
+				`kubectl rollout status -n %s deployment/%s --timeout=5m`,
+				s.namespace, sinkDeployment))
+		})
+	}
+
+	t.Cleanup(restore)
+	return restore
 }
 
 func (s *Sink) read(ctx context.Context, file string) (string, error) {
@@ -82,7 +120,7 @@ func (s *Sink) Truncate(t *testing.T) {
 	t.Helper()
 
 	s.h.MustRun(t, fmt.Sprintf(
-		`kubectl exec -n %s %s -- sh -c 'rm -f %s/logs.json %s/metrics.json'`,
+		`kubectl exec -n %s %s -- sh -c ': > %s/logs.json; : > %s/metrics.json'`,
 		s.namespace, s.pod, s.dir, s.dir))
 }
 

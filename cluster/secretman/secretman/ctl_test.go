@@ -171,9 +171,12 @@ func TestSync(t *testing.T) {
 		})
 		assert.Nil(t, err)
 
-		assert.Nil(t, ss.Status.Synchronization)
+		assert.NotNil(t, ss.Status.Synchronization)
 		assert.True(t, len(ss.Status.LastSynchronizations) == 1)
 		assert.Equal(t, enterprisev1.SecretStore_Status_OK, ss.Status.State)
+		assert.Equal(t, enterprisev1.SecretStore_Status_Synchronization_SUCCESS,
+			ss.Status.Synchronization.State)
+		assert.NotNil(t, ss.Status.Synchronization.CompletedAt)
 
 		last := ss.Status.LastSynchronizations[0]
 		assert.Equal(t, enterprisev1.SecretStore_Status_Synchronization_SUCCESS, last.State)
@@ -193,5 +196,25 @@ func TestSync(t *testing.T) {
 		assert.NotNil(t, cipher1)
 		assert.NotNil(t, cipher11)
 		assert.NotEqual(t, cipher1, cipher11)
+
+		ss.Status.Synchronization = &enterprisev1.SecretStore_Status_Synchronization{
+			CreatedAt: pbutils.Now(),
+			State:     enterprisev1.SecretStore_Status_Synchronization_SYNCING,
+		}
+		_, err = srv.octeliumC.EnterpriseC().UpdateSecretStore(ctx, ss)
+		assert.Nil(t, err)
+
+		err = srv.markSyncFinished(ctx, ss.Metadata.Uid, assert.AnError)
+		assert.Nil(t, err)
+
+		ss, err = srv.octeliumC.EnterpriseC().GetSecretStore(ctx,
+			&rmetav1.GetOptions{Uid: ss.Metadata.Uid})
+		assert.Nil(t, err)
+		assert.Equal(t, enterprisev1.SecretStore_Status_Synchronization_FAILED,
+			ss.Status.Synchronization.State)
+		assert.NotNil(t, ss.Status.Synchronization.CompletedAt)
+		assert.Len(t, ss.Status.LastSynchronizations, 2)
+		assert.Equal(t, enterprisev1.SecretStore_Status_Synchronization_FAILED,
+			ss.Status.LastSynchronizations[0].State)
 	}
 }

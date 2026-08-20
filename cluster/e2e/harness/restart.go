@@ -11,6 +11,7 @@ package harness
 import (
 	"context"
 	"fmt"
+	"sync"
 	"testing"
 
 	"github.com/octelium/octelium/cluster/common/vutils"
@@ -105,4 +106,68 @@ func (h *H) EnterpriseRestarts(t *testing.T, component string) int32 {
 	}
 
 	return ret
+}
+
+func (h *H) StopEnterprise(t *testing.T, component string) func() {
+	t.Helper()
+
+	name := "octeliumee-" + component
+	ctx, cancel := h.Ctx(t)
+	dep, err := h.K8sC().AppsV1().Deployments(vutils.K8sNS).Get(
+		ctx, name, k8smetav1.GetOptions{})
+	cancel()
+	if err != nil {
+		t.Fatalf("Could not get the %s deployment: %+v", name, err)
+	}
+
+	replicas := int32(1)
+	if dep.Spec.Replicas != nil {
+		replicas = *dep.Spec.Replicas
+	}
+	zero := int32(0)
+	dep.Spec.Replicas = &zero
+
+	ctx, cancel = h.Ctx(t)
+	_, err = h.K8sC().AppsV1().Deployments(vutils.K8sNS).Update(
+		ctx, dep, k8smetav1.UpdateOptions{})
+	cancel()
+	if err != nil {
+		t.Fatalf("Could not stop the %s deployment: %+v", name, err)
+	}
+
+	h.Eventually(t, "the "+component+" deployment to stop", harness.DeploymentBudget,
+		func(ctx context.Context) error {
+			cur, err := h.K8sC().AppsV1().Deployments(vutils.K8sNS).Get(
+				ctx, name, k8smetav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			if cur.Status.Replicas != 0 {
+				return errors.Errorf("the deployment still has %d replicas", cur.Status.Replicas)
+			}
+			return nil
+		})
+
+	var once sync.Once
+	restore := func() {
+		once.Do(func() {
+			ctx, cancel := h.Ctx(t)
+			defer cancel()
+
+			cur, err := h.K8sC().AppsV1().Deployments(vutils.K8sNS).Get(
+				ctx, name, k8smetav1.GetOptions{})
+			if err != nil {
+				t.Fatalf("Could not get the stopped %s deployment: %+v", name, err)
+			}
+			cur.Spec.Replicas = &replicas
+			if _, err := h.K8sC().AppsV1().Deployments(vutils.K8sNS).Update(
+				ctx, cur, k8smetav1.UpdateOptions{}); err != nil {
+				t.Fatalf("Could not restore the %s deployment: %+v", name, err)
+			}
+			h.MustWaitDeployment(t, name)
+		})
+	}
+
+	t.Cleanup(restore)
+	return restore
 }

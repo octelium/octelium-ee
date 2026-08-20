@@ -63,6 +63,30 @@ func CatalogResource(cat *accessv1.Catalog) *accessv1.Policy_Spec_Rule_Condition
 	}
 }
 
+func ServiceResource(svc *corev1.Service) *accessv1.Policy_Spec_Rule_Condition {
+	return &accessv1.Policy_Spec_Rule_Condition{
+		Type: &accessv1.Policy_Spec_Rule_Condition_Resource_{
+			Resource: &accessv1.Policy_Spec_Rule_Condition_Resource{
+				Type: &accessv1.Policy_Spec_Rule_Condition_Resource_ServiceRef{
+					ServiceRef: umetav1.GetObjectReference(svc),
+				},
+			},
+		},
+	}
+}
+
+func UserSubject(usr *corev1.User) *accessv1.Policy_Spec_Rule_Condition {
+	return &accessv1.Policy_Spec_Rule_Condition{
+		Type: &accessv1.Policy_Spec_Rule_Condition_Subject_{
+			Subject: &accessv1.Policy_Spec_Rule_Condition_Subject{
+				Type: &accessv1.Policy_Spec_Rule_Condition_Subject_UserRef{
+					UserRef: umetav1.GetObjectReference(usr),
+				},
+			},
+		},
+	}
+}
+
 func GroupSubject(grp *corev1.Group) *accessv1.Policy_Spec_Rule_Condition {
 	return &accessv1.Policy_Spec_Rule_Condition{
 		Type: &accessv1.Policy_Spec_Rule_Condition_Subject_{
@@ -94,6 +118,22 @@ func CatalogRequest(cat *accessv1.Catalog, duration *metav1.Duration) *accessv1.
 					Catalog: &accessv1.Request_Spec_Resource_Catalog{
 						CatalogRef: umetav1.GetObjectReference(cat),
 					},
+				},
+			},
+			Duration: duration,
+		},
+	}
+}
+
+func ServiceRequest(svc *corev1.Service, duration *metav1.Duration) *accessv1.Request {
+	return &accessv1.Request{
+		Metadata: &metav1.Metadata{Name: utilrand.GetRandomStringCanonical(8)},
+		Spec: &accessv1.Request_Spec{
+			Urgency:       accessv1.Request_Spec_NORMAL,
+			Justification: "e2e",
+			Resource: &accessv1.Request_Spec_Resource{
+				Type: &accessv1.Request_Spec_Resource_ServiceRef{
+					ServiceRef: umetav1.GetObjectReference(svc),
 				},
 			},
 			Duration: duration,
@@ -182,6 +222,30 @@ func (h *H) CreateRequest(t *testing.T, a *Actor, req *accessv1.Request) *access
 	ret, err := h.AccessUserC(a.Conn).CreateRequest(ctx, req)
 	if err != nil {
 		t.Fatalf("Could not create the Request as %s: %+v", a.User.Metadata.Name, err)
+	}
+
+	t.Cleanup(func() {
+		h.deleteQuietly(t, "Request", ret.Metadata.Name, func(ctx context.Context) error {
+			_, err := h.AccessC().DeleteRequest(ctx,
+				&metav1.DeleteOptions{Uid: ret.Metadata.Uid})
+			return err
+		})
+	})
+
+	return ret
+}
+
+func (h *H) CreateRequestForSubject(t *testing.T,
+	a *Actor, req *accessv1.Request) *accessv1.Request {
+	t.Helper()
+
+	ctx, cancel := h.Ctx(t)
+	defer cancel()
+
+	ret, err := h.AccessUserC(a.Conn).CreateRequestForSubject(ctx, req)
+	if err != nil {
+		t.Fatalf("Could not create the Request for a subject as %s: %+v",
+			a.User.Metadata.Name, err)
 	}
 
 	t.Cleanup(func() {

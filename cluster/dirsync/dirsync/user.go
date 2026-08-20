@@ -37,6 +37,8 @@ import (
 	"go.uber.org/zap"
 )
 
+const directoryOwnedAnnotation = "octelium.com/directory-provider-owned"
+
 func (s *server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/scim+json")
 	ctx := r.Context()
@@ -95,6 +97,7 @@ func (s *server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 		IsEmbedded: true,
 	})
 
+	directoryOwned := false
 	if usr.Spec.Email != "" {
 		usrList, err := s.octeliumC.CoreC().ListUser(ctx, &rmetav1.ListOptions{
 			Filters: []*rmetav1.ListOptions_Filter{
@@ -108,6 +111,7 @@ func (s *server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 		if len(usrList.Items) > 0 {
 			oUsr := usrList.Items[0]
+			directoryOwned = s.isDirectoryOwnedUser(ctx, oUsr.Metadata.Uid)
 			oUsr.Spec = usr.Spec
 			apisrvcommon.MetadataUpdate(oUsr.Metadata, usr.Metadata)
 
@@ -122,6 +126,7 @@ func (s *server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 				s.setErrorFromAPI(w, err)
 				return
 			}
+			directoryOwned = true
 		}
 	} else {
 		usr, err = coreSrv.CreateUser(ctx, usr)
@@ -129,9 +134,13 @@ func (s *server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 			s.setErrorFromAPI(w, err)
 			return
 		}
+		directoryOwned = true
 	}
 
 	dpUser.Status.UserRef = umetav1.GetObjectReference(usr)
+	if directoryOwned {
+		dpUser.Metadata.Annotations = map[string]string{directoryOwnedAnnotation: "true"}
+	}
 
 	dpUser, err = s.octeliumC.EnterpriseC().CreateDirectoryProviderUser(ctx, dpUser)
 	if err != nil {
@@ -230,13 +239,12 @@ func (s *server) handleDeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = s.octeliumC.CoreC().DeleteUser(ctx, &rmetav1.DeleteOptions{
-		Uid: dpUsr.Status.UserRef.Uid,
-	})
-	if err != nil {
-		if !grpcerr.IsNotFound(err) {
-			s.setErrorInternal(w, err)
-			return
+	owned := dpUsr.Metadata != nil &&
+		dpUsr.Metadata.Annotations[directoryOwnedAnnotation] == "true"
+	if !owned && dpUsr.Status != nil && dpUsr.Status.UserRef != nil {
+		if usr, getErr := s.octeliumC.CoreC().GetUser(ctx,
+			&rmetav1.GetOptions{Uid: dpUsr.Status.UserRef.Uid}); getErr == nil {
+			owned = usr.Metadata.Name == dpUsr.Metadata.Name
 		}
 	}
 
@@ -248,7 +256,50 @@ func (s *server) handleDeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if dpUsr.Status == nil || dpUsr.Status.UserRef == nil {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	others, err := s.octeliumC.EnterpriseC().ListDirectoryProviderUser(ctx,
+		&rmetav1.ListOptions{Filters: []*rmetav1.ListOptions_Filter{
+			urscsrv.FilterFieldEQValStr("status.userRef.uid", dpUsr.Status.UserRef.Uid),
+		}})
+	if err != nil {
+		s.setErrorInternal(w, err)
+		return
+	}
+
+	if owned && len(others.Items) == 0 {
+		_, err = s.octeliumC.CoreC().DeleteUser(ctx, &rmetav1.DeleteOptions{
+			Uid: dpUsr.Status.UserRef.Uid,
+		})
+		if err != nil && !grpcerr.IsNotFound(err) {
+			s.setErrorInternal(w, err)
+			return
+		}
+	}
+
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *server) isDirectoryOwnedUser(ctx context.Context, uid string) bool {
+	links, err := s.octeliumC.EnterpriseC().ListDirectoryProviderUser(ctx,
+		&rmetav1.ListOptions{Filters: []*rmetav1.ListOptions_Filter{
+			urscsrv.FilterFieldEQValStr("status.userRef.uid", uid),
+		}})
+	if err != nil {
+		return false
+	}
+
+	for _, link := range links.Items {
+		if link.Metadata != nil &&
+			link.Metadata.Annotations[directoryOwnedAnnotation] == "true" {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (s *server) unmarshalUserSCIMFromReqBody(r *http.Request, w http.ResponseWriter) (*resourceUser, error) {

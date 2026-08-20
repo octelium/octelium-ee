@@ -11,6 +11,7 @@ package watcher
 import (
 	"context"
 	"math/rand"
+	"os"
 	"sync"
 	"time"
 
@@ -24,11 +25,17 @@ import (
 )
 
 const (
-	pollInterval       = 30 * time.Second
-	minPollingInterval = 5 * time.Minute
-	maxBackoff         = 30 * time.Minute
-	syncStaleAfter     = 30 * time.Minute
-	pollListPageSize   = 200
+	defaultPollInterval       = 30 * time.Second
+	defaultMinPollingInterval = 5 * time.Minute
+	maxBackoff                = 30 * time.Minute
+	syncStaleAfter            = 30 * time.Minute
+	pollListPageSize          = 200
+)
+
+var (
+	pollInterval       = durationFromEnv("OCTELIUM_DIRSYNC_POLL_INTERVAL", defaultPollInterval)
+	minPollingInterval = durationFromEnv(
+		"OCTELIUM_DIRSYNC_MIN_POLLING_INTERVAL", defaultMinPollingInterval)
 )
 
 type Watcher struct {
@@ -250,4 +257,18 @@ func backoff(base time.Duration, failures int) time.Duration {
 		return maxBackoff
 	}
 	return d
+}
+
+func durationFromEnv(name string, fallback time.Duration) time.Duration {
+	val := os.Getenv(name)
+	if val == "" {
+		return fallback
+	}
+
+	ret, err := time.ParseDuration(val)
+	if err != nil || ret <= 0 {
+		return fallback
+	}
+
+	return ret
 }

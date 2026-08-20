@@ -10,6 +10,7 @@ package watcher
 
 import (
 	"context"
+	"os"
 	"strings"
 	"time"
 
@@ -26,6 +27,9 @@ import (
 )
 
 const maxRequestStateHistory = 100
+
+var accessWatchInterval = durationFromEnv(
+	"OCTELIUM_NOCTURNE_ACCESS_WATCH_INTERVAL", 5*time.Minute)
 
 type Watcher struct {
 	octeliumC octeliumc.ClientInterface
@@ -55,7 +59,7 @@ func (w *Watcher) runRequests(ctx context.Context) {
 		return nil
 	}
 
-	tickerCh := time.NewTicker(5 * time.Minute)
+	tickerCh := time.NewTicker(accessWatchInterval)
 	defer tickerCh.Stop()
 
 	for {
@@ -112,7 +116,7 @@ func (w *Watcher) runPolicyTriggers(ctx context.Context) {
 		return nil
 	}
 
-	tickerCh := time.NewTicker(5 * time.Minute)
+	tickerCh := time.NewTicker(accessWatchInterval)
 	defer tickerCh.Stop()
 
 	for {
@@ -242,6 +246,20 @@ func isPolicyTriggerExpired(pt *corev1.PolicyTrigger) bool {
 	}
 
 	return false
+}
+
+func durationFromEnv(name string, fallback time.Duration) time.Duration {
+	val := os.Getenv(name)
+	if val == "" {
+		return fallback
+	}
+
+	ret, err := time.ParseDuration(val)
+	if err != nil || ret <= 0 {
+		return fallback
+	}
+
+	return ret
 }
 
 func (w *Watcher) doCheckRequest(ctx context.Context, req *accessv1.Request) error {

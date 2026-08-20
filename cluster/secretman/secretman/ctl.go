@@ -22,6 +22,10 @@ func (s *server) onSecretManUpdate(ctx context.Context, new, old *enterprisev1.S
 	if s.shouldSync(new, old) {
 		if err := s.doSync(ctx, new); err != nil {
 			zap.L().Warn("Could not synchronize", zap.Any("ss", new), zap.Error(err))
+			if updateErr := s.markSyncFinished(ctx, new.Metadata.Uid, err); updateErr != nil {
+				zap.L().Warn("Could not record synchronization failure",
+					zap.Any("ss", new), zap.Error(updateErr))
+			}
 		}
 	}
 
@@ -88,30 +92,60 @@ func (s *server) doSync(ctx context.Context, new *enterprisev1.SecretStore) erro
 		return err
 	}
 
-	ss, err := s.octeliumC.EnterpriseC().GetSecretStore(ctx, &rmetav1.GetOptions{
-		Uid: new.Metadata.Uid,
-	})
-	if err != nil {
-		return err
-	}
-
-	ss.Status.State = enterprisev1.SecretStore_Status_OK
-
-	ss.Status.Synchronization.State = enterprisev1.SecretStore_Status_Synchronization_SUCCESS
-	ss.Status.Synchronization.CompletedAt = pbutils.Now()
-
-	ss.Status.LastSynchronizations = append([]*enterprisev1.SecretStore_Status_Synchronization{
-		ss.Status.Synchronization,
-	}, ss.Status.LastSynchronizations...)
-
-	ss.Status.Synchronization = nil
-
-	_, err = s.octeliumC.EnterpriseC().UpdateSecretStore(ctx, ss)
-	if err != nil {
+	if err := s.markSyncFinished(ctx, new.Metadata.Uid, nil); err != nil {
 		return err
 	}
 
 	zap.L().Info("Successfully rotated DEKs")
 
 	return nil
+}
+
+func (s *server) markSyncFinished(ctx context.Context, uid string, syncErr error) error {
+	ss, err := s.octeliumC.EnterpriseC().GetSecretStore(ctx, &rmetav1.GetOptions{Uid: uid})
+	if err != nil {
+		return err
+	}
+
+	if ss.Status == nil {
+		ss.Status = &enterprisev1.SecretStore_Status{}
+	}
+	if ss.Status.Synchronization == nil {
+		ss.Status.Synchronization = &enterprisev1.SecretStore_Status_Synchronization{
+			CreatedAt: pbutils.Now(),
+		}
+	}
+
+	sync := ss.Status.Synchronization
+	sync.State = enterprisev1.SecretStore_Status_Synchronization_SUCCESS
+	if syncErr != nil {
+		sync.State = enterprisev1.SecretStore_Status_Synchronization_FAILED
+	} else {
+		ss.Status.State = enterprisev1.SecretStore_Status_OK
+	}
+	sync.CompletedAt = pbutils.Now()
+
+	ss.Status.LastSynchronizations = appendSecretStoreSync(
+		ss.Status.LastSynchronizations, sync)
+
+	_, err = s.octeliumC.EnterpriseC().UpdateSecretStore(ctx, ss)
+	return err
+}
+
+const maxLastSecretStoreSynchronizations = 100
+
+func appendSecretStoreSync(
+	history []*enterprisev1.SecretStore_Status_Synchronization,
+	rec *enterprisev1.SecretStore_Status_Synchronization,
+) []*enterprisev1.SecretStore_Status_Synchronization {
+	entry := &enterprisev1.SecretStore_Status_Synchronization{
+		State:       rec.State,
+		CreatedAt:   rec.CreatedAt,
+		CompletedAt: rec.CompletedAt,
+	}
+	history = append([]*enterprisev1.SecretStore_Status_Synchronization{entry}, history...)
+	if len(history) > maxLastSecretStoreSynchronizations {
+		history = history[:maxLastSecretStoreSynchronizations]
+	}
+	return history
 }
