@@ -8,6 +8,7 @@ import CopyText from "../CopyText";
 import DeleteResource from "../DeleteResource";
 import PageWrap from "../PageWrap";
 import ResourceYAML from "../ResourceYAML";
+import ResourceSchema from "../ResourceSchema";
 import TimeAgo from "../TimeAgo";
 import CloneResource from "./CloneResource";
 import ResourceInfoItems from "./ResourceInfoItems";
@@ -226,6 +227,7 @@ const ResourceMainContent = (props: {
           >
             {props.mainAction && <props.mainAction item={item} />}
             <ResourceYAML item={item} size="xs" />
+            <ResourceSchema item={item} />
             {props.cloneable && <CloneResource item={item} />}
             {!props.unDeletable && (
               <DeleteResource
