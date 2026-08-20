@@ -6,6 +6,8 @@ import {
   NumberInput,
   SegmentedControl,
   Select,
+  Switch,
+  TagsInput,
   Textarea,
   TextInput,
 } from "@mantine/core";
@@ -14,6 +16,8 @@ import * as React from "react";
 
 export type RequestKind =
   | "http"
+  | "mcp"
+  | "llm"
   | "kubernetes"
   | "grpc"
   | "ssh"
@@ -50,6 +54,8 @@ const fieldStyles = {
 
 const protocols = [
   { label: "HTTP", value: "http" },
+  { label: "MCP", value: "mcp" },
+  { label: "LLM / AI", value: "llm" },
   { label: "Kubernetes", value: "kubernetes" },
   { label: "gRPC", value: "grpc" },
   { label: "SSH", value: "ssh" },
@@ -70,6 +76,25 @@ export const createRequestContext = (
         type: {
           oneofKind: "http",
           http: createHTTP(),
+        },
+      });
+    case "mcp":
+      return Core.RequestContext_Request.create({
+        type: {
+          oneofKind: "mcp",
+          mcp: Core.RequestContext_Request_MCP.create(),
+        },
+      });
+    case "llm":
+      return Core.RequestContext_Request.create({
+        type: {
+          oneofKind: "llm",
+          llm: Core.RequestContext_Request_LLM.create({
+            protocol: Core.Service_Spec_Config_LLM_Protocol.OPENAI,
+            operation: Core.RequestContext_Request_LLM_Operation.CHAT_COMPLETIONS,
+            estimateQuality:
+              Core.RequestContext_Request_LLM_EstimateQuality.COMPLETE,
+          }),
         },
       });
     case "kubernetes":
@@ -481,6 +506,360 @@ const NestedHTTP = ({
   </div>
 );
 
+const MCPClientEditor = ({
+  value,
+  onSet,
+  onRemove,
+  onChange,
+}: {
+  value?: Core.RequestContext_Request_MCP_Client;
+  onSet: () => void;
+  onRemove: () => void;
+  onChange: (
+    update: (value: Core.RequestContext_Request_MCP_Client) => void,
+  ) => void;
+}) => (
+  <div className="rounded-xl border border-slate-200 bg-white">
+    <div className="flex items-center justify-between gap-3 px-3.5 py-3">
+      <div>
+        <p className="text-[0.68rem] font-bold text-slate-700">MCP client information</p>
+        <p className="mt-0.5 text-[0.63rem] font-semibold text-slate-400">
+          Self-reported client metadata, not an identity signal
+        </p>
+      </div>
+      <Button
+        type="button"
+        size="compact-xs"
+        variant="default"
+        leftSection={value ? <X size={11} /> : <Plus size={11} />}
+        onClick={value ? onRemove : onSet}
+      >
+        {value ? "Remove" : "Add client"}
+      </Button>
+    </div>
+    {value && (
+      <div className="grid gap-3 border-t border-slate-100 p-3.5 sm:grid-cols-3">
+        {[
+          ["Name", "name", "Example Client"],
+          ["Version", "version", "1.0.0"],
+          ["Title", "title", "Example MCP client"],
+        ].map(([label, field, placeholder]) => (
+          <TextInput
+            key={field}
+            label={label}
+            placeholder={placeholder}
+            value={String(value[field as keyof Core.RequestContext_Request_MCP_Client] ?? "")}
+            styles={fieldStyles}
+            onChange={(event) =>
+              onChange((client) => {
+                Object.assign(client, { [field]: event.target.value });
+              })
+            }
+          />
+        ))}
+      </div>
+    )}
+  </div>
+);
+
+const MCPFields = ({
+  value,
+  onChange,
+}: {
+  value: Core.RequestContext_Request_MCP;
+  onChange: (update: (value: Core.RequestContext_Request_MCP) => void) => void;
+}) => (
+  <div className="space-y-4">
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {[
+        ["Protocol version", "protocolVersion", "2025-06-18"],
+        ["Method", "method", "tools/call"],
+        ["Target name", "name", "search"],
+        ["Request ID", "requestID", "42"],
+        ["MCP session ID", "sessionID", "session-123"],
+      ].map(([label, field, placeholder]) => (
+        <TextInput
+          key={field}
+          label={label}
+          placeholder={placeholder}
+          value={String(value[field as keyof Core.RequestContext_Request_MCP] ?? "")}
+          styles={fieldStyles}
+          onChange={(event) =>
+            onChange((mcp) => {
+              Object.assign(mcp, { [field]: event.target.value });
+            })
+          }
+        />
+      ))}
+      <Switch
+        label="JSON-RPC notification"
+        description="No response is expected for this request"
+        checked={value.isNotification}
+        styles={fieldStyles}
+        onChange={(event) =>
+          onChange((mcp) => {
+            mcp.isNotification = event.currentTarget.checked;
+          })
+        }
+      />
+    </div>
+
+    <TagsInput
+      label="Capabilities"
+      description="Self-reported MCP capabilities"
+      placeholder="Add capability"
+      value={value.capabilities}
+      styles={fieldStyles}
+      onChange={(capabilities) =>
+        onChange((mcp) => {
+          mcp.capabilities = capabilities;
+        })
+      }
+    />
+
+    <MCPClientEditor
+      value={value.client}
+      onSet={() =>
+        onChange((mcp) => {
+          mcp.client = Core.RequestContext_Request_MCP_Client.create();
+        })
+      }
+      onRemove={() =>
+        onChange((mcp) => {
+          mcp.client = undefined;
+        })
+      }
+      onChange={(update) =>
+        onChange((mcp) => {
+          if (mcp.client) update(mcp.client);
+        })
+      }
+    />
+
+    <NestedHTTP
+      value={value.http}
+      onSet={() =>
+        onChange((mcp) => {
+          mcp.http = createHTTP();
+        })
+      }
+      onRemove={() =>
+        onChange((mcp) => {
+          mcp.http = undefined;
+        })
+      }
+      onChange={(update) =>
+        onChange((mcp) => {
+          if (mcp.http) update(mcp.http);
+        })
+      }
+    />
+  </div>
+);
+
+const LLMFields = ({
+  value,
+  onChange,
+}: {
+  value: Core.RequestContext_Request_LLM;
+  onChange: (update: (value: Core.RequestContext_Request_LLM) => void) => void;
+}) => {
+  const protocolData = [
+    { label: "OpenAI", value: String(Core.Service_Spec_Config_LLM_Protocol.OPENAI) },
+    { label: "Anthropic", value: String(Core.Service_Spec_Config_LLM_Protocol.ANTHROPIC) },
+  ];
+  const operationData = [
+    ["Chat completions", Core.RequestContext_Request_LLM_Operation.CHAT_COMPLETIONS],
+    ["Responses", Core.RequestContext_Request_LLM_Operation.RESPONSES],
+    ["Completions", Core.RequestContext_Request_LLM_Operation.COMPLETIONS],
+    ["Embeddings", Core.RequestContext_Request_LLM_Operation.EMBEDDINGS],
+    ["Moderations", Core.RequestContext_Request_LLM_Operation.MODERATIONS],
+    ["Models list", Core.RequestContext_Request_LLM_Operation.MODELS_LIST],
+    ["Models get", Core.RequestContext_Request_LLM_Operation.MODELS_GET],
+    ["Messages", Core.RequestContext_Request_LLM_Operation.MESSAGES],
+    ["Count tokens", Core.RequestContext_Request_LLM_Operation.COUNT_TOKENS],
+  ].map(([label, operation]) => ({ label: String(label), value: String(operation) }));
+  const qualityData = [
+    ["Complete", Core.RequestContext_Request_LLM_EstimateQuality.COMPLETE],
+    ["Partial", Core.RequestContext_Request_LLM_EstimateQuality.PARTIAL],
+    ["Unavailable", Core.RequestContext_Request_LLM_EstimateQuality.UNAVAILABLE],
+  ].map(([label, quality]) => ({ label: String(label), value: String(quality) }));
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <Select
+          label="Protocol"
+          value={String(value.protocol)}
+          data={protocolData}
+          allowDeselect={false}
+          styles={fieldStyles}
+          onChange={(protocol) =>
+            onChange((llm) => {
+              llm.protocol = Number(protocol);
+            })
+          }
+        />
+        <Select
+          label="Operation"
+          value={String(value.operation)}
+          data={operationData}
+          allowDeselect={false}
+          searchable
+          styles={fieldStyles}
+          onChange={(operation) =>
+            onChange((llm) => {
+              llm.operation = Number(operation);
+            })
+          }
+        />
+        <TextInput
+          label="Model"
+          placeholder="gpt-4o"
+          value={value.model}
+          styles={fieldStyles}
+          onChange={(event) =>
+            onChange((llm) => {
+              llm.model = event.target.value;
+            })
+          }
+        />
+        <Switch
+          label="Streaming response"
+          checked={value.stream}
+          styles={fieldStyles}
+          onChange={(event) =>
+            onChange((llm) => {
+              llm.stream = event.currentTarget.checked;
+            })
+          }
+        />
+        <NumberInput
+          label="Estimated input tokens"
+          min={0}
+          allowDecimal={false}
+          value={value.estimatedInputTokens}
+          styles={fieldStyles}
+          onChange={(tokens) =>
+            onChange((llm) => {
+              llm.estimatedInputTokens = Number(tokens || 0);
+            })
+          }
+        />
+        <Select
+          label="Estimate quality"
+          value={String(value.estimateQuality)}
+          data={qualityData}
+          allowDeselect={false}
+          styles={fieldStyles}
+          onChange={(quality) =>
+            onChange((llm) => {
+              llm.estimateQuality = Number(quality);
+            })
+          }
+        />
+        <NumberInput
+          label="Maximum output tokens"
+          min={0}
+          allowDecimal={false}
+          value={value.maxOutputTokens}
+          styles={fieldStyles}
+          onChange={(tokens) =>
+            onChange((llm) => {
+              llm.maxOutputTokens = Number(tokens || 0);
+            })
+          }
+        />
+        <Switch
+          label="Request has tools"
+          checked={value.hasTools}
+          styles={fieldStyles}
+          onChange={(event) =>
+            onChange((llm) => {
+              llm.hasTools = event.currentTarget.checked;
+            })
+          }
+        />
+        <NumberInput
+          label="Tool count"
+          min={0}
+          allowDecimal={false}
+          value={value.toolCount}
+          styles={fieldStyles}
+          onChange={(count) =>
+            onChange((llm) => {
+              llm.toolCount = Number(count || 0);
+            })
+          }
+        />
+        <NumberInput
+          label="Input item count"
+          min={0}
+          allowDecimal={false}
+          value={value.inputItemCount}
+          styles={fieldStyles}
+          onChange={(count) =>
+            onChange((llm) => {
+              llm.inputItemCount = Number(count || 0);
+            })
+          }
+        />
+        <Switch
+          label="Image input"
+          checked={value.hasImageInput}
+          styles={fieldStyles}
+          onChange={(event) =>
+            onChange((llm) => {
+              llm.hasImageInput = event.currentTarget.checked;
+            })
+          }
+        />
+        <Switch
+          label="Audio input"
+          checked={value.hasAudioInput}
+          styles={fieldStyles}
+          onChange={(event) =>
+            onChange((llm) => {
+              llm.hasAudioInput = event.currentTarget.checked;
+            })
+          }
+        />
+      </div>
+
+      <TagsInput
+        label="Tool names"
+        placeholder="Add tool name"
+        value={value.toolNames}
+        styles={fieldStyles}
+        onChange={(toolNames) =>
+          onChange((llm) => {
+            llm.toolNames = toolNames;
+          })
+        }
+      />
+
+      <NestedHTTP
+        value={value.http}
+        onSet={() =>
+          onChange((llm) => {
+            llm.http = createHTTP();
+          })
+        }
+        onRemove={() =>
+          onChange((llm) => {
+            llm.http = undefined;
+          })
+        }
+        onChange={(update) =>
+          onChange((llm) => {
+            if (llm.http) update(llm.http);
+          })
+        }
+      />
+    </div>
+  );
+};
+
 const RequestContextEditor = ({
   value,
   onChange,
@@ -551,6 +930,32 @@ const RequestContextEditor = ({
               onChange((request) => {
                 if (request.type.oneofKind === "http") {
                   update(request.type.http);
+                }
+              })
+            }
+          />
+        )}
+
+        {value.type.oneofKind === "mcp" && (
+          <MCPFields
+            value={value.type.mcp}
+            onChange={(update) =>
+              onChange((request) => {
+                if (request.type.oneofKind === "mcp") {
+                  update(request.type.mcp);
+                }
+              })
+            }
+          />
+        )}
+
+        {value.type.oneofKind === "llm" && (
+          <LLMFields
+            value={value.type.llm}
+            onChange={(update) =>
+              onChange((request) => {
+                if (request.type.oneofKind === "llm") {
+                  update(request.type.llm);
                 }
               })
             }
