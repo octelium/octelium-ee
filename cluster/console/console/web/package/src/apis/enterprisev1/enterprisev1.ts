@@ -24,6 +24,10 @@ import type { PartialMessage } from "@protobuf-ts/runtime";
 import { reflectionMergePartial } from "@protobuf-ts/runtime";
 import { MessageType } from "@protobuf-ts/runtime";
 import { Session_Status_Authentication } from "../corev1/corev1";
+import { RequestContext_Request_LLM_EstimateQuality } from "../corev1/corev1";
+import { RequestContext_Request_LLM_Operation } from "../corev1/corev1";
+import { Service_Spec_Config_LLM_Protocol } from "../corev1/corev1";
+import { RequestContext_Request_SOCKS5_Connect_AddressType } from "../corev1/corev1";
 import { Credential_Spec_Type } from "../corev1/corev1";
 import { Session_Status_Authentication_Info_AAL } from "../corev1/corev1";
 import { Session_Status_Authentication_Info_Type } from "../corev1/corev1";
@@ -5527,17 +5531,11 @@ export interface Condition_Expression {
          */
         sessionAuthenticationGeoipCountryCode: Condition_Expression_SessionAuthenticationGeoipCountryCode;
     } | {
-        oneofKind: "requestHTTPPathExact";
+        oneofKind: "requestHTTPPath";
         /**
-         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPathExact requestHTTPPathExact = 27
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPath requestHTTPPath = 27
          */
-        requestHTTPPathExact: Condition_Expression_RequestHTTPPathExact;
-    } | {
-        oneofKind: "requestHTTPPathPrefix";
-        /**
-         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPathPrefix requestHTTPPathPrefix = 28
-         */
-        requestHTTPPathPrefix: Condition_Expression_RequestHTTPPathPrefix;
+        requestHTTPPath: Condition_Expression_RequestHTTPPath;
     } | {
         oneofKind: "requestHTTPMethod";
         /**
@@ -5616,6 +5614,354 @@ export interface Condition_Expression {
          * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess apiServerAccess = 41
          */
         apiServerAccess: Condition_Expression_APIServerAccess;
+    } | {
+        oneofKind: "requestMCPProtocolVersion";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.MCPProtocolVersion requestMCPProtocolVersion = 42
+         */
+        requestMCPProtocolVersion: Condition_Expression_MCPProtocolVersion;
+    } | {
+        oneofKind: "requestMCPMethod";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.MCPMethod requestMCPMethod = 43
+         */
+        requestMCPMethod: Condition_Expression_MCPMethod;
+    } | {
+        oneofKind: "requestMCPToolName";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolName requestMCPToolName = 44
+         */
+        requestMCPToolName: Condition_Expression_MCPToolName;
+    } | {
+        oneofKind: "requestMCPPromptName";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.MCPPromptName requestMCPPromptName = 45
+         */
+        requestMCPPromptName: Condition_Expression_MCPPromptName;
+    } | {
+        oneofKind: "requestMCPResourceURI";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.MCPResourceURI requestMCPResourceURI = 46
+         */
+        requestMCPResourceURI: Condition_Expression_MCPResourceURI;
+    } | {
+        oneofKind: "requestMCPIsNotification";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.MCPIsNotification requestMCPIsNotification = 47
+         */
+        requestMCPIsNotification: Condition_Expression_MCPIsNotification;
+    } | {
+        oneofKind: "requestLLMProtocol";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.LLMProtocol requestLLMProtocol = 48
+         */
+        requestLLMProtocol: Condition_Expression_LLMProtocol;
+    } | {
+        oneofKind: "requestLLMOperation";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.LLMOperation requestLLMOperation = 49
+         */
+        requestLLMOperation: Condition_Expression_LLMOperation;
+    } | {
+        oneofKind: "requestLLMModel";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.LLMModel requestLLMModel = 50
+         */
+        requestLLMModel: Condition_Expression_LLMModel;
+    } | {
+        oneofKind: "requestLLMStream";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.LLMStream requestLLMStream = 51
+         */
+        requestLLMStream: Condition_Expression_LLMStream;
+    } | {
+        oneofKind: "requestLLMEstimatedInputTokens";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimatedInputTokens requestLLMEstimatedInputTokens = 52
+         */
+        requestLLMEstimatedInputTokens: Condition_Expression_LLMEstimatedInputTokens;
+    } | {
+        oneofKind: "requestLLMEstimateQuality";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimateQuality requestLLMEstimateQuality = 53
+         */
+        requestLLMEstimateQuality: Condition_Expression_LLMEstimateQuality;
+    } | {
+        oneofKind: "requestLLMMaxOutputTokens";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.LLMMaxOutputTokens requestLLMMaxOutputTokens = 54
+         */
+        requestLLMMaxOutputTokens: Condition_Expression_LLMMaxOutputTokens;
+    } | {
+        oneofKind: "requestLLMHasTools";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.LLMHasTools requestLLMHasTools = 55
+         */
+        requestLLMHasTools: Condition_Expression_LLMHasTools;
+    } | {
+        oneofKind: "requestLLMToolCount";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.LLMToolCount requestLLMToolCount = 56
+         */
+        requestLLMToolCount: Condition_Expression_LLMToolCount;
+    } | {
+        oneofKind: "requestLLMToolName";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.LLMToolName requestLLMToolName = 57
+         */
+        requestLLMToolName: Condition_Expression_LLMToolName;
+    } | {
+        oneofKind: "requestLLMInputItemCount";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.LLMInputItemCount requestLLMInputItemCount = 58
+         */
+        requestLLMInputItemCount: Condition_Expression_LLMInputItemCount;
+    } | {
+        oneofKind: "requestLLMHasImageInput";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.LLMHasImageInput requestLLMHasImageInput = 59
+         */
+        requestLLMHasImageInput: Condition_Expression_LLMHasImageInput;
+    } | {
+        oneofKind: "requestLLMHasAudioInput";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.LLMHasAudioInput requestLLMHasAudioInput = 60
+         */
+        requestLLMHasAudioInput: Condition_Expression_LLMHasAudioInput;
+    } | {
+        oneofKind: "requestHTTPHost";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHost requestHTTPHost = 61
+         */
+        requestHTTPHost: Condition_Expression_RequestHTTPHost;
+    } | {
+        oneofKind: "requestHTTPProtocol";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPProtocol requestHTTPProtocol = 62
+         */
+        requestHTTPProtocol: Condition_Expression_RequestHTTPProtocol;
+    } | {
+        oneofKind: "requestHTTPScheme";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPScheme requestHTTPScheme = 63
+         */
+        requestHTTPScheme: Condition_Expression_RequestHTTPScheme;
+    } | {
+        oneofKind: "requestHTTPURI";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPURI requestHTTPURI = 64
+         */
+        requestHTTPURI: Condition_Expression_RequestHTTPURI;
+    } | {
+        oneofKind: "requestHTTPSize";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPSize requestHTTPSize = 65
+         */
+        requestHTTPSize: Condition_Expression_RequestHTTPSize;
+    } | {
+        oneofKind: "requestHTTPHasQueryParam";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasQueryParam requestHTTPHasQueryParam = 66
+         */
+        requestHTTPHasQueryParam: Condition_Expression_RequestHTTPHasQueryParam;
+    } | {
+        oneofKind: "requestHTTPQueryParamValue";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPQueryParamValue requestHTTPQueryParamValue = 67
+         */
+        requestHTTPQueryParamValue: Condition_Expression_RequestHTTPQueryParamValue;
+    } | {
+        oneofKind: "requestSSH";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestSSH requestSSH = 68
+         */
+        requestSSH: Condition_Expression_RequestSSH;
+    } | {
+        oneofKind: "requestSSHUser";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestSSHUser requestSSHUser = 69
+         */
+        requestSSHUser: Condition_Expression_RequestSSHUser;
+    } | {
+        oneofKind: "requestKubernetes";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetes requestKubernetes = 70
+         */
+        requestKubernetes: Condition_Expression_RequestKubernetes;
+    } | {
+        oneofKind: "requestKubernetesVerb";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesVerb requestKubernetesVerb = 71
+         */
+        requestKubernetesVerb: Condition_Expression_RequestKubernetesVerb;
+    } | {
+        oneofKind: "requestKubernetesAPIPrefix";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIPrefix requestKubernetesAPIPrefix = 72
+         */
+        requestKubernetesAPIPrefix: Condition_Expression_RequestKubernetesAPIPrefix;
+    } | {
+        oneofKind: "requestKubernetesAPIGroup";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIGroup requestKubernetesAPIGroup = 73
+         */
+        requestKubernetesAPIGroup: Condition_Expression_RequestKubernetesAPIGroup;
+    } | {
+        oneofKind: "requestKubernetesAPIVersion";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIVersion requestKubernetesAPIVersion = 74
+         */
+        requestKubernetesAPIVersion: Condition_Expression_RequestKubernetesAPIVersion;
+    } | {
+        oneofKind: "requestKubernetesNamespace";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesNamespace requestKubernetesNamespace = 75
+         */
+        requestKubernetesNamespace: Condition_Expression_RequestKubernetesNamespace;
+    } | {
+        oneofKind: "requestKubernetesResource";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesResource requestKubernetesResource = 76
+         */
+        requestKubernetesResource: Condition_Expression_RequestKubernetesResource;
+    } | {
+        oneofKind: "requestKubernetesSubresource";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesSubresource requestKubernetesSubresource = 77
+         */
+        requestKubernetesSubresource: Condition_Expression_RequestKubernetesSubresource;
+    } | {
+        oneofKind: "requestKubernetesName";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesName requestKubernetesName = 78
+         */
+        requestKubernetesName: Condition_Expression_RequestKubernetesName;
+    } | {
+        oneofKind: "requestGRPC";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPC requestGRPC = 79
+         */
+        requestGRPC: Condition_Expression_RequestGRPC;
+    } | {
+        oneofKind: "requestGRPCMethod";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCMethod requestGRPCMethod = 80
+         */
+        requestGRPCMethod: Condition_Expression_RequestGRPCMethod;
+    } | {
+        oneofKind: "requestGRPCService";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCService requestGRPCService = 81
+         */
+        requestGRPCService: Condition_Expression_RequestGRPCService;
+    } | {
+        oneofKind: "requestGRPCServiceFullName";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCServiceFullName requestGRPCServiceFullName = 82
+         */
+        requestGRPCServiceFullName: Condition_Expression_RequestGRPCServiceFullName;
+    } | {
+        oneofKind: "requestGRPCPackage";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCPackage requestGRPCPackage = 83
+         */
+        requestGRPCPackage: Condition_Expression_RequestGRPCPackage;
+    } | {
+        oneofKind: "requestPostgresConnect";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnect requestPostgresConnect = 84
+         */
+        requestPostgresConnect: Condition_Expression_RequestPostgresConnect;
+    } | {
+        oneofKind: "requestPostgresConnectUser";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectUser requestPostgresConnectUser = 85
+         */
+        requestPostgresConnectUser: Condition_Expression_RequestPostgresConnectUser;
+    } | {
+        oneofKind: "requestPostgresConnectDatabase";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectDatabase requestPostgresConnectDatabase = 86
+         */
+        requestPostgresConnectDatabase: Condition_Expression_RequestPostgresConnectDatabase;
+    } | {
+        oneofKind: "requestPostgresConnectApplicationName";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectApplicationName requestPostgresConnectApplicationName = 87
+         */
+        requestPostgresConnectApplicationName: Condition_Expression_RequestPostgresConnectApplicationName;
+    } | {
+        oneofKind: "requestPostgresQuery";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQuery requestPostgresQuery = 88
+         */
+        requestPostgresQuery: Condition_Expression_RequestPostgresQuery;
+    } | {
+        oneofKind: "requestPostgresQueryText";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQueryText requestPostgresQueryText = 89
+         */
+        requestPostgresQueryText: Condition_Expression_RequestPostgresQueryText;
+    } | {
+        oneofKind: "requestPostgresParse";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParse requestPostgresParse = 90
+         */
+        requestPostgresParse: Condition_Expression_RequestPostgresParse;
+    } | {
+        oneofKind: "requestPostgresParseName";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseName requestPostgresParseName = 91
+         */
+        requestPostgresParseName: Condition_Expression_RequestPostgresParseName;
+    } | {
+        oneofKind: "requestPostgresParseQuery";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseQuery requestPostgresParseQuery = 92
+         */
+        requestPostgresParseQuery: Condition_Expression_RequestPostgresParseQuery;
+    } | {
+        oneofKind: "requestDNS";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestDNS requestDNS = 93
+         */
+        requestDNS: Condition_Expression_RequestDNS;
+    } | {
+        oneofKind: "requestDNSName";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSName requestDNSName = 94
+         */
+        requestDNSName: Condition_Expression_RequestDNSName;
+    } | {
+        oneofKind: "requestDNSTypeID";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSTypeID requestDNSTypeID = 95
+         */
+        requestDNSTypeID: Condition_Expression_RequestDNSTypeID;
+    } | {
+        oneofKind: "requestSOCKS5";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5 requestSOCKS5 = 96
+         */
+        requestSOCKS5: Condition_Expression_RequestSOCKS5;
+    } | {
+        oneofKind: "requestSOCKS5Host";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Host requestSOCKS5Host = 97
+         */
+        requestSOCKS5Host: Condition_Expression_RequestSOCKS5Host;
+    } | {
+        oneofKind: "requestSOCKS5Port";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Port requestSOCKS5Port = 98
+         */
+        requestSOCKS5Port: Condition_Expression_RequestSOCKS5Port;
+    } | {
+        oneofKind: "requestSOCKS5AddressType";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5AddressType requestSOCKS5AddressType = 99
+         */
+        requestSOCKS5AddressType: Condition_Expression_RequestSOCKS5AddressType;
     } | {
         oneofKind: undefined;
     };
@@ -5827,53 +6173,44 @@ export interface Condition_Expression_SessionAuthenticationGeoipCountryCode {
     code: string;
 }
 /**
- * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPathPrefix
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPath
  */
-export interface Condition_Expression_RequestHTTPPathPrefix {
+export interface Condition_Expression_RequestHTTPPath {
     /**
-     * @generated from protobuf field: string value = 1
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
      */
-    value: string;
-}
-/**
- * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPathExact
- */
-export interface Condition_Expression_RequestHTTPPathExact {
-    /**
-     * @generated from protobuf field: string value = 1
-     */
-    value: string;
+    match?: Condition_Expression_StringMatch;
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod
  */
 export interface Condition_Expression_RequestHTTPMethod {
     /**
-     * @generated from protobuf field: string value = 1
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
      */
-    value: string;
+    match?: Condition_Expression_StringMatch;
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader
  */
 export interface Condition_Expression_RequestHTTPHasHeader {
     /**
-     * @generated from protobuf field: string value = 1
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
      */
-    value: string;
+    match?: Condition_Expression_StringMatch;
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue
  */
 export interface Condition_Expression_RequestHTTPHeaderValue {
     /**
-     * @generated from protobuf field: string header = 1
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch header = 1
      */
-    header: string;
+    header?: Condition_Expression_StringMatch;
     /**
-     * @generated from protobuf field: string value = 2
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch value = 2
      */
-    value: string;
+    value?: Condition_Expression_StringMatch;
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestIP
@@ -5892,6 +6229,630 @@ export interface Condition_Expression_RequestIPInRange {
      * @generated from protobuf field: string value = 1
      */
     value: string;
+}
+/**
+ * StringMatch is a reusable matcher for string-valued request fields.
+ * The server translates the selected variant into the corresponding CEL
+ * string operation.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+ */
+export interface Condition_Expression_StringMatch {
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "exact";
+        /**
+         * @generated from protobuf field: string exact = 1
+         */
+        exact: string;
+    } | {
+        oneofKind: "prefix";
+        /**
+         * @generated from protobuf field: string prefix = 2
+         */
+        prefix: string;
+    } | {
+        oneofKind: "suffix";
+        /**
+         * @generated from protobuf field: string suffix = 3
+         */
+        suffix: string;
+    } | {
+        oneofKind: "contains";
+        /**
+         * @generated from protobuf field: string contains = 4
+         */
+        contains: string;
+    } | {
+        oneofKind: "in";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch.In in = 5
+         */
+        in: Condition_Expression_StringMatch_In;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.StringMatch.In
+ */
+export interface Condition_Expression_StringMatch_In {
+    /**
+     * @generated from protobuf field: repeated string values = 1
+     */
+    values: string[];
+}
+/**
+ * UIntMatch is a reusable matcher for unsigned integer-valued request
+ * fields. It is suitable for both uint32 and uint64 RequestContext fields.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch
+ */
+export interface Condition_Expression_UIntMatch {
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "exact";
+        /**
+         * @generated from protobuf field: uint64 exact = 1
+         */
+        exact: number;
+    } | {
+        oneofKind: "lessThan";
+        /**
+         * @generated from protobuf field: uint64 lessThan = 2
+         */
+        lessThan: number;
+    } | {
+        oneofKind: "lessThanOrEqual";
+        /**
+         * @generated from protobuf field: uint64 lessThanOrEqual = 3
+         */
+        lessThanOrEqual: number;
+    } | {
+        oneofKind: "greaterThan";
+        /**
+         * @generated from protobuf field: uint64 greaterThan = 4
+         */
+        greaterThan: number;
+    } | {
+        oneofKind: "greaterThanOrEqual";
+        /**
+         * @generated from protobuf field: uint64 greaterThanOrEqual = 5
+         */
+        greaterThanOrEqual: number;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * IntMatch is a reusable matcher for signed integer-valued request
+ * fields, including fields whose value can be -1 when unknown.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.IntMatch
+ */
+export interface Condition_Expression_IntMatch {
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "exact";
+        /**
+         * @generated from protobuf field: int64 exact = 1
+         */
+        exact: number;
+    } | {
+        oneofKind: "lessThan";
+        /**
+         * @generated from protobuf field: int64 lessThan = 2
+         */
+        lessThan: number;
+    } | {
+        oneofKind: "lessThanOrEqual";
+        /**
+         * @generated from protobuf field: int64 lessThanOrEqual = 3
+         */
+        lessThanOrEqual: number;
+    } | {
+        oneofKind: "greaterThan";
+        /**
+         * @generated from protobuf field: int64 greaterThan = 4
+         */
+        greaterThan: number;
+    } | {
+        oneofKind: "greaterThanOrEqual";
+        /**
+         * @generated from protobuf field: int64 greaterThanOrEqual = 5
+         */
+        greaterThanOrEqual: number;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHost
+ */
+export interface Condition_Expression_RequestHTTPHost {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPProtocol
+ */
+export interface Condition_Expression_RequestHTTPProtocol {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPScheme
+ */
+export interface Condition_Expression_RequestHTTPScheme {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPURI
+ */
+export interface Condition_Expression_RequestHTTPURI {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPSize
+ */
+export interface Condition_Expression_RequestHTTPSize {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.IntMatch match = 1
+     */
+    match?: Condition_Expression_IntMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasQueryParam
+ */
+export interface Condition_Expression_RequestHTTPHasQueryParam {
+    /**
+     * @generated from protobuf field: string name = 1
+     */
+    name: string;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPQueryParamValue
+ */
+export interface Condition_Expression_RequestHTTPQueryParamValue {
+    /**
+     * @generated from protobuf field: string name = 1
+     */
+    name: string;
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 2
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestSSH
+ */
+export interface Condition_Expression_RequestSSH {
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestSSHUser
+ */
+export interface Condition_Expression_RequestSSHUser {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetes
+ */
+export interface Condition_Expression_RequestKubernetes {
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesVerb
+ */
+export interface Condition_Expression_RequestKubernetesVerb {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIPrefix
+ */
+export interface Condition_Expression_RequestKubernetesAPIPrefix {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIGroup
+ */
+export interface Condition_Expression_RequestKubernetesAPIGroup {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIVersion
+ */
+export interface Condition_Expression_RequestKubernetesAPIVersion {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesNamespace
+ */
+export interface Condition_Expression_RequestKubernetesNamespace {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesResource
+ */
+export interface Condition_Expression_RequestKubernetesResource {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesSubresource
+ */
+export interface Condition_Expression_RequestKubernetesSubresource {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesName
+ */
+export interface Condition_Expression_RequestKubernetesName {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPC
+ */
+export interface Condition_Expression_RequestGRPC {
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCMethod
+ */
+export interface Condition_Expression_RequestGRPCMethod {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCService
+ */
+export interface Condition_Expression_RequestGRPCService {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCServiceFullName
+ */
+export interface Condition_Expression_RequestGRPCServiceFullName {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCPackage
+ */
+export interface Condition_Expression_RequestGRPCPackage {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnect
+ */
+export interface Condition_Expression_RequestPostgresConnect {
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectUser
+ */
+export interface Condition_Expression_RequestPostgresConnectUser {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectDatabase
+ */
+export interface Condition_Expression_RequestPostgresConnectDatabase {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectApplicationName
+ */
+export interface Condition_Expression_RequestPostgresConnectApplicationName {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQuery
+ */
+export interface Condition_Expression_RequestPostgresQuery {
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQueryText
+ */
+export interface Condition_Expression_RequestPostgresQueryText {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParse
+ */
+export interface Condition_Expression_RequestPostgresParse {
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseName
+ */
+export interface Condition_Expression_RequestPostgresParseName {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseQuery
+ */
+export interface Condition_Expression_RequestPostgresParseQuery {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestDNS
+ */
+export interface Condition_Expression_RequestDNS {
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSName
+ */
+export interface Condition_Expression_RequestDNSName {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSTypeID
+ */
+export interface Condition_Expression_RequestDNSTypeID {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.IntMatch match = 1
+     */
+    match?: Condition_Expression_IntMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5
+ */
+export interface Condition_Expression_RequestSOCKS5 {
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Host
+ */
+export interface Condition_Expression_RequestSOCKS5Host {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Port
+ */
+export interface Condition_Expression_RequestSOCKS5Port {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch match = 1
+     */
+    match?: Condition_Expression_UIntMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5AddressType
+ */
+export interface Condition_Expression_RequestSOCKS5AddressType {
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect.AddressType addressType = 1
+     */
+    addressType: RequestContext_Request_SOCKS5_Connect_AddressType;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.MCPProtocolVersion
+ */
+export interface Condition_Expression_MCPProtocolVersion {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.MCPMethod
+ */
+export interface Condition_Expression_MCPMethod {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.MCPToolName
+ */
+export interface Condition_Expression_MCPToolName {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.MCPPromptName
+ */
+export interface Condition_Expression_MCPPromptName {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.MCPResourceURI
+ */
+export interface Condition_Expression_MCPResourceURI {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.MCPIsNotification
+ */
+export interface Condition_Expression_MCPIsNotification {
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.LLMProtocol
+ */
+export interface Condition_Expression_LLMProtocol {
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.LLM.Protocol protocol = 1
+     */
+    protocol: Service_Spec_Config_LLM_Protocol;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.LLMOperation
+ */
+export interface Condition_Expression_LLMOperation {
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.RequestContext.Request.LLM.Operation operation = 1
+     */
+    operation: RequestContext_Request_LLM_Operation;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.LLMModel
+ */
+export interface Condition_Expression_LLMModel {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.LLMStream
+ */
+export interface Condition_Expression_LLMStream {
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimatedInputTokens
+ */
+export interface Condition_Expression_LLMEstimatedInputTokens {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch match = 1
+     */
+    match?: Condition_Expression_UIntMatch;
+    /**
+     * RequireComplete only permits the estimate when Octelium accounted for
+     * the entire textual input. It prevents PARTIAL and UNAVAILABLE
+     * estimates from being treated as a reliable input-size policy signal.
+     *
+     * @generated from protobuf field: bool requireComplete = 2
+     */
+    requireComplete: boolean;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimateQuality
+ */
+export interface Condition_Expression_LLMEstimateQuality {
+    /**
+     * @generated from protobuf field: octelium.api.main.core.v1.RequestContext.Request.LLM.EstimateQuality quality = 1
+     */
+    quality: RequestContext_Request_LLM_EstimateQuality;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.LLMMaxOutputTokens
+ */
+export interface Condition_Expression_LLMMaxOutputTokens {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch match = 1
+     */
+    match?: Condition_Expression_UIntMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.LLMHasTools
+ */
+export interface Condition_Expression_LLMHasTools {
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.LLMToolCount
+ */
+export interface Condition_Expression_LLMToolCount {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch match = 1
+     */
+    match?: Condition_Expression_UIntMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.LLMToolName
+ */
+export interface Condition_Expression_LLMToolName {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1
+     */
+    match?: Condition_Expression_StringMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.LLMInputItemCount
+ */
+export interface Condition_Expression_LLMInputItemCount {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch match = 1
+     */
+    match?: Condition_Expression_UIntMatch;
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.LLMHasImageInput
+ */
+export interface Condition_Expression_LLMHasImageInput {
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.LLMHasAudioInput
+ */
+export interface Condition_Expression_LLMHasAudioInput {
 }
 /**
  * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.APIServerReadOnlyMethods
@@ -20629,8 +21590,7 @@ class Condition_Expression$Type extends MessageType<Condition_Expression> {
             { no: 24, name: "sessionAuthenticationCredAuthenticatorFIDOUserVerified", kind: "message", oneof: "type", T: () => Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserVerified },
             { no: 25, name: "sessionAuthenticationCredAuthenticatorFIDOUserPresent", kind: "message", oneof: "type", T: () => Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserPresent },
             { no: 26, name: "sessionAuthenticationGeoipCountryCode", kind: "message", oneof: "type", T: () => Condition_Expression_SessionAuthenticationGeoipCountryCode },
-            { no: 27, name: "requestHTTPPathExact", kind: "message", oneof: "type", T: () => Condition_Expression_RequestHTTPPathExact },
-            { no: 28, name: "requestHTTPPathPrefix", kind: "message", oneof: "type", T: () => Condition_Expression_RequestHTTPPathPrefix },
+            { no: 27, name: "requestHTTPPath", kind: "message", oneof: "type", T: () => Condition_Expression_RequestHTTPPath },
             { no: 29, name: "requestHTTPMethod", kind: "message", oneof: "type", T: () => Condition_Expression_RequestHTTPMethod },
             { no: 30, name: "requestHTTPHasHeader", kind: "message", oneof: "type", T: () => Condition_Expression_RequestHTTPHasHeader },
             { no: 31, name: "requestHTTPHeaderValue", kind: "message", oneof: "type", T: () => Condition_Expression_RequestHTTPHeaderValue },
@@ -20643,7 +21603,65 @@ class Condition_Expression$Type extends MessageType<Condition_Expression> {
             { no: 38, name: "apiServerUser", kind: "message", oneof: "type", T: () => Condition_Expression_APIServerUser },
             { no: 39, name: "apiServerEnterprise", kind: "message", oneof: "type", T: () => Condition_Expression_APIServerEnterprise },
             { no: 40, name: "apiServerCordium", kind: "message", oneof: "type", T: () => Condition_Expression_APIServerCordium },
-            { no: 41, name: "apiServerAccess", kind: "message", oneof: "type", T: () => Condition_Expression_APIServerAccess }
+            { no: 41, name: "apiServerAccess", kind: "message", oneof: "type", T: () => Condition_Expression_APIServerAccess },
+            { no: 42, name: "requestMCPProtocolVersion", kind: "message", oneof: "type", T: () => Condition_Expression_MCPProtocolVersion },
+            { no: 43, name: "requestMCPMethod", kind: "message", oneof: "type", T: () => Condition_Expression_MCPMethod },
+            { no: 44, name: "requestMCPToolName", kind: "message", oneof: "type", T: () => Condition_Expression_MCPToolName },
+            { no: 45, name: "requestMCPPromptName", kind: "message", oneof: "type", T: () => Condition_Expression_MCPPromptName },
+            { no: 46, name: "requestMCPResourceURI", kind: "message", oneof: "type", T: () => Condition_Expression_MCPResourceURI },
+            { no: 47, name: "requestMCPIsNotification", kind: "message", oneof: "type", T: () => Condition_Expression_MCPIsNotification },
+            { no: 48, name: "requestLLMProtocol", kind: "message", oneof: "type", T: () => Condition_Expression_LLMProtocol },
+            { no: 49, name: "requestLLMOperation", kind: "message", oneof: "type", T: () => Condition_Expression_LLMOperation },
+            { no: 50, name: "requestLLMModel", kind: "message", oneof: "type", T: () => Condition_Expression_LLMModel },
+            { no: 51, name: "requestLLMStream", kind: "message", oneof: "type", T: () => Condition_Expression_LLMStream },
+            { no: 52, name: "requestLLMEstimatedInputTokens", kind: "message", oneof: "type", T: () => Condition_Expression_LLMEstimatedInputTokens },
+            { no: 53, name: "requestLLMEstimateQuality", kind: "message", oneof: "type", T: () => Condition_Expression_LLMEstimateQuality },
+            { no: 54, name: "requestLLMMaxOutputTokens", kind: "message", oneof: "type", T: () => Condition_Expression_LLMMaxOutputTokens },
+            { no: 55, name: "requestLLMHasTools", kind: "message", oneof: "type", T: () => Condition_Expression_LLMHasTools },
+            { no: 56, name: "requestLLMToolCount", kind: "message", oneof: "type", T: () => Condition_Expression_LLMToolCount },
+            { no: 57, name: "requestLLMToolName", kind: "message", oneof: "type", T: () => Condition_Expression_LLMToolName },
+            { no: 58, name: "requestLLMInputItemCount", kind: "message", oneof: "type", T: () => Condition_Expression_LLMInputItemCount },
+            { no: 59, name: "requestLLMHasImageInput", kind: "message", oneof: "type", T: () => Condition_Expression_LLMHasImageInput },
+            { no: 60, name: "requestLLMHasAudioInput", kind: "message", oneof: "type", T: () => Condition_Expression_LLMHasAudioInput },
+            { no: 61, name: "requestHTTPHost", kind: "message", oneof: "type", T: () => Condition_Expression_RequestHTTPHost },
+            { no: 62, name: "requestHTTPProtocol", kind: "message", oneof: "type", T: () => Condition_Expression_RequestHTTPProtocol },
+            { no: 63, name: "requestHTTPScheme", kind: "message", oneof: "type", T: () => Condition_Expression_RequestHTTPScheme },
+            { no: 64, name: "requestHTTPURI", kind: "message", oneof: "type", T: () => Condition_Expression_RequestHTTPURI },
+            { no: 65, name: "requestHTTPSize", kind: "message", oneof: "type", T: () => Condition_Expression_RequestHTTPSize },
+            { no: 66, name: "requestHTTPHasQueryParam", kind: "message", oneof: "type", T: () => Condition_Expression_RequestHTTPHasQueryParam },
+            { no: 67, name: "requestHTTPQueryParamValue", kind: "message", oneof: "type", T: () => Condition_Expression_RequestHTTPQueryParamValue },
+            { no: 68, name: "requestSSH", kind: "message", oneof: "type", T: () => Condition_Expression_RequestSSH },
+            { no: 69, name: "requestSSHUser", kind: "message", oneof: "type", T: () => Condition_Expression_RequestSSHUser },
+            { no: 70, name: "requestKubernetes", kind: "message", oneof: "type", T: () => Condition_Expression_RequestKubernetes },
+            { no: 71, name: "requestKubernetesVerb", kind: "message", oneof: "type", T: () => Condition_Expression_RequestKubernetesVerb },
+            { no: 72, name: "requestKubernetesAPIPrefix", kind: "message", oneof: "type", T: () => Condition_Expression_RequestKubernetesAPIPrefix },
+            { no: 73, name: "requestKubernetesAPIGroup", kind: "message", oneof: "type", T: () => Condition_Expression_RequestKubernetesAPIGroup },
+            { no: 74, name: "requestKubernetesAPIVersion", kind: "message", oneof: "type", T: () => Condition_Expression_RequestKubernetesAPIVersion },
+            { no: 75, name: "requestKubernetesNamespace", kind: "message", oneof: "type", T: () => Condition_Expression_RequestKubernetesNamespace },
+            { no: 76, name: "requestKubernetesResource", kind: "message", oneof: "type", T: () => Condition_Expression_RequestKubernetesResource },
+            { no: 77, name: "requestKubernetesSubresource", kind: "message", oneof: "type", T: () => Condition_Expression_RequestKubernetesSubresource },
+            { no: 78, name: "requestKubernetesName", kind: "message", oneof: "type", T: () => Condition_Expression_RequestKubernetesName },
+            { no: 79, name: "requestGRPC", kind: "message", oneof: "type", T: () => Condition_Expression_RequestGRPC },
+            { no: 80, name: "requestGRPCMethod", kind: "message", oneof: "type", T: () => Condition_Expression_RequestGRPCMethod },
+            { no: 81, name: "requestGRPCService", kind: "message", oneof: "type", T: () => Condition_Expression_RequestGRPCService },
+            { no: 82, name: "requestGRPCServiceFullName", kind: "message", oneof: "type", T: () => Condition_Expression_RequestGRPCServiceFullName },
+            { no: 83, name: "requestGRPCPackage", kind: "message", oneof: "type", T: () => Condition_Expression_RequestGRPCPackage },
+            { no: 84, name: "requestPostgresConnect", kind: "message", oneof: "type", T: () => Condition_Expression_RequestPostgresConnect },
+            { no: 85, name: "requestPostgresConnectUser", kind: "message", oneof: "type", T: () => Condition_Expression_RequestPostgresConnectUser },
+            { no: 86, name: "requestPostgresConnectDatabase", kind: "message", oneof: "type", T: () => Condition_Expression_RequestPostgresConnectDatabase },
+            { no: 87, name: "requestPostgresConnectApplicationName", kind: "message", oneof: "type", T: () => Condition_Expression_RequestPostgresConnectApplicationName },
+            { no: 88, name: "requestPostgresQuery", kind: "message", oneof: "type", T: () => Condition_Expression_RequestPostgresQuery },
+            { no: 89, name: "requestPostgresQueryText", kind: "message", oneof: "type", T: () => Condition_Expression_RequestPostgresQueryText },
+            { no: 90, name: "requestPostgresParse", kind: "message", oneof: "type", T: () => Condition_Expression_RequestPostgresParse },
+            { no: 91, name: "requestPostgresParseName", kind: "message", oneof: "type", T: () => Condition_Expression_RequestPostgresParseName },
+            { no: 92, name: "requestPostgresParseQuery", kind: "message", oneof: "type", T: () => Condition_Expression_RequestPostgresParseQuery },
+            { no: 93, name: "requestDNS", kind: "message", oneof: "type", T: () => Condition_Expression_RequestDNS },
+            { no: 94, name: "requestDNSName", kind: "message", oneof: "type", T: () => Condition_Expression_RequestDNSName },
+            { no: 95, name: "requestDNSTypeID", kind: "message", oneof: "type", T: () => Condition_Expression_RequestDNSTypeID },
+            { no: 96, name: "requestSOCKS5", kind: "message", oneof: "type", T: () => Condition_Expression_RequestSOCKS5 },
+            { no: 97, name: "requestSOCKS5Host", kind: "message", oneof: "type", T: () => Condition_Expression_RequestSOCKS5Host },
+            { no: 98, name: "requestSOCKS5Port", kind: "message", oneof: "type", T: () => Condition_Expression_RequestSOCKS5Port },
+            { no: 99, name: "requestSOCKS5AddressType", kind: "message", oneof: "type", T: () => Condition_Expression_RequestSOCKS5AddressType }
         ]);
     }
     create(value?: PartialMessage<Condition_Expression>): Condition_Expression {
@@ -20814,16 +21832,10 @@ class Condition_Expression$Type extends MessageType<Condition_Expression> {
                         sessionAuthenticationGeoipCountryCode: Condition_Expression_SessionAuthenticationGeoipCountryCode.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).sessionAuthenticationGeoipCountryCode)
                     };
                     break;
-                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPathExact requestHTTPPathExact */ 27:
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPath requestHTTPPath */ 27:
                     message.type = {
-                        oneofKind: "requestHTTPPathExact",
-                        requestHTTPPathExact: Condition_Expression_RequestHTTPPathExact.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestHTTPPathExact)
-                    };
-                    break;
-                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPathPrefix requestHTTPPathPrefix */ 28:
-                    message.type = {
-                        oneofKind: "requestHTTPPathPrefix",
-                        requestHTTPPathPrefix: Condition_Expression_RequestHTTPPathPrefix.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestHTTPPathPrefix)
+                        oneofKind: "requestHTTPPath",
+                        requestHTTPPath: Condition_Expression_RequestHTTPPath.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestHTTPPath)
                     };
                     break;
                 case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod requestHTTPMethod */ 29:
@@ -20902,6 +21914,354 @@ class Condition_Expression$Type extends MessageType<Condition_Expression> {
                     message.type = {
                         oneofKind: "apiServerAccess",
                         apiServerAccess: Condition_Expression_APIServerAccess.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).apiServerAccess)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.MCPProtocolVersion requestMCPProtocolVersion */ 42:
+                    message.type = {
+                        oneofKind: "requestMCPProtocolVersion",
+                        requestMCPProtocolVersion: Condition_Expression_MCPProtocolVersion.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestMCPProtocolVersion)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.MCPMethod requestMCPMethod */ 43:
+                    message.type = {
+                        oneofKind: "requestMCPMethod",
+                        requestMCPMethod: Condition_Expression_MCPMethod.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestMCPMethod)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.MCPToolName requestMCPToolName */ 44:
+                    message.type = {
+                        oneofKind: "requestMCPToolName",
+                        requestMCPToolName: Condition_Expression_MCPToolName.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestMCPToolName)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.MCPPromptName requestMCPPromptName */ 45:
+                    message.type = {
+                        oneofKind: "requestMCPPromptName",
+                        requestMCPPromptName: Condition_Expression_MCPPromptName.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestMCPPromptName)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.MCPResourceURI requestMCPResourceURI */ 46:
+                    message.type = {
+                        oneofKind: "requestMCPResourceURI",
+                        requestMCPResourceURI: Condition_Expression_MCPResourceURI.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestMCPResourceURI)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.MCPIsNotification requestMCPIsNotification */ 47:
+                    message.type = {
+                        oneofKind: "requestMCPIsNotification",
+                        requestMCPIsNotification: Condition_Expression_MCPIsNotification.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestMCPIsNotification)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.LLMProtocol requestLLMProtocol */ 48:
+                    message.type = {
+                        oneofKind: "requestLLMProtocol",
+                        requestLLMProtocol: Condition_Expression_LLMProtocol.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestLLMProtocol)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.LLMOperation requestLLMOperation */ 49:
+                    message.type = {
+                        oneofKind: "requestLLMOperation",
+                        requestLLMOperation: Condition_Expression_LLMOperation.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestLLMOperation)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.LLMModel requestLLMModel */ 50:
+                    message.type = {
+                        oneofKind: "requestLLMModel",
+                        requestLLMModel: Condition_Expression_LLMModel.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestLLMModel)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.LLMStream requestLLMStream */ 51:
+                    message.type = {
+                        oneofKind: "requestLLMStream",
+                        requestLLMStream: Condition_Expression_LLMStream.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestLLMStream)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimatedInputTokens requestLLMEstimatedInputTokens */ 52:
+                    message.type = {
+                        oneofKind: "requestLLMEstimatedInputTokens",
+                        requestLLMEstimatedInputTokens: Condition_Expression_LLMEstimatedInputTokens.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestLLMEstimatedInputTokens)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimateQuality requestLLMEstimateQuality */ 53:
+                    message.type = {
+                        oneofKind: "requestLLMEstimateQuality",
+                        requestLLMEstimateQuality: Condition_Expression_LLMEstimateQuality.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestLLMEstimateQuality)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.LLMMaxOutputTokens requestLLMMaxOutputTokens */ 54:
+                    message.type = {
+                        oneofKind: "requestLLMMaxOutputTokens",
+                        requestLLMMaxOutputTokens: Condition_Expression_LLMMaxOutputTokens.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestLLMMaxOutputTokens)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.LLMHasTools requestLLMHasTools */ 55:
+                    message.type = {
+                        oneofKind: "requestLLMHasTools",
+                        requestLLMHasTools: Condition_Expression_LLMHasTools.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestLLMHasTools)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.LLMToolCount requestLLMToolCount */ 56:
+                    message.type = {
+                        oneofKind: "requestLLMToolCount",
+                        requestLLMToolCount: Condition_Expression_LLMToolCount.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestLLMToolCount)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.LLMToolName requestLLMToolName */ 57:
+                    message.type = {
+                        oneofKind: "requestLLMToolName",
+                        requestLLMToolName: Condition_Expression_LLMToolName.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestLLMToolName)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.LLMInputItemCount requestLLMInputItemCount */ 58:
+                    message.type = {
+                        oneofKind: "requestLLMInputItemCount",
+                        requestLLMInputItemCount: Condition_Expression_LLMInputItemCount.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestLLMInputItemCount)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.LLMHasImageInput requestLLMHasImageInput */ 59:
+                    message.type = {
+                        oneofKind: "requestLLMHasImageInput",
+                        requestLLMHasImageInput: Condition_Expression_LLMHasImageInput.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestLLMHasImageInput)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.LLMHasAudioInput requestLLMHasAudioInput */ 60:
+                    message.type = {
+                        oneofKind: "requestLLMHasAudioInput",
+                        requestLLMHasAudioInput: Condition_Expression_LLMHasAudioInput.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestLLMHasAudioInput)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHost requestHTTPHost */ 61:
+                    message.type = {
+                        oneofKind: "requestHTTPHost",
+                        requestHTTPHost: Condition_Expression_RequestHTTPHost.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestHTTPHost)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPProtocol requestHTTPProtocol */ 62:
+                    message.type = {
+                        oneofKind: "requestHTTPProtocol",
+                        requestHTTPProtocol: Condition_Expression_RequestHTTPProtocol.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestHTTPProtocol)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPScheme requestHTTPScheme */ 63:
+                    message.type = {
+                        oneofKind: "requestHTTPScheme",
+                        requestHTTPScheme: Condition_Expression_RequestHTTPScheme.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestHTTPScheme)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPURI requestHTTPURI */ 64:
+                    message.type = {
+                        oneofKind: "requestHTTPURI",
+                        requestHTTPURI: Condition_Expression_RequestHTTPURI.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestHTTPURI)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPSize requestHTTPSize */ 65:
+                    message.type = {
+                        oneofKind: "requestHTTPSize",
+                        requestHTTPSize: Condition_Expression_RequestHTTPSize.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestHTTPSize)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasQueryParam requestHTTPHasQueryParam */ 66:
+                    message.type = {
+                        oneofKind: "requestHTTPHasQueryParam",
+                        requestHTTPHasQueryParam: Condition_Expression_RequestHTTPHasQueryParam.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestHTTPHasQueryParam)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPQueryParamValue requestHTTPQueryParamValue */ 67:
+                    message.type = {
+                        oneofKind: "requestHTTPQueryParamValue",
+                        requestHTTPQueryParamValue: Condition_Expression_RequestHTTPQueryParamValue.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestHTTPQueryParamValue)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestSSH requestSSH */ 68:
+                    message.type = {
+                        oneofKind: "requestSSH",
+                        requestSSH: Condition_Expression_RequestSSH.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestSSH)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestSSHUser requestSSHUser */ 69:
+                    message.type = {
+                        oneofKind: "requestSSHUser",
+                        requestSSHUser: Condition_Expression_RequestSSHUser.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestSSHUser)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetes requestKubernetes */ 70:
+                    message.type = {
+                        oneofKind: "requestKubernetes",
+                        requestKubernetes: Condition_Expression_RequestKubernetes.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestKubernetes)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesVerb requestKubernetesVerb */ 71:
+                    message.type = {
+                        oneofKind: "requestKubernetesVerb",
+                        requestKubernetesVerb: Condition_Expression_RequestKubernetesVerb.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestKubernetesVerb)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIPrefix requestKubernetesAPIPrefix */ 72:
+                    message.type = {
+                        oneofKind: "requestKubernetesAPIPrefix",
+                        requestKubernetesAPIPrefix: Condition_Expression_RequestKubernetesAPIPrefix.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestKubernetesAPIPrefix)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIGroup requestKubernetesAPIGroup */ 73:
+                    message.type = {
+                        oneofKind: "requestKubernetesAPIGroup",
+                        requestKubernetesAPIGroup: Condition_Expression_RequestKubernetesAPIGroup.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestKubernetesAPIGroup)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIVersion requestKubernetesAPIVersion */ 74:
+                    message.type = {
+                        oneofKind: "requestKubernetesAPIVersion",
+                        requestKubernetesAPIVersion: Condition_Expression_RequestKubernetesAPIVersion.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestKubernetesAPIVersion)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesNamespace requestKubernetesNamespace */ 75:
+                    message.type = {
+                        oneofKind: "requestKubernetesNamespace",
+                        requestKubernetesNamespace: Condition_Expression_RequestKubernetesNamespace.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestKubernetesNamespace)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesResource requestKubernetesResource */ 76:
+                    message.type = {
+                        oneofKind: "requestKubernetesResource",
+                        requestKubernetesResource: Condition_Expression_RequestKubernetesResource.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestKubernetesResource)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesSubresource requestKubernetesSubresource */ 77:
+                    message.type = {
+                        oneofKind: "requestKubernetesSubresource",
+                        requestKubernetesSubresource: Condition_Expression_RequestKubernetesSubresource.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestKubernetesSubresource)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesName requestKubernetesName */ 78:
+                    message.type = {
+                        oneofKind: "requestKubernetesName",
+                        requestKubernetesName: Condition_Expression_RequestKubernetesName.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestKubernetesName)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPC requestGRPC */ 79:
+                    message.type = {
+                        oneofKind: "requestGRPC",
+                        requestGRPC: Condition_Expression_RequestGRPC.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestGRPC)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCMethod requestGRPCMethod */ 80:
+                    message.type = {
+                        oneofKind: "requestGRPCMethod",
+                        requestGRPCMethod: Condition_Expression_RequestGRPCMethod.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestGRPCMethod)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCService requestGRPCService */ 81:
+                    message.type = {
+                        oneofKind: "requestGRPCService",
+                        requestGRPCService: Condition_Expression_RequestGRPCService.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestGRPCService)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCServiceFullName requestGRPCServiceFullName */ 82:
+                    message.type = {
+                        oneofKind: "requestGRPCServiceFullName",
+                        requestGRPCServiceFullName: Condition_Expression_RequestGRPCServiceFullName.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestGRPCServiceFullName)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCPackage requestGRPCPackage */ 83:
+                    message.type = {
+                        oneofKind: "requestGRPCPackage",
+                        requestGRPCPackage: Condition_Expression_RequestGRPCPackage.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestGRPCPackage)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnect requestPostgresConnect */ 84:
+                    message.type = {
+                        oneofKind: "requestPostgresConnect",
+                        requestPostgresConnect: Condition_Expression_RequestPostgresConnect.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestPostgresConnect)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectUser requestPostgresConnectUser */ 85:
+                    message.type = {
+                        oneofKind: "requestPostgresConnectUser",
+                        requestPostgresConnectUser: Condition_Expression_RequestPostgresConnectUser.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestPostgresConnectUser)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectDatabase requestPostgresConnectDatabase */ 86:
+                    message.type = {
+                        oneofKind: "requestPostgresConnectDatabase",
+                        requestPostgresConnectDatabase: Condition_Expression_RequestPostgresConnectDatabase.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestPostgresConnectDatabase)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectApplicationName requestPostgresConnectApplicationName */ 87:
+                    message.type = {
+                        oneofKind: "requestPostgresConnectApplicationName",
+                        requestPostgresConnectApplicationName: Condition_Expression_RequestPostgresConnectApplicationName.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestPostgresConnectApplicationName)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQuery requestPostgresQuery */ 88:
+                    message.type = {
+                        oneofKind: "requestPostgresQuery",
+                        requestPostgresQuery: Condition_Expression_RequestPostgresQuery.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestPostgresQuery)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQueryText requestPostgresQueryText */ 89:
+                    message.type = {
+                        oneofKind: "requestPostgresQueryText",
+                        requestPostgresQueryText: Condition_Expression_RequestPostgresQueryText.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestPostgresQueryText)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParse requestPostgresParse */ 90:
+                    message.type = {
+                        oneofKind: "requestPostgresParse",
+                        requestPostgresParse: Condition_Expression_RequestPostgresParse.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestPostgresParse)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseName requestPostgresParseName */ 91:
+                    message.type = {
+                        oneofKind: "requestPostgresParseName",
+                        requestPostgresParseName: Condition_Expression_RequestPostgresParseName.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestPostgresParseName)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseQuery requestPostgresParseQuery */ 92:
+                    message.type = {
+                        oneofKind: "requestPostgresParseQuery",
+                        requestPostgresParseQuery: Condition_Expression_RequestPostgresParseQuery.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestPostgresParseQuery)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestDNS requestDNS */ 93:
+                    message.type = {
+                        oneofKind: "requestDNS",
+                        requestDNS: Condition_Expression_RequestDNS.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestDNS)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSName requestDNSName */ 94:
+                    message.type = {
+                        oneofKind: "requestDNSName",
+                        requestDNSName: Condition_Expression_RequestDNSName.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestDNSName)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSTypeID requestDNSTypeID */ 95:
+                    message.type = {
+                        oneofKind: "requestDNSTypeID",
+                        requestDNSTypeID: Condition_Expression_RequestDNSTypeID.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestDNSTypeID)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5 requestSOCKS5 */ 96:
+                    message.type = {
+                        oneofKind: "requestSOCKS5",
+                        requestSOCKS5: Condition_Expression_RequestSOCKS5.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestSOCKS5)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Host requestSOCKS5Host */ 97:
+                    message.type = {
+                        oneofKind: "requestSOCKS5Host",
+                        requestSOCKS5Host: Condition_Expression_RequestSOCKS5Host.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestSOCKS5Host)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Port requestSOCKS5Port */ 98:
+                    message.type = {
+                        oneofKind: "requestSOCKS5Port",
+                        requestSOCKS5Port: Condition_Expression_RequestSOCKS5Port.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestSOCKS5Port)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5AddressType requestSOCKS5AddressType */ 99:
+                    message.type = {
+                        oneofKind: "requestSOCKS5AddressType",
+                        requestSOCKS5AddressType: Condition_Expression_RequestSOCKS5AddressType.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestSOCKS5AddressType)
                     };
                     break;
                 default:
@@ -20994,12 +22354,9 @@ class Condition_Expression$Type extends MessageType<Condition_Expression> {
         /* octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipCountryCode sessionAuthenticationGeoipCountryCode = 26; */
         if (message.type.oneofKind === "sessionAuthenticationGeoipCountryCode")
             Condition_Expression_SessionAuthenticationGeoipCountryCode.internalBinaryWrite(message.type.sessionAuthenticationGeoipCountryCode, writer.tag(26, WireType.LengthDelimited).fork(), options).join();
-        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPathExact requestHTTPPathExact = 27; */
-        if (message.type.oneofKind === "requestHTTPPathExact")
-            Condition_Expression_RequestHTTPPathExact.internalBinaryWrite(message.type.requestHTTPPathExact, writer.tag(27, WireType.LengthDelimited).fork(), options).join();
-        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPathPrefix requestHTTPPathPrefix = 28; */
-        if (message.type.oneofKind === "requestHTTPPathPrefix")
-            Condition_Expression_RequestHTTPPathPrefix.internalBinaryWrite(message.type.requestHTTPPathPrefix, writer.tag(28, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPath requestHTTPPath = 27; */
+        if (message.type.oneofKind === "requestHTTPPath")
+            Condition_Expression_RequestHTTPPath.internalBinaryWrite(message.type.requestHTTPPath, writer.tag(27, WireType.LengthDelimited).fork(), options).join();
         /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod requestHTTPMethod = 29; */
         if (message.type.oneofKind === "requestHTTPMethod")
             Condition_Expression_RequestHTTPMethod.internalBinaryWrite(message.type.requestHTTPMethod, writer.tag(29, WireType.LengthDelimited).fork(), options).join();
@@ -21039,6 +22396,180 @@ class Condition_Expression$Type extends MessageType<Condition_Expression> {
         /* octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess apiServerAccess = 41; */
         if (message.type.oneofKind === "apiServerAccess")
             Condition_Expression_APIServerAccess.internalBinaryWrite(message.type.apiServerAccess, writer.tag(41, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.MCPProtocolVersion requestMCPProtocolVersion = 42; */
+        if (message.type.oneofKind === "requestMCPProtocolVersion")
+            Condition_Expression_MCPProtocolVersion.internalBinaryWrite(message.type.requestMCPProtocolVersion, writer.tag(42, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.MCPMethod requestMCPMethod = 43; */
+        if (message.type.oneofKind === "requestMCPMethod")
+            Condition_Expression_MCPMethod.internalBinaryWrite(message.type.requestMCPMethod, writer.tag(43, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.MCPToolName requestMCPToolName = 44; */
+        if (message.type.oneofKind === "requestMCPToolName")
+            Condition_Expression_MCPToolName.internalBinaryWrite(message.type.requestMCPToolName, writer.tag(44, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.MCPPromptName requestMCPPromptName = 45; */
+        if (message.type.oneofKind === "requestMCPPromptName")
+            Condition_Expression_MCPPromptName.internalBinaryWrite(message.type.requestMCPPromptName, writer.tag(45, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.MCPResourceURI requestMCPResourceURI = 46; */
+        if (message.type.oneofKind === "requestMCPResourceURI")
+            Condition_Expression_MCPResourceURI.internalBinaryWrite(message.type.requestMCPResourceURI, writer.tag(46, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.MCPIsNotification requestMCPIsNotification = 47; */
+        if (message.type.oneofKind === "requestMCPIsNotification")
+            Condition_Expression_MCPIsNotification.internalBinaryWrite(message.type.requestMCPIsNotification, writer.tag(47, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.LLMProtocol requestLLMProtocol = 48; */
+        if (message.type.oneofKind === "requestLLMProtocol")
+            Condition_Expression_LLMProtocol.internalBinaryWrite(message.type.requestLLMProtocol, writer.tag(48, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.LLMOperation requestLLMOperation = 49; */
+        if (message.type.oneofKind === "requestLLMOperation")
+            Condition_Expression_LLMOperation.internalBinaryWrite(message.type.requestLLMOperation, writer.tag(49, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.LLMModel requestLLMModel = 50; */
+        if (message.type.oneofKind === "requestLLMModel")
+            Condition_Expression_LLMModel.internalBinaryWrite(message.type.requestLLMModel, writer.tag(50, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.LLMStream requestLLMStream = 51; */
+        if (message.type.oneofKind === "requestLLMStream")
+            Condition_Expression_LLMStream.internalBinaryWrite(message.type.requestLLMStream, writer.tag(51, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimatedInputTokens requestLLMEstimatedInputTokens = 52; */
+        if (message.type.oneofKind === "requestLLMEstimatedInputTokens")
+            Condition_Expression_LLMEstimatedInputTokens.internalBinaryWrite(message.type.requestLLMEstimatedInputTokens, writer.tag(52, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimateQuality requestLLMEstimateQuality = 53; */
+        if (message.type.oneofKind === "requestLLMEstimateQuality")
+            Condition_Expression_LLMEstimateQuality.internalBinaryWrite(message.type.requestLLMEstimateQuality, writer.tag(53, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.LLMMaxOutputTokens requestLLMMaxOutputTokens = 54; */
+        if (message.type.oneofKind === "requestLLMMaxOutputTokens")
+            Condition_Expression_LLMMaxOutputTokens.internalBinaryWrite(message.type.requestLLMMaxOutputTokens, writer.tag(54, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.LLMHasTools requestLLMHasTools = 55; */
+        if (message.type.oneofKind === "requestLLMHasTools")
+            Condition_Expression_LLMHasTools.internalBinaryWrite(message.type.requestLLMHasTools, writer.tag(55, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.LLMToolCount requestLLMToolCount = 56; */
+        if (message.type.oneofKind === "requestLLMToolCount")
+            Condition_Expression_LLMToolCount.internalBinaryWrite(message.type.requestLLMToolCount, writer.tag(56, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.LLMToolName requestLLMToolName = 57; */
+        if (message.type.oneofKind === "requestLLMToolName")
+            Condition_Expression_LLMToolName.internalBinaryWrite(message.type.requestLLMToolName, writer.tag(57, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.LLMInputItemCount requestLLMInputItemCount = 58; */
+        if (message.type.oneofKind === "requestLLMInputItemCount")
+            Condition_Expression_LLMInputItemCount.internalBinaryWrite(message.type.requestLLMInputItemCount, writer.tag(58, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.LLMHasImageInput requestLLMHasImageInput = 59; */
+        if (message.type.oneofKind === "requestLLMHasImageInput")
+            Condition_Expression_LLMHasImageInput.internalBinaryWrite(message.type.requestLLMHasImageInput, writer.tag(59, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.LLMHasAudioInput requestLLMHasAudioInput = 60; */
+        if (message.type.oneofKind === "requestLLMHasAudioInput")
+            Condition_Expression_LLMHasAudioInput.internalBinaryWrite(message.type.requestLLMHasAudioInput, writer.tag(60, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHost requestHTTPHost = 61; */
+        if (message.type.oneofKind === "requestHTTPHost")
+            Condition_Expression_RequestHTTPHost.internalBinaryWrite(message.type.requestHTTPHost, writer.tag(61, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPProtocol requestHTTPProtocol = 62; */
+        if (message.type.oneofKind === "requestHTTPProtocol")
+            Condition_Expression_RequestHTTPProtocol.internalBinaryWrite(message.type.requestHTTPProtocol, writer.tag(62, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPScheme requestHTTPScheme = 63; */
+        if (message.type.oneofKind === "requestHTTPScheme")
+            Condition_Expression_RequestHTTPScheme.internalBinaryWrite(message.type.requestHTTPScheme, writer.tag(63, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPURI requestHTTPURI = 64; */
+        if (message.type.oneofKind === "requestHTTPURI")
+            Condition_Expression_RequestHTTPURI.internalBinaryWrite(message.type.requestHTTPURI, writer.tag(64, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPSize requestHTTPSize = 65; */
+        if (message.type.oneofKind === "requestHTTPSize")
+            Condition_Expression_RequestHTTPSize.internalBinaryWrite(message.type.requestHTTPSize, writer.tag(65, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasQueryParam requestHTTPHasQueryParam = 66; */
+        if (message.type.oneofKind === "requestHTTPHasQueryParam")
+            Condition_Expression_RequestHTTPHasQueryParam.internalBinaryWrite(message.type.requestHTTPHasQueryParam, writer.tag(66, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPQueryParamValue requestHTTPQueryParamValue = 67; */
+        if (message.type.oneofKind === "requestHTTPQueryParamValue")
+            Condition_Expression_RequestHTTPQueryParamValue.internalBinaryWrite(message.type.requestHTTPQueryParamValue, writer.tag(67, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestSSH requestSSH = 68; */
+        if (message.type.oneofKind === "requestSSH")
+            Condition_Expression_RequestSSH.internalBinaryWrite(message.type.requestSSH, writer.tag(68, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestSSHUser requestSSHUser = 69; */
+        if (message.type.oneofKind === "requestSSHUser")
+            Condition_Expression_RequestSSHUser.internalBinaryWrite(message.type.requestSSHUser, writer.tag(69, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetes requestKubernetes = 70; */
+        if (message.type.oneofKind === "requestKubernetes")
+            Condition_Expression_RequestKubernetes.internalBinaryWrite(message.type.requestKubernetes, writer.tag(70, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesVerb requestKubernetesVerb = 71; */
+        if (message.type.oneofKind === "requestKubernetesVerb")
+            Condition_Expression_RequestKubernetesVerb.internalBinaryWrite(message.type.requestKubernetesVerb, writer.tag(71, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIPrefix requestKubernetesAPIPrefix = 72; */
+        if (message.type.oneofKind === "requestKubernetesAPIPrefix")
+            Condition_Expression_RequestKubernetesAPIPrefix.internalBinaryWrite(message.type.requestKubernetesAPIPrefix, writer.tag(72, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIGroup requestKubernetesAPIGroup = 73; */
+        if (message.type.oneofKind === "requestKubernetesAPIGroup")
+            Condition_Expression_RequestKubernetesAPIGroup.internalBinaryWrite(message.type.requestKubernetesAPIGroup, writer.tag(73, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIVersion requestKubernetesAPIVersion = 74; */
+        if (message.type.oneofKind === "requestKubernetesAPIVersion")
+            Condition_Expression_RequestKubernetesAPIVersion.internalBinaryWrite(message.type.requestKubernetesAPIVersion, writer.tag(74, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesNamespace requestKubernetesNamespace = 75; */
+        if (message.type.oneofKind === "requestKubernetesNamespace")
+            Condition_Expression_RequestKubernetesNamespace.internalBinaryWrite(message.type.requestKubernetesNamespace, writer.tag(75, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesResource requestKubernetesResource = 76; */
+        if (message.type.oneofKind === "requestKubernetesResource")
+            Condition_Expression_RequestKubernetesResource.internalBinaryWrite(message.type.requestKubernetesResource, writer.tag(76, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesSubresource requestKubernetesSubresource = 77; */
+        if (message.type.oneofKind === "requestKubernetesSubresource")
+            Condition_Expression_RequestKubernetesSubresource.internalBinaryWrite(message.type.requestKubernetesSubresource, writer.tag(77, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesName requestKubernetesName = 78; */
+        if (message.type.oneofKind === "requestKubernetesName")
+            Condition_Expression_RequestKubernetesName.internalBinaryWrite(message.type.requestKubernetesName, writer.tag(78, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPC requestGRPC = 79; */
+        if (message.type.oneofKind === "requestGRPC")
+            Condition_Expression_RequestGRPC.internalBinaryWrite(message.type.requestGRPC, writer.tag(79, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCMethod requestGRPCMethod = 80; */
+        if (message.type.oneofKind === "requestGRPCMethod")
+            Condition_Expression_RequestGRPCMethod.internalBinaryWrite(message.type.requestGRPCMethod, writer.tag(80, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCService requestGRPCService = 81; */
+        if (message.type.oneofKind === "requestGRPCService")
+            Condition_Expression_RequestGRPCService.internalBinaryWrite(message.type.requestGRPCService, writer.tag(81, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCServiceFullName requestGRPCServiceFullName = 82; */
+        if (message.type.oneofKind === "requestGRPCServiceFullName")
+            Condition_Expression_RequestGRPCServiceFullName.internalBinaryWrite(message.type.requestGRPCServiceFullName, writer.tag(82, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCPackage requestGRPCPackage = 83; */
+        if (message.type.oneofKind === "requestGRPCPackage")
+            Condition_Expression_RequestGRPCPackage.internalBinaryWrite(message.type.requestGRPCPackage, writer.tag(83, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnect requestPostgresConnect = 84; */
+        if (message.type.oneofKind === "requestPostgresConnect")
+            Condition_Expression_RequestPostgresConnect.internalBinaryWrite(message.type.requestPostgresConnect, writer.tag(84, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectUser requestPostgresConnectUser = 85; */
+        if (message.type.oneofKind === "requestPostgresConnectUser")
+            Condition_Expression_RequestPostgresConnectUser.internalBinaryWrite(message.type.requestPostgresConnectUser, writer.tag(85, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectDatabase requestPostgresConnectDatabase = 86; */
+        if (message.type.oneofKind === "requestPostgresConnectDatabase")
+            Condition_Expression_RequestPostgresConnectDatabase.internalBinaryWrite(message.type.requestPostgresConnectDatabase, writer.tag(86, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectApplicationName requestPostgresConnectApplicationName = 87; */
+        if (message.type.oneofKind === "requestPostgresConnectApplicationName")
+            Condition_Expression_RequestPostgresConnectApplicationName.internalBinaryWrite(message.type.requestPostgresConnectApplicationName, writer.tag(87, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQuery requestPostgresQuery = 88; */
+        if (message.type.oneofKind === "requestPostgresQuery")
+            Condition_Expression_RequestPostgresQuery.internalBinaryWrite(message.type.requestPostgresQuery, writer.tag(88, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQueryText requestPostgresQueryText = 89; */
+        if (message.type.oneofKind === "requestPostgresQueryText")
+            Condition_Expression_RequestPostgresQueryText.internalBinaryWrite(message.type.requestPostgresQueryText, writer.tag(89, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParse requestPostgresParse = 90; */
+        if (message.type.oneofKind === "requestPostgresParse")
+            Condition_Expression_RequestPostgresParse.internalBinaryWrite(message.type.requestPostgresParse, writer.tag(90, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseName requestPostgresParseName = 91; */
+        if (message.type.oneofKind === "requestPostgresParseName")
+            Condition_Expression_RequestPostgresParseName.internalBinaryWrite(message.type.requestPostgresParseName, writer.tag(91, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseQuery requestPostgresParseQuery = 92; */
+        if (message.type.oneofKind === "requestPostgresParseQuery")
+            Condition_Expression_RequestPostgresParseQuery.internalBinaryWrite(message.type.requestPostgresParseQuery, writer.tag(92, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestDNS requestDNS = 93; */
+        if (message.type.oneofKind === "requestDNS")
+            Condition_Expression_RequestDNS.internalBinaryWrite(message.type.requestDNS, writer.tag(93, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSName requestDNSName = 94; */
+        if (message.type.oneofKind === "requestDNSName")
+            Condition_Expression_RequestDNSName.internalBinaryWrite(message.type.requestDNSName, writer.tag(94, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSTypeID requestDNSTypeID = 95; */
+        if (message.type.oneofKind === "requestDNSTypeID")
+            Condition_Expression_RequestDNSTypeID.internalBinaryWrite(message.type.requestDNSTypeID, writer.tag(95, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5 requestSOCKS5 = 96; */
+        if (message.type.oneofKind === "requestSOCKS5")
+            Condition_Expression_RequestSOCKS5.internalBinaryWrite(message.type.requestSOCKS5, writer.tag(96, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Host requestSOCKS5Host = 97; */
+        if (message.type.oneofKind === "requestSOCKS5Host")
+            Condition_Expression_RequestSOCKS5Host.internalBinaryWrite(message.type.requestSOCKS5Host, writer.tag(97, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Port requestSOCKS5Port = 98; */
+        if (message.type.oneofKind === "requestSOCKS5Port")
+            Condition_Expression_RequestSOCKS5Port.internalBinaryWrite(message.type.requestSOCKS5Port, writer.tag(98, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5AddressType requestSOCKS5AddressType = 99; */
+        if (message.type.oneofKind === "requestSOCKS5AddressType")
+            Condition_Expression_RequestSOCKS5AddressType.internalBinaryWrite(message.type.requestSOCKS5AddressType, writer.tag(99, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -22199,26 +23730,25 @@ class Condition_Expression_SessionAuthenticationGeoipCountryCode$Type extends Me
  */
 export const Condition_Expression_SessionAuthenticationGeoipCountryCode = new Condition_Expression_SessionAuthenticationGeoipCountryCode$Type();
 // @generated message type with reflection information, may provide speed optimized methods
-class Condition_Expression_RequestHTTPPathPrefix$Type extends MessageType<Condition_Expression_RequestHTTPPathPrefix> {
+class Condition_Expression_RequestHTTPPath$Type extends MessageType<Condition_Expression_RequestHTTPPath> {
     constructor() {
-        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPathPrefix", [
-            { no: 1, name: "value", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPath", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
         ]);
     }
-    create(value?: PartialMessage<Condition_Expression_RequestHTTPPathPrefix>): Condition_Expression_RequestHTTPPathPrefix {
+    create(value?: PartialMessage<Condition_Expression_RequestHTTPPath>): Condition_Expression_RequestHTTPPath {
         const message = globalThis.Object.create((this.messagePrototype!));
-        message.value = "";
         if (value !== undefined)
-            reflectionMergePartial<Condition_Expression_RequestHTTPPathPrefix>(this, message, value);
+            reflectionMergePartial<Condition_Expression_RequestHTTPPath>(this, message, value);
         return message;
     }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestHTTPPathPrefix): Condition_Expression_RequestHTTPPathPrefix {
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestHTTPPath): Condition_Expression_RequestHTTPPath {
         let message = target ?? this.create(), end = reader.pos + length;
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* string value */ 1:
-                    message.value = reader.string();
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -22231,10 +23761,10 @@ class Condition_Expression_RequestHTTPPathPrefix$Type extends MessageType<Condit
         }
         return message;
     }
-    internalBinaryWrite(message: Condition_Expression_RequestHTTPPathPrefix, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* string value = 1; */
-        if (message.value !== "")
-            writer.tag(1, WireType.LengthDelimited).string(message.value);
+    internalBinaryWrite(message: Condition_Expression_RequestHTTPPath, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -22242,66 +23772,18 @@ class Condition_Expression_RequestHTTPPathPrefix$Type extends MessageType<Condit
     }
 }
 /**
- * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPathPrefix
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPath
  */
-export const Condition_Expression_RequestHTTPPathPrefix = new Condition_Expression_RequestHTTPPathPrefix$Type();
-// @generated message type with reflection information, may provide speed optimized methods
-class Condition_Expression_RequestHTTPPathExact$Type extends MessageType<Condition_Expression_RequestHTTPPathExact> {
-    constructor() {
-        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPathExact", [
-            { no: 1, name: "value", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
-        ]);
-    }
-    create(value?: PartialMessage<Condition_Expression_RequestHTTPPathExact>): Condition_Expression_RequestHTTPPathExact {
-        const message = globalThis.Object.create((this.messagePrototype!));
-        message.value = "";
-        if (value !== undefined)
-            reflectionMergePartial<Condition_Expression_RequestHTTPPathExact>(this, message, value);
-        return message;
-    }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestHTTPPathExact): Condition_Expression_RequestHTTPPathExact {
-        let message = target ?? this.create(), end = reader.pos + length;
-        while (reader.pos < end) {
-            let [fieldNo, wireType] = reader.tag();
-            switch (fieldNo) {
-                case /* string value */ 1:
-                    message.value = reader.string();
-                    break;
-                default:
-                    let u = options.readUnknownField;
-                    if (u === "throw")
-                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
-                    let d = reader.skip(wireType);
-                    if (u !== false)
-                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
-            }
-        }
-        return message;
-    }
-    internalBinaryWrite(message: Condition_Expression_RequestHTTPPathExact, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* string value = 1; */
-        if (message.value !== "")
-            writer.tag(1, WireType.LengthDelimited).string(message.value);
-        let u = options.writeUnknownFields;
-        if (u !== false)
-            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
-        return writer;
-    }
-}
-/**
- * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPathExact
- */
-export const Condition_Expression_RequestHTTPPathExact = new Condition_Expression_RequestHTTPPathExact$Type();
+export const Condition_Expression_RequestHTTPPath = new Condition_Expression_RequestHTTPPath$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class Condition_Expression_RequestHTTPMethod$Type extends MessageType<Condition_Expression_RequestHTTPMethod> {
     constructor() {
         super("octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod", [
-            { no: 1, name: "value", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
         ]);
     }
     create(value?: PartialMessage<Condition_Expression_RequestHTTPMethod>): Condition_Expression_RequestHTTPMethod {
         const message = globalThis.Object.create((this.messagePrototype!));
-        message.value = "";
         if (value !== undefined)
             reflectionMergePartial<Condition_Expression_RequestHTTPMethod>(this, message, value);
         return message;
@@ -22311,8 +23793,8 @@ class Condition_Expression_RequestHTTPMethod$Type extends MessageType<Condition_
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* string value */ 1:
-                    message.value = reader.string();
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -22326,9 +23808,9 @@ class Condition_Expression_RequestHTTPMethod$Type extends MessageType<Condition_
         return message;
     }
     internalBinaryWrite(message: Condition_Expression_RequestHTTPMethod, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* string value = 1; */
-        if (message.value !== "")
-            writer.tag(1, WireType.LengthDelimited).string(message.value);
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -22343,12 +23825,11 @@ export const Condition_Expression_RequestHTTPMethod = new Condition_Expression_R
 class Condition_Expression_RequestHTTPHasHeader$Type extends MessageType<Condition_Expression_RequestHTTPHasHeader> {
     constructor() {
         super("octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader", [
-            { no: 1, name: "value", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
         ]);
     }
     create(value?: PartialMessage<Condition_Expression_RequestHTTPHasHeader>): Condition_Expression_RequestHTTPHasHeader {
         const message = globalThis.Object.create((this.messagePrototype!));
-        message.value = "";
         if (value !== undefined)
             reflectionMergePartial<Condition_Expression_RequestHTTPHasHeader>(this, message, value);
         return message;
@@ -22358,8 +23839,8 @@ class Condition_Expression_RequestHTTPHasHeader$Type extends MessageType<Conditi
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* string value */ 1:
-                    message.value = reader.string();
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -22373,9 +23854,9 @@ class Condition_Expression_RequestHTTPHasHeader$Type extends MessageType<Conditi
         return message;
     }
     internalBinaryWrite(message: Condition_Expression_RequestHTTPHasHeader, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* string value = 1; */
-        if (message.value !== "")
-            writer.tag(1, WireType.LengthDelimited).string(message.value);
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -22390,14 +23871,12 @@ export const Condition_Expression_RequestHTTPHasHeader = new Condition_Expressio
 class Condition_Expression_RequestHTTPHeaderValue$Type extends MessageType<Condition_Expression_RequestHTTPHeaderValue> {
     constructor() {
         super("octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue", [
-            { no: 1, name: "header", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 2, name: "value", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 1, name: "header", kind: "message", T: () => Condition_Expression_StringMatch },
+            { no: 2, name: "value", kind: "message", T: () => Condition_Expression_StringMatch }
         ]);
     }
     create(value?: PartialMessage<Condition_Expression_RequestHTTPHeaderValue>): Condition_Expression_RequestHTTPHeaderValue {
         const message = globalThis.Object.create((this.messagePrototype!));
-        message.header = "";
-        message.value = "";
         if (value !== undefined)
             reflectionMergePartial<Condition_Expression_RequestHTTPHeaderValue>(this, message, value);
         return message;
@@ -22407,11 +23886,11 @@ class Condition_Expression_RequestHTTPHeaderValue$Type extends MessageType<Condi
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* string header */ 1:
-                    message.header = reader.string();
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch header */ 1:
+                    message.header = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.header);
                     break;
-                case /* string value */ 2:
-                    message.value = reader.string();
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch value */ 2:
+                    message.value = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.value);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -22425,12 +23904,12 @@ class Condition_Expression_RequestHTTPHeaderValue$Type extends MessageType<Condi
         return message;
     }
     internalBinaryWrite(message: Condition_Expression_RequestHTTPHeaderValue, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* string header = 1; */
-        if (message.header !== "")
-            writer.tag(1, WireType.LengthDelimited).string(message.header);
-        /* string value = 2; */
-        if (message.value !== "")
-            writer.tag(2, WireType.LengthDelimited).string(message.value);
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch header = 1; */
+        if (message.header)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.header, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch value = 2; */
+        if (message.value)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.value, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -22535,6 +24014,2908 @@ class Condition_Expression_RequestIPInRange$Type extends MessageType<Condition_E
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestIPInRange
  */
 export const Condition_Expression_RequestIPInRange = new Condition_Expression_RequestIPInRange$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_StringMatch$Type extends MessageType<Condition_Expression_StringMatch> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.StringMatch", [
+            { no: 1, name: "exact", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "prefix", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "suffix", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "contains", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ },
+            { no: 5, name: "in", kind: "message", oneof: "type", T: () => Condition_Expression_StringMatch_In }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_StringMatch>): Condition_Expression_StringMatch {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_StringMatch>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_StringMatch): Condition_Expression_StringMatch {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string exact */ 1:
+                    message.type = {
+                        oneofKind: "exact",
+                        exact: reader.string()
+                    };
+                    break;
+                case /* string prefix */ 2:
+                    message.type = {
+                        oneofKind: "prefix",
+                        prefix: reader.string()
+                    };
+                    break;
+                case /* string suffix */ 3:
+                    message.type = {
+                        oneofKind: "suffix",
+                        suffix: reader.string()
+                    };
+                    break;
+                case /* string contains */ 4:
+                    message.type = {
+                        oneofKind: "contains",
+                        contains: reader.string()
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch.In in */ 5:
+                    message.type = {
+                        oneofKind: "in",
+                        in: Condition_Expression_StringMatch_In.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).in)
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_StringMatch, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string exact = 1; */
+        if (message.type.oneofKind === "exact")
+            writer.tag(1, WireType.LengthDelimited).string(message.type.exact);
+        /* string prefix = 2; */
+        if (message.type.oneofKind === "prefix")
+            writer.tag(2, WireType.LengthDelimited).string(message.type.prefix);
+        /* string suffix = 3; */
+        if (message.type.oneofKind === "suffix")
+            writer.tag(3, WireType.LengthDelimited).string(message.type.suffix);
+        /* string contains = 4; */
+        if (message.type.oneofKind === "contains")
+            writer.tag(4, WireType.LengthDelimited).string(message.type.contains);
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch.In in = 5; */
+        if (message.type.oneofKind === "in")
+            Condition_Expression_StringMatch_In.internalBinaryWrite(message.type.in, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.StringMatch
+ */
+export const Condition_Expression_StringMatch = new Condition_Expression_StringMatch$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_StringMatch_In$Type extends MessageType<Condition_Expression_StringMatch_In> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.StringMatch.In", [
+            { no: 1, name: "values", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_StringMatch_In>): Condition_Expression_StringMatch_In {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.values = [];
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_StringMatch_In>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_StringMatch_In): Condition_Expression_StringMatch_In {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated string values */ 1:
+                    message.values.push(reader.string());
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_StringMatch_In, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated string values = 1; */
+        for (let i = 0; i < message.values.length; i++)
+            writer.tag(1, WireType.LengthDelimited).string(message.values[i]);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.StringMatch.In
+ */
+export const Condition_Expression_StringMatch_In = new Condition_Expression_StringMatch_In$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_UIntMatch$Type extends MessageType<Condition_Expression_UIntMatch> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch", [
+            { no: 1, name: "exact", kind: "scalar", oneof: "type", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 2, name: "lessThan", kind: "scalar", oneof: "type", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 3, name: "lessThanOrEqual", kind: "scalar", oneof: "type", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 4, name: "greaterThan", kind: "scalar", oneof: "type", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 5, name: "greaterThanOrEqual", kind: "scalar", oneof: "type", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_UIntMatch>): Condition_Expression_UIntMatch {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_UIntMatch>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_UIntMatch): Condition_Expression_UIntMatch {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* uint64 exact */ 1:
+                    message.type = {
+                        oneofKind: "exact",
+                        exact: reader.uint64().toNumber()
+                    };
+                    break;
+                case /* uint64 lessThan */ 2:
+                    message.type = {
+                        oneofKind: "lessThan",
+                        lessThan: reader.uint64().toNumber()
+                    };
+                    break;
+                case /* uint64 lessThanOrEqual */ 3:
+                    message.type = {
+                        oneofKind: "lessThanOrEqual",
+                        lessThanOrEqual: reader.uint64().toNumber()
+                    };
+                    break;
+                case /* uint64 greaterThan */ 4:
+                    message.type = {
+                        oneofKind: "greaterThan",
+                        greaterThan: reader.uint64().toNumber()
+                    };
+                    break;
+                case /* uint64 greaterThanOrEqual */ 5:
+                    message.type = {
+                        oneofKind: "greaterThanOrEqual",
+                        greaterThanOrEqual: reader.uint64().toNumber()
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_UIntMatch, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* uint64 exact = 1; */
+        if (message.type.oneofKind === "exact")
+            writer.tag(1, WireType.Varint).uint64(message.type.exact);
+        /* uint64 lessThan = 2; */
+        if (message.type.oneofKind === "lessThan")
+            writer.tag(2, WireType.Varint).uint64(message.type.lessThan);
+        /* uint64 lessThanOrEqual = 3; */
+        if (message.type.oneofKind === "lessThanOrEqual")
+            writer.tag(3, WireType.Varint).uint64(message.type.lessThanOrEqual);
+        /* uint64 greaterThan = 4; */
+        if (message.type.oneofKind === "greaterThan")
+            writer.tag(4, WireType.Varint).uint64(message.type.greaterThan);
+        /* uint64 greaterThanOrEqual = 5; */
+        if (message.type.oneofKind === "greaterThanOrEqual")
+            writer.tag(5, WireType.Varint).uint64(message.type.greaterThanOrEqual);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch
+ */
+export const Condition_Expression_UIntMatch = new Condition_Expression_UIntMatch$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_IntMatch$Type extends MessageType<Condition_Expression_IntMatch> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.IntMatch", [
+            { no: 1, name: "exact", kind: "scalar", oneof: "type", T: 3 /*ScalarType.INT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 2, name: "lessThan", kind: "scalar", oneof: "type", T: 3 /*ScalarType.INT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 3, name: "lessThanOrEqual", kind: "scalar", oneof: "type", T: 3 /*ScalarType.INT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 4, name: "greaterThan", kind: "scalar", oneof: "type", T: 3 /*ScalarType.INT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 5, name: "greaterThanOrEqual", kind: "scalar", oneof: "type", T: 3 /*ScalarType.INT64*/, L: 2 /*LongType.NUMBER*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_IntMatch>): Condition_Expression_IntMatch {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_IntMatch>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_IntMatch): Condition_Expression_IntMatch {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* int64 exact */ 1:
+                    message.type = {
+                        oneofKind: "exact",
+                        exact: reader.int64().toNumber()
+                    };
+                    break;
+                case /* int64 lessThan */ 2:
+                    message.type = {
+                        oneofKind: "lessThan",
+                        lessThan: reader.int64().toNumber()
+                    };
+                    break;
+                case /* int64 lessThanOrEqual */ 3:
+                    message.type = {
+                        oneofKind: "lessThanOrEqual",
+                        lessThanOrEqual: reader.int64().toNumber()
+                    };
+                    break;
+                case /* int64 greaterThan */ 4:
+                    message.type = {
+                        oneofKind: "greaterThan",
+                        greaterThan: reader.int64().toNumber()
+                    };
+                    break;
+                case /* int64 greaterThanOrEqual */ 5:
+                    message.type = {
+                        oneofKind: "greaterThanOrEqual",
+                        greaterThanOrEqual: reader.int64().toNumber()
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_IntMatch, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* int64 exact = 1; */
+        if (message.type.oneofKind === "exact")
+            writer.tag(1, WireType.Varint).int64(message.type.exact);
+        /* int64 lessThan = 2; */
+        if (message.type.oneofKind === "lessThan")
+            writer.tag(2, WireType.Varint).int64(message.type.lessThan);
+        /* int64 lessThanOrEqual = 3; */
+        if (message.type.oneofKind === "lessThanOrEqual")
+            writer.tag(3, WireType.Varint).int64(message.type.lessThanOrEqual);
+        /* int64 greaterThan = 4; */
+        if (message.type.oneofKind === "greaterThan")
+            writer.tag(4, WireType.Varint).int64(message.type.greaterThan);
+        /* int64 greaterThanOrEqual = 5; */
+        if (message.type.oneofKind === "greaterThanOrEqual")
+            writer.tag(5, WireType.Varint).int64(message.type.greaterThanOrEqual);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.IntMatch
+ */
+export const Condition_Expression_IntMatch = new Condition_Expression_IntMatch$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestHTTPHost$Type extends MessageType<Condition_Expression_RequestHTTPHost> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHost", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestHTTPHost>): Condition_Expression_RequestHTTPHost {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestHTTPHost>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestHTTPHost): Condition_Expression_RequestHTTPHost {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestHTTPHost, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHost
+ */
+export const Condition_Expression_RequestHTTPHost = new Condition_Expression_RequestHTTPHost$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestHTTPProtocol$Type extends MessageType<Condition_Expression_RequestHTTPProtocol> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPProtocol", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestHTTPProtocol>): Condition_Expression_RequestHTTPProtocol {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestHTTPProtocol>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestHTTPProtocol): Condition_Expression_RequestHTTPProtocol {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestHTTPProtocol, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPProtocol
+ */
+export const Condition_Expression_RequestHTTPProtocol = new Condition_Expression_RequestHTTPProtocol$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestHTTPScheme$Type extends MessageType<Condition_Expression_RequestHTTPScheme> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPScheme", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestHTTPScheme>): Condition_Expression_RequestHTTPScheme {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestHTTPScheme>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestHTTPScheme): Condition_Expression_RequestHTTPScheme {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestHTTPScheme, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPScheme
+ */
+export const Condition_Expression_RequestHTTPScheme = new Condition_Expression_RequestHTTPScheme$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestHTTPURI$Type extends MessageType<Condition_Expression_RequestHTTPURI> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPURI", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestHTTPURI>): Condition_Expression_RequestHTTPURI {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestHTTPURI>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestHTTPURI): Condition_Expression_RequestHTTPURI {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestHTTPURI, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPURI
+ */
+export const Condition_Expression_RequestHTTPURI = new Condition_Expression_RequestHTTPURI$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestHTTPSize$Type extends MessageType<Condition_Expression_RequestHTTPSize> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPSize", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_IntMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestHTTPSize>): Condition_Expression_RequestHTTPSize {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestHTTPSize>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestHTTPSize): Condition_Expression_RequestHTTPSize {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.IntMatch match */ 1:
+                    message.match = Condition_Expression_IntMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestHTTPSize, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.IntMatch match = 1; */
+        if (message.match)
+            Condition_Expression_IntMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPSize
+ */
+export const Condition_Expression_RequestHTTPSize = new Condition_Expression_RequestHTTPSize$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestHTTPHasQueryParam$Type extends MessageType<Condition_Expression_RequestHTTPHasQueryParam> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasQueryParam", [
+            { no: 1, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestHTTPHasQueryParam>): Condition_Expression_RequestHTTPHasQueryParam {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.name = "";
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestHTTPHasQueryParam>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestHTTPHasQueryParam): Condition_Expression_RequestHTTPHasQueryParam {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string name */ 1:
+                    message.name = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestHTTPHasQueryParam, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string name = 1; */
+        if (message.name !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.name);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasQueryParam
+ */
+export const Condition_Expression_RequestHTTPHasQueryParam = new Condition_Expression_RequestHTTPHasQueryParam$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestHTTPQueryParamValue$Type extends MessageType<Condition_Expression_RequestHTTPQueryParamValue> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPQueryParamValue", [
+            { no: 1, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestHTTPQueryParamValue>): Condition_Expression_RequestHTTPQueryParamValue {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.name = "";
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestHTTPQueryParamValue>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestHTTPQueryParamValue): Condition_Expression_RequestHTTPQueryParamValue {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string name */ 1:
+                    message.name = reader.string();
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 2:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestHTTPQueryParamValue, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string name = 1; */
+        if (message.name !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.name);
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 2; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPQueryParamValue
+ */
+export const Condition_Expression_RequestHTTPQueryParamValue = new Condition_Expression_RequestHTTPQueryParamValue$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestSSH$Type extends MessageType<Condition_Expression_RequestSSH> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestSSH", []);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestSSH>): Condition_Expression_RequestSSH {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestSSH>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestSSH): Condition_Expression_RequestSSH {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestSSH, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestSSH
+ */
+export const Condition_Expression_RequestSSH = new Condition_Expression_RequestSSH$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestSSHUser$Type extends MessageType<Condition_Expression_RequestSSHUser> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestSSHUser", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestSSHUser>): Condition_Expression_RequestSSHUser {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestSSHUser>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestSSHUser): Condition_Expression_RequestSSHUser {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestSSHUser, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestSSHUser
+ */
+export const Condition_Expression_RequestSSHUser = new Condition_Expression_RequestSSHUser$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestKubernetes$Type extends MessageType<Condition_Expression_RequestKubernetes> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetes", []);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestKubernetes>): Condition_Expression_RequestKubernetes {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestKubernetes>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestKubernetes): Condition_Expression_RequestKubernetes {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestKubernetes, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetes
+ */
+export const Condition_Expression_RequestKubernetes = new Condition_Expression_RequestKubernetes$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestKubernetesVerb$Type extends MessageType<Condition_Expression_RequestKubernetesVerb> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesVerb", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestKubernetesVerb>): Condition_Expression_RequestKubernetesVerb {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestKubernetesVerb>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestKubernetesVerb): Condition_Expression_RequestKubernetesVerb {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestKubernetesVerb, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesVerb
+ */
+export const Condition_Expression_RequestKubernetesVerb = new Condition_Expression_RequestKubernetesVerb$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestKubernetesAPIPrefix$Type extends MessageType<Condition_Expression_RequestKubernetesAPIPrefix> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIPrefix", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestKubernetesAPIPrefix>): Condition_Expression_RequestKubernetesAPIPrefix {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestKubernetesAPIPrefix>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestKubernetesAPIPrefix): Condition_Expression_RequestKubernetesAPIPrefix {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestKubernetesAPIPrefix, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIPrefix
+ */
+export const Condition_Expression_RequestKubernetesAPIPrefix = new Condition_Expression_RequestKubernetesAPIPrefix$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestKubernetesAPIGroup$Type extends MessageType<Condition_Expression_RequestKubernetesAPIGroup> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIGroup", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestKubernetesAPIGroup>): Condition_Expression_RequestKubernetesAPIGroup {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestKubernetesAPIGroup>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestKubernetesAPIGroup): Condition_Expression_RequestKubernetesAPIGroup {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestKubernetesAPIGroup, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIGroup
+ */
+export const Condition_Expression_RequestKubernetesAPIGroup = new Condition_Expression_RequestKubernetesAPIGroup$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestKubernetesAPIVersion$Type extends MessageType<Condition_Expression_RequestKubernetesAPIVersion> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIVersion", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestKubernetesAPIVersion>): Condition_Expression_RequestKubernetesAPIVersion {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestKubernetesAPIVersion>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestKubernetesAPIVersion): Condition_Expression_RequestKubernetesAPIVersion {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestKubernetesAPIVersion, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIVersion
+ */
+export const Condition_Expression_RequestKubernetesAPIVersion = new Condition_Expression_RequestKubernetesAPIVersion$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestKubernetesNamespace$Type extends MessageType<Condition_Expression_RequestKubernetesNamespace> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesNamespace", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestKubernetesNamespace>): Condition_Expression_RequestKubernetesNamespace {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestKubernetesNamespace>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestKubernetesNamespace): Condition_Expression_RequestKubernetesNamespace {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestKubernetesNamespace, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesNamespace
+ */
+export const Condition_Expression_RequestKubernetesNamespace = new Condition_Expression_RequestKubernetesNamespace$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestKubernetesResource$Type extends MessageType<Condition_Expression_RequestKubernetesResource> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesResource", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestKubernetesResource>): Condition_Expression_RequestKubernetesResource {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestKubernetesResource>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestKubernetesResource): Condition_Expression_RequestKubernetesResource {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestKubernetesResource, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesResource
+ */
+export const Condition_Expression_RequestKubernetesResource = new Condition_Expression_RequestKubernetesResource$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestKubernetesSubresource$Type extends MessageType<Condition_Expression_RequestKubernetesSubresource> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesSubresource", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestKubernetesSubresource>): Condition_Expression_RequestKubernetesSubresource {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestKubernetesSubresource>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestKubernetesSubresource): Condition_Expression_RequestKubernetesSubresource {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestKubernetesSubresource, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesSubresource
+ */
+export const Condition_Expression_RequestKubernetesSubresource = new Condition_Expression_RequestKubernetesSubresource$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestKubernetesName$Type extends MessageType<Condition_Expression_RequestKubernetesName> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesName", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestKubernetesName>): Condition_Expression_RequestKubernetesName {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestKubernetesName>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestKubernetesName): Condition_Expression_RequestKubernetesName {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestKubernetesName, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesName
+ */
+export const Condition_Expression_RequestKubernetesName = new Condition_Expression_RequestKubernetesName$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestGRPC$Type extends MessageType<Condition_Expression_RequestGRPC> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPC", []);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestGRPC>): Condition_Expression_RequestGRPC {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestGRPC>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestGRPC): Condition_Expression_RequestGRPC {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestGRPC, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPC
+ */
+export const Condition_Expression_RequestGRPC = new Condition_Expression_RequestGRPC$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestGRPCMethod$Type extends MessageType<Condition_Expression_RequestGRPCMethod> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCMethod", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestGRPCMethod>): Condition_Expression_RequestGRPCMethod {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestGRPCMethod>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestGRPCMethod): Condition_Expression_RequestGRPCMethod {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestGRPCMethod, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCMethod
+ */
+export const Condition_Expression_RequestGRPCMethod = new Condition_Expression_RequestGRPCMethod$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestGRPCService$Type extends MessageType<Condition_Expression_RequestGRPCService> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCService", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestGRPCService>): Condition_Expression_RequestGRPCService {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestGRPCService>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestGRPCService): Condition_Expression_RequestGRPCService {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestGRPCService, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCService
+ */
+export const Condition_Expression_RequestGRPCService = new Condition_Expression_RequestGRPCService$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestGRPCServiceFullName$Type extends MessageType<Condition_Expression_RequestGRPCServiceFullName> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCServiceFullName", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestGRPCServiceFullName>): Condition_Expression_RequestGRPCServiceFullName {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestGRPCServiceFullName>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestGRPCServiceFullName): Condition_Expression_RequestGRPCServiceFullName {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestGRPCServiceFullName, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCServiceFullName
+ */
+export const Condition_Expression_RequestGRPCServiceFullName = new Condition_Expression_RequestGRPCServiceFullName$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestGRPCPackage$Type extends MessageType<Condition_Expression_RequestGRPCPackage> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCPackage", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestGRPCPackage>): Condition_Expression_RequestGRPCPackage {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestGRPCPackage>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestGRPCPackage): Condition_Expression_RequestGRPCPackage {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestGRPCPackage, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCPackage
+ */
+export const Condition_Expression_RequestGRPCPackage = new Condition_Expression_RequestGRPCPackage$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestPostgresConnect$Type extends MessageType<Condition_Expression_RequestPostgresConnect> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnect", []);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestPostgresConnect>): Condition_Expression_RequestPostgresConnect {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestPostgresConnect>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestPostgresConnect): Condition_Expression_RequestPostgresConnect {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestPostgresConnect, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnect
+ */
+export const Condition_Expression_RequestPostgresConnect = new Condition_Expression_RequestPostgresConnect$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestPostgresConnectUser$Type extends MessageType<Condition_Expression_RequestPostgresConnectUser> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectUser", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestPostgresConnectUser>): Condition_Expression_RequestPostgresConnectUser {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestPostgresConnectUser>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestPostgresConnectUser): Condition_Expression_RequestPostgresConnectUser {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestPostgresConnectUser, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectUser
+ */
+export const Condition_Expression_RequestPostgresConnectUser = new Condition_Expression_RequestPostgresConnectUser$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestPostgresConnectDatabase$Type extends MessageType<Condition_Expression_RequestPostgresConnectDatabase> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectDatabase", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestPostgresConnectDatabase>): Condition_Expression_RequestPostgresConnectDatabase {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestPostgresConnectDatabase>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestPostgresConnectDatabase): Condition_Expression_RequestPostgresConnectDatabase {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestPostgresConnectDatabase, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectDatabase
+ */
+export const Condition_Expression_RequestPostgresConnectDatabase = new Condition_Expression_RequestPostgresConnectDatabase$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestPostgresConnectApplicationName$Type extends MessageType<Condition_Expression_RequestPostgresConnectApplicationName> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectApplicationName", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestPostgresConnectApplicationName>): Condition_Expression_RequestPostgresConnectApplicationName {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestPostgresConnectApplicationName>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestPostgresConnectApplicationName): Condition_Expression_RequestPostgresConnectApplicationName {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestPostgresConnectApplicationName, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectApplicationName
+ */
+export const Condition_Expression_RequestPostgresConnectApplicationName = new Condition_Expression_RequestPostgresConnectApplicationName$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestPostgresQuery$Type extends MessageType<Condition_Expression_RequestPostgresQuery> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQuery", []);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestPostgresQuery>): Condition_Expression_RequestPostgresQuery {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestPostgresQuery>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestPostgresQuery): Condition_Expression_RequestPostgresQuery {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestPostgresQuery, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQuery
+ */
+export const Condition_Expression_RequestPostgresQuery = new Condition_Expression_RequestPostgresQuery$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestPostgresQueryText$Type extends MessageType<Condition_Expression_RequestPostgresQueryText> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQueryText", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestPostgresQueryText>): Condition_Expression_RequestPostgresQueryText {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestPostgresQueryText>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestPostgresQueryText): Condition_Expression_RequestPostgresQueryText {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestPostgresQueryText, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQueryText
+ */
+export const Condition_Expression_RequestPostgresQueryText = new Condition_Expression_RequestPostgresQueryText$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestPostgresParse$Type extends MessageType<Condition_Expression_RequestPostgresParse> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParse", []);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestPostgresParse>): Condition_Expression_RequestPostgresParse {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestPostgresParse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestPostgresParse): Condition_Expression_RequestPostgresParse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestPostgresParse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParse
+ */
+export const Condition_Expression_RequestPostgresParse = new Condition_Expression_RequestPostgresParse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestPostgresParseName$Type extends MessageType<Condition_Expression_RequestPostgresParseName> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseName", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestPostgresParseName>): Condition_Expression_RequestPostgresParseName {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestPostgresParseName>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestPostgresParseName): Condition_Expression_RequestPostgresParseName {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestPostgresParseName, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseName
+ */
+export const Condition_Expression_RequestPostgresParseName = new Condition_Expression_RequestPostgresParseName$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestPostgresParseQuery$Type extends MessageType<Condition_Expression_RequestPostgresParseQuery> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseQuery", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestPostgresParseQuery>): Condition_Expression_RequestPostgresParseQuery {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestPostgresParseQuery>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestPostgresParseQuery): Condition_Expression_RequestPostgresParseQuery {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestPostgresParseQuery, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseQuery
+ */
+export const Condition_Expression_RequestPostgresParseQuery = new Condition_Expression_RequestPostgresParseQuery$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestDNS$Type extends MessageType<Condition_Expression_RequestDNS> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestDNS", []);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestDNS>): Condition_Expression_RequestDNS {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestDNS>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestDNS): Condition_Expression_RequestDNS {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestDNS, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestDNS
+ */
+export const Condition_Expression_RequestDNS = new Condition_Expression_RequestDNS$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestDNSName$Type extends MessageType<Condition_Expression_RequestDNSName> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSName", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestDNSName>): Condition_Expression_RequestDNSName {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestDNSName>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestDNSName): Condition_Expression_RequestDNSName {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestDNSName, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSName
+ */
+export const Condition_Expression_RequestDNSName = new Condition_Expression_RequestDNSName$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestDNSTypeID$Type extends MessageType<Condition_Expression_RequestDNSTypeID> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSTypeID", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_IntMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestDNSTypeID>): Condition_Expression_RequestDNSTypeID {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestDNSTypeID>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestDNSTypeID): Condition_Expression_RequestDNSTypeID {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.IntMatch match */ 1:
+                    message.match = Condition_Expression_IntMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestDNSTypeID, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.IntMatch match = 1; */
+        if (message.match)
+            Condition_Expression_IntMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSTypeID
+ */
+export const Condition_Expression_RequestDNSTypeID = new Condition_Expression_RequestDNSTypeID$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestSOCKS5$Type extends MessageType<Condition_Expression_RequestSOCKS5> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5", []);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestSOCKS5>): Condition_Expression_RequestSOCKS5 {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestSOCKS5>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestSOCKS5): Condition_Expression_RequestSOCKS5 {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestSOCKS5, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5
+ */
+export const Condition_Expression_RequestSOCKS5 = new Condition_Expression_RequestSOCKS5$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestSOCKS5Host$Type extends MessageType<Condition_Expression_RequestSOCKS5Host> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Host", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestSOCKS5Host>): Condition_Expression_RequestSOCKS5Host {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestSOCKS5Host>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestSOCKS5Host): Condition_Expression_RequestSOCKS5Host {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestSOCKS5Host, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Host
+ */
+export const Condition_Expression_RequestSOCKS5Host = new Condition_Expression_RequestSOCKS5Host$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestSOCKS5Port$Type extends MessageType<Condition_Expression_RequestSOCKS5Port> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Port", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_UIntMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestSOCKS5Port>): Condition_Expression_RequestSOCKS5Port {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestSOCKS5Port>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestSOCKS5Port): Condition_Expression_RequestSOCKS5Port {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch match */ 1:
+                    message.match = Condition_Expression_UIntMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestSOCKS5Port, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch match = 1; */
+        if (message.match)
+            Condition_Expression_UIntMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Port
+ */
+export const Condition_Expression_RequestSOCKS5Port = new Condition_Expression_RequestSOCKS5Port$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_RequestSOCKS5AddressType$Type extends MessageType<Condition_Expression_RequestSOCKS5AddressType> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5AddressType", [
+            { no: 1, name: "addressType", kind: "enum", T: () => ["octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect.AddressType", RequestContext_Request_SOCKS5_Connect_AddressType] }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_RequestSOCKS5AddressType>): Condition_Expression_RequestSOCKS5AddressType {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.addressType = 0;
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_RequestSOCKS5AddressType>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_RequestSOCKS5AddressType): Condition_Expression_RequestSOCKS5AddressType {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect.AddressType addressType */ 1:
+                    message.addressType = reader.int32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_RequestSOCKS5AddressType, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.core.v1.RequestContext.Request.SOCKS5.Connect.AddressType addressType = 1; */
+        if (message.addressType !== 0)
+            writer.tag(1, WireType.Varint).int32(message.addressType);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5AddressType
+ */
+export const Condition_Expression_RequestSOCKS5AddressType = new Condition_Expression_RequestSOCKS5AddressType$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_MCPProtocolVersion$Type extends MessageType<Condition_Expression_MCPProtocolVersion> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.MCPProtocolVersion", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_MCPProtocolVersion>): Condition_Expression_MCPProtocolVersion {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_MCPProtocolVersion>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_MCPProtocolVersion): Condition_Expression_MCPProtocolVersion {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_MCPProtocolVersion, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.MCPProtocolVersion
+ */
+export const Condition_Expression_MCPProtocolVersion = new Condition_Expression_MCPProtocolVersion$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_MCPMethod$Type extends MessageType<Condition_Expression_MCPMethod> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.MCPMethod", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_MCPMethod>): Condition_Expression_MCPMethod {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_MCPMethod>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_MCPMethod): Condition_Expression_MCPMethod {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_MCPMethod, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.MCPMethod
+ */
+export const Condition_Expression_MCPMethod = new Condition_Expression_MCPMethod$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_MCPToolName$Type extends MessageType<Condition_Expression_MCPToolName> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.MCPToolName", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_MCPToolName>): Condition_Expression_MCPToolName {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_MCPToolName>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_MCPToolName): Condition_Expression_MCPToolName {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_MCPToolName, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.MCPToolName
+ */
+export const Condition_Expression_MCPToolName = new Condition_Expression_MCPToolName$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_MCPPromptName$Type extends MessageType<Condition_Expression_MCPPromptName> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.MCPPromptName", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_MCPPromptName>): Condition_Expression_MCPPromptName {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_MCPPromptName>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_MCPPromptName): Condition_Expression_MCPPromptName {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_MCPPromptName, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.MCPPromptName
+ */
+export const Condition_Expression_MCPPromptName = new Condition_Expression_MCPPromptName$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_MCPResourceURI$Type extends MessageType<Condition_Expression_MCPResourceURI> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.MCPResourceURI", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_MCPResourceURI>): Condition_Expression_MCPResourceURI {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_MCPResourceURI>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_MCPResourceURI): Condition_Expression_MCPResourceURI {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_MCPResourceURI, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.MCPResourceURI
+ */
+export const Condition_Expression_MCPResourceURI = new Condition_Expression_MCPResourceURI$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_MCPIsNotification$Type extends MessageType<Condition_Expression_MCPIsNotification> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.MCPIsNotification", []);
+    }
+    create(value?: PartialMessage<Condition_Expression_MCPIsNotification>): Condition_Expression_MCPIsNotification {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_MCPIsNotification>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_MCPIsNotification): Condition_Expression_MCPIsNotification {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_MCPIsNotification, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.MCPIsNotification
+ */
+export const Condition_Expression_MCPIsNotification = new Condition_Expression_MCPIsNotification$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_LLMProtocol$Type extends MessageType<Condition_Expression_LLMProtocol> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.LLMProtocol", [
+            { no: 1, name: "protocol", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Config.LLM.Protocol", Service_Spec_Config_LLM_Protocol] }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_LLMProtocol>): Condition_Expression_LLMProtocol {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.protocol = 0;
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_LLMProtocol>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_LLMProtocol): Condition_Expression_LLMProtocol {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.core.v1.Service.Spec.Config.LLM.Protocol protocol */ 1:
+                    message.protocol = reader.int32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_LLMProtocol, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.core.v1.Service.Spec.Config.LLM.Protocol protocol = 1; */
+        if (message.protocol !== 0)
+            writer.tag(1, WireType.Varint).int32(message.protocol);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.LLMProtocol
+ */
+export const Condition_Expression_LLMProtocol = new Condition_Expression_LLMProtocol$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_LLMOperation$Type extends MessageType<Condition_Expression_LLMOperation> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.LLMOperation", [
+            { no: 1, name: "operation", kind: "enum", T: () => ["octelium.api.main.core.v1.RequestContext.Request.LLM.Operation", RequestContext_Request_LLM_Operation] }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_LLMOperation>): Condition_Expression_LLMOperation {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.operation = 0;
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_LLMOperation>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_LLMOperation): Condition_Expression_LLMOperation {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.core.v1.RequestContext.Request.LLM.Operation operation */ 1:
+                    message.operation = reader.int32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_LLMOperation, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.core.v1.RequestContext.Request.LLM.Operation operation = 1; */
+        if (message.operation !== 0)
+            writer.tag(1, WireType.Varint).int32(message.operation);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.LLMOperation
+ */
+export const Condition_Expression_LLMOperation = new Condition_Expression_LLMOperation$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_LLMModel$Type extends MessageType<Condition_Expression_LLMModel> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.LLMModel", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_LLMModel>): Condition_Expression_LLMModel {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_LLMModel>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_LLMModel): Condition_Expression_LLMModel {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_LLMModel, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.LLMModel
+ */
+export const Condition_Expression_LLMModel = new Condition_Expression_LLMModel$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_LLMStream$Type extends MessageType<Condition_Expression_LLMStream> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.LLMStream", []);
+    }
+    create(value?: PartialMessage<Condition_Expression_LLMStream>): Condition_Expression_LLMStream {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_LLMStream>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_LLMStream): Condition_Expression_LLMStream {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_LLMStream, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.LLMStream
+ */
+export const Condition_Expression_LLMStream = new Condition_Expression_LLMStream$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_LLMEstimatedInputTokens$Type extends MessageType<Condition_Expression_LLMEstimatedInputTokens> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimatedInputTokens", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_UIntMatch },
+            { no: 2, name: "requireComplete", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_LLMEstimatedInputTokens>): Condition_Expression_LLMEstimatedInputTokens {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.requireComplete = false;
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_LLMEstimatedInputTokens>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_LLMEstimatedInputTokens): Condition_Expression_LLMEstimatedInputTokens {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch match */ 1:
+                    message.match = Condition_Expression_UIntMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                case /* bool requireComplete */ 2:
+                    message.requireComplete = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_LLMEstimatedInputTokens, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch match = 1; */
+        if (message.match)
+            Condition_Expression_UIntMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* bool requireComplete = 2; */
+        if (message.requireComplete !== false)
+            writer.tag(2, WireType.Varint).bool(message.requireComplete);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimatedInputTokens
+ */
+export const Condition_Expression_LLMEstimatedInputTokens = new Condition_Expression_LLMEstimatedInputTokens$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_LLMEstimateQuality$Type extends MessageType<Condition_Expression_LLMEstimateQuality> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimateQuality", [
+            { no: 1, name: "quality", kind: "enum", T: () => ["octelium.api.main.core.v1.RequestContext.Request.LLM.EstimateQuality", RequestContext_Request_LLM_EstimateQuality] }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_LLMEstimateQuality>): Condition_Expression_LLMEstimateQuality {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.quality = 0;
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_LLMEstimateQuality>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_LLMEstimateQuality): Condition_Expression_LLMEstimateQuality {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.core.v1.RequestContext.Request.LLM.EstimateQuality quality */ 1:
+                    message.quality = reader.int32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_LLMEstimateQuality, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.core.v1.RequestContext.Request.LLM.EstimateQuality quality = 1; */
+        if (message.quality !== 0)
+            writer.tag(1, WireType.Varint).int32(message.quality);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimateQuality
+ */
+export const Condition_Expression_LLMEstimateQuality = new Condition_Expression_LLMEstimateQuality$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_LLMMaxOutputTokens$Type extends MessageType<Condition_Expression_LLMMaxOutputTokens> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.LLMMaxOutputTokens", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_UIntMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_LLMMaxOutputTokens>): Condition_Expression_LLMMaxOutputTokens {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_LLMMaxOutputTokens>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_LLMMaxOutputTokens): Condition_Expression_LLMMaxOutputTokens {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch match */ 1:
+                    message.match = Condition_Expression_UIntMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_LLMMaxOutputTokens, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch match = 1; */
+        if (message.match)
+            Condition_Expression_UIntMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.LLMMaxOutputTokens
+ */
+export const Condition_Expression_LLMMaxOutputTokens = new Condition_Expression_LLMMaxOutputTokens$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_LLMHasTools$Type extends MessageType<Condition_Expression_LLMHasTools> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.LLMHasTools", []);
+    }
+    create(value?: PartialMessage<Condition_Expression_LLMHasTools>): Condition_Expression_LLMHasTools {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_LLMHasTools>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_LLMHasTools): Condition_Expression_LLMHasTools {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_LLMHasTools, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.LLMHasTools
+ */
+export const Condition_Expression_LLMHasTools = new Condition_Expression_LLMHasTools$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_LLMToolCount$Type extends MessageType<Condition_Expression_LLMToolCount> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.LLMToolCount", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_UIntMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_LLMToolCount>): Condition_Expression_LLMToolCount {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_LLMToolCount>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_LLMToolCount): Condition_Expression_LLMToolCount {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch match */ 1:
+                    message.match = Condition_Expression_UIntMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_LLMToolCount, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch match = 1; */
+        if (message.match)
+            Condition_Expression_UIntMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.LLMToolCount
+ */
+export const Condition_Expression_LLMToolCount = new Condition_Expression_LLMToolCount$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_LLMToolName$Type extends MessageType<Condition_Expression_LLMToolName> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.LLMToolName", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_LLMToolName>): Condition_Expression_LLMToolName {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_LLMToolName>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_LLMToolName): Condition_Expression_LLMToolName {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match */ 1:
+                    message.match = Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_LLMToolName, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.LLMToolName
+ */
+export const Condition_Expression_LLMToolName = new Condition_Expression_LLMToolName$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_LLMInputItemCount$Type extends MessageType<Condition_Expression_LLMInputItemCount> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.LLMInputItemCount", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_UIntMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_LLMInputItemCount>): Condition_Expression_LLMInputItemCount {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_LLMInputItemCount>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_LLMInputItemCount): Condition_Expression_LLMInputItemCount {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch match */ 1:
+                    message.match = Condition_Expression_UIntMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_LLMInputItemCount, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch match = 1; */
+        if (message.match)
+            Condition_Expression_UIntMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.LLMInputItemCount
+ */
+export const Condition_Expression_LLMInputItemCount = new Condition_Expression_LLMInputItemCount$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_LLMHasImageInput$Type extends MessageType<Condition_Expression_LLMHasImageInput> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.LLMHasImageInput", []);
+    }
+    create(value?: PartialMessage<Condition_Expression_LLMHasImageInput>): Condition_Expression_LLMHasImageInput {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_LLMHasImageInput>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_LLMHasImageInput): Condition_Expression_LLMHasImageInput {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_LLMHasImageInput, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.LLMHasImageInput
+ */
+export const Condition_Expression_LLMHasImageInput = new Condition_Expression_LLMHasImageInput$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_LLMHasAudioInput$Type extends MessageType<Condition_Expression_LLMHasAudioInput> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.LLMHasAudioInput", []);
+    }
+    create(value?: PartialMessage<Condition_Expression_LLMHasAudioInput>): Condition_Expression_LLMHasAudioInput {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_LLMHasAudioInput>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_LLMHasAudioInput): Condition_Expression_LLMHasAudioInput {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_LLMHasAudioInput, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.LLMHasAudioInput
+ */
+export const Condition_Expression_LLMHasAudioInput = new Condition_Expression_LLMHasAudioInput$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class Condition_Expression_APIServerReadOnlyMethods$Type extends MessageType<Condition_Expression_APIServerReadOnlyMethods> {
     constructor() {

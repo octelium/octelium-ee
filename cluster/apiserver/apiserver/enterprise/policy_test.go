@@ -377,24 +377,11 @@ func TestPolicyGetExpression(t *testing.T) {
 	}
 
 	{
-		assertPolicyExpression(t, srv, &enterprisev1.Condition_Expression{
-			Type: &enterprisev1.Condition_Expression_RequestHTTPHasHeader_{
-				RequestHTTPHasHeader: &enterprisev1.Condition_Expression_RequestHTTPHasHeader{
-					Value: "X-Request-ID",
-				},
-			},
-		}, `"x-request-id" in ctx.request.http.headers`)
+		assertPolicyExpression(t, srv, policyRequestHTTPHasHeader("X-Request-ID"), `"x-request-id" in ctx.request.http.headers`)
 	}
 
 	{
-		assertPolicyExpression(t, srv, &enterprisev1.Condition_Expression{
-			Type: &enterprisev1.Condition_Expression_RequestHTTPHeaderValue_{
-				RequestHTTPHeaderValue: &enterprisev1.Condition_Expression_RequestHTTPHeaderValue{
-					Header: "X-Forwarded-For",
-					Value:  "10.0.0.1",
-				},
-			},
-		}, `ctx.request.http.headers["x-forwarded-for"] == "10.0.0.1"`)
+		assertPolicyExpression(t, srv, policyRequestHTTPHeaderValue("X-Forwarded-For", "10.0.0.1"), `ctx.request.http.headers["x-forwarded-for"] == "10.0.0.1"`)
 	}
 
 	{
@@ -481,6 +468,153 @@ func TestPolicyGetExpression(t *testing.T) {
 
 	{
 		assertPolicyExpression(t, srv, policyAPIServerAccess(enterprisev1.Condition_Expression_APIServerAccess_REVIEWER), `((`+apiServerExpr+`) && (ctx.request.grpc.package == "octelium.api.main.access.v1")) && (ctx.request.grpc.service == "ReviewerService")`)
+	}
+}
+
+func TestPolicyGetRequestExpression(t *testing.T) {
+	srv := &Server{}
+
+	tests := []struct {
+		name string
+		expr *enterprisev1.Condition_Expression
+		want string
+	}{
+		{
+			name: "http method in",
+			expr: policyRequestHTTPMethodMatchIn("get", "POST"),
+			want: `ctx.request.http.method in ["GET", "POST"]`,
+		},
+		{
+			name: "http path contains",
+			expr: policyRequestHTTPPathMatch(&enterprisev1.Condition_Expression_StringMatch{
+				Type: &enterprisev1.Condition_Expression_StringMatch_Contains{Contains: "/admin/"},
+			}),
+			want: `ctx.request.http.path.contains("/admin/")`,
+		},
+		{
+			name: "http header value prefix",
+			expr: policyRequestHTTPHeaderValueMatch(
+				policyStringMatchExact("X-Auth"),
+				&enterprisev1.Condition_Expression_StringMatch{Type: &enterprisev1.Condition_Expression_StringMatch_Prefix{Prefix: "Bearer "}},
+			),
+			want: `ctx.request.http.headers.exists(k, k == "x-auth" && ctx.request.http.headers[k].startsWith("Bearer "))`,
+		},
+		{
+			name: "http query parameter",
+			expr: &enterprisev1.Condition_Expression{
+				Type: &enterprisev1.Condition_Expression_RequestHTTPQueryParamValue_{
+					RequestHTTPQueryParamValue: &enterprisev1.Condition_Expression_RequestHTTPQueryParamValue{
+						Name:  "tenant",
+						Match: &enterprisev1.Condition_Expression_StringMatch{Type: &enterprisev1.Condition_Expression_StringMatch_Suffix{Suffix: "-prod"}},
+					},
+				},
+			},
+			want: `("tenant" in ctx.request.http.queryParams) && (ctx.request.http.queryParams["tenant"].endsWith("-prod"))`,
+		},
+		{
+			name: "ssh marker",
+			expr: &enterprisev1.Condition_Expression{
+				Type: &enterprisev1.Condition_Expression_RequestSSH_{
+					RequestSSH: &enterprisev1.Condition_Expression_RequestSSH{},
+				},
+			},
+			want: `has(ctx.request.ssh)`,
+		},
+		{
+			name: "kubernetes namespace",
+			expr: &enterprisev1.Condition_Expression{
+				Type: &enterprisev1.Condition_Expression_RequestKubernetesNamespace_{
+					RequestKubernetesNamespace: &enterprisev1.Condition_Expression_RequestKubernetesNamespace{
+						Match: &enterprisev1.Condition_Expression_StringMatch{Type: &enterprisev1.Condition_Expression_StringMatch_Prefix{Prefix: "team-"}},
+					},
+				},
+			},
+			want: `(has(ctx.request.kubernetes)) && (ctx.request.kubernetes.namespace.startsWith("team-"))`,
+		},
+		{
+			name: "grpc method",
+			expr: &enterprisev1.Condition_Expression{
+				Type: &enterprisev1.Condition_Expression_RequestGRPCMethod_{
+					RequestGRPCMethod: &enterprisev1.Condition_Expression_RequestGRPCMethod{
+						Match: policyStringMatchIn("Get", "List"),
+					},
+				},
+			},
+			want: `(has(ctx.request.grpc)) && (ctx.request.grpc.method in ["Get", "List"])`,
+		},
+		{
+			name: "postgres query",
+			expr: &enterprisev1.Condition_Expression{
+				Type: &enterprisev1.Condition_Expression_RequestPostgresQueryText_{
+					RequestPostgresQueryText: &enterprisev1.Condition_Expression_RequestPostgresQueryText{
+						Match: &enterprisev1.Condition_Expression_StringMatch{Type: &enterprisev1.Condition_Expression_StringMatch_Contains{Contains: "SELECT"}},
+					},
+				},
+			},
+			want: `(has(ctx.request.postgres)) && (has(ctx.request.postgres.query)) && (ctx.request.postgres.query.query.contains("SELECT"))`,
+		},
+		{
+			name: "dns type",
+			expr: &enterprisev1.Condition_Expression{
+				Type: &enterprisev1.Condition_Expression_RequestDNSTypeID_{
+					RequestDNSTypeID: &enterprisev1.Condition_Expression_RequestDNSTypeID{
+						Match: &enterprisev1.Condition_Expression_IntMatch{Type: &enterprisev1.Condition_Expression_IntMatch_Exact{Exact: 16}},
+					},
+				},
+			},
+			want: `(has(ctx.request.dns)) && (ctx.request.dns.typeID == 16)`,
+		},
+		{
+			name: "socks port",
+			expr: &enterprisev1.Condition_Expression{
+				Type: &enterprisev1.Condition_Expression_RequestSOCKS5Port_{
+					RequestSOCKS5Port: &enterprisev1.Condition_Expression_RequestSOCKS5Port{
+						Match: &enterprisev1.Condition_Expression_UIntMatch{Type: &enterprisev1.Condition_Expression_UIntMatch_GreaterThan{GreaterThan: 1024}},
+					},
+				},
+			},
+			want: `(has(ctx.request.socks5)) && (has(ctx.request.socks5.connect)) && (ctx.request.socks5.connect.port > uint(1024))`,
+		},
+		{
+			name: "mcp tool allowlist",
+			expr: &enterprisev1.Condition_Expression{
+				Type: &enterprisev1.Condition_Expression_RequestMCPToolName{
+					RequestMCPToolName: &enterprisev1.Condition_Expression_MCPToolName{
+						Match: policyStringMatchIn("search", "read_db"),
+					},
+				},
+			},
+			want: `(has(ctx.request.mcp)) && (ctx.request.mcp.method == "tools/call") && (ctx.request.mcp.name in ["search", "read_db"])`,
+		},
+		{
+			name: "llm input estimate",
+			expr: &enterprisev1.Condition_Expression{
+				Type: &enterprisev1.Condition_Expression_RequestLLMEstimatedInputTokens{
+					RequestLLMEstimatedInputTokens: &enterprisev1.Condition_Expression_LLMEstimatedInputTokens{
+						Match:           &enterprisev1.Condition_Expression_UIntMatch{Type: &enterprisev1.Condition_Expression_UIntMatch_LessThanOrEqual{LessThanOrEqual: 1000}},
+						RequireComplete: true,
+					},
+				},
+			},
+			want: `((has(ctx.request.llm)) && (ctx.request.llm.estimatedInputTokens <= uint(1000))) && (ctx.request.llm.estimateQuality == "COMPLETE")`,
+		},
+		{
+			name: "llm tool name",
+			expr: &enterprisev1.Condition_Expression{
+				Type: &enterprisev1.Condition_Expression_RequestLLMToolName{
+					RequestLLMToolName: &enterprisev1.Condition_Expression_LLMToolName{
+						Match: &enterprisev1.Condition_Expression_StringMatch{Type: &enterprisev1.Condition_Expression_StringMatch_Prefix{Prefix: "mcp_"}},
+					},
+				},
+			},
+			want: `(has(ctx.request.llm)) && (ctx.request.llm.toolNames.exists(x, x.startsWith("mcp_")))`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assertPolicyExpression(t, srv, tt.expr, tt.want)
+		})
 	}
 }
 
@@ -887,41 +1021,25 @@ func TestPolicyValidateExpressionInvalid(t *testing.T) {
 	}
 
 	{
-		err := srv.validateExpression(ctx, &enterprisev1.Condition_Expression{
-			Type: &enterprisev1.Condition_Expression_RequestHTTPHasHeader_{
-				RequestHTTPHasHeader: &enterprisev1.Condition_Expression_RequestHTTPHasHeader{},
-			},
-		})
+		err := srv.validateExpression(ctx, policyRequestHTTPHasHeader(""))
 		assert.NotNil(t, err)
 		assert.True(t, grpcerr.IsInvalidArg(err))
 	}
 
 	{
-		err := srv.validateExpression(ctx, &enterprisev1.Condition_Expression{
-			Type: &enterprisev1.Condition_Expression_RequestHTTPHasHeader_{
-				RequestHTTPHasHeader: &enterprisev1.Condition_Expression_RequestHTTPHasHeader{Value: "Bad Header"},
-			},
-		})
+		err := srv.validateExpression(ctx, policyRequestHTTPHasHeader("Bad Header"))
 		assert.NotNil(t, err)
 		assert.True(t, grpcerr.IsInvalidArg(err))
 	}
 
 	{
-		err := srv.validateExpression(ctx, &enterprisev1.Condition_Expression{
-			Type: &enterprisev1.Condition_Expression_RequestHTTPHeaderValue_{
-				RequestHTTPHeaderValue: &enterprisev1.Condition_Expression_RequestHTTPHeaderValue{Header: "Bad Header", Value: "v"},
-			},
-		})
+		err := srv.validateExpression(ctx, policyRequestHTTPHeaderValue("Bad Header", "v"))
 		assert.NotNil(t, err)
 		assert.True(t, grpcerr.IsInvalidArg(err))
 	}
 
 	{
-		err := srv.validateExpression(ctx, &enterprisev1.Condition_Expression{
-			Type: &enterprisev1.Condition_Expression_RequestHTTPHeaderValue_{
-				RequestHTTPHeaderValue: &enterprisev1.Condition_Expression_RequestHTTPHeaderValue{Header: "X-Test", Value: longValue},
-			},
-		})
+		err := srv.validateExpression(ctx, policyRequestHTTPHeaderValue("X-Test", longValue))
 		assert.NotNil(t, err)
 		assert.True(t, grpcerr.IsInvalidArg(err))
 	}
@@ -1158,19 +1276,11 @@ func TestPolicyValidateExpressionValidNoRefs(t *testing.T) {
 	}
 
 	{
-		assert.Nil(t, srv.validateExpression(ctx, &enterprisev1.Condition_Expression{
-			Type: &enterprisev1.Condition_Expression_RequestHTTPHasHeader_{
-				RequestHTTPHasHeader: &enterprisev1.Condition_Expression_RequestHTTPHasHeader{Value: "X-Request-ID"},
-			},
-		}))
+		assert.Nil(t, srv.validateExpression(ctx, policyRequestHTTPHasHeader("X-Request-ID")))
 	}
 
 	{
-		assert.Nil(t, srv.validateExpression(ctx, &enterprisev1.Condition_Expression{
-			Type: &enterprisev1.Condition_Expression_RequestHTTPHeaderValue_{
-				RequestHTTPHeaderValue: &enterprisev1.Condition_Expression_RequestHTTPHeaderValue{Header: "X-Request-ID", Value: "abc"},
-			},
-		}))
+		assert.Nil(t, srv.validateExpression(ctx, policyRequestHTTPHeaderValue("X-Request-ID", "abc")))
 	}
 
 	{
@@ -1344,11 +1454,31 @@ func policyExprCond(expr *enterprisev1.Condition_Expression) *enterprisev1.Condi
 	}
 }
 
+func policyStringMatchExact(v string) *enterprisev1.Condition_Expression_StringMatch {
+	return &enterprisev1.Condition_Expression_StringMatch{
+		Type: &enterprisev1.Condition_Expression_StringMatch_Exact{Exact: v},
+	}
+}
+
+func policyStringMatchPrefix(v string) *enterprisev1.Condition_Expression_StringMatch {
+	return &enterprisev1.Condition_Expression_StringMatch{
+		Type: &enterprisev1.Condition_Expression_StringMatch_Prefix{Prefix: v},
+	}
+}
+
+func policyStringMatchIn(values ...string) *enterprisev1.Condition_Expression_StringMatch {
+	return &enterprisev1.Condition_Expression_StringMatch{
+		Type: &enterprisev1.Condition_Expression_StringMatch_In_{
+			In: &enterprisev1.Condition_Expression_StringMatch_In{Values: values},
+		},
+	}
+}
+
 func policyRequestHTTPPathExact(v string) *enterprisev1.Condition_Expression {
 	return &enterprisev1.Condition_Expression{
-		Type: &enterprisev1.Condition_Expression_RequestHTTPPathExact_{
-			RequestHTTPPathExact: &enterprisev1.Condition_Expression_RequestHTTPPathExact{
-				Value: v,
+		Type: &enterprisev1.Condition_Expression_RequestHTTPPath_{
+			RequestHTTPPath: &enterprisev1.Condition_Expression_RequestHTTPPath{
+				Match: policyStringMatchExact(v),
 			},
 		},
 	}
@@ -1356,9 +1486,19 @@ func policyRequestHTTPPathExact(v string) *enterprisev1.Condition_Expression {
 
 func policyRequestHTTPPathPrefix(v string) *enterprisev1.Condition_Expression {
 	return &enterprisev1.Condition_Expression{
-		Type: &enterprisev1.Condition_Expression_RequestHTTPPathPrefix_{
-			RequestHTTPPathPrefix: &enterprisev1.Condition_Expression_RequestHTTPPathPrefix{
-				Value: v,
+		Type: &enterprisev1.Condition_Expression_RequestHTTPPath_{
+			RequestHTTPPath: &enterprisev1.Condition_Expression_RequestHTTPPath{
+				Match: policyStringMatchPrefix(v),
+			},
+		},
+	}
+}
+
+func policyRequestHTTPPathMatch(match *enterprisev1.Condition_Expression_StringMatch) *enterprisev1.Condition_Expression {
+	return &enterprisev1.Condition_Expression{
+		Type: &enterprisev1.Condition_Expression_RequestHTTPPath_{
+			RequestHTTPPath: &enterprisev1.Condition_Expression_RequestHTTPPath{
+				Match: match,
 			},
 		},
 	}
@@ -1368,7 +1508,49 @@ func policyRequestHTTPMethod(v string) *enterprisev1.Condition_Expression {
 	return &enterprisev1.Condition_Expression{
 		Type: &enterprisev1.Condition_Expression_RequestHTTPMethod_{
 			RequestHTTPMethod: &enterprisev1.Condition_Expression_RequestHTTPMethod{
-				Value: v,
+				Match: policyStringMatchExact(v),
+			},
+		},
+	}
+}
+
+func policyRequestHTTPMethodMatchIn(values ...string) *enterprisev1.Condition_Expression {
+	return &enterprisev1.Condition_Expression{
+		Type: &enterprisev1.Condition_Expression_RequestHTTPMethod_{
+			RequestHTTPMethod: &enterprisev1.Condition_Expression_RequestHTTPMethod{
+				Match: policyStringMatchIn(values...),
+			},
+		},
+	}
+}
+
+func policyRequestHTTPHasHeader(v string) *enterprisev1.Condition_Expression {
+	return &enterprisev1.Condition_Expression{
+		Type: &enterprisev1.Condition_Expression_RequestHTTPHasHeader_{
+			RequestHTTPHasHeader: &enterprisev1.Condition_Expression_RequestHTTPHasHeader{
+				Match: policyStringMatchExact(v),
+			},
+		},
+	}
+}
+
+func policyRequestHTTPHeaderValue(header, value string) *enterprisev1.Condition_Expression {
+	return &enterprisev1.Condition_Expression{
+		Type: &enterprisev1.Condition_Expression_RequestHTTPHeaderValue_{
+			RequestHTTPHeaderValue: &enterprisev1.Condition_Expression_RequestHTTPHeaderValue{
+				Header: policyStringMatchExact(header),
+				Value:  policyStringMatchExact(value),
+			},
+		},
+	}
+}
+
+func policyRequestHTTPHeaderValueMatch(header, value *enterprisev1.Condition_Expression_StringMatch) *enterprisev1.Condition_Expression {
+	return &enterprisev1.Condition_Expression{
+		Type: &enterprisev1.Condition_Expression_RequestHTTPHeaderValue_{
+			RequestHTTPHeaderValue: &enterprisev1.Condition_Expression_RequestHTTPHeaderValue{
+				Header: header,
+				Value:  value,
 			},
 		},
 	}

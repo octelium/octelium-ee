@@ -238,12 +238,8 @@
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipCountryCode",
                     "additionalProperties": false
                 },
-                "requestHTTPPathExact": {
-                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPathExact",
-                    "additionalProperties": false
-                },
-                "requestHTTPPathPrefix": {
-                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPathPrefix",
+                "requestHTTPPath": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPath",
                     "additionalProperties": false
                 },
                 "requestHTTPMethod": {
@@ -296,6 +292,238 @@
                 },
                 "apiServerAccess": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess",
+                    "additionalProperties": false
+                },
+                "requestMCPProtocolVersion": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.MCPProtocolVersion",
+                    "additionalProperties": false
+                },
+                "requestMCPMethod": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.MCPMethod",
+                    "additionalProperties": false
+                },
+                "requestMCPToolName": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.MCPToolName",
+                    "additionalProperties": false
+                },
+                "requestMCPPromptName": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.MCPPromptName",
+                    "additionalProperties": false
+                },
+                "requestMCPResourceURI": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.MCPResourceURI",
+                    "additionalProperties": false
+                },
+                "requestMCPIsNotification": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.MCPIsNotification",
+                    "additionalProperties": false
+                },
+                "requestLLMProtocol": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.LLMProtocol",
+                    "additionalProperties": false
+                },
+                "requestLLMOperation": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.LLMOperation",
+                    "additionalProperties": false
+                },
+                "requestLLMModel": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.LLMModel",
+                    "additionalProperties": false
+                },
+                "requestLLMStream": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.LLMStream",
+                    "additionalProperties": false
+                },
+                "requestLLMEstimatedInputTokens": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimatedInputTokens",
+                    "additionalProperties": false
+                },
+                "requestLLMEstimateQuality": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimateQuality",
+                    "additionalProperties": false
+                },
+                "requestLLMMaxOutputTokens": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.LLMMaxOutputTokens",
+                    "additionalProperties": false
+                },
+                "requestLLMHasTools": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.LLMHasTools",
+                    "additionalProperties": false
+                },
+                "requestLLMToolCount": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.LLMToolCount",
+                    "additionalProperties": false
+                },
+                "requestLLMToolName": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.LLMToolName",
+                    "additionalProperties": false
+                },
+                "requestLLMInputItemCount": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.LLMInputItemCount",
+                    "additionalProperties": false
+                },
+                "requestLLMHasImageInput": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.LLMHasImageInput",
+                    "additionalProperties": false
+                },
+                "requestLLMHasAudioInput": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.LLMHasAudioInput",
+                    "additionalProperties": false
+                },
+                "requestHTTPHost": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHost",
+                    "additionalProperties": false
+                },
+                "requestHTTPProtocol": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPProtocol",
+                    "additionalProperties": false
+                },
+                "requestHTTPScheme": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPScheme",
+                    "additionalProperties": false
+                },
+                "requestHTTPURI": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPURI",
+                    "additionalProperties": false
+                },
+                "requestHTTPSize": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPSize",
+                    "additionalProperties": false
+                },
+                "requestHTTPHasQueryParam": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasQueryParam",
+                    "additionalProperties": false
+                },
+                "requestHTTPQueryParamValue": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPQueryParamValue",
+                    "additionalProperties": false
+                },
+                "requestSSH": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestSSH",
+                    "additionalProperties": false
+                },
+                "requestSSHUser": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestSSHUser",
+                    "additionalProperties": false
+                },
+                "requestKubernetes": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetes",
+                    "additionalProperties": false
+                },
+                "requestKubernetesVerb": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesVerb",
+                    "additionalProperties": false
+                },
+                "requestKubernetesAPIPrefix": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIPrefix",
+                    "additionalProperties": false
+                },
+                "requestKubernetesAPIGroup": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIGroup",
+                    "additionalProperties": false
+                },
+                "requestKubernetesAPIVersion": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIVersion",
+                    "additionalProperties": false
+                },
+                "requestKubernetesNamespace": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesNamespace",
+                    "additionalProperties": false
+                },
+                "requestKubernetesResource": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesResource",
+                    "additionalProperties": false
+                },
+                "requestKubernetesSubresource": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesSubresource",
+                    "additionalProperties": false
+                },
+                "requestKubernetesName": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesName",
+                    "additionalProperties": false
+                },
+                "requestGRPC": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPC",
+                    "additionalProperties": false
+                },
+                "requestGRPCMethod": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCMethod",
+                    "additionalProperties": false
+                },
+                "requestGRPCService": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCService",
+                    "additionalProperties": false
+                },
+                "requestGRPCServiceFullName": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCServiceFullName",
+                    "additionalProperties": false
+                },
+                "requestGRPCPackage": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCPackage",
+                    "additionalProperties": false
+                },
+                "requestPostgresConnect": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnect",
+                    "additionalProperties": false
+                },
+                "requestPostgresConnectUser": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectUser",
+                    "additionalProperties": false
+                },
+                "requestPostgresConnectDatabase": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectDatabase",
+                    "additionalProperties": false
+                },
+                "requestPostgresConnectApplicationName": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectApplicationName",
+                    "additionalProperties": false
+                },
+                "requestPostgresQuery": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQuery",
+                    "additionalProperties": false
+                },
+                "requestPostgresQueryText": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQueryText",
+                    "additionalProperties": false
+                },
+                "requestPostgresParse": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParse",
+                    "additionalProperties": false
+                },
+                "requestPostgresParseName": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseName",
+                    "additionalProperties": false
+                },
+                "requestPostgresParseQuery": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseQuery",
+                    "additionalProperties": false
+                },
+                "requestDNS": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestDNS",
+                    "additionalProperties": false
+                },
+                "requestDNSName": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSName",
+                    "additionalProperties": false
+                },
+                "requestDNSTypeID": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSTypeID",
+                    "additionalProperties": false
+                },
+                "requestSOCKS5": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5",
+                    "additionalProperties": false
+                },
+                "requestSOCKS5Host": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Host",
+                    "additionalProperties": false
+                },
+                "requestSOCKS5Port": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Port",
+                    "additionalProperties": false
+                },
+                "requestSOCKS5AddressType": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5AddressType",
                     "additionalProperties": false
                 }
             },
@@ -439,12 +667,7 @@
                                     },
                                     {
                                         "required": [
-                                            "requestHTTPPathExact"
-                                        ]
-                                    },
-                                    {
-                                        "required": [
-                                            "requestHTTPPathPrefix"
+                                            "requestHTTPPath"
                                         ]
                                     },
                                     {
@@ -510,6 +733,296 @@
                                     {
                                         "required": [
                                             "apiServerAccess"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestMCPProtocolVersion"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestMCPMethod"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestMCPToolName"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestMCPPromptName"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestMCPResourceURI"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestMCPIsNotification"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestLLMProtocol"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestLLMOperation"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestLLMModel"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestLLMStream"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestLLMEstimatedInputTokens"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestLLMEstimateQuality"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestLLMMaxOutputTokens"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestLLMHasTools"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestLLMToolCount"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestLLMToolName"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestLLMInputItemCount"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestLLMHasImageInput"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestLLMHasAudioInput"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestHTTPHost"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestHTTPProtocol"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestHTTPScheme"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestHTTPURI"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestHTTPSize"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestHTTPHasQueryParam"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestHTTPQueryParamValue"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestSSH"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestSSHUser"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestKubernetes"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestKubernetesVerb"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestKubernetesAPIPrefix"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestKubernetesAPIGroup"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestKubernetesAPIVersion"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestKubernetesNamespace"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestKubernetesResource"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestKubernetesSubresource"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestKubernetesName"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestGRPC"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestGRPCMethod"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestGRPCService"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestGRPCServiceFullName"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestGRPCPackage"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestPostgresConnect"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestPostgresConnectUser"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestPostgresConnectDatabase"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestPostgresConnectApplicationName"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestPostgresQuery"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestPostgresQueryText"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestPostgresParse"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestPostgresParseName"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestPostgresParseQuery"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestDNS"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestDNSName"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestDNSTypeID"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestSOCKS5"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestSOCKS5Host"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestSOCKS5Port"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestSOCKS5AddressType"
                                         ]
                                     }
                                 ]
@@ -647,12 +1160,7 @@
                         },
                         {
                             "required": [
-                                "requestHTTPPathExact"
-                            ]
-                        },
-                        {
-                            "required": [
-                                "requestHTTPPathPrefix"
+                                "requestHTTPPath"
                             ]
                         },
                         {
@@ -718,6 +1226,296 @@
                         {
                             "required": [
                                 "apiServerAccess"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestMCPProtocolVersion"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestMCPMethod"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestMCPToolName"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestMCPPromptName"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestMCPResourceURI"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestMCPIsNotification"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestLLMProtocol"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestLLMOperation"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestLLMModel"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestLLMStream"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestLLMEstimatedInputTokens"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestLLMEstimateQuality"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestLLMMaxOutputTokens"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestLLMHasTools"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestLLMToolCount"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestLLMToolName"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestLLMInputItemCount"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestLLMHasImageInput"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestLLMHasAudioInput"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestHTTPHost"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestHTTPProtocol"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestHTTPScheme"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestHTTPURI"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestHTTPSize"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestHTTPHasQueryParam"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestHTTPQueryParamValue"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestSSH"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestSSHUser"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestKubernetes"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestKubernetesVerb"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestKubernetesAPIPrefix"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestKubernetesAPIGroup"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestKubernetesAPIVersion"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestKubernetesNamespace"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestKubernetesResource"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestKubernetesSubresource"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestKubernetesName"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestGRPC"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestGRPCMethod"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestGRPCService"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestGRPCServiceFullName"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestGRPCPackage"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestPostgresConnect"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestPostgresConnectUser"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestPostgresConnectDatabase"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestPostgresConnectApplicationName"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestPostgresQuery"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestPostgresQueryText"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestPostgresParse"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestPostgresParseName"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestPostgresParseQuery"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestDNS"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestDNSName"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestDNSTypeID"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestSOCKS5"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestSOCKS5Host"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestSOCKS5Port"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requestSOCKS5AddressType"
                             ]
                         }
                     ]
@@ -870,6 +1668,297 @@
             "type": "object",
             "title": "Group"
         },
+        "octelium.api.main.enterprise.v1.Condition.Expression.IntMatch": {
+            "properties": {
+                "exact": {
+                    "type": "integer"
+                },
+                "lessThan": {
+                    "type": "integer"
+                },
+                "lessThanOrEqual": {
+                    "type": "integer"
+                },
+                "greaterThan": {
+                    "type": "integer"
+                },
+                "greaterThanOrEqual": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "exact"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "lessThan"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "lessThanOrEqual"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "greaterThan"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "greaterThanOrEqual"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "exact"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "lessThan"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "lessThanOrEqual"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "greaterThan"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "greaterThanOrEqual"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Int Match",
+            "description": "IntMatch is a reusable matcher for signed integer-valued request fields, including fields whose value can be -1 when unknown."
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimateQuality": {
+            "properties": {
+                "quality": {
+                    "enum": [
+                        "ESTIMATE_QUALITY_UNSET",
+                        "COMPLETE",
+                        "PARTIAL",
+                        "UNAVAILABLE"
+                    ],
+                    "type": "string",
+                    "title": "Estimate Quality"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "LLM Estimate Quality"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimatedInputTokens": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch",
+                    "additionalProperties": false
+                },
+                "requireComplete": {
+                    "type": "boolean",
+                    "description": "RequireComplete only permits the estimate when Octelium accounted for the entire textual input. It prevents PARTIAL and UNAVAILABLE estimates from being treated as a reliable input-size policy signal."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "LLM Estimated Input Tokens"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.LLMHasAudioInput": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "LLM Has Audio Input"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.LLMHasImageInput": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "LLM Has Image Input"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.LLMHasTools": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "LLM Has Tools"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.LLMInputItemCount": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "LLM Input Item Count"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.LLMMaxOutputTokens": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "LLM Max Output Tokens"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.LLMModel": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "LLM Model"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.LLMOperation": {
+            "properties": {
+                "operation": {
+                    "enum": [
+                        "OPERATION_UNSET",
+                        "CHAT_COMPLETIONS",
+                        "RESPONSES",
+                        "COMPLETIONS",
+                        "EMBEDDINGS",
+                        "MODERATIONS",
+                        "MODELS_LIST",
+                        "MODELS_GET",
+                        "MESSAGES",
+                        "COUNT_TOKENS"
+                    ],
+                    "type": "string",
+                    "title": "Operation"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "LLM Operation"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.LLMProtocol": {
+            "properties": {
+                "protocol": {
+                    "enum": [
+                        "PROTOCOL_UNSET",
+                        "OPENAI",
+                        "ANTHROPIC"
+                    ],
+                    "type": "string",
+                    "title": "Protocol"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "LLM Protocol"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.LLMStream": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "LLM Stream"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.LLMToolCount": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "LLM Tool Count"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.LLMToolName": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "LLM Tool Name"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.MCPIsNotification": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "MCP Is Notification"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.MCPMethod": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "MCP Method"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.MCPPromptName": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "MCP Prompt Name"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.MCPProtocolVersion": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "MCP Protocol Version"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.MCPResourceURI": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "MCP Resource URI"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.MCPToolName": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "MCP Tool Name"
+        },
         "octelium.api.main.enterprise.v1.Condition.Expression.Namespace": {
             "properties": {
                 "namespaceRef": {
@@ -881,58 +1970,208 @@
             "type": "object",
             "title": "Namespace"
         },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestDNS": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request DNS"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSName": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request DNS Name"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSTypeID": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.IntMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request DNS Type ID"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPC": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request GRPC"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCMethod": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request GRPC Method"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCPackage": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request GRPC Package"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCService": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request GRPC Service"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCServiceFullName": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request GRPC Service Full Name"
+        },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader": {
             "properties": {
-                "value": {
-                    "type": "string"
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false,
             "type": "object",
             "title": "Request HTTP Has Header"
         },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasQueryParam": {
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request HTTP Has Query Param"
+        },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue": {
             "properties": {
                 "header": {
-                    "type": "string"
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
                 },
                 "value": {
-                    "type": "string"
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false,
             "type": "object",
             "title": "Request HTTP Header Value"
         },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHost": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request HTTP Host"
+        },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod": {
             "properties": {
-                "value": {
-                    "type": "string"
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false,
             "type": "object",
             "title": "Request HTTP Method"
         },
-        "octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPathExact": {
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPath": {
             "properties": {
-                "value": {
-                    "type": "string"
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request HTTP Path Exact"
+            "title": "Request HTTP Path"
         },
-        "octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPathPrefix": {
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPProtocol": {
             "properties": {
-                "value": {
-                    "type": "string"
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request HTTP Path Prefix"
+            "title": "Request HTTP Protocol"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPQueryParamValue": {
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request HTTP Query Param Value"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPScheme": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request HTTP Scheme"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPSize": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.IntMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request HTTP Size"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPURI": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request HTTPURI"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestIP": {
             "properties": {
@@ -953,6 +2192,240 @@
             "additionalProperties": false,
             "type": "object",
             "title": "Request IP In Range"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetes": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request Kubernetes"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIGroup": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request Kubernetes API Group"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIPrefix": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request Kubernetes API Prefix"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIVersion": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request Kubernetes API Version"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesName": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request Kubernetes Name"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesNamespace": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request Kubernetes Namespace"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesResource": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request Kubernetes Resource"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesSubresource": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request Kubernetes Subresource"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesVerb": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request Kubernetes Verb"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnect": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request Postgres Connect"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectApplicationName": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request Postgres Connect Application Name"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectDatabase": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request Postgres Connect Database"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectUser": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request Postgres Connect User"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParse": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request Postgres Parse"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseName": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request Postgres Parse Name"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseQuery": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request Postgres Parse Query"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQuery": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request Postgres Query"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQueryText": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request Postgres Query Text"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request SOCKS 5"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5AddressType": {
+            "properties": {
+                "addressType": {
+                    "enum": [
+                        "ADDRESS_TYPE_UNSPECIFIED",
+                        "IPV4",
+                        "DOMAIN",
+                        "IPV6"
+                    ],
+                    "type": "string",
+                    "title": "Address Type"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request SOCKS 5 Address Type"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Host": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request SOCKS 5 Host"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Port": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request SOCKS 5 Port"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestSSH": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request SSH"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.RequestSSHUser": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Request SSH User"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.Service": {
             "properties": {
@@ -1151,6 +2624,105 @@
             "type": "object",
             "title": "Session Type"
         },
+        "octelium.api.main.enterprise.v1.Condition.Expression.StringMatch": {
+            "properties": {
+                "exact": {
+                    "type": "string"
+                },
+                "prefix": {
+                    "type": "string"
+                },
+                "suffix": {
+                    "type": "string"
+                },
+                "contains": {
+                    "type": "string"
+                },
+                "in": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch.In",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "exact"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "prefix"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "suffix"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "contains"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "in"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "exact"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "prefix"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "suffix"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "contains"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "in"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "String Match",
+            "description": "StringMatch is a reusable matcher for string-valued request fields. The server translates the selected variant into the corresponding CEL string operation."
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.StringMatch.In": {
+            "properties": {
+                "values": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "In"
+        },
         "octelium.api.main.enterprise.v1.Condition.Expression.TimeAfter": {
             "properties": {
                 "timestamp": {
@@ -1172,6 +2744,91 @@
             "additionalProperties": false,
             "type": "object",
             "title": "Time Before"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch": {
+            "properties": {
+                "exact": {
+                    "type": "integer"
+                },
+                "lessThan": {
+                    "type": "integer"
+                },
+                "lessThanOrEqual": {
+                    "type": "integer"
+                },
+                "greaterThan": {
+                    "type": "integer"
+                },
+                "greaterThanOrEqual": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "exact"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "lessThan"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "lessThanOrEqual"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "greaterThan"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "greaterThanOrEqual"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "exact"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "lessThan"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "lessThanOrEqual"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "greaterThan"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "greaterThanOrEqual"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "U Int Match",
+            "description": "UIntMatch is a reusable matcher for unsigned integer-valued request fields. It is suitable for both uint32 and uint64 RequestContext fields."
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.User": {
             "properties": {

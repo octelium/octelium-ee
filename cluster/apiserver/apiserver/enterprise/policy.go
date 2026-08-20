@@ -291,55 +291,238 @@ func (s *Server) validateExpression(ctx context.Context, p *enterprisev1.Conditi
 			return grpcutils.InvalidArg("Invalid TimeBefore timestamp")
 		}
 
-	case *enterprisev1.Condition_Expression_RequestHTTPPathExact_:
-		expr := p.GetRequestHTTPPathExact()
+	case *enterprisev1.Condition_Expression_RequestHTTPPath_:
+		expr := p.GetRequestHTTPPath()
 		if expr == nil {
-			return grpcutils.InvalidArg("Nil HTTP path exact expression")
+			return grpcutils.InvalidArg("Nil HTTP path expression")
 		}
-		if err := validateHTTPPath(expr.Value); err != nil {
-			return err
-		}
-
-	case *enterprisev1.Condition_Expression_RequestHTTPPathPrefix_:
-		expr := p.GetRequestHTTPPathPrefix()
-		if expr == nil {
-			return grpcutils.InvalidArg("Nil HTTP path prefix expression")
-		}
-		if err := validateHTTPPath(expr.Value); err != nil {
-			return err
-		}
+		return validateHTTPPathMatch(expr.GetMatch())
 
 	case *enterprisev1.Condition_Expression_RequestHTTPHasHeader_:
 		expr := p.GetRequestHTTPHasHeader()
 		if expr == nil {
 			return grpcutils.InvalidArg("Nil HTTP header expression")
 		}
-		if err := validateHTTPHeaderName(expr.Value); err != nil {
-			return err
-		}
+		return validateStringMatch(expr.GetMatch(), "HTTP header name", validateHTTPHeaderName)
 
 	case *enterprisev1.Condition_Expression_RequestHTTPHeaderValue_:
 		expr := p.GetRequestHTTPHeaderValue()
 		if expr == nil {
 			return grpcutils.InvalidArg("Nil HTTP header value expression")
 		}
-		if err := validateHTTPHeaderName(expr.Header); err != nil {
+		if err := validateStringMatch(expr.GetHeader(), "HTTP header name", validateHTTPHeaderName); err != nil {
 			return err
 		}
-		if err := validateBoundedString(expr.Value, false, "HTTP header value"); err != nil {
-			return err
-		}
+		return validateStringMatch(expr.GetValue(), "HTTP header value", nil)
 
 	case *enterprisev1.Condition_Expression_RequestHTTPMethod_:
 		expr := p.GetRequestHTTPMethod()
 		if expr == nil {
 			return grpcutils.InvalidArg("Nil HTTP method expression")
 		}
+		return validateHTTPMethodMatch(expr.GetMatch())
 
-		switch strings.ToUpper(expr.Value) {
-		case "GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "CONNECT", "TRACE":
-		default:
-			return grpcutils.InvalidArg("Unsupported HTTP method")
+	case *enterprisev1.Condition_Expression_RequestHTTPHost_:
+		return validateStringMatch(p.GetRequestHTTPHost().GetMatch(), "HTTP host", nil)
+
+	case *enterprisev1.Condition_Expression_RequestHTTPProtocol_:
+		return validateStringMatch(p.GetRequestHTTPProtocol().GetMatch(), "HTTP protocol", nil)
+
+	case *enterprisev1.Condition_Expression_RequestHTTPScheme_:
+		return validateStringMatch(p.GetRequestHTTPScheme().GetMatch(), "HTTP scheme", nil)
+
+	case *enterprisev1.Condition_Expression_RequestHTTPURI_:
+		return validateStringMatch(p.GetRequestHTTPURI().GetMatch(), "HTTP URI", nil)
+
+	case *enterprisev1.Condition_Expression_RequestHTTPSize_:
+		return validateIntMatch(p.GetRequestHTTPSize().GetMatch(), "HTTP request size")
+
+	case *enterprisev1.Condition_Expression_RequestHTTPHasQueryParam_:
+		expr := p.GetRequestHTTPHasQueryParam()
+		if expr == nil {
+			return grpcutils.InvalidArg("Nil HTTP query parameter expression")
+		}
+		return validateBoundedString(expr.GetName(), true, "HTTP query parameter name")
+
+	case *enterprisev1.Condition_Expression_RequestHTTPQueryParamValue_:
+		expr := p.GetRequestHTTPQueryParamValue()
+		if expr == nil {
+			return grpcutils.InvalidArg("Nil HTTP query parameter value expression")
+		}
+		if err := validateBoundedString(expr.GetName(), true, "HTTP query parameter name"); err != nil {
+			return err
+		}
+		return validateStringMatch(expr.GetMatch(), "HTTP query parameter value", nil)
+
+	case *enterprisev1.Condition_Expression_RequestSSH_:
+		if p.GetRequestSSH() == nil {
+			return grpcutils.InvalidArg("Nil SSH request expression")
+		}
+
+	case *enterprisev1.Condition_Expression_RequestSSHUser_:
+		return validateStringMatch(p.GetRequestSSHUser().GetMatch(), "SSH user", nil)
+
+	case *enterprisev1.Condition_Expression_RequestKubernetes_:
+		if p.GetRequestKubernetes() == nil {
+			return grpcutils.InvalidArg("Nil Kubernetes request expression")
+		}
+
+	case *enterprisev1.Condition_Expression_RequestKubernetesVerb_:
+		return validateStringMatch(p.GetRequestKubernetesVerb().GetMatch(), "Kubernetes verb", nil)
+	case *enterprisev1.Condition_Expression_RequestKubernetesAPIPrefix_:
+		return validateStringMatch(p.GetRequestKubernetesAPIPrefix().GetMatch(), "Kubernetes API prefix", nil)
+	case *enterprisev1.Condition_Expression_RequestKubernetesAPIGroup_:
+		return validateStringMatch(p.GetRequestKubernetesAPIGroup().GetMatch(), "Kubernetes API group", nil)
+	case *enterprisev1.Condition_Expression_RequestKubernetesAPIVersion_:
+		return validateStringMatch(p.GetRequestKubernetesAPIVersion().GetMatch(), "Kubernetes API version", nil)
+	case *enterprisev1.Condition_Expression_RequestKubernetesNamespace_:
+		return validateStringMatch(p.GetRequestKubernetesNamespace().GetMatch(), "Kubernetes namespace", nil)
+	case *enterprisev1.Condition_Expression_RequestKubernetesResource_:
+		return validateStringMatch(p.GetRequestKubernetesResource().GetMatch(), "Kubernetes resource", nil)
+	case *enterprisev1.Condition_Expression_RequestKubernetesSubresource_:
+		return validateStringMatch(p.GetRequestKubernetesSubresource().GetMatch(), "Kubernetes subresource", nil)
+	case *enterprisev1.Condition_Expression_RequestKubernetesName_:
+		return validateStringMatch(p.GetRequestKubernetesName().GetMatch(), "Kubernetes resource name", nil)
+
+	case *enterprisev1.Condition_Expression_RequestGRPC_:
+		if p.GetRequestGRPC() == nil {
+			return grpcutils.InvalidArg("Nil gRPC request expression")
+		}
+
+	case *enterprisev1.Condition_Expression_RequestGRPCMethod_:
+		return validateStringMatch(p.GetRequestGRPCMethod().GetMatch(), "gRPC method", nil)
+	case *enterprisev1.Condition_Expression_RequestGRPCService_:
+		return validateStringMatch(p.GetRequestGRPCService().GetMatch(), "gRPC service", nil)
+	case *enterprisev1.Condition_Expression_RequestGRPCServiceFullName_:
+		return validateStringMatch(p.GetRequestGRPCServiceFullName().GetMatch(), "gRPC full service name", nil)
+	case *enterprisev1.Condition_Expression_RequestGRPCPackage_:
+		return validateStringMatch(p.GetRequestGRPCPackage().GetMatch(), "gRPC package", nil)
+
+	case *enterprisev1.Condition_Expression_RequestPostgresConnect_:
+		if p.GetRequestPostgresConnect() == nil {
+			return grpcutils.InvalidArg("Nil PostgreSQL connect expression")
+		}
+	case *enterprisev1.Condition_Expression_RequestPostgresConnectUser_:
+		return validateStringMatch(p.GetRequestPostgresConnectUser().GetMatch(), "PostgreSQL user", nil)
+	case *enterprisev1.Condition_Expression_RequestPostgresConnectDatabase_:
+		return validateStringMatch(p.GetRequestPostgresConnectDatabase().GetMatch(), "PostgreSQL database", nil)
+	case *enterprisev1.Condition_Expression_RequestPostgresConnectApplicationName_:
+		return validateStringMatch(p.GetRequestPostgresConnectApplicationName().GetMatch(), "PostgreSQL application name", nil)
+	case *enterprisev1.Condition_Expression_RequestPostgresQuery_:
+		if p.GetRequestPostgresQuery() == nil {
+			return grpcutils.InvalidArg("Nil PostgreSQL query expression")
+		}
+	case *enterprisev1.Condition_Expression_RequestPostgresQueryText_:
+		return validateStringMatch(p.GetRequestPostgresQueryText().GetMatch(), "PostgreSQL query", nil)
+	case *enterprisev1.Condition_Expression_RequestPostgresParse_:
+		if p.GetRequestPostgresParse() == nil {
+			return grpcutils.InvalidArg("Nil PostgreSQL parse expression")
+		}
+	case *enterprisev1.Condition_Expression_RequestPostgresParseName_:
+		return validateStringMatch(p.GetRequestPostgresParseName().GetMatch(), "PostgreSQL parse name", nil)
+	case *enterprisev1.Condition_Expression_RequestPostgresParseQuery_:
+		return validateStringMatch(p.GetRequestPostgresParseQuery().GetMatch(), "PostgreSQL parse query", nil)
+
+	case *enterprisev1.Condition_Expression_RequestDNS_:
+		if p.GetRequestDNS() == nil {
+			return grpcutils.InvalidArg("Nil DNS request expression")
+		}
+	case *enterprisev1.Condition_Expression_RequestDNSName_:
+		return validateStringMatch(p.GetRequestDNSName().GetMatch(), "DNS name", nil)
+	case *enterprisev1.Condition_Expression_RequestDNSTypeID_:
+		return validateIntMatch(p.GetRequestDNSTypeID().GetMatch(), "DNS type ID")
+
+	case *enterprisev1.Condition_Expression_RequestSOCKS5_:
+		if p.GetRequestSOCKS5() == nil {
+			return grpcutils.InvalidArg("Nil SOCKS5 request expression")
+		}
+	case *enterprisev1.Condition_Expression_RequestSOCKS5Host_:
+		return validateStringMatch(p.GetRequestSOCKS5Host().GetMatch(), "SOCKS5 host", nil)
+	case *enterprisev1.Condition_Expression_RequestSOCKS5Port_:
+		return validateUIntMatch(p.GetRequestSOCKS5Port().GetMatch(), "SOCKS5 port")
+	case *enterprisev1.Condition_Expression_RequestSOCKS5AddressType_:
+		expr := p.GetRequestSOCKS5AddressType()
+		if expr == nil || expr.GetAddressType() == corev1.RequestContext_Request_SOCKS5_Connect_ADDRESS_TYPE_UNSPECIFIED {
+			return grpcutils.InvalidArg("SOCKS5 address type must be set")
+		}
+		if expr.GetAddressType() < corev1.RequestContext_Request_SOCKS5_Connect_ADDRESS_TYPE_UNSPECIFIED ||
+			expr.GetAddressType() > corev1.RequestContext_Request_SOCKS5_Connect_IPV6 {
+			return grpcutils.InvalidArg("Invalid SOCKS5 address type")
+		}
+
+	case *enterprisev1.Condition_Expression_RequestMCPProtocolVersion:
+		return validateStringMatch(p.GetRequestMCPProtocolVersion().GetMatch(), "MCP protocol version", nil)
+	case *enterprisev1.Condition_Expression_RequestMCPMethod:
+		return validateStringMatch(p.GetRequestMCPMethod().GetMatch(), "MCP method", nil)
+	case *enterprisev1.Condition_Expression_RequestMCPToolName:
+		return validateStringMatch(p.GetRequestMCPToolName().GetMatch(), "MCP tool name", nil)
+	case *enterprisev1.Condition_Expression_RequestMCPPromptName:
+		return validateStringMatch(p.GetRequestMCPPromptName().GetMatch(), "MCP prompt name", nil)
+	case *enterprisev1.Condition_Expression_RequestMCPResourceURI:
+		return validateStringMatch(p.GetRequestMCPResourceURI().GetMatch(), "MCP resource URI", nil)
+	case *enterprisev1.Condition_Expression_RequestMCPIsNotification:
+		if p.GetRequestMCPIsNotification() == nil {
+			return grpcutils.InvalidArg("Nil MCP notification expression")
+		}
+
+	case *enterprisev1.Condition_Expression_RequestLLMProtocol:
+		expr := p.GetRequestLLMProtocol()
+		if expr == nil || expr.GetProtocol() == corev1.Service_Spec_Config_LLM_PROTOCOL_UNSET {
+			return grpcutils.InvalidArg("LLM protocol must be set")
+		}
+		if expr.GetProtocol() < corev1.Service_Spec_Config_LLM_PROTOCOL_UNSET ||
+			expr.GetProtocol() > corev1.Service_Spec_Config_LLM_ANTHROPIC {
+			return grpcutils.InvalidArg("Invalid LLM protocol")
+		}
+	case *enterprisev1.Condition_Expression_RequestLLMOperation:
+		expr := p.GetRequestLLMOperation()
+		if expr == nil || expr.GetOperation() == corev1.RequestContext_Request_LLM_OPERATION_UNSET {
+			return grpcutils.InvalidArg("LLM operation must be set")
+		}
+		if expr.GetOperation() < corev1.RequestContext_Request_LLM_OPERATION_UNSET ||
+			expr.GetOperation() > corev1.RequestContext_Request_LLM_COUNT_TOKENS {
+			return grpcutils.InvalidArg("Invalid LLM operation")
+		}
+	case *enterprisev1.Condition_Expression_RequestLLMModel:
+		return validateStringMatch(p.GetRequestLLMModel().GetMatch(), "LLM model", nil)
+	case *enterprisev1.Condition_Expression_RequestLLMStream:
+		if p.GetRequestLLMStream() == nil {
+			return grpcutils.InvalidArg("Nil LLM stream expression")
+		}
+	case *enterprisev1.Condition_Expression_RequestLLMEstimatedInputTokens:
+		expr := p.GetRequestLLMEstimatedInputTokens()
+		if expr == nil {
+			return grpcutils.InvalidArg("Nil LLM estimated input tokens expression")
+		}
+		return validateUIntMatch(expr.GetMatch(), "LLM estimated input tokens")
+	case *enterprisev1.Condition_Expression_RequestLLMEstimateQuality:
+		expr := p.GetRequestLLMEstimateQuality()
+		if expr == nil || expr.GetQuality() == corev1.RequestContext_Request_LLM_ESTIMATE_QUALITY_UNSET {
+			return grpcutils.InvalidArg("LLM estimate quality must be set")
+		}
+		if expr.GetQuality() < corev1.RequestContext_Request_LLM_ESTIMATE_QUALITY_UNSET ||
+			expr.GetQuality() > corev1.RequestContext_Request_LLM_UNAVAILABLE {
+			return grpcutils.InvalidArg("Invalid LLM estimate quality")
+		}
+	case *enterprisev1.Condition_Expression_RequestLLMMaxOutputTokens:
+		return validateUIntMatch(p.GetRequestLLMMaxOutputTokens().GetMatch(), "LLM max output tokens")
+	case *enterprisev1.Condition_Expression_RequestLLMHasTools:
+		if p.GetRequestLLMHasTools() == nil {
+			return grpcutils.InvalidArg("Nil LLM tools expression")
+		}
+	case *enterprisev1.Condition_Expression_RequestLLMToolCount:
+		return validateUIntMatch(p.GetRequestLLMToolCount().GetMatch(), "LLM tool count")
+	case *enterprisev1.Condition_Expression_RequestLLMToolName:
+		return validateStringMatch(p.GetRequestLLMToolName().GetMatch(), "LLM tool name", nil)
+	case *enterprisev1.Condition_Expression_RequestLLMInputItemCount:
+		return validateUIntMatch(p.GetRequestLLMInputItemCount().GetMatch(), "LLM input item count")
+	case *enterprisev1.Condition_Expression_RequestLLMHasImageInput:
+		if p.GetRequestLLMHasImageInput() == nil {
+			return grpcutils.InvalidArg("Nil LLM image input expression")
+		}
+	case *enterprisev1.Condition_Expression_RequestLLMHasAudioInput:
+		if p.GetRequestLLMHasAudioInput() == nil {
+			return grpcutils.InvalidArg("Nil LLM audio input expression")
 		}
 
 	case *enterprisev1.Condition_Expression_RequestIP_:
@@ -615,24 +798,172 @@ func (s *Server) getExpression(in *enterprisev1.Condition_Expression) string {
 		return fmt.Sprintf(`now() < timestamp(%s)`,
 			celString(in.GetTimeBefore().Timestamp.AsTime().Format(time.RFC3339Nano)))
 
-	case *enterprisev1.Condition_Expression_RequestHTTPPathExact_:
-		return fmt.Sprintf(`ctx.request.http.path == %s`, celString(in.GetRequestHTTPPathExact().Value))
-
-	case *enterprisev1.Condition_Expression_RequestHTTPPathPrefix_:
-		return fmt.Sprintf(`ctx.request.http.path.startsWith(%s)`, celString(in.GetRequestHTTPPathPrefix().Value))
+	case *enterprisev1.Condition_Expression_RequestHTTPPath_:
+		return stringMatchCEL("ctx.request.http.path", in.GetRequestHTTPPath().GetMatch(), nil)
 
 	case *enterprisev1.Condition_Expression_RequestHTTPHasHeader_:
-		return fmt.Sprintf(`%s in ctx.request.http.headers`,
-			celString(strings.ToLower(in.GetRequestHTTPHasHeader().Value)))
+		headerMatch := in.GetRequestHTTPHasHeader().GetMatch()
+		if value, ok := exactStringMatchValue(headerMatch); ok {
+			return fmt.Sprintf(`%s in ctx.request.http.headers`, celString(strings.ToLower(value)))
+		}
+		match := stringMatchCEL("k", headerMatch, strings.ToLower)
+		return fmt.Sprintf(`ctx.request.http.headers.exists(k, %s)`, match)
 
 	case *enterprisev1.Condition_Expression_RequestHTTPHeaderValue_:
-		return fmt.Sprintf(`ctx.request.http.headers[%s] == %s`,
-			celString(strings.ToLower(in.GetRequestHTTPHeaderValue().Header)),
-			celString(in.GetRequestHTTPHeaderValue().Value))
+		expr := in.GetRequestHTTPHeaderValue()
+		if header, headerOK := exactStringMatchValue(expr.GetHeader()); headerOK {
+			if value, valueOK := exactStringMatchValue(expr.GetValue()); valueOK {
+				return fmt.Sprintf(`ctx.request.http.headers[%s] == %s`,
+					celString(strings.ToLower(header)), celString(value))
+			}
+		}
+		headerMatch := stringMatchCEL("k", expr.GetHeader(), strings.ToLower)
+		valueMatch := stringMatchCEL("ctx.request.http.headers[k]", expr.GetValue(), nil)
+		return fmt.Sprintf(`ctx.request.http.headers.exists(k, %s && %s)`, headerMatch, valueMatch)
 
 	case *enterprisev1.Condition_Expression_RequestHTTPMethod_:
-		return fmt.Sprintf(`ctx.request.http.method == %s`,
-			celString(strings.ToUpper(in.GetRequestHTTPMethod().Value)))
+		return stringMatchCEL("ctx.request.http.method", in.GetRequestHTTPMethod().GetMatch(), strings.ToUpper)
+
+	case *enterprisev1.Condition_Expression_RequestHTTPHost_:
+		return stringMatchCEL("ctx.request.http.host", in.GetRequestHTTPHost().GetMatch(), nil)
+
+	case *enterprisev1.Condition_Expression_RequestHTTPProtocol_:
+		return stringMatchCEL("ctx.request.http.protocol", in.GetRequestHTTPProtocol().GetMatch(), nil)
+
+	case *enterprisev1.Condition_Expression_RequestHTTPScheme_:
+		return stringMatchCEL("ctx.request.http.scheme", in.GetRequestHTTPScheme().GetMatch(), strings.ToLower)
+
+	case *enterprisev1.Condition_Expression_RequestHTTPURI_:
+		return stringMatchCEL("ctx.request.http.uri", in.GetRequestHTTPURI().GetMatch(), nil)
+
+	case *enterprisev1.Condition_Expression_RequestHTTPSize_:
+		return intMatchCEL("ctx.request.http.size", in.GetRequestHTTPSize().GetMatch())
+
+	case *enterprisev1.Condition_Expression_RequestHTTPHasQueryParam_:
+		return fmt.Sprintf(`%s in ctx.request.http.queryParams`, celString(in.GetRequestHTTPHasQueryParam().GetName()))
+
+	case *enterprisev1.Condition_Expression_RequestHTTPQueryParamValue_:
+		expr := in.GetRequestHTTPQueryParamValue()
+		valueMatch := stringMatchCEL(fmt.Sprintf(`ctx.request.http.queryParams[%s]`, celString(expr.GetName())), expr.GetMatch(), nil)
+		return andCEL(fmt.Sprintf(`%s in ctx.request.http.queryParams`, celString(expr.GetName())), valueMatch)
+
+	case *enterprisev1.Condition_Expression_RequestSSH_:
+		return `has(ctx.request.ssh)`
+
+	case *enterprisev1.Condition_Expression_RequestSSHUser_:
+		return requestNestedStringMatchCEL("ssh", "connect", "user", in.GetRequestSSHUser().GetMatch(), nil)
+
+	case *enterprisev1.Condition_Expression_RequestKubernetes_:
+		return `has(ctx.request.kubernetes)`
+
+	case *enterprisev1.Condition_Expression_RequestKubernetesVerb_:
+		return requestStringMatchCEL("kubernetes", "verb", in.GetRequestKubernetesVerb().GetMatch(), nil)
+	case *enterprisev1.Condition_Expression_RequestKubernetesAPIPrefix_:
+		return requestStringMatchCEL("kubernetes", "apiPrefix", in.GetRequestKubernetesAPIPrefix().GetMatch(), nil)
+	case *enterprisev1.Condition_Expression_RequestKubernetesAPIGroup_:
+		return requestStringMatchCEL("kubernetes", "apiGroup", in.GetRequestKubernetesAPIGroup().GetMatch(), nil)
+	case *enterprisev1.Condition_Expression_RequestKubernetesAPIVersion_:
+		return requestStringMatchCEL("kubernetes", "apiVersion", in.GetRequestKubernetesAPIVersion().GetMatch(), nil)
+	case *enterprisev1.Condition_Expression_RequestKubernetesNamespace_:
+		return requestStringMatchCEL("kubernetes", "namespace", in.GetRequestKubernetesNamespace().GetMatch(), nil)
+	case *enterprisev1.Condition_Expression_RequestKubernetesResource_:
+		return requestStringMatchCEL("kubernetes", "resource", in.GetRequestKubernetesResource().GetMatch(), nil)
+	case *enterprisev1.Condition_Expression_RequestKubernetesSubresource_:
+		return requestStringMatchCEL("kubernetes", "subresource", in.GetRequestKubernetesSubresource().GetMatch(), nil)
+	case *enterprisev1.Condition_Expression_RequestKubernetesName_:
+		return requestStringMatchCEL("kubernetes", "name", in.GetRequestKubernetesName().GetMatch(), nil)
+
+	case *enterprisev1.Condition_Expression_RequestGRPC_:
+		return `has(ctx.request.grpc)`
+
+	case *enterprisev1.Condition_Expression_RequestGRPCMethod_:
+		return requestStringMatchCEL("grpc", "method", in.GetRequestGRPCMethod().GetMatch(), nil)
+	case *enterprisev1.Condition_Expression_RequestGRPCService_:
+		return requestStringMatchCEL("grpc", "service", in.GetRequestGRPCService().GetMatch(), nil)
+	case *enterprisev1.Condition_Expression_RequestGRPCServiceFullName_:
+		return requestStringMatchCEL("grpc", "serviceFullName", in.GetRequestGRPCServiceFullName().GetMatch(), nil)
+	case *enterprisev1.Condition_Expression_RequestGRPCPackage_:
+		return requestStringMatchCEL("grpc", "package", in.GetRequestGRPCPackage().GetMatch(), nil)
+
+	case *enterprisev1.Condition_Expression_RequestPostgresConnect_:
+		return `has(ctx.request.postgres.connect)`
+	case *enterprisev1.Condition_Expression_RequestPostgresConnectUser_:
+		return requestNestedStringMatchCEL("postgres", "connect", "user", in.GetRequestPostgresConnectUser().GetMatch(), nil)
+	case *enterprisev1.Condition_Expression_RequestPostgresConnectDatabase_:
+		return requestNestedStringMatchCEL("postgres", "connect", "database", in.GetRequestPostgresConnectDatabase().GetMatch(), nil)
+	case *enterprisev1.Condition_Expression_RequestPostgresConnectApplicationName_:
+		return requestNestedStringMatchCEL("postgres", "connect", "applicationName", in.GetRequestPostgresConnectApplicationName().GetMatch(), nil)
+	case *enterprisev1.Condition_Expression_RequestPostgresQuery_:
+		return `has(ctx.request.postgres.query)`
+	case *enterprisev1.Condition_Expression_RequestPostgresQueryText_:
+		return requestNestedStringMatchCEL("postgres", "query", "query", in.GetRequestPostgresQueryText().GetMatch(), nil)
+	case *enterprisev1.Condition_Expression_RequestPostgresParse_:
+		return `has(ctx.request.postgres.parse)`
+	case *enterprisev1.Condition_Expression_RequestPostgresParseName_:
+		return requestNestedStringMatchCEL("postgres", "parse", "name", in.GetRequestPostgresParseName().GetMatch(), nil)
+	case *enterprisev1.Condition_Expression_RequestPostgresParseQuery_:
+		return requestNestedStringMatchCEL("postgres", "parse", "query", in.GetRequestPostgresParseQuery().GetMatch(), nil)
+
+	case *enterprisev1.Condition_Expression_RequestDNS_:
+		return `has(ctx.request.dns)`
+	case *enterprisev1.Condition_Expression_RequestDNSName_:
+		return requestStringMatchCEL("dns", "name", in.GetRequestDNSName().GetMatch(), strings.ToLower)
+	case *enterprisev1.Condition_Expression_RequestDNSTypeID_:
+		return requestIntMatchCEL("dns", "typeID", in.GetRequestDNSTypeID().GetMatch())
+
+	case *enterprisev1.Condition_Expression_RequestSOCKS5_:
+		return `has(ctx.request.socks5)`
+	case *enterprisev1.Condition_Expression_RequestSOCKS5Host_:
+		return requestNestedStringMatchCEL("socks5", "connect", "host", in.GetRequestSOCKS5Host().GetMatch(), strings.ToLower)
+	case *enterprisev1.Condition_Expression_RequestSOCKS5Port_:
+		return requestNestedUIntMatchCEL("socks5", "connect", "port", in.GetRequestSOCKS5Port().GetMatch())
+	case *enterprisev1.Condition_Expression_RequestSOCKS5AddressType_:
+		return andCEL(`has(ctx.request.socks5.connect)`, fmt.Sprintf(`ctx.request.socks5.connect.addressType == %s`, celString(in.GetRequestSOCKS5AddressType().GetAddressType().String())))
+
+	case *enterprisev1.Condition_Expression_RequestMCPProtocolVersion:
+		return requestStringMatchCEL("mcp", "protocolVersion", in.GetRequestMCPProtocolVersion().GetMatch(), nil)
+	case *enterprisev1.Condition_Expression_RequestMCPMethod:
+		return requestStringMatchCEL("mcp", "method", in.GetRequestMCPMethod().GetMatch(), nil)
+	case *enterprisev1.Condition_Expression_RequestMCPToolName:
+		return andCEL(`has(ctx.request.mcp)`, `ctx.request.mcp.method == "tools/call"`, stringMatchCEL("ctx.request.mcp.name", in.GetRequestMCPToolName().GetMatch(), nil))
+	case *enterprisev1.Condition_Expression_RequestMCPPromptName:
+		return andCEL(`has(ctx.request.mcp)`, `ctx.request.mcp.method == "prompts/get"`, stringMatchCEL("ctx.request.mcp.name", in.GetRequestMCPPromptName().GetMatch(), nil))
+	case *enterprisev1.Condition_Expression_RequestMCPResourceURI:
+		return andCEL(`has(ctx.request.mcp)`, `ctx.request.mcp.method == "resources/read"`, stringMatchCEL("ctx.request.mcp.name", in.GetRequestMCPResourceURI().GetMatch(), nil))
+	case *enterprisev1.Condition_Expression_RequestMCPIsNotification:
+		return `has(ctx.request.mcp) && ctx.request.mcp.isNotification`
+
+	case *enterprisev1.Condition_Expression_RequestLLMProtocol:
+		return requestEnumCEL("llm", "protocol", in.GetRequestLLMProtocol().GetProtocol().String())
+	case *enterprisev1.Condition_Expression_RequestLLMOperation:
+		return requestEnumCEL("llm", "operation", in.GetRequestLLMOperation().GetOperation().String())
+	case *enterprisev1.Condition_Expression_RequestLLMModel:
+		return requestStringMatchCEL("llm", "model", in.GetRequestLLMModel().GetMatch(), nil)
+	case *enterprisev1.Condition_Expression_RequestLLMStream:
+		return `has(ctx.request.llm) && ctx.request.llm.stream`
+	case *enterprisev1.Condition_Expression_RequestLLMEstimatedInputTokens:
+		expr := in.GetRequestLLMEstimatedInputTokens()
+		ret := requestUIntMatchCEL("llm", "estimatedInputTokens", expr.GetMatch())
+		if expr.GetRequireComplete() {
+			ret = andCEL(ret, `ctx.request.llm.estimateQuality == "COMPLETE"`)
+		}
+		return ret
+	case *enterprisev1.Condition_Expression_RequestLLMEstimateQuality:
+		return requestEnumCEL("llm", "estimateQuality", in.GetRequestLLMEstimateQuality().GetQuality().String())
+	case *enterprisev1.Condition_Expression_RequestLLMMaxOutputTokens:
+		return requestUIntMatchCEL("llm", "maxOutputTokens", in.GetRequestLLMMaxOutputTokens().GetMatch())
+	case *enterprisev1.Condition_Expression_RequestLLMHasTools:
+		return `has(ctx.request.llm) && ctx.request.llm.hasTools`
+	case *enterprisev1.Condition_Expression_RequestLLMToolCount:
+		return requestUIntMatchCEL("llm", "toolCount", in.GetRequestLLMToolCount().GetMatch())
+	case *enterprisev1.Condition_Expression_RequestLLMToolName:
+		return andCEL(`has(ctx.request.llm)`, fmt.Sprintf(`ctx.request.llm.toolNames.exists(x, %s)`, stringMatchCEL("x", in.GetRequestLLMToolName().GetMatch(), nil)))
+	case *enterprisev1.Condition_Expression_RequestLLMInputItemCount:
+		return requestUIntMatchCEL("llm", "inputItemCount", in.GetRequestLLMInputItemCount().GetMatch())
+	case *enterprisev1.Condition_Expression_RequestLLMHasImageInput:
+		return `has(ctx.request.llm) && ctx.request.llm.hasImageInput`
+	case *enterprisev1.Condition_Expression_RequestLLMHasAudioInput:
+		return `has(ctx.request.llm) && ctx.request.llm.hasAudioInput`
 
 	case *enterprisev1.Condition_Expression_RequestIP_:
 		return fmt.Sprintf(`ctx.request.ip == %s`, celString(in.GetRequestIP().Value))
@@ -799,6 +1130,138 @@ func celStringList(items []string) string {
 	return fmt.Sprintf("[%s]", strings.Join(ret, ", "))
 }
 
+func stringMatchCEL(field string, match *enterprisev1.Condition_Expression_StringMatch, normalize func(string) string) string {
+	if match == nil || match.GetType() == nil {
+		return "false"
+	}
+
+	normalizeValue := func(value string) string {
+		if normalize != nil {
+			return normalize(value)
+		}
+		return value
+	}
+
+	switch m := match.GetType().(type) {
+	case *enterprisev1.Condition_Expression_StringMatch_Exact:
+		return fmt.Sprintf(`%s == %s`, field, celString(normalizeValue(m.Exact)))
+	case *enterprisev1.Condition_Expression_StringMatch_Prefix:
+		return fmt.Sprintf(`%s.startsWith(%s)`, field, celString(normalizeValue(m.Prefix)))
+	case *enterprisev1.Condition_Expression_StringMatch_Suffix:
+		return fmt.Sprintf(`%s.endsWith(%s)`, field, celString(normalizeValue(m.Suffix)))
+	case *enterprisev1.Condition_Expression_StringMatch_Contains:
+		return fmt.Sprintf(`%s.contains(%s)`, field, celString(normalizeValue(m.Contains)))
+	case *enterprisev1.Condition_Expression_StringMatch_In_:
+		if m.In == nil {
+			return "false"
+		}
+		values := make([]string, 0, len(m.In.Values))
+		for _, value := range m.In.Values {
+			values = append(values, normalizeValue(value))
+		}
+		return fmt.Sprintf(`%s in %s`, field, celStringList(values))
+	default:
+		return "false"
+	}
+}
+
+func exactStringMatchValue(match *enterprisev1.Condition_Expression_StringMatch) (string, bool) {
+	if match == nil {
+		return "", false
+	}
+	value, ok := match.GetType().(*enterprisev1.Condition_Expression_StringMatch_Exact)
+	if !ok {
+		return "", false
+	}
+	return value.Exact, true
+}
+
+func uintMatchCEL(field string, match *enterprisev1.Condition_Expression_UIntMatch) string {
+	if match == nil || match.GetType() == nil {
+		return "false"
+	}
+
+	switch m := match.GetType().(type) {
+	case *enterprisev1.Condition_Expression_UIntMatch_Exact:
+		return fmt.Sprintf(`%s == uint(%d)`, field, m.Exact)
+	case *enterprisev1.Condition_Expression_UIntMatch_LessThan:
+		return fmt.Sprintf(`%s < uint(%d)`, field, m.LessThan)
+	case *enterprisev1.Condition_Expression_UIntMatch_LessThanOrEqual:
+		return fmt.Sprintf(`%s <= uint(%d)`, field, m.LessThanOrEqual)
+	case *enterprisev1.Condition_Expression_UIntMatch_GreaterThan:
+		return fmt.Sprintf(`%s > uint(%d)`, field, m.GreaterThan)
+	case *enterprisev1.Condition_Expression_UIntMatch_GreaterThanOrEqual:
+		return fmt.Sprintf(`%s >= uint(%d)`, field, m.GreaterThanOrEqual)
+	default:
+		return "false"
+	}
+}
+
+func intMatchCEL(field string, match *enterprisev1.Condition_Expression_IntMatch) string {
+	if match == nil || match.GetType() == nil {
+		return "false"
+	}
+
+	switch m := match.GetType().(type) {
+	case *enterprisev1.Condition_Expression_IntMatch_Exact:
+		return fmt.Sprintf(`%s == %d`, field, m.Exact)
+	case *enterprisev1.Condition_Expression_IntMatch_LessThan:
+		return fmt.Sprintf(`%s < %d`, field, m.LessThan)
+	case *enterprisev1.Condition_Expression_IntMatch_LessThanOrEqual:
+		return fmt.Sprintf(`%s <= %d`, field, m.LessThanOrEqual)
+	case *enterprisev1.Condition_Expression_IntMatch_GreaterThan:
+		return fmt.Sprintf(`%s > %d`, field, m.GreaterThan)
+	case *enterprisev1.Condition_Expression_IntMatch_GreaterThanOrEqual:
+		return fmt.Sprintf(`%s >= %d`, field, m.GreaterThanOrEqual)
+	default:
+		return "false"
+	}
+}
+
+func requestStringMatchCEL(requestType, field string, match *enterprisev1.Condition_Expression_StringMatch, normalize func(string) string) string {
+	return andCEL(
+		fmt.Sprintf(`has(ctx.request.%s)`, requestType),
+		stringMatchCEL(fmt.Sprintf(`ctx.request.%s.%s`, requestType, field), match, normalize),
+	)
+}
+
+func requestNestedStringMatchCEL(requestType, nestedType, field string, match *enterprisev1.Condition_Expression_StringMatch, normalize func(string) string) string {
+	return andCEL(
+		fmt.Sprintf(`has(ctx.request.%s)`, requestType),
+		fmt.Sprintf(`has(ctx.request.%s.%s)`, requestType, nestedType),
+		stringMatchCEL(fmt.Sprintf(`ctx.request.%s.%s.%s`, requestType, nestedType, field), match, normalize),
+	)
+}
+
+func requestUIntMatchCEL(requestType, field string, match *enterprisev1.Condition_Expression_UIntMatch) string {
+	return andCEL(
+		fmt.Sprintf(`has(ctx.request.%s)`, requestType),
+		uintMatchCEL(fmt.Sprintf(`ctx.request.%s.%s`, requestType, field), match),
+	)
+}
+
+func requestNestedUIntMatchCEL(requestType, nestedType, field string, match *enterprisev1.Condition_Expression_UIntMatch) string {
+	return andCEL(
+		fmt.Sprintf(`has(ctx.request.%s)`, requestType),
+		fmt.Sprintf(`has(ctx.request.%s.%s)`, requestType, nestedType),
+		uintMatchCEL(fmt.Sprintf(`ctx.request.%s.%s.%s`, requestType, nestedType, field), match),
+	)
+}
+
+func requestIntMatchCEL(requestType, field string, match *enterprisev1.Condition_Expression_IntMatch) string {
+	return andCEL(
+		fmt.Sprintf(`has(ctx.request.%s)`, requestType),
+		intMatchCEL(fmt.Sprintf(`ctx.request.%s.%s`, requestType, field), match),
+	)
+}
+
+func requestEnumCEL(requestType, field, value string) string {
+	return andCEL(
+		fmt.Sprintf(`has(ctx.request.%s)`, requestType),
+		fmt.Sprintf(`ctx.request.%s.%s == %s`, requestType, field, celString(value)),
+	)
+}
+
 func andCEL(items ...string) string {
 	if len(items) == 0 {
 		return "true"
@@ -831,6 +1294,140 @@ func validateBoundedString(v string, required bool, field string) error {
 		return grpcutils.InvalidArg("%s is too long", field)
 	}
 
+	return nil
+}
+
+func validateStringMatch(match *enterprisev1.Condition_Expression_StringMatch, field string, validate func(string) error) error {
+	if match == nil || match.GetType() == nil {
+		return grpcutils.InvalidArg("%s matcher must be set", field)
+	}
+
+	values := []string{}
+	switch m := match.GetType().(type) {
+	case *enterprisev1.Condition_Expression_StringMatch_Exact:
+		values = append(values, m.Exact)
+	case *enterprisev1.Condition_Expression_StringMatch_Prefix:
+		values = append(values, m.Prefix)
+	case *enterprisev1.Condition_Expression_StringMatch_Suffix:
+		values = append(values, m.Suffix)
+	case *enterprisev1.Condition_Expression_StringMatch_Contains:
+		values = append(values, m.Contains)
+	case *enterprisev1.Condition_Expression_StringMatch_In_:
+		if m.In == nil || len(m.In.Values) == 0 {
+			return grpcutils.InvalidArg("%s in matcher must contain at least one value", field)
+		}
+		if len(m.In.Values) > maxConditionChildren {
+			return grpcutils.InvalidArg("%s in matcher has too many values", field)
+		}
+		values = append(values, m.In.Values...)
+	default:
+		return grpcutils.InvalidArg("Unsupported %s matcher", field)
+	}
+
+	seen := map[string]struct{}{}
+	for _, value := range values {
+		if err := validateBoundedString(value, false, field); err != nil {
+			return err
+		}
+		if validate != nil {
+			if err := validate(value); err != nil {
+				return err
+			}
+		}
+		if _, ok := seen[value]; ok {
+			return grpcutils.InvalidArg("Duplicate %s matcher value: %s", field, value)
+		}
+		seen[value] = struct{}{}
+	}
+
+	return nil
+}
+
+func validateHTTPPathMatch(match *enterprisev1.Condition_Expression_StringMatch) error {
+	if match == nil || match.GetType() == nil {
+		return grpcutils.InvalidArg("HTTP path matcher must be set")
+	}
+
+	switch m := match.GetType().(type) {
+	case *enterprisev1.Condition_Expression_StringMatch_Exact:
+		return validateHTTPPath(m.Exact)
+	case *enterprisev1.Condition_Expression_StringMatch_Prefix:
+		return validateHTTPPath(m.Prefix)
+	case *enterprisev1.Condition_Expression_StringMatch_Suffix:
+		return validateHTTPPathFragment(m.Suffix)
+	case *enterprisev1.Condition_Expression_StringMatch_Contains:
+		return validateHTTPPathFragment(m.Contains)
+	case *enterprisev1.Condition_Expression_StringMatch_In_:
+		if err := validateStringMatch(match, "HTTP path", nil); err != nil {
+			return err
+		}
+		for _, value := range m.In.Values {
+			if err := validateHTTPPath(value); err != nil {
+				return err
+			}
+		}
+		return nil
+	default:
+		return grpcutils.InvalidArg("Unsupported HTTP path matcher")
+	}
+}
+
+func validateHTTPPathFragment(v string) error {
+	if err := validateBoundedString(v, true, "HTTP path"); err != nil {
+		return err
+	}
+	if strings.ContainsAny(v, "\x00\r\n") {
+		return grpcutils.InvalidArg("HTTP path contains invalid characters")
+	}
+	return nil
+}
+
+func validateHTTPMethod(v string) error {
+	if err := validateBoundedString(v, true, "HTTP method"); err != nil {
+		return err
+	}
+	if !isHTTPToken(v) {
+		return grpcutils.InvalidArg("Invalid HTTP method")
+	}
+	return nil
+}
+
+func validateHTTPMethodMatch(match *enterprisev1.Condition_Expression_StringMatch) error {
+	if err := validateStringMatch(match, "HTTP method", validateHTTPMethod); err != nil {
+		return err
+	}
+
+	var values []string
+	switch m := match.GetType().(type) {
+	case *enterprisev1.Condition_Expression_StringMatch_Exact:
+		values = []string{m.Exact}
+	case *enterprisev1.Condition_Expression_StringMatch_In_:
+		values = m.In.Values
+	default:
+		return nil
+	}
+
+	for _, value := range values {
+		switch strings.ToUpper(value) {
+		case "GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "CONNECT", "TRACE":
+		default:
+			return grpcutils.InvalidArg("Unsupported HTTP method")
+		}
+	}
+	return nil
+}
+
+func validateUIntMatch(match *enterprisev1.Condition_Expression_UIntMatch, field string) error {
+	if match == nil || match.GetType() == nil {
+		return grpcutils.InvalidArg("%s matcher must be set", field)
+	}
+	return nil
+}
+
+func validateIntMatch(match *enterprisev1.Condition_Expression_IntMatch, field string) error {
+	if match == nil || match.GetType() == nil {
+		return grpcutils.InvalidArg("%s matcher must be set", field)
+	}
 	return nil
 }
 
