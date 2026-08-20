@@ -11,7 +11,7 @@ import { ResourceMainInfo } from "@/pages/utils/types";
 import { randomStringLowerCase, slugify } from "@/utils";
 import { getClientCore } from "@/utils/client";
 import { getResourcePath, getResourceRef } from "@/utils/pb";
-import { Button, Modal, Switch } from "@mantine/core";
+import { Button, Drawer, Switch } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useMutation } from "@tanstack/react-query";
 import {
@@ -145,16 +145,29 @@ const CreateUserCredential = (props: { item: CoreC.User }) => {
   const { item } = props;
   const [opened, { open, close }] = useDisclosure(false);
   const navigate = useNavigate();
-  const [credential, setCredential] = useState(
-    CoreC.Credential.create({
+  const getCredentialNamePrefix = (
+    userName: string,
+    type: CoreC.Credential_Spec_Type,
+  ) => `${userName}-${slugify(CoreC.Credential_Spec_Type[type]).toLowerCase()}-`;
+  const getCredentialName = (userName: string, type: CoreC.Credential_Spec_Type) =>
+    `${getCredentialNamePrefix(userName, type)}${randomStringLowerCase(6)}`;
+  const [credential, setCredential] = useState(() => {
+    const next = CoreC.Credential.create({
       kind: "Credential",
       apiVersion: "core/v1",
       metadata: {},
       spec: {
         user: item.metadata?.name,
+        type: CoreC.Credential_Spec_Type.AUTH_TOKEN,
+        sessionType: CoreC.Session_Status_Type.CLIENT,
       },
-    }),
-  );
+    });
+    next.metadata!.name = getCredentialName(
+      item.metadata?.name ?? "",
+      CoreC.Credential_Spec_Type.AUTH_TOKEN,
+    );
+    return next;
+  });
 
   const mutationCredential = useMutation({
     mutationFn: async () => {
@@ -181,11 +194,11 @@ const CreateUserCredential = (props: { item: CoreC.User }) => {
       >
         Create credential
       </Button>
-      <Modal
+      <Drawer
         opened={opened}
         onClose={close}
-        size="xl"
-        centered
+        position="right"
+        size="min(760px, 100vw)"
         closeOnClickOutside={!mutationCredential.isPending}
         closeOnEscape={!mutationCredential.isPending}
         title={
@@ -204,26 +217,37 @@ const CreateUserCredential = (props: { item: CoreC.User }) => {
           </div>
         }
         overlayProps={{ backgroundOpacity: 0.2, blur: 1 }}
+        transitionProps={{
+          transition: "slide-left",
+          duration: 500,
+          exitDuration: 500,
+        }}
         styles={{
-          header: { borderBottom: "1px solid #e2e8f0", minHeight: "64px" },
-          body: { padding: 0 },
-          content: { border: "1px solid #e2e8f0" },
+          header: { borderBottom: "1px solid #e2e8f0", minHeight: "56px" },
+          body: {
+            minHeight: "calc(100dvh - 56px)",
+            padding: "16px",
+            backgroundColor: "#f8fafc",
+          },
+          content: { borderLeft: "1px solid #e2e8f0" },
         }}
       >
-        <div className="flex flex-col bg-slate-50/70">
-          <div className="p-4 sm:p-5">
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <Edit
-            onUpdate={(v) => {
-              v.metadata!.name = `${v.spec!.user}-${slugify(CoreC.Credential_Spec_Type[v.spec!.type]).toLowerCase()}-${randomStringLowerCase(6)}`;
-              setCredential(CoreC.Credential.clone(v));
-            }}
-            item={credential}
-          />
-            </div>
+        <div className="flex min-h-[calc(100dvh-96px)] flex-col gap-3">
+          <div className="flex-1 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <Edit
+              hideUser
+              onUpdate={(v) => {
+                const prefix = getCredentialNamePrefix(v.spec!.user, v.spec!.type);
+                if (!v.metadata!.name.startsWith(prefix)) {
+                  v.metadata!.name = getCredentialName(v.spec!.user, v.spec!.type);
+                }
+                setCredential(CoreC.Credential.clone(v));
+              }}
+              item={credential}
+            />
           </div>
 
-          <div className="flex items-center justify-end gap-2 border-t border-slate-200 bg-white px-4 py-3 sm:px-5">
+          <div className="flex items-center justify-end gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm sm:px-5">
             <Button
               variant="default"
               size="sm"
@@ -251,7 +275,7 @@ const CreateUserCredential = (props: { item: CoreC.User }) => {
             </Button>
           </div>
         </div>
-      </Modal>
+      </Drawer>
     </div>
   );
 };

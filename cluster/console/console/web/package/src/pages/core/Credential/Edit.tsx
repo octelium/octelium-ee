@@ -17,6 +17,7 @@ import { match } from "ts-pattern";
 const Edit = (props: {
   item: CoreP.Credential;
   onUpdate: (item: CoreP.Credential) => void;
+  hideUser?: boolean;
 }) => {
   let [req, setReq] = React.useState<CoreP.Credential>(props.item);
   const data = props.item;
@@ -59,19 +60,21 @@ const Edit = (props: {
   return (
     <div>
       <Group grow>
-        <SelectResource
-          api="core"
-          kind="User"
-          label="Select the User"
-          description="Select the User that will use this Credential to authenticate to the Cluster"
-          required
-          defaultValue={req.spec!.user}
-          onChange={(v) => {
-            req.spec!.user = v?.metadata?.name ?? "";
-            setName();
-            updateReq();
-          }}
-        />
+        {!props.hideUser && (
+          <SelectResource
+            api="core"
+            kind="User"
+            label="Select the User"
+            description="Select the User that will use this Credential to authenticate to the Cluster"
+            required
+            defaultValue={req.spec!.user}
+            onChange={(v) => {
+              req.spec!.user = v?.metadata?.name ?? "";
+              setName();
+              updateReq();
+            }}
+          />
+        )}
 
         <Select
           label="Type"
