@@ -304,6 +304,24 @@ const cloneConfigForMode = (
       http: CoreP.Service_Spec_Config_HTTP.create(),
     };
   }
+  if (
+    ret.type.oneofKind === undefined &&
+    mode === CoreP.Service_Spec_Mode.MCP
+  ) {
+    ret.type = {
+      oneofKind: "mcp",
+      mcp: CoreP.Service_Spec_Config_MCP.create(),
+    };
+  }
+  if (
+    ret.type.oneofKind === undefined &&
+    mode === CoreP.Service_Spec_Mode.LLM
+  ) {
+    ret.type = {
+      oneofKind: "llm",
+      llm: CoreP.Service_Spec_Config_LLM.create(),
+    };
+  }
   return ret;
 };
 
@@ -325,10 +343,1241 @@ const configTypeTitle = (
       return "SOCKS5-specific configuration";
     case "rdp":
       return "RDP-specific configuration";
+    case "mcp":
+      return "MCP-specific configuration";
+    case "llm":
+      return "LLM/AI-specific configuration";
     default:
       return "Mode-specific configuration";
   }
 };
+
+type GatewayConfig =
+  | CoreP.Service_Spec_Config_MCP
+  | CoreP.Service_Spec_Config_LLM;
+
+const StringListEditor = (props: {
+  title: string;
+  values: string[];
+  onChange: (values: string[]) => void;
+  placeholder?: string;
+}) => (
+  <ItemMessage
+    title={props.title}
+    obj={props.values}
+    isList
+    onSet={() => props.onChange([""])}
+    onAddListItem={() => props.onChange([...props.values, ""])}
+  >
+    {props.values.map((value, index) => (
+      <div className="mb-3 flex w-full items-center" key={`${props.title}-${index}`}>
+        <CloseButton
+          size="sm"
+          variant="subtle"
+          className="mr-2"
+          aria-label={`Remove ${props.title} item ${index + 1}`}
+          onClick={() =>
+            props.onChange(props.values.filter((_, itemIndex) => itemIndex !== index))
+          }
+        />
+        <TextInput
+          className="flex-1"
+          label={`${props.title} ${index + 1}`}
+          placeholder={props.placeholder}
+          value={value}
+          onChange={(event) => {
+            const next = [...props.values];
+            next[index] = event.target.value;
+            props.onChange(next);
+          }}
+        />
+      </div>
+    ))}
+  </ItemMessage>
+);
+
+const GatewayAuthEditor = (props: {
+  config: GatewayConfig;
+  onChange: () => void;
+}) => {
+  const { config, onChange } = props;
+
+  return (
+    <EditItem
+      title="Upstream authentication"
+      description="Authenticate requests sent to the MCP or model provider upstream"
+      obj={config.auth}
+      onUnset={() => {
+        config.auth = undefined;
+        onChange();
+      }}
+      onSet={() => {
+        config.auth = CoreP.Service_Spec_Config_HTTP_Auth.create({
+          type: {
+            oneofKind: "bearer",
+            bearer: CoreP.Service_Spec_Config_HTTP_Auth_Bearer.create({
+              type: { oneofKind: "fromSecret", fromSecret: "" },
+            }),
+          },
+        });
+        onChange();
+      }}
+    >
+      {config.auth && (
+        <>
+          <Tabs
+            className="mb-4"
+            value={config.auth.type.oneofKind ?? "bearer"}
+            onChange={(value) => {
+              if (!value) return;
+              const type =
+                value === "basic"
+                  ? {
+                      oneofKind: "basic" as const,
+                      basic: CoreP.Service_Spec_Config_HTTP_Auth_Basic.create({
+                        password: {
+                          type: { oneofKind: "fromSecret", fromSecret: "" },
+                        },
+                      }),
+                    }
+                  : value === "custom"
+                    ? {
+                        oneofKind: "custom" as const,
+                        custom:
+                          CoreP.Service_Spec_Config_HTTP_Auth_Custom.create({
+                            value: {
+                              type: { oneofKind: "fromSecret", fromSecret: "" },
+                            },
+                          }),
+                      }
+                    : value === "oauth2ClientCredentials"
+                      ? {
+                          oneofKind: "oauth2ClientCredentials" as const,
+                          oauth2ClientCredentials:
+                            CoreP.Service_Spec_Config_HTTP_Auth_OAuth2ClientCredentials.create(
+                              {
+                                clientSecret: {
+                                  type: {
+                                    oneofKind: "fromSecret",
+                                    fromSecret: "",
+                                  },
+                                },
+                              },
+                            ),
+                        }
+                      : value === "sigv4"
+                        ? {
+                            oneofKind: "sigv4" as const,
+                            sigv4:
+                              CoreP.Service_Spec_Config_HTTP_Auth_Sigv4.create({
+                                secretAccessKey: {
+                                  type: {
+                                    oneofKind: "fromSecret",
+                                    fromSecret: "",
+                                  },
+                                },
+                              }),
+                          }
+                        : {
+                            oneofKind: "bearer" as const,
+                            bearer:
+                              CoreP.Service_Spec_Config_HTTP_Auth_Bearer.create({
+                                type: {
+                                  oneofKind: "fromSecret",
+                                  fromSecret: "",
+                                },
+                              }),
+                          };
+              config.auth!.type = type;
+              onChange();
+            }}
+          >
+            <Tabs.List>
+              <Tabs.Tab value="bearer">Bearer</Tabs.Tab>
+              <Tabs.Tab value="basic">Basic</Tabs.Tab>
+              <Tabs.Tab value="custom">Custom header</Tabs.Tab>
+              <Tabs.Tab value="oauth2ClientCredentials">OAuth2</Tabs.Tab>
+              <Tabs.Tab value="sigv4">AWS SigV4</Tabs.Tab>
+            </Tabs.List>
+          </Tabs>
+
+          {match(config.auth.type)
+            .with({ oneofKind: "bearer" }, (auth) => (
+              <SelectResource
+                api="core"
+                kind="Secret"
+                label="Bearer token Secret"
+                defaultValue={
+                  auth.bearer.type.oneofKind === "fromSecret"
+                    ? auth.bearer.type.fromSecret
+                    : undefined
+                }
+                onChange={(value) => {
+                  if (auth.bearer.type.oneofKind === "fromSecret") {
+                    auth.bearer.type.fromSecret = value?.metadata?.name ?? "";
+                  }
+                  onChange();
+                }}
+              />
+            ))
+            .with({ oneofKind: "basic" }, (auth) => (
+              <Group grow align="flex-start">
+                <TextInput
+                  label="Username"
+                  value={auth.basic.username}
+                  onChange={(event) => {
+                    auth.basic.username = event.target.value;
+                    onChange();
+                  }}
+                />
+                {auth.basic.password?.type.oneofKind === "fromSecret" && (
+                  <SelectResource
+                    api="core"
+                    kind="Secret"
+                    label="Password Secret"
+                    defaultValue={auth.basic.password.type.fromSecret}
+                    onChange={(value) => {
+                      if (auth.basic.password?.type.oneofKind === "fromSecret") {
+                        auth.basic.password.type.fromSecret =
+                          value?.metadata?.name ?? "";
+                      }
+                      onChange();
+                    }}
+                  />
+                )}
+              </Group>
+            ))
+            .with({ oneofKind: "custom" }, (auth) => (
+              <Group grow align="flex-start">
+                <TextInput
+                  label="Header name"
+                  placeholder="X-API-Key"
+                  value={auth.custom.header}
+                  onChange={(event) => {
+                    auth.custom.header = event.target.value;
+                    onChange();
+                  }}
+                />
+                {auth.custom.value?.type.oneofKind === "fromSecret" && (
+                  <SelectResource
+                    api="core"
+                    kind="Secret"
+                    label="Header value Secret"
+                    defaultValue={auth.custom.value.type.fromSecret}
+                    onChange={(value) => {
+                      if (auth.custom.value?.type.oneofKind === "fromSecret") {
+                        auth.custom.value.type.fromSecret =
+                          value?.metadata?.name ?? "";
+                      }
+                      onChange();
+                    }}
+                  />
+                )}
+              </Group>
+            ))
+            .with({ oneofKind: "oauth2ClientCredentials" }, (auth) => (
+              <div>
+                <Group grow align="flex-start">
+                  <TextInput
+                    label="Client ID"
+                    value={auth.oauth2ClientCredentials.clientID}
+                    onChange={(event) => {
+                      auth.oauth2ClientCredentials.clientID = event.target.value;
+                      onChange();
+                    }}
+                  />
+                  <TextInput
+                    label="Token endpoint URL"
+                    value={auth.oauth2ClientCredentials.tokenURL}
+                    onChange={(event) => {
+                      auth.oauth2ClientCredentials.tokenURL = event.target.value;
+                      onChange();
+                    }}
+                  />
+                </Group>
+                {auth.oauth2ClientCredentials.clientSecret?.type.oneofKind ===
+                  "fromSecret" && (
+                  <SelectResource
+                    api="core"
+                    kind="Secret"
+                    label="Client Secret"
+                    defaultValue={
+                      auth.oauth2ClientCredentials.clientSecret.type.fromSecret
+                    }
+                    onChange={(value) => {
+                      if (
+                        auth.oauth2ClientCredentials.clientSecret?.type
+                          .oneofKind === "fromSecret"
+                      ) {
+                        auth.oauth2ClientCredentials.clientSecret.type.fromSecret =
+                          value?.metadata?.name ?? "";
+                      }
+                      onChange();
+                    }}
+                  />
+                )}
+                <StringListEditor
+                  title="OAuth2 scopes"
+                  values={auth.oauth2ClientCredentials.scopes}
+                  onChange={(values) => {
+                    auth.oauth2ClientCredentials.scopes = values;
+                    onChange();
+                  }}
+                  placeholder="scope.read"
+                />
+              </div>
+            ))
+            .with({ oneofKind: "sigv4" }, (auth) => (
+              <div>
+                <Group grow align="flex-start">
+                  <TextInput
+                    label="Access key ID"
+                    value={auth.sigv4.accessKeyID}
+                    onChange={(event) => {
+                      auth.sigv4.accessKeyID = event.target.value;
+                      onChange();
+                    }}
+                  />
+                  <TextInput
+                    label="Region"
+                    value={auth.sigv4.region}
+                    onChange={(event) => {
+                      auth.sigv4.region = event.target.value;
+                      onChange();
+                    }}
+                  />
+                  <TextInput
+                    label="Service"
+                    value={auth.sigv4.service}
+                    onChange={(event) => {
+                      auth.sigv4.service = event.target.value;
+                      onChange();
+                    }}
+                  />
+                </Group>
+                {auth.sigv4.secretAccessKey?.type.oneofKind === "fromSecret" && (
+                  <SelectResource
+                    api="core"
+                    kind="Secret"
+                    label="Secret access key"
+                    defaultValue={auth.sigv4.secretAccessKey.type.fromSecret}
+                    onChange={(value) => {
+                      if (auth.sigv4.secretAccessKey?.type.oneofKind === "fromSecret") {
+                        auth.sigv4.secretAccessKey.type.fromSecret =
+                          value?.metadata?.name ?? "";
+                      }
+                      onChange();
+                    }}
+                  />
+                )}
+              </div>
+            ))
+            .otherwise(() => null)}
+        </>
+      )}
+    </EditItem>
+  );
+};
+
+const GatewayPathEditor = (props: {
+  config: GatewayConfig;
+  onChange: () => void;
+}) => (
+  <EditItem
+    title="Upstream path"
+    description="Rewrite the path before forwarding requests"
+    obj={props.config.path}
+    onUnset={() => {
+      props.config.path = undefined;
+      props.onChange();
+    }}
+    onSet={() => {
+      props.config.path = CoreP.Service_Spec_Config_HTTP_Path.create();
+      props.onChange();
+    }}
+  >
+    {props.config.path && (
+      <Group grow>
+        <TextInput
+          label="Add prefix"
+          placeholder="/api"
+          value={props.config.path.addPrefix}
+          onChange={(event) => {
+            props.config.path!.addPrefix = event.target.value;
+            props.onChange();
+          }}
+        />
+        <TextInput
+          label="Remove prefix"
+          placeholder="/v1"
+          value={props.config.path.removePrefix}
+          onChange={(event) => {
+            props.config.path!.removePrefix = event.target.value;
+            props.onChange();
+          }}
+        />
+      </Group>
+    )}
+  </EditItem>
+);
+
+const GatewayHeaderEditor = (props: {
+  config: GatewayConfig;
+  onChange: () => void;
+}) => (
+  <EditItem
+    title="Headers"
+    description="Control forwarded, added, and removed request headers"
+    obj={props.config.header}
+    onUnset={() => {
+      props.config.header = undefined;
+      props.onChange();
+    }}
+    onSet={() => {
+      props.config.header = CoreP.Service_Spec_Config_HTTP_Header.create();
+      props.onChange();
+    }}
+  >
+    {props.config.header && (
+      <Group grow>
+        <Select
+          label="Forwarded headers"
+          data={["DROP", "OBFUSCATE", "TRANSPARENT"]}
+          value={
+            CoreP.Service_Spec_Config_HTTP_Header_ForwardedMode[
+              props.config.header.forwardedMode
+            ] ?? "DROP"
+          }
+          onChange={(value) => {
+            if (!value) return;
+            props.config.header!.forwardedMode =
+              CoreP.Service_Spec_Config_HTTP_Header_ForwardedMode[
+                value as keyof typeof CoreP.Service_Spec_Config_HTTP_Header_ForwardedMode
+              ];
+            props.onChange();
+          }}
+        />
+        <Select
+          label="Authorization header"
+          data={["DELETE", "PASS"]}
+          value={
+            CoreP.Service_Spec_Config_HTTP_Header_AuthorizationMode[
+              props.config.header.authorizationMode
+            ] ?? "DELETE"
+          }
+          onChange={(value) => {
+            if (!value) return;
+            props.config.header!.authorizationMode =
+              CoreP.Service_Spec_Config_HTTP_Header_AuthorizationMode[
+                value as keyof typeof CoreP.Service_Spec_Config_HTTP_Header_AuthorizationMode
+              ];
+            props.onChange();
+          }}
+        />
+      </Group>
+    )}
+  </EditItem>
+);
+
+const createGatewayPlugin = () =>
+  CoreP.Service_Spec_Config_HTTP_Plugin.create({
+    type: {
+      oneofKind: "direct",
+      direct: CoreP.Service_Spec_Config_HTTP_Plugin_Direct.create(),
+    },
+  });
+
+const GatewayPluginsEditor = (props: {
+  config: GatewayConfig;
+  onChange: () => void;
+}) => (
+  <ItemMessage
+    title="Plugins"
+    obj={props.config.plugins}
+    isList
+    onSet={() => {
+      props.config.plugins = [createGatewayPlugin()];
+      props.onChange();
+    }}
+    onAddListItem={() => {
+      props.config.plugins.push(createGatewayPlugin());
+      props.onChange();
+    }}
+  >
+    {props.config.plugins.map((plugin, index) => (
+      <EditItem
+        key={`${plugin.name || "plugin"}-${index}`}
+        obj={plugin}
+        onUnset={() => {
+          props.config.plugins.splice(index, 1);
+          props.onChange();
+        }}
+      >
+        <Group grow align="flex-start">
+          <TextInput
+            label="Name"
+            required
+            placeholder="my-plugin"
+            value={plugin.name}
+            onChange={(event) => {
+              plugin.name = event.target.value;
+              props.onChange();
+            }}
+          />
+          <Select
+            label="Phase"
+            data={["PRE_AUTH", "POST_AUTH"]}
+            value={
+              CoreP.Service_Spec_Config_HTTP_Plugin_Phase[plugin.phase] ??
+              "PRE_AUTH"
+            }
+            onChange={(value) => {
+              if (!value) return;
+              plugin.phase =
+                CoreP.Service_Spec_Config_HTTP_Plugin_Phase[
+                  value as keyof typeof CoreP.Service_Spec_Config_HTTP_Plugin_Phase
+                ];
+              props.onChange();
+            }}
+          />
+          <Switch
+            label="Disabled"
+            checked={plugin.isDisabled}
+            onChange={(event) => {
+              plugin.isDisabled = event.currentTarget.checked;
+              props.onChange();
+            }}
+          />
+        </Group>
+        <Cond
+          item={
+            plugin.condition ??
+            CoreP.Condition.create({
+              type: { oneofKind: "matchAny", matchAny: true },
+            })
+          }
+          onChange={(condition) => {
+            plugin.condition = condition;
+            props.onChange();
+          }}
+        />
+        <Tabs
+          className="mb-4"
+          value={plugin.type.oneofKind ?? "direct"}
+          onChange={(value) => {
+            if (!value) return;
+            plugin.type =
+              value === "rateLimit"
+                ? {
+                    oneofKind: "rateLimit",
+                    rateLimit:
+                      CoreP.Service_Spec_Config_HTTP_Plugin_RateLimit.create(),
+                  }
+                  : value === "lua"
+                    ? {
+                        oneofKind: "lua",
+                        lua: CoreP.Service_Spec_Config_HTTP_Plugin_Lua.create({
+                          type: { oneofKind: "inline", inline: "" },
+                        }),
+                      }
+                    : value === "path"
+                      ? {
+                          oneofKind: "path",
+                          path: CoreP.Service_Spec_Config_HTTP_Plugin_Path.create(),
+                        }
+                      : value === "jsonSchema"
+                        ? {
+                            oneofKind: "jsonSchema",
+                            jsonSchema:
+                              CoreP.Service_Spec_Config_HTTP_Plugin_JSONSchema.create(
+                                { type: { oneofKind: "inline", inline: "" } },
+                              ),
+                          }
+                        : value === "extProc"
+                          ? {
+                              oneofKind: "extProc",
+                              extProc:
+                                CoreP.Service_Spec_Config_HTTP_Plugin_ExtProc.create(
+                                  {
+                                    type: {
+                                      oneofKind: "address",
+                                      address: "",
+                                    },
+                                  },
+                                ),
+                            }
+                          : {
+                              oneofKind: "direct",
+                              direct:
+                                CoreP.Service_Spec_Config_HTTP_Plugin_Direct.create(),
+                            };
+            props.onChange();
+          }}
+        >
+          <Tabs.List>
+            <Tabs.Tab value="direct">Direct response</Tabs.Tab>
+            <Tabs.Tab value="rateLimit">Rate limit</Tabs.Tab>
+            <Tabs.Tab value="lua">Lua</Tabs.Tab>
+            <Tabs.Tab value="path">Path</Tabs.Tab>
+            <Tabs.Tab value="jsonSchema">JSON Schema</Tabs.Tab>
+            <Tabs.Tab value="extProc">Ext Proc</Tabs.Tab>
+          </Tabs.List>
+        </Tabs>
+        {match(plugin.type)
+          .with({ oneofKind: "direct" }, (type) => (
+            <NumberInput
+              label="Status code"
+              min={100}
+              max={599}
+              value={type.direct.statusCode}
+              onChange={(value) => {
+                type.direct.statusCode = strToNum(value);
+                props.onChange();
+              }}
+            />
+          ))
+          .with({ oneofKind: "rateLimit" }, (type) => (
+            <NumberInput
+              label="Request limit"
+              min={0}
+              value={type.rateLimit.limit}
+              onChange={(value) => {
+                type.rateLimit.limit = strToNum(value);
+                props.onChange();
+              }}
+            />
+          ))
+          .with({ oneofKind: "lua" }, (type) => (
+            <TextAreaCustom
+              value={
+                type.lua.type.oneofKind === "inline"
+                  ? type.lua.type.inline
+                  : ""
+              }
+              onChange={(value) => {
+                type.lua.type = { oneofKind: "inline", inline: value ?? "" };
+                props.onChange();
+              }}
+            />
+          ))
+          .with({ oneofKind: "path" }, (type) => (
+            <Group grow>
+              <TextInput
+                label="Add prefix"
+                value={type.path.addPrefix}
+                onChange={(event) => {
+                  type.path.addPrefix = event.target.value;
+                  props.onChange();
+                }}
+              />
+              <TextInput
+                label="Remove prefix"
+                value={type.path.removePrefix}
+                onChange={(event) => {
+                  type.path.removePrefix = event.target.value;
+                  props.onChange();
+                }}
+              />
+            </Group>
+          ))
+          .with({ oneofKind: "jsonSchema" }, (type) => (
+            <div>
+              <NumberInput
+                label="Status code"
+                min={100}
+                max={599}
+                value={type.jsonSchema.statusCode}
+                onChange={(value) => {
+                  type.jsonSchema.statusCode = strToNum(value);
+                  props.onChange();
+                }}
+              />
+              <TextAreaCustom
+                value={
+                  type.jsonSchema.type.oneofKind === "inline"
+                    ? type.jsonSchema.type.inline
+                    : ""
+                }
+                onChange={(value) => {
+                  type.jsonSchema.type = {
+                    oneofKind: "inline",
+                    inline: value ?? "",
+                  };
+                  props.onChange();
+                }}
+              />
+            </div>
+          ))
+          .with({ oneofKind: "extProc" }, (type) => (
+            <Group grow>
+              <Select
+                label="Endpoint type"
+                data={["address", "container"]}
+                value={type.extProc.type.oneofKind ?? "address"}
+                onChange={(value) => {
+                  if (!value) return;
+                  type.extProc.type =
+                    value === "container"
+                      ? {
+                          oneofKind: "container",
+                          container:
+                            CoreP.Service_Spec_Config_HTTP_Plugin_ExtProc_Container.create(),
+                        }
+                      : { oneofKind: "address", address: "" };
+                  props.onChange();
+                }}
+              />
+              {type.extProc.type.oneofKind === "address" ? (
+                <TextInput
+                  label="Address"
+                  value={type.extProc.type.address}
+                  onChange={(event) => {
+                    if (type.extProc.type.oneofKind === "address") {
+                      type.extProc.type.address = event.target.value;
+                    }
+                    props.onChange();
+                  }}
+                />
+              ) : (
+                <TextInput
+                  label="Container image"
+                  value={
+                    type.extProc.type.oneofKind === "container"
+                      ? type.extProc.type.container.image
+                      : ""
+                  }
+                  onChange={(event) => {
+                    if (type.extProc.type.oneofKind === "container") {
+                      type.extProc.type.container.image = event.target.value;
+                    }
+                    props.onChange();
+                  }}
+                />
+              )}
+            </Group>
+          ))
+          .otherwise(() => null)}
+      </EditItem>
+    ))}
+  </ItemMessage>
+);
+
+const GatewayCommonEditor = (props: {
+  config: GatewayConfig;
+  onChange: () => void;
+}) => (
+  <>
+    <Group grow>
+      <Switch
+        label="HTTP/2 upstream"
+        description="Connect to the upstream over HTTP/2"
+        checked={props.config.isUpstreamHTTP2}
+        onChange={(event) => {
+          props.config.isUpstreamHTTP2 = event.currentTarget.checked;
+          props.onChange();
+        }}
+      />
+      <Switch
+        label="Listen over HTTP/2"
+        description="Enable HTTP/2 on the Service listener"
+        checked={props.config.listenHTTP2}
+        onChange={(event) => {
+          props.config.listenHTTP2 = event.currentTarget.checked;
+          props.onChange();
+        }}
+      />
+    </Group>
+    <GatewayAuthEditor {...props} />
+    <GatewayHeaderEditor {...props} />
+    <GatewayPathEditor {...props} />
+    <GatewayPluginsEditor {...props} />
+  </>
+);
+
+const MCPConfigEditor = (props: {
+  config: CoreP.Service_Spec_Config_MCP;
+  onChange: () => void;
+}) => (
+  <div className="w-full space-y-4">
+    <TextInput
+      label="MCP endpoint"
+      description="Only requests matching this exact path are accepted when set"
+      placeholder="/mcp"
+      value={props.config.endpoint}
+      onChange={(event) => {
+        props.config.endpoint = event.target.value;
+        props.onChange();
+      }}
+    />
+    <EditItem
+      title="Protocol validation"
+      description="Restrict MCP protocol versions and method handling"
+      obj={props.config.protocol}
+      onUnset={() => {
+        props.config.protocol = undefined;
+        props.onChange();
+      }}
+      onSet={() => {
+        props.config.protocol =
+          CoreP.Service_Spec_Config_MCP_Protocol.create();
+        props.onChange();
+      }}
+    >
+      {props.config.protocol && (
+        <>
+          <StringListEditor
+            title="Accepted protocol versions"
+            values={props.config.protocol.versions}
+            onChange={(values) => {
+              props.config.protocol!.versions = values;
+              props.onChange();
+            }}
+            placeholder="2025-06-18"
+          />
+          <Group grow>
+            <Switch
+              label="Require protocol version"
+              checked={props.config.protocol.requireVersion}
+              onChange={(event) => {
+                props.config.protocol!.requireVersion = event.currentTarget.checked;
+                props.onChange();
+              }}
+            />
+            <Switch
+              label="Reject unknown methods"
+              checked={props.config.protocol.rejectUnknownMethods}
+              onChange={(event) => {
+                props.config.protocol!.rejectUnknownMethods =
+                  event.currentTarget.checked;
+                props.onChange();
+              }}
+            />
+          </Group>
+        </>
+      )}
+    </EditItem>
+    <EditItem
+      title="MCP limits"
+      description="Bound request and stream event inspection sizes"
+      obj={props.config.limits}
+      onUnset={() => {
+        props.config.limits = undefined;
+        props.onChange();
+      }}
+      onSet={() => {
+        props.config.limits = CoreP.Service_Spec_Config_MCP_Limits.create();
+        props.onChange();
+      }}
+    >
+      {props.config.limits && (
+        <Group grow>
+          <NumberInput
+            label="Max request bytes"
+            min={0}
+            value={props.config.limits.maxRequestBytes}
+            onChange={(value) => {
+              props.config.limits!.maxRequestBytes = strToNum(value);
+              props.onChange();
+            }}
+          />
+          <NumberInput
+            label="Max stream event bytes"
+            min={0}
+            value={props.config.limits.maxStreamEventBytes}
+            onChange={(value) => {
+              props.config.limits!.maxStreamEventBytes = strToNum(value);
+              props.onChange();
+            }}
+          />
+        </Group>
+      )}
+    </EditItem>
+    <EditItem
+      title="Origin validation"
+      description="Protect the upstream from DNS rebinding attacks"
+      obj={props.config.origin}
+      onUnset={() => {
+        props.config.origin = undefined;
+        props.onChange();
+      }}
+      onSet={() => {
+        props.config.origin = CoreP.Service_Spec_Config_MCP_Origin.create();
+        props.onChange();
+      }}
+    >
+      {props.config.origin && (
+        <>
+          <Switch
+            label="Disable Origin validation"
+            checked={props.config.origin.disable}
+            onChange={(event) => {
+              props.config.origin!.disable = event.currentTarget.checked;
+              props.onChange();
+            }}
+          />
+          <StringListEditor
+            title="Additional allowed Origins"
+            values={props.config.origin.allowed}
+            onChange={(values) => {
+              props.config.origin!.allowed = values;
+              props.onChange();
+            }}
+            placeholder="https://client.example.com"
+          />
+        </>
+      )}
+    </EditItem>
+    <EditItem
+      title="MCP visibility"
+      description="Choose which MCP payloads and headers are recorded in AccessLogs"
+      obj={props.config.visibility}
+      onUnset={() => {
+        props.config.visibility = undefined;
+        props.onChange();
+      }}
+      onSet={() => {
+        props.config.visibility =
+          CoreP.Service_Spec_Config_MCP_Visibility.create();
+        props.onChange();
+      }}
+    >
+      {props.config.visibility && (
+        <>
+          <Group grow>
+            <Switch
+              label="Disable request body"
+              checked={props.config.visibility.disableRequestBody}
+              onChange={(event) => {
+                props.config.visibility!.disableRequestBody =
+                  event.currentTarget.checked;
+                props.onChange();
+              }}
+            />
+            <Switch
+              label="Disable response body"
+              checked={props.config.visibility.disableResponseBody}
+              onChange={(event) => {
+                props.config.visibility!.disableResponseBody =
+                  event.currentTarget.checked;
+                props.onChange();
+              }}
+            />
+          </Group>
+          <StringListEditor
+            title="Request header allowlist"
+            values={props.config.visibility.includeRequestHeaders}
+            onChange={(values) => {
+              props.config.visibility!.includeRequestHeaders = values;
+              props.onChange();
+            }}
+          />
+          <StringListEditor
+            title="Response header allowlist"
+            values={props.config.visibility.includeResponseHeaders}
+            onChange={(values) => {
+              props.config.visibility!.includeResponseHeaders = values;
+              props.onChange();
+            }}
+          />
+          <Group grow>
+            <Switch
+              label="Include all request headers"
+              checked={props.config.visibility.includeAllRequestHeaders}
+              onChange={(event) => {
+                props.config.visibility!.includeAllRequestHeaders =
+                  event.currentTarget.checked;
+                props.onChange();
+              }}
+            />
+            <Switch
+              label="Include all response headers"
+              checked={props.config.visibility.includeAllResponseHeaders}
+              onChange={(event) => {
+                props.config.visibility!.includeAllResponseHeaders =
+                  event.currentTarget.checked;
+                props.onChange();
+              }}
+            />
+          </Group>
+          <StringListEditor
+            title="Request header denylist"
+            values={props.config.visibility.excludeRequestHeaders}
+            onChange={(values) => {
+              props.config.visibility!.excludeRequestHeaders = values;
+              props.onChange();
+            }}
+          />
+          <StringListEditor
+            title="Response header denylist"
+            values={props.config.visibility.excludeResponseHeaders}
+            onChange={(values) => {
+              props.config.visibility!.excludeResponseHeaders = values;
+              props.onChange();
+            }}
+          />
+        </>
+      )}
+    </EditItem>
+    <GatewayCommonEditor config={props.config} onChange={props.onChange} />
+  </div>
+);
+
+const LLMConfigEditor = (props: {
+  config: CoreP.Service_Spec_Config_LLM;
+  onChange: () => void;
+}) => (
+  <div className="w-full space-y-4">
+    <Select
+      label="Inference protocol"
+      description="Select the API protocol spoken by downstreams and the upstream"
+      data={["OPENAI", "ANTHROPIC"]}
+      value={CoreP.Service_Spec_Config_LLM_Protocol[props.config.protocol] ?? "OPENAI"}
+      onChange={(value) => {
+        if (!value) return;
+        props.config.protocol =
+          CoreP.Service_Spec_Config_LLM_Protocol[
+            value as keyof typeof CoreP.Service_Spec_Config_LLM_Protocol
+          ];
+        props.onChange();
+      }}
+    />
+    <EditItem
+      title="Model rewrite"
+      description="Optionally replace the downstream model name before proxying"
+      obj={props.config.model}
+      onUnset={() => {
+        props.config.model = undefined;
+        props.onChange();
+      }}
+      onSet={() => {
+        props.config.model = CoreP.Service_Spec_Config_LLM_Model.create({
+          type: { oneofKind: "value", value: "" },
+        });
+        props.onChange();
+      }}
+    >
+      {props.config.model && (
+        <Group grow align="flex-start">
+          <Select
+            label="Rewrite source"
+            data={["value", "eval"]}
+            value={props.config.model.type.oneofKind ?? "value"}
+            onChange={(value) => {
+              if (!value) return;
+              props.config.model!.type =
+                value === "eval"
+                  ? { oneofKind: "eval", eval: "" }
+                  : { oneofKind: "value", value: "" };
+              props.onChange();
+            }}
+          />
+          {props.config.model.type.oneofKind === "value" ? (
+            <TextInput
+              label="Model name"
+              placeholder="gpt-4.1"
+              value={props.config.model.type.value}
+              onChange={(event) => {
+                if (props.config.model?.type.oneofKind === "value") {
+                  props.config.model.type.value = event.target.value;
+                }
+                props.onChange();
+              }}
+            />
+          ) : (
+            <TextInput
+              label="CEL expression"
+              placeholder="ctx.request.llm.model"
+              value={
+                props.config.model.type.oneofKind === "eval"
+                  ? props.config.model.type.eval
+                  : ""
+              }
+              onChange={(event) => {
+                if (props.config.model?.type.oneofKind === "eval") {
+                  props.config.model.type.eval = event.target.value;
+                }
+                props.onChange();
+              }}
+            />
+          )}
+        </Group>
+      )}
+    </EditItem>
+    <EditItem
+      title="LLM limits"
+      description="Bound request parsing and inference request semantics"
+      obj={props.config.limits}
+      onUnset={() => {
+        props.config.limits = undefined;
+        props.onChange();
+      }}
+      onSet={() => {
+        props.config.limits = CoreP.Service_Spec_Config_LLM_Limits.create();
+        props.onChange();
+      }}
+    >
+      {props.config.limits && (
+        <Group grow>
+          <NumberInput
+            label="Max request bytes"
+            min={0}
+            value={props.config.limits.maxRequestBytes}
+            onChange={(value) => {
+              props.config.limits!.maxRequestBytes = strToNum(value);
+              props.onChange();
+            }}
+          />
+          <NumberInput
+            label="Max stream event bytes"
+            min={0}
+            value={props.config.limits.maxStreamEventBytes}
+            onChange={(value) => {
+              props.config.limits!.maxStreamEventBytes = strToNum(value);
+              props.onChange();
+            }}
+          />
+          <NumberInput
+            label="Max estimated input tokens"
+            min={0}
+            value={props.config.limits.maxEstimatedInputTokens}
+            onChange={(value) => {
+              props.config.limits!.maxEstimatedInputTokens = strToNum(value);
+              props.onChange();
+            }}
+          />
+          <NumberInput
+            label="Max output tokens"
+            min={0}
+            value={props.config.limits.maxOutputTokens}
+            onChange={(value) => {
+              props.config.limits!.maxOutputTokens = strToNum(value);
+              props.onChange();
+            }}
+          />
+          <NumberInput
+            label="Max tools"
+            min={0}
+            value={props.config.limits.maxTools}
+            onChange={(value) => {
+              props.config.limits!.maxTools = strToNum(value);
+              props.onChange();
+            }}
+          />
+        </Group>
+      )}
+    </EditItem>
+    <EditItem
+      title="LLM visibility"
+      description="Control recording of sensitive prompts, completions, and headers"
+      obj={props.config.visibility}
+      onUnset={() => {
+        props.config.visibility = undefined;
+        props.onChange();
+      }}
+      onSet={() => {
+        props.config.visibility =
+          CoreP.Service_Spec_Config_LLM_Visibility.create();
+        props.onChange();
+      }}
+    >
+      {props.config.visibility && (
+        <>
+          <Group grow>
+            <Switch
+              label="Record request body"
+              checked={props.config.visibility.enableRequestBody}
+              onChange={(event) => {
+                props.config.visibility!.enableRequestBody =
+                  event.currentTarget.checked;
+                props.onChange();
+              }}
+            />
+            <Switch
+              label="Record request body map"
+              checked={props.config.visibility.enableRequestBodyMap}
+              onChange={(event) => {
+                props.config.visibility!.enableRequestBodyMap =
+                  event.currentTarget.checked;
+                props.onChange();
+              }}
+            />
+            <Switch
+              label="Record response body"
+              checked={props.config.visibility.enableResponseBody}
+              onChange={(event) => {
+                props.config.visibility!.enableResponseBody =
+                  event.currentTarget.checked;
+                props.onChange();
+              }}
+            />
+            <Switch
+              label="Record response body map"
+              checked={props.config.visibility.enableResponseBodyMap}
+              onChange={(event) => {
+                props.config.visibility!.enableResponseBodyMap =
+                  event.currentTarget.checked;
+                props.onChange();
+              }}
+            />
+          </Group>
+          <StringListEditor
+            title="Request header allowlist"
+            values={props.config.visibility.includeRequestHeaders}
+            onChange={(values) => {
+              props.config.visibility!.includeRequestHeaders = values;
+              props.onChange();
+            }}
+          />
+          <StringListEditor
+            title="Response header allowlist"
+            values={props.config.visibility.includeResponseHeaders}
+            onChange={(values) => {
+              props.config.visibility!.includeResponseHeaders = values;
+              props.onChange();
+            }}
+          />
+          <Group grow>
+            <Switch
+              label="Include all request headers"
+              checked={props.config.visibility.includeAllRequestHeaders}
+              onChange={(event) => {
+                props.config.visibility!.includeAllRequestHeaders =
+                  event.currentTarget.checked;
+                props.onChange();
+              }}
+            />
+            <Switch
+              label="Include all response headers"
+              checked={props.config.visibility.includeAllResponseHeaders}
+              onChange={(event) => {
+                props.config.visibility!.includeAllResponseHeaders =
+                  event.currentTarget.checked;
+                props.onChange();
+              }}
+            />
+          </Group>
+          <StringListEditor
+            title="Request header denylist"
+            values={props.config.visibility.excludeRequestHeaders}
+            onChange={(values) => {
+              props.config.visibility!.excludeRequestHeaders = values;
+              props.onChange();
+            }}
+          />
+          <StringListEditor
+            title="Response header denylist"
+            values={props.config.visibility.excludeResponseHeaders}
+            onChange={(values) => {
+              props.config.visibility!.excludeResponseHeaders = values;
+              props.onChange();
+            }}
+          />
+        </>
+      )}
+    </EditItem>
+    <GatewayCommonEditor config={props.config} onChange={props.onChange} />
+  </div>
+);
 
 const Config = (props: {
   item: CoreP.Service_Spec_Config;
@@ -1818,6 +3067,24 @@ const Config = (props: {
                   </div>
                 );
               },
+            )
+            .when(
+              (x) => x.oneofKind === `mcp`,
+              (mcp) => (
+                <MCPConfigEditor
+                  config={mcp.mcp}
+                  onChange={updateReq}
+                />
+              ),
+            )
+            .when(
+              (x) => x.oneofKind === `llm`,
+              (llm) => (
+                <LLMConfigEditor
+                  config={llm.llm}
+                  onChange={updateReq}
+                />
+              ),
             )
             .when(
               (x) => x.oneofKind === `http`,
@@ -6044,6 +7311,14 @@ const Edit = (props: {
               label: "RDP Web",
               value: CoreP.Service_Spec_Mode[CoreP.Service_Spec_Mode.RDP_WEB],
             },
+            {
+              label: "MCP Gateway",
+              value: CoreP.Service_Spec_Mode[CoreP.Service_Spec_Mode.MCP],
+            },
+            {
+              label: "LLM / AI Gateway",
+              value: CoreP.Service_Spec_Mode[CoreP.Service_Spec_Mode.LLM],
+            },
           ]}
           value={CoreP.Service_Spec_Mode[req.spec!.mode]}
           onChange={(v) => {
@@ -6295,6 +7570,36 @@ const Edit = (props: {
                       },
                     });
               })
+              .with(CoreP.Service_Spec_Mode.MCP, () => {
+                const previousConfig =
+                  configsByMode.current[CoreP.Service_Spec_Mode.MCP];
+                req.spec!.config = previousConfig
+                  ? CoreP.Service_Spec_Config.clone(previousConfig)
+                  : CoreP.Service_Spec_Config.create({
+                      upstream: {
+                        type: { oneofKind: "url", url: "" },
+                      },
+                      type: {
+                        oneofKind: "mcp",
+                        mcp: CoreP.Service_Spec_Config_MCP.create(),
+                      },
+                    });
+              })
+              .with(CoreP.Service_Spec_Mode.LLM, () => {
+                const previousConfig =
+                  configsByMode.current[CoreP.Service_Spec_Mode.LLM];
+                req.spec!.config = previousConfig
+                  ? CoreP.Service_Spec_Config.clone(previousConfig)
+                  : CoreP.Service_Spec_Config.create({
+                      upstream: {
+                        type: { oneofKind: "url", url: "" },
+                      },
+                      type: {
+                        oneofKind: "llm",
+                        llm: CoreP.Service_Spec_Config_LLM.create(),
+                      },
+                    });
+              })
 
               .when(
                 (x) =>
@@ -6350,6 +7655,8 @@ const Edit = (props: {
       {(req.spec!.mode === CoreP.Service_Spec_Mode.HTTP ||
         req.spec!.mode === CoreP.Service_Spec_Mode.WEB ||
         req.spec!.mode === CoreP.Service_Spec_Mode.GRPC ||
+        req.spec!.mode === CoreP.Service_Spec_Mode.MCP ||
+        req.spec!.mode === CoreP.Service_Spec_Mode.LLM ||
         req.spec!.mode === CoreP.Service_Spec_Mode.KUBERNETES) && (
         <Group className="my-2" grow>
           <Switch
