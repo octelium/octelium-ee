@@ -10,6 +10,7 @@ import {
   SegmentedControl,
   Select,
   Switch,
+  TagsInput,
   TextInput,
 } from "@mantine/core";
 
@@ -288,39 +289,115 @@ const ContainerProbe = (props: {
   );
 };
 
+const createConfigTypeForMode = (
+  mode?: CoreP.Service_Spec_Mode,
+): CoreP.Service_Spec_Config["type"] => {
+  switch (mode) {
+    case CoreP.Service_Spec_Mode.HTTP:
+    case CoreP.Service_Spec_Mode.WEB:
+    case CoreP.Service_Spec_Mode.GRPC:
+      return {
+        oneofKind: "http",
+        http: CoreP.Service_Spec_Config_HTTP.create(),
+      };
+    case CoreP.Service_Spec_Mode.SSH:
+      return {
+        oneofKind: "ssh",
+        ssh: CoreP.Service_Spec_Config_SSH.create({
+          auth: {
+            type: {
+              oneofKind: "password",
+              password: {
+                type: { oneofKind: "fromSecret", fromSecret: "" },
+              },
+            },
+          },
+        }),
+      };
+    case CoreP.Service_Spec_Mode.POSTGRES:
+      return {
+        oneofKind: "postgres",
+        postgres: CoreP.Service_Spec_Config_Postgres.create({
+          auth: {
+            type: {
+              oneofKind: "password",
+              password: {
+                type: { oneofKind: "fromSecret", fromSecret: "" },
+              },
+            },
+          },
+        }),
+      };
+    case CoreP.Service_Spec_Mode.MYSQL:
+      return {
+        oneofKind: "mysql",
+        mysql: CoreP.Service_Spec_Config_MySQL.create({
+          auth: {
+            type: {
+              oneofKind: "password",
+              password: {
+                type: { oneofKind: "fromSecret", fromSecret: "" },
+              },
+            },
+          },
+        }),
+      };
+    case CoreP.Service_Spec_Mode.KUBERNETES:
+      return {
+        oneofKind: "kubernetes",
+        kubernetes: CoreP.Service_Spec_Config_Kubernetes.create({
+          type: {
+            oneofKind: "kubeconfig",
+            kubeconfig: CoreP.Service_Spec_Config_Kubernetes_Kubeconfig.create({
+              type: { oneofKind: "fromSecret", fromSecret: "" },
+            }),
+          },
+        }),
+      };
+    case CoreP.Service_Spec_Mode.SOCKS5:
+      return {
+        oneofKind: "socks5",
+        socks5: CoreP.Service_Spec_Config_SOCKS5.create({
+          auth: { type: { oneofKind: "noAuth", noAuth: true } },
+        }),
+      };
+    case CoreP.Service_Spec_Mode.RDP_WEB:
+      return {
+        oneofKind: "rdp",
+        rdp: CoreP.Service_Spec_Config_RDP.create({
+          auth: {
+            password: {
+              type: { oneofKind: "fromSecret", fromSecret: "" },
+            },
+          },
+        }),
+      };
+    case CoreP.Service_Spec_Mode.MCP:
+      return {
+        oneofKind: "mcp",
+        mcp: CoreP.Service_Spec_Config_MCP.create(),
+      };
+    case CoreP.Service_Spec_Mode.LLM:
+      return {
+        oneofKind: "llm",
+        llm: CoreP.Service_Spec_Config_LLM.create(),
+      };
+    default:
+      return { oneofKind: undefined };
+  }
+};
+
+const configTypeForMode = (mode?: CoreP.Service_Spec_Mode) =>
+  createConfigTypeForMode(mode).oneofKind;
+
 const cloneConfigForMode = (
   item: CoreP.Service_Spec_Config,
   mode?: CoreP.Service_Spec_Mode,
 ) => {
   const ret = CoreP.Service_Spec_Config.clone(item);
-  if (
-    ret.type.oneofKind === undefined &&
-    (mode === CoreP.Service_Spec_Mode.HTTP ||
-      mode === CoreP.Service_Spec_Mode.WEB ||
-      mode === CoreP.Service_Spec_Mode.GRPC)
-  ) {
-    ret.type = {
-      oneofKind: "http",
-      http: CoreP.Service_Spec_Config_HTTP.create(),
-    };
-  }
-  if (
-    ret.type.oneofKind === undefined &&
-    mode === CoreP.Service_Spec_Mode.MCP
-  ) {
-    ret.type = {
-      oneofKind: "mcp",
-      mcp: CoreP.Service_Spec_Config_MCP.create(),
-    };
-  }
-  if (
-    ret.type.oneofKind === undefined &&
-    mode === CoreP.Service_Spec_Mode.LLM
-  ) {
-    ret.type = {
-      oneofKind: "llm",
-      llm: CoreP.Service_Spec_Config_LLM.create(),
-    };
+  const expectedType = configTypeForMode(mode);
+  if (ret.type.oneofKind !== expectedType) {
+    ret.type = createConfigTypeForMode(mode);
   }
   return ret;
 };
@@ -1090,9 +1167,17 @@ const GatewayCommonEditor = (props: {
     <GatewayAuthEditor {...props} />
     <GatewayHeaderEditor {...props} />
     <GatewayPathEditor {...props} />
-    <GatewayPluginsEditor {...props} />
+  <GatewayPluginsEditor {...props} />
   </>
 );
+
+const mcpProtocolVersions = [
+  "2024-11-05",
+  "2025-03-26",
+  "2025-06-18",
+  "2025-11-25",
+  "2026-07-28",
+];
 
 const MCPConfigEditor = (props: {
   config: CoreP.Service_Spec_Config_MCP;
@@ -1125,14 +1210,16 @@ const MCPConfigEditor = (props: {
     >
       {props.config.protocol && (
         <>
-          <StringListEditor
-            title="Accepted protocol versions"
-            values={props.config.protocol.versions}
+          <TagsInput
+            label="Accepted protocol versions"
+            description="Select a canonical MCP version or enter a custom version"
+            placeholder="Choose a version or type a custom value"
+            data={mcpProtocolVersions}
+            value={props.config.protocol.versions}
             onChange={(values) => {
               props.config.protocol!.versions = values;
               props.onChange();
             }}
-            placeholder="2025-06-18"
           />
           <Group grow>
             <Switch
@@ -7737,7 +7824,7 @@ const Edit = (props: {
       >
         {req.spec!.config && (
           <Config
-            key={itemKey}
+            key={`${itemKey}-${req.spec!.mode}`}
             default
             mode={req.spec!.mode}
             item={req.spec!.config}
@@ -7881,7 +7968,9 @@ const Edit = (props: {
                   }}
                 >
                   <Config
+                    key={`${idx}-${req.spec!.mode}`}
                     item={req.spec!.dynamicConfig!.configs[idx]}
+                    mode={req.spec!.mode}
                     onUpdate={(v) => {
                       req.spec!.dynamicConfig!.configs[idx] = v;
                       updateReq();
@@ -7950,37 +8039,44 @@ const Edit = (props: {
                           />
                         </Group>
 
-                        <Select
-                          label="Rule type"
-                          required
-                          description="Set what the rule resolves to when it matches"
-                          data={[
-                            { label: "Config name", value: "configName" },
-                            { label: "Eval (CEL)", value: "eval" },
-                            { label: "OPA (Rego)", value: "opa" },
-                          ]}
-                          value={
-                            req.spec!.dynamicConfig!.rules[ruleIdx].type
-                              .oneofKind
-                          }
-                          onChange={(v) => {
-                            req.spec!.dynamicConfig!.rules[ruleIdx].type =
-                              match(v)
-                                .with("eval", () => ({
-                                  oneofKind: "eval" as const,
-                                  eval: "",
-                                }))
-                                .with("opa", () => ({
-                                  oneofKind: "opa" as const,
-                                  opa: "",
-                                }))
-                                .otherwise(() => ({
-                                  oneofKind: "configName" as const,
-                                  configName: "",
-                                }));
-                            updateReq();
-                          }}
-                        />
+                        <div className="space-y-1.5">
+                          <p className="text-sm font-semibold text-slate-700">
+                            Rule type
+                          </p>
+                          <SegmentedControl
+                            aria-label="Rule type"
+                            fullWidth
+                            value={
+                              req.spec!.dynamicConfig!.rules[ruleIdx].type
+                                .oneofKind
+                            }
+                            data={[
+                              { label: "Config name", value: "configName" },
+                              { label: "Eval (CEL)", value: "eval" },
+                              { label: "OPA (Rego)", value: "opa" },
+                            ]}
+                            onChange={(v) => {
+                              req.spec!.dynamicConfig!.rules[ruleIdx].type =
+                                match(v)
+                                  .with("eval", () => ({
+                                    oneofKind: "eval" as const,
+                                    eval: "",
+                                  }))
+                                  .with("opa", () => ({
+                                    oneofKind: "opa" as const,
+                                    opa: "",
+                                  }))
+                                  .otherwise(() => ({
+                                    oneofKind: "configName" as const,
+                                    configName: "",
+                                  }));
+                              updateReq();
+                            }}
+                          />
+                          <p className="text-xs font-medium text-slate-500">
+                            Choose a named configuration or evaluate a complete service configuration object.
+                          </p>
+                        </div>
                       </EditItem>
 
                       {match(req.spec!.dynamicConfig!.rules[ruleIdx].type)
@@ -8013,7 +8109,12 @@ const Edit = (props: {
                               <div>
                                 <TextAreaCustom
                                   label="Eval (CEL)"
-                                  placeholder='ctx.user.spec.type == "HUMAN" ? "config-a" : "config-b"'
+                                  description="Return a service.spec.config-compatible object."
+                                  placeholder={`{
+  "upstream": {
+    "url": "https://" + ctx.user.metadata.uid + ".example.com"
+  }
+}`}
                                   value={evalType.eval}
                                   onChange={(v) => {
                                     evalType.eval = v ?? "";
@@ -8031,9 +8132,14 @@ const Edit = (props: {
                               <div>
                                 <TextAreaCustom
                                   label="OPA (Rego)"
-                                  placeholder={`package octelium
+                                  description="Set result to a service.spec.config-compatible object."
+                                  placeholder={`package octelium.eval
 
-config_name := "config-a"`}
+result := {
+  "upstream": {
+    "url": sprintf("https://%s.example.com", [input.ctx.service.metadata.name])
+  }
+}`}
                                   value={opa.opa}
                                   onChange={(v) => {
                                     opa.opa = v ?? "";
