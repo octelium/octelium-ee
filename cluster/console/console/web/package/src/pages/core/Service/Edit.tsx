@@ -16,6 +16,7 @@ import {
 
 import Cond from "@/components/Condition";
 import DurationPicker from "@/components/DurationPicker";
+import Editor from "@/components/Editor";
 import ItemMessage from "@/components/ItemMessage";
 import SelectInlinePolicies from "@/components/ResourceLayout/SelectInlinePolicies";
 import SelectPolicies from "@/components/ResourceLayout/SelectPolicies";
@@ -84,7 +85,12 @@ const SegmentedTabsList = (props: {
         value={value ?? data[0]?.value}
         onChange={onChange}
         data={data}
-        className="min-w-max"
+        fullWidth={props.className?.split(/\s+/).includes("w-full")}
+        className={
+          props.className?.split(/\s+/).includes("w-full")
+            ? "w-full"
+            : "min-w-max"
+        }
       />
     </div>
   );
@@ -289,6 +295,11 @@ const ContainerProbe = (props: {
   );
 };
 
+const createDirectResponseBody = () =>
+  CoreP.Service_Spec_Config_HTTP_Plugin_Direct_Body.create({
+    type: { oneofKind: "inline", inline: "" },
+  });
+
 const createConfigTypeForMode = (
   mode?: CoreP.Service_Spec_Mode,
 ): CoreP.Service_Spec_Config["type"] => {
@@ -398,6 +409,23 @@ const cloneConfigForMode = (
   const expectedType = configTypeForMode(mode);
   if (ret.type.oneofKind !== expectedType) {
     ret.type = createConfigTypeForMode(mode);
+  }
+  if (ret.type.oneofKind === "http") {
+    ret.type.http.plugins.forEach((plugin) => {
+      if (plugin.type.oneofKind === undefined) {
+        plugin.type = {
+          oneofKind: "direct",
+          direct: CoreP.Service_Spec_Config_HTTP_Plugin_Direct.create({
+            body: createDirectResponseBody(),
+          }),
+        };
+      } else if (
+        plugin.type.oneofKind === "direct" &&
+        !plugin.type.direct.body
+      ) {
+        plugin.type.direct.body = createDirectResponseBody();
+      }
+    });
   }
   return ret;
 };
@@ -864,6 +892,37 @@ const createGatewayPlugin = () =>
     },
   });
 
+const createHTTPPlugin = () =>
+  CoreP.Service_Spec_Config_HTTP_Plugin.create({
+    type: {
+      oneofKind: "direct",
+      direct: CoreP.Service_Spec_Config_HTTP_Plugin_Direct.create({
+        body: createDirectResponseBody(),
+      }),
+    },
+  });
+
+const LuaScriptEditor = (props: {
+  value: string;
+  onChange: (value: string) => void;
+}) => (
+  <div className="space-y-2">
+    <div>
+      <p className="text-sm font-semibold text-slate-700">Lua script</p>
+      <p className="text-xs font-medium text-slate-500">
+        Write the inline Lua script executed by this plugin.
+      </p>
+    </div>
+    <Editor
+      mode="lua"
+      value={props.value}
+      onChange={props.onChange}
+      minHeight="260px"
+      maxHeight="520px"
+    />
+  </div>
+);
+
 const GatewayPluginsEditor = (props: {
   config: GatewayConfig;
   onChange: () => void;
@@ -991,7 +1050,7 @@ const GatewayPluginsEditor = (props: {
             props.onChange();
           }}
         >
-          <Tabs.List>
+          <Tabs.List className="w-full">
             <Tabs.Tab value="direct">Direct response</Tabs.Tab>
             <Tabs.Tab value="rateLimit">Rate limit</Tabs.Tab>
             <Tabs.Tab value="lua">Lua</Tabs.Tab>
@@ -1025,7 +1084,7 @@ const GatewayPluginsEditor = (props: {
             />
           ))
           .with({ oneofKind: "lua" }, (type) => (
-            <TextAreaCustom
+            <LuaScriptEditor
               value={
                 type.lua.type.oneofKind === "inline"
                   ? type.lua.type.inline
@@ -5266,13 +5325,13 @@ const Config = (props: {
                       isList
                       onSet={() => {
                         http.http.plugins = [
-                          CoreP.Service_Spec_Config_HTTP_Plugin.create(),
+                          createHTTPPlugin(),
                         ];
                         updateReq();
                       }}
                       onAddListItem={() => {
                         http.http.plugins.push(
-                          CoreP.Service_Spec_Config_HTTP_Plugin.create(),
+                          createHTTPPlugin(),
                         );
                         updateReq();
                       }}
@@ -5372,7 +5431,9 @@ const Config = (props: {
                                   plugin.type = {
                                     oneofKind: "direct",
                                     direct:
-                                      CoreP.Service_Spec_Config_HTTP_Plugin_Direct.create(),
+                                      CoreP.Service_Spec_Config_HTTP_Plugin_Direct.create({
+                                        body: createDirectResponseBody(),
+                                      }),
                                   };
                                 })
                                 .with("rateLimit", () => {
@@ -5440,7 +5501,7 @@ const Config = (props: {
                               updateReq();
                             }}
                           >
-                            <Tabs.List>
+                            <Tabs.List className="w-full">
                               <Tabs.Tab value="direct">
                                 Direct Response
                               </Tabs.Tab>
@@ -5776,9 +5837,7 @@ const Config = (props: {
                                 .when(
                                   (x) => x.oneofKind === "lua",
                                   (lua) => (
-                                    <TextAreaCustom
-                                      label="Lua script"
-                                      placeholder="-- lua script"
+                                    <LuaScriptEditor
                                       value={
                                         lua.lua.type.oneofKind === "inline"
                                           ? lua.lua.type.inline
@@ -5787,7 +5846,7 @@ const Config = (props: {
                                       onChange={(v) => {
                                         lua.lua.type = {
                                           oneofKind: "inline",
-                                          inline: v ?? "",
+                                          inline: v,
                                         };
                                         updateReq();
                                       }}

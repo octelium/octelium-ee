@@ -16,6 +16,7 @@ import CodeMirror from "@uiw/react-codemirror";
 import { jsonSchema } from "codemirror-json-schema";
 import { yamlCompletion, yamlSchema } from "codemirror-json-schema/yaml";
 import { JSONSchema7 } from "json-schema";
+import * as React from "react";
 import { match } from "ts-pattern";
 import resourceJSONSchema from "../../jsonschema";
 
@@ -43,18 +44,38 @@ const fontTheme = EditorView.theme(
 
 const Editor = (props: {
   value: string;
-  mode: "yaml" | "dockerfile" | "shell" | "json" | undefined;
+  mode: "yaml" | "dockerfile" | "shell" | "json" | "lua" | undefined;
   onChange?: (val: string) => void;
   readOnly?: boolean;
   onResourceChange?: (arg: Resource) => void;
-  item: Resource;
+  item?: Resource;
   schemaMode?: "full" | "spec" | "status" | "metadata";
   minHeight?: string;
   maxHeight?: string;
 }) => {
   const minHeight = props.minHeight ?? "300px";
   const maxHeight = props.maxHeight ?? "600px";
-  const schema = resourceJSONSchema(props.item) as JSONSchema7;
+  const [luaExtension, setLuaExtension] = React.useState<any>();
+
+  React.useEffect(() => {
+    let cancelled = false;
+    if (props.mode !== "lua") {
+      setLuaExtension(undefined);
+      return;
+    }
+
+    import("@uiw/codemirror-extensions-langs").then(({ langs }) => {
+      if (!cancelled) setLuaExtension(langs.lua());
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [props.mode]);
+
+  const schema = props.item
+    ? (resourceJSONSchema(props.item) as JSONSchema7)
+    : undefined;
 
   const activeSchema =
     !props.schemaMode || props.schemaMode === "full" ? schema : null;
@@ -76,13 +97,17 @@ const Editor = (props: {
     lineNumbers(),
     foldGutter(),
     keymap.of([...defaultKeymap, ...historyKeymap]),
-    ...(props.mode === "json"
-      ? [json(), ...(activeSchema ? [jsonSchema(activeSchema)] : [])]
-      : [
-          yaml(),
-          yamlLanguage.data.of({ autocomplete: yamlCompletion() }),
-          ...(activeSchema ? [yamlSchema(activeSchema)] : []),
-        ]),
+    ...(props.mode === "lua"
+      ? luaExtension
+        ? [luaExtension]
+        : []
+      : props.mode === "json"
+        ? [json(), ...(activeSchema ? [jsonSchema(activeSchema)] : [])]
+        : [
+            yaml(),
+            yamlLanguage.data.of({ autocomplete: yamlCompletion() }),
+            ...(activeSchema ? [yamlSchema(activeSchema)] : []),
+          ]),
   ];
 
   return (
@@ -98,7 +123,7 @@ const Editor = (props: {
         extensions={extensions}
         onChange={(val) => {
           props.onChange?.(val);
-          if (props.onResourceChange) {
+          if (props.onResourceChange && props.mode === "yaml") {
             match(props.mode)
               .with("yaml", () => {
                 const res = resourceFromYAML(val);
