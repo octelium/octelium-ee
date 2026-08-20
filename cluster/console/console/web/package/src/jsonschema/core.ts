@@ -11,6 +11,8 @@ import Gateway from "./core/Gateway.json";
 import Secret from "./core/Secret.json";
 import Credential from "./core/Credential.json";
 import IdentityProvider from "./core/IdentityProvider.json";
+import Config from "./core/Config.json";
+import Authenticator from "./core/Authenticator.json";
 
 import { ResourceCoreName } from "@/utils/pb";
 import { match } from "ts-pattern";
@@ -30,5 +32,7 @@ export default (arg: ResourceCoreName) => {
     .with("Session", () => Session)
     .with("Secret", () => Secret)
     .with("IdentityProvider", () => IdentityProvider)
+    .with("Config", () => Config)
+    .with("Authenticator", () => Authenticator)
     .otherwise(() => undefined);
 };

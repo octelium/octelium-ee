@@ -206,6 +206,7 @@ gen-json-schema:
 	go install github.com/chrusty/protoc-gen-jsonschema/cmd/protoc-gen-jsonschema@latest
 	mkdir -p tmp/jsonschema/core
 	mkdir -p tmp/jsonschema/enterprise
+	mkdir -p tmp/jsonschema/access
 	protoc -I . -I $(PROTO_IN_MAIN)/corev1 \
 		--jsonschema_opt=enums_as_strings_only \
 		--jsonschema_opt=disallow_bigints_as_strings \
@@ -218,8 +219,16 @@ gen-json-schema:
 		--jsonschema_opt=disallow_additional_properties \
 		--jsonschema_opt=enforce_oneof \
 		--jsonschema_out=./tmp/jsonschema/enterprise --proto_path=$(PROTO_IN_MAIN)/enterprisev1 enterprisev1.proto
+	protoc -I . -I $(PROTO_IN_MAIN)/corev1 -I $(PROTO_IN_MAIN)/metav1 \
+		-I $(PROTO_IN_MAIN)/userv1 -I $(PROTO_IN_MAIN)/accessv1 accessv1.proto \
+		--jsonschema_opt=enums_as_strings_only \
+		--jsonschema_opt=disallow_bigints_as_strings \
+		--jsonschema_opt=disallow_additional_properties \
+		--jsonschema_opt=enforce_oneof \
+		--jsonschema_out=./tmp/jsonschema/access --proto_path=$(PROTO_IN_MAIN)/accessv1
 	cp -r ./tmp/jsonschema/core ./cluster/console/console/web/package/src/jsonschema
 	cp -r ./tmp/jsonschema/enterprise ./cluster/console/console/web/package/src/jsonschema
+	cp -r ./tmp/jsonschema/access ./cluster/console/console/web/package/src/jsonschema
 
 
 tidy:
