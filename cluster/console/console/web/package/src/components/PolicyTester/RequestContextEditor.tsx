@@ -982,20 +982,6 @@ const RequestContextEditor = ({
       </div>
 
       <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
-        <TextInput
-          label="Client IP address"
-          description="Source address used during policy evaluation"
-          placeholder="192.0.2.10"
-          value={value.ip}
-          styles={fieldStyles}
-          className="mb-4 max-w-md"
-          onChange={(event) =>
-            onChange((request) => {
-              request.ip = event.target.value;
-            })
-          }
-        />
-
         {value.type.oneofKind === "http" && (
           <HTTPFields
             value={value.type.http}
@@ -1423,6 +1409,20 @@ const RequestContextEditor = ({
               />
             </div>
           )}
+
+        <TextInput
+          label="Client IP address"
+          description="Source address used during policy evaluation for public services"
+          placeholder="192.0.2.10"
+          value={value.ip}
+          styles={fieldStyles}
+          className="mt-4 max-w-md"
+          onChange={(event) =>
+            onChange((request) => {
+              request.ip = event.target.value;
+            })
+          }
+        />
       </div>
     </div>
   );
