@@ -41,14 +41,6 @@ const Edit = (props: {
     return next;
   }, []);
   const [req, setReq] = React.useState(() => cloneForEdit(item));
-  const mmdbSources = React.useRef<
-    Partial<
-      Record<
-        string,
-        CoreP.ClusterConfig_Spec_Authentication_Geolocation_MMDB["type"]
-      >
-    >
-  >({});
   const mmdbAuthTypes = React.useRef<Record<string, unknown>>({});
   const ruleIDs = React.useRef<Record<string, string[]>>({
     post: [],
@@ -65,13 +57,6 @@ const Edit = (props: {
   React.useEffect(() => {
     const next = cloneForEdit(item);
     setReq(next);
-    const source =
-      next.spec?.authentication?.geolocation?.type.oneofKind === "mmdb"
-        ? next.spec.authentication.geolocation.type.mmdb.type
-        : undefined;
-    mmdbSources.current = source?.oneofKind
-      ? { [source.oneofKind]: structuredClone(source) }
-      : {};
     mmdbAuthTypes.current = {};
     ruleIDs.current = { post: [], authentication: [], registration: [] };
   }, [cloneForEdit, itemKey]);
@@ -1286,69 +1271,7 @@ const Edit = (props: {
                           (mmdb) => {
                             return (
                               <div>
-                                <Select
-                                  label="MMDB Source"
-                                  description="Set the MMDB source"
-                                  data={[
-                                    {
-                                      label: "Upstream URL",
-                                      value: "upstream",
-                                    },
-                                    {
-                                      label: "From Config",
-                                      value: "fromConfig",
-                                    },
-                                  ]}
-                                  value={mmdb.mmdb.type.oneofKind}
-                                  onChange={(v) => {
-                                    const currentKind = mmdb.mmdb.type.oneofKind;
-                                    if (currentKind) {
-                                      mmdbSources.current[currentKind] =
-                                        structuredClone(mmdb.mmdb.type);
-                                    }
-                                    const cached = v
-                                      ? mmdbSources.current[v]
-                                      : undefined;
-                                    mmdb.mmdb.type = cached
-                                      ? structuredClone(cached)
-                                      : match(v)
-                                      .with("fromConfig", () => ({
-                                        oneofKind: "fromConfig" as const,
-                                        fromConfig: "",
-                                      }))
-                                      .otherwise(() => ({
-                                        oneofKind: "upstream" as const,
-                                        upstream:
-                                          CoreP.ClusterConfig_Spec_Authentication_Geolocation_MMDB_Upstream.create(
-                                            { url: "" },
-                                          ),
-                                      }));
-                                    updateReq();
-                                  }}
-                                />
-
                                 {match(mmdb.mmdb.type)
-                                  .when(
-                                    (x) => x.oneofKind === `fromConfig`,
-                                    (fromConfig) => {
-                                      return (
-                                        <Group grow>
-                                          <SelectResource
-                                            api="core"
-                                            kind="Config"
-                                            label="From Config"
-                                            description="Set the name of the config containing the MMDB"
-                                            defaultValue={fromConfig.fromConfig}
-                                            onChange={(v) => {
-                                              fromConfig.fromConfig =
-                                                v?.metadata?.name ?? "";
-                                              updateReq();
-                                            }}
-                                          />
-                                        </Group>
-                                      );
-                                    },
-                                  )
                                   .when(
                                     (x) => x.oneofKind === `upstream`,
                                     (upstream) => {
