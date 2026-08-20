@@ -47,6 +47,8 @@ func TestRenderIndex(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.True(t, strings.Contains(resp.Header.Get("Content-Security-Policy"), "frame-src"))
+	assert.Contains(t, resp.Header.Get("Content-Security-Policy"),
+		"connect-src 'self' https://*.")
 
 	assert.Equal(t, resp.StatusCode, http.StatusOK)
 }
