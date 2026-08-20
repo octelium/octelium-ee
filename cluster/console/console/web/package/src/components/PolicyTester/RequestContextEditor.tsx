@@ -2,6 +2,7 @@ import * as Core from "@/apis/corev1/corev1";
 import { Struct } from "@/apis/google/protobuf/struct";
 import {
   ActionIcon,
+  Autocomplete,
   Button,
   NumberInput,
   SegmentedControl,
@@ -62,6 +63,49 @@ const protocols = [
   { label: "PostgreSQL", value: "postgres" },
   { label: "DNS", value: "dns" },
   { label: "SOCKS5", value: "socks5" },
+];
+
+const mcpProtocolVersions = [
+  "2024-11-05",
+  "2025-03-26",
+  "2025-06-18",
+  "2025-11-25",
+  "2026-07-28",
+];
+
+const mcpKnownMethods = [
+  "server/discover",
+  "initialize",
+  "ping",
+  "tools/list",
+  "tools/call",
+  "prompts/list",
+  "prompts/get",
+  "resources/list",
+  "resources/read",
+  "resources/templates/list",
+  "resources/subscribe",
+  "resources/unsubscribe",
+  "completion/complete",
+  "subscriptions/listen",
+  "elicitation/create",
+  "roots/list",
+  "sampling/createMessage",
+  "logging/setLevel",
+  "tasks/get",
+  "tasks/update",
+  "tasks/cancel",
+  "notifications/initialized",
+  "notifications/cancelled",
+  "notifications/progress",
+  "notifications/message",
+  "notifications/roots/list_changed",
+  "notifications/tools/list_changed",
+  "notifications/prompts/list_changed",
+  "notifications/resources/list_changed",
+  "notifications/resources/updated",
+  "notifications/subscriptions/acknowledged",
+  "notifications/tasks",
 ];
 
 const createHTTP = () =>
@@ -571,9 +615,33 @@ const MCPFields = ({
 }) => (
   <div className="space-y-4">
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <Autocomplete
+        label="Protocol version"
+        description="Select a canonical version or enter a custom value"
+        placeholder="2025-06-18"
+        data={mcpProtocolVersions}
+        value={value.protocolVersion}
+        styles={fieldStyles}
+        onChange={(protocolVersion) =>
+          onChange((mcp) => {
+            mcp.protocolVersion = protocolVersion;
+          })
+        }
+      />
+      <Autocomplete
+        label="Method"
+        description="Select a known JSON-RPC method or enter a custom value"
+        placeholder="tools/call"
+        data={mcpKnownMethods}
+        value={value.method}
+        styles={fieldStyles}
+        onChange={(method) =>
+          onChange((mcp) => {
+            mcp.method = method;
+          })
+        }
+      />
       {[
-        ["Protocol version", "protocolVersion", "2025-06-18"],
-        ["Method", "method", "tools/call"],
         ["Target name", "name", "search"],
         ["Request ID", "requestID", "42"],
         ["MCP session ID", "sessionID", "session-123"],
@@ -596,11 +664,12 @@ const MCPFields = ({
         description="No response is expected for this request"
         checked={value.isNotification}
         styles={fieldStyles}
-        onChange={(event) =>
+        onChange={(event) => {
+          const checked = event.currentTarget.checked;
           onChange((mcp) => {
-            mcp.isNotification = event.currentTarget.checked;
-          })
-        }
+            mcp.isNotification = checked;
+          });
+        }}
       />
     </div>
 
@@ -728,11 +797,12 @@ const LLMFields = ({
           label="Streaming response"
           checked={value.stream}
           styles={fieldStyles}
-          onChange={(event) =>
+          onChange={(event) => {
+            const checked = event.currentTarget.checked;
             onChange((llm) => {
-              llm.stream = event.currentTarget.checked;
-            })
-          }
+              llm.stream = checked;
+            });
+          }}
         />
         <NumberInput
           label="Estimated input tokens"
@@ -774,11 +844,12 @@ const LLMFields = ({
           label="Request has tools"
           checked={value.hasTools}
           styles={fieldStyles}
-          onChange={(event) =>
+          onChange={(event) => {
+            const checked = event.currentTarget.checked;
             onChange((llm) => {
-              llm.hasTools = event.currentTarget.checked;
-            })
-          }
+              llm.hasTools = checked;
+            });
+          }}
         />
         <NumberInput
           label="Tool count"
@@ -808,21 +879,23 @@ const LLMFields = ({
           label="Image input"
           checked={value.hasImageInput}
           styles={fieldStyles}
-          onChange={(event) =>
+          onChange={(event) => {
+            const checked = event.currentTarget.checked;
             onChange((llm) => {
-              llm.hasImageInput = event.currentTarget.checked;
-            })
-          }
+              llm.hasImageInput = checked;
+            });
+          }}
         />
         <Switch
           label="Audio input"
           checked={value.hasAudioInput}
           styles={fieldStyles}
-          onChange={(event) =>
+          onChange={(event) => {
+            const checked = event.currentTarget.checked;
             onChange((llm) => {
-              llm.hasAudioInput = event.currentTarget.checked;
-            })
-          }
+              llm.hasAudioInput = checked;
+            });
+          }}
         />
       </div>
 
