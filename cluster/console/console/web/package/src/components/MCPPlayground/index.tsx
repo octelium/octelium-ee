@@ -52,6 +52,7 @@ const PROTOCOL_VERSIONS = [
   "2025-11-25",
   "2026-07-28",
 ];
+const SERVER_DISCOVER_VERSION = "2026-07-28";
 
 const newArgument = (): ArgumentRow => ({
   id: crypto.randomUUID(),
@@ -239,6 +240,53 @@ const MCPPlayground = (props: { service: Service }) => {
   const config = getMCPConfig(service);
   const endpoint = config?.endpoint?.trim() || "/mcp";
   const isPublic = service.spec?.isPublic === true;
+  const protocolDate = Date.parse(`${protocolVersion}T00:00:00Z`);
+  const serverDiscoverDate = Date.parse(`${SERVER_DISCOVER_VERSION}T00:00:00Z`);
+  const supportsServerDiscover =
+    Number.isFinite(protocolDate) && protocolDate >= serverDiscoverDate;
+  const supportsInitialize = !supportsServerDiscover;
+  const methodGroups = React.useMemo(
+    () =>
+      [
+        {
+          group: "Session",
+          items: supportsInitialize
+            ? [{ value: "initialize", label: "initialize" }]
+            : [],
+        },
+        {
+          group: "Tools",
+          items: [
+            { value: "tools/list", label: "tools/list" },
+            { value: "tools/call", label: "tools/call" },
+          ],
+        },
+        {
+          group: "Resources",
+          items: [
+            { value: "resources/list", label: "resources/list" },
+            { value: "resources/read", label: "resources/read" },
+          ],
+        },
+        {
+          group: "Prompts",
+          items: [
+            { value: "prompts/list", label: "prompts/list" },
+            { value: "prompts/get", label: "prompts/get" },
+          ],
+        },
+        {
+          group: "Diagnostics",
+          items: [
+            { value: "ping", label: "ping" },
+            ...(supportsServerDiscover
+              ? [{ value: "server/discover", label: "server/discover" }]
+              : []),
+          ],
+        },
+      ].filter((group) => group.items.length > 0),
+    [supportsInitialize, supportsServerDiscover],
+  );
   const availableTools = React.useMemo(() => {
     const tools = (response as { result?: { tools?: unknown[] } } | undefined)?.result?.tools;
     if (!Array.isArray(tools)) return [];
@@ -281,6 +329,15 @@ const MCPPlayground = (props: { service: Service }) => {
     const configured = getMCPConfig(service)?.protocol?.versions[0];
     setProtocolVersion(configured || DEFAULT_PROTOCOL_VERSION);
   }, [service]);
+
+  React.useEffect(() => {
+    if (method === "initialize" && !supportsInitialize) {
+      setMethod("tools/list");
+    }
+    if (method === "server/discover" && !supportsServerDiscover) {
+      setMethod("tools/list");
+    }
+  }, [method, supportsInitialize, supportsServerDiscover]);
 
   const updateArgument = (id: string, patch: Partial<ArgumentRow>) => {
     setArgumentsList((rows) =>
@@ -519,40 +576,7 @@ const MCPPlayground = (props: { service: Service }) => {
             <Select
               label="MCP method"
               searchable
-              data={[
-                {
-                  group: "Session",
-                  items: [{ value: "initialize", label: "initialize" }],
-                },
-                {
-                  group: "Tools",
-                  items: [
-                    { value: "tools/list", label: "tools/list" },
-                    { value: "tools/call", label: "tools/call" },
-                  ],
-                },
-                {
-                  group: "Resources",
-                  items: [
-                    { value: "resources/list", label: "resources/list" },
-                    { value: "resources/read", label: "resources/read" },
-                  ],
-                },
-                {
-                  group: "Prompts",
-                  items: [
-                    { value: "prompts/list", label: "prompts/list" },
-                    { value: "prompts/get", label: "prompts/get" },
-                  ],
-                },
-                {
-                  group: "Diagnostics",
-                  items: [
-                    { value: "ping", label: "ping" },
-                    { value: "server/discover", label: "server/discover" },
-                  ],
-                },
-              ]}
+              data={methodGroups}
               value={method}
               onChange={(value) => {
                 setMethod((value as MCPMethod) || "tools/list");
