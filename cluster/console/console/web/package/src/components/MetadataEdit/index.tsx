@@ -2,7 +2,6 @@ import { Metadata } from "@/apis/metav1/metav1";
 import { getShortNameFromStr, Resource } from "@/utils/pb";
 import { SimpleGrid, TagsInput, Textarea, TextInput } from "@mantine/core";
 import { AlignLeft, LockKeyhole, ShieldCheck, Tag, Type } from "lucide-react";
-import * as React from "react";
 
 const sharedInputStyles = {
   label: {
@@ -53,21 +52,14 @@ const MetadataEdit = (props: {
   skipDisplayName?: boolean;
   isUpdateMode?: boolean;
 }) => {
-  const [req, setReq] = React.useState(() =>
-    Metadata.clone(props.item.metadata ?? Metadata.create()),
-  );
+  const req = props.item.metadata ?? Metadata.create();
   const sourceMetadata = props.item.metadata;
   const isSystem = !!sourceMetadata?.isSystem;
   const isNameLocked = isSystem || !!props.isUpdateMode;
 
-  React.useEffect(() => {
-    setReq(Metadata.clone(sourceMetadata ?? Metadata.create()));
-  }, [sourceMetadata]);
-
   const update = (partial: Partial<Metadata>) => {
-    const next = Metadata.clone(req);
+    const next = Metadata.clone(sourceMetadata ?? Metadata.create());
     Object.assign(next, partial);
-    setReq(next);
     props.onUpdate(next);
   };
 

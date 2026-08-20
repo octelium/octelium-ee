@@ -37,7 +37,7 @@ const Edit = ({
   }, []);
   const [req, setReq] = React.useState(() => cloneForEdit(item));
   const pipelineIDs = React.useRef<string[]>([]);
-  const itemKey = item.metadata?.uid || item.metadata?.name || item.apiVersion;
+  const itemKey = item.metadata?.uid || item.apiVersion || item.kind;
 
   React.useEffect(() => {
     setReq(cloneForEdit(item));

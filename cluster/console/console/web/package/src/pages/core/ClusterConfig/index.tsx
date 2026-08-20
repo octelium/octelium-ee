@@ -60,7 +60,7 @@ const Edit = (props: {
     while (ids.length <= index) ids.push(`${kind}-${crypto.randomUUID()}`);
     return ids[index];
   };
-  const itemKey = item.metadata?.uid || item.metadata?.name || item.apiVersion;
+  const itemKey = item.metadata?.uid || item.apiVersion || item.kind;
 
   React.useEffect(() => {
     const next = cloneForEdit(item);

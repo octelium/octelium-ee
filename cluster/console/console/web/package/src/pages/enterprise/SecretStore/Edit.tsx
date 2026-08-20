@@ -71,7 +71,8 @@ const Edit = (props: {
   const configurations = React.useRef<Partial<Record<StoreKind, StoreType>>>({
     [req.spec!.type.oneofKind!]: structuredClone(req.spec!.type),
   });
-  const itemKey = props.item.metadata?.uid || props.item.metadata?.name;
+  const itemKey =
+    props.item.metadata?.uid || props.item.apiVersion || props.item.kind;
 
   React.useEffect(() => {
     const next = cloneForEdit(props.item);

@@ -20,7 +20,8 @@ const Edit = (props: {
   const enforcementRuleKeys = React.useRef(
     props.item.spec!.enforcementRules.map(() => crypto.randomUUID()),
   );
-  const itemKey = props.item.metadata?.uid || props.item.metadata?.name;
+  const itemKey =
+    props.item.metadata?.uid || props.item.apiVersion || props.item.kind;
 
   React.useEffect(() => {
     setReq(CoreP.Policy.clone(props.item));

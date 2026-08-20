@@ -10,7 +10,7 @@ const Edit = (props: {
 }) => {
   const { item, onUpdate } = props;
   const [req, setReq] = React.useState(AccessP.Catalog.clone(item));
-  const itemKey = item.metadata?.uid || item.metadata?.name;
+  const itemKey = item.metadata?.uid || item.apiVersion || item.kind;
 
   React.useEffect(() => {
     setReq(AccessP.Catalog.clone(item));

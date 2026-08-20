@@ -42,7 +42,8 @@ const Edit = (props: {
   onUpdate: (item: EnterpriseP.CertificateIssuer) => void;
 }) => {
   const [req, setReq] = React.useState(cloneForEdit(props.item));
-  const itemKey = props.item.metadata?.uid || props.item.metadata?.name;
+  const itemKey =
+    props.item.metadata?.uid || props.item.apiVersion || props.item.kind;
 
   React.useEffect(() => {
     setReq(cloneForEdit(props.item));

@@ -523,7 +523,7 @@ const Edit = (props: {
     ),
   });
   const authenticationConfigurations = React.useRef<Record<string, unknown>>({});
-  const itemKey = item.metadata?.uid || item.metadata?.name;
+  const itemKey = item.metadata?.uid || item.apiVersion || item.kind;
 
   React.useEffect(() => {
     const next = normalizeSecretSelectors(EnterpriseP.CollectorExporter.clone(item));

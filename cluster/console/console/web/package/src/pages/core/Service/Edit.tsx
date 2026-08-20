@@ -7383,7 +7383,7 @@ const Edit = (props: {
         }
       : {},
   );
-  const itemKey = item.metadata?.uid || item.metadata?.name;
+  const itemKey = item.metadata?.uid || item.apiVersion || item.kind;
   React.useEffect(() => {
     const next = CoreP.Service.clone(item);
     setReq(next);

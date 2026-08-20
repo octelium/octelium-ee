@@ -1018,7 +1018,7 @@ const Edit = (props: {
   const ruleKeys = React.useRef(
     item.spec?.rules.map(() => crypto.randomUUID()) ?? [],
   );
-  const itemKey = item.metadata?.uid || item.metadata?.name;
+  const itemKey = item.metadata?.uid || item.apiVersion || item.kind;
 
   React.useEffect(() => {
     setReq(AccessP.Policy.clone(item));
