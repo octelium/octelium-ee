@@ -79,18 +79,14 @@ const SegmentedTabsList = (props: {
     });
 
   return (
-    <div className={`overflow-x-auto ${props.className ?? ""}`}>
+    <div className={`w-full ${props.className ?? ""}`}>
       <SegmentedControl
-        size="xs"
+        size="sm"
         value={value ?? data[0]?.value}
         onChange={onChange}
         data={data}
-        fullWidth={props.className?.split(/\s+/).includes("w-full")}
-        className={
-          props.className?.split(/\s+/).includes("w-full")
-            ? "w-full"
-            : "min-w-max"
-        }
+        fullWidth
+        className="w-full"
       />
     </div>
   );
@@ -8190,7 +8186,9 @@ const Edit = (props: {
                           </p>
                           <SegmentedControl
                             aria-label="Rule type"
+                            size="sm"
                             fullWidth
+                            className="w-full"
                             value={
                               req.spec!.dynamicConfig!.rules[ruleIdx].type
                                 .oneofKind
