@@ -1,5 +1,10 @@
 import { getResourceComponentInfoFromResource } from "@/pages/utils/resourceRegistry";
-import { hasAccessLog, hasAuthenticationLog, Resource } from "@/utils/pb";
+import {
+  hasAccessLog,
+  hasAuthenticationLog,
+  hasSSHSessionLog,
+  Resource,
+} from "@/utils/pb";
 import { SegmentedControl } from "@mantine/core";
 import {
   ChartNoAxesCombined,
@@ -8,6 +13,7 @@ import {
   Settings,
   ShieldEllipsis,
   ShieldUser,
+  Terminal,
 } from "lucide-react";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { match } from "ts-pattern";
@@ -46,6 +52,13 @@ const METRICS_TAB: Tab = {
   path: "metrics",
 };
 
+const SSH_TAB: Tab = {
+  value: "ssh",
+  label: "SSH Recordings",
+  icon: Terminal,
+  path: "ssh",
+};
+
 const AUDIT_LOG_TAB: Tab = {
   value: "auditlogs",
   label: "Audit Logs",
@@ -61,6 +74,7 @@ const getActiveTab = (pathname: string): string => {
     .with("accesslogs", () => "accesslogs")
     .with("authenticationlogs", () => "authenticationlogs")
     .with("metrics", () => "metrics")
+    .with("ssh", () => "ssh")
     .with("auditlogs", () => "auditlogs")
     .otherwise(() => "main");
 };
@@ -80,6 +94,13 @@ const buildTabs = (resource: Resource): Tab[] => {
     (resource.kind === "Service" || resource.kind === "Namespace")
   ) {
     tabs.push(METRICS_TAB);
+  }
+  if (
+    resource.apiVersion === "core/v1" &&
+    resource.kind === "Service" &&
+    hasSSHSessionLog(resource)
+  ) {
+    tabs.push(SSH_TAB);
   }
   if (hasAccessLog(resource)) tabs.push(ACCESS_LOG_TAB);
   if (hasAuthenticationLog(resource)) tabs.push(AUTH_LOG_TAB);

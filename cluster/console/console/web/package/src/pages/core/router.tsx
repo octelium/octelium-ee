@@ -32,6 +32,7 @@ import ResourceCreatePage from "@/components/ResourceLayout/ResourceCreate";
 import ResourceItemMainPage from "@/components/ResourceLayout/ResourceItemMainPage";
 import ResourceItemDrawer from "@/components/ResourceLayout/ResourceItemDrawer";
 import ServiceMetricsPage from "@/components/ResourceLayout/ServiceMetricsPage";
+import ServiceSSHPage from "@/components/ResourceLayout/ServiceSSHPage";
 
 export const resourceList = [
   serviceRouter,
@@ -127,6 +128,13 @@ const getResourceChildrenRouter = (arg: ResourceComponentInfo): RouteObject => {
     children.push({
       path: "metrics",
       element: <ServiceMetricsPage />,
+    });
+  }
+
+  if (arg.API === "core" && arg.Kind === "Service") {
+    children.push({
+      path: "ssh",
+      element: <ServiceSSHPage />,
     });
   }
 
