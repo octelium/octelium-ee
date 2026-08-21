@@ -18,7 +18,7 @@
                     },
                     "additionalProperties": false,
                     "type": "array",
-                    "description": "Items is the list of Namespaces"
+                    "description": "Items is the list of Namespaces."
                 },
                 "listResponseMeta": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ListResponseMeta",
@@ -28,7 +28,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Namespace List"
+            "title": "Namespace List",
+            "description": "NamespaceList is the list of Namespaces returned by the ListNamespace method."
         },
         "octelium.api.main.core.v1.Condition": {
             "properties": {
@@ -257,7 +258,7 @@
                 "metadata": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Metadata",
                     "additionalProperties": false,
-                    "description": "octelium.api.main.meta.v1.Metadata is the object's metadata."
+                    "description": "Metadata is the object's metadata."
                 },
                 "spec": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Namespace.Spec",
@@ -272,7 +273,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Namespace"
+            "title": "Namespace",
+            "description": "Namespace is a logical grouping of Services. Every Service is owned by exactly one Namespace which is mainly used to organize the Cluster's Services, to apply common authorization rules to all the Services owned by the Namespace as well as to provide the TLS certificate used by them."
         },
         "octelium.api.main.core.v1.Namespace.Spec": {
             "properties": {
@@ -284,12 +286,13 @@
                 "attrs": {
                     "additionalProperties": true,
                     "type": "object",
-                    "description": "Attrs is a map user-defined attributes, mostly used in authorization rules. It is strongly recommended to stick to camelCase in order to be conformant with Octelium's API naming conventions."
+                    "description": "Attrs is a map of user-defined attributes, mostly used in authorization rules. It is strongly recommended to stick to camelCase in order to be conformant with Octelium's API naming conventions."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Spec"
+            "title": "Spec",
+            "description": "Spec is the Namespace specification"
         },
         "octelium.api.main.core.v1.Namespace.Spec.Authorization": {
             "properties": {
@@ -311,12 +314,14 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Authorization"
+            "title": "Authorization",
+            "description": "Authorization sets the Policies that are applied to every Service owned by the Namespace"
         },
         "octelium.api.main.core.v1.Namespace.Status": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Status"
+            "title": "Status",
+            "description": "Status is the current status of the Namespace"
         },
         "octelium.api.main.core.v1.Policy.Spec": {
             "properties": {

@@ -28,7 +28,8 @@
                         "WORKLOAD"
                     ],
                     "type": "string",
-                    "title": "Type"
+                    "title": "Type",
+                    "description": "Type is the type of the User"
                 }
             },
             "additionalProperties": false,

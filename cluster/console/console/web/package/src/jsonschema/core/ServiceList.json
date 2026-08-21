@@ -28,7 +28,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Service List"
+            "title": "Service List",
+            "description": "ServiceList is the list of Services returned by the ListService method."
         },
         "octelium.api.main.core.v1.Condition": {
             "properties": {
@@ -338,7 +339,7 @@
                 "metadata": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Metadata",
                     "additionalProperties": false,
-                    "description": "octelium.api.main.meta.v1.Metadata is the object's metadata."
+                    "description": "Metadata is the object's metadata."
                 },
                 "spec": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec",
@@ -353,7 +354,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Service"
+            "title": "Service",
+            "description": "Service is a proxied upstream resource (e.g. a web application, an API, an SSH server, a database, a Kubernetes cluster, etc...) that Users access through the Cluster. A Service is owned by a Namespace and it is the resource at which the Cluster's identity-aware proxies terminate the clients' connections, enforce the authorization Policies and produce the access logs before forwarding the traffic to the upstream."
         },
         "octelium.api.main.core.v1.Service.Spec": {
             "properties": {
@@ -380,7 +382,8 @@
                         "LLM"
                     ],
                     "type": "string",
-                    "title": "Mode"
+                    "title": "Mode",
+                    "description": "Mode is the application-layer protocol used by the proxy implementing the Service"
                 },
                 "authorization": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Authorization",
@@ -412,7 +415,7 @@
                 "deployment": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Deployment",
                     "additionalProperties": false,
-                    "description": "Deployment sets The Service's underlying deployment configurations."
+                    "description": "Deployment sets the Service's underlying deployment configurations."
                 },
                 "isDisabled": {
                     "type": "boolean",
@@ -420,16 +423,18 @@
                 },
                 "attrs": {
                     "additionalProperties": true,
-                    "type": "object"
+                    "type": "object",
+                    "description": "Attrs is a map of user-defined attributes, mostly used in authorization rules. It is strongly recommended to stick to camelCase in order to be conformant with Octelium's API naming conventions."
                 },
                 "region": {
                     "type": "string",
-                    "description": "Region explicitly sets the Region name in which the Service is deployed.By default, a Service is deployed in the \"default\" Region."
+                    "description": "Region explicitly sets the Region name in which the Service is deployed. By default, a Service is deployed in the \"default\" Region."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Spec"
+            "title": "Spec",
+            "description": "Spec is the Service specification"
         },
         "octelium.api.main.core.v1.Service.Spec.Authorization": {
             "properties": {
@@ -449,12 +454,14 @@
                     "description": "InlinePolicies is the list of inline Policies"
                 },
                 "enableAnonymous": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "EnableAnonymous enables the authorization of anonymous requests (i.e. requests that are not associated with an authenticated Session)."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Authorization"
+            "title": "Authorization",
+            "description": "Authorization sets the Policies that are applied to the Service"
         },
         "octelium.api.main.core.v1.Service.Spec.Config": {
             "properties": {
@@ -478,7 +485,8 @@
                 },
                 "tls": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.TLS",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "TLS sets the TLS-related configuration used to connect to the upstream."
                 },
                 "http": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP",
@@ -507,11 +515,13 @@
                 },
                 "socks5": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.SOCKS5",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "SOCKS5 sets SOCKS5-specific configuration"
                 },
                 "rdp": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.RDP",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RDP sets RDP-specific configuration"
                 },
                 "mcp": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.MCP",
@@ -628,7 +638,8 @@
                     ]
                 }
             ],
-            "title": "Config"
+            "title": "Config",
+            "description": "Config sets the Service configuration. It contains the options that are common to every Service as well as the options that are specific to the application-layer protocol used by the Service."
         },
         "octelium.api.main.core.v1.Service.Spec.Config.ClientCertificate": {
             "properties": {
@@ -1162,7 +1173,7 @@
                         "type": "string"
                     },
                     "type": "array",
-                    "description": "AllowOriginStringMatch is the list of  patterns that match allowed origins."
+                    "description": "AllowOriginStringMatch is the list of the allowed origins. An entry is either an exact origin (e.g. \"https://example.com\") or a `*` which allows every origin. A request whose Origin matches the Service's own origin is always allowed and it does not need to be listed here. Note that Octelium always responds with the request's own Origin rather than with a literal `*` since the browsers reject a wildcard whenever the request carries credentials."
                 },
                 "allowMethods": {
                     "type": "string",
@@ -1183,6 +1194,10 @@
                 "allowCredentials": {
                     "type": "boolean",
                     "description": "AllowCredentials specifies whether the resource allows credentials."
+                },
+                "allowClusterServices": {
+                    "type": "boolean",
+                    "description": "AllowClusterServices allows the origins of the Cluster's own Services (i.e. the Cluster domain itself as well as any of its subdomains at any depth, over HTTPS only) in addition to the origins that are set in `allowOriginStringMatch`. Credentials are always allowed for such origins regardless of `allowCredentials` since the Cluster's Services authenticate the browsers with the `octelium_auth` Cookie. This is needed to access the Service from the Cluster's own web console (e.g. the MCP and LLM playgrounds). Note that enabling this effectively trusts every Service in the Cluster since a browser-based application served by any of them can then read this Service's responses on behalf of the browsing User."
                 }
             },
             "additionalProperties": false,
@@ -2427,6 +2442,11 @@
                     "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Visibility",
                     "additionalProperties": false,
                     "description": "Visibility sets the visibility/access logging specific options"
+                },
+                "cors": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.CORS",
+                    "additionalProperties": false,
+                    "description": "CORS sets the Cross-Origin Resource Sharing options which are needed to access the Service from a browser-based application served at a different origin (e.g. the Cluster's own web dashboard). This field has to be set in the \"default\" or global Configuration (as opposed to named dynamic Configs) in order to actually work since the CORS preflight requests carry no identity."
                 }
             },
             "additionalProperties": false,
@@ -2607,15 +2627,19 @@
                     "type": "boolean",
                     "description": "ListenHTTP2 sets the Service to listen to HTTP 2.0 connections. This is only enabled by default for Services using TLS. This field has to be enabled in the \"default\" or global Configuration (as opposed to named dynamic Configs) in order to actually work."
                 },
-                "origin": {
-                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.MCP.Origin",
-                    "additionalProperties": false,
-                    "description": "Origin sets the `Origin` request header validation options. This field has to be set in the \"default\" or global Configuration (as opposed to named dynamic Configs) in order to actually work."
-                },
                 "visibility": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.MCP.Visibility",
                     "additionalProperties": false,
                     "description": "Visibility sets the visibility/access logging specific options"
+                },
+                "cors": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.CORS",
+                    "additionalProperties": false,
+                    "description": "CORS sets the Cross-Origin Resource Sharing options which are needed to access the Service from a browser-based application served at a different origin (e.g. the Cluster's own web dashboard). An Origin that is allowed here is also accepted by the Origin request header validation. This field has to be set in the \"default\" or global Configuration (as opposed to named dynamic Configs) in order to actually work since the CORS preflight requests carry no identity."
+                },
+                "disableOriginCheck": {
+                    "type": "boolean",
+                    "description": "DisableOriginCheck disables the `Origin` request header validation entirely. The validation rejects any request whose Origin is neither the Service's own origin nor an origin that is allowed by the `cors` field. Requests that carry no Origin request header at all, which is the case for nearly every non-browser MCP client (e.g. IDEs, AI agents, CLI tools), are always accepted. This field has to be set in the \"default\" or global Configuration (as opposed to named dynamic Configs) in order to actually work."
                 }
             },
             "additionalProperties": false,
@@ -2636,24 +2660,6 @@
             "additionalProperties": false,
             "type": "object",
             "title": "Limits"
-        },
-        "octelium.api.main.core.v1.Service.Spec.Config.MCP.Origin": {
-            "properties": {
-                "allowed": {
-                    "items": {
-                        "type": "string"
-                    },
-                    "type": "array",
-                    "description": "Allowed is the list of the additional allowed `Origin` request header values (e.g. \"https://example.com\"). A request whose Origin matches the Service's own origin is always accepted and it does not need to be listed here. Requests that carry no Origin request header at all, which is the case for nearly every non-browser MCP client (e.g. IDEs, AI agents, CLI tools), are always accepted."
-                },
-                "disable": {
-                    "type": "boolean",
-                    "description": "Disable disables the `Origin` request header validation entirely. This validation protects the upstream MCP server from DNS rebinding attacks and it is enabled by default."
-                }
-            },
-            "additionalProperties": false,
-            "type": "object",
-            "title": "Origin"
         },
         "octelium.api.main.core.v1.Service.Spec.Config.MCP.Protocol": {
             "properties": {
@@ -3391,7 +3397,7 @@
                 "container": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Upstream.Container",
                     "additionalProperties": false,
-                    "description": "Container sets the Upstream to a managed container deployed on the same Kubernetes cluster that hosts the OCtelium Cluster"
+                    "description": "Container sets the Upstream to a managed container deployed on the same Kubernetes cluster that hosts the Octelium Cluster"
                 }
             },
             "additionalProperties": false,
@@ -4008,7 +4014,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Deployment"
+            "title": "Deployment",
+            "description": "Deployment sets the configuration of the Service's underlying deployment"
         },
         "octelium.api.main.core.v1.Service.Spec.DynamicConfig": {
             "properties": {
@@ -4031,7 +4038,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Dynamic Config"
+            "title": "Dynamic Config",
+            "description": "DynamicConfig overrides the global/static Service Config on a per-request basis"
         },
         "octelium.api.main.core.v1.Service.Spec.DynamicConfig.Rule": {
             "properties": {
@@ -4097,7 +4105,8 @@
                     ]
                 }
             ],
-            "title": "Rule"
+            "title": "Rule",
+            "description": "Rule is a rule that is evaluated on a per-request basis to choose the Config used for that request"
         },
         "octelium.api.main.core.v1.Service.Status": {
             "properties": {
@@ -4116,97 +4125,119 @@
                 },
                 "managedService": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Service.Status.ManagedService",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ManagedService is the configuration of the Octelium-managed container implementing the Service. It is only set for managed Services."
                 },
                 "regionRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RegionRef is the reference of the Region in which the Service is deployed."
                 },
                 "primaryHostname": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "PrimaryHostname is the Service's primary hostname"
                 },
                 "additionalHostnames": {
                     "items": {
                         "type": "string"
                     },
-                    "type": "array"
+                    "type": "array",
+                    "description": "AdditionalHostnames is the list of the additional hostnames of the Service."
                 },
                 "port": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "Port is the port number used by the Service's listener"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Status"
+            "title": "Status",
+            "description": "Status is the current status of the Service"
         },
         "octelium.api.main.core.v1.Service.Status.Address": {
             "properties": {
                 "dualStackIP": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.DualStackIP",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "DualStackIP is the IPv4 and IPv6 addresses of the Service"
                 },
                 "podRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "PodRef is the reference of the Pod serving the Service"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Address"
+            "title": "Address",
+            "description": "Address is a private address at which the Service is reachable by the Cluster's clients"
         },
         "octelium.api.main.core.v1.Service.Status.ManagedService": {
             "properties": {
                 "image": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Image is the container image of the managed Service"
                 },
                 "port": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "Port is the port at which the managed Service listens"
                 },
                 "hasSubdomain": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "HasSubdomain determines whether the managed Service is served over its own dedicated subdomain."
                 },
                 "forwardHost": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "ForwardHost determines whether the original Host header is forwarded to the managed Service."
                 },
                 "type": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Type is the type of the managed Service"
                 },
                 "k8sLabels": {
                     "additionalProperties": {
                         "type": "string"
                     },
-                    "type": "object"
+                    "type": "object",
+                    "description": "K8sLabels is the map of the labels applied to the managed Service's Kubernetes resources."
                 },
                 "command": {
                     "items": {
                         "type": "string"
                     },
-                    "type": "array"
+                    "type": "array",
+                    "description": "Command overrides the container image's entrypoint"
                 },
                 "args": {
                     "items": {
                         "type": "string"
                     },
-                    "type": "array"
+                    "type": "array",
+                    "description": "Args overrides the arguments passed to the container's entrypoint"
                 },
                 "imagePullSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ImagePullSecret is the name of the Kubernetes secret used to pull the container image."
                 },
                 "healthCheck": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Service.Status.ManagedService.HealthCheck",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "HealthCheck sets the health check of the managed Service"
                 },
                 "resourceLimit": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Service.Status.ManagedService.ResourceLimit",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ResourceLimit sets the compute resource limits of the managed Service"
                 },
                 "readOnlyFileSystem": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "ReadOnlyFileSystem mounts the container's root filesystem as read-only"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Managed Service"
+            "title": "Managed Service",
+            "description": "ManagedService is the configuration of the Octelium-managed container that implements the Service. It is set by the Cluster for the Services that are deployed and maintained by the Cluster itself."
         },
         "octelium.api.main.core.v1.Service.Status.ManagedService.HealthCheck": {
             "properties": {
@@ -4239,7 +4270,8 @@
                     ]
                 }
             ],
-            "title": "Health Check"
+            "title": "Health Check",
+            "description": "HealthCheck is the health check used to probe the managed Service"
         },
         "octelium.api.main.core.v1.Service.Status.ManagedService.HealthCheck.GRPC": {
             "properties": {
@@ -4249,22 +4281,26 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "GRPC"
+            "title": "GRPC",
+            "description": "GRPC is a gRPC health check"
         },
         "octelium.api.main.core.v1.Service.Status.ManagedService.ResourceLimit": {
             "properties": {
                 "cpu": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Service.Status.ManagedService.ResourceLimit.CPU",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "CPU sets the CPU limit"
                 },
                 "memory": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Service.Status.ManagedService.ResourceLimit.Memory",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Memory sets the memory limit"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Resource Limit"
+            "title": "Resource Limit",
+            "description": "ResourceLimit sets the compute resource limits of the managed Service"
         },
         "octelium.api.main.core.v1.Service.Status.ManagedService.ResourceLimit.CPU": {
             "properties": {
@@ -4274,7 +4310,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "CPU"
+            "title": "CPU",
+            "description": "CPU is the CPU limit"
         },
         "octelium.api.main.core.v1.Service.Status.ManagedService.ResourceLimit.Memory": {
             "properties": {
@@ -4284,7 +4321,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Memory"
+            "title": "Memory",
+            "description": "Memory is the memory limit"
         },
         "octelium.api.main.meta.v1.DualStackIP": {
             "properties": {

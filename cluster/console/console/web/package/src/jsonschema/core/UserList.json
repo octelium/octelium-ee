@@ -28,7 +28,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "User List"
+            "title": "User List",
+            "description": "UserList is the list of Users returned by the ListUser method."
         },
         "octelium.api.main.core.v1.Condition": {
             "properties": {
@@ -338,7 +339,7 @@
                 "metadata": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Metadata",
                     "additionalProperties": false,
-                    "description": "octelium.api.main.meta.v1.Metadata is the object's metadata."
+                    "description": "Metadata is the object's metadata."
                 },
                 "spec": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.User.Spec",
@@ -353,7 +354,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "User"
+            "title": "User",
+            "description": "User is an identity within the Cluster. A User is either a HUMAN who authenticates via the Cluster's IdentityProviders, or a WORKLOAD (e.g. a container, a server, a CI job, etc...) which authenticates via its Credentials. Users are members of Groups and every successful authentication of a User creates a Session."
         },
         "octelium.api.main.core.v1.User.Spec": {
             "properties": {
@@ -366,7 +368,7 @@
                 },
                 "email": {
                     "type": "string",
-                    "description": "Email sets the default e-mail for the User. It is used for User authentication if the IdentityProvider returns the email value in the authentication information (e.g. OIDC identity tokens, SAML 2.0 assertions or GitHub OAuth2). The e-mail is used as a fallback authentication method if there are no User identity that matches in the"
+                    "description": "Email sets the default e-mail for the User. It is used for User authentication if the IdentityProvider returns the email value in the authentication information (e.g. OIDC identity tokens, SAML 2.0 assertions or GitHub OAuth2)."
                 },
                 "type": {
                     "enum": [
@@ -375,7 +377,8 @@
                         "WORKLOAD"
                     ],
                     "type": "string",
-                    "title": "Type"
+                    "title": "Type",
+                    "description": "Type is the type of the User"
                 },
                 "info": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.User.Spec.Info",
@@ -394,20 +397,23 @@
                 },
                 "isDisabled": {
                     "type": "boolean",
-                    "description": "isDisabled de-activates/disables the User. Once disabled, the User cannot interact with the Cluster or access its Services until this field is set to false again."
+                    "description": "IsDisabled de-activates/disables the User. Once disabled, the User cannot interact with the Cluster or access its Services until this field is set to false again."
                 },
                 "attrs": {
                     "additionalProperties": true,
-                    "type": "object"
+                    "type": "object",
+                    "description": "Attrs is a map of user-defined attributes, mostly used in authorization rules. It is strongly recommended to stick to camelCase in order to be conformant with Octelium's API naming conventions."
                 },
                 "authentication": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.User.Spec.Authentication",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Authentication sets the authentication-related configuration"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Spec"
+            "title": "Spec",
+            "description": "Spec is the User specification"
         },
         "octelium.api.main.core.v1.User.Spec.Authentication": {
             "properties": {
@@ -432,13 +438,14 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Authentication"
+            "title": "Authentication",
+            "description": "Authentication sets how the User authenticates to the Cluster"
         },
         "octelium.api.main.core.v1.User.Spec.Authentication.Identity": {
             "properties": {
                 "identityProvider": {
                     "type": "string",
-                    "description": "Provider is the provider's name according to the Cluster configuration."
+                    "description": "IdentityProvider is the IdentityProvider's name."
                 },
                 "identifier": {
                     "type": "string",
@@ -447,7 +454,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Identity"
+            "title": "Identity",
+            "description": "Identity is an identity of the User at a specific IdentityProvider"
         },
         "octelium.api.main.core.v1.User.Spec.Authorization": {
             "properties": {
@@ -469,35 +477,44 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Authorization"
+            "title": "Authorization",
+            "description": "Authorization sets the Policies that are applied to the User"
         },
         "octelium.api.main.core.v1.User.Spec.Info": {
             "properties": {
                 "locale": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Locale is the User's locale (e.g. \"en-US\")"
                 },
                 "phone": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Phone is the User's phone number"
                 },
                 "firstName": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FirstName is the User's first/given name"
                 },
                 "middleName": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "MiddleName is the User's middle name"
                 },
                 "lastName": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "LastName is the User's last/family name"
                 },
                 "website": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Website is the URL of the User's website"
                 },
                 "country": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Country is the User's country"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Info"
+            "title": "Info",
+            "description": "Info is the personal information of the User"
         },
         "octelium.api.main.core.v1.User.Spec.Session": {
             "properties": {
@@ -523,7 +540,7 @@
                 },
                 "maxPerUser": {
                     "type": "integer",
-                    "description": "MaxPerUser sets the max number of of Sessions per User"
+                    "description": "MaxPerUser sets the max number of Sessions per User"
                 },
                 "defaultState": {
                     "enum": [
@@ -538,7 +555,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Session"
+            "title": "Session",
+            "description": "Session sets the options of the Sessions created for the User"
         },
         "octelium.api.main.core.v1.User.Status": {
             "properties": {
@@ -547,19 +565,23 @@
                         "additionalProperties": true,
                         "type": "object"
                     },
-                    "type": "object"
+                    "type": "object",
+                    "description": "Ext is a map of internal Cluster-managed extension data."
                 },
                 "identityProviderRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "IdentityProviderRef is the reference of the IdentityProvider that provisioned the User."
                 },
                 "isLocked": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "IsLocked indicates whether the User is locked by the Cluster."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Status"
+            "title": "Status",
+            "description": "Status is the current status of the User"
         },
         "octelium.api.main.meta.v1.Duration": {
             "properties": {

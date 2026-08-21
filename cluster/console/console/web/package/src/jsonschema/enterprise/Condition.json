@@ -2459,7 +2459,8 @@
                         "LLM"
                     ],
                     "type": "string",
-                    "title": "Mode"
+                    "title": "Mode",
+                    "description": "Mode is the application-layer protocol used by the proxy implementing the Service"
                 }
             },
             "additionalProperties": false,
@@ -2850,7 +2851,8 @@
                         "WORKLOAD"
                     ],
                     "type": "string",
-                    "title": "Type"
+                    "title": "Type",
+                    "description": "Type is the type of the User"
                 }
             },
             "additionalProperties": false,

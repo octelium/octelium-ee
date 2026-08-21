@@ -501,6 +501,93 @@ const StringListEditor = (props: {
   </ItemMessage>
 );
 
+const CORSConfigEditor = (props: {
+  cors?: CoreP.Service_Spec_Config_HTTP_CORS;
+  onChange: (cors: CoreP.Service_Spec_Config_HTTP_CORS | undefined) => void;
+}) => (
+  <EditItem
+    title="CORS"
+    description="Allow browser applications from selected origins to call this Service"
+    obj={props.cors}
+    onUnset={() => props.onChange(undefined)}
+    onSet={() =>
+      props.onChange(CoreP.Service_Spec_Config_HTTP_CORS.create())
+    }
+  >
+    {props.cors && (
+      <div className="space-y-3">
+        <Group grow>
+          <TextInput
+            label="Allow methods"
+            placeholder="POST, GET, OPTIONS"
+            value={props.cors.allowMethods}
+            onChange={(event) => {
+              props.cors!.allowMethods = event.currentTarget.value;
+              props.onChange(props.cors);
+            }}
+          />
+          <TextInput
+            label="Allow headers"
+            placeholder="X-PINGOTHER, Content-Type"
+            value={props.cors.allowHeaders}
+            onChange={(event) => {
+              props.cors!.allowHeaders = event.currentTarget.value;
+              props.onChange(props.cors);
+            }}
+          />
+          <Switch
+            label="Allow credentials"
+            description="Allow cookies and HTTP authentication"
+            checked={props.cors.allowCredentials}
+            onChange={(event) => {
+              props.cors!.allowCredentials = event.currentTarget.checked;
+              props.onChange(props.cors);
+            }}
+          />
+        </Group>
+        <Group grow>
+          <TextInput
+            label="Expose headers"
+            placeholder="Content-Encoding, Kuma-Revision"
+            value={props.cors.exposeHeaders}
+            onChange={(event) => {
+              props.cors!.exposeHeaders = event.currentTarget.value;
+              props.onChange(props.cors);
+            }}
+          />
+          <TextInput
+            label="Max age"
+            placeholder="86400"
+            value={props.cors.maxAge}
+            onChange={(event) => {
+              props.cors!.maxAge = event.currentTarget.value;
+              props.onChange(props.cors);
+            }}
+          />
+          <Switch
+            label="Allow Cluster Services"
+            description="Trust origins from Services in this Cluster"
+            checked={props.cors.allowClusterServices}
+            onChange={(event) => {
+              props.cors!.allowClusterServices = event.currentTarget.checked;
+              props.onChange(props.cors);
+            }}
+          />
+        </Group>
+        <StringListEditor
+          title="Allowed origin patterns"
+          values={props.cors.allowOriginStringMatch}
+          onChange={(values) => {
+            props.cors!.allowOriginStringMatch = values;
+            props.onChange(props.cors);
+          }}
+          placeholder="https://example.com or *"
+        />
+      </div>
+    )}
+  </EditItem>
+);
+
 const GatewayAuthEditor = (props: {
   config: GatewayConfig;
   onChange: () => void;
@@ -1338,41 +1425,22 @@ const MCPConfigEditor = (props: {
         </Group>
       )}
     </EditItem>
-    <EditItem
-      title="Origin validation"
-      description="Protect the upstream from DNS rebinding attacks"
-      obj={props.config.origin}
-      onUnset={() => {
-        props.config.origin = undefined;
+    <CORSConfigEditor
+      cors={props.config.cors}
+      onChange={(cors) => {
+        props.config.cors = cors;
         props.onChange();
       }}
-      onSet={() => {
-        props.config.origin = CoreP.Service_Spec_Config_MCP_Origin.create();
+    />
+    <Switch
+      label="Disable Origin validation"
+      description="Allow requests from any Origin, including untrusted origins"
+      checked={props.config.disableOriginCheck}
+      onChange={(event) => {
+        props.config.disableOriginCheck = event.currentTarget.checked;
         props.onChange();
       }}
-    >
-      {props.config.origin && (
-        <>
-          <Switch
-            label="Disable Origin validation"
-            checked={props.config.origin.disable}
-            onChange={(event) => {
-              props.config.origin!.disable = event.currentTarget.checked;
-              props.onChange();
-            }}
-          />
-          <StringListEditor
-            title="Additional allowed Origins"
-            values={props.config.origin.allowed}
-            onChange={(values) => {
-              props.config.origin!.allowed = values;
-              props.onChange();
-            }}
-            placeholder="https://client.example.com"
-          />
-        </>
-      )}
-    </EditItem>
+    />
     <EditItem
       title="MCP visibility"
       description="Choose which MCP payloads and headers are recorded in AccessLogs"
@@ -1464,6 +1532,13 @@ const MCPConfigEditor = (props: {
         </>
       )}
     </EditItem>
+    <CORSConfigEditor
+      cors={props.config.cors}
+      onChange={(cors) => {
+        props.config.cors = cors;
+        props.onChange();
+      }}
+    />
     <GatewayCommonEditor config={props.config} onChange={props.onChange} />
   </div>
 );
@@ -1721,6 +1796,13 @@ const LLMConfigEditor = (props: {
         </>
       )}
     </EditItem>
+    <CORSConfigEditor
+      cors={props.config.cors}
+      onChange={(cors) => {
+        props.config.cors = cors;
+        props.onChange();
+      }}
+    />
     <GatewayCommonEditor config={props.config} onChange={props.onChange} />
   </div>
 );
@@ -4947,6 +5029,17 @@ const Config = (props: {
                               value={http.http.cors.maxAge}
                               onChange={(v) => {
                                 http.http.cors!.maxAge = v.target.value;
+                                updateReq();
+                              }}
+                            />
+
+                            <Switch
+                              label="Allow Cluster Services"
+                              description="Trust origins from Services in this Cluster"
+                              checked={http.http.cors.allowClusterServices}
+                              onChange={(event) => {
+                                http.http.cors!.allowClusterServices =
+                                  event.currentTarget.checked;
                                 updateReq();
                               }}
                             />
