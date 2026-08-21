@@ -434,6 +434,7 @@ const MCPPlayground = (props: { service: Service }) => {
     try {
       const result = await fetch(targetURL, {
         method: "POST",
+        credentials: "include",
         headers: {
           Accept: "application/json, text/event-stream",
           "Content-Type": "application/json",
