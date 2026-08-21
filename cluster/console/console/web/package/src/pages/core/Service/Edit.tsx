@@ -1532,13 +1532,6 @@ const MCPConfigEditor = (props: {
         </>
       )}
     </EditItem>
-    <CORSConfigEditor
-      cors={props.config.cors}
-      onChange={(cors) => {
-        props.config.cors = cors;
-        props.onChange();
-      }}
-    />
     <GatewayCommonEditor config={props.config} onChange={props.onChange} />
   </div>
 );
