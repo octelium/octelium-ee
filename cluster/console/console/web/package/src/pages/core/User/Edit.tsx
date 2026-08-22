@@ -56,77 +56,78 @@ const Edit = (props: {
   return (
     <div className="space-y-7">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <Select
-            label="Type"
-            required
-            description="Choose whether this principal represents a person or workload"
-            data={[
-              {
-                label: "Human",
-                value: CoreP.User_Spec_Type[CoreP.User_Spec_Type.HUMAN],
-              },
-              {
-                label: "Workload",
-                value: CoreP.User_Spec_Type[CoreP.User_Spec_Type.WORKLOAD],
-              },
-            ]}
-            value={
-              CoreP.User_Spec_Type[req.spec!.type] ??
-              CoreP.User_Spec_Type[CoreP.User_Spec_Type.HUMAN]
-            }
-            onChange={(value) => {
-              if (!value) return;
-              const type = CoreP.User_Spec_Type[value as "HUMAN" | "WORKLOAD"];
-              req.spec!.type = type;
-              if (type === CoreP.User_Spec_Type.WORKLOAD) req.spec!.email = "";
-              updateReq();
-            }}
-          />
+        <Select
+          label="Type"
+          required
+          description="Select whether this User represents a person or a workload such as an AI agent, server, or CI job."
+          data={[
+            {
+              label: "Human",
+              value: CoreP.User_Spec_Type[CoreP.User_Spec_Type.HUMAN],
+            },
+            {
+              label: "Workload",
+              value: CoreP.User_Spec_Type[CoreP.User_Spec_Type.WORKLOAD],
+            },
+          ]}
+          value={
+            CoreP.User_Spec_Type[req.spec!.type] ??
+            CoreP.User_Spec_Type[CoreP.User_Spec_Type.HUMAN]
+          }
+          onChange={(value) => {
+            if (!value) return;
+            const type = CoreP.User_Spec_Type[value as "HUMAN" | "WORKLOAD"];
+            req.spec!.type = type;
+            if (type === CoreP.User_Spec_Type.WORKLOAD) req.spec!.email = "";
+            updateReq();
+          }}
+        />
 
-          <TextInput
-            label="Email"
-            placeholder="john@example.com"
-            description="Used as a fallback identity for human users"
-            value={req.spec?.email}
-            disabled={req.spec?.type !== CoreP.User_Spec_Type.HUMAN}
-            onChange={(event) => {
-              req.spec!.email = event.currentTarget.value;
-              updateReq();
-            }}
-          />
+        <TextInput
+          label="Email"
+          placeholder="john@example.com"
+          description="Default email used when an IdentityProvider returns an email during authentication."
+          value={req.spec?.email}
+          disabled={req.spec?.type !== CoreP.User_Spec_Type.HUMAN}
+          onChange={(event) => {
+            req.spec!.email = event.currentTarget.value;
+            updateReq();
+          }}
+        />
       </div>
 
       <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-[minmax(0,1fr)_minmax(220px,0.7fr)]">
-          <SelectResourceMultiple
-            api="core"
-            kind="Group"
-            label="Groups"
-            description="Choose the Groups this User belongs to"
-            defaultValue={req.spec!.groups}
-            clearable
-            onChange={(value) => {
-              req.spec!.groups =
-                value?.map((resource) => resource.metadata!.name) ?? [];
+        <SelectResourceMultiple
+          api="core"
+          kind="Group"
+          label="Groups"
+          description="Groups this User belongs to and inherits authorization from."
+          defaultValue={req.spec!.groups}
+          clearable
+          onChange={(value) => {
+            req.spec!.groups =
+              value?.map((resource) => resource.metadata!.name) ?? [];
+            updateReq();
+          }}
+        />
+
+        <div className="rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-3">
+          <Switch
+            label="Disable user"
+            description="Disabled Users cannot interact with the Cluster or access its Services until re-enabled."
+            color="red.8"
+            checked={req.spec!.isDisabled}
+            onChange={(event) => {
+              req.spec!.isDisabled = event.currentTarget.checked;
               updateReq();
             }}
           />
-
-          <div className="rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-3">
-            <Switch
-              label="Disable user"
-              color="red.8"
-              checked={req.spec!.isDisabled}
-              onChange={(event) => {
-                req.spec!.isDisabled = event.currentTarget.checked;
-                updateReq();
-              }}
-            />
-          </div>
+        </div>
       </div>
 
       <EditItem
         title="Authentication"
-        description="Set Authentication-related Options"
+        description="Configure how this User authenticates to the Cluster."
         onUnset={() => {
           req.spec!.authentication = undefined;
           updateReq();
@@ -189,6 +190,10 @@ const Edit = (props: {
               }}
             />
 
+            <p className="text-[0.7rem] font-medium leading-5 text-slate-500">
+              Explicit identities match the account returned by a configured
+              IdentityProvider, such as an email or username.
+            </p>
             <ItemMessage
               title="Identities"
               obj={req.spec!.authentication!.identities}
@@ -233,38 +238,38 @@ const Edit = (props: {
                     </Tooltip>
 
                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                    <TextInput
-                      required
-                      label="Identifier"
-                      description="Value returned by the Identity Provider, such as an email or username"
-                      placeholder="linus"
-                      value={
-                        req.spec!.authentication!.identities[idx].identifier
-                      }
-                      onChange={(v) => {
-                        req.spec!.authentication!.identities[idx].identifier =
-                          v.target.value;
-                        updateReq();
-                      }}
-                    />
+                      <TextInput
+                        required
+                        label="Identifier"
+                        description="Account identifier returned by the selected IdentityProvider, such as an email or username."
+                        placeholder="linus"
+                        value={
+                          req.spec!.authentication!.identities[idx].identifier
+                        }
+                        onChange={(v) => {
+                          req.spec!.authentication!.identities[idx].identifier =
+                            v.target.value;
+                          updateReq();
+                        }}
+                      />
 
-                    <SelectResource
-                      api="core"
-                      kind="IdentityProvider"
-                      description="Set the corresponding IdentityProvider"
-                      labelDefault
-                      required
-                      defaultValue={
-                        req.spec!.authentication!.identities[idx]
-                          .identityProvider
-                      }
-                      onChange={(v) => {
-                        req.spec!.authentication!.identities[
-                          idx
-                        ].identityProvider = v?.metadata?.name ?? "";
-                        updateReq();
-                      }}
-                    />
+                      <SelectResource
+                        api="core"
+                        kind="IdentityProvider"
+                        description="IdentityProvider that owns and validates this external identity."
+                        labelDefault
+                        required
+                        defaultValue={
+                          req.spec!.authentication!.identities[idx]
+                            .identityProvider
+                        }
+                        onChange={(v) => {
+                          req.spec!.authentication!.identities[
+                            idx
+                          ].identityProvider = v?.metadata?.name ?? "";
+                          updateReq();
+                        }}
+                      />
                     </div>
                   </div>
                 ))}
@@ -276,7 +281,7 @@ const Edit = (props: {
 
       <EditItem
         title="Authorization"
-        description="Set the User Policies"
+        description="Choose the standalone and inline Policies applied to this User."
         onUnset={() => {
           req.spec!.authorization = undefined;
           updateReq();
@@ -318,7 +323,7 @@ const Edit = (props: {
 
       <EditItem
         title="Session"
-        description="Set Session-related Options"
+        description="Set the defaults and lifetime limits for Sessions created for this User."
         onUnset={() => {
           req.spec!.session = undefined;
           updateReq();
@@ -337,6 +342,7 @@ const Edit = (props: {
               <DurationPicker
                 value={req.spec!.session!.accessTokenDuration}
                 title="Access Token Duration"
+                description="How long an access token remains valid before it expires."
                 onChange={(v) => {
                   req.spec!.session!.accessTokenDuration = v;
                   updateReq();
@@ -346,6 +352,7 @@ const Edit = (props: {
               <DurationPicker
                 value={req.spec!.session!.refreshTokenDuration}
                 title="Refresh Token Duration"
+                description="How long a refresh token remains valid for renewing access."
                 onChange={(v) => {
                   req.spec!.session!.refreshTokenDuration = v;
                   updateReq();
@@ -355,6 +362,7 @@ const Edit = (props: {
               <DurationPicker
                 value={req.spec!.session!.clientDuration}
                 title="Session Client-based Duration"
+                description="Maximum lifetime of Sessions established by a client."
                 onChange={(v) => {
                   req.spec!.session!.clientDuration = v;
                   updateReq();
@@ -364,6 +372,7 @@ const Edit = (props: {
               <DurationPicker
                 value={req.spec!.session!.clientlessDuration}
                 title="Session Clientless Duration"
+                description="Maximum lifetime of browser-based or clientless Sessions."
                 onChange={(v) => {
                   req.spec!.session!.clientlessDuration = v;
                   updateReq();
@@ -374,7 +383,7 @@ const Edit = (props: {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <NumberInput
                 label="Max Per User"
-                description="Set the max number of Sessions per User"
+                description="Maximum number of concurrent Sessions allowed for this User."
                 value={req.spec!.session!.maxPerUser}
                 min={1}
                 max={100000}
@@ -386,7 +395,7 @@ const Edit = (props: {
 
               <Select
                 label="Default State"
-                description="Set the Session's default state to ACTIVE, PENDING or REJECTED"
+                description="Initial state assigned to Sessions created for this User."
                 data={[
                   {
                     label: "Active",
@@ -430,7 +439,7 @@ const Edit = (props: {
       {req.spec!.type === CoreP.User_Spec_Type.HUMAN && (
         <EditItem
           title="Profile"
-          description="Optional human profile and contact information"
+          description="Optional personal information used for HUMAN Users."
           obj={req.spec!.info}
           onSet={() => {
             req.spec!.info = CoreP.User_Spec_Info.create({});
@@ -444,17 +453,18 @@ const Edit = (props: {
           {req.spec!.info && (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {[
-                ["First name", "firstName"],
-                ["Middle name", "middleName"],
-                ["Last name", "lastName"],
-                ["Phone", "phone"],
-                ["Locale", "locale"],
-                ["Country", "country"],
-                ["Website", "website"],
-              ].map(([label, key]) => (
+                ["First name", "firstName", "User's first or given name."],
+                ["Middle name", "middleName", "User's middle name."],
+                ["Last name", "lastName", "User's last or family name."],
+                ["Phone", "phone", "User's phone number."],
+                ["Locale", "locale", "User's locale, for example en-US."],
+                ["Country", "country", "User's country."],
+                ["Website", "website", "URL of the User's website."],
+              ].map(([label, key, description]) => (
                 <TextInput
                   key={key}
                   label={label}
+                  description={description}
                   value={req.spec!.info![key as keyof CoreP.User_Spec_Info]}
                   onChange={(event) => {
                     req.spec!.info![key as keyof CoreP.User_Spec_Info] =

@@ -161,9 +161,13 @@ const DurationPicker = ({
   return (
     <Input.Wrapper
       label={title}
-      description={description}
       className="w-full"
     >
+      {description && (
+        <p className="mb-1 text-[0.7rem] font-semibold leading-5 text-slate-400">
+          {description}
+        </p>
+      )}
       <Popover
         opened={opened}
         onChange={setOpened}
