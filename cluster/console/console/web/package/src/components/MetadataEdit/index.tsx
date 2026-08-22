@@ -64,21 +64,20 @@ const MetadataEdit = (props: {
   };
 
   return (
-    <div className="flex w-full flex-col gap-5">
+    <div className="flex w-full flex-col gap-3">
       {isSystem && (
-        <div className="flex items-start gap-2.5 rounded-lg border border-blue-200/80 bg-blue-50/70 px-3 py-2.5">
+        <div className="flex items-start gap-2 rounded-lg border border-blue-200/80 bg-blue-50/70 px-3 py-2">
           <ShieldCheck
             size={15}
             strokeWidth={2.25}
             className="mt-0.5 shrink-0 text-blue-600"
           />
           <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="text-[0.74rem] font-bold text-blue-800">
+            <span className="text-[0.72rem] font-bold text-blue-800">
               System-managed metadata
             </span>
-            <span className="text-[0.68rem] font-semibold leading-4 text-blue-600">
-              This resource is managed by the Cluster and its metadata cannot be
-              changed here.
+            <span className="text-[0.65rem] font-semibold leading-4 text-blue-600">
+              Managed by the Cluster; metadata cannot be changed here.
             </span>
           </div>
         </div>
@@ -86,18 +85,18 @@ const MetadataEdit = (props: {
 
       <SimpleGrid
         cols={{ base: 1, sm: props.skipDisplayName ? 1 : 2 }}
-        spacing="md"
-        verticalSpacing="md"
+        spacing="sm"
+        verticalSpacing="sm"
       >
         <TextInput
           value={getShortNameFromStr(req.name)}
           label="Name"
           description={
             props.isUpdateMode
-              ? "Resource names are immutable after creation"
+              ? "Names are immutable after creation."
               : props.parentName
-                ? `Created under ${props.parentName}`
-                : "A unique name used by the Cluster API"
+                ? `Unique name under ${props.parentName}.`
+                : "Must be unique within this API, version, and kind."
           }
           placeholder="my-resource"
           required
@@ -122,7 +121,7 @@ const MetadataEdit = (props: {
           <TextInput
             value={req.displayName}
             label="Display name"
-            description="A friendly name shown throughout the console"
+            description="Optional public name; it does not need to be unique."
             placeholder="My Resource"
             disabled={isSystem}
             leftSection={<Type size={13} strokeWidth={2.25} />}
@@ -134,56 +133,58 @@ const MetadataEdit = (props: {
         )}
       </SimpleGrid>
 
-      <TagsInput
-        label="Tags"
-        disabled={isSystem}
-        placeholder="Add a tag and press Enter"
-        description="Use tags to organize and identify related resources"
-        value={req.tags}
-        leftSection={<Tag size={13} strokeWidth={2.25} />}
-        onChange={(tags) => update({ tags })}
-        clearable
-        styles={{
-          ...sharedInputStyles,
-          pill: {
-            height: "24px",
-            fontSize: "0.68rem",
-            fontWeight: 700,
-            backgroundColor: "#f1f5f9",
-            color: "#475569",
-            border: "1px solid #e2e8f0",
-            borderRadius: "6px",
-          },
-          input: {
-            ...sharedInputStyles.input,
-            minHeight: "40px",
-          },
-        }}
-      />
+      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm" verticalSpacing="sm">
+        <TagsInput
+          label="Tags"
+          disabled={isSystem}
+          placeholder="Add a tag"
+          description="Optional tags that classify this resource."
+          value={req.tags}
+          leftSection={<Tag size={13} strokeWidth={2.25} />}
+          onChange={(tags) => update({ tags })}
+          clearable
+          styles={{
+            ...sharedInputStyles,
+            pill: {
+              height: "22px",
+              fontSize: "0.68rem",
+              fontWeight: 700,
+              backgroundColor: "#f1f5f9",
+              color: "#475569",
+              border: "1px solid #e2e8f0",
+              borderRadius: "6px",
+            },
+            input: {
+              ...sharedInputStyles.input,
+              minHeight: "36px",
+            },
+          }}
+        />
 
-      <Textarea
-        value={req.description}
-        disabled={isSystem}
-        label="Description"
-        description="Document the purpose of this resource for other administrators"
-        placeholder="Describe what this resource is used for…"
-        minRows={3}
-        autosize
-        maxRows={7}
-        leftSection={<AlignLeft size={13} strokeWidth={2.25} />}
-        onChange={(event) =>
-          update({ description: event.currentTarget.value })
-        }
-        styles={{
-          ...sharedInputStyles,
-          input: {
-            ...sharedInputStyles.input,
-            lineHeight: 1.55,
-            paddingTop: "10px",
-            paddingBottom: "10px",
-          },
-        }}
-      />
+        <Textarea
+          value={req.description}
+          disabled={isSystem}
+          label="Description"
+          description="Short description of this resource, up to 1000 characters."
+          placeholder="Describe this resource…"
+          minRows={2}
+          autosize
+          maxRows={4}
+          leftSection={<AlignLeft size={13} strokeWidth={2.25} />}
+          onChange={(event) =>
+            update({ description: event.currentTarget.value })
+          }
+          styles={{
+            ...sharedInputStyles,
+            input: {
+              ...sharedInputStyles.input,
+              lineHeight: 1.45,
+              paddingTop: "8px",
+              paddingBottom: "8px",
+            },
+          }}
+        />
+      </SimpleGrid>
     </div>
   );
 };
