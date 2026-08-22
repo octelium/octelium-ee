@@ -365,6 +365,14 @@ func TestPolicyGetExpression(t *testing.T) {
 	}
 
 	{
+		assertPolicyExpression(t, srv, policyTimeDayType(enterprisev1.Condition_Expression_TimeDayType_WEEKDAY, ""), `time.isWeekday(now())`)
+	}
+
+	{
+		assertPolicyExpression(t, srv, policyTimeDayType(enterprisev1.Condition_Expression_TimeDayType_WEEKEND, "America/Los_Angeles"), `time.isWeekendInTZ(now(), "America/Los_Angeles")`)
+	}
+
+	{
 		assertPolicyExpression(t, srv, policyRequestHTTPPathExact("/api"), `ctx.request.http.path == "/api"`)
 	}
 
@@ -1003,6 +1011,22 @@ func TestPolicyValidateExpressionInvalid(t *testing.T) {
 	}
 
 	{
+		err := srv.validateExpression(ctx, &enterprisev1.Condition_Expression{
+			Type: &enterprisev1.Condition_Expression_TimeDayType_{
+				TimeDayType: &enterprisev1.Condition_Expression_TimeDayType{},
+			},
+		})
+		assert.NotNil(t, err)
+		assert.True(t, grpcerr.IsInvalidArg(err))
+	}
+
+	{
+		err := srv.validateExpression(ctx, policyTimeDayType(enterprisev1.Condition_Expression_TimeDayType_WEEKDAY, "Not/A_Timezone"))
+		assert.NotNil(t, err)
+		assert.True(t, grpcerr.IsInvalidArg(err))
+	}
+
+	{
 		err := srv.validateExpression(ctx, policyRequestHTTPPathExact(""))
 		assert.NotNil(t, err)
 		assert.True(t, grpcerr.IsInvalidArg(err))
@@ -1264,6 +1288,10 @@ func TestPolicyValidateExpressionValidNoRefs(t *testing.T) {
 	}
 
 	{
+		assert.Nil(t, srv.validateExpression(ctx, policyTimeDayType(enterprisev1.Condition_Expression_TimeDayType_WEEKEND, "UTC")))
+	}
+
+	{
 		assert.Nil(t, srv.validateExpression(ctx, policyRequestHTTPPathExact("/api")))
 	}
 
@@ -1450,6 +1478,17 @@ func policyExprCond(expr *enterprisev1.Condition_Expression) *enterprisev1.Condi
 	return &enterprisev1.Condition{
 		Type: &enterprisev1.Condition_Expression_{
 			Expression: expr,
+		},
+	}
+}
+
+func policyTimeDayType(typ enterprisev1.Condition_Expression_TimeDayType_Type, timezone string) *enterprisev1.Condition_Expression {
+	return &enterprisev1.Condition_Expression{
+		Type: &enterprisev1.Condition_Expression_TimeDayType_{
+			TimeDayType: &enterprisev1.Condition_Expression_TimeDayType{
+				Type:     typ,
+				Timezone: timezone,
+			},
 		},
 	}
 }

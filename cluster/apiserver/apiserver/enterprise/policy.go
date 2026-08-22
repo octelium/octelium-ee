@@ -291,6 +291,24 @@ func (s *Server) validateExpression(ctx context.Context, p *enterprisev1.Conditi
 			return grpcutils.InvalidArg("Invalid TimeBefore timestamp")
 		}
 
+	case *enterprisev1.Condition_Expression_TimeDayType_:
+		expr := p.GetTimeDayType()
+		if expr == nil {
+			return grpcutils.InvalidArg("Nil TimeDayType expression")
+		}
+		if expr.GetType() != enterprisev1.Condition_Expression_TimeDayType_WEEKDAY &&
+			expr.GetType() != enterprisev1.Condition_Expression_TimeDayType_WEEKEND {
+			return grpcutils.InvalidArg("TimeDayType type must be set")
+		}
+		if err := validateBoundedString(expr.GetTimezone(), false, "TimeDayType timezone"); err != nil {
+			return err
+		}
+		if expr.GetTimezone() != "" {
+			if _, err := time.LoadLocation(expr.GetTimezone()); err != nil {
+				return grpcutils.InvalidArg("Invalid TimeDayType timezone")
+			}
+		}
+
 	case *enterprisev1.Condition_Expression_RequestHTTPPath_:
 		expr := p.GetRequestHTTPPath()
 		if expr == nil {
@@ -798,6 +816,9 @@ func (s *Server) getExpression(in *enterprisev1.Condition_Expression) string {
 		return fmt.Sprintf(`now() < timestamp(%s)`,
 			celString(in.GetTimeBefore().Timestamp.AsTime().Format(time.RFC3339Nano)))
 
+	case *enterprisev1.Condition_Expression_TimeDayType_:
+		return timeDayTypeCEL(in.GetTimeDayType())
+
 	case *enterprisev1.Condition_Expression_RequestHTTPPath_:
 		return stringMatchCEL("ctx.request.http.path", in.GetRequestHTTPPath().GetMatch(), nil)
 
@@ -1280,6 +1301,21 @@ func andCEL(items ...string) string {
 	}
 
 	return strings.Join(ret, " && ")
+}
+
+func timeDayTypeCEL(expr *enterprisev1.Condition_Expression_TimeDayType) string {
+	weekday := expr.GetType() == enterprisev1.Condition_Expression_TimeDayType_WEEKDAY
+	baseFunc := "time.isWeekend"
+	tzFunc := "time.isWeekendInTZ"
+	if weekday {
+		baseFunc = "time.isWeekday"
+		tzFunc = "time.isWeekdayInTZ"
+	}
+
+	if expr.GetTimezone() == "" {
+		return fmt.Sprintf(`%s(now())`, baseFunc)
+	}
+	return fmt.Sprintf(`%s(now(), %s)`, tzFunc, celString(expr.GetTimezone()))
 }
 
 func validateBoundedString(v string, required bool, field string) error {

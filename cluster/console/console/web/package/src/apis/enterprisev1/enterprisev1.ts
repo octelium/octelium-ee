@@ -8630,6 +8630,14 @@ export interface Condition_Expression {
          */
         requestSOCKS5AddressType: Condition_Expression_RequestSOCKS5AddressType;
     } | {
+        oneofKind: "timeDayType";
+        /**
+         * TimeDayType matches whether the current day is a weekday or weekend.
+         *
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.TimeDayType timeDayType = 100
+         */
+        timeDayType: Condition_Expression_TimeDayType;
+    } | {
         oneofKind: undefined;
     };
 }
@@ -10162,6 +10170,42 @@ export enum Condition_Expression_APIServerAccess_Service {
      * @generated from protobuf enum value: REVIEWER = 4;
      */
     REVIEWER = 4
+}
+/**
+ * TimeDayType matches the current day as a weekday or weekend day.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.TimeDayType
+ */
+export interface Condition_Expression_TimeDayType {
+    /**
+     * Type is the day type that is matched.
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.TimeDayType.Type type = 1
+     */
+    type: Condition_Expression_TimeDayType_Type;
+    /**
+     * Timezone is an optional IANA timezone name. An empty value means UTC.
+     *
+     * @generated from protobuf field: string timezone = 2
+     */
+    timezone: string;
+}
+/**
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.Condition.Expression.TimeDayType.Type
+ */
+export enum Condition_Expression_TimeDayType_Type {
+    /**
+     * @generated from protobuf enum value: TYPE_UNSET = 0;
+     */
+    TYPE_UNSET = 0,
+    /**
+     * @generated from protobuf enum value: WEEKDAY = 1;
+     */
+    WEEKDAY = 1,
+    /**
+     * @generated from protobuf enum value: WEEKEND = 2;
+     */
+    WEEKEND = 2
 }
 /**
  * SynchronizeDirectoryProviderRequest is the request of the
@@ -25002,7 +25046,8 @@ class Condition_Expression$Type extends MessageType<Condition_Expression> {
             { no: 96, name: "requestSOCKS5", kind: "message", oneof: "type", T: () => Condition_Expression_RequestSOCKS5 },
             { no: 97, name: "requestSOCKS5Host", kind: "message", oneof: "type", T: () => Condition_Expression_RequestSOCKS5Host },
             { no: 98, name: "requestSOCKS5Port", kind: "message", oneof: "type", T: () => Condition_Expression_RequestSOCKS5Port },
-            { no: 99, name: "requestSOCKS5AddressType", kind: "message", oneof: "type", T: () => Condition_Expression_RequestSOCKS5AddressType }
+            { no: 99, name: "requestSOCKS5AddressType", kind: "message", oneof: "type", T: () => Condition_Expression_RequestSOCKS5AddressType },
+            { no: 100, name: "timeDayType", kind: "message", oneof: "type", T: () => Condition_Expression_TimeDayType }
         ]);
     }
     create(value?: PartialMessage<Condition_Expression>): Condition_Expression {
@@ -25605,6 +25650,12 @@ class Condition_Expression$Type extends MessageType<Condition_Expression> {
                         requestSOCKS5AddressType: Condition_Expression_RequestSOCKS5AddressType.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestSOCKS5AddressType)
                     };
                     break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.TimeDayType timeDayType */ 100:
+                    message.type = {
+                        oneofKind: "timeDayType",
+                        timeDayType: Condition_Expression_TimeDayType.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).timeDayType)
+                    };
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -25911,6 +25962,9 @@ class Condition_Expression$Type extends MessageType<Condition_Expression> {
         /* octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5AddressType requestSOCKS5AddressType = 99; */
         if (message.type.oneofKind === "requestSOCKS5AddressType")
             Condition_Expression_RequestSOCKS5AddressType.internalBinaryWrite(message.type.requestSOCKS5AddressType, writer.tag(99, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.TimeDayType timeDayType = 100; */
+        if (message.type.oneofKind === "timeDayType")
+            Condition_Expression_TimeDayType.internalBinaryWrite(message.type.timeDayType, writer.tag(100, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -30624,6 +30678,61 @@ class Condition_Expression_APIServerAccess$Type extends MessageType<Condition_Ex
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess
  */
 export const Condition_Expression_APIServerAccess = new Condition_Expression_APIServerAccess$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_TimeDayType$Type extends MessageType<Condition_Expression_TimeDayType> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.TimeDayType", [
+            { no: 1, name: "type", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.Condition.Expression.TimeDayType.Type", Condition_Expression_TimeDayType_Type] },
+            { no: 2, name: "timezone", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_TimeDayType>): Condition_Expression_TimeDayType {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = 0;
+        message.timezone = "";
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_TimeDayType>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_TimeDayType): Condition_Expression_TimeDayType {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.TimeDayType.Type type */ 1:
+                    message.type = reader.int32();
+                    break;
+                case /* string timezone */ 2:
+                    message.timezone = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_TimeDayType, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.TimeDayType.Type type = 1; */
+        if (message.type !== 0)
+            writer.tag(1, WireType.Varint).int32(message.type);
+        /* string timezone = 2; */
+        if (message.timezone !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.timezone);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.TimeDayType
+ */
+export const Condition_Expression_TimeDayType = new Condition_Expression_TimeDayType$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class SynchronizeDirectoryProviderRequest$Type extends MessageType<SynchronizeDirectoryProviderRequest> {
     constructor() {

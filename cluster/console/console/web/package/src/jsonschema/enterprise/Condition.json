@@ -634,6 +634,11 @@
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5AddressType",
                     "additionalProperties": false,
                     "description": "RequestSOCKS5AddressType matches the address type of the SOCKS5 connection."
+                },
+                "timeDayType": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.TimeDayType",
+                    "additionalProperties": false,
+                    "description": "TimeDayType matches whether the current day is a weekday or weekend."
                 }
             },
             "additionalProperties": false,
@@ -1133,6 +1138,11 @@
                                         "required": [
                                             "requestSOCKS5AddressType"
                                         ]
+                                    },
+                                    {
+                                        "required": [
+                                            "timeDayType"
+                                        ]
                                     }
                                 ]
                             }
@@ -1625,6 +1635,11 @@
                         {
                             "required": [
                                 "requestSOCKS5AddressType"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "timeDayType"
                             ]
                         }
                     ]
@@ -3039,6 +3054,27 @@
             "type": "object",
             "title": "Time Before",
             "description": "TimeBefore matches only before a specific point in time"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.TimeDayType": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "TYPE_UNSET",
+                        "WEEKDAY",
+                        "WEEKEND"
+                    ],
+                    "type": "string",
+                    "title": "Type"
+                },
+                "timezone": {
+                    "type": "string",
+                    "description": "Timezone is an optional IANA timezone name. An empty value means UTC."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Time Day Type",
+            "description": "TimeDayType matches the current day as a weekday or weekend day."
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch": {
             "properties": {
