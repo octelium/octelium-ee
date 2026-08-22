@@ -1,7 +1,7 @@
 import * as CoreP from "@/apis/corev1/corev1";
 
 import { IdentityProvider_Spec_OIDCIdentityToken } from "@/apis/corev1/corev1";
-import SelectSecret from "@/components/ResourceLayout/SelectSecret";
+import SelectResource from "@/components/ResourceLayout/SelectResource";
 import TextAreaCustom from "@/components/TextAreaCustom";
 import { getDomain } from "@/utils";
 import { cloneResource } from "@/utils/pb";
@@ -69,13 +69,14 @@ const SegmentedTabsList = (props: {
     });
 
   return (
-    <div className={`overflow-x-auto ${props.className ?? ""}`}>
+    <div className={`w-full overflow-x-auto ${props.className ?? ""}`}>
       <SegmentedControl
-        size="xs"
+        size="sm"
         value={value ?? data[0]?.value}
         onChange={onChange}
         data={data}
-        className="min-w-max"
+        fullWidth
+        className="w-full"
       />
     </div>
   );
@@ -111,7 +112,7 @@ const Edit = (props: {
       <Group grow>
         <TextInput
           label="Display Name"
-          description="This is the public Display Name to be shown for Users seeking to log in"
+          description="Public name shown to Users on the sign-in screen."
           placeholder="Log in with MyIDP"
           value={req.spec!.displayName}
           onChange={(v) => {
@@ -122,7 +123,7 @@ const Edit = (props: {
 
         <Switch
           label="Disable User Email as identity"
-          description="Disable automatically using the User email as an identifier"
+          description="Require an explicit User identity instead of matching the email returned by this provider."
           checked={req.spec!.disableEmailAsIdentity}
           onChange={(v) => {
             req.spec!.disableEmailAsIdentity = v.target.checked;
@@ -131,7 +132,7 @@ const Edit = (props: {
         />
         <Switch
           label="Disabled"
-          description="Disable/deactivate the IdentityProvider"
+          description="Disable this IdentityProvider so it cannot be used for authentication."
           checked={req.spec!.isDisabled}
           onChange={(v) => {
             req.spec!.isDisabled = v.target.checked;
@@ -228,6 +229,7 @@ const Edit = (props: {
               <TextInput
                 required
                 label="Client ID"
+                description="GitHub OAuth2 application client ID."
                 placeholder="abcdefgh"
                 value={req.spec!.type.github.clientID}
                 onChange={(v) => {
@@ -239,10 +241,11 @@ const Edit = (props: {
                   updateReq();
                 }}
               />
-              <SelectSecret
+              <SelectResource
                 api="core"
+                kind="Secret"
                 label="Client Secret"
-                description="Select the Secret of the client secret"
+                description="Secret containing the GitHub OAuth2 client secret."
                 defaultValue={
                   req.spec!.type.github.clientSecret?.type.oneofKind ===
                   "fromSecret"
@@ -258,7 +261,7 @@ const Edit = (props: {
                     oneofKind: "fromSecret";
                     fromSecret: string;
                   };
-                  g.fromSecret = v ?? "";
+                  g.fromSecret = v?.metadata?.name ?? "";
                   updateReq();
                 }}
               />
@@ -273,6 +276,7 @@ const Edit = (props: {
                 <TextInput
                   required
                   label="Client ID"
+                  description="OIDC OAuth2 application client ID."
                   placeholder="abcdefgh"
                   value={req.spec!.type.oidc.clientID}
                   onChange={(v) => {
@@ -284,10 +288,11 @@ const Edit = (props: {
                     updateReq();
                   }}
                 />
-                <SelectSecret
+                <SelectResource
                   api="core"
+                  kind="Secret"
                   label="Client Secret"
-                  description="Select the Secret of the client secret"
+                  description="Secret containing the OIDC client secret."
                   defaultValue={
                     req.spec!.type.oidc.clientSecret?.type.oneofKind ===
                     "fromSecret"
@@ -303,7 +308,7 @@ const Edit = (props: {
                       oneofKind: "fromSecret";
                       fromSecret: string;
                     };
-                    g.fromSecret = v ?? "";
+                    g.fromSecret = v?.metadata?.name ?? "";
                     updateReq();
                   }}
                 />
@@ -312,7 +317,7 @@ const Edit = (props: {
                 <TextInput
                   required
                   label="Issuer URL"
-                  description={`The issuer URL is where the OIDC configuration can be obtained automatically by adding this IssuerURL to the path "/.well-known/openid-configuration"`}
+                  description="Issuer URL used to discover the OIDC configuration and signing keys."
                   placeholder="https://accounts.google.com"
                   value={req.spec!.type.oidc.issuerURL}
                   onChange={(v) => {
@@ -327,7 +332,7 @@ const Edit = (props: {
                 <TagsInput
                   label="Scopes"
                   placeholder="email, scope-1, scope-2"
-                  description={`Scopes are the additional scopes to "openid". If not set, the default array is set to ["profile", "email"]`}
+                  description="Additional scopes beyond openid; defaults to profile and email when omitted."
                   value={req.spec!.type.oidc.scopes}
                   onChange={(v) => {
                     let f = req.spec!.type as {
@@ -342,7 +347,7 @@ const Edit = (props: {
               <Group grow>
                 <TextInput
                   label="Identifier Claim"
-                  description="Override the default claim used as the identifier (default: email)"
+                  description="Claim whose value identifies the User; email is used by default."
                   placeholder="email"
                   value={req.spec!.type.oidc.identifierClaim}
                   onChange={(v) => {
@@ -356,7 +361,7 @@ const Edit = (props: {
                 />
                 <Switch
                   label="Check email verified"
-                  description="Check that the email_verified claim is set to true"
+                  description="Accept only tokens whose email_verified claim is true."
                   checked={req.spec!.type.oidc.checkEmailVerified}
                   onChange={(v) => {
                     let f = req.spec!.type as {
@@ -369,7 +374,7 @@ const Edit = (props: {
                 />
                 <Switch
                   label="Use UserInfo endpoint"
-                  description="Obtain claims via the UserInfo endpoint"
+                  description="Fetch additional claims from the provider's UserInfo endpoint."
                   checked={req.spec!.type.oidc.useUserInfoEndpoint}
                   onChange={(v) => {
                     let f = req.spec!.type as {
@@ -391,7 +396,7 @@ const Edit = (props: {
               <Group grow>
                 <TextInput
                   label="Entity ID"
-                  description={`EntityID is the entity ID. If not set, then the value "https://<CLUSTER_DOMAIN>" is used as the default entity ID.`}
+                  description="SAML entity ID; the Cluster domain is used when omitted."
                   placeholder="https://accounts.google.com"
                   value={req.spec!.type.saml.entityID}
                   onChange={(v) => {
@@ -405,7 +410,7 @@ const Edit = (props: {
                 />
                 <TextInput
                   label="Identifier Attribute"
-                  description={`The attribute of the identifier used for authentication. If not set, then the default value "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress" is used instead.`}
+                  description="SAML attribute used as the User identifier; email address is used by default."
                   placeholder="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
                   value={req.spec!.type.saml.identifierAttribute}
                   onChange={(v) => {
@@ -419,7 +424,7 @@ const Edit = (props: {
                 />
                 <Switch
                   label="Force Authn"
-                  description="Forces re-authentication by the IdP even if the user has a valid SSO session"
+                  description="Force re-authentication even when the User has an active SSO session."
                   checked={req.spec!.type.saml.forceAuthn}
                   onChange={(v) => {
                     let f = req.spec!.type as {
@@ -570,6 +575,7 @@ const Edit = (props: {
                     <TextAreaCustom
                       label="Metadata"
                       required
+                      description="Inline SAML 2.0 metadata XML used to configure the provider."
                       placeholder={`<?xml version="1.0" encoding="UTF-8"?><md:EntityDescriptor ...>`}
                       rows={8}
                       value={req.spec!.type.saml.metadataType.metadata}
@@ -599,7 +605,7 @@ const Edit = (props: {
               <Group grow>
                 <TextInput
                   label="Issuer"
-                  description="Match the issuer in the identity token to this value"
+                  description="Expected value of the identity token's iss claim."
                   placeholder="http://example.com"
                   value={req.spec!.type.oidcIdentityToken.issuer}
                   onChange={(v) => {
@@ -613,7 +619,7 @@ const Edit = (props: {
                 />
                 <TextInput
                   label="Audience"
-                  description={`Match the audience of the identity token to this value. By default it is set to "https://${getDomain()}"`}
+                  description={`Expected value of the identity token's aud claim; defaults to https://${getDomain()}.`}
                   placeholder="my-custom-aud"
                   value={req.spec!.type.oidcIdentityToken.audience}
                   onChange={(v) => {
@@ -719,7 +725,7 @@ const Edit = (props: {
                     "issuerURL" && (
                     <TextInput
                       label="Issuer URL"
-                      description="Set the OIDC issuer URL"
+                      description="Issuer URL from which the OIDC configuration and JWKS are discovered."
                       placeholder="https://accounts.google.com"
                       value={req.spec!.type.oidcIdentityToken.type.issuerURL}
                       onChange={(v) => {
@@ -743,7 +749,7 @@ const Edit = (props: {
                     "jwksURL" && (
                     <TextInput
                       label="JWKS URL"
-                      description="Set the JWKS URL"
+                      description="URL of the issuer's JSON Web Key Set."
                       placeholder="https://www.googleapis.com/oauth2/v3/certs"
                       value={req.spec!.type.oidcIdentityToken.type.jwksURL}
                       onChange={(v) => {
@@ -767,6 +773,7 @@ const Edit = (props: {
                     "jwksContent" && (
                     <TextAreaCustom
                       label="JWKS Content"
+                      description="Inline JSON Web Key Set used to validate identity tokens."
                       placeholder={`{\n  "keys": [\n    {\n      "use": "sig",\n      "kty": "RSA",\n      ...\n    }\n  ]\n}`}
                       value={req.spec!.type.oidcIdentityToken.type.jwksContent}
                       onChange={(v) => {
