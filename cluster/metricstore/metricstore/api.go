@@ -24,6 +24,7 @@ import (
 
 const (
 	maxDescriptorResults      = 5000
+	maxDescriptorCandidates   = 8
 	attributeEstimateLookback = rawMetricRetention
 )
 
@@ -345,6 +346,33 @@ func metricAttributeGroupCapability(_ string, _ uint64) (bool, string) {
 }
 
 func (s *srvMetric) resolveDescriptor(ctx context.Context, q *querySpec) (*vmetricsv1.MetricDescriptor, error) {
+	descriptors, err := s.loadDescriptorCandidates(ctx, q, false)
+	if err != nil {
+		return nil, err
+	}
+	if len(descriptors) == 0 {
+		return nil, status.Error(codes.NotFound, "metric descriptor not found")
+	}
+
+	if len(descriptors) > 1 {
+		descriptors, err = s.loadDescriptorCandidates(ctx, q, true)
+		if err != nil {
+			return nil, err
+		}
+		if len(descriptors) != 1 {
+			return nil, status.Error(codes.FailedPrecondition,
+				"metric name resolves to multiple incompatible descriptors; query by descriptorID")
+		}
+	}
+
+	if err := s.populateDescriptorAttributes(ctx, descriptors, q.req.Component); err != nil {
+		return nil, err
+	}
+	return descriptors[0], nil
+}
+
+func (s *srvMetric) loadDescriptorCandidates(ctx context.Context, q *querySpec,
+	activeOnly bool) ([]*vmetricsv1.MetricDescriptor, error) {
 	where := []string{"1 = 1"}
 	args := []any{}
 
@@ -356,9 +384,15 @@ func (s *srvMetric) resolveDescriptor(ctx context.Context, q *querySpec) (*vmetr
 		args = append(args, strings.TrimSpace(q.req.Metric.GetName()))
 	}
 
-	activeSQL, activeArgs := descriptorActiveSeriesSQL("d", q.req.Component, q.from, q.to, q.snapshot)
-	where = append(where, activeSQL)
-	args = append(args, activeArgs...)
+	if activeOnly {
+		activeSQL, activeArgs := descriptorActiveSeriesSQL("d", q.req.Component, q.from, q.to, q.snapshot)
+		where = append(where, activeSQL)
+		args = append(args, activeArgs...)
+	} else {
+		componentWhere, componentArgs := descriptorComponentSQL(q.req.Component, q.snapshot)
+		where = append(where, componentWhere...)
+		args = append(args, componentArgs...)
+	}
 
 	query := `
 SELECT
@@ -368,8 +402,9 @@ SELECT
 FROM metric_descriptors d
 WHERE ` + strings.Join(where, " AND ") + `
 ORDER BY d.id
-LIMIT 2
+LIMIT ?
 `
+	args = append(args, maxDescriptorCandidates)
 
 	rows, err := s.s.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -377,28 +412,15 @@ LIMIT 2
 	}
 	defer rows.Close()
 
-	var descriptors []*vmetricsv1.MetricDescriptor
+	var ret []*vmetricsv1.MetricDescriptor
 	for rows.Next() {
 		descriptor, err := scanMetricDescriptor(rows)
 		if err != nil {
 			return nil, err
 		}
-		descriptors = append(descriptors, descriptor)
+		ret = append(ret, descriptor)
 	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	if len(descriptors) == 0 {
-		return nil, status.Error(codes.NotFound, "metric descriptor not found")
-	}
-	if len(descriptors) > 1 {
-		return nil, status.Error(codes.FailedPrecondition,
-			"metric name resolves to multiple incompatible descriptors; query by descriptorID")
-	}
-	if err := s.populateDescriptorAttributes(ctx, descriptors, q.req.Component); err != nil {
-		return nil, err
-	}
-	return descriptors[0], nil
+	return ret, rows.Err()
 }
 
 func descriptorActiveSeriesSQL(alias string, component *vmetricsv1.ComponentSelector,

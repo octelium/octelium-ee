@@ -116,8 +116,14 @@ const NON_RETRYABLE_METRIC_CODES = new Set([
   "RESOURCE_EXHAUSTED",
 ]);
 
+export const metricErrorCode = (error: unknown): string | undefined =>
+  (error as { code?: string })?.code?.toUpperCase();
+
+export const isMetricNotRecorded = (error: unknown): boolean =>
+  metricErrorCode(error) === "NOT_FOUND";
+
 export const retryMetricQuery = (failureCount: number, error: unknown) => {
-  const code = (error as { code?: string })?.code?.toUpperCase();
+  const code = metricErrorCode(error);
   return failureCount < 2 && (!code || !NON_RETRYABLE_METRIC_CODES.has(code));
 };
 
@@ -813,6 +819,9 @@ const MetricChart = (props: MetricChartProps) => {
   const errorMessage =
     qry.error instanceof Error ? qry.error.message : "Unable to load this metric";
 
+  const notRecorded = qry.isError && isMetricNotRecorded(qry.error);
+  const failed = qry.isError && !notRecorded;
+
   return (
     <section
       className="my-3 flex w-full flex-col rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-4"
@@ -836,7 +845,7 @@ const MetricChart = (props: MetricChartProps) => {
                 Updating
               </span>
             )}
-            {qry.isError && series.length > 0 && (
+            {failed && series.length > 0 && (
               <span className="flex items-center gap-1.5 text-[0.65rem] font-semibold text-amber-600">
                 <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
                 Refresh failed · showing previous data
@@ -909,7 +918,7 @@ const MetricChart = (props: MetricChartProps) => {
         </div>
       )}
 
-      {qry.isError && series.length === 0 && (
+      {failed && series.length === 0 && (
         <div
           style={{ height }}
           className="flex w-full items-center justify-center px-4 text-center"
@@ -932,7 +941,7 @@ const MetricChart = (props: MetricChartProps) => {
         </div>
       )}
 
-      {!qry.isLoading && !qry.isError && series.length === 0 && (
+      {!qry.isLoading && !failed && series.length === 0 && (
         <div
           style={{ height }}
           className="flex w-full items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/60 px-4 text-center"
@@ -940,7 +949,9 @@ const MetricChart = (props: MetricChartProps) => {
           <div>
             <p className="text-sm font-bold text-slate-600">No metric data</p>
             <p className="mt-1 text-xs font-semibold text-slate-400">
-              No numeric samples were returned for this time range.
+              {notRecorded
+                ? "This metric has not been recorded yet."
+                : "No numeric samples were returned for this time range."}
             </p>
           </div>
         </div>

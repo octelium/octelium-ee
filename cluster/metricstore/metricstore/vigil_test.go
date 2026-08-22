@@ -20,6 +20,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func newTestSrvMetric(t *testing.T) *srvMetric {
@@ -85,6 +87,23 @@ func appendTestUpDownCounter(sm pmetric.ScopeMetrics, name string, start, at tim
 	point.SetTimestamp(pcommon.NewTimestampFromTime(at))
 	point.SetIntValue(value)
 	putTestAttributes(point.Attributes(), attrs)
+}
+
+func appendTestHistogram(sm pmetric.ScopeMetrics, name, unit string, start, at time.Time) {
+	metric := sm.Metrics().AppendEmpty()
+	metric.SetName(name)
+	metric.SetUnit(unit)
+
+	histogram := metric.SetEmptyHistogram()
+	histogram.SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+
+	point := histogram.DataPoints().AppendEmpty()
+	point.SetStartTimestamp(pcommon.NewTimestampFromTime(start))
+	point.SetTimestamp(pcommon.NewTimestampFromTime(at))
+	point.ExplicitBounds().FromRaw([]float64{10, 100})
+	point.BucketCounts().FromRaw([]uint64{1, 1, 1})
+	point.SetCount(3)
+	point.SetSum(100)
 }
 
 func storeTestMetrics(t *testing.T, s *srvMetric, metrics pmetric.Metrics) {
@@ -300,4 +319,141 @@ func TestVigilCatalogItemsResolveTheirGroupByKeys(t *testing.T) {
 		require.NoError(t, err, item.Id)
 		assert.NotEmpty(t, res.Series, item.Id)
 	}
+}
+
+func testTokensQuery(from, to time.Time, component *vmetricsv1.ComponentSelector,
+	filters []*vmetricsv1.AttributeFilter) *vmetricsv1.QueryMetricsRequest {
+	return &vmetricsv1.QueryMetricsRequest{
+		Metric: &vmetricsv1.MetricSelector{
+			Selector: &vmetricsv1.MetricSelector_Name{Name: "llm.tokens.input"},
+			Kind:     vmetricsv1.MetricDescriptor_COUNTER,
+		},
+		Component: component,
+		TimeRange: testMetricTimeRange(from, to),
+		Step:      testMetricStep(),
+		Operation: &vmetricsv1.QueryOperation{
+			Type: &vmetricsv1.QueryOperation_Counter{Counter: &vmetricsv1.CounterOperation{
+				Function: vmetricsv1.CounterOperation_RATE,
+			}},
+		},
+		Filters:           filters,
+		SeriesAggregation: vmetricsv1.QueryMetricsRequest_SUM,
+	}
+}
+
+func TestQuietTimeRangeReturnsAnEmptyResultInsteadOfNotFound(t *testing.T) {
+	s := newTestSrvMetric(t)
+	ctx := context.Background()
+
+	now := time.Now().UTC().Truncate(time.Minute)
+	component := &vmetricsv1.ComponentSelector{Type: "vigil", Namespace: "octelium"}
+
+	metrics, sm := newVigilResourceMetrics()
+	appendTestCounter(sm, "llm.tokens.input", now.Add(-3*time.Hour), now.Add(-2*time.Hour), 100,
+		map[string]any{
+			"octelium.vigil.svc.name": "svc-llm",
+			"octelium.vigil.svc.mode": "LLM",
+			"req.llm.model":           "claude-opus-5",
+		})
+	storeTestMetrics(t, s, metrics)
+
+	res, err := s.QueryMetrics(ctx, testTokensQuery(now.Add(-4*time.Hour), now, component, nil))
+	require.NoError(t, err)
+	assert.NotEmpty(t, res.Series)
+
+	res, err = s.QueryMetrics(ctx, testTokensQuery(now.Add(-15*time.Minute), now, component, nil))
+	require.NoError(t, err)
+	assert.Empty(t, res.Series)
+	assert.NotNil(t, res.SourceDescriptor)
+
+	res, err = s.QueryMetrics(ctx, testTokensQuery(now.Add(-4*time.Hour), now, component,
+		[]*vmetricsv1.AttributeFilter{
+			{
+				Key:      "octelium.vigil.svc.name",
+				Operator: vmetricsv1.AttributeFilter_EQ,
+				Value: &vmetricsv1.AttributeValue{
+					Value: &vmetricsv1.AttributeValue_StringValue{StringValue: "svc-other"},
+				},
+			},
+		}))
+	require.NoError(t, err)
+	assert.Empty(t, res.Series)
+}
+
+func TestUnknownMetricNameStaysNotFound(t *testing.T) {
+	s := newTestSrvMetric(t)
+	ctx := context.Background()
+
+	now := time.Now().UTC().Truncate(time.Minute)
+
+	metrics, sm := newVigilResourceMetrics()
+	appendTestCounter(sm, "llm.tokens.input", now.Add(-3*time.Hour), now.Add(-2*time.Hour), 100,
+		map[string]any{"octelium.vigil.svc.name": "svc-llm"})
+	storeTestMetrics(t, s, metrics)
+
+	req := testTokensQuery(now.Add(-4*time.Hour), now, nil, nil)
+	req.Metric.Selector = &vmetricsv1.MetricSelector_Name{Name: "llm.tokens.nonexistent"}
+
+	_, err := s.QueryMetrics(ctx, req)
+	require.Error(t, err)
+	assert.Equal(t, codes.NotFound, status.Code(err))
+
+	req = testTokensQuery(now.Add(-4*time.Hour), now,
+		&vmetricsv1.ComponentSelector{Type: "rscserver"}, nil)
+
+	_, err = s.QueryMetrics(ctx, req)
+	require.Error(t, err)
+	assert.Equal(t, codes.NotFound, status.Code(err))
+}
+
+func TestAmbiguousMetricNameIsResolvedByComponent(t *testing.T) {
+	s := newTestSrvMetric(t)
+	ctx := context.Background()
+
+	now := time.Now().UTC().Truncate(time.Minute)
+	start, at := now.Add(-3*time.Hour), now.Add(-2*time.Hour)
+
+	vigil, vigilScope := newVigilResourceMetrics()
+	appendTestHistogram(vigilScope, "req.duration", "ms", start, at)
+	storeTestMetrics(t, s, vigil)
+
+	rscserver := pmetric.NewMetrics()
+	rm := rscserver.ResourceMetrics().AppendEmpty()
+	putTestAttributes(rm.Resource().Attributes(), map[string]any{
+		"octelium.component.type":      "rscserver",
+		"octelium.component.namespace": "octelium",
+		"octelium.component.uid":       "octelium-rscserver-1",
+	})
+	rscserverScope := rm.ScopeMetrics().AppendEmpty()
+	rscserverScope.Scope().SetName("default")
+	appendTestHistogram(rscserverScope, "req.duration", "us", start, at)
+	storeTestMetrics(t, s, rscserver)
+
+	query := func(component *vmetricsv1.ComponentSelector, from time.Time) error {
+		_, err := s.QueryMetrics(ctx, &vmetricsv1.QueryMetricsRequest{
+			Metric: &vmetricsv1.MetricSelector{
+				Selector: &vmetricsv1.MetricSelector_Name{Name: "req.duration"},
+				Kind:     vmetricsv1.MetricDescriptor_HISTOGRAM,
+			},
+			Component: component,
+			TimeRange: testMetricTimeRange(from, now),
+			Step:      testMetricStep(),
+			Operation: &vmetricsv1.QueryOperation{
+				Type: &vmetricsv1.QueryOperation_Histogram{Histogram: &vmetricsv1.HistogramOperation{
+					Function:  vmetricsv1.HistogramOperation_QUANTILE,
+					Quantiles: []float64{0.95},
+				}},
+			},
+			SeriesAggregation: vmetricsv1.QueryMetricsRequest_MERGE,
+		})
+		return err
+	}
+
+	assert.NoError(t, query(&vmetricsv1.ComponentSelector{Type: "vigil"}, now.Add(-4*time.Hour)))
+	assert.NoError(t, query(&vmetricsv1.ComponentSelector{Type: "rscserver"}, now.Add(-4*time.Hour)))
+	assert.NoError(t, query(&vmetricsv1.ComponentSelector{Type: "vigil"}, now.Add(-15*time.Minute)))
+
+	err := query(nil, now.Add(-4*time.Hour))
+	require.Error(t, err)
+	assert.Equal(t, codes.FailedPrecondition, status.Code(err))
 }
