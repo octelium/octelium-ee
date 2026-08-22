@@ -78,7 +78,7 @@ const Edit = (props: {
 
         <Select
           label="Type"
-          description="The Credential must be either an Authentication Token or a OAuth2 Client Credential"
+          description="Credential type: authentication token, OAuth2 client credential, or access token."
           required
           data={[
             {
@@ -111,7 +111,7 @@ const Edit = (props: {
 
         <Select
           label="Session Type"
-          description="The Credential must be either an Authentication Token or a OAuth2 Client Credential"
+          description="Session type created after this credential authenticates: client or clientless."
           required
           data={[
             {
@@ -137,7 +137,7 @@ const Edit = (props: {
       <Group grow>
         <TimestampPicker
           label="Expires at"
-          description="Set the expiration time for the Credential"
+          description="Timestamp after which this credential can no longer authenticate."
           value={req.spec!.expiresAt}
           isFuture
           onChange={(v) => {
@@ -148,7 +148,7 @@ const Edit = (props: {
 
         <Switch
           label="Disabled"
-          description="Disable/deactivate the Credential"
+          description="Disable the credential and prevent authentication through it."
           checked={req.spec!.isDisabled}
           onChange={(v) => {
             req.spec!.isDisabled = v.target.checked;
@@ -157,20 +157,31 @@ const Edit = (props: {
         />
 
         <NumberInput
-          label="Max Authentication"
-          description="Set the max number of Authentications used by this Credential before expiration"
-          defaultValue={req.spec!.maxAuthentications}
+          label="Max authentications"
+          description="Maximum number of authentications permitted by this credential."
+          value={req.spec!.maxAuthentications}
           min={0}
           max={100000}
           onChange={(v) => {
             req.spec!.maxAuthentications = strToNum(v);
+            updateReq();
+          }}
+        />
+
+        <Switch
+          label="Auto-delete"
+          description="Automatically delete the credential after its authentication limit is reached."
+          checked={req.spec!.autoDelete}
+          onChange={(v) => {
+            req.spec!.autoDelete = v.target.checked;
+            updateReq();
           }}
         />
       </Group>
 
       <EditItem
         title="Authorization"
-        description="Set the Credential Policies"
+        description="Policies copied to sessions created after successful authentication with this credential."
         onUnset={() => {
           req.spec!.authorization = undefined;
           updateReq();

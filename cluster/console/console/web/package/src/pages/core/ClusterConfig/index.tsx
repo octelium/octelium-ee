@@ -73,7 +73,7 @@ const Edit = (props: {
         <div className="w-full">
           <EditItem
             title="DNS"
-            description="Set the Cluster's DNS-related Configuration"
+            description="Configure the Cluster's private DNS service."
             onUnset={() => {
               req.spec!.dns = undefined;
 
@@ -91,7 +91,7 @@ const Edit = (props: {
               <>
                 <EditItem
                   title="Fallback Zone"
-                  description="Set the fallback zone DNS servers for the Cluster's private DNS server Service"
+                  description="Configure upstream DNS servers for names not served by the Cluster."
                   onUnset={() => {
                     req.spec!.dns!.fallbackZone = undefined;
                     updateReq();
@@ -110,7 +110,7 @@ const Edit = (props: {
                       <TagsInput
                         label="Servers"
                         placeholder="1.1.1.1, tls://8.8.8.8"
-                        description="Set one or more Fallback DNS servers. Both raw DNS and DNS over TLS servers are supported"
+                        description="Upstream DNS servers; supports raw DNS addresses and DNS-over-TLS endpoints."
                         value={req.spec!.dns!.fallbackZone!.servers}
                         onChange={(v) => {
                           req.spec!.dns!.fallbackZone!.servers = v;
@@ -121,7 +121,7 @@ const Edit = (props: {
                       <DurationPicker
                         value={req.spec!.dns!.fallbackZone.cacheDuration}
                         title="Cache Duration"
-                        description="Set the cache duration of the DNS server"
+                        description="How long answers from the fallback zone remain cached."
                         onChange={(v) => {
                           req.spec!.dns!.fallbackZone!.cacheDuration = v;
                           updateReq();
@@ -135,7 +135,7 @@ const Edit = (props: {
           </EditItem>
           <EditItem
             title="Gateway"
-            description="Set the Cluster's Gateway-related Configuration"
+            description="Configure Cluster-wide Gateway options."
             onUnset={() => {
               req.spec!.gateway = undefined;
               updateReq();
@@ -153,7 +153,7 @@ const Edit = (props: {
                 <DurationPicker
                   value={req.spec!.gateway!.wireguardKeyRotationDuration}
                   title="WireGuard Key Rotation Duration"
-                  description="Set the duration for the Gateways to periodically rotate their keys"
+                  description="How often Gateway WireGuard keys are rotated."
                   onChange={(v) => {
                     req.spec!.gateway!.wireguardKeyRotationDuration = v;
                     updateReq();
@@ -165,7 +165,7 @@ const Edit = (props: {
 
           <EditItem
             title="Authenticator"
-            description="Set the Global Authenticator-related Configuration"
+            description="Configure Cluster-wide Authenticator and MFA options."
             onUnset={() => {
               req.spec!.authenticator = undefined;
               updateReq();
@@ -184,7 +184,7 @@ const Edit = (props: {
                 <Group grow>
                   <Switch
                     label="Enable Passkey Login"
-                    description="Enabled the ability for Users to login with Passkeys"
+                    description="Allow Users to log in directly with supported resident-key Passkeys."
                     checked={req.spec!.authenticator!.enablePasskeyLogin}
                     onChange={(v) => {
                       req.spec!.authenticator!.enablePasskeyLogin =
@@ -195,7 +195,7 @@ const Edit = (props: {
 
                   <Select
                     label="Default State"
-                    description="Set the default Authenticator state to ACTIVE, PENDING or REJECTED"
+                    description="Default state assigned to newly registered Authenticators."
                     data={[
                       {
                         label: "Active",
@@ -237,7 +237,7 @@ const Edit = (props: {
 
                 <EditItem
                   title="FIDO"
-                  description="Set the Global FIDO-related Configuration"
+                  description="Configure WebAuthn/FIDO registration options."
                   onUnset={() => {
                     req.spec!.authenticator!.fido = undefined;
                     updateReq();
@@ -256,7 +256,7 @@ const Edit = (props: {
                       <Group grow>
                         <Select
                           label="Attestation Conveyance Preference"
-                          description="Set attestation conveyance preference to DIRECT, INDIRECT, NONE or ENTERPRISE"
+                          description="Attestation conveyance preference used during WebAuthn registration."
                           data={[
                             {
                               label: "Direct",
@@ -705,7 +705,7 @@ const Edit = (props: {
 
           <EditItem
             title="Authorization"
-            description="Set the Global Authorization-related Configuration"
+            description="Configure Policies applied to every request in the Cluster."
             onUnset={() => {
               req.spec!.authorization = undefined;
               updateReq();
@@ -747,7 +747,7 @@ const Edit = (props: {
 
           <EditItem
             title="Session"
-            description="Set the Cluster's Session-related Configuration"
+            description="Configure Cluster-wide defaults for Sessions."
             onUnset={() => {
               req.spec!.session = undefined;
               updateReq();
@@ -764,7 +764,7 @@ const Edit = (props: {
               <>
                 <EditItem
                   title="Human"
-                  description="Set Human Session-related Configuration"
+                  description="Session defaults for HUMAN Users."
                   onUnset={() => {
                     req.spec!.session!.human = undefined;
                     updateReq();
@@ -784,6 +784,7 @@ const Edit = (props: {
                         <DurationPicker
                           value={req.spec!.session!.human!.accessTokenDuration}
                           title="Access Token Duration"
+                          description="How long access tokens issued for human sessions remain valid."
                           onChange={(v) => {
                             req.spec!.session!.human!.accessTokenDuration = v;
                             updateReq();
@@ -793,6 +794,7 @@ const Edit = (props: {
                         <DurationPicker
                           value={req.spec!.session!.human!.refreshTokenDuration}
                           title="Refresh Token Duration"
+                          description="How long refresh tokens issued for human sessions remain valid."
                           onChange={(v) => {
                             req.spec!.session!.human!.refreshTokenDuration = v;
                             updateReq();
@@ -802,6 +804,7 @@ const Edit = (props: {
                         <DurationPicker
                           value={req.spec!.session!.human!.clientDuration}
                           title="Client-base Session Duration"
+                          description="How long client-based human sessions remain active before expiring."
                           onChange={(v) => {
                             req.spec!.session!.human!.clientDuration = v;
                             updateReq();
@@ -811,6 +814,7 @@ const Edit = (props: {
                         <DurationPicker
                           value={req.spec!.session!.human!.clientlessDuration}
                           title="Clientless Session Duration"
+                          description="How long clientless human sessions remain active before expiring."
                           onChange={(v) => {
                             req.spec!.session!.human!.clientlessDuration = v;
                             updateReq();
@@ -878,7 +882,7 @@ const Edit = (props: {
 
                 <EditItem
                   title="Workload"
-                  description="Set Workload Session-related Configuration"
+                  description="Session defaults for WORKLOAD Users."
                   onUnset={() => {
                     req.spec!.session!.workload = undefined;
                     updateReq();
@@ -900,6 +904,7 @@ const Edit = (props: {
                             req.spec!.session!.workload!.accessTokenDuration
                           }
                           title="Access Token Duration"
+                          description="How long access tokens issued for workload sessions remain valid."
                           onChange={(v) => {
                             req.spec!.session!.workload!.accessTokenDuration =
                               v;
@@ -912,6 +917,7 @@ const Edit = (props: {
                             req.spec!.session!.workload!.refreshTokenDuration
                           }
                           title="Refresh Token Duration"
+                          description="How long refresh tokens issued for workload sessions remain valid."
                           onChange={(v) => {
                             req.spec!.session!.workload!.refreshTokenDuration =
                               v;
@@ -922,6 +928,7 @@ const Edit = (props: {
                         <DurationPicker
                           value={req.spec!.session!.workload!.clientDuration}
                           title="Client-base Session Duration"
+                          description="How long client-based workload sessions remain active before expiring."
                           onChange={(v) => {
                             req.spec!.session!.workload!.clientDuration = v;
                             updateReq();
@@ -933,6 +940,7 @@ const Edit = (props: {
                             req.spec!.session!.workload!.clientlessDuration
                           }
                           title="Clientless Session Duration"
+                          description="How long clientless workload sessions remain active before expiring."
                           onChange={(v) => {
                             req.spec!.session!.workload!.clientlessDuration = v;
                             updateReq();
@@ -1004,7 +1012,7 @@ const Edit = (props: {
 
           <EditItem
             title="Device"
-            description="Set the Cluster's Device-related Configuration"
+            description="Configure Cluster-wide defaults for Devices."
             onUnset={() => {
               req.spec!.device = undefined;
               updateReq();
@@ -1021,7 +1029,7 @@ const Edit = (props: {
               <>
                 <EditItem
                   title="Human"
-                  description="Set Human Device-related Configuration"
+                  description="Device defaults for HUMAN Users."
                   onUnset={() => {
                     req.spec!.device!.human = undefined;
                     updateReq();
@@ -1095,7 +1103,7 @@ const Edit = (props: {
 
                 <EditItem
                   title="Workload"
-                  description="Set Workload Device-related Configuration"
+                  description="Device defaults for WORKLOAD Users."
                   onUnset={() => {
                     req.spec!.device!.workload = undefined;
                     updateReq();
@@ -1172,7 +1180,7 @@ const Edit = (props: {
 
           <EditItem
             title="Ingress"
-            description="Set the Cluster's Ingress-related Configuration"
+            description="Configure the internet-facing Ingress and downstream IP detection."
             onUnset={() => {
               req.spec!.ingress = undefined;
               updateReq();
@@ -1191,6 +1199,7 @@ const Edit = (props: {
               <div className="grid gap-4 md:grid-cols-2">
                 <Switch
                   label="Use X-Forwarded-For Header"
+                  description="Use the X-Forwarded-For header to determine the downstream public IP address. Only trust configured reverse proxies."
                   checked={req.spec!.ingress!.useForwardedForHeader}
                   onChange={(v) => {
                     req.spec!.ingress!.useForwardedForHeader = v.target.checked;
@@ -1217,7 +1226,7 @@ const Edit = (props: {
 
           <EditItem
             title="Authentication"
-            description="Set the authentication-related Configuration"
+            description="Configure options used during the authentication process."
             onUnset={() => {
               req.spec!.authentication = undefined;
               updateReq();
@@ -1235,7 +1244,7 @@ const Edit = (props: {
               <div>
                 <EditItem
                   title="Geolocation"
-                  description="Set geolocation-related Configuration"
+                  description="Resolve client geolocation during authentication for use in Policies."
                   onUnset={() => {
                     req.spec!.authentication!.geolocation = undefined;
                     updateReq();
@@ -1299,7 +1308,7 @@ const Edit = (props: {
                                             <TextInput
                                               label="URL"
                                               placeholder="https://mmdb.example/country-db-v1.0.0"
-                                              description="Set the MMDB URL"
+                                              description="URL from which the MaxMind MMDB database is fetched."
                                               value={upstream.upstream.url}
                                               onChange={(v) => {
                                                 upstream.upstream.url =
@@ -1311,7 +1320,7 @@ const Edit = (props: {
 
                                           <EditItem
                                             title="Authentication"
-                                            description="Set the MMDB upstream authentication"
+                                            description="Credentials used to fetch the MaxMind MMDB database."
                                             onUnset={() => {
                                               upstream.upstream.auth =
                                                 undefined;
@@ -1414,6 +1423,7 @@ const Edit = (props: {
                                                         <Group grow>
                                                           <TextInput
                                                             label="Username"
+                                                            description="Username for HTTP Basic authentication to the MMDB upstream."
                                                             placeholder="user1234"
                                                             value={
                                                               basic.basic
@@ -1476,6 +1486,7 @@ const Edit = (props: {
                                                         <Group grow>
                                                           <TextInput
                                                             label="Header Name"
+                                                            description="HTTP header used to carry the custom MMDB credential."
                                                             placeholder="X-Custom-Auth"
                                                             value={
                                                               custom.custom
@@ -1537,6 +1548,7 @@ const Edit = (props: {
                                                         <Group grow>
                                                           <TextInput
                                                             label="Query Key"
+                                                            description="Query parameter used to carry the MMDB credential."
                                                             placeholder="api_key"
                                                             value={
                                                               query.query.key
