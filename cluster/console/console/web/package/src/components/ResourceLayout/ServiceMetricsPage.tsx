@@ -113,8 +113,12 @@ const SectionIntro = (props: {
 const BaseCharts = (props: {
   scope: "service" | "namespace";
   shared: SharedChartProps;
+  mode?: Service_Spec_Mode;
 }) => {
   const namespace = props.scope === "namespace";
+  const stream = props.mode !== undefined && STREAM_MODES.has(props.mode);
+  const http = props.mode !== undefined && HTTP_MODES.has(props.mode);
+  const sessions = stream || http;
 
   return (
     <div className="grid grid-cols-1 gap-x-4 md:grid-cols-2">
@@ -156,6 +160,49 @@ const BaseCharts = (props: {
         limitSeries={3}
         {...props.shared}
       />
+      {!namespace && (
+        <>
+          <MetricChart
+            title="Bytes received"
+            unit="bytes/s"
+            metric="req.bytes_received"
+            operation={counterOp(CounterOperation_Function.RATE)}
+            limitSeries={1}
+            {...props.shared}
+          />
+          <MetricChart
+            title="Bytes sent"
+            unit="bytes/s"
+            metric="req.bytes_sent"
+            operation={counterOp(CounterOperation_Function.RATE)}
+            limitSeries={1}
+            {...props.shared}
+          />
+          {sessions && (
+            <MetricChart
+              title="Active sessions"
+              unit="sessions"
+              metric="session.active"
+              operation={gaugeOp(GaugeOperation_Function.LAST)}
+              limitSeries={1}
+              {...props.shared}
+            />
+          )}
+          {http && (
+            <MetricChart
+              title="Time to first byte"
+              unit="ms"
+              metric="req.ttfb"
+              operation={histogramOp(
+                HistogramOperation_Function.QUANTILE,
+                [0.5, 0.95, 0.99],
+              )}
+              limitSeries={4}
+              {...props.shared}
+            />
+          )}
+        </>
+      )}
       <MetricChart
         title="Denied requests by reason"
         unit="requests/s"
@@ -216,6 +263,114 @@ const HTTPDetails = (props: { shared: SharedChartProps }) => (
         limitSeries={6}
         {...props.shared}
       />
+      <MetricChart
+        title="Requests by HTTP version"
+        unit="requests/s"
+        metric="req.total"
+        operation={counterOp(CounterOperation_Function.RATE)}
+        groupBy={["req.http.version"]}
+        limitSeries={4}
+        {...props.shared}
+      />
+      <MetricChart
+        title="Streaming request types"
+        unit="requests/s"
+        metric="req.total"
+        operation={counterOp(CounterOperation_Function.RATE)}
+        groupBy={["req.http.stream"]}
+        limitSeries={8}
+        {...props.shared}
+      />
+      <MetricChart
+        title="Streaming session duration"
+        unit="ms"
+        metric="session.duration"
+        operation={histogramOp(
+          HistogramOperation_Function.QUANTILE,
+          [0.5, 0.95, 0.99],
+        )}
+        groupBy={["req.http.stream"]}
+        limitSeries={8}
+        {...props.shared}
+      />
+    </div>
+  </>
+);
+
+const GRPCDetails = (props: { shared: SharedChartProps }) => (
+  <>
+    <SectionIntro
+      title="gRPC traffic"
+      description="gRPC routes and status classes captured by the HTTP dataplane."
+      icon={<Network size={16} strokeWidth={2.2} />}
+    />
+    <div className="grid grid-cols-1 gap-x-4 md:grid-cols-2">
+      <MetricChart
+        title="Requests by gRPC method"
+        unit="requests/s"
+        metric="req.total"
+        operation={counterOp(CounterOperation_Function.RATE)}
+        groupBy={["req.grpc.method"]}
+        limitSeries={20}
+        {...props.shared}
+      />
+      <MetricChart
+        title="Requests by gRPC service"
+        unit="requests/s"
+        metric="req.total"
+        operation={counterOp(CounterOperation_Function.RATE)}
+        groupBy={["req.grpc.service_full_name"]}
+        limitSeries={20}
+        {...props.shared}
+      />
+      <MetricChart
+        title="gRPC status classes"
+        unit="requests/s"
+        metric="req.total"
+        operation={counterOp(CounterOperation_Function.RATE)}
+        groupBy={["req.grpc.status_class"]}
+        limitSeries={6}
+        {...props.shared}
+      />
+      <MetricChart
+        title="gRPC status codes"
+        unit="requests/s"
+        metric="req.total"
+        operation={counterOp(CounterOperation_Function.RATE)}
+        groupBy={["req.grpc.status"]}
+        limitSeries={20}
+        {...props.shared}
+      />
+    </div>
+  </>
+);
+
+const KubernetesDetails = (props: { shared: SharedChartProps }) => (
+  <>
+    <SectionIntro
+      title="Kubernetes API traffic"
+      description="Kubernetes verbs, resources, subresources, and streaming operations observed by Vigil."
+      icon={<Network size={16} strokeWidth={2.2} />}
+    />
+    <div className="grid grid-cols-1 gap-x-4 md:grid-cols-2">
+      {[
+        ["Requests by verb", "req.k8s.verb", 12],
+        ["Requests by resource", "req.k8s.resource", 24],
+        ["Requests by subresource", "req.k8s.subresource", 16],
+        ["Requests by API group", "req.k8s.api_group", 16],
+        ["Streaming operations", "req.http.stream", 8],
+      ].map(([title, groupBy, limit]) => (
+        <MetricChart
+          key={groupBy as string}
+          title={title as string}
+          unit="requests/s"
+          metric="req.total"
+          operation={counterOp(CounterOperation_Function.RATE)}
+          groupBy={[groupBy as string]}
+          limitSeries={limit as number}
+          {...props.shared}
+        />
+      ))}
     </div>
   </>
 );
@@ -253,6 +408,33 @@ const MCPDetails = (props: { shared: SharedChartProps }) => (
         operation={counterOp(CounterOperation_Function.RATE)}
         groupBy={["req.http.status"]}
         limitSeries={6}
+        {...props.shared}
+      />
+      <MetricChart
+        title="MCP names"
+        unit="requests/s"
+        metric="req.total"
+        operation={counterOp(CounterOperation_Function.RATE)}
+        groupBy={["req.mcp.name"]}
+        limitSeries={20}
+        {...props.shared}
+      />
+      <MetricChart
+        title="MCP errors"
+        unit="requests/s"
+        metric="req.total"
+        operation={counterOp(CounterOperation_Function.RATE)}
+        groupBy={["req.mcp.error"]}
+        limitSeries={5}
+        {...props.shared}
+      />
+      <MetricChart
+        title="Notifications"
+        unit="requests/s"
+        metric="req.total"
+        operation={counterOp(CounterOperation_Function.RATE)}
+        groupBy={["req.mcp.is_notification"]}
+        limitSeries={3}
         {...props.shared}
       />
     </div>
@@ -303,6 +485,222 @@ const LLMDetails = (props: { shared: SharedChartProps }) => (
         limitSeries={6}
         {...props.shared}
       />
+      <MetricChart
+        title="Requests by model"
+        unit="requests/s"
+        metric="req.total"
+        operation={counterOp(CounterOperation_Function.RATE)}
+        groupBy={["req.llm.model"]}
+        limitSeries={20}
+        {...props.shared}
+      />
+      <MetricChart
+        title="Finish reasons"
+        unit="requests/s"
+        metric="req.total"
+        operation={counterOp(CounterOperation_Function.RATE)}
+        groupBy={["req.llm.finish_reason"]}
+        limitSeries={12}
+        {...props.shared}
+      />
+      <MetricChart
+        title="Input tokens"
+        unit="tokens/s"
+        metric="llm.tokens.input"
+        operation={counterOp(CounterOperation_Function.RATE)}
+        limitSeries={1}
+        {...props.shared}
+      />
+      <MetricChart
+        title="Output tokens"
+        unit="tokens/s"
+        metric="llm.tokens.output"
+        operation={counterOp(CounterOperation_Function.RATE)}
+        limitSeries={1}
+        {...props.shared}
+      />
+      <MetricChart
+        title="Total tokens"
+        unit="tokens/s"
+        metric="llm.tokens.total"
+        operation={counterOp(CounterOperation_Function.RATE)}
+        limitSeries={1}
+        {...props.shared}
+      />
+      <MetricChart
+        title="Cache-read tokens"
+        unit="tokens/s"
+        metric="llm.tokens.cache_read"
+        operation={counterOp(CounterOperation_Function.RATE)}
+        limitSeries={1}
+        {...props.shared}
+      />
+      <MetricChart
+        title="Cache-write tokens"
+        unit="tokens/s"
+        metric="llm.tokens.cache_write"
+        operation={counterOp(CounterOperation_Function.RATE)}
+        limitSeries={1}
+        {...props.shared}
+      />
+      <MetricChart
+        title="Reasoning tokens"
+        unit="tokens/s"
+        metric="llm.tokens.reasoning"
+        operation={counterOp(CounterOperation_Function.RATE)}
+        limitSeries={1}
+        {...props.shared}
+      />
+      <MetricChart
+        title="Time to first token"
+        unit="ms"
+        metric="llm.ttft"
+        operation={histogramOp(
+          HistogramOperation_Function.QUANTILE,
+          [0.5, 0.95, 0.99],
+        )}
+        limitSeries={4}
+        {...props.shared}
+      />
+      <MetricChart
+        title="Stream events"
+        unit="events/s"
+        metric="llm.stream.events"
+        operation={counterOp(CounterOperation_Function.RATE)}
+        limitSeries={1}
+        {...props.shared}
+      />
+    </div>
+  </>
+);
+
+const DatabaseDetails = (props: { shared: SharedChartProps }) => (
+  <>
+    <SectionIntro
+      title="Database traffic"
+      description="Database commands, authorization outcomes, and command-level latency."
+      icon={<Activity size={16} strokeWidth={2.2} />}
+    />
+    <div className="grid grid-cols-1 gap-x-4 md:grid-cols-2">
+      <MetricChart
+        title="Commands by type"
+        unit="commands/s"
+        metric="db.command.total"
+        operation={counterOp(CounterOperation_Function.RATE)}
+        groupBy={["db.command"]}
+        limitSeries={20}
+        {...props.shared}
+      />
+      <MetricChart
+        title="Command outcomes"
+        unit="commands/s"
+        metric="db.command.total"
+        operation={counterOp(CounterOperation_Function.RATE)}
+        groupBy={["state"]}
+        limitSeries={3}
+        {...props.shared}
+      />
+      <MetricChart
+        title="Denied command reasons"
+        unit="commands/s"
+        metric="db.command.total"
+        operation={counterOp(CounterOperation_Function.RATE)}
+        groupBy={["reason"]}
+        limitSeries={12}
+        {...props.shared}
+        filters={[...props.shared.filters, eqFilter("state", "DENIED")]}
+      />
+      <MetricChart
+        title="Authorization latency"
+        unit="ms"
+        metric="db.authz.duration"
+        operation={histogramOp(
+          HistogramOperation_Function.QUANTILE,
+          [0.5, 0.95, 0.99],
+        )}
+        limitSeries={4}
+        {...props.shared}
+      />
+    </div>
+  </>
+);
+
+const SOCKS5Details = (props: { shared: SharedChartProps }) => (
+  <>
+    <StreamDetails shared={props.shared} />
+    <SectionIntro
+      title="SOCKS5 destinations"
+      description="Connection targets grouped by the address type negotiated with the downstream client."
+      icon={<Network size={16} strokeWidth={2.2} />}
+    />
+    <div className="grid grid-cols-1 gap-x-4 md:grid-cols-2">
+      <MetricChart
+        title="Requests by target type"
+        unit="requests/s"
+        metric="req.total"
+        operation={counterOp(CounterOperation_Function.RATE)}
+        groupBy={["socks5.target_type"]}
+        limitSeries={4}
+        {...props.shared}
+      />
+    </div>
+  </>
+);
+
+const SSHDetails = (props: { shared: SharedChartProps }) => (
+  <>
+    <SectionIntro
+      title="SSH activity"
+      description="SSH channels and channel requests, including authorization outcomes and reasons."
+      icon={<Activity size={16} strokeWidth={2.2} />}
+    />
+    <div className="grid grid-cols-1 gap-x-4 md:grid-cols-2">
+      <MetricChart
+        title="Channels by type"
+        unit="channels/s"
+        metric="ssh.channel.total"
+        operation={counterOp(CounterOperation_Function.RATE)}
+        groupBy={["ssh.channel.type"]}
+        limitSeries={12}
+        {...props.shared}
+      />
+      <MetricChart
+        title="Channel outcomes"
+        unit="channels/s"
+        metric="ssh.channel.total"
+        operation={counterOp(CounterOperation_Function.RATE)}
+        groupBy={["state"]}
+        limitSeries={3}
+        {...props.shared}
+      />
+      <MetricChart
+        title="Requests by type"
+        unit="requests/s"
+        metric="ssh.request.total"
+        operation={counterOp(CounterOperation_Function.RATE)}
+        groupBy={["ssh.request.type"]}
+        limitSeries={16}
+        {...props.shared}
+      />
+      <MetricChart
+        title="Denied request reasons"
+        unit="requests/s"
+        metric="ssh.request.total"
+        operation={counterOp(CounterOperation_Function.RATE)}
+        groupBy={["reason"]}
+        limitSeries={12}
+        {...props.shared}
+        filters={[...props.shared.filters, eqFilter("state", "DENIED")]}
+      />
+      <MetricChart
+        title="ESSH sessions"
+        unit="sessions"
+        metric="session.duration"
+        operation={histogramOp(HistogramOperation_Function.COUNT)}
+        groupBy={["req.ssh.is_essh"]}
+        limitSeries={3}
+        {...props.shared}
+      />
     </div>
   </>
 );
@@ -333,6 +731,27 @@ const DNSDetails = (props: { shared: SharedChartProps }) => (
         limitSeries={8}
         {...props.shared}
       />
+      <MetricChart
+        title="Malformed queries"
+        unit="queries/s"
+        metric="dns.malformed.total"
+        operation={counterOp(CounterOperation_Function.RATE)}
+        groupBy={["reason"]}
+        limitSeries={12}
+        {...props.shared}
+      />
+      <MetricChart
+        title="Response size"
+        unit="bytes"
+        metric="dns.response.bytes"
+        operation={histogramOp(
+          HistogramOperation_Function.QUANTILE,
+          [0.5, 0.95, 0.99],
+        )}
+        groupBy={["dns.truncated"]}
+        limitSeries={3}
+        {...props.shared}
+      />
     </div>
   </>
 );
@@ -340,6 +759,7 @@ const DNSDetails = (props: { shared: SharedChartProps }) => (
 const StreamDetails = (props: {
   shared: SharedChartProps;
   groupByService?: boolean;
+  showPackets?: boolean;
 }) => (
   <>
     <SectionIntro
@@ -366,6 +786,48 @@ const StreamDetails = (props: {
         limitSeries={props.groupByService ? 12 : 1}
         {...props.shared}
       />
+      <MetricChart
+        title="Session duration"
+        unit="ms"
+        metric="session.duration"
+        operation={histogramOp(
+          HistogramOperation_Function.QUANTILE,
+          [0.5, 0.95, 0.99],
+        )}
+        limitSeries={4}
+        {...props.shared}
+      />
+      <MetricChart
+        title="Rejected connections"
+        unit="connections/s"
+        metric="conn.rejected"
+        operation={counterOp(CounterOperation_Function.RATE)}
+        groupBy={["stage"]}
+        limitSeries={8}
+        {...props.shared}
+      />
+      {props.showPackets && (
+        <>
+          <MetricChart
+            title={props.groupByService ? "Packets received by Service" : "Packets received"}
+            unit="packets/s"
+            metric="req.packets_received"
+            operation={counterOp(CounterOperation_Function.RATE)}
+            groupBy={props.groupByService ? [SERVICE_NAME] : undefined}
+            limitSeries={props.groupByService ? 12 : 1}
+            {...props.shared}
+          />
+          <MetricChart
+            title={props.groupByService ? "Packets sent by Service" : "Packets sent"}
+            unit="packets/s"
+            metric="req.packets_sent"
+            operation={counterOp(CounterOperation_Function.RATE)}
+            groupBy={props.groupByService ? [SERVICE_NAME] : undefined}
+            limitSeries={props.groupByService ? 12 : 1}
+            {...props.shared}
+          />
+        </>
+      )}
     </div>
   </>
 );
@@ -397,7 +859,7 @@ const NamespaceDetails = (props: { shared: SharedChartProps }) => (
         {...props.shared}
       />
     </div>
-    <StreamDetails shared={props.shared} groupByService />
+    <StreamDetails shared={props.shared} groupByService showPackets />
   </>
 );
 
@@ -412,11 +874,34 @@ const ServiceDetails = (props: {
   if (mode === Service_Spec_Mode.LLM) {
     return <LLMDetails shared={props.shared} />;
   }
+  if (mode === Service_Spec_Mode.GRPC) {
+    return <GRPCDetails shared={props.shared} />;
+  }
+  if (mode === Service_Spec_Mode.KUBERNETES) {
+    return <KubernetesDetails shared={props.shared} />;
+  }
   if (mode === Service_Spec_Mode.DNS) {
     return <DNSDetails shared={props.shared} />;
   }
+  if (mode === Service_Spec_Mode.SSH) {
+    return <SSHDetails shared={props.shared} />;
+  }
+  if (
+    mode === Service_Spec_Mode.POSTGRES ||
+    mode === Service_Spec_Mode.MYSQL
+  ) {
+    return <DatabaseDetails shared={props.shared} />;
+  }
+  if (mode === Service_Spec_Mode.SOCKS5) {
+    return <SOCKS5Details shared={props.shared} />;
+  }
   if (STREAM_MODES.has(mode)) {
-    return <StreamDetails shared={props.shared} />;
+    return (
+      <StreamDetails
+        shared={props.shared}
+        showPackets={mode === Service_Spec_Mode.UDP}
+      />
+    );
   }
   if (HTTP_MODES.has(mode)) {
     return <HTTPDetails shared={props.shared} />;
@@ -558,7 +1043,11 @@ export const ResourceMetrics = (props: { resource: MetricsResource }) => {
       </header>
 
       {view === "overview" ? (
-        <BaseCharts scope={isService ? "service" : "namespace"} shared={shared} />
+        <BaseCharts
+          scope={isService ? "service" : "namespace"}
+          mode={mode}
+          shared={shared}
+        />
       ) : service ? (
         <ServiceDetails service={service} shared={shared} />
       ) : (
