@@ -6,12 +6,14 @@
             "properties": {
                 "common": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.CommonListOptions",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Common sets the common listing options (e.g. pagination, ordering and filtering)"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "List Namespace Options"
+            "title": "List Namespace Options",
+            "description": "ListNamespaceOptions is the request of the ListNamespace method."
         },
         "octelium.api.main.meta.v1.CommonListOptions": {
             "properties": {
@@ -31,7 +33,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Common List Options"
+            "title": "Common List Options",
+            "description": "CommonListOptions is the listing options that are common to every List request."
         },
         "octelium.api.main.meta.v1.CommonListOptions.OrderBy": {
             "properties": {
@@ -42,7 +45,8 @@
                         "CREATED_AT"
                     ],
                     "type": "string",
-                    "title": "Type"
+                    "title": "Type",
+                    "description": "Type is the field by which the list is ordered"
                 },
                 "mode": {
                     "enum": [
@@ -51,12 +55,14 @@
                         "DESC"
                     ],
                     "type": "string",
-                    "title": "Mode"
+                    "title": "Mode",
+                    "description": "Mode is the direction in which the list is ordered"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Order By"
+            "title": "Order By",
+            "description": "OrderBy sets the ordering of the returned list"
         }
     }
 }

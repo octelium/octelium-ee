@@ -28,7 +28,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Session List"
+            "title": "Session List",
+            "description": "SessionList is the list of Sessions returned by the ListSession method."
         },
         "octelium.api.main.core.v1.Condition": {
             "properties": {
@@ -149,7 +150,8 @@
                     ]
                 }
             ],
-            "title": "Condition"
+            "title": "Condition",
+            "description": "Condition is a policy-as-code expression that is evaluated against the request context. It is used by the Policy rules, the Service dynamic configuration rules, the HTTP Plugins as well as by the IdentityProvider rules."
         },
         "octelium.api.main.core.v1.Condition.All": {
             "properties": {
@@ -158,12 +160,14 @@
                         "$ref": "#/definitions/octelium.api.main.core.v1.Condition"
                     },
                     "additionalProperties": false,
-                    "type": "array"
+                    "type": "array",
+                    "description": "Of is the list of the Conditions that must all match"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "All"
+            "title": "All",
+            "description": "All acts as a logical AND operator on its list of Conditions"
         },
         "octelium.api.main.core.v1.Condition.Any": {
             "properties": {
@@ -173,12 +177,13 @@
                     },
                     "additionalProperties": false,
                     "type": "array",
-                    "description": "Expressions is the list of CEL expressions"
+                    "description": "Of is the list of the Conditions of which at least one must match"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Any"
+            "title": "Any",
+            "description": "Any acts as a logical OR operator on its list of Conditions"
         },
         "octelium.api.main.core.v1.Condition.None": {
             "properties": {
@@ -188,12 +193,13 @@
                     },
                     "additionalProperties": false,
                     "type": "array",
-                    "description": "Expressions is the list of CEL expressions"
+                    "description": "Of is the list of the Conditions of which none must match"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "None"
+            "title": "None",
+            "description": "None acts as a logical NOR operator on its list of Conditions"
         },
         "octelium.api.main.core.v1.Condition.OPA": {
             "properties": {
@@ -226,12 +232,14 @@
                     ]
                 }
             ],
-            "title": "OPA"
+            "title": "OPA",
+            "description": "OPA evaluates the Condition via an Open Policy Agent Rego script"
         },
         "octelium.api.main.core.v1.GeoIP": {
             "properties": {
                 "ip": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "IP is the IP address itself"
                 },
                 "ipVersion": {
                     "enum": [
@@ -240,140 +248,173 @@
                         "V6"
                     ],
                     "type": "string",
-                    "title": "IP Version"
+                    "title": "IP Version",
+                    "description": "IPVersion is the version of the IP address"
                 },
                 "country": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.GeoIP.Country",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Country is the country of the IP address"
                 },
                 "region": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.GeoIP.Region",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Region is the subdivision/region of the IP address within its country"
                 },
                 "city": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.GeoIP.City",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "City is the city of the IP address"
                 },
                 "continent": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.GeoIP.Continent",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Continent is the continent of the IP address"
                 },
                 "network": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.GeoIP.Network",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Network is the network information of the IP address"
                 },
                 "timezone": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.GeoIP.Timezone",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Timezone is the timezone of the IP address"
                 },
                 "postalCode": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "PostalCode is the postal code of the IP address"
                 },
                 "coordinates": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.GeoIP.Coordinates",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Coordinates is the approximate geographic location of the IP address"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Geo IP"
+            "title": "Geo IP",
+            "description": "GeoIP is the geolocation information of an IP address. It is resolved by the Cluster from the MaxMind MMDB databases that are set in the ClusterConfig and it is only set if geolocation is enabled."
         },
         "octelium.api.main.core.v1.GeoIP.City": {
             "properties": {
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Name is the city's name (e.g. \"New York\")"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "City"
+            "title": "City",
+            "description": "City is the city of the IP address"
         },
         "octelium.api.main.core.v1.GeoIP.Continent": {
             "properties": {
                 "code": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Code is the continent's code (e.g. \"EU\")"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Name is the continent's name (e.g. \"Europe\")"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Continent"
+            "title": "Continent",
+            "description": "Continent is the continent of the IP address"
         },
         "octelium.api.main.core.v1.GeoIP.Coordinates": {
             "properties": {
                 "latitude": {
-                    "type": "number"
+                    "type": "number",
+                    "description": "Latitude is the latitude in degrees"
                 },
                 "longitude": {
-                    "type": "number"
+                    "type": "number",
+                    "description": "Longitude is the longitude in degrees"
                 },
                 "accuracyRadius": {
-                    "type": "number"
+                    "type": "number",
+                    "description": "AccuracyRadius is the radius in kilometers within which the IP address is likely to be located"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Coordinates"
+            "title": "Coordinates",
+            "description": "Coordinates is the approximate geographic location of the IP address"
         },
         "octelium.api.main.core.v1.GeoIP.Country": {
             "properties": {
                 "code": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Code is the ISO 3166-1 country code (e.g. \"US\")"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Name is the country's name (e.g. \"United States\")"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Country"
+            "title": "Country",
+            "description": "Country is the country of the IP address"
         },
         "octelium.api.main.core.v1.GeoIP.Network": {
             "properties": {
                 "asn": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "ASN is the autonomous system number of the network"
                 },
                 "isp": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ISP is the name of the internet service provider"
                 },
                 "organization": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Organization is the name of the organization that owns the network"
                 },
                 "domain": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Domain is the second-level domain of the network"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Network"
+            "title": "Network",
+            "description": "Network is the network information of the IP address"
         },
         "octelium.api.main.core.v1.GeoIP.Region": {
             "properties": {
                 "code": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Code is the region's code"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Name is the region's name"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Region"
+            "title": "Region",
+            "description": "Region is the subdivision/region of the IP address within its country"
         },
         "octelium.api.main.core.v1.GeoIP.Timezone": {
             "properties": {
                 "id": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ID is the IANA timezone identifier (e.g. \"America/New_York\")"
                 },
                 "offset": {
-                    "type": "number"
+                    "type": "number",
+                    "description": "Offset is the timezone's offset in hours from UTC"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Timezone"
+            "title": "Timezone",
+            "description": "Timezone is the timezone of the IP address"
         },
         "octelium.api.main.core.v1.InlinePolicy": {
             "properties": {
@@ -389,7 +430,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Inline Policy"
+            "title": "Inline Policy",
+            "description": "InlinePolicy is a Policy that is defined inline within the resource that attaches it instead of being created as a standalone Policy resource."
         },
         "octelium.api.main.core.v1.Policy.Spec": {
             "properties": {
@@ -411,7 +453,8 @@
                 },
                 "attrs": {
                     "additionalProperties": true,
-                    "type": "object"
+                    "type": "object",
+                    "description": "Attrs is a map of user-defined attributes that can be reused inside the Policy rules. It is strongly recommended to stick to camelCase in order to be conformant with Octelium's API naming conventions."
                 },
                 "isDisabled": {
                     "type": "boolean",
@@ -420,7 +463,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Spec"
+            "title": "Spec",
+            "description": "Spec is the Policy specification"
         },
         "octelium.api.main.core.v1.Policy.Spec.EnforcementRule": {
             "properties": {
@@ -436,12 +480,14 @@
                         "IGNORE"
                     ],
                     "type": "string",
-                    "title": "Effect"
+                    "title": "Effect",
+                    "description": "Effect is the decision of the EnforcementRule once its Condition matches"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Enforcement Rule"
+            "title": "Enforcement Rule",
+            "description": "EnforcementRule is a pre-condition that decides whether the Policy is evaluated at all. If no EnforcementRule matches, or if the list of EnforcementRules is empty, then the Policy is enforced. ENFORCE rules always override IGNORE rules in the same way that DENY rules override ALLOW rules."
         },
         "octelium.api.main.core.v1.Policy.Spec.Rule": {
             "properties": {
@@ -461,7 +507,8 @@
                         "DENY"
                     ],
                     "type": "string",
-                    "title": "Effect"
+                    "title": "Effect",
+                    "description": "Effect is the decision of the Rule once its Condition matches"
                 },
                 "priority": {
                     "type": "integer",
@@ -470,7 +517,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Rule"
+            "title": "Rule",
+            "description": "Rule is a single access control rule of the Policy"
         },
         "octelium.api.main.core.v1.Scope": {
             "properties": {
@@ -519,7 +567,8 @@
                     ]
                 }
             ],
-            "title": "Scope"
+            "title": "Scope",
+            "description": "Scope restricts what a Session is allowed to reach. A Session that carries no Scopes is unrestricted, otherwise it can only reach what its Scopes allow. Scopes narrow a Session down, they never widen it beyond what the authorization Policies already allow."
         },
         "octelium.api.main.core.v1.Scope.API": {
             "properties": {
@@ -568,12 +617,14 @@
                     ]
                 }
             ],
-            "title": "API"
+            "title": "API",
+            "description": "API scopes the access to the Cluster's own gRPC APIs"
         },
         "octelium.api.main.core.v1.Scope.API.All": {
             "additionalProperties": false,
             "type": "object",
-            "title": "All"
+            "title": "All",
+            "description": "All allows access to all APIs"
         },
         "octelium.api.main.core.v1.Scope.API.Filter": {
             "properties": {
@@ -601,7 +652,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Filter"
+            "title": "Filter",
+            "description": "Filter restricts the access to certain gRPC packages, services or methods"
         },
         "octelium.api.main.core.v1.Scope.Service": {
             "properties": {
@@ -650,12 +702,14 @@
                     ]
                 }
             ],
-            "title": "Service"
+            "title": "Service",
+            "description": "Service scopes the access to the Cluster's Services"
         },
         "octelium.api.main.core.v1.Scope.Service.All": {
             "additionalProperties": false,
             "type": "object",
-            "title": "All"
+            "title": "All",
+            "description": "All allows access to all Services"
         },
         "octelium.api.main.core.v1.Scope.Service.Filter": {
             "properties": {
@@ -676,7 +730,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Filter"
+            "title": "Filter",
+            "description": "Filter restricts the access to certain Services or Namespaces"
         },
         "octelium.api.main.core.v1.Session": {
             "properties": {
@@ -691,7 +746,7 @@
                 "metadata": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Metadata",
                     "additionalProperties": false,
-                    "description": "octelium.api.main.meta.v1.Metadata is the object's metadata."
+                    "description": "Metadata is the object's metadata."
                 },
                 "spec": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Session.Spec",
@@ -706,7 +761,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Session"
+            "title": "Session",
+            "description": "Session represents an authenticated session of a User. A User can interact with the Cluster and access its Services only through a valid Session which is automatically created by the Cluster upon a successful authentication. The Cluster issues an access token and a refresh token representing the Session's validity and the User has to periodically re-authenticate to keep the Session valid until it eventually expires and is automatically deleted by the Cluster."
         },
         "octelium.api.main.core.v1.Session.Spec": {
             "properties": {
@@ -723,16 +779,19 @@
                         "REJECTED"
                     ],
                     "type": "string",
-                    "title": "State"
+                    "title": "State",
+                    "description": "State is the state of the Session"
                 },
                 "authorization": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Session.Spec.Authorization",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Authorization sets the authorization-related configuration"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Spec"
+            "title": "Spec",
+            "description": "Spec is the Session specification"
         },
         "octelium.api.main.core.v1.Session.Spec.Authorization": {
             "properties": {
@@ -754,7 +813,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Authorization"
+            "title": "Authorization",
+            "description": "Authorization sets the Policies that are applied to the Session. These Policies are typically copied from the Credential that created the Session upon a successful authentication."
         },
         "octelium.api.main.core.v1.Session.Status": {
             "properties": {
@@ -775,7 +835,8 @@
                         "CLIENTLESS"
                     ],
                     "type": "string",
-                    "title": "Type"
+                    "title": "Type",
+                    "description": "Type is the type of the Session"
                 },
                 "isBrowser": {
                     "type": "boolean",
@@ -810,17 +871,20 @@
                 },
                 "credentialRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "CredentialRef is the reference of the Credential that created the Session, if any"
                 },
                 "ext": {
                     "additionalProperties": {
                         "additionalProperties": true,
                         "type": "object"
                     },
-                    "type": "object"
+                    "type": "object",
+                    "description": "Ext is a map of internal Cluster-managed extension data"
                 },
                 "totalAuthentications": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "TotalAuthentications is the total number of the authentication operations performed by the Session"
                 },
                 "scopes": {
                     "items": {
@@ -831,17 +895,20 @@
                     "description": "Scopes is the list of scopes used by the Session"
                 },
                 "totalConnections": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "TotalConnections is the total number of the connections established by the Session"
                 },
                 "lastConnections": {
                     "items": {
                         "$ref": "#/definitions/octelium.api.main.core.v1.Session.Status.LastConnection"
                     },
                     "additionalProperties": false,
-                    "type": "array"
+                    "type": "array",
+                    "description": "LastConnections is the list of the last connections of the Session"
                 },
                 "isLocked": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "IsLocked indicates whether the Session is locked by the Cluster"
                 },
                 "authenticatorAction": {
                     "enum": [
@@ -852,42 +919,51 @@
                         "REGISTRATION_RECOMMENDED"
                     ],
                     "type": "string",
-                    "title": "Authenticator Action"
+                    "title": "Authenticator Action",
+                    "description": "AuthenticatorAction is the Authenticator-related action that the Session is currently required or recommended to perform"
                 },
                 "requiredAuthenticatorRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequiredAuthenticatorRef is the reference of the Authenticator that the Session is required to authenticate with, if any"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Status"
+            "title": "Status",
+            "description": "Status is the current status of the Session"
         },
         "octelium.api.main.core.v1.Session.Status.Authentication": {
             "properties": {
                 "info": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Session.Status.Authentication.Info",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Info is the detailed information of the authentication operation"
                 },
                 "setAt": {
                     "type": "string",
+                    "description": "SetAt is the timestamp at which the authentication was performed",
                     "format": "date-time"
                 },
                 "tokenID": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "TokenID is the ID of the Session's token pair that was issued by this authentication. It is rotated with every re-authentication."
                 },
                 "accessTokenDuration": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "AccessTokenDuration is the duration of the issued access token"
                 },
                 "refreshTokenDuration": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RefreshTokenDuration is the duration of the issued refresh token. Once the refresh token expires, the Session as a whole is deemed expired."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Authentication"
+            "title": "Authentication",
+            "description": "Authentication is the information of a single authentication operation of the Session"
         },
         "octelium.api.main.core.v1.Session.Status.Authentication.Info": {
             "properties": {
@@ -902,23 +978,28 @@
                         "AUTHENTICATOR"
                     ],
                     "type": "string",
-                    "title": "Type"
+                    "title": "Type",
+                    "description": "Type is the method by which the Session was authenticated"
                 },
                 "external": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Session.Status.Authentication.Info.External",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "External is the information of an authentication done by an external owner of the Session"
                 },
                 "identityProvider": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Session.Status.Authentication.Info.IdentityProvider",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "IdentityProvider is the information of an IdentityProvider-based authentication"
                 },
                 "credential": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Session.Status.Authentication.Info.Credential",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Credential is the information of a Credential-based authentication"
                 },
                 "authenticator": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Session.Status.Authentication.Info.Authenticator",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Authenticator is the information of an Authenticator-based authentication"
                 },
                 "aal": {
                     "enum": [
@@ -928,15 +1009,18 @@
                         "AAL3"
                     ],
                     "type": "string",
-                    "title": "AAL"
+                    "title": "AAL",
+                    "description": "AAL is the authenticator assurance level (AAL) of the authentication as defined by NIST SP 800-63B"
                 },
                 "downstream": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Session.Status.Authentication.Info.Downstream",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Downstream is the information of the client that performed the authentication"
                 },
                 "geoip": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.GeoIP",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "GeoIP is the geolocation information of the client that performed the authentication. It is only set if geolocation is enabled in the ClusterConfig."
                 }
             },
             "additionalProperties": false,
@@ -993,13 +1077,15 @@
                     ]
                 }
             ],
-            "title": "Info"
+            "title": "Info",
+            "description": "Info is the detailed information of the authentication operation"
         },
         "octelium.api.main.core.v1.Session.Status.Authentication.Info.Authenticator": {
             "properties": {
                 "authenticatorRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "AuthenticatorRef is the reference of the Authenticator that authenticated the User"
                 },
                 "type": {
                     "enum": [
@@ -1009,11 +1095,13 @@
                         "TPM"
                     ],
                     "type": "string",
-                    "title": "Type"
+                    "title": "Type",
+                    "description": "Type is the type of the Authenticator"
                 },
                 "info": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Session.Status.Authentication.Info.Authenticator.Info",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Info is the type-specific information of the Authenticator"
                 },
                 "mode": {
                     "enum": [
@@ -1023,12 +1111,14 @@
                         "MFA"
                     ],
                     "type": "string",
-                    "title": "Mode"
+                    "title": "Mode",
+                    "description": "Mode is the role that the Authenticator played in the authentication"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Authenticator"
+            "title": "Authenticator",
+            "description": "Authenticator is the information of an Authenticator-based authentication (e.g. MFA or a Passkey login)"
         },
         "octelium.api.main.core.v1.Session.Status.Authentication.Info.Authenticator.Info": {
             "properties": {
@@ -1061,41 +1151,51 @@
                     ]
                 }
             ],
-            "title": "Info"
+            "title": "Info",
+            "description": "Info is the type-specific information of the Authenticator"
         },
         "octelium.api.main.core.v1.Session.Status.Authentication.Info.Authenticator.Info.FIDO": {
             "properties": {
                 "userPresent": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "UserPresent means that the User presence check was satisfied"
                 },
                 "userVerified": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "UserVerified means that the User was verified by the Authenticator (e.g. via a PIN or a biometric)"
                 },
                 "isHardware": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "IsHardware means that the Authenticator is hardware-backed (e.g. a security key or a platform authenticator)"
                 },
                 "isSoftware": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "IsSoftware means that the Authenticator is software-based (e.g. a password manager)"
                 },
                 "isAttestationVerified": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "IsAttestationVerified means that the Authenticator's attestation was verified"
                 },
                 "isPasskey": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "IsPasskey means that the Authenticator is a Passkey (i.e. it uses a resident/discoverable key credential)"
                 },
                 "aaguid": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "AAGUID is the Authenticator Attestation GUID that identifies the model of the Authenticator"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "FIDO"
+            "title": "FIDO",
+            "description": "FIDO is the information of a FIDO/WebAuthn Authenticator"
         },
         "octelium.api.main.core.v1.Session.Status.Authentication.Info.Credential": {
             "properties": {
                 "credentialRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "CredentialRef is the reference of the Credential that authenticated the User"
                 },
                 "type": {
                     "enum": [
@@ -1105,52 +1205,63 @@
                         "ACCESS_TOKEN"
                     ],
                     "type": "string",
-                    "title": "Type"
+                    "title": "Type",
+                    "description": "Type is the type of the Credential"
                 },
                 "tokenID": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "TokenID is the ID of the Credential's token that was used for the authentication. It is rotated whenever the Credential is rotated."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Credential"
+            "title": "Credential",
+            "description": "Credential is the information of a Credential-based authentication"
         },
         "octelium.api.main.core.v1.Session.Status.Authentication.Info.Downstream": {
             "properties": {
                 "ipAddress": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "IPAddress is the IP address of the client"
                 },
                 "userAgent": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "UserAgent is the `User-Agent` request header of the client"
                 },
                 "clientVersion": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ClientVersion is the version of the Octelium client"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Downstream"
+            "title": "Downstream",
+            "description": "Downstream is the information of the client that performed the authentication"
         },
         "octelium.api.main.core.v1.Session.Status.Authentication.Info.External": {
             "properties": {
                 "ownerRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "OwnerRef is the reference of the external owner of the Session"
                 },
                 "attrs": {
                     "additionalProperties": true,
-                    "type": "object"
+                    "type": "object",
+                    "description": "Attrs is a map of the attributes provided by the external owner"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "External"
+            "title": "External",
+            "description": "External is the information of an authentication done by an external owner of the Session"
         },
         "octelium.api.main.core.v1.Session.Status.Authentication.Info.IdentityProvider": {
             "properties": {
                 "identityProviderRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "IdentityProviderRef is the reference of the IdentityProvider that authenticated the User"
                 },
                 "type": {
                     "enum": [
@@ -1161,30 +1272,37 @@
                         "OIDC_IDENTITY_TOKEN"
                     ],
                     "type": "string",
-                    "title": "Type"
+                    "title": "Type",
+                    "description": "Type is the type of the IdentityProvider"
                 },
                 "identifier": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Identifier is the value that identifies the User account according to the IdentityProvider"
                 },
                 "picURL": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "PicURL is the URL of the User's picture as provided by the IdentityProvider"
                 },
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Email is the User's email as provided by the IdentityProvider"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Identity Provider"
+            "title": "Identity Provider",
+            "description": "IdentityProvider is the information of an IdentityProvider-based authentication"
         },
         "octelium.api.main.core.v1.Session.Status.Connection": {
             "properties": {
                 "startedAt": {
                     "type": "string",
+                    "description": "StartedAt is the timestamp at which the connection started",
                     "format": "date-time"
                 },
                 "lastSeenAt": {
                     "type": "string",
+                    "description": "LastSeenAt is the timestamp at which the connected client was last seen by the Cluster",
                     "format": "date-time"
                 },
                 "upstreams": {
@@ -1210,7 +1328,8 @@
                         "V6"
                     ],
                     "type": "string",
-                    "title": "L 3 Mode"
+                    "title": "L 3 Mode",
+                    "description": "L3Mode is the layer-3 mode of the connection"
                 },
                 "serviceOptions": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Session.Status.Connection.ServiceOptions",
@@ -1236,7 +1355,8 @@
                         "QUICV0"
                     ],
                     "type": "string",
-                    "title": "Type"
+                    "title": "Type",
+                    "description": "Type is the type of the connection's tunnel"
                 },
                 "publishedServices": {
                     "items": {
@@ -1259,32 +1379,39 @@
                     "description": "ESSHPort is the port number of the eSSH Server. Only meaningful if ESSHEnable is set to true"
                 },
                 "eSOCKS5Enable": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "ESOCKS5Enable means that serving embedded SOCKS5 Services is enabled"
                 },
                 "eSOCKS5Port": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "ESOCKS5Port is the port number of the embedded SOCKS5 server. Only meaningful if ESOCKS5Enable is set to true"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Connection"
+            "title": "Connection",
+            "description": "Connection is the information of the currently connected client of a CLIENT Session"
         },
         "octelium.api.main.core.v1.Session.Status.Connection.PublishedService": {
             "properties": {
                 "serviceRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ServiceRef is the reference of the published Service"
                 },
                 "port": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "Port is the local port at which the Service is published"
                 },
                 "address": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Address is the local address at which the Service is published"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Published Service"
+            "title": "Published Service",
+            "description": "PublishedService is a Service that is published to the connected client's host (i.e. reachable locally at the client's side)"
         },
         "octelium.api.main.core.v1.Session.Status.Connection.ServiceOptions": {
             "properties": {
@@ -1297,7 +1424,8 @@
                         "$ref": "#/definitions/octelium.api.main.core.v1.Session.Status.Connection.ServiceOptions.RequestedService"
                     },
                     "additionalProperties": false,
-                    "type": "array"
+                    "type": "array",
+                    "description": "RequestedServices is the list of the Services that the Session explicitly requested to serve"
                 },
                 "portStart": {
                     "type": "integer",
@@ -1306,27 +1434,32 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Service Options"
+            "title": "Service Options",
+            "description": "ServiceOptions is the configuration of the Services that the connected Session is willing to serve as upstreams"
         },
         "octelium.api.main.core.v1.Session.Status.Connection.ServiceOptions.RequestedService": {
             "properties": {
                 "serviceRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ServiceRef is the reference of the requested Service"
                 },
                 "namespaceRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "NamespaceRef is the reference of the requested Service's Namespace"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Requested Service"
+            "title": "Requested Service",
+            "description": "RequestedService is a Service that the Session explicitly requested to serve"
         },
         "octelium.api.main.core.v1.Session.Status.Connection.Upstream": {
             "properties": {
                 "port": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "Port is the port at which the client listens to serve the upstream"
                 },
                 "l4Type": {
                     "enum": [
@@ -1335,19 +1468,23 @@
                         "UDP"
                     ],
                     "type": "string",
-                    "title": "L 4 Type"
+                    "title": "L 4 Type",
+                    "description": "L4Type is the layer-4 protocol of the upstream"
                 },
                 "serviceRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ServiceRef is the reference of the served Service"
                 },
                 "namespaceRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "NamespaceRef is the reference of the served Service's Namespace"
                 },
                 "backend": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Session.Status.Connection.Upstream.Backend",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Backend is the actual upstream reachable from the connected Session's host"
                 },
                 "mode": {
                     "enum": [
@@ -1356,12 +1493,14 @@
                         "ESSH"
                     ],
                     "type": "string",
-                    "title": "Mode"
+                    "title": "Mode",
+                    "description": "Mode is how the upstream is served by the connected Session"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Upstream"
+            "title": "Upstream",
+            "description": "Upstream is a Service that is actually served by the connected Session (i.e. the Session's host reaches the actual upstream on behalf of the Cluster)"
         },
         "octelium.api.main.core.v1.Session.Status.Connection.Upstream.Backend": {
             "properties": {
@@ -1376,22 +1515,26 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Backend"
+            "title": "Backend",
+            "description": "Backend is the actual upstream that is reachable from the connected Session's host"
         },
         "octelium.api.main.core.v1.Session.Status.LastConnection": {
             "properties": {
                 "startedAt": {
                     "type": "string",
+                    "description": "StartedAt is the timestamp at which the connection started",
                     "format": "date-time"
                 },
                 "endedAt": {
                     "type": "string",
+                    "description": "EndedAt is the timestamp at which the connection ended",
                     "format": "date-time"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Last Connection"
+            "title": "Last Connection",
+            "description": "LastConnection is the information of a past connection of the Session"
         },
         "octelium.api.main.meta.v1.DualStackNetwork": {
             "properties": {
@@ -1406,7 +1549,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Dual Stack Network"
+            "title": "Dual Stack Network",
+            "description": "DualStackNetwork is a pair of an IPv4 and an IPv6 network range."
         },
         "octelium.api.main.meta.v1.Duration": {
             "properties": {
@@ -1523,7 +1667,8 @@
                     ]
                 }
             ],
-            "title": "Duration"
+            "title": "Duration",
+            "description": "Duration is a length of time that is expressed in a single unit of choice. Exactly one of the units is set (e.g. `seconds: 30`)."
         },
         "octelium.api.main.meta.v1.ListResponseMeta": {
             "properties": {
@@ -1533,7 +1678,7 @@
                 },
                 "itemsPerPage": {
                     "type": "integer",
-                    "description": "ItemsPerPage is number of items per page."
+                    "description": "ItemsPerPage is the number of items per page."
                 },
                 "totalCount": {
                     "type": "integer",
@@ -1541,12 +1686,13 @@
                 },
                 "hasMore": {
                     "type": "boolean",
-                    "description": "HasMore shows whether there a next page is available"
+                    "description": "HasMore shows whether a next page is available"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "List Response Meta"
+            "title": "List Response Meta",
+            "description": "ListResponseMeta is the pagination information that is common to every List response."
         },
         "octelium.api.main.meta.v1.Metadata": {
             "properties": {
@@ -1595,7 +1741,7 @@
                         "type": "string"
                     },
                     "type": "object",
-                    "description": "Labels is a map of string keys and values that can be used to store metadata about the object."
+                    "description": "Annotations is a map of string keys and values that can be used to store arbitrary metadata about the object."
                 },
                 "picURL": {
                     "type": "string",
@@ -1647,7 +1793,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Metadata"
+            "title": "Metadata",
+            "description": "Metadata is the metadata that is common to every Cluster resource. It carries the resource's identity (i.e. its UID and name), its human-readable information as well as the Cluster-managed bookkeeping of the resource's versioning and provenance."
         },
         "octelium.api.main.meta.v1.ObjectReference": {
             "properties": {
@@ -1674,7 +1821,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Object Reference"
+            "title": "Object Reference",
+            "description": "ObjectReference is a reference to another Cluster resource. It identifies the referenced resource by its kind and either its UID or its name."
         }
     }
 }

@@ -5,7 +5,8 @@
         "GetClusterConfigRequest": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Get Cluster Config Request"
+            "title": "Get Cluster Config Request",
+            "description": "GetClusterConfigRequest is the request of the GetClusterConfig method."
         }
     }
 }

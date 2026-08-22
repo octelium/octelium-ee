@@ -9,30 +9,36 @@
                     "description": "APIVersion is the API version (i.e. \"core/v1\")"
                 },
                 "kind": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Kind is the resource name (i.e. `ClusterConfig`)."
                 },
                 "metadata": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Metadata",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Metadata is the object's metadata."
                 },
                 "spec": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Spec is the ClusterConfig specification."
                 },
                 "status": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Status",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Status is the current status of the ClusterConfig."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Cluster Config"
+            "title": "Cluster Config",
+            "description": "ClusterConfig is the Cluster-wide configuration. It is a singleton resource that sets the defaults and the global options that apply to the entire Cluster (e.g. the Session and Device defaults, the Cluster-wide Policies, the DNS and the Authenticator/MFA options)."
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec": {
             "properties": {
                 "authorization": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Authorization",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Authorization sets the Cluster-wide authorization configuration"
                 },
                 "ingress": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Ingress",
@@ -61,27 +67,32 @@
                 },
                 "authenticator": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Authenticator sets the Authenticator/MFA specific options."
                 },
                 "authentication": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Authentication",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Authentication sets the authentication process specific options."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Spec"
+            "title": "Spec",
+            "description": "Spec is the ClusterConfig specification"
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.Authentication": {
             "properties": {
                 "geolocation": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Geolocation sets the geolocation resolution of the authenticating clients"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Authentication"
+            "title": "Authentication",
+            "description": "Authentication sets the Cluster-wide options of the authentication process"
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation": {
             "properties": {
@@ -114,16 +125,19 @@
                     ]
                 }
             ],
-            "title": "Geolocation"
+            "title": "Geolocation",
+            "description": "Geolocation sets the geolocation resolution of the authenticating clients. Once enabled, the resolved GeoIP information is set in the Session on each authentication and it can be used in the Policies."
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB": {
             "properties": {
                 "fromConfig": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromConfig sets the name of the Config whose data contains the MMDB database"
                 },
                 "upstream": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Upstream fetches the MMDB database from a URL"
                 }
             },
             "additionalProperties": false,
@@ -160,21 +174,25 @@
                     ]
                 }
             ],
-            "title": "MMDB"
+            "title": "MMDB",
+            "description": "MMDB resolves the geolocation from MaxMind MMDB databases (the `enterprise`, `city` and `country` database types are supported)"
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream": {
             "properties": {
                 "url": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "URL is the URL from which the MMDB database is fetched"
                 },
                 "auth": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Auth sets the credentials used to fetch the MMDB database"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Upstream"
+            "title": "Upstream",
+            "description": "Upstream fetches the MMDB database from a URL"
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth": {
             "properties": {
@@ -186,7 +204,7 @@
                 "basic": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Basic",
                     "additionalProperties": false,
-                    "description": "Basis sets basic authentication details"
+                    "description": "Basic sets basic authentication details"
                 },
                 "custom": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Custom",
@@ -195,7 +213,8 @@
                 },
                 "query": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Query",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Query sets authentication inside a URL query parameter"
                 }
             },
             "additionalProperties": false,
@@ -252,7 +271,8 @@
                     ]
                 }
             ],
-            "title": "Auth"
+            "title": "Auth",
+            "description": "Auth sets the credentials used to fetch the MMDB database"
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Basic": {
             "properties": {
@@ -268,12 +288,14 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Basic"
+            "title": "Basic",
+            "description": "Basic is the HTTP basic authentication credentials"
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Basic.Password": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the Password"
                 }
             },
             "additionalProperties": false,
@@ -300,12 +322,14 @@
                     ]
                 }
             ],
-            "title": "Password"
+            "title": "Password",
+            "description": "Password is the password value of HTTP basic authentication"
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Bearer": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the bearer token"
                 }
             },
             "additionalProperties": false,
@@ -332,7 +356,8 @@
                     ]
                 }
             ],
-            "title": "Bearer"
+            "title": "Bearer",
+            "description": "Bearer is the bearer token that is set in the `Authorization` request header"
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Custom": {
             "properties": {
@@ -348,12 +373,14 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Custom"
+            "title": "Custom",
+            "description": "Custom is a credential that is set in a custom request header"
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Custom.Value": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the header's Value"
                 }
             },
             "additionalProperties": false,
@@ -380,26 +407,31 @@
                     ]
                 }
             ],
-            "title": "Value"
+            "title": "Value",
+            "description": "Value is the value of the custom request header"
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Query": {
             "properties": {
                 "key": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Key is the name of the query parameter"
                 },
                 "value": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Query.Value",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Value is the value of the query parameter"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Query"
+            "title": "Query",
+            "description": "Query is a credential that is set in a URL query parameter"
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.Authentication.Geolocation.MMDB.Upstream.Auth.Query.Value": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the query parameter's Value"
                 }
             },
             "additionalProperties": false,
@@ -426,7 +458,8 @@
                     ]
                 }
             ],
-            "title": "Value"
+            "title": "Value",
+            "description": "Value is the value of the query parameter"
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator": {
             "properties": {
@@ -435,24 +468,28 @@
                         "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.EnforcementRule"
                     },
                     "additionalProperties": false,
-                    "type": "array"
+                    "type": "array",
+                    "description": "RegistrationEnforcementRules is the list of the rules that decide whether registering an Authenticator is enforced"
                 },
                 "authenticationEnforcementRules": {
                     "items": {
                         "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.EnforcementRule"
                     },
                     "additionalProperties": false,
-                    "type": "array"
+                    "type": "array",
+                    "description": "AuthenticationEnforcementRules is the list of the rules that decide whether authenticating via an Authenticator is enforced as MFA right after a successful IdentityProvider authentication"
                 },
                 "postAuthenticationRules": {
                     "items": {
                         "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.Rule"
                     },
                     "additionalProperties": false,
-                    "type": "array"
+                    "type": "array",
+                    "description": "PostAuthenticationRules is the list of the rules that decide whether an otherwise successful Authenticator authentication is eventually accepted or rejected"
                 },
                 "enablePasskeyLogin": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "EnablePasskeyLogin enables logging in directly with a Passkey. Once enabled, any registered FIDO Authenticator that supports resident key credentials can be used for a Passkey login."
                 },
                 "defaultState": {
                     "enum": [
@@ -462,22 +499,26 @@
                         "REJECTED"
                     ],
                     "type": "string",
-                    "title": "State"
+                    "title": "State",
+                    "description": "State is the state of the Authenticator"
                 },
                 "fido": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.FIDO",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "FIDO sets the options of the FIDO/WebAuthn Authenticators"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Authenticator"
+            "title": "Authenticator",
+            "description": "Authenticator sets the Cluster-wide options of the Authenticators and MFA"
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.EnforcementRule": {
             "properties": {
                 "condition": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Condition",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Condition is the rule's Condition"
                 },
                 "effect": {
                     "enum": [
@@ -487,12 +528,14 @@
                         "RECOMMEND"
                     ],
                     "type": "string",
-                    "title": "Effect"
+                    "title": "Effect",
+                    "description": "Effect is the decision of the rule once its Condition matches"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Enforcement Rule"
+            "title": "Enforcement Rule",
+            "description": "EnforcementRule decides whether the Authenticator registration or authentication is enforced, recommended or ignored"
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.FIDO": {
             "properties": {
@@ -505,12 +548,14 @@
                         "ENTERPRISE"
                     ],
                     "type": "string",
-                    "title": "Attestation Conveyance Preference"
+                    "title": "Attestation Conveyance Preference",
+                    "description": "AttestationConveyancePreference is the WebAuthn attestation conveyance preference used during the registration"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "FIDO"
+            "title": "FIDO",
+            "description": "FIDO sets the options of the FIDO/WebAuthn Authenticators"
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.Rule": {
             "properties": {
@@ -530,12 +575,14 @@
                         "DENY"
                     ],
                     "type": "string",
-                    "title": "Effect"
+                    "title": "Effect",
+                    "description": "Effect is the decision of the rule once its Condition matches"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Rule"
+            "title": "Rule",
+            "description": "Rule decides whether an otherwise successful Authenticator authentication is eventually accepted or rejected"
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.Authorization": {
             "properties": {
@@ -557,18 +604,21 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Authorization"
+            "title": "Authorization",
+            "description": "Authorization sets the Cluster-wide Policies that are applied to every request"
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.DNS": {
             "properties": {
                 "fallbackZone": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.DNS.Zone",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "FallbackZone sets the zone that resolves the names that are not served by the Cluster itself"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "DNS"
+            "title": "DNS",
+            "description": "DNS sets the options of the Cluster's private DNS service"
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.DNS.Zone": {
             "properties": {
@@ -576,16 +626,19 @@
                     "items": {
                         "type": "string"
                     },
-                    "type": "array"
+                    "type": "array",
+                    "description": "Servers is the list of the upstream DNS servers of the zone"
                 },
                 "cacheDuration": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "CacheDuration is the duration for which the zone's answers are cached"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Zone"
+            "title": "Zone",
+            "description": "Zone sets the options of a DNS zone"
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.Device": {
             "properties": {
@@ -602,7 +655,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Device"
+            "title": "Device",
+            "description": "Device sets the Cluster-wide defaults of the Devices"
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.Device.Human": {
             "properties": {
@@ -614,16 +668,18 @@
                         "REJECTED"
                     ],
                     "type": "string",
-                    "title": "State"
+                    "title": "State",
+                    "description": "State is the state of the Device"
                 },
                 "maxPerUser": {
                     "type": "integer",
-                    "description": "MaxPerUser sets the max number of of Devices per User"
+                    "description": "MaxPerUser sets the max number of Devices per User"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Human"
+            "title": "Human",
+            "description": "Human sets the Device defaults of the HUMAN Users"
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.Device.Workload": {
             "properties": {
@@ -635,16 +691,18 @@
                         "REJECTED"
                     ],
                     "type": "string",
-                    "title": "State"
+                    "title": "State",
+                    "description": "State is the state of the Device"
                 },
                 "maxPerUser": {
                     "type": "integer",
-                    "description": "MaxPerUser sets the max number of of Devices per User"
+                    "description": "MaxPerUser sets the max number of Devices per User"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Workload"
+            "title": "Workload",
+            "description": "Workload sets the Device defaults of the WORKLOAD Users"
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.Gateway": {
             "properties": {
@@ -656,7 +714,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Gateway"
+            "title": "Gateway",
+            "description": "Gateway sets the Cluster-wide options of the Gateways"
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.Ingress": {
             "properties": {
@@ -665,12 +724,14 @@
                     "description": "UseForwardedForHeader enables the usage of the X-Forwarded-For header by the Cluster to obtain the downstream's public IP address."
                 },
                 "xffNumTrustedHops": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "XFFNumTrustedHops is the number of the trusted hops used to pick the downstream's public IP address out of the X-Forwarded-For header."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Ingress"
+            "title": "Ingress",
+            "description": "Ingress sets the options of the Cluster's internet-facing Ingress"
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.Session": {
             "properties": {
@@ -687,7 +748,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Session"
+            "title": "Session",
+            "description": "Session sets the Cluster-wide defaults of the Sessions"
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.Session.Human": {
             "properties": {
@@ -713,7 +775,7 @@
                 },
                 "maxPerUser": {
                     "type": "integer",
-                    "description": "MaxPerUser sets the max number of of Sessions per User"
+                    "description": "MaxPerUser sets the max number of Sessions per User"
                 },
                 "defaultState": {
                     "enum": [
@@ -723,12 +785,14 @@
                         "REJECTED"
                     ],
                     "type": "string",
-                    "title": "State"
+                    "title": "State",
+                    "description": "State is the state of the Session"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Human"
+            "title": "Human",
+            "description": "Human sets the Session defaults of the HUMAN Users"
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.Session.Workload": {
             "properties": {
@@ -754,7 +818,7 @@
                 },
                 "maxPerUser": {
                     "type": "integer",
-                    "description": "MaxPerUser sets the max number of of Sessions per User"
+                    "description": "MaxPerUser sets the max number of Sessions per User"
                 },
                 "defaultState": {
                     "enum": [
@@ -764,33 +828,40 @@
                         "REJECTED"
                     ],
                     "type": "string",
-                    "title": "State"
+                    "title": "State",
+                    "description": "State is the state of the Session"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Workload"
+            "title": "Workload",
+            "description": "Workload sets the Session defaults of the WORKLOAD Users"
         },
         "octelium.api.main.core.v1.ClusterConfig.Status": {
             "properties": {
                 "domain": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Domain is the Cluster's domain (e.g. \"example.com\")"
                 },
                 "network": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Status.Network",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Network is the actual network ranges that were allocated by the Cluster"
                 },
                 "networkConfig": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Status.NetworkConfig",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "NetworkConfig is the Cluster's networking configuration"
                 },
                 "secretManager": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Status.SecretManager",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "SecretManager is the external secret manager used by the Cluster, if any"
                 },
                 "device": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Status.Device",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Device is the Cluster-wide Device configuration"
                 },
                 "installation": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Status.Installation",
@@ -800,7 +871,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Status"
+            "title": "Status",
+            "description": "Status is the current status of the ClusterConfig"
         },
         "octelium.api.main.core.v1.ClusterConfig.Status.Device": {
             "properties": {
@@ -809,18 +881,21 @@
                         "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe"
                     },
                     "additionalProperties": false,
-                    "type": "array"
+                    "type": "array",
+                    "description": "Probes is the list of the Probes that are run on the Devices"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Device"
+            "title": "Device",
+            "description": "Device is the Cluster-wide Device configuration"
         },
         "octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe": {
             "properties": {
                 "ownerRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "OwnerRef is the reference of the DeviceManager that owns the Probe"
                 },
                 "osType": {
                     "enum": [
@@ -832,26 +907,32 @@
                         "IOS"
                     ],
                     "type": "string",
-                    "title": "OS Type"
+                    "title": "OS Type",
+                    "description": "OSType is the operating system of the Device"
                 },
                 "requireElevation": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "RequireElevation requires the Probe to be run with elevated privileges"
                 },
                 "condition": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Condition",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Condition decides whether the Probe is run on a given Device"
                 },
                 "runCommand": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.RunCommand",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RunCommand runs a command on the Device"
                 },
                 "readFile": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ReadFile",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ReadFile reads a file from the Device"
                 },
                 "readRegistry": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ReadRegistry",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ReadRegistry reads a value from the Device's Windows registry"
                 }
             },
             "additionalProperties": false,
@@ -898,55 +979,67 @@
                     ]
                 }
             ],
-            "title": "Probe"
+            "title": "Probe",
+            "description": "Probe is a check that is run on the Devices in order to collect the information used to bind them to their DeviceManagers"
         },
         "octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ReadFile": {
             "properties": {
                 "path": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Path is the path of the file to be read"
                 },
                 "maxBytes": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "MaxBytes is the maximum size in bytes that is read from the file"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Read File"
+            "title": "Read File",
+            "description": "ReadFile reads a file from the Device"
         },
         "octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ReadRegistry": {
             "properties": {
                 "key": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Key is the registry key to be read"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Name is the name of the registry value to be read"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Read Registry"
+            "title": "Read Registry",
+            "description": "ReadRegistry reads a value from the Windows registry of the Device"
         },
         "octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.RunCommand": {
             "properties": {
                 "command": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Command is the command to be run"
                 },
                 "args": {
                     "items": {
                         "type": "string"
                     },
-                    "type": "array"
+                    "type": "array",
+                    "description": "Args is the list of the command's arguments"
                 },
                 "timeoutSeconds": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "TimeoutSeconds is the number of seconds after which running the command times out"
                 },
                 "maxOutputBytes": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "MaxOutputBytes is the maximum size in bytes of the collected output"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Run Command"
+            "title": "Run Command",
+            "description": "RunCommand runs a command on the Device and collects its output"
         },
         "octelium.api.main.core.v1.ClusterConfig.Status.Installation": {
             "properties": {
@@ -1016,7 +1109,8 @@
                     ]
                 }
             ],
-            "title": "CNI"
+            "title": "CNI",
+            "description": "CNI is the Kubernetes cluster CNI-specific installation options"
         },
         "octelium.api.main.core.v1.ClusterConfig.Status.Installation.Ingress": {
             "properties": {
@@ -1028,7 +1122,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Ingress"
+            "title": "Ingress",
+            "description": "Ingress is the Cluster Ingress-specific installation options"
         },
         "octelium.api.main.core.v1.ClusterConfig.Status.Installation.Ingress.FrontProxy": {
             "properties": {
@@ -1039,7 +1134,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Front Proxy"
+            "title": "Front Proxy",
+            "description": "FrontProxy is the front proxy mode-specific options"
         },
         "octelium.api.main.core.v1.ClusterConfig.Status.Installation.SPIFFE": {
             "properties": {
@@ -1059,7 +1155,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "SPIFFE"
+            "title": "SPIFFE",
+            "description": "SPIFFE is the SPIFFE/SPIRE-specific installation options"
         },
         "octelium.api.main.core.v1.ClusterConfig.Status.Installation.SPIFFE.CSIDriver": {
             "properties": {
@@ -1070,35 +1167,42 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "CSI Driver"
+            "title": "CSI Driver",
+            "description": "CSIDriver is the SPIFFE CSI driver-specific options"
         },
         "octelium.api.main.core.v1.ClusterConfig.Status.Network": {
             "properties": {
                 "clusterNetwork": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.DualStackNetwork",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ClusterNetwork is the dual-stack network range of the entire Cluster"
                 },
                 "wgConnSubnet": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.DualStackNetwork",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "WGConnSubnet is the dual-stack subnet from which the addresses of the WireGuard-based connections are allocated"
                 },
                 "v6RangePrefix": {
                     "type": "string",
+                    "description": "V6RangePrefix is the prefix of the Cluster's IPv6 range",
                     "format": "binary",
                     "binaryEncoding": "base64"
                 },
                 "serviceSubnet": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.DualStackNetwork",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ServiceSubnet is the dual-stack subnet from which the private addresses of the Services are allocated"
                 },
                 "quicConnSubnet": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.DualStackNetwork",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "QUICConnSubnet is the dual-stack subnet from which the addresses of the QUICv0-based connections are allocated"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Network"
+            "title": "Network",
+            "description": "Network is the actual network ranges that were allocated by the Cluster"
         },
         "octelium.api.main.core.v1.ClusterConfig.Status.NetworkConfig": {
             "properties": {
@@ -1110,7 +1214,8 @@
                         "V4_ONLY"
                     ],
                     "type": "string",
-                    "title": "Mode"
+                    "title": "Mode",
+                    "description": "Mode is the Cluster's networking mode"
                 },
                 "v4": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Status.NetworkConfig.V4",
@@ -1135,7 +1240,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Network Config"
+            "title": "Network Config",
+            "description": "NetworkConfig is the Cluster's networking configuration"
         },
         "octelium.api.main.core.v1.ClusterConfig.Status.NetworkConfig.QUICV0": {
             "properties": {
@@ -1154,7 +1260,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "QUICV 0"
+            "title": "QUICV 0",
+            "description": "QUICV0 is the QUICv0-specific configuration"
         },
         "octelium.api.main.core.v1.ClusterConfig.Status.NetworkConfig.V4": {
             "properties": {
@@ -1163,15 +1270,18 @@
                     "description": "ClusterNetwork is the Cluster network range. Currently `100.64.0.0/10` is used by default."
                 },
                 "gatewayBits": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "GatewayBits is the number of the bits of the ClusterNetwork that are allocated to address the Gateways."
                 },
                 "regionBits": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "RegionBits is the number of the bits of the ClusterNetwork that are allocated to address the Regions."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "V 4"
+            "title": "V 4",
+            "description": "V4 is the IPv4 Network configuration"
         },
         "octelium.api.main.core.v1.ClusterConfig.Status.NetworkConfig.V6": {
             "properties": {
@@ -1182,7 +1292,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "V 6"
+            "title": "V 6",
+            "description": "V6 is the IPv6 Network configuration"
         },
         "octelium.api.main.core.v1.ClusterConfig.Status.NetworkConfig.Wireguard": {
             "properties": {
@@ -1197,26 +1308,31 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Wireguard"
+            "title": "Wireguard",
+            "description": "Wireguard is the WireGuard-specific configuration"
         },
         "octelium.api.main.core.v1.ClusterConfig.Status.SecretManager": {
             "properties": {
                 "address": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Address is the address of the secret manager's gRPC server"
                 },
                 "tls": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Status.SecretManager.TLS",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "TLS sets the TLS-related configuration"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Secret Manager"
+            "title": "Secret Manager",
+            "description": "SecretManager is the external secret manager that intercepts the Secret operations in order to store the Secrets according to the operator's own requirements"
         },
         "octelium.api.main.core.v1.ClusterConfig.Status.SecretManager.TLS": {
             "additionalProperties": false,
             "type": "object",
-            "title": "TLS"
+            "title": "TLS",
+            "description": "TLS sets the TLS-related configuration used to connect to the secret manager"
         },
         "octelium.api.main.core.v1.Condition": {
             "properties": {
@@ -1337,7 +1453,8 @@
                     ]
                 }
             ],
-            "title": "Condition"
+            "title": "Condition",
+            "description": "Condition is a policy-as-code expression that is evaluated against the request context. It is used by the Policy rules, the Service dynamic configuration rules, the HTTP Plugins as well as by the IdentityProvider rules."
         },
         "octelium.api.main.core.v1.Condition.All": {
             "properties": {
@@ -1346,12 +1463,14 @@
                         "$ref": "#/definitions/octelium.api.main.core.v1.Condition"
                     },
                     "additionalProperties": false,
-                    "type": "array"
+                    "type": "array",
+                    "description": "Of is the list of the Conditions that must all match"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "All"
+            "title": "All",
+            "description": "All acts as a logical AND operator on its list of Conditions"
         },
         "octelium.api.main.core.v1.Condition.Any": {
             "properties": {
@@ -1361,12 +1480,13 @@
                     },
                     "additionalProperties": false,
                     "type": "array",
-                    "description": "Expressions is the list of CEL expressions"
+                    "description": "Of is the list of the Conditions of which at least one must match"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Any"
+            "title": "Any",
+            "description": "Any acts as a logical OR operator on its list of Conditions"
         },
         "octelium.api.main.core.v1.Condition.None": {
             "properties": {
@@ -1376,12 +1496,13 @@
                     },
                     "additionalProperties": false,
                     "type": "array",
-                    "description": "Expressions is the list of CEL expressions"
+                    "description": "Of is the list of the Conditions of which none must match"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "None"
+            "title": "None",
+            "description": "None acts as a logical NOR operator on its list of Conditions"
         },
         "octelium.api.main.core.v1.Condition.OPA": {
             "properties": {
@@ -1414,7 +1535,8 @@
                     ]
                 }
             ],
-            "title": "OPA"
+            "title": "OPA",
+            "description": "OPA evaluates the Condition via an Open Policy Agent Rego script"
         },
         "octelium.api.main.core.v1.InlinePolicy": {
             "properties": {
@@ -1430,7 +1552,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Inline Policy"
+            "title": "Inline Policy",
+            "description": "InlinePolicy is a Policy that is defined inline within the resource that attaches it instead of being created as a standalone Policy resource."
         },
         "octelium.api.main.core.v1.Policy.Spec": {
             "properties": {
@@ -1452,7 +1575,8 @@
                 },
                 "attrs": {
                     "additionalProperties": true,
-                    "type": "object"
+                    "type": "object",
+                    "description": "Attrs is a map of user-defined attributes that can be reused inside the Policy rules. It is strongly recommended to stick to camelCase in order to be conformant with Octelium's API naming conventions."
                 },
                 "isDisabled": {
                     "type": "boolean",
@@ -1461,7 +1585,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Spec"
+            "title": "Spec",
+            "description": "Spec is the Policy specification"
         },
         "octelium.api.main.core.v1.Policy.Spec.EnforcementRule": {
             "properties": {
@@ -1477,12 +1602,14 @@
                         "IGNORE"
                     ],
                     "type": "string",
-                    "title": "Effect"
+                    "title": "Effect",
+                    "description": "Effect is the decision of the EnforcementRule once its Condition matches"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Enforcement Rule"
+            "title": "Enforcement Rule",
+            "description": "EnforcementRule is a pre-condition that decides whether the Policy is evaluated at all. If no EnforcementRule matches, or if the list of EnforcementRules is empty, then the Policy is enforced. ENFORCE rules always override IGNORE rules in the same way that DENY rules override ALLOW rules."
         },
         "octelium.api.main.core.v1.Policy.Spec.Rule": {
             "properties": {
@@ -1502,7 +1629,8 @@
                         "DENY"
                     ],
                     "type": "string",
-                    "title": "Effect"
+                    "title": "Effect",
+                    "description": "Effect is the decision of the Rule once its Condition matches"
                 },
                 "priority": {
                     "type": "integer",
@@ -1511,7 +1639,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Rule"
+            "title": "Rule",
+            "description": "Rule is a single access control rule of the Policy"
         },
         "octelium.api.main.meta.v1.DualStackNetwork": {
             "properties": {
@@ -1526,7 +1655,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Dual Stack Network"
+            "title": "Dual Stack Network",
+            "description": "DualStackNetwork is a pair of an IPv4 and an IPv6 network range."
         },
         "octelium.api.main.meta.v1.Duration": {
             "properties": {
@@ -1643,7 +1773,8 @@
                     ]
                 }
             ],
-            "title": "Duration"
+            "title": "Duration",
+            "description": "Duration is a length of time that is expressed in a single unit of choice. Exactly one of the units is set (e.g. `seconds: 30`)."
         },
         "octelium.api.main.meta.v1.Metadata": {
             "properties": {
@@ -1692,7 +1823,7 @@
                         "type": "string"
                     },
                     "type": "object",
-                    "description": "Labels is a map of string keys and values that can be used to store metadata about the object."
+                    "description": "Annotations is a map of string keys and values that can be used to store arbitrary metadata about the object."
                 },
                 "picURL": {
                     "type": "string",
@@ -1744,7 +1875,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Metadata"
+            "title": "Metadata",
+            "description": "Metadata is the metadata that is common to every Cluster resource. It carries the resource's identity (i.e. its UID and name), its human-readable information as well as the Cluster-managed bookkeeping of the resource's versioning and provenance."
         },
         "octelium.api.main.meta.v1.ObjectReference": {
             "properties": {
@@ -1771,7 +1903,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Object Reference"
+            "title": "Object Reference",
+            "description": "ObjectReference is a reference to another Cluster resource. It identifies the referenced resource by its kind and either its UID or its name."
         }
     }
 }

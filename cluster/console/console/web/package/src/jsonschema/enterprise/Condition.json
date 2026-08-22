@@ -1650,7 +1650,8 @@
                         "IOS"
                     ],
                     "type": "string",
-                    "title": "OS Type"
+                    "title": "OS Type",
+                    "description": "OSType is the operating system of the Device"
                 }
             },
             "additionalProperties": false,
@@ -1763,7 +1764,8 @@
                         "UNAVAILABLE"
                     ],
                     "type": "string",
-                    "title": "Estimate Quality"
+                    "title": "Estimate Quality",
+                    "description": "EstimateQuality is whether the EstimatedInputTokens field accounted for the entire input of the request"
                 }
             },
             "additionalProperties": false,
@@ -1849,7 +1851,8 @@
                         "COUNT_TOKENS"
                     ],
                     "type": "string",
-                    "title": "Operation"
+                    "title": "Operation",
+                    "description": "Operation is the normalized inference operation of the request"
                 }
             },
             "additionalProperties": false,
@@ -1865,7 +1868,8 @@
                         "ANTHROPIC"
                     ],
                     "type": "string",
-                    "title": "Protocol"
+                    "title": "Protocol",
+                    "description": "Protocol is the inference API protocol served by the Service."
                 }
             },
             "additionalProperties": false,
@@ -2382,7 +2386,8 @@
                         "IPV6"
                     ],
                     "type": "string",
-                    "title": "Address Type"
+                    "title": "Address Type",
+                    "description": "AddressType is the type of the requested destination address"
                 }
             },
             "additionalProperties": false,
@@ -2460,7 +2465,7 @@
                     ],
                     "type": "string",
                     "title": "Mode",
-                    "description": "Mode is the application-layer protocol used by the proxy implementing the Service"
+                    "description": "Mode is the application-layer protocol understood by the proxy implementing the Service"
                 }
             },
             "additionalProperties": false,
@@ -2493,7 +2498,8 @@
                         "AAL3"
                     ],
                     "type": "string",
-                    "title": "AAL"
+                    "title": "AAL",
+                    "description": "AAL is the authenticator assurance level (AAL) of the authentication as defined by NIST SP 800-63B"
                 }
             },
             "additionalProperties": false,
@@ -2556,7 +2562,8 @@
                         "ACCESS_TOKEN"
                     ],
                     "type": "string",
-                    "title": "Type"
+                    "title": "Type",
+                    "description": "Type is the type of the Credential"
                 }
             },
             "additionalProperties": false,
@@ -2597,7 +2604,8 @@
                         "AUTHENTICATOR"
                     ],
                     "type": "string",
-                    "title": "Type"
+                    "title": "Type",
+                    "description": "Type is the method by which the Session was authenticated"
                 }
             },
             "additionalProperties": false,
@@ -2618,7 +2626,8 @@
                         "CLIENTLESS"
                     ],
                     "type": "string",
-                    "title": "Type"
+                    "title": "Type",
+                    "description": "Type is the type of the Session"
                 }
             },
             "additionalProperties": false,
@@ -2909,7 +2918,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Object Reference"
+            "title": "Object Reference",
+            "description": "ObjectReference is a reference to another Cluster resource. It identifies the referenced resource by its kind and either its UID or its name."
         }
     }
 }

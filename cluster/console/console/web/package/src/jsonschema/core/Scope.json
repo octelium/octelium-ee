@@ -49,7 +49,8 @@
                     ]
                 }
             ],
-            "title": "Scope"
+            "title": "Scope",
+            "description": "Scope restricts what a Session is allowed to reach. A Session that carries no Scopes is unrestricted, otherwise it can only reach what its Scopes allow. Scopes narrow a Session down, they never widen it beyond what the authorization Policies already allow."
         },
         "octelium.api.main.core.v1.Scope.API": {
             "properties": {
@@ -98,12 +99,14 @@
                     ]
                 }
             ],
-            "title": "API"
+            "title": "API",
+            "description": "API scopes the access to the Cluster's own gRPC APIs"
         },
         "octelium.api.main.core.v1.Scope.API.All": {
             "additionalProperties": false,
             "type": "object",
-            "title": "All"
+            "title": "All",
+            "description": "All allows access to all APIs"
         },
         "octelium.api.main.core.v1.Scope.API.Filter": {
             "properties": {
@@ -131,7 +134,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Filter"
+            "title": "Filter",
+            "description": "Filter restricts the access to certain gRPC packages, services or methods"
         },
         "octelium.api.main.core.v1.Scope.Service": {
             "properties": {
@@ -180,12 +184,14 @@
                     ]
                 }
             ],
-            "title": "Service"
+            "title": "Service",
+            "description": "Service scopes the access to the Cluster's Services"
         },
         "octelium.api.main.core.v1.Scope.Service.All": {
             "additionalProperties": false,
             "type": "object",
-            "title": "All"
+            "title": "All",
+            "description": "All allows access to all Services"
         },
         "octelium.api.main.core.v1.Scope.Service.Filter": {
             "properties": {
@@ -206,7 +212,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Filter"
+            "title": "Filter",
+            "description": "Filter restricts the access to certain Services or Namespaces"
         }
     }
 }

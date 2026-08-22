@@ -5,7 +5,8 @@
         "GeoIP": {
             "properties": {
                 "ip": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "IP is the IP address itself"
                 },
                 "ipVersion": {
                     "enum": [
@@ -14,140 +15,173 @@
                         "V6"
                     ],
                     "type": "string",
-                    "title": "IP Version"
+                    "title": "IP Version",
+                    "description": "IPVersion is the version of the IP address"
                 },
                 "country": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.GeoIP.Country",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Country is the country of the IP address"
                 },
                 "region": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.GeoIP.Region",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Region is the subdivision/region of the IP address within its country"
                 },
                 "city": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.GeoIP.City",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "City is the city of the IP address"
                 },
                 "continent": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.GeoIP.Continent",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Continent is the continent of the IP address"
                 },
                 "network": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.GeoIP.Network",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Network is the network information of the IP address"
                 },
                 "timezone": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.GeoIP.Timezone",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Timezone is the timezone of the IP address"
                 },
                 "postalCode": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "PostalCode is the postal code of the IP address"
                 },
                 "coordinates": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.GeoIP.Coordinates",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Coordinates is the approximate geographic location of the IP address"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Geo IP"
+            "title": "Geo IP",
+            "description": "GeoIP is the geolocation information of an IP address. It is resolved by the Cluster from the MaxMind MMDB databases that are set in the ClusterConfig and it is only set if geolocation is enabled."
         },
         "octelium.api.main.core.v1.GeoIP.City": {
             "properties": {
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Name is the city's name (e.g. \"New York\")"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "City"
+            "title": "City",
+            "description": "City is the city of the IP address"
         },
         "octelium.api.main.core.v1.GeoIP.Continent": {
             "properties": {
                 "code": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Code is the continent's code (e.g. \"EU\")"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Name is the continent's name (e.g. \"Europe\")"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Continent"
+            "title": "Continent",
+            "description": "Continent is the continent of the IP address"
         },
         "octelium.api.main.core.v1.GeoIP.Coordinates": {
             "properties": {
                 "latitude": {
-                    "type": "number"
+                    "type": "number",
+                    "description": "Latitude is the latitude in degrees"
                 },
                 "longitude": {
-                    "type": "number"
+                    "type": "number",
+                    "description": "Longitude is the longitude in degrees"
                 },
                 "accuracyRadius": {
-                    "type": "number"
+                    "type": "number",
+                    "description": "AccuracyRadius is the radius in kilometers within which the IP address is likely to be located"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Coordinates"
+            "title": "Coordinates",
+            "description": "Coordinates is the approximate geographic location of the IP address"
         },
         "octelium.api.main.core.v1.GeoIP.Country": {
             "properties": {
                 "code": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Code is the ISO 3166-1 country code (e.g. \"US\")"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Name is the country's name (e.g. \"United States\")"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Country"
+            "title": "Country",
+            "description": "Country is the country of the IP address"
         },
         "octelium.api.main.core.v1.GeoIP.Network": {
             "properties": {
                 "asn": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "ASN is the autonomous system number of the network"
                 },
                 "isp": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ISP is the name of the internet service provider"
                 },
                 "organization": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Organization is the name of the organization that owns the network"
                 },
                 "domain": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Domain is the second-level domain of the network"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Network"
+            "title": "Network",
+            "description": "Network is the network information of the IP address"
         },
         "octelium.api.main.core.v1.GeoIP.Region": {
             "properties": {
                 "code": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Code is the region's code"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Name is the region's name"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Region"
+            "title": "Region",
+            "description": "Region is the subdivision/region of the IP address within its country"
         },
         "octelium.api.main.core.v1.GeoIP.Timezone": {
             "properties": {
                 "id": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ID is the IANA timezone identifier (e.g. \"America/New_York\")"
                 },
                 "offset": {
-                    "type": "number"
+                    "type": "number",
+                    "description": "Offset is the timezone's offset in hours from UTC"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Timezone"
+            "title": "Timezone",
+            "description": "Timezone is the timezone of the IP address"
         }
     }
 }

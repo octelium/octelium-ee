@@ -150,7 +150,8 @@
                     ]
                 }
             ],
-            "title": "Condition"
+            "title": "Condition",
+            "description": "Condition is a policy-as-code expression that is evaluated against the request context. It is used by the Policy rules, the Service dynamic configuration rules, the HTTP Plugins as well as by the IdentityProvider rules."
         },
         "octelium.api.main.core.v1.Condition.All": {
             "properties": {
@@ -159,12 +160,14 @@
                         "$ref": "#/definitions/octelium.api.main.core.v1.Condition"
                     },
                     "additionalProperties": false,
-                    "type": "array"
+                    "type": "array",
+                    "description": "Of is the list of the Conditions that must all match"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "All"
+            "title": "All",
+            "description": "All acts as a logical AND operator on its list of Conditions"
         },
         "octelium.api.main.core.v1.Condition.Any": {
             "properties": {
@@ -174,12 +177,13 @@
                     },
                     "additionalProperties": false,
                     "type": "array",
-                    "description": "Expressions is the list of CEL expressions"
+                    "description": "Of is the list of the Conditions of which at least one must match"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Any"
+            "title": "Any",
+            "description": "Any acts as a logical OR operator on its list of Conditions"
         },
         "octelium.api.main.core.v1.Condition.None": {
             "properties": {
@@ -189,12 +193,13 @@
                     },
                     "additionalProperties": false,
                     "type": "array",
-                    "description": "Expressions is the list of CEL expressions"
+                    "description": "Of is the list of the Conditions of which none must match"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "None"
+            "title": "None",
+            "description": "None acts as a logical NOR operator on its list of Conditions"
         },
         "octelium.api.main.core.v1.Condition.OPA": {
             "properties": {
@@ -227,7 +232,8 @@
                     ]
                 }
             ],
-            "title": "OPA"
+            "title": "OPA",
+            "description": "OPA evaluates the Condition via an Open Policy Agent Rego script"
         },
         "octelium.api.main.core.v1.InlinePolicy": {
             "properties": {
@@ -243,7 +249,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Inline Policy"
+            "title": "Inline Policy",
+            "description": "InlinePolicy is a Policy that is defined inline within the resource that attaches it instead of being created as a standalone Policy resource."
         },
         "octelium.api.main.core.v1.Policy.Spec": {
             "properties": {
@@ -265,7 +272,8 @@
                 },
                 "attrs": {
                     "additionalProperties": true,
-                    "type": "object"
+                    "type": "object",
+                    "description": "Attrs is a map of user-defined attributes that can be reused inside the Policy rules. It is strongly recommended to stick to camelCase in order to be conformant with Octelium's API naming conventions."
                 },
                 "isDisabled": {
                     "type": "boolean",
@@ -274,7 +282,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Spec"
+            "title": "Spec",
+            "description": "Spec is the Policy specification"
         },
         "octelium.api.main.core.v1.Policy.Spec.EnforcementRule": {
             "properties": {
@@ -290,12 +299,14 @@
                         "IGNORE"
                     ],
                     "type": "string",
-                    "title": "Effect"
+                    "title": "Effect",
+                    "description": "Effect is the decision of the EnforcementRule once its Condition matches"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Enforcement Rule"
+            "title": "Enforcement Rule",
+            "description": "EnforcementRule is a pre-condition that decides whether the Policy is evaluated at all. If no EnforcementRule matches, or if the list of EnforcementRules is empty, then the Policy is enforced. ENFORCE rules always override IGNORE rules in the same way that DENY rules override ALLOW rules."
         },
         "octelium.api.main.core.v1.Policy.Spec.Rule": {
             "properties": {
@@ -315,7 +326,8 @@
                         "DENY"
                     ],
                     "type": "string",
-                    "title": "Effect"
+                    "title": "Effect",
+                    "description": "Effect is the decision of the Rule once its Condition matches"
                 },
                 "priority": {
                     "type": "integer",
@@ -324,7 +336,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Rule"
+            "title": "Rule",
+            "description": "Rule is a single access control rule of the Policy"
         },
         "octelium.api.main.core.v1.User": {
             "properties": {
@@ -433,7 +446,8 @@
                         "REJECTED"
                     ],
                     "type": "string",
-                    "title": "State"
+                    "title": "State",
+                    "description": "State is the state of the Authenticator"
                 }
             },
             "additionalProperties": false,
@@ -550,7 +564,8 @@
                         "REJECTED"
                     ],
                     "type": "string",
-                    "title": "State"
+                    "title": "State",
+                    "description": "State is the state of the Session"
                 }
             },
             "additionalProperties": false,
@@ -698,7 +713,8 @@
                     ]
                 }
             ],
-            "title": "Duration"
+            "title": "Duration",
+            "description": "Duration is a length of time that is expressed in a single unit of choice. Exactly one of the units is set (e.g. `seconds: 30`)."
         },
         "octelium.api.main.meta.v1.ListResponseMeta": {
             "properties": {
@@ -708,7 +724,7 @@
                 },
                 "itemsPerPage": {
                     "type": "integer",
-                    "description": "ItemsPerPage is number of items per page."
+                    "description": "ItemsPerPage is the number of items per page."
                 },
                 "totalCount": {
                     "type": "integer",
@@ -716,12 +732,13 @@
                 },
                 "hasMore": {
                     "type": "boolean",
-                    "description": "HasMore shows whether there a next page is available"
+                    "description": "HasMore shows whether a next page is available"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "List Response Meta"
+            "title": "List Response Meta",
+            "description": "ListResponseMeta is the pagination information that is common to every List response."
         },
         "octelium.api.main.meta.v1.Metadata": {
             "properties": {
@@ -770,7 +787,7 @@
                         "type": "string"
                     },
                     "type": "object",
-                    "description": "Labels is a map of string keys and values that can be used to store metadata about the object."
+                    "description": "Annotations is a map of string keys and values that can be used to store arbitrary metadata about the object."
                 },
                 "picURL": {
                     "type": "string",
@@ -822,7 +839,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Metadata"
+            "title": "Metadata",
+            "description": "Metadata is the metadata that is common to every Cluster resource. It carries the resource's identity (i.e. its UID and name), its human-readable information as well as the Cluster-managed bookkeeping of the resource's versioning and provenance."
         },
         "octelium.api.main.meta.v1.ObjectReference": {
             "properties": {
@@ -849,7 +867,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Object Reference"
+            "title": "Object Reference",
+            "description": "ObjectReference is a reference to another Cluster resource. It identifies the referenced resource by its kind and either its UID or its name."
         }
     }
 }

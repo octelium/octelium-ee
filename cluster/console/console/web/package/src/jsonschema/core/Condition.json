@@ -121,7 +121,8 @@
                     ]
                 }
             ],
-            "title": "Condition"
+            "title": "Condition",
+            "description": "Condition is a policy-as-code expression that is evaluated against the request context. It is used by the Policy rules, the Service dynamic configuration rules, the HTTP Plugins as well as by the IdentityProvider rules."
         },
         "octelium.api.main.core.v1.Condition.All": {
             "properties": {
@@ -130,12 +131,14 @@
                         "$ref": "#/definitions/Condition"
                     },
                     "additionalProperties": false,
-                    "type": "array"
+                    "type": "array",
+                    "description": "Of is the list of the Conditions that must all match"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "All"
+            "title": "All",
+            "description": "All acts as a logical AND operator on its list of Conditions"
         },
         "octelium.api.main.core.v1.Condition.Any": {
             "properties": {
@@ -145,12 +148,13 @@
                     },
                     "additionalProperties": false,
                     "type": "array",
-                    "description": "Expressions is the list of CEL expressions"
+                    "description": "Of is the list of the Conditions of which at least one must match"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Any"
+            "title": "Any",
+            "description": "Any acts as a logical OR operator on its list of Conditions"
         },
         "octelium.api.main.core.v1.Condition.None": {
             "properties": {
@@ -160,12 +164,13 @@
                     },
                     "additionalProperties": false,
                     "type": "array",
-                    "description": "Expressions is the list of CEL expressions"
+                    "description": "Of is the list of the Conditions of which none must match"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "None"
+            "title": "None",
+            "description": "None acts as a logical NOR operator on its list of Conditions"
         },
         "octelium.api.main.core.v1.Condition.OPA": {
             "properties": {
@@ -198,7 +203,8 @@
                     ]
                 }
             ],
-            "title": "OPA"
+            "title": "OPA",
+            "description": "OPA evaluates the Condition via an Open Policy Agent Rego script"
         }
     }
 }

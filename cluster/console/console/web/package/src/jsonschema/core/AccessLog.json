@@ -25,13 +25,15 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Access Log"
+            "title": "Access Log",
+            "description": "AccessLog is a log entry of a request that and is emitted in real time by a Service to the Cluster collector. It records a User's access to the Service with the application-layer aware information of the protocol used by that Service."
         },
         "octelium.api.main.core.v1.AccessLog.Entry": {
             "properties": {
                 "common": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Common",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Common is the information that is common to every AccessLog entry"
                 },
                 "info": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Info",
@@ -41,7 +43,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Entry"
+            "title": "Entry",
+            "description": "Entry is the AccessLog's entry information"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Common": {
             "properties": {
@@ -62,7 +65,8 @@
                         "DENIED"
                     ],
                     "type": "string",
-                    "title": "Status"
+                    "title": "Status",
+                    "description": "Status is the authorization decision of the request"
                 },
                 "mode": {
                     "enum": [
@@ -84,7 +88,7 @@
                     ],
                     "type": "string",
                     "title": "Mode",
-                    "description": "Mode is the application-layer protocol used by the proxy implementing the Service"
+                    "description": "Mode is the application-layer protocol understood by the proxy implementing the Service"
                 },
                 "reason": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Common.Reason",
@@ -98,11 +102,13 @@
                 },
                 "userRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "UserRef refers the User."
                 },
                 "deviceRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "DeviceRef refers the Device, if available."
                 },
                 "serviceRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
@@ -111,31 +117,39 @@
                 },
                 "namespaceRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "NamespaceRef refers the Service's Namespace."
                 },
                 "regionRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RegionRef refers the Region in which the Service is deployed."
                 },
                 "connectionID": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ConnectionID is the identifier that correlates all the entries that belong to the same connection"
                 },
                 "sessionID": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "SessionID is the identifier of the Session that issued the request"
                 },
                 "sequence": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "Sequence is the position of the entry within its connection"
                 },
                 "isPublic": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "IsPublic shows whether the request was served over the public clientless/BeyondCorp mode"
                 },
                 "isAnonymous": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "IsAnonymous shows whether the request was served anonymously"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Common"
+            "title": "Common",
+            "description": "Common is the information that is common to every AccessLog entry regardless of the Service's mode"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Common.Reason": {
             "properties": {
@@ -158,26 +172,31 @@
                         "ACCESS_TOKEN_EXPIRED"
                     ],
                     "type": "string",
-                    "title": "Type"
+                    "title": "Type",
+                    "description": "Type is the reason of the authorization decision"
                 },
                 "details": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Details is the type-specific details of the Reason"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Reason"
+            "title": "Reason",
+            "description": "Reason is why the request was allowed or denied"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details": {
             "properties": {
                 "policyMatch": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.PolicyMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "PolicyMatch shows the details of the Policy rule that triggered the decision"
                 },
                 "sessionNotActive": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.SessionNotActive",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "SessionNotActive shows the details of the Session that is not active"
                 }
             },
             "additionalProperties": false,
@@ -214,7 +233,8 @@
                     ]
                 }
             ],
-            "title": "Details"
+            "title": "Details",
+            "description": "Details is the type-specific details of the Reason"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.PolicyMatch": {
             "properties": {
@@ -229,10 +249,12 @@
                     "description": "InlinePolicy is the inline Policy of a resource whose rule match triggered the decision"
                 },
                 "ruleName": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "RuleName is the name of the Policy rule that matched, if available"
                 },
                 "priority": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "Priority is the priority level of the Policy rule that matched"
                 }
             },
             "additionalProperties": false,
@@ -269,7 +291,8 @@
                     ]
                 }
             ],
-            "title": "Policy Match"
+            "title": "Policy Match",
+            "description": "PolicyMatch is the details of the Policy rule that triggered the authorization decision"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.PolicyMatch.InlinePolicy": {
             "properties": {
@@ -285,7 +308,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Inline Policy"
+            "title": "Inline Policy",
+            "description": "InlinePolicy is the inline Policy whose rule matched"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.PolicyMatch.Policy": {
             "properties": {
@@ -297,7 +321,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Policy"
+            "title": "Policy",
+            "description": "Policy is the standalone Policy whose rule matched"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.SessionNotActive": {
             "properties": {
@@ -309,12 +334,14 @@
                         "REJECTED"
                     ],
                     "type": "string",
-                    "title": "State"
+                    "title": "State",
+                    "description": "State is the state of the Session"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Session Not Active"
+            "title": "Session Not Active",
+            "description": "SessionNotActive is the details of a decision that was triggered by a Session that is not active"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info": {
             "properties": {
@@ -365,7 +392,8 @@
                 },
                 "socks5": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "SOCKS5 sets the SOCKS5-specific entry details"
                 },
                 "mcp": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Info.MCP",
@@ -512,7 +540,8 @@
                     ]
                 }
             ],
-            "title": "Info"
+            "title": "Info",
+            "description": "Info is the application-layer specific information of the entry"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.DNS": {
             "properties": {
@@ -527,24 +556,30 @@
                         "TYPE_OTHER"
                     ],
                     "type": "string",
-                    "title": "Type"
+                    "title": "Type",
+                    "description": "Type is the type of the DNS query"
                 },
                 "typeID": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "TypeID is the numeric DNS query type"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Name is the queried domain name"
                 },
                 "answer": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Answer is the answer of the DNS query"
                 },
                 "rcode": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "Rcode is the DNS response code"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "DNS"
+            "title": "DNS",
+            "description": "DNS is the DNS-specific information"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.GRPC": {
             "properties": {
@@ -580,7 +615,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "GRPC"
+            "title": "GRPC",
+            "description": "GRPC is the gRPC-specific information"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP": {
             "properties": {
@@ -603,12 +639,14 @@
                         "HTTP3"
                     ],
                     "type": "string",
-                    "title": "HTTP Version"
+                    "title": "HTTP Version",
+                    "description": "HTTPVersion is the HTTP version of the request"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "HTTP"
+            "title": "HTTP",
+            "description": "HTTP is the HTTP-specific information"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP.Request": {
             "properties": {
@@ -669,7 +707,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request"
+            "title": "Request",
+            "description": "Request is the HTTP request information"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.HTTP.Response": {
             "properties": {
@@ -706,7 +745,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Response"
+            "title": "Response",
+            "description": "Response is the HTTP response information"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.Kubernetes": {
             "properties": {
@@ -750,7 +790,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Kubernetes"
+            "title": "Kubernetes",
+            "description": "Kubernetes is the Kubernetes-specific information"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.LLM": {
             "properties": {
@@ -767,7 +808,8 @@
                         "STREAM_END"
                     ],
                     "type": "string",
-                    "title": "Type"
+                    "title": "Type",
+                    "description": "Type is the LLM-specific type of the entry"
                 },
                 "protocol": {
                     "enum": [
@@ -776,7 +818,8 @@
                         "ANTHROPIC"
                     ],
                     "type": "string",
-                    "title": "Protocol"
+                    "title": "Protocol",
+                    "description": "Protocol is the inference API protocol served by the Service."
                 },
                 "operation": {
                     "enum": [
@@ -792,7 +835,8 @@
                         "COUNT_TOKENS"
                     ],
                     "type": "string",
-                    "title": "Operation"
+                    "title": "Operation",
+                    "description": "Operation is the normalized inference operation of the request"
                 },
                 "requestedModel": {
                     "type": "string",
@@ -835,7 +879,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "LLM"
+            "title": "LLM",
+            "description": "LLM is the LLM-gateway-specific information"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Usage": {
             "properties": {
@@ -847,13 +892,16 @@
                         "PARTIAL"
                     ],
                     "type": "string",
-                    "title": "Source"
+                    "title": "Source",
+                    "description": "Source shows where the token counts came from"
                 },
                 "inputTokens": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "InputTokens is the number of the input/prompt tokens"
                 },
                 "outputTokens": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "OutputTokens is the number of the generated/completion tokens"
                 },
                 "totalTokens": {
                     "type": "integer",
@@ -868,12 +916,14 @@
                     "description": "CacheCreationInputTokens is the number of the input tokens that were written to the provider's prompt cache. It is only reported by the ANTHROPIC protocol and it is additive to the InputTokens field."
                 },
                 "reasoningTokens": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "ReasoningTokens is the number of the reasoning tokens. It is only reported by the OPENAI protocol where it is already included in the OutputTokens field."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Usage"
+            "title": "Usage",
+            "description": "Usage is the token usage of the request as reported by the upstream provider"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.MCP": {
             "properties": {
@@ -890,7 +940,8 @@
                         "STREAM_END"
                     ],
                     "type": "string",
-                    "title": "Type"
+                    "title": "Type",
+                    "description": "Type is the MCP-specific type of the entry"
                 },
                 "protocolVersion": {
                     "type": "string",
@@ -960,7 +1011,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "MCP"
+            "title": "MCP",
+            "description": "MCP is the Model Context Protocol-specific information"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.MCP.Client": {
             "properties": {
@@ -979,7 +1031,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Client"
+            "title": "Client",
+            "description": "Client is the client information reported by the downstream itself"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL": {
             "properties": {
@@ -1002,27 +1055,33 @@
                         "CHANGE_USER"
                     ],
                     "type": "string",
-                    "title": "Type"
+                    "title": "Type",
+                    "description": "Type is the MySQL-specific type of the entry"
                 },
                 "query": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.Query",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Query shows the details of a query command"
                 },
                 "initDB": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.InitDB",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "InitDB shows the details of a command that changes the default database"
                 },
                 "createDB": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.CreateDB",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "CreateDB shows the details of a command that creates a database"
                 },
                 "dropDB": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.DropDB",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "DropDB shows the details of a command that drops a database"
                 },
                 "prepareStatement": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.PrepareStatement",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "PrepareStatement shows the details of a command that prepares a statement"
                 }
             },
             "additionalProperties": false,
@@ -1089,57 +1148,68 @@
                     ]
                 }
             ],
-            "title": "My SQL"
+            "title": "My SQL",
+            "description": "MySQL is the MySQL-specific information"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.CreateDB": {
             "properties": {
                 "database": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Database is the name of the database"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Create DB"
+            "title": "Create DB",
+            "description": "CreateDB is the details of a command that creates a database"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.DropDB": {
             "properties": {
                 "database": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Database is the name of the database"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Drop DB"
+            "title": "Drop DB",
+            "description": "DropDB is the details of a command that drops a database"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.InitDB": {
             "properties": {
                 "database": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Database is the name of the database"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Init DB"
+            "title": "Init DB",
+            "description": "InitDB is the details of a command that changes the default database"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.PrepareStatement": {
             "properties": {
                 "query": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Query is the query of the prepared statement"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Prepare Statement"
+            "title": "Prepare Statement",
+            "description": "PrepareStatement is the details of a command that prepares a statement"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.Query": {
             "properties": {
                 "query": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Query is the query itself"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Query"
+            "title": "Query",
+            "description": "Query is the details of a query command"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.Postgres": {
             "properties": {
@@ -1156,7 +1226,8 @@
                         "FUNCTION_CALL"
                     ],
                     "type": "string",
-                    "title": "Type"
+                    "title": "Type",
+                    "description": "Type is the PostgreSQL-specific type of the entry"
                 },
                 "start": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Info.Postgres.Start",
@@ -1218,7 +1289,8 @@
                     ]
                 }
             ],
-            "title": "Postgres"
+            "title": "Postgres",
+            "description": "Postgres is the PostgreSQL-specific information"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.Postgres.Parse": {
             "properties": {
@@ -1233,7 +1305,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Parse"
+            "title": "Parse",
+            "description": "Parse is the details of a PostgreSQL parse message"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.Postgres.Query": {
             "properties": {
@@ -1244,7 +1317,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Query"
+            "title": "Query",
+            "description": "Query is the details of a PostgreSQL query message"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.Postgres.Start": {
             "properties": {
@@ -1271,7 +1345,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Start"
+            "title": "Start",
+            "description": "Start is the details of the start of a PostgreSQL connection"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.SOCKS5": {
             "properties": {
@@ -1282,13 +1357,16 @@
                         "SESSION_END"
                     ],
                     "type": "string",
-                    "title": "Type"
+                    "title": "Type",
+                    "description": "Type is the SOCKS5-specific type of the entry"
                 },
                 "host": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Host is the requested destination host"
                 },
                 "port": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "Port is the requested destination port"
                 },
                 "addressType": {
                     "enum": [
@@ -1298,24 +1376,30 @@
                         "IPV6"
                     ],
                     "type": "string",
-                    "title": "Address Type"
+                    "title": "Address Type",
+                    "description": "AddressType is the type of the requested destination address"
                 },
                 "receivedBytes": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "ReceivedBytes is the number of bytes received from the downstream. Only used with SESSION_END entries."
                 },
                 "sentBytes": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "SentBytes is the number of bytes sent to the downstream. Only used with SESSION_END entries."
                 },
                 "upstreamHost": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "UpstreamHost is the host of the upstream SOCKS5 server"
                 },
                 "upstreamPort": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "UpstreamPort is the port of the upstream SOCKS5 server"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "SOCKS 5"
+            "title": "SOCKS 5",
+            "description": "SOCKS5 is the SOCKS5-specific information"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.SSH": {
             "properties": {
@@ -1334,7 +1418,8 @@
                         "SESSION_REQUEST_SUBSYSTEM"
                     ],
                     "type": "string",
-                    "title": "Type"
+                    "title": "Type",
+                    "description": "Type is the SSH-specific type of the entry"
                 },
                 "start": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.Start",
@@ -1426,7 +1511,8 @@
                     ]
                 }
             ],
-            "title": "SSH"
+            "title": "SSH",
+            "description": "SSH is the SSH-specific information"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.DirectTCPIPStart": {
             "properties": {
@@ -1441,7 +1527,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Direct TCPIP Start"
+            "title": "Direct TCPIP Start",
+            "description": "DirectTCPIPStart is the details of a requested \"direct-tcpip\" channel"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.SessionRecording": {
             "properties": {
@@ -1452,7 +1539,8 @@
                         "STDOUT"
                     ],
                     "type": "string",
-                    "title": "Type"
+                    "title": "Type",
+                    "description": "Type is the type of the recording chunk"
                 },
                 "data": {
                     "type": "string",
@@ -1463,7 +1551,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Session Recording"
+            "title": "Session Recording",
+            "description": "SessionRecording is a recording chunk of an SSH session"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.SessionRequestExec": {
             "properties": {
@@ -1474,7 +1563,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Session Request Exec"
+            "title": "Session Request Exec",
+            "description": "SessionRequestExec is the details of a session exec request"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.SessionRequestSubsystem": {
             "properties": {
@@ -1485,7 +1575,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Session Request Subsystem"
+            "title": "Session Request Subsystem",
+            "description": "SessionRequestSubsystem is the details of a session subsystem request"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.SSH.Start": {
             "properties": {
@@ -1500,7 +1591,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Start"
+            "title": "Start",
+            "description": "Start is the details of a new SSH connection"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.TCP": {
             "properties": {
@@ -1511,7 +1603,8 @@
                         "END"
                     ],
                     "type": "string",
-                    "title": "Type"
+                    "title": "Type",
+                    "description": "Type is the TCP-specific type of the entry"
                 },
                 "receivedBytes": {
                     "type": "integer",
@@ -1524,7 +1617,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "TCP"
+            "title": "TCP",
+            "description": "TCP is the TCP-specific information"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.UDP": {
             "properties": {
@@ -1535,12 +1629,14 @@
                         "END"
                     ],
                     "type": "string",
-                    "title": "Type"
+                    "title": "Type",
+                    "description": "Type is the UDP-specific type of the entry"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "UDP"
+            "title": "UDP",
+            "description": "UDP is the UDP-specific information"
         },
         "octelium.api.main.meta.v1.Duration": {
             "properties": {
@@ -1657,7 +1753,8 @@
                     ]
                 }
             ],
-            "title": "Duration"
+            "title": "Duration",
+            "description": "Duration is a length of time that is expressed in a single unit of choice. Exactly one of the units is set (e.g. `seconds: 30`)."
         },
         "octelium.api.main.meta.v1.LogMetadata": {
             "properties": {
@@ -1673,17 +1770,18 @@
                 "actorRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
                     "additionalProperties": false,
-                    "description": "Actor is the actor whose action triggered the log entry (i.e. the User, their Session and Device if available)"
+                    "description": "ActorRef is the reference of the actor whose action triggered the log entry (i.e. the User, their Session and Device if available)"
                 },
                 "targetRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
                     "additionalProperties": false,
-                    "description": "Target is the target of the action that triggered the log entry (e.g. the Service and its Namespace in the case of a SERVICE log entry)"
+                    "description": "TargetRef is the reference of the target of the action that triggered the log entry (e.g. the Service and its Namespace in the case of a SERVICE log entry)"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Log Metadata"
+            "title": "Log Metadata",
+            "description": "LogMetadata is the metadata that is common to every log entry (i.e. the AccessLogs and the ComponentLogs). It is the log-entry counterpart of the Metadata of the Cluster resources."
         },
         "octelium.api.main.meta.v1.ObjectReference": {
             "properties": {
@@ -1710,7 +1808,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Object Reference"
+            "title": "Object Reference",
+            "description": "ObjectReference is a reference to another Cluster resource. It identifies the referenced resource by its kind and either its UID or its name."
         }
     }
 }

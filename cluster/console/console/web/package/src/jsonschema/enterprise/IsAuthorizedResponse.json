@@ -37,26 +37,31 @@
                         "ACCESS_TOKEN_EXPIRED"
                     ],
                     "type": "string",
-                    "title": "Type"
+                    "title": "Type",
+                    "description": "Type is the reason of the authorization decision"
                 },
                 "details": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Details is the type-specific details of the Reason"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Reason"
+            "title": "Reason",
+            "description": "Reason is why the request was allowed or denied"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details": {
             "properties": {
                 "policyMatch": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.PolicyMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "PolicyMatch shows the details of the Policy rule that triggered the decision"
                 },
                 "sessionNotActive": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.SessionNotActive",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "SessionNotActive shows the details of the Session that is not active"
                 }
             },
             "additionalProperties": false,
@@ -93,7 +98,8 @@
                     ]
                 }
             ],
-            "title": "Details"
+            "title": "Details",
+            "description": "Details is the type-specific details of the Reason"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.PolicyMatch": {
             "properties": {
@@ -108,10 +114,12 @@
                     "description": "InlinePolicy is the inline Policy of a resource whose rule match triggered the decision"
                 },
                 "ruleName": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "RuleName is the name of the Policy rule that matched, if available"
                 },
                 "priority": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "Priority is the priority level of the Policy rule that matched"
                 }
             },
             "additionalProperties": false,
@@ -148,7 +156,8 @@
                     ]
                 }
             ],
-            "title": "Policy Match"
+            "title": "Policy Match",
+            "description": "PolicyMatch is the details of the Policy rule that triggered the authorization decision"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.PolicyMatch.InlinePolicy": {
             "properties": {
@@ -164,7 +173,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Inline Policy"
+            "title": "Inline Policy",
+            "description": "InlinePolicy is the inline Policy whose rule matched"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.PolicyMatch.Policy": {
             "properties": {
@@ -176,7 +186,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Policy"
+            "title": "Policy",
+            "description": "Policy is the standalone Policy whose rule matched"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Common.Reason.Details.SessionNotActive": {
             "properties": {
@@ -188,12 +199,14 @@
                         "REJECTED"
                     ],
                     "type": "string",
-                    "title": "State"
+                    "title": "State",
+                    "description": "State is the state of the Session"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Session Not Active"
+            "title": "Session Not Active",
+            "description": "SessionNotActive is the details of a decision that was triggered by a Session that is not active"
         },
         "octelium.api.main.meta.v1.ObjectReference": {
             "properties": {
@@ -220,7 +233,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Object Reference"
+            "title": "Object Reference",
+            "description": "ObjectReference is a reference to another Cluster resource. It identifies the referenced resource by its kind and either its UID or its name."
         }
     }
 }

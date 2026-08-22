@@ -2572,7 +2572,8 @@
                     ]
                 }
             ],
-            "title": "Duration"
+            "title": "Duration",
+            "description": "Duration is a length of time that is expressed in a single unit of choice. Exactly one of the units is set (e.g. `seconds: 30`)."
         },
         "octelium.api.main.meta.v1.Metadata": {
             "properties": {
@@ -2621,7 +2622,7 @@
                         "type": "string"
                     },
                     "type": "object",
-                    "description": "Labels is a map of string keys and values that can be used to store metadata about the object."
+                    "description": "Annotations is a map of string keys and values that can be used to store arbitrary metadata about the object."
                 },
                 "picURL": {
                     "type": "string",
@@ -2673,7 +2674,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Metadata"
+            "title": "Metadata",
+            "description": "Metadata is the metadata that is common to every Cluster resource. It carries the resource's identity (i.e. its UID and name), its human-readable information as well as the Cluster-managed bookkeeping of the resource's versioning and provenance."
         },
         "octelium.api.main.meta.v1.ObjectReference": {
             "properties": {
@@ -2700,7 +2702,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Object Reference"
+            "title": "Object Reference",
+            "description": "ObjectReference is a reference to another Cluster resource. It identifies the referenced resource by its kind and either its UID or its name."
         }
     }
 }

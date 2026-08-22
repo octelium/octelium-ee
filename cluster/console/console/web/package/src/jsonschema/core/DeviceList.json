@@ -28,13 +28,15 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Device List"
+            "title": "Device List",
+            "description": "DeviceList is the list of Devices returned by the ListDevice method."
         },
         "octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe": {
             "properties": {
                 "ownerRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "OwnerRef is the reference of the DeviceManager that owns the Probe"
                 },
                 "osType": {
                     "enum": [
@@ -46,26 +48,32 @@
                         "IOS"
                     ],
                     "type": "string",
-                    "title": "OS Type"
+                    "title": "OS Type",
+                    "description": "OSType is the operating system of the Device"
                 },
                 "requireElevation": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "RequireElevation requires the Probe to be run with elevated privileges"
                 },
                 "condition": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Condition",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Condition decides whether the Probe is run on a given Device"
                 },
                 "runCommand": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.RunCommand",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RunCommand runs a command on the Device"
                 },
                 "readFile": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ReadFile",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ReadFile reads a file from the Device"
                 },
                 "readRegistry": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ReadRegistry",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ReadRegistry reads a value from the Device's Windows registry"
                 }
             },
             "additionalProperties": false,
@@ -112,55 +120,67 @@
                     ]
                 }
             ],
-            "title": "Probe"
+            "title": "Probe",
+            "description": "Probe is a check that is run on the Devices in order to collect the information used to bind them to their DeviceManagers"
         },
         "octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ReadFile": {
             "properties": {
                 "path": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Path is the path of the file to be read"
                 },
                 "maxBytes": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "MaxBytes is the maximum size in bytes that is read from the file"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Read File"
+            "title": "Read File",
+            "description": "ReadFile reads a file from the Device"
         },
         "octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.ReadRegistry": {
             "properties": {
                 "key": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Key is the registry key to be read"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Name is the name of the registry value to be read"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Read Registry"
+            "title": "Read Registry",
+            "description": "ReadRegistry reads a value from the Windows registry of the Device"
         },
         "octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe.RunCommand": {
             "properties": {
                 "command": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Command is the command to be run"
                 },
                 "args": {
                     "items": {
                         "type": "string"
                     },
-                    "type": "array"
+                    "type": "array",
+                    "description": "Args is the list of the command's arguments"
                 },
                 "timeoutSeconds": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "TimeoutSeconds is the number of seconds after which running the command times out"
                 },
                 "maxOutputBytes": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "MaxOutputBytes is the maximum size in bytes of the collected output"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Run Command"
+            "title": "Run Command",
+            "description": "RunCommand runs a command on the Device and collects its output"
         },
         "octelium.api.main.core.v1.Condition": {
             "properties": {
@@ -281,7 +301,8 @@
                     ]
                 }
             ],
-            "title": "Condition"
+            "title": "Condition",
+            "description": "Condition is a policy-as-code expression that is evaluated against the request context. It is used by the Policy rules, the Service dynamic configuration rules, the HTTP Plugins as well as by the IdentityProvider rules."
         },
         "octelium.api.main.core.v1.Condition.All": {
             "properties": {
@@ -290,12 +311,14 @@
                         "$ref": "#/definitions/octelium.api.main.core.v1.Condition"
                     },
                     "additionalProperties": false,
-                    "type": "array"
+                    "type": "array",
+                    "description": "Of is the list of the Conditions that must all match"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "All"
+            "title": "All",
+            "description": "All acts as a logical AND operator on its list of Conditions"
         },
         "octelium.api.main.core.v1.Condition.Any": {
             "properties": {
@@ -305,12 +328,13 @@
                     },
                     "additionalProperties": false,
                     "type": "array",
-                    "description": "Expressions is the list of CEL expressions"
+                    "description": "Of is the list of the Conditions of which at least one must match"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Any"
+            "title": "Any",
+            "description": "Any acts as a logical OR operator on its list of Conditions"
         },
         "octelium.api.main.core.v1.Condition.None": {
             "properties": {
@@ -320,12 +344,13 @@
                     },
                     "additionalProperties": false,
                     "type": "array",
-                    "description": "Expressions is the list of CEL expressions"
+                    "description": "Of is the list of the Conditions of which none must match"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "None"
+            "title": "None",
+            "description": "None acts as a logical NOR operator on its list of Conditions"
         },
         "octelium.api.main.core.v1.Condition.OPA": {
             "properties": {
@@ -358,7 +383,8 @@
                     ]
                 }
             ],
-            "title": "OPA"
+            "title": "OPA",
+            "description": "OPA evaluates the Condition via an Open Policy Agent Rego script"
         },
         "octelium.api.main.core.v1.Device": {
             "properties": {
@@ -373,7 +399,7 @@
                 "metadata": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Metadata",
                     "additionalProperties": false,
-                    "description": "octelium.api.main.meta.v1.Metadata is the object's metadata."
+                    "description": "Metadata is the object's metadata."
                 },
                 "spec": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Device.Spec",
@@ -388,7 +414,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Device"
+            "title": "Device",
+            "description": "Device is the Cluster's representation of a User's machine. A Device is optionally registered/enrolled by a logged-in User and it belongs to the one User that registered it. One or more of the User's Sessions can belong to the same Device. It is up to the access control Policies to allow or deny a request based on the Device's information."
         },
         "octelium.api.main.core.v1.Device.Spec": {
             "properties": {
@@ -400,16 +427,19 @@
                         "REJECTED"
                     ],
                     "type": "string",
-                    "title": "State"
+                    "title": "State",
+                    "description": "State is the state of the Device"
                 },
                 "authorization": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Device.Spec.Authorization",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Authorization sets the authorization-related configuration"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Spec"
+            "title": "Spec",
+            "description": "Spec is the Device specification"
         },
         "octelium.api.main.core.v1.Device.Spec.Authorization": {
             "properties": {
@@ -431,7 +461,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Authorization"
+            "title": "Authorization",
+            "description": "Authorization sets the Policies that are applied to the Sessions belonging to the Device"
         },
         "octelium.api.main.core.v1.Device.Status": {
             "properties": {
@@ -440,7 +471,8 @@
                         "additionalProperties": true,
                         "type": "object"
                     },
-                    "type": "object"
+                    "type": "object",
+                    "description": "Ext is a map of internal Cluster-managed extension data"
                 },
                 "userRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
@@ -457,54 +489,67 @@
                         "IOS"
                     ],
                     "type": "string",
-                    "title": "OS Type"
+                    "title": "OS Type",
+                    "description": "OSType is the operating system of the Device"
                 },
                 "hostname": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Hostname is the Device's hostname"
                 },
                 "id": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ID is a unique Device identifier that is derived from the Device's host"
                 },
                 "serialNumber": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "SerialNumber is the Device's hardware serial number"
                 },
                 "isLocked": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "IsLocked indicates whether the Device is locked by the Cluster"
                 },
                 "macAddresses": {
                     "items": {
                         "type": "string"
                     },
-                    "type": "array"
+                    "type": "array",
+                    "description": "MacAddresses is the list of the MAC addresses of the Device's network interfaces"
                 },
                 "posture": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Device.Status.Posture",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Posture is the Device's security posture as reported by the DeviceManager that the Device is bound to"
                 },
                 "binding": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Device.Status.Binding",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Binding is the link between the Device and its DeviceManager"
                 },
                 "probeAttempt": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Device.Status.ProbeAttempt",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ProbeAttempt is the most recent device probing attempt"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Status"
+            "title": "Status",
+            "description": "Status is the current status of the Device"
         },
         "octelium.api.main.core.v1.Device.Status.Binding": {
             "properties": {
                 "uid": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "UID is the unique identifier of the Binding"
                 },
                 "ownerRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "OwnerRef is the reference of the DeviceManager that the Device is bound to"
                 },
                 "externalID": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ExternalID is the identifier of the Device according to the DeviceManager's provider"
                 },
                 "state": {
                     "enum": [
@@ -515,7 +560,8 @@
                         "AMBIGUOUS"
                     ],
                     "type": "string",
-                    "title": "State"
+                    "title": "State",
+                    "description": "State is the state of the Binding"
                 },
                 "acceptanceMethod": {
                     "enum": [
@@ -525,22 +571,27 @@
                         "MANUAL"
                     ],
                     "type": "string",
-                    "title": "Acceptance Method"
+                    "title": "Acceptance Method",
+                    "description": "AcceptanceMethod is how the Binding was accepted"
                 },
                 "acceptedAt": {
                     "type": "string",
+                    "description": "AcceptedAt is the timestamp at which the Binding was accepted",
                     "format": "date-time"
                 },
                 "expiresAt": {
                     "type": "string",
+                    "description": "ExpiresAt is the timestamp at which a WAITING_APPROVAL Binding expires. Expiry clears the Binding so that a later attempt can retry.",
                     "format": "date-time"
                 },
                 "lastVerifiedAt": {
                     "type": "string",
+                    "description": "LastVerifiedAt is the timestamp at which the Binding was last verified",
                     "format": "date-time"
                 },
                 "verificationFailures": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "VerificationFailures is the number of the consecutive failures to verify the Binding"
                 }
             },
             "additionalProperties": false,
@@ -559,7 +610,8 @@
                         "CRITICAL"
                     ],
                     "type": "string",
-                    "title": "Risk Level"
+                    "title": "Risk Level",
+                    "description": "RiskLevel is the overall risk level of the Device as assessed by the provider"
                 },
                 "diskEncryption": {
                     "enum": [
@@ -606,14 +658,17 @@
                         "title": "Signal State",
                         "description": "SignalState semantics under the single-provider model: adapters MUST set NOT_APPLICABLE for every named signal outside their provider's domain (an EDR adapter sets compliant = NOT_APPLICABLE, an MDM adapter sets threatFree = NOT_APPLICABLE). SIGNAL_STATE_UNKNOWN is reserved for \"the provider should know this but did not report it\" and fails closed in policy. Leaving a signal UNKNOWN when it is actually out-of-domain will lock devices out under any policy that requires that signal."
                     },
-                    "type": "object"
+                    "type": "object",
+                    "description": "Signals is the map of the additional provider-specific signals keyed by the signal's name"
                 },
                 "lastSyncAt": {
                     "type": "string",
+                    "description": "LastSyncAt is the timestamp at which the Posture was last synced from the provider",
                     "format": "date-time"
                 },
                 "lastSeenAt": {
                     "type": "string",
+                    "description": "LastSeenAt is the timestamp at which the Device was last seen by the provider",
                     "format": "date-time"
                 },
                 "expiresAt": {
@@ -623,20 +678,24 @@
                 },
                 "attrs": {
                     "additionalProperties": true,
-                    "type": "object"
+                    "type": "object",
+                    "description": "Attrs is a map of the additional provider-specific attributes of the Device. It is mostly used in authorization rules."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Posture"
+            "title": "Posture",
+            "description": "Posture is the Device's security posture as reported by the DeviceManager that the Device is bound to (e.g. an EDR or an MDM provider). It is only valid while binding.state is ACCEPTED."
         },
         "octelium.api.main.core.v1.Device.Status.ProbeAttempt": {
             "properties": {
                 "uid": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "UID is the unique identifier of the ProbeAttempt"
                 },
                 "startedAt": {
                     "type": "string",
+                    "description": "StartedAt is the timestamp at which the ProbeAttempt started",
                     "format": "date-time"
                 },
                 "probes": {
@@ -644,32 +703,38 @@
                         "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Status.Device.Probe"
                     },
                     "additionalProperties": false,
-                    "type": "array"
+                    "type": "array",
+                    "description": "Probes is the list of the Probes that were requested to be run on the Device"
                 },
                 "results": {
                     "items": {
                         "$ref": "#/definitions/octelium.api.main.core.v1.Device.Status.ProbeAttempt.Result"
                     },
                     "additionalProperties": false,
-                    "type": "array"
+                    "type": "array",
+                    "description": "Results is the list of the results of the requested Probes"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Probe Attempt"
+            "title": "Probe Attempt",
+            "description": "ProbeAttempt is the most recent attempt to run the Cluster's device probes on the Device in order to collect the information used to bind it to a DeviceManager"
         },
         "octelium.api.main.core.v1.Device.Status.ProbeAttempt.Result": {
             "properties": {
                 "probeID": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ProbeID is the identifier of the Probe that produced the Result"
                 },
                 "output": {
                     "type": "string",
+                    "description": "Output is the raw output produced by the Probe",
                     "format": "binary",
                     "binaryEncoding": "base64"
                 },
                 "error": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Error is the error message if running the Probe failed"
                 }
             },
             "additionalProperties": false,
@@ -706,7 +771,8 @@
                     ]
                 }
             ],
-            "title": "Result"
+            "title": "Result",
+            "description": "Result is the result of running a single Probe"
         },
         "octelium.api.main.core.v1.InlinePolicy": {
             "properties": {
@@ -722,7 +788,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Inline Policy"
+            "title": "Inline Policy",
+            "description": "InlinePolicy is a Policy that is defined inline within the resource that attaches it instead of being created as a standalone Policy resource."
         },
         "octelium.api.main.core.v1.Policy.Spec": {
             "properties": {
@@ -744,7 +811,8 @@
                 },
                 "attrs": {
                     "additionalProperties": true,
-                    "type": "object"
+                    "type": "object",
+                    "description": "Attrs is a map of user-defined attributes that can be reused inside the Policy rules. It is strongly recommended to stick to camelCase in order to be conformant with Octelium's API naming conventions."
                 },
                 "isDisabled": {
                     "type": "boolean",
@@ -753,7 +821,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Spec"
+            "title": "Spec",
+            "description": "Spec is the Policy specification"
         },
         "octelium.api.main.core.v1.Policy.Spec.EnforcementRule": {
             "properties": {
@@ -769,12 +838,14 @@
                         "IGNORE"
                     ],
                     "type": "string",
-                    "title": "Effect"
+                    "title": "Effect",
+                    "description": "Effect is the decision of the EnforcementRule once its Condition matches"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Enforcement Rule"
+            "title": "Enforcement Rule",
+            "description": "EnforcementRule is a pre-condition that decides whether the Policy is evaluated at all. If no EnforcementRule matches, or if the list of EnforcementRules is empty, then the Policy is enforced. ENFORCE rules always override IGNORE rules in the same way that DENY rules override ALLOW rules."
         },
         "octelium.api.main.core.v1.Policy.Spec.Rule": {
             "properties": {
@@ -794,7 +865,8 @@
                         "DENY"
                     ],
                     "type": "string",
-                    "title": "Effect"
+                    "title": "Effect",
+                    "description": "Effect is the decision of the Rule once its Condition matches"
                 },
                 "priority": {
                     "type": "integer",
@@ -803,7 +875,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Rule"
+            "title": "Rule",
+            "description": "Rule is a single access control rule of the Policy"
         },
         "octelium.api.main.meta.v1.ListResponseMeta": {
             "properties": {
@@ -813,7 +886,7 @@
                 },
                 "itemsPerPage": {
                     "type": "integer",
-                    "description": "ItemsPerPage is number of items per page."
+                    "description": "ItemsPerPage is the number of items per page."
                 },
                 "totalCount": {
                     "type": "integer",
@@ -821,12 +894,13 @@
                 },
                 "hasMore": {
                     "type": "boolean",
-                    "description": "HasMore shows whether there a next page is available"
+                    "description": "HasMore shows whether a next page is available"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "List Response Meta"
+            "title": "List Response Meta",
+            "description": "ListResponseMeta is the pagination information that is common to every List response."
         },
         "octelium.api.main.meta.v1.Metadata": {
             "properties": {
@@ -875,7 +949,7 @@
                         "type": "string"
                     },
                     "type": "object",
-                    "description": "Labels is a map of string keys and values that can be used to store metadata about the object."
+                    "description": "Annotations is a map of string keys and values that can be used to store arbitrary metadata about the object."
                 },
                 "picURL": {
                     "type": "string",
@@ -927,7 +1001,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Metadata"
+            "title": "Metadata",
+            "description": "Metadata is the metadata that is common to every Cluster resource. It carries the resource's identity (i.e. its UID and name), its human-readable information as well as the Cluster-managed bookkeeping of the resource's versioning and provenance."
         },
         "octelium.api.main.meta.v1.ObjectReference": {
             "properties": {
@@ -954,7 +1029,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Object Reference"
+            "title": "Object Reference",
+            "description": "ObjectReference is a reference to another Cluster resource. It identifies the referenced resource by its kind and either its UID or its name."
         }
     }
 }

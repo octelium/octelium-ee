@@ -6,16 +6,19 @@
             "properties": {
                 "common": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.CommonListOptions",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Common sets the common listing options (e.g. pagination, ordering and filtering)"
                 },
                 "userRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "UserRef filters the Devices by their User"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "List Device Options"
+            "title": "List Device Options",
+            "description": "ListDeviceOptions is the request of the ListDevice method."
         },
         "octelium.api.main.meta.v1.CommonListOptions": {
             "properties": {
@@ -35,7 +38,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Common List Options"
+            "title": "Common List Options",
+            "description": "CommonListOptions is the listing options that are common to every List request."
         },
         "octelium.api.main.meta.v1.CommonListOptions.OrderBy": {
             "properties": {
@@ -46,7 +50,8 @@
                         "CREATED_AT"
                     ],
                     "type": "string",
-                    "title": "Type"
+                    "title": "Type",
+                    "description": "Type is the field by which the list is ordered"
                 },
                 "mode": {
                     "enum": [
@@ -55,12 +60,14 @@
                         "DESC"
                     ],
                     "type": "string",
-                    "title": "Mode"
+                    "title": "Mode",
+                    "description": "Mode is the direction in which the list is ordered"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Order By"
+            "title": "Order By",
+            "description": "OrderBy sets the ordering of the returned list"
         },
         "octelium.api.main.meta.v1.ObjectReference": {
             "properties": {
@@ -87,7 +94,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Object Reference"
+            "title": "Object Reference",
+            "description": "ObjectReference is a reference to another Cluster resource. It identifies the referenced resource by its kind and either its UID or its name."
         }
     }
 }

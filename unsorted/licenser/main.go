@@ -57,14 +57,12 @@ func setHeader(ctx context.Context, rootPath string, header string) error {
 				return err
 			}
 
-			pkgIdx := getIdx(cn[:])
-			if pkgIdx < 0 {
+			newFile := addHeader(cn, header)
+			if newFile == nil {
 				return nil
 			}
 
-			newFile := header + "\n" + string(cn[pkgIdx:])
-
-			if err := os.WriteFile(path, []byte(newFile), info.Mode().Perm()); err != nil {
+			if err := os.WriteFile(path, newFile, info.Mode().Perm()); err != nil {
 				return err
 			}
 
@@ -73,6 +71,23 @@ func setHeader(ctx context.Context, rootPath string, header string) error {
 		return err
 	}
 	return nil
+}
+
+func addHeader(src []byte, header string) []byte {
+	pkgIdx := getIdx(src)
+	if pkgIdx < 0 {
+		return nil
+	}
+
+	// Go build constraints must remain at the beginning of the file. Keep the
+	// leading constraint block ahead of the license header when rewriting it.
+	buildEnd := getLeadingBuildConstraintEnd(src)
+	if buildEnd > 0 {
+		pkgIdx = bytes.Index(src, []byte("package "))
+		return []byte(string(src[:buildEnd]) + "\n" + header + "\n" + string(src[pkgIdx:]))
+	}
+
+	return []byte(header + "\n" + string(src[pkgIdx:]))
 }
 
 func getIdx(src []byte) int {
@@ -91,6 +106,31 @@ func getIdx(src []byte) int {
 	}
 
 	return ret
+}
+
+func getLeadingBuildConstraintEnd(src []byte) int {
+	offset := 0
+	for offset < len(src) {
+		lineEnd := bytes.IndexByte(src[offset:], '\n')
+		if lineEnd < 0 {
+			lineEnd = len(src)
+		} else {
+			lineEnd += offset + 1
+		}
+
+		line := bytes.TrimSpace(src[offset:lineEnd])
+		if !bytes.HasPrefix(line, []byte("//go:build ")) &&
+			!bytes.HasPrefix(line, []byte("// +build ")) {
+			break
+		}
+
+		offset = lineEnd
+	}
+
+	if offset > 0 {
+		return offset
+	}
+	return 0
 }
 
 const goHeader = `// Copyright (c) 2025-present Octelium Labs, LLC. All rights reserved.

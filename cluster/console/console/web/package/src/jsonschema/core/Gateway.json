@@ -15,7 +15,7 @@
                 "metadata": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Metadata",
                     "additionalProperties": false,
-                    "description": "octelium.api.main.meta.v1.Metadata is the object's metadata."
+                    "description": "Metadata is the object's metadata."
                 },
                 "spec": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Gateway.Spec",
@@ -30,12 +30,14 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Gateway"
+            "title": "Gateway",
+            "description": "Gateway represents a Kubernetes node that is part of the data-plane of the Cluster. A Gateway hosts the Services running on that node and maintains the WireGuard/QUIC tunnel interfaces at which the Users' tunneled traffic is terminated."
         },
         "octelium.api.main.core.v1.Gateway.Spec": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Spec"
+            "title": "Spec",
+            "description": "Spec is the Gateway specification"
         },
         "octelium.api.main.core.v1.Gateway.Status": {
             "properties": {
@@ -77,15 +79,17 @@
                 },
                 "hostname": {
                     "type": "string",
-                    "description": "Hostname is the public hostname of the Gateway when connected to by the User clients. Currently sed by QUICv0 Gateways."
+                    "description": "Hostname is the public hostname of the Gateway when connected to by the User clients. Currently used by QUICv0 Gateways."
                 },
                 "index": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "Index is the Gateway's index within its Region"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Status"
+            "title": "Status",
+            "description": "Status is the current status of the Gateway"
         },
         "octelium.api.main.core.v1.Gateway.Status.QUICV0": {
             "properties": {
@@ -96,7 +100,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "QUICV 0"
+            "title": "QUICV 0",
+            "description": "QUICV0 is the Gateway's QUICv0-specific information"
         },
         "octelium.api.main.core.v1.Gateway.Status.WireGuard": {
             "properties": {
@@ -110,12 +115,14 @@
                 },
                 "keyRotatedAt": {
                     "type": "string",
+                    "description": "KeyRotatedAt is the timestamp at which the key pair was last rotated",
                     "format": "date-time"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Wire Guard"
+            "title": "Wire Guard",
+            "description": "WireGuard is the Gateway's WireGuard-specific information"
         },
         "octelium.api.main.meta.v1.DualStackNetwork": {
             "properties": {
@@ -130,7 +137,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Dual Stack Network"
+            "title": "Dual Stack Network",
+            "description": "DualStackNetwork is a pair of an IPv4 and an IPv6 network range."
         },
         "octelium.api.main.meta.v1.Metadata": {
             "properties": {
@@ -179,7 +187,7 @@
                         "type": "string"
                     },
                     "type": "object",
-                    "description": "Labels is a map of string keys and values that can be used to store metadata about the object."
+                    "description": "Annotations is a map of string keys and values that can be used to store arbitrary metadata about the object."
                 },
                 "picURL": {
                     "type": "string",
@@ -231,7 +239,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Metadata"
+            "title": "Metadata",
+            "description": "Metadata is the metadata that is common to every Cluster resource. It carries the resource's identity (i.e. its UID and name), its human-readable information as well as the Cluster-managed bookkeeping of the resource's versioning and provenance."
         },
         "octelium.api.main.meta.v1.ObjectReference": {
             "properties": {
@@ -258,7 +267,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Object Reference"
+            "title": "Object Reference",
+            "description": "ObjectReference is a reference to another Cluster resource. It identifies the referenced resource by its kind and either its UID or its name."
         }
     }
 }
