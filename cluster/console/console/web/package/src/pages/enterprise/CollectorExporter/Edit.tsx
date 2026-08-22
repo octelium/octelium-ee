@@ -105,9 +105,11 @@ const normalizeSecretSelectors = (item: EnterpriseP.CollectorExporter) => {
 const SecretSelectField = (props: {
   label: string;
   sel?: SecretSelector;
+  description?: string;
   onUpdate: () => void;
 }) => {
   const { label, sel, onUpdate } = props;
+  const secretDescription = `Secret containing the ${label.replace(/\s+secret$/i, "").toLowerCase()}.`;
 
   if (!sel || sel.type.oneofKind !== "fromSecret") {
     return <></>;
@@ -119,6 +121,7 @@ const SecretSelectField = (props: {
       kind="Secret"
       required
       label={label}
+      description={props.description ?? secretDescription}
       defaultValue={sel.type.fromSecret}
       onChange={(v) => {
         if (sel.type.oneofKind === "fromSecret") {
@@ -198,6 +201,7 @@ const SecretAuthTabs = (props: {
             <Group grow>
               <TextInput
                 label="Username"
+                description="Username used for HTTP Basic authentication."
                 placeholder="username"
                 value={b.basic.username}
                 onChange={(v) => {
@@ -224,6 +228,7 @@ const SecretAuthTabs = (props: {
               <TextInput
                 required
                 label="Header"
+                description="HTTP header used to carry the custom credential."
                 placeholder="X-Custom-Auth"
                 value={c.custom.header}
                 onChange={(v) => {
@@ -334,7 +339,7 @@ const EnumSelect = (props: {
   return (
     <Select
       label={label}
-      description={description}
+      description={description ?? `Select the ${label.toLowerCase()}.`}
       data={options.map((o) => ({
         label: o.label,
         value: String(enumObj[o.value]),
@@ -352,11 +357,13 @@ const EnumSelect = (props: {
 
 const DurationField = (props: {
   label: string;
+  description?: string;
   value?: Duration;
   onChange: (value?: Duration) => void;
 }) => (
   <DurationPicker
     title={props.label}
+    description={props.description ?? `Duration for ${props.label.toLowerCase()}.`}
     value={props.value}
     onChange={props.onChange}
   />
@@ -395,11 +402,11 @@ const AdvancedSettings = (props: {
       <EditItem title="Advanced delivery" obj={value}>
         <div className="grid gap-4 md:grid-cols-2">
           <DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} />
-          <TextInput label="Authority" value={value.authority} onChange={(event) => { value.authority = event.currentTarget.value; onUpdate(); }} />
-          <TextInput label="User agent" value={value.userAgent} onChange={(event) => { value.userAgent = event.currentTarget.value; onUpdate(); }} />
-          <TextInput label="Balancer name" value={value.balancerName} onChange={(event) => { value.balancerName = event.currentTarget.value; onUpdate(); }} />
-          <NumberInput min={0} label="Read buffer size" value={value.readBufferSize} onChange={(next) => { value.readBufferSize = Number(next) || 0; onUpdate(); }} />
-          <NumberInput min={0} label="Write buffer size" value={value.writeBufferSize} onChange={(next) => { value.writeBufferSize = Number(next) || 0; onUpdate(); }} />
+          <TextInput label="Authority" description="Override the gRPC :authority pseudo-header." value={value.authority} onChange={(event) => { value.authority = event.currentTarget.value; onUpdate(); }} />
+          <TextInput label="User agent" description="Override the user-agent sent to the upstream endpoint." value={value.userAgent} onChange={(event) => { value.userAgent = event.currentTarget.value; onUpdate(); }} />
+          <TextInput label="Balancer name" description="gRPC load-balancing policy used for the upstream connection." value={value.balancerName} onChange={(event) => { value.balancerName = event.currentTarget.value; onUpdate(); }} />
+          <NumberInput min={0} label="Read buffer size" description="Size in bytes of the upstream connection read buffer." value={value.readBufferSize} onChange={(next) => { value.readBufferSize = Number(next) || 0; onUpdate(); }} />
+          <NumberInput min={0} label="Write buffer size" description="Size in bytes of the upstream connection write buffer." value={value.writeBufferSize} onChange={(next) => { value.writeBufferSize = Number(next) || 0; onUpdate(); }} />
         </div>
         <EditItem
           title="TLS details"
@@ -407,10 +414,10 @@ const AdvancedSettings = (props: {
           onSet={() => { value.tls = EnterpriseP.CollectorExporter_Spec_OTLP_TLS.create(); onUpdate(); }}
           onUnset={() => { value.tls = undefined; onUpdate(); }}
         >
-          {value.tls && <div className="grid gap-4 md:grid-cols-2"><TextInput label="Server name override" value={value.tls.serverNameOverride} onChange={(event) => { value.tls!.serverNameOverride = event.currentTarget.value; onUpdate(); }} /><Textarea label="CA certificate PEM" autosize minRows={3} value={value.tls.caPEM} onChange={(event) => { value.tls!.caPEM = event.currentTarget.value; onUpdate(); }} /></div>}
+          {value.tls && <div className="grid gap-4 md:grid-cols-2"><TextInput label="Server name override" description="Optional hostname used when verifying the upstream certificate." value={value.tls.serverNameOverride} onChange={(event) => { value.tls!.serverNameOverride = event.currentTarget.value; onUpdate(); }} /><Textarea label="CA certificate PEM" description="Optional PEM-encoded CA used to verify the upstream certificate." autosize minRows={3} value={value.tls.caPEM} onChange={(event) => { value.tls!.caPEM = event.currentTarget.value; onUpdate(); }} /></div>}
         </EditItem>
         <EditItem title="Keepalive" obj={value.keepalive} onSet={() => { value.keepalive = EnterpriseP.CollectorExporter_Spec_OTLP_Keepalive.create(); onUpdate(); }} onUnset={() => { value.keepalive = undefined; onUpdate(); }}>
-          {value.keepalive && <div className="grid gap-4 md:grid-cols-2"><DurationField label="Keepalive time" value={value.keepalive.time} onChange={(next) => { value.keepalive!.time = next; onUpdate(); }} /><DurationField label="Keepalive timeout" value={value.keepalive.timeout} onChange={(next) => { value.keepalive!.timeout = next; onUpdate(); }} /><Switch label="Permit without stream" checked={value.keepalive.permitWithoutStream} onChange={(event) => { value.keepalive!.permitWithoutStream = event.currentTarget.checked; onUpdate(); }} /></div>}
+          {value.keepalive && <div className="grid gap-4 md:grid-cols-2"><DurationField label="Keepalive time" value={value.keepalive.time} onChange={(next) => { value.keepalive!.time = next; onUpdate(); }} /><DurationField label="Keepalive timeout" value={value.keepalive.timeout} onChange={(next) => { value.keepalive!.timeout = next; onUpdate(); }} /><Switch label="Permit without stream" description="Allow keepalive pings when no streams are active." checked={value.keepalive.permitWithoutStream} onChange={(event) => { value.keepalive!.permitWithoutStream = event.currentTarget.checked; onUpdate(); }} /></div>}
         </EditItem>
       </EditItem>
     );
@@ -418,44 +425,44 @@ const AdvancedSettings = (props: {
 
   if (type.oneofKind === "otlpHTTP") {
     const value = type.otlpHTTP;
-    return <EditItem title="Advanced delivery" obj={value}><div className="grid gap-4 md:grid-cols-2"><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /><NumberInput min={0} label="Read buffer size" value={value.readBufferSize} onChange={(next) => { value.readBufferSize = Number(next) || 0; onUpdate(); }} /><NumberInput min={0} label="Write buffer size" value={value.writeBufferSize} onChange={(next) => { value.writeBufferSize = Number(next) || 0; onUpdate(); }} /></div><EditItem title="TLS" obj={value.tls} onSet={() => { value.tls = EnterpriseP.CollectorExporter_Spec_OTLPHTTP_TLS.create(); onUpdate(); }} onUnset={() => { value.tls = undefined; onUpdate(); }}>{value.tls && <div className="grid gap-4 md:grid-cols-2"><Switch label="No TLS" checked={value.tls.insecure} onChange={(event) => { value.tls!.insecure = event.currentTarget.checked; onUpdate(); }} /><Switch label="Skip TLS verification" checked={value.tls.insecureSkipVerify} onChange={(event) => { value.tls!.insecureSkipVerify = event.currentTarget.checked; onUpdate(); }} /><TextInput label="Server name override" value={value.tls.serverNameOverride} onChange={(event) => { value.tls!.serverNameOverride = event.currentTarget.value; onUpdate(); }} /><Textarea label="CA certificate PEM" autosize minRows={3} value={value.tls.caPEM} onChange={(event) => { value.tls!.caPEM = event.currentTarget.value; onUpdate(); }} />{value.tls.insecureSkipVerify && <Alert color="red" icon={<AlertTriangle size={14} />}>Server certificates will not be verified.</Alert>}</div>}</EditItem></EditItem>;
+    return <EditItem title="Advanced delivery" obj={value}><div className="grid gap-4 md:grid-cols-2"><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /><NumberInput min={0} label="Read buffer size" description="Size in bytes of the upstream connection read buffer." value={value.readBufferSize} onChange={(next) => { value.readBufferSize = Number(next) || 0; onUpdate(); }} /><NumberInput min={0} label="Write buffer size" description="Size in bytes of the upstream connection write buffer." value={value.writeBufferSize} onChange={(next) => { value.writeBufferSize = Number(next) || 0; onUpdate(); }} /></div><EditItem title="TLS" obj={value.tls} onSet={() => { value.tls = EnterpriseP.CollectorExporter_Spec_OTLPHTTP_TLS.create(); onUpdate(); }} onUnset={() => { value.tls = undefined; onUpdate(); }}>{value.tls && <div className="grid gap-4 md:grid-cols-2"><Switch label="No TLS" description="Disable TLS and connect over plaintext." checked={value.tls.insecure} onChange={(event) => { value.tls!.insecure = event.currentTarget.checked; onUpdate(); }} /><Switch label="Skip TLS verification" description="Skip upstream certificate-chain and hostname verification." checked={value.tls.insecureSkipVerify} onChange={(event) => { value.tls!.insecureSkipVerify = event.currentTarget.checked; onUpdate(); }} /><TextInput label="Server name override" description="Optional hostname used when verifying the upstream certificate." value={value.tls.serverNameOverride} onChange={(event) => { value.tls!.serverNameOverride = event.currentTarget.value; onUpdate(); }} /><Textarea label="CA certificate PEM" description="Optional PEM-encoded CA used to verify the upstream certificate." autosize minRows={3} value={value.tls.caPEM} onChange={(event) => { value.tls!.caPEM = event.currentTarget.value; onUpdate(); }} />{value.tls.insecureSkipVerify && <Alert color="red" icon={<AlertTriangle size={14} />}>Server certificates will not be verified.</Alert>}</div>}</EditItem></EditItem>;
   }
 
   if (type.oneofKind === "prometheusRemoteWrite") {
     const value = type.prometheusRemoteWrite;
-    return <EditItem title="Advanced delivery" obj={value}><HeaderList headers={value.headers} makeHeader={() => EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_Header.create()} onUpdate={onUpdate} /><HeaderList headers={value.externalLabels} makeHeader={() => EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel.create()} onUpdate={onUpdate} /><div className="grid gap-4 md:grid-cols-2"><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /><NumberInput min={0} label="Maximum batch size (bytes)" value={value.maxBatchSizeBytes} onChange={(next) => { value.maxBatchSizeBytes = Number(next) || 0; onUpdate(); }} /><NumberInput min={0} label="Maximum parallel requests" value={value.maxBatchRequestParallelism} onChange={(next) => { value.maxBatchRequestParallelism = Number(next) || 0; onUpdate(); }} /></div><EditItem title="Remote write queue" obj={value.remoteWriteQueue} onSet={() => { value.remoteWriteQueue = EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue.create(); onUpdate(); }} onUnset={() => { value.remoteWriteQueue = undefined; onUpdate(); }}>{value.remoteWriteQueue && <div className="grid gap-4 md:grid-cols-3"><Switch label="Enabled" checked={value.remoteWriteQueue.enabled} onChange={(event) => { value.remoteWriteQueue!.enabled = event.currentTarget.checked; onUpdate(); }} /><NumberInput min={0} label="Queue size" value={value.remoteWriteQueue.queueSize} onChange={(next) => { value.remoteWriteQueue!.queueSize = Number(next) || 0; onUpdate(); }} /><NumberInput min={0} label="Consumers" value={value.remoteWriteQueue.numConsumers} onChange={(next) => { value.remoteWriteQueue!.numConsumers = Number(next) || 0; onUpdate(); }} /></div>}</EditItem><EditItem title="Resource conversion" obj={value.resourceToTelemetryConversion} onSet={() => { value.resourceToTelemetryConversion = EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion.create(); onUpdate(); }} onUnset={() => { value.resourceToTelemetryConversion = undefined; onUpdate(); }}>{value.resourceToTelemetryConversion && <Group><Switch label="Enabled" checked={value.resourceToTelemetryConversion.enabled} onChange={(event) => { value.resourceToTelemetryConversion!.enabled = event.currentTarget.checked; onUpdate(); }} /><Switch label="Exclude service attributes" checked={value.resourceToTelemetryConversion.excludeServiceAttributes} onChange={(event) => { value.resourceToTelemetryConversion!.excludeServiceAttributes = event.currentTarget.checked; onUpdate(); }} /></Group>}</EditItem><Switch label="Target information" checked={value.targetInfo?.enabled ?? false} onChange={(event) => { value.targetInfo = EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo.create({ enabled: event.currentTarget.checked }); onUpdate(); }} /></EditItem>;
+    return <EditItem title="Advanced delivery" obj={value}><HeaderList headers={value.headers} makeHeader={() => EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_Header.create()} onUpdate={onUpdate} /><HeaderList headers={value.externalLabels} makeHeader={() => EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel.create()} onUpdate={onUpdate} /><div className="grid gap-4 md:grid-cols-2"><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /><NumberInput min={0} label="Maximum batch size (bytes)" description="Maximum size of a single remote-write request." value={value.maxBatchSizeBytes} onChange={(next) => { value.maxBatchSizeBytes = Number(next) || 0; onUpdate(); }} /><NumberInput min={0} label="Maximum parallel requests" description="Maximum concurrent requests sent for one batch." value={value.maxBatchRequestParallelism} onChange={(next) => { value.maxBatchRequestParallelism = Number(next) || 0; onUpdate(); }} /></div><EditItem title="Remote write queue" obj={value.remoteWriteQueue} onSet={() => { value.remoteWriteQueue = EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue.create(); onUpdate(); }} onUnset={() => { value.remoteWriteQueue = undefined; onUpdate(); }}>{value.remoteWriteQueue && <div className="grid gap-4 md:grid-cols-3"><Switch label="Enabled" description="Buffer metric batches before sending them." checked={value.remoteWriteQueue.enabled} onChange={(event) => { value.remoteWriteQueue!.enabled = event.currentTarget.checked; onUpdate(); }} /><NumberInput min={0} label="Queue size" description="Maximum number of metric batches buffered in the queue." value={value.remoteWriteQueue.queueSize} onChange={(next) => { value.remoteWriteQueue!.queueSize = Number(next) || 0; onUpdate(); }} /><NumberInput min={0} label="Consumers" description="Number of workers sending queued batches." value={value.remoteWriteQueue.numConsumers} onChange={(next) => { value.remoteWriteQueue!.numConsumers = Number(next) || 0; onUpdate(); }} /></div>}</EditItem><EditItem title="Resource conversion" obj={value.resourceToTelemetryConversion} onSet={() => { value.resourceToTelemetryConversion = EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion.create(); onUpdate(); }} onUnset={() => { value.resourceToTelemetryConversion = undefined; onUpdate(); }}>{value.resourceToTelemetryConversion && <Group><Switch label="Enabled" description="Convert OpenTelemetry resource attributes into Prometheus labels." checked={value.resourceToTelemetryConversion.enabled} onChange={(event) => { value.resourceToTelemetryConversion!.enabled = event.currentTarget.checked; onUpdate(); }} /><Switch label="Exclude service attributes" description="Exclude service.* resource attributes from the conversion." checked={value.resourceToTelemetryConversion.excludeServiceAttributes} onChange={(event) => { value.resourceToTelemetryConversion!.excludeServiceAttributes = event.currentTarget.checked; onUpdate(); }} /></Group>}</EditItem><Switch label="Target information" description="Export the target_info metric with resource attributes." checked={value.targetInfo?.enabled ?? false} onChange={(event) => { value.targetInfo = EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo.create({ enabled: event.currentTarget.checked }); onUpdate(); }} /></EditItem>;
   }
 
   if (type.oneofKind === "clickhouse") {
     const value = type.clickhouse;
-    return <EditItem title="Advanced delivery" obj={value}><HeaderList headers={value.connectionParams} makeHeader={() => EnterpriseP.CollectorExporter_Spec_Clickhouse_ConnectionParam.create()} onUpdate={onUpdate} /><div className="grid gap-4 md:grid-cols-2"><DurationField label="TTL" value={value.ttl} onChange={(next) => { value.ttl = next; onUpdate(); }} /><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /></div><EditItem title="Metrics tables" obj={value.metricsTables} onSet={() => { value.metricsTables = EnterpriseP.CollectorExporter_Spec_Clickhouse_MetricsTables.create(); onUpdate(); }} onUnset={() => { value.metricsTables = undefined; onUpdate(); }}>{value.metricsTables && <div className="grid gap-4 md:grid-cols-2">{(["gauge", "sum", "summary", "histogram", "exponentialHistogram"] as const).map((field) => <TextInput key={field} label={field === "exponentialHistogram" ? "Exponential histogram" : field[0].toUpperCase() + field.slice(1)} value={value.metricsTables![field]} onChange={(event) => { value.metricsTables![field] = event.currentTarget.value; onUpdate(); }} />)}</div>}</EditItem><EditItem title="Table engine" obj={value.tableEngine} onSet={() => { value.tableEngine = EnterpriseP.CollectorExporter_Spec_Clickhouse_TableEngine.create(); onUpdate(); }} onUnset={() => { value.tableEngine = undefined; onUpdate(); }}>{value.tableEngine && <div className="grid gap-4 md:grid-cols-2"><TextInput label="Engine name" value={value.tableEngine.name} onChange={(event) => { value.tableEngine!.name = event.currentTarget.value; onUpdate(); }} /><TextInput label="Parameters" value={value.tableEngine.params} onChange={(event) => { value.tableEngine!.params = event.currentTarget.value; onUpdate(); }} /></div>}</EditItem><EditItem title="TLS" obj={value.tls} onSet={() => { value.tls = EnterpriseP.CollectorExporter_Spec_Clickhouse_TLS.create(); onUpdate(); }} onUnset={() => { value.tls = undefined; onUpdate(); }}>{value.tls && <div className="grid gap-4 md:grid-cols-2"><Switch label="No TLS" checked={value.tls.insecure} onChange={(event) => { value.tls!.insecure = event.currentTarget.checked; onUpdate(); }} /><Switch label="Skip TLS verification" checked={value.tls.insecureSkipVerify} onChange={(event) => { value.tls!.insecureSkipVerify = event.currentTarget.checked; onUpdate(); }} /><TextInput label="Server name override" value={value.tls.serverNameOverride} onChange={(event) => { value.tls!.serverNameOverride = event.currentTarget.value; onUpdate(); }} /><Textarea label="CA certificate PEM" autosize minRows={3} value={value.tls.caPEM} onChange={(event) => { value.tls!.caPEM = event.currentTarget.value; onUpdate(); }} /></div>}</EditItem></EditItem>;
+    return <EditItem title="Advanced delivery" obj={value}><HeaderList headers={value.connectionParams} makeHeader={() => EnterpriseP.CollectorExporter_Spec_Clickhouse_ConnectionParam.create()} onUpdate={onUpdate} /><div className="grid gap-4 md:grid-cols-2"><DurationField label="TTL" description="Retention duration for exported telemetry rows." value={value.ttl} onChange={(next) => { value.ttl = next; onUpdate(); }} /><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /></div><EditItem title="Metrics tables" obj={value.metricsTables} onSet={() => { value.metricsTables = EnterpriseP.CollectorExporter_Spec_Clickhouse_MetricsTables.create(); onUpdate(); }} onUnset={() => { value.metricsTables = undefined; onUpdate(); }}>{value.metricsTables && <div className="grid gap-4 md:grid-cols-2">{(["gauge", "sum", "summary", "histogram", "exponentialHistogram"] as const).map((field) => <TextInput key={field} label={field === "exponentialHistogram" ? "Exponential histogram" : field[0].toUpperCase() + field.slice(1)} description="ClickHouse table name for this metric type." value={value.metricsTables![field]} onChange={(event) => { value.metricsTables![field] = event.currentTarget.value; onUpdate(); }} />)}</div>}</EditItem><EditItem title="Table engine" obj={value.tableEngine} onSet={() => { value.tableEngine = EnterpriseP.CollectorExporter_Spec_Clickhouse_TableEngine.create(); onUpdate(); }} onUnset={() => { value.tableEngine = undefined; onUpdate(); }}>{value.tableEngine && <div className="grid gap-4 md:grid-cols-2"><TextInput label="Engine name" description="ClickHouse table engine name, such as MergeTree." value={value.tableEngine.name} onChange={(event) => { value.tableEngine!.name = event.currentTarget.value; onUpdate(); }} /><TextInput label="Parameters" description="Parameters passed to the ClickHouse table engine." value={value.tableEngine.params} onChange={(event) => { value.tableEngine!.params = event.currentTarget.value; onUpdate(); }} /></div>}</EditItem><EditItem title="TLS" obj={value.tls} onSet={() => { value.tls = EnterpriseP.CollectorExporter_Spec_Clickhouse_TLS.create(); onUpdate(); }} onUnset={() => { value.tls = undefined; onUpdate(); }}>{value.tls && <div className="grid gap-4 md:grid-cols-2"><Switch label="No TLS" description="Disable TLS and connect over plaintext." checked={value.tls.insecure} onChange={(event) => { value.tls!.insecure = event.currentTarget.checked; onUpdate(); }} /><Switch label="Skip TLS verification" description="Skip upstream certificate-chain and hostname verification." checked={value.tls.insecureSkipVerify} onChange={(event) => { value.tls!.insecureSkipVerify = event.currentTarget.checked; onUpdate(); }} /><TextInput label="Server name override" description="Optional hostname used when verifying the upstream certificate." value={value.tls.serverNameOverride} onChange={(event) => { value.tls!.serverNameOverride = event.currentTarget.value; onUpdate(); }} /><Textarea label="CA certificate PEM" description="Optional PEM-encoded CA used to verify the upstream certificate." autosize minRows={3} value={value.tls.caPEM} onChange={(event) => { value.tls!.caPEM = event.currentTarget.value; onUpdate(); }} /></div>}</EditItem></EditItem>;
   }
 
   if (type.oneofKind === "elasticsearch") {
     const value = type.elasticsearch;
-    return <EditItem title="Advanced delivery" obj={value}><HeaderList headers={value.headers} makeHeader={() => EnterpriseP.CollectorExporter_Spec_Elasticsearch_Header.create()} onUpdate={onUpdate} /><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /><Switch label="Skip TLS verification" checked={value.tls?.insecureSkipVerify ?? false} onChange={(event) => { value.tls = EnterpriseP.CollectorExporter_Spec_Elasticsearch_TLS.create({ insecureSkipVerify: event.currentTarget.checked }); onUpdate(); }} />{value.tls?.insecureSkipVerify && <Alert color="red" icon={<AlertTriangle size={14} />}>Server certificates will not be verified.</Alert>}</EditItem>;
+    return <EditItem title="Advanced delivery" obj={value}><HeaderList headers={value.headers} makeHeader={() => EnterpriseP.CollectorExporter_Spec_Elasticsearch_Header.create()} onUpdate={onUpdate} /><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /><Switch label="Skip TLS verification" description="Skip upstream certificate-chain and hostname verification." checked={value.tls?.insecureSkipVerify ?? false} onChange={(event) => { value.tls = EnterpriseP.CollectorExporter_Spec_Elasticsearch_TLS.create({ insecureSkipVerify: event.currentTarget.checked }); onUpdate(); }} />{value.tls?.insecureSkipVerify && <Alert color="red" icon={<AlertTriangle size={14} />}>Server certificates will not be verified.</Alert>}</EditItem>;
   }
 
   if (type.oneofKind === "logzio") return <EditItem title="Advanced delivery" obj={type.logzio}><DurationField label="Timeout" value={type.logzio.timeout} onChange={(next) => { type.logzio.timeout = next; onUpdate(); }} /></EditItem>;
 
   if (type.oneofKind === "influxDB") {
     const value = type.influxDB;
-    return <EditItem title="Advanced delivery" obj={value}><HeaderList headers={value.headers} makeHeader={() => EnterpriseP.CollectorExporter_Spec_InfluxDB_Header.create()} onUpdate={onUpdate} /><div className="grid gap-4 md:grid-cols-2"><NumberInput min={0} label="Maximum payload lines" value={value.payloadMaxLines} onChange={(next) => { value.payloadMaxLines = Number(next) || 0; onUpdate(); }} /><NumberInput min={0} label="Maximum payload bytes" value={value.payloadMaxBytes} onChange={(next) => { value.payloadMaxBytes = Number(next) || 0; onUpdate(); }} /><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /><StringListField label="Log record dimensions" value={value.logRecordDimensions} onChange={(next) => { value.logRecordDimensions = next; onUpdate(); }} /></div><EditItem title="InfluxDB v1 compatibility" obj={value.v1Compatibility} onSet={() => { value.v1Compatibility = EnterpriseP.CollectorExporter_Spec_InfluxDB_V1Compatibility.create(); onUpdate(); }} onUnset={() => { value.v1Compatibility = undefined; onUpdate(); }}>{value.v1Compatibility && <div className="grid gap-4 md:grid-cols-2"><Switch label="Enabled" checked={value.v1Compatibility.enabled} onChange={(event) => { value.v1Compatibility!.enabled = event.currentTarget.checked; onUpdate(); }} /><TextInput label="Database" value={value.v1Compatibility.db} onChange={(event) => { value.v1Compatibility!.db = event.currentTarget.value; onUpdate(); }} /><TextInput label="Username" value={value.v1Compatibility.username} onChange={(event) => { value.v1Compatibility!.username = event.currentTarget.value; onUpdate(); }} /><SecretSelectField label="Password Secret" sel={value.v1Compatibility.password} onUpdate={onUpdate} /></div>}</EditItem></EditItem>;
+    return <EditItem title="Advanced delivery" obj={value}><HeaderList headers={value.headers} makeHeader={() => EnterpriseP.CollectorExporter_Spec_InfluxDB_Header.create()} onUpdate={onUpdate} /><div className="grid gap-4 md:grid-cols-2"><NumberInput min={0} label="Maximum payload lines" description="Maximum number of lines sent in one export request." value={value.payloadMaxLines} onChange={(next) => { value.payloadMaxLines = Number(next) || 0; onUpdate(); }} /><NumberInput min={0} label="Maximum payload bytes" description="Maximum size in bytes of one export request." value={value.payloadMaxBytes} onChange={(next) => { value.payloadMaxBytes = Number(next) || 0; onUpdate(); }} /><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /><StringListField label="Log record dimensions" value={value.logRecordDimensions} onChange={(next) => { value.logRecordDimensions = next; onUpdate(); }} /></div><EditItem title="InfluxDB v1 compatibility" obj={value.v1Compatibility} onSet={() => { value.v1Compatibility = EnterpriseP.CollectorExporter_Spec_InfluxDB_V1Compatibility.create(); onUpdate(); }} onUnset={() => { value.v1Compatibility = undefined; onUpdate(); }}>{value.v1Compatibility && <div className="grid gap-4 md:grid-cols-2"><Switch label="Enabled" description="Enable InfluxDB v1.x compatibility mode." checked={value.v1Compatibility.enabled} onChange={(event) => { value.v1Compatibility!.enabled = event.currentTarget.checked; onUpdate(); }} /><TextInput label="Database" description="InfluxDB v1.x database receiving telemetry." value={value.v1Compatibility.db} onChange={(event) => { value.v1Compatibility!.db = event.currentTarget.value; onUpdate(); }} /><TextInput label="Username" description="InfluxDB v1.x username." value={value.v1Compatibility.username} onChange={(event) => { value.v1Compatibility!.username = event.currentTarget.value; onUpdate(); }} /><SecretSelectField label="Password Secret" sel={value.v1Compatibility.password} onUpdate={onUpdate} /></div>}</EditItem></EditItem>;
   }
 
   if (type.oneofKind === "kafka") {
     const value = type.kafka;
-    return <EditItem title="Advanced delivery" obj={value}><HeaderList headers={value.recordHeaders} makeHeader={() => EnterpriseP.CollectorExporter_Spec_Kafka_Header.create()} onUpdate={onUpdate} /><div className="grid gap-4 md:grid-cols-2"><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /><DurationField label="Connection idle timeout" value={value.connIdleTimeout} onChange={(next) => { value.connIdleTimeout = next; onUpdate(); }} /><Switch label="Partition logs by resource attributes" checked={value.partitionLogsByResourceAttributes} onChange={(event) => { value.partitionLogsByResourceAttributes = event.currentTarget.checked; onUpdate(); }} /><Switch label="Partition metrics by resource attributes" checked={value.partitionMetricsByResourceAttributes} onChange={(event) => { value.partitionMetricsByResourceAttributes = event.currentTarget.checked; onUpdate(); }} /></div><EditItem title="TLS" obj={value.tls} onSet={() => { value.tls = EnterpriseP.CollectorExporter_Spec_Kafka_TLS.create(); onUpdate(); }} onUnset={() => { value.tls = undefined; onUpdate(); }}>{value.tls && <Group><Switch label="No TLS" checked={value.tls.insecure} onChange={(event) => { value.tls!.insecure = event.currentTarget.checked; onUpdate(); }} /><Switch label="Skip TLS verification" checked={value.tls.insecureSkipVerify} onChange={(event) => { value.tls!.insecureSkipVerify = event.currentTarget.checked; onUpdate(); }} /></Group>}</EditItem><EditItem title="Producer" obj={value.producer} onSet={() => { value.producer = EnterpriseP.CollectorExporter_Spec_Kafka_Producer.create(); onUpdate(); }} onUnset={() => { value.producer = undefined; onUpdate(); }}>{value.producer && <div className="grid gap-4 md:grid-cols-2"><NumberInput min={0} label="Maximum message bytes" value={value.producer.maxMessageBytes} onChange={(next) => { value.producer!.maxMessageBytes = Number(next) || 0; onUpdate(); }} /><NumberInput label="Required acknowledgements" value={value.producer.requiredAcks} onChange={(next) => { value.producer!.requiredAcks = Number(next) || 0; onUpdate(); }} /><NumberInput min={0} label="Flush maximum messages" value={value.producer.flushMaxMessages} onChange={(next) => { value.producer!.flushMaxMessages = Number(next) || 0; onUpdate(); }} /><Switch label="Allow automatic topic creation" checked={value.producer.allowAutoTopicCreation} onChange={(event) => { value.producer!.allowAutoTopicCreation = event.currentTarget.checked; onUpdate(); }} /><DurationField label="Linger" value={value.producer.linger} onChange={(next) => { value.producer!.linger = next; onUpdate(); }} /><EnumSelect label="Compression" enumObj={EnterpriseP.CollectorExporter_Spec_Kafka_ProducerCompression} value={value.producer.compression} options={[{ label: "None", value: EnterpriseP.CollectorExporter_Spec_Kafka_ProducerCompression.NONE }, { label: "Gzip", value: EnterpriseP.CollectorExporter_Spec_Kafka_ProducerCompression.GZIP }, { label: "Snappy", value: EnterpriseP.CollectorExporter_Spec_Kafka_ProducerCompression.SNAPPY }, { label: "LZ4", value: EnterpriseP.CollectorExporter_Spec_Kafka_ProducerCompression.LZ4 }, { label: "Zstd", value: EnterpriseP.CollectorExporter_Spec_Kafka_ProducerCompression.ZSTD }]} onChange={(next) => { value.producer!.compression = next; onUpdate(); }} /></div>}</EditItem></EditItem>;
+    return <EditItem title="Advanced delivery" obj={value}><HeaderList headers={value.recordHeaders} makeHeader={() => EnterpriseP.CollectorExporter_Spec_Kafka_Header.create()} onUpdate={onUpdate} /><div className="grid gap-4 md:grid-cols-2"><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /><DurationField label="Connection idle timeout" value={value.connIdleTimeout} onChange={(next) => { value.connIdleTimeout = next; onUpdate(); }} /><Switch label="Partition logs by resource attributes" description="Use resource attributes when selecting the Kafka partition for logs." checked={value.partitionLogsByResourceAttributes} onChange={(event) => { value.partitionLogsByResourceAttributes = event.currentTarget.checked; onUpdate(); }} /><Switch label="Partition metrics by resource attributes" description="Use resource attributes when selecting the Kafka partition for metrics." checked={value.partitionMetricsByResourceAttributes} onChange={(event) => { value.partitionMetricsByResourceAttributes = event.currentTarget.checked; onUpdate(); }} /></div><EditItem title="TLS" obj={value.tls} onSet={() => { value.tls = EnterpriseP.CollectorExporter_Spec_Kafka_TLS.create(); onUpdate(); }} onUnset={() => { value.tls = undefined; onUpdate(); }}>{value.tls && <Group><Switch label="No TLS" description="Disable TLS and connect over plaintext." checked={value.tls.insecure} onChange={(event) => { value.tls!.insecure = event.currentTarget.checked; onUpdate(); }} /><Switch label="Skip TLS verification" description="Skip upstream certificate-chain and hostname verification." checked={value.tls.insecureSkipVerify} onChange={(event) => { value.tls!.insecureSkipVerify = event.currentTarget.checked; onUpdate(); }} /></Group>}</EditItem><EditItem title="Producer" obj={value.producer} onSet={() => { value.producer = EnterpriseP.CollectorExporter_Spec_Kafka_Producer.create(); onUpdate(); }} onUnset={() => { value.producer = undefined; onUpdate(); }}>{value.producer && <div className="grid gap-4 md:grid-cols-2"><NumberInput min={0} label="Maximum message bytes" description="Maximum size of a Kafka message in bytes." value={value.producer.maxMessageBytes} onChange={(next) => { value.producer!.maxMessageBytes = Number(next) || 0; onUpdate(); }} /><NumberInput label="Required acknowledgements" description="Number of broker acknowledgements required before a message is considered written." value={value.producer.requiredAcks} onChange={(next) => { value.producer!.requiredAcks = Number(next) || 0; onUpdate(); }} /><NumberInput min={0} label="Flush maximum messages" description="Maximum messages accumulated before a producer flush." value={value.producer.flushMaxMessages} onChange={(next) => { value.producer!.flushMaxMessages = Number(next) || 0; onUpdate(); }} /><Switch label="Allow automatic topic creation" description="Allow the producer to create missing Kafka topics automatically." checked={value.producer.allowAutoTopicCreation} onChange={(event) => { value.producer!.allowAutoTopicCreation = event.currentTarget.checked; onUpdate(); }} /><DurationField label="Linger" value={value.producer.linger} onChange={(next) => { value.producer!.linger = next; onUpdate(); }} /><EnumSelect label="Compression" enumObj={EnterpriseP.CollectorExporter_Spec_Kafka_ProducerCompression} value={value.producer.compression} options={[{ label: "None", value: EnterpriseP.CollectorExporter_Spec_Kafka_ProducerCompression.NONE }, { label: "Gzip", value: EnterpriseP.CollectorExporter_Spec_Kafka_ProducerCompression.GZIP }, { label: "Snappy", value: EnterpriseP.CollectorExporter_Spec_Kafka_ProducerCompression.SNAPPY }, { label: "LZ4", value: EnterpriseP.CollectorExporter_Spec_Kafka_ProducerCompression.LZ4 }, { label: "Zstd", value: EnterpriseP.CollectorExporter_Spec_Kafka_ProducerCompression.ZSTD }]} onChange={(next) => { value.producer!.compression = next; onUpdate(); }} /></div>}</EditItem></EditItem>;
   }
 
   if (type.oneofKind === "datadog") {
     const value = type.datadog;
-    return <EditItem title="Advanced delivery" obj={value}><EditItem title="Metrics" obj={value.metrics} onSet={() => { value.metrics = EnterpriseP.CollectorExporter_Spec_Datadog_Metrics.create(); onUpdate(); }} onUnset={() => { value.metrics = undefined; onUpdate(); }}>{value.metrics && <div className="grid gap-4 md:grid-cols-2"><TextInput label="Metrics endpoint" value={value.metrics.endpoint} onChange={(event) => { value.metrics!.endpoint = event.currentTarget.value; onUpdate(); }} /><Switch label="Resource attributes as tags" checked={value.metrics.resourceAttributesAsTags} onChange={(event) => { value.metrics!.resourceAttributesAsTags = event.currentTarget.checked; onUpdate(); }} /><Switch label="Instrumentation scope metadata as tags" checked={value.metrics.instrumentationScopeMetadataAsTags} onChange={(event) => { value.metrics!.instrumentationScopeMetadataAsTags = event.currentTarget.checked; onUpdate(); }} /></div>}</EditItem><EditItem title="Logs" obj={value.logs} onSet={() => { value.logs = EnterpriseP.CollectorExporter_Spec_Datadog_Logs.create(); onUpdate(); }} onUnset={() => { value.logs = undefined; onUpdate(); }}>{value.logs && <div className="grid gap-4 md:grid-cols-2"><TextInput label="Logs endpoint" value={value.logs.endpoint} onChange={(event) => { value.logs!.endpoint = event.currentTarget.value; onUpdate(); }} /><Switch label="Use compression" checked={value.logs.useCompression} onChange={(event) => { value.logs!.useCompression = event.currentTarget.checked; onUpdate(); }} /><NumberInput min={0} label="Compression level" value={value.logs.compressionLevel} onChange={(next) => { value.logs!.compressionLevel = Number(next) || 0; onUpdate(); }} /><DurationField label="Batch wait" value={value.logs.batchWait} onChange={(next) => { value.logs!.batchWait = next; onUpdate(); }} /></div>}</EditItem><EditItem title="Host metadata" obj={value.hostMetadata} onSet={() => { value.hostMetadata = EnterpriseP.CollectorExporter_Spec_Datadog_HostMetadata.create(); onUpdate(); }} onUnset={() => { value.hostMetadata = undefined; onUpdate(); }}>{value.hostMetadata && <div className="grid gap-4 md:grid-cols-2"><Switch label="Enabled" checked={value.hostMetadata.enabled} onChange={(event) => { value.hostMetadata!.enabled = event.currentTarget.checked; onUpdate(); }} /><DurationField label="Reporter period" value={value.hostMetadata.reporterPeriod} onChange={(next) => { value.hostMetadata!.reporterPeriod = next; onUpdate(); }} /></div>}</EditItem><DurationField label="Hostname detection timeout" value={value.hostnameDetectionTimeout} onChange={(next) => { value.hostnameDetectionTimeout = next; onUpdate(); }} /></EditItem>;
+    return <EditItem title="Advanced delivery" obj={value}><EditItem title="Metrics" obj={value.metrics} onSet={() => { value.metrics = EnterpriseP.CollectorExporter_Spec_Datadog_Metrics.create(); onUpdate(); }} onUnset={() => { value.metrics = undefined; onUpdate(); }}>{value.metrics && <div className="grid gap-4 md:grid-cols-2"><TextInput label="Metrics endpoint" description="Optional Datadog metrics intake endpoint override." value={value.metrics.endpoint} onChange={(event) => { value.metrics!.endpoint = event.currentTarget.value; onUpdate(); }} /><Switch label="Resource attributes as tags" description="Export resource attributes as Datadog metric tags." checked={value.metrics.resourceAttributesAsTags} onChange={(event) => { value.metrics!.resourceAttributesAsTags = event.currentTarget.checked; onUpdate(); }} /><Switch label="Instrumentation scope metadata as tags" description="Export instrumentation-scope metadata as Datadog metric tags." checked={value.metrics.instrumentationScopeMetadataAsTags} onChange={(event) => { value.metrics!.instrumentationScopeMetadataAsTags = event.currentTarget.checked; onUpdate(); }} /></div>}</EditItem><EditItem title="Logs" obj={value.logs} onSet={() => { value.logs = EnterpriseP.CollectorExporter_Spec_Datadog_Logs.create(); onUpdate(); }} onUnset={() => { value.logs = undefined; onUpdate(); }}>{value.logs && <div className="grid gap-4 md:grid-cols-2"><TextInput label="Logs endpoint" description="Optional Datadog logs intake endpoint override." value={value.logs.endpoint} onChange={(event) => { value.logs!.endpoint = event.currentTarget.value; onUpdate(); }} /><Switch label="Use compression" description="Compress log payloads before sending them." checked={value.logs.useCompression} onChange={(event) => { value.logs!.useCompression = event.currentTarget.checked; onUpdate(); }} /><NumberInput min={0} label="Compression level" description="Compression level used for Datadog log payloads." value={value.logs.compressionLevel} onChange={(next) => { value.logs!.compressionLevel = Number(next) || 0; onUpdate(); }} /><DurationField label="Batch wait" value={value.logs.batchWait} onChange={(next) => { value.logs!.batchWait = next; onUpdate(); }} /></div>}</EditItem><EditItem title="Host metadata" obj={value.hostMetadata} onSet={() => { value.hostMetadata = EnterpriseP.CollectorExporter_Spec_Datadog_HostMetadata.create(); onUpdate(); }} onUnset={() => { value.hostMetadata = undefined; onUpdate(); }}>{value.hostMetadata && <div className="grid gap-4 md:grid-cols-2"><Switch label="Enabled" description="Enable Datadog host metadata reporting." checked={value.hostMetadata.enabled} onChange={(event) => { value.hostMetadata!.enabled = event.currentTarget.checked; onUpdate(); }} /><DurationField label="Reporter period" value={value.hostMetadata.reporterPeriod} onChange={(next) => { value.hostMetadata!.reporterPeriod = next; onUpdate(); }} /></div>}</EditItem><DurationField label="Hostname detection timeout" value={value.hostnameDetectionTimeout} onChange={(next) => { value.hostnameDetectionTimeout = next; onUpdate(); }} /></EditItem>;
   }
 
   if (type.oneofKind === "splunk") {
     const value = type.splunk;
-    return <EditItem title="Advanced delivery" obj={value}><div className="grid gap-4 md:grid-cols-2"><NumberInput min={0} label="Maximum log content length" value={value.maxContentLengthLogs} onChange={(next) => { value.maxContentLengthLogs = Number(next) || 0; onUpdate(); }} /><NumberInput min={0} label="Maximum metric content length" value={value.maxContentLengthMetrics} onChange={(next) => { value.maxContentLengthMetrics = Number(next) || 0; onUpdate(); }} /><NumberInput min={0} label="Maximum idle connections" value={value.maxIdleConns} onChange={(next) => { value.maxIdleConns = Number(next) || 0; onUpdate(); }} /><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /><Switch label="Skip TLS verification" checked={value.tls?.insecureSkipVerify ?? false} onChange={(event) => { value.tls = EnterpriseP.CollectorExporter_Spec_Splunk_TLS.create({ insecureSkipVerify: event.currentTarget.checked }); onUpdate(); }} /></div>{value.tls?.insecureSkipVerify && <Alert color="red" icon={<AlertTriangle size={14} />}>Server certificates will not be verified.</Alert>}</EditItem>;
+    return <EditItem title="Advanced delivery" obj={value}><div className="grid gap-4 md:grid-cols-2"><NumberInput min={0} label="Maximum log content length" description="Maximum log payload size sent to Splunk." value={value.maxContentLengthLogs} onChange={(next) => { value.maxContentLengthLogs = Number(next) || 0; onUpdate(); }} /><NumberInput min={0} label="Maximum metric content length" description="Maximum metric payload size sent to Splunk." value={value.maxContentLengthMetrics} onChange={(next) => { value.maxContentLengthMetrics = Number(next) || 0; onUpdate(); }} /><NumberInput min={0} label="Maximum idle connections" description="Maximum number of idle connections kept in the pool." value={value.maxIdleConns} onChange={(next) => { value.maxIdleConns = Number(next) || 0; onUpdate(); }} /><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /><Switch label="Skip TLS verification" description="Skip upstream certificate-chain and hostname verification." checked={value.tls?.insecureSkipVerify ?? false} onChange={(event) => { value.tls = EnterpriseP.CollectorExporter_Spec_Splunk_TLS.create({ insecureSkipVerify: event.currentTarget.checked }); onUpdate(); }} /></div>{value.tls?.insecureSkipVerify && <Alert color="red" icon={<AlertTriangle size={14} />}>Server certificates will not be verified.</Alert>}</EditItem>;
   }
 
   if (type.oneofKind === "azureMonitor") {
@@ -465,7 +472,7 @@ const AdvancedSettings = (props: {
 
   if (type.oneofKind === "azureDataExplorer") {
     const value = type.azureDataExplorer;
-    return <EditItem title="Advanced delivery" obj={value}><div className="grid gap-4 md:grid-cols-2"><TextInput label="Metrics table mapping" value={value.metricsTableMapping} onChange={(event) => { value.metricsTableMapping = event.currentTarget.value; onUpdate(); }} /><TextInput label="Logs table mapping" value={value.logsTableMapping} onChange={(event) => { value.logsTableMapping = event.currentTarget.value; onUpdate(); }} /><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /></div></EditItem>;
+    return <EditItem title="Advanced delivery" obj={value}><div className="grid gap-4 md:grid-cols-2"><TextInput label="Metrics table mapping" description="Optional mapping that routes metrics to an Azure Data Explorer table." value={value.metricsTableMapping} onChange={(event) => { value.metricsTableMapping = event.currentTarget.value; onUpdate(); }} /><TextInput label="Logs table mapping" description="Optional mapping that routes logs to an Azure Data Explorer table." value={value.logsTableMapping} onChange={(event) => { value.logsTableMapping = event.currentTarget.value; onUpdate(); }} /><DurationField label="Timeout" value={value.timeout} onChange={(next) => { value.timeout = next; onUpdate(); }} /></div></EditItem>;
   }
 
   return null;
@@ -493,10 +500,10 @@ const PrometheusTLSSettings = (props: {
     >
       {value.tls && (
         <div className="grid gap-4 md:grid-cols-2">
-          <Switch label="No TLS" checked={value.tls.insecure} onChange={(event) => { value.tls!.insecure = event.currentTarget.checked; props.onUpdate(); }} />
-          <Switch label="Skip TLS verification" checked={value.tls.insecureSkipVerify} onChange={(event) => { value.tls!.insecureSkipVerify = event.currentTarget.checked; props.onUpdate(); }} />
-          <TextInput label="Server name override" value={value.tls.serverNameOverride} onChange={(event) => { value.tls!.serverNameOverride = event.currentTarget.value; props.onUpdate(); }} />
-          <Textarea label="CA certificate PEM" autosize minRows={3} value={value.tls.caPEM} onChange={(event) => { value.tls!.caPEM = event.currentTarget.value; props.onUpdate(); }} />
+          <Switch label="No TLS" description="Disable TLS and connect over plaintext." checked={value.tls.insecure} onChange={(event) => { value.tls!.insecure = event.currentTarget.checked; props.onUpdate(); }} />
+          <Switch label="Skip TLS verification" description="Skip upstream certificate-chain and hostname verification." checked={value.tls.insecureSkipVerify} onChange={(event) => { value.tls!.insecureSkipVerify = event.currentTarget.checked; props.onUpdate(); }} />
+          <TextInput label="Server name override" description="Optional hostname used when verifying the upstream certificate." value={value.tls.serverNameOverride} onChange={(event) => { value.tls!.serverNameOverride = event.currentTarget.value; props.onUpdate(); }} />
+          <Textarea label="CA certificate PEM" description="Optional PEM-encoded CA used to verify the upstream certificate." autosize minRows={3} value={value.tls.caPEM} onChange={(event) => { value.tls!.caPEM = event.currentTarget.value; props.onUpdate(); }} />
           {value.tls.insecureSkipVerify && <Alert color="red" icon={<AlertTriangle size={14} />}>Server certificates will not be verified.</Alert>}
         </div>
       )}
@@ -582,6 +589,7 @@ const Edit = (props: {
       <div className="rounded-xl border border-slate-200 bg-white p-3">
         <Switch
           label="Disabled"
+          description="Disable this exporter so the Collector skips it even when referenced by a pipeline."
           checked={req.spec!.isDisabled}
           onChange={(v) => {
             req.spec!.isDisabled = v.target.checked;
@@ -839,6 +847,7 @@ const Edit = (props: {
                   <TextInput
                     required
                     label="Endpoint"
+                    description="Address of the upstream OTLP gRPC endpoint."
                     placeholder="otlp-receiver.example.com:8443"
                     value={type.otlp.endpoint}
                     onChange={(v) => {
@@ -848,6 +857,7 @@ const Edit = (props: {
                   />
                   <EnumSelect
                     label="Compression"
+                    description="Compression algorithm used for OTLP payloads."
                     enumObj={
                       EnterpriseP.CollectorExporter_Spec_OTLP_Compression
                     }
@@ -901,7 +911,7 @@ const Edit = (props: {
                   />
                   <Switch
                     label="Skip TLS Verify"
-                    description="Do not verify the server certificate"
+                    description="Skip upstream certificate-chain and hostname verification."
                     checked={type.otlp.tls?.insecureSkipVerify ?? false}
                     onChange={(v) => {
                       if (!type.otlp.tls) {
@@ -914,7 +924,7 @@ const Edit = (props: {
                   />
                   <Switch
                     label="Wait For Ready"
-                    description="Block until the connection is ready"
+                    description="Wait for the upstream connection instead of failing immediately."
                     checked={type.otlp.waitForReady}
                     onChange={(v) => {
                       type.otlp.waitForReady = v.target.checked;
@@ -971,7 +981,7 @@ const Edit = (props: {
                 <Group grow>
                   <TextInput
                     label="Logs Endpoint"
-                    description="Override the logs endpoint"
+                    description="Optional URL override for exported logs."
                     placeholder="https://otlp-receiver.example.com/v1/logs"
                     value={type.otlpHTTP.logsEndpoint}
                     onChange={(v) => {
@@ -981,7 +991,7 @@ const Edit = (props: {
                   />
                   <TextInput
                     label="Metrics Endpoint"
-                    description="Override the metrics endpoint"
+                    description="Optional URL override for exported metrics."
                     placeholder="https://otlp-receiver.example.com/v1/metrics"
                     value={type.otlpHTTP.metricsEndpoint}
                     onChange={(v) => {
@@ -994,7 +1004,7 @@ const Edit = (props: {
                 <Group grow>
                   <EnumSelect
                     label="Encoding"
-                    description="Set the payload encoding"
+                    description="Wire encoding used for OTLP HTTP payloads."
                     enumObj={
                       EnterpriseP.CollectorExporter_Spec_OTLPHTTP_Encoding
                     }
@@ -1020,6 +1030,7 @@ const Edit = (props: {
                   />
                   <EnumSelect
                     label="Compression"
+                    description="Compression algorithm used for OTLP HTTP payloads."
                     enumObj={
                       EnterpriseP.CollectorExporter_Spec_OTLPHTTP_Compression
                     }
@@ -1082,6 +1093,7 @@ const Edit = (props: {
                   <TextInput
                     required
                     label="Endpoint"
+                    description="Address of the upstream ClickHouse server."
                     placeholder='"tcp://addr:port", "http://addr:port", "clickhouse://addr:port"'
                     value={type.clickhouse.endpoint}
                     onChange={(v) => {
@@ -1091,6 +1103,7 @@ const Edit = (props: {
                   />
                   <TextInput
                     label="Username"
+                    description="Username of the ClickHouse database user."
                     placeholder="clickhouse"
                     value={type.clickhouse.username}
                     onChange={(v) => {
@@ -1102,6 +1115,7 @@ const Edit = (props: {
                 <Group grow>
                   <TextInput
                     label="Database"
+                    description="ClickHouse database that receives the telemetry."
                     placeholder="otel"
                     value={type.clickhouse.database}
                     onChange={(v) => {
@@ -1118,6 +1132,7 @@ const Edit = (props: {
                 <Group grow>
                   <TextInput
                     label="Logs Table Name"
+                    description="Table where exported logs are stored."
                     placeholder="otel_logs"
                     value={type.clickhouse.logsTableName}
                     onChange={(v) => {
@@ -1127,6 +1142,7 @@ const Edit = (props: {
                   />
                   <TextInput
                     label="Cluster Name"
+                    description="Optional ClickHouse cluster used for ON CLUSTER table creation."
                     placeholder="cluster"
                     value={type.clickhouse.clusterName}
                     onChange={(v) => {
@@ -1136,6 +1152,7 @@ const Edit = (props: {
                   />
                   <EnumSelect
                     label="Compression"
+                    description="Compression algorithm used for exported ClickHouse payloads."
                     enumObj={
                       EnterpriseP.CollectorExporter_Spec_Clickhouse_Compression
                     }
@@ -1188,6 +1205,7 @@ const Edit = (props: {
                 <Group>
                   <Switch
                     label="Async Insert"
+                    description="Buffer inserts on the ClickHouse server before flushing them."
                     checked={type.clickhouse.asyncInsert}
                     onChange={(v) => {
                       type.clickhouse.asyncInsert = v.target.checked;
@@ -1196,6 +1214,7 @@ const Edit = (props: {
                   />
                   <Switch
                     label="Create Schema"
+                    description="Create the database and tables automatically when missing."
                     checked={type.clickhouse.createSchema}
                     onChange={(v) => {
                       type.clickhouse.createSchema = v.target.checked;
@@ -1204,6 +1223,7 @@ const Edit = (props: {
                   />
                   <Switch
                     label="JSON"
+                    description="Use ClickHouse JSON columns instead of map columns for attributes."
                     checked={type.clickhouse.json}
                     onChange={(v) => {
                       type.clickhouse.json = v.target.checked;
@@ -1226,6 +1246,7 @@ const Edit = (props: {
                   <TextInput
                     required
                     label="Endpoint"
+                    description="URL of the Prometheus remote write endpoint."
                     placeholder="https://prometheus.example.com/api/v1/write"
                     value={type.prometheusRemoteWrite.endpoint}
                     onChange={(v) => {
@@ -1235,6 +1256,7 @@ const Edit = (props: {
                   />
                   <TextInput
                     label="Namespace"
+                    description="Prefix prepended to every exported metric name."
                     placeholder="default"
                     value={type.prometheusRemoteWrite.namespace}
                     onChange={(v) => {
@@ -1247,6 +1269,7 @@ const Edit = (props: {
                 <Group>
                   <Switch
                     label="Disable Scope Info"
+                    description="Do not export OpenTelemetry scope labels or the scope-info metric."
                     checked={type.prometheusRemoteWrite.disableScopeInfo}
                     onChange={(v) => {
                       type.prometheusRemoteWrite.disableScopeInfo =
@@ -1256,6 +1279,7 @@ const Edit = (props: {
                   />
                   <Switch
                     label="Send Metadata"
+                    description="Send metric help, type, and unit metadata with the samples."
                     checked={type.prometheusRemoteWrite.sendMetadata}
                     onChange={(v) => {
                       type.prometheusRemoteWrite.sendMetadata =
@@ -1267,6 +1291,7 @@ const Edit = (props: {
 
                 <EnumSelect
                   label="Translation Strategy"
+                  description="How OpenTelemetry metric and label names are translated to Prometheus names."
                   enumObj={
                     EnterpriseP.CollectorExporter_Spec_PrometheusRemoteWrite_TranslationStrategy
                   }
@@ -1324,6 +1349,7 @@ const Edit = (props: {
                 <Group grow>
                   <TextInput
                     label="Endpoint"
+                    description="URL of the upstream Elasticsearch cluster."
                     placeholder="https://es.example.com:9200"
                     value={type.elasticsearch.endpoint}
                     onChange={(v) => {
@@ -1333,6 +1359,7 @@ const Edit = (props: {
                   />
                   <TextInput
                     label="Cloud ID"
+                    description="Elastic Cloud ID; used instead of endpoint addresses."
                     placeholder="my-cloud-id"
                     value={type.elasticsearch.cloudID}
                     onChange={(v) => {
@@ -1344,7 +1371,7 @@ const Edit = (props: {
 
                 <TextInput
                   label="Endpoints"
-                  description="One or more endpoints separated by a comma"
+                  description="Optional Elasticsearch node URLs, separated by commas."
                   placeholder="https://es1:9200, https://es2:9200"
                   value={type.elasticsearch.endpoints.join(",")}
                   onChange={(v) => {
@@ -1359,6 +1386,7 @@ const Edit = (props: {
                 <Group grow>
                   <TextInput
                     label="Logs Index"
+                    description="Index or data stream where logs are written."
                     placeholder="my-log-index"
                     value={type.elasticsearch.logsIndex}
                     onChange={(v) => {
@@ -1368,6 +1396,7 @@ const Edit = (props: {
                   />
                   <TextInput
                     label="Metrics Index"
+                    description="Index or data stream where metrics are written."
                     placeholder="my-metrics-index"
                     value={type.elasticsearch.metricsIndex}
                     onChange={(v) => {
@@ -1377,6 +1406,7 @@ const Edit = (props: {
                   />
                   <TextInput
                     label="Pipeline"
+                    description="Optional Elasticsearch ingest pipeline for exported documents."
                     placeholder="pipeline"
                     value={type.elasticsearch.pipeline}
                     onChange={(v) => {
@@ -1388,6 +1418,7 @@ const Edit = (props: {
 
                 <EnumSelect
                   label="Compression"
+                  description="Compression algorithm used for Elasticsearch payloads."
                   enumObj={
                     EnterpriseP.CollectorExporter_Spec_Elasticsearch_Compression
                   }
@@ -1485,6 +1516,7 @@ const Edit = (props: {
                         <Group grow>
                           <TextInput
                             label="User"
+                            description="Username used for Elasticsearch Basic authentication."
                             placeholder="elastic"
                             value={a.basic.user}
                             onChange={(v) => {
@@ -1517,7 +1549,7 @@ const Edit = (props: {
               <>
                 <TextInput
                   label="Brokers"
-                  description="One or more brokers separated by a comma"
+                  description="Kafka broker addresses, separated by commas."
                   placeholder="localhost:9092, localhost:9093"
                   value={type.kafka.brokers.join(",")}
                   onChange={(v) => {
@@ -1532,6 +1564,7 @@ const Edit = (props: {
                 <Group grow>
                   <TextInput
                     label="Protocol Version"
+                    description="Kafka protocol version negotiated with the brokers."
                     placeholder="2.1.0"
                     value={type.kafka.protocolVersion}
                     onChange={(v) => {
@@ -1541,6 +1574,7 @@ const Edit = (props: {
                   />
                   <TextInput
                     label="Client ID"
+                    description="Client identifier reported to the Kafka brokers."
                     placeholder="otel-collector"
                     value={type.kafka.clientID}
                     onChange={(v) => {
@@ -1553,6 +1587,7 @@ const Edit = (props: {
                 <Group grow>
                   <TextInput
                     label="Logs Topic"
+                    description="Kafka topic for exported logs; leave empty to disable log export."
                     placeholder="otlp_logs"
                     value={type.kafka.logs?.topic ?? ""}
                     onChange={(v) => {
@@ -1566,6 +1601,7 @@ const Edit = (props: {
                   />
                   <EnumSelect
                     label="Logs Encoding"
+                    description="Wire encoding used for exported log records."
                     enumObj={EnterpriseP.CollectorExporter_Spec_Kafka_Encoding}
                     value={type.kafka.logs?.encoding ?? 0}
                     options={[
@@ -1601,6 +1637,7 @@ const Edit = (props: {
                 <Group grow>
                   <TextInput
                     label="Metrics Topic"
+                    description="Kafka topic for exported metrics; leave empty to disable metric export."
                     placeholder="otlp_metrics"
                     value={type.kafka.metrics?.topic ?? ""}
                     onChange={(v) => {
@@ -1614,6 +1651,7 @@ const Edit = (props: {
                   />
                   <EnumSelect
                     label="Metrics Encoding"
+                    description="Wire encoding used for exported metric records."
                     enumObj={EnterpriseP.CollectorExporter_Spec_Kafka_Encoding}
                     value={type.kafka.metrics?.encoding ?? 0}
                     options={[
@@ -1646,6 +1684,7 @@ const Edit = (props: {
                     <Group grow>
                       <TextInput
                         label="SASL Username"
+                        description="Username used for Kafka SASL authentication."
                         value={a.sasl.username}
                         onChange={(v) => {
                           a.sasl.username = v.target.value;
@@ -1659,6 +1698,7 @@ const Edit = (props: {
                       />
                       <EnumSelect
                         label="Mechanism"
+                        description="SASL mechanism used to authenticate to Kafka."
                         enumObj={
                           EnterpriseP.CollectorExporter_Spec_Kafka_Auth_SASL_Mechanism
                         }
@@ -1711,6 +1751,7 @@ const Edit = (props: {
                   <TextInput
                     required
                     label="Site"
+                    description="Datadog site receiving the exported telemetry."
                     placeholder="datadoghq.com"
                     value={type.datadog.api?.site ?? ""}
                     onChange={(v) => {
@@ -1731,6 +1772,7 @@ const Edit = (props: {
                 <Group grow>
                   <TextInput
                     label="Hostname"
+                    description="Hostname attributed to exported Datadog telemetry; detected automatically when empty."
                     value={type.datadog.hostname}
                     onChange={(v) => {
                       type.datadog.hostname = v.target.value;
@@ -1739,6 +1781,7 @@ const Edit = (props: {
                   />
                   <Switch
                     label="Fail On Invalid Key"
+                    description="Fail Collector startup when Datadog rejects the API key."
                     checked={type.datadog.api?.failOnInvalidKey ?? false}
                     onChange={(v) => {
                       if (!type.datadog.api) {
@@ -1765,6 +1808,7 @@ const Edit = (props: {
                   <TextInput
                     required
                     label="Endpoint"
+                    description="Logz.io listener URL; derived from Region when empty."
                     placeholder="https://listener.logz.io:8053"
                     value={type.logzio.endpoint}
                     onChange={(v) => {
@@ -1774,6 +1818,7 @@ const Edit = (props: {
                   />
                   <TextInput
                     label="Region"
+                    description="Logz.io account region used to derive the listener URL."
                     placeholder="us"
                     value={type.logzio.region}
                     onChange={(v) => {
@@ -1802,6 +1847,7 @@ const Edit = (props: {
                   <TextInput
                     required
                     label="Endpoint"
+                    description="URL of the upstream InfluxDB server."
                     placeholder="https://influxdb.example.com:8086"
                     value={type.influxDB.endpoint}
                     onChange={(v) => {
@@ -1819,6 +1865,7 @@ const Edit = (props: {
                   <TextInput
                     required
                     label="Org"
+                    description="InfluxDB organization that owns the bucket."
                     value={type.influxDB.org}
                     onChange={(v) => {
                       type.influxDB.org = v.target.value;
@@ -1828,6 +1875,7 @@ const Edit = (props: {
                   <TextInput
                     required
                     label="Bucket"
+                    description="InfluxDB bucket receiving the telemetry."
                     value={type.influxDB.bucket}
                     onChange={(v) => {
                       type.influxDB.bucket = v.target.value;
@@ -1838,6 +1886,7 @@ const Edit = (props: {
                 <Group grow>
                   <EnumSelect
                     label="Metrics Schema"
+                    description="Schema used to map OpenTelemetry metrics into InfluxDB points."
                     enumObj={
                       EnterpriseP.CollectorExporter_Spec_InfluxDB_MetricsSchema
                     }
@@ -1865,6 +1914,7 @@ const Edit = (props: {
                   />
                   <EnumSelect
                     label="Precision"
+                    description="Timestamp precision used for exported InfluxDB points."
                     enumObj={
                       EnterpriseP.CollectorExporter_Spec_InfluxDB_Precision
                     }
@@ -1916,6 +1966,7 @@ const Edit = (props: {
                   <TextInput
                     required
                     label="Endpoint"
+                    description="URL of the upstream Splunk HTTP Event Collector endpoint."
                     placeholder="https://splunk.example.com:8088/services/collector"
                     value={type.splunk.endpoint}
                     onChange={(v) => {
@@ -1932,6 +1983,7 @@ const Edit = (props: {
                 <Group grow>
                   <TextInput
                     label="Source"
+                    description="Splunk source field assigned to exported events."
                     value={type.splunk.source}
                     onChange={(v) => {
                       type.splunk.source = v.target.value;
@@ -1940,6 +1992,7 @@ const Edit = (props: {
                   />
                   <TextInput
                     label="Source Type"
+                    description="Splunk sourcetype field assigned to exported events."
                     value={type.splunk.sourceType}
                     onChange={(v) => {
                       type.splunk.sourceType = v.target.value;
@@ -1948,6 +2001,7 @@ const Edit = (props: {
                   />
                   <TextInput
                     label="Index"
+                    description="Splunk index receiving the exported events."
                     value={type.splunk.index}
                     onChange={(v) => {
                       type.splunk.index = v.target.value;
@@ -1958,6 +2012,7 @@ const Edit = (props: {
                 <Group grow>
                   <TextInput
                     label="App Name"
+                    description="Application name reported to Splunk."
                     value={type.splunk.appName}
                     onChange={(v) => {
                       type.splunk.appName = v.target.value;
@@ -1966,6 +2021,7 @@ const Edit = (props: {
                   />
                   <TextInput
                     label="App Version"
+                    description="Application version reported to Splunk."
                     value={type.splunk.appVersion}
                     onChange={(v) => {
                       type.splunk.appVersion = v.target.value;
@@ -1976,6 +2032,7 @@ const Edit = (props: {
                 <Group>
                   <Switch
                     label="Use Multi Metric Format"
+                    description="Combine metrics with shared dimensions into a single event."
                     checked={type.splunk.useMultiMetricFormat}
                     onChange={(v) => {
                       type.splunk.useMultiMetricFormat = v.target.checked;
@@ -1984,6 +2041,7 @@ const Edit = (props: {
                   />
                   <Switch
                     label="Disable Compression"
+                    description="Disable compression for exported Splunk payloads."
                     checked={type.splunk.disableCompression}
                     onChange={(v) => {
                       type.splunk.disableCompression = v.target.checked;
@@ -2017,6 +2075,7 @@ const Edit = (props: {
                 <Group grow>
                   <TextInput
                     label="Endpoint"
+                    description="Optional Azure Monitor ingestion endpoint override."
                     value={type.azureMonitor.endpoint}
                     onChange={(v) => {
                       type.azureMonitor.endpoint = v.target.value;
@@ -2025,6 +2084,7 @@ const Edit = (props: {
                   />
                   <NumberInput
                     label="Max Batch Size"
+                    description="Maximum number of telemetry items sent in one batch."
                     value={type.azureMonitor.maxBatchSize}
                     onChange={(v) => {
                       type.azureMonitor.maxBatchSize =
@@ -2036,6 +2096,7 @@ const Edit = (props: {
                 <Group>
                   <Switch
                     label="Custom Events Enabled"
+                    description="Export custom-event log records to Application Insights."
                     checked={type.azureMonitor.customEventsEnabled}
                     onChange={(v) => {
                       type.azureMonitor.customEventsEnabled = v.target.checked;
@@ -2044,6 +2105,7 @@ const Edit = (props: {
                   />
                   <Switch
                     label="Exception Events Enabled"
+                    description="Export exception attributes as Application Insights telemetry."
                     checked={type.azureMonitor.exceptionEventsEnabled}
                     onChange={(v) => {
                       type.azureMonitor.exceptionEventsEnabled =
@@ -2067,6 +2129,7 @@ const Edit = (props: {
                   <TextInput
                     required
                     label="Cluster URI"
+                    description="URI of the upstream Azure Data Explorer cluster."
                     placeholder="https://cluster.region.kusto.windows.net"
                     value={type.azureDataExplorer.clusterURI}
                     onChange={(v) => {
@@ -2076,6 +2139,7 @@ const Edit = (props: {
                   />
                   <EnumSelect
                     label="Ingestion Type"
+                    description="Ingestion mode used to write telemetry to Azure Data Explorer."
                     enumObj={
                       EnterpriseP.CollectorExporter_Spec_AzureDataExplorer_IngestionType
                     }
@@ -2106,6 +2170,7 @@ const Edit = (props: {
                 <Group grow>
                   <TextInput
                     label="Database"
+                    description="Azure Data Explorer database receiving the telemetry."
                     value={type.azureDataExplorer.database}
                     onChange={(v) => {
                       type.azureDataExplorer.database = v.target.value;
@@ -2114,6 +2179,7 @@ const Edit = (props: {
                   />
                   <TextInput
                     label="Logs Table"
+                    description="Azure Data Explorer table receiving logs."
                     value={type.azureDataExplorer.logsTable}
                     onChange={(v) => {
                       type.azureDataExplorer.logsTable = v.target.value;
@@ -2122,6 +2188,7 @@ const Edit = (props: {
                   />
                   <TextInput
                     label="Metrics Table"
+                    description="Azure Data Explorer table receiving metrics."
                     value={type.azureDataExplorer.metricsTable}
                     onChange={(v) => {
                       type.azureDataExplorer.metricsTable = v.target.value;
@@ -2199,6 +2266,7 @@ const Edit = (props: {
                           <TextInput
                             required
                             label="Application ID"
+                            description="Client ID of the Entra ID application."
                             value={a.servicePrincipal.applicationID}
                             onChange={(v) => {
                               a.servicePrincipal.applicationID = v.target.value;
@@ -2208,6 +2276,7 @@ const Edit = (props: {
                           <TextInput
                             required
                             label="Tenant ID"
+                            description="Entra ID tenant that owns the application."
                             value={a.servicePrincipal.tenantID}
                             onChange={(v) => {
                               a.servicePrincipal.tenantID = v.target.value;

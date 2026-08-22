@@ -6,12 +6,14 @@
             "properties": {
                 "common": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.CommonListOptions",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Common is the common list options."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "List Device Manager Options"
+            "title": "List Device Manager Options",
+            "description": "ListDeviceManagerOptions is the list options of the ListDeviceManager method."
         },
         "octelium.api.main.meta.v1.CommonListOptions": {
             "properties": {

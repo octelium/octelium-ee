@@ -6,12 +6,14 @@
             "properties": {
                 "common": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.CommonListOptions",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Common is the common list options."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "List DNS Provider Options"
+            "title": "List DNS Provider Options",
+            "description": "ListDNSProviderOptions is the list options of the ListDNSProvider method."
         },
         "octelium.api.main.meta.v1.CommonListOptions": {
             "properties": {

@@ -5,7 +5,8 @@
         "DeleteLicenseRequest": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Delete License Request"
+            "title": "Delete License Request",
+            "description": "DeleteLicenseRequest is the request of the DeleteLicense method."
         }
     }
 }

@@ -5,7 +5,8 @@
         "SetCertificateResponse": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Set Certificate Response"
+            "title": "Set Certificate Response",
+            "description": "SetCertificateResponse is the response of the SetCertificate method."
         }
     }
 }

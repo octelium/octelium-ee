@@ -5,7 +5,8 @@
         "SynchronizeDirectoryProviderResponse": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Synchronize Directory Provider Response"
+            "title": "Synchronize Directory Provider Response",
+            "description": "SynchronizeDirectoryProviderResponse is the response of the SynchronizeDirectoryProvider method."
         }
     }
 }

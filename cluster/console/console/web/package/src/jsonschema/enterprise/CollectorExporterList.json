@@ -6,7 +6,7 @@
             "properties": {
                 "apiVersion": {
                     "type": "string",
-                    "description": "APIVersion is the API version of the object."
+                    "description": "APIVersion is the API version (i.e. \"enterprise/v1\")"
                 },
                 "kind": {
                     "type": "string",
@@ -18,7 +18,7 @@
                     },
                     "additionalProperties": false,
                     "type": "array",
-                    "description": "Items is the list of CollectorExporter items."
+                    "description": "Items is the list of CollectorExporters."
                 },
                 "listResponseMeta": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ListResponseMeta",
@@ -28,17 +28,18 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Collector Exporter List"
+            "title": "Collector Exporter List",
+            "description": "CollectorExporterList is the list of CollectorExporters returned by the ListCollectorExporter method."
         },
         "octelium.api.main.enterprise.v1.CollectorExporter": {
             "properties": {
                 "apiVersion": {
                     "type": "string",
-                    "description": "APIVersion is the API version of the object."
+                    "description": "APIVersion is the API version (i.e. \"enterprise/v1\")"
                 },
                 "kind": {
                     "type": "string",
-                    "description": "Kind is the resource name (i.e. `User`)."
+                    "description": "Kind is the resource name (i.e. `CollectorExporter`)."
                 },
                 "metadata": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Metadata",
@@ -48,70 +49,84 @@
                 "spec": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec",
                     "additionalProperties": false,
-                    "description": "Spec is the User specification."
+                    "description": "Spec is the CollectorExporter specification."
                 },
                 "status": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Status",
                     "additionalProperties": false,
-                    "description": "Status is the current status of the User."
+                    "description": "Status is the current status of the CollectorExporter."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Collector Exporter"
+            "title": "Collector Exporter",
+            "description": "CollectorExporter represents a destination where the Cluster's telemetry (i.e. logs and metrics) is exported to. Each CollectorExporter maps to an exporter of the Cluster's OpenTelemetry Collector. A CollectorExporter is only used once it is referenced by a pipeline in the `collector` field of the enterprise ClusterConfig."
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec": {
             "properties": {
                 "isDisabled": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "IsDisabled disables the CollectorExporter. A disabled CollectorExporter is skipped by the Collector even when it is still referenced by a pipeline."
                 },
                 "otlp": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "OTLP sets the OTLP over gRPC exporter specific options."
                 },
                 "otlpHTTP": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "OTLPHTTP sets the OTLP over HTTP exporter specific options."
                 },
                 "clickhouse": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Clickhouse sets the ClickHouse exporter specific options."
                 },
                 "elasticsearch": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Elasticsearch sets the Elasticsearch exporter specific options."
                 },
                 "logzio": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Logzio sets the Logz.io exporter specific options."
                 },
                 "influxDB": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "InfluxDB sets the InfluxDB exporter specific options."
                 },
                 "kafka": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Kafka sets the Kafka exporter specific options."
                 },
                 "datadog": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Datadog sets the Datadog exporter specific options."
                 },
                 "splunk": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Splunk sets the Splunk HEC exporter specific options."
                 },
                 "azureMonitor": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "AzureMonitor sets the Azure Monitor exporter specific options."
                 },
                 "azureDataExplorer": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "AzureDataExplorer sets the Azure Data Explorer exporter specific options."
                 },
                 "prometheusRemoteWrite": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "PrometheusRemoteWrite sets the Prometheus remote write exporter specific options."
                 }
             },
             "additionalProperties": false,
@@ -248,31 +263,39 @@
                     ]
                 }
             ],
-            "title": "Spec"
+            "title": "Spec",
+            "description": "Spec is the CollectorExporter specification"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer": {
             "properties": {
                 "clusterURI": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ClusterURI is the URI of the upstream Azure Data Explorer cluster (e.g. `https://mycluster.westeurope.kusto.windows.net`). Required."
                 },
                 "auth": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.Auth",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Auth sets the authentication-related configuration."
                 },
                 "database": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Database is the name of the Azure Data Explorer database that the telemetry is written to."
                 },
                 "metricsTable": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "MetricsTable is the name of the table that the metrics are written to."
                 },
                 "logsTable": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "LogsTable is the name of the table that the logs are written to."
                 },
                 "metricsTableMapping": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "MetricsTableMapping is the name of the ingestion mapping that is used for the MetricsTable."
                 },
                 "logsTableMapping": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "LogsTableMapping is the name of the ingestion mapping that is used for the LogsTable."
                 },
                 "ingestionType": {
                     "enum": [
@@ -281,21 +304,25 @@
                         "MANAGED"
                     ],
                     "type": "string",
-                    "title": "Ingestion Type"
+                    "title": "Ingestion Type",
+                    "description": "IngestionType is the mode used to ingest the telemetry into Azure Data Explorer."
                 },
                 "timeout": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Timeout is the timeout of every export request."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Azure Data Explorer"
+            "title": "Azure Data Explorer",
+            "description": "AzureDataExplorer sets the Azure Data Explorer (i.e. Kusto) exporter options."
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ApplicationKey": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the application key"
                 }
             },
             "additionalProperties": false,
@@ -322,21 +349,25 @@
                     ]
                 }
             ],
-            "title": "Application Key"
+            "title": "Application Key",
+            "description": "ApplicationKey is the client secret of the Entra ID application"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.Auth": {
             "properties": {
                 "servicePrincipal": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ServicePrincipal",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ServicePrincipal sets the Entra ID application authentication options."
                 },
                 "managedIdentity": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ManagedIdentity",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ManagedIdentity sets the Azure managed identity authentication options."
                 },
                 "azureDefault": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.AzureDefaultAuth",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "AzureDefault sets the Azure default credential chain authentication options."
                 }
             },
             "additionalProperties": false,
@@ -383,79 +414,97 @@
                     ]
                 }
             ],
-            "title": "Auth"
+            "title": "Auth",
+            "description": "Auth sets the credentials that are used by the Collector to authenticate to Azure Data Explorer"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.AzureDefaultAuth": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Azure Default Auth"
+            "title": "Azure Default Auth",
+            "description": "AzureDefaultAuth authenticates to Azure Data Explorer using the Azure default credential chain (e.g. the environment variables, the workload identity, the managed identity, etc...)"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ManagedIdentity": {
             "properties": {
                 "id": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ID is the client ID of the user-assigned managed identity. If unset, the system-assigned managed identity is used."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Managed Identity"
+            "title": "Managed Identity",
+            "description": "ManagedIdentity authenticates to Azure Data Explorer using an Azure managed identity"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ServicePrincipal": {
             "properties": {
                 "applicationID": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ApplicationID is the client ID of the Entra ID application."
                 },
                 "applicationKey": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureDataExplorer.ApplicationKey",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ApplicationKey is the client secret of the Entra ID application."
                 },
                 "tenantID": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "TenantID is the ID of the Entra ID tenant that owns the application."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Service Principal"
+            "title": "Service Principal",
+            "description": "ServicePrincipal authenticates to Azure Data Explorer using an Entra ID application (i.e. a service principal)"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor": {
             "properties": {
                 "connectionString": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.ConnectionString",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ConnectionString is the Application Insights connection string. It is the recommended way to configure the exporter since it also carries the ingestion endpoints."
                 },
                 "instrumentationKey": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.InstrumentationKey",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "InstrumentationKey is the Application Insights instrumentation key. It is used instead of the ConnectionString."
                 },
                 "endpoint": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Endpoint overrides the ingestion endpoint that the telemetry is exported to."
                 },
                 "maxBatchSize": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "MaxBatchSize is the maximum number of telemetry items that are batched together before they are sent."
                 },
                 "maxBatchInterval": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "MaxBatchInterval is the maximum duration that the exporter waits to batch more telemetry items together before sending them."
                 },
                 "shutdownTimeout": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ShutdownTimeout is the duration that the exporter waits to flush the buffered telemetry upon shutdown."
                 },
                 "customEventsEnabled": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "CustomEventsEnabled exports the log records that carry a `microsoft.custom_event.name` attribute as Application Insights custom events."
                 },
                 "exceptionEventsEnabled": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "ExceptionEventsEnabled exports the log records that carry exception attributes as Application Insights exception telemetry."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Azure Monitor"
+            "title": "Azure Monitor",
+            "description": "AzureMonitor sets the Azure Monitor (i.e. Application Insights) exporter options."
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.ConnectionString": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the connection string"
                 }
             },
             "additionalProperties": false,
@@ -482,12 +531,14 @@
                     ]
                 }
             ],
-            "title": "Connection String"
+            "title": "Connection String",
+            "description": "ConnectionString is the Application Insights connection string"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.AzureMonitor.InstrumentationKey": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the instrumentation key"
                 }
             },
             "additionalProperties": false,
@@ -514,47 +565,58 @@
                     ]
                 }
             ],
-            "title": "Instrumentation Key"
+            "title": "Instrumentation Key",
+            "description": "InstrumentationKey is the Application Insights instrumentation key"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse": {
             "properties": {
                 "endpoint": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Endpoint is the address of the upstream ClickHouse server (e.g. `tcp://clickhouse.example.com:9000`). Required."
                 },
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Username is the username of the ClickHouse user."
                 },
                 "password": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.Password",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Password is the password of the ClickHouse user."
                 },
                 "database": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Database is the name of the ClickHouse database that the telemetry is written to."
                 },
                 "tls": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TLS",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "TLS sets the TLS-related configuration."
                 },
                 "connectionParams": {
                     "items": {
                         "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.ConnectionParam"
                     },
                     "additionalProperties": false,
-                    "type": "array"
+                    "type": "array",
+                    "description": "ConnectionParams is the list of additional parameters that are set in the ClickHouse connection string."
                 },
                 "logsTableName": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "LogsTableName is the name of the table that the logs are written to."
                 },
                 "metricsTables": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.MetricsTables",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "MetricsTables sets the names of the tables that the metrics are written to."
                 },
                 "ttl": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "TTL is the retention duration of the exported telemetry. Once set, the tables created by the exporter automatically delete the rows that are older than this duration."
                 },
                 "createSchema": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "CreateSchema enables automatically creating the database and the tables used by the exporter if they do not already exist."
                 },
                 "compression": {
                     "enum": [
@@ -567,69 +629,86 @@
                         "BR"
                     ],
                     "type": "string",
-                    "title": "Compression"
+                    "title": "Compression",
+                    "description": "Compression is the compression algorithm used for the exported payloads."
                 },
                 "asyncInsert": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "AsyncInsert enables ClickHouse asynchronous inserts where the server buffers the rows and flushes them in the background."
                 },
                 "json": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "JSON enables using the ClickHouse `JSON` column type instead of maps for the attribute columns."
                 },
                 "clusterName": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ClusterName is the name of the ClickHouse cluster. Once set, the exporter creates the tables using `ON CLUSTER`."
                 },
                 "tableEngine": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TableEngine",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "TableEngine sets the table engine of the tables created by the exporter."
                 },
                 "timeout": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Timeout is the timeout of every export request."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Clickhouse"
+            "title": "Clickhouse",
+            "description": "Clickhouse sets the ClickHouse exporter options."
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.ConnectionParam": {
             "properties": {
                 "key": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Key is the name of the parameter"
                 },
                 "value": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Value is the value of the parameter"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Connection Param"
+            "title": "Connection Param",
+            "description": "ConnectionParam is an additional parameter that is set in the ClickHouse connection string"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.MetricsTables": {
             "properties": {
                 "gauge": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Gauge is the name of the table of the gauge metrics."
                 },
                 "sum": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Sum is the name of the table of the sum metrics."
                 },
                 "summary": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Summary is the name of the table of the summary metrics."
                 },
                 "histogram": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Histogram is the name of the table of the histogram metrics."
                 },
                 "exponentialHistogram": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ExponentialHistogram is the name of the table of the exponential histogram metrics."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Metrics Tables"
+            "title": "Metrics Tables",
+            "description": "MetricsTables sets the names of the tables that the metrics are written to. Each OpenTelemetry metric type is stored in its own table."
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.Password": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the Password"
                 }
             },
             "additionalProperties": false,
@@ -656,91 +735,112 @@
                     ]
                 }
             ],
-            "title": "Password"
+            "title": "Password",
+            "description": "Password is the password of the ClickHouse user"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TLS": {
             "properties": {
                 "insecure": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Insecure disables TLS entirely and connects to the upstream endpoint over plaintext."
                 },
                 "insecureSkipVerify": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "InsecureSkipVerify skips the verification of the upstream endpoint's certificate chain and hostname. It is not recommended in production environments."
                 },
                 "serverNameOverride": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ServerNameOverride overrides the server name that is used to verify the hostname of the upstream endpoint's certificate. It is mainly useful when the endpoint address does not match the certificate."
                 },
                 "caPEM": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "CAPEM is the PEM-encoded CA certificate that is used to verify the upstream endpoint's certificate. If unset, the system CA pool is used."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "TLS"
+            "title": "TLS",
+            "description": "TLS sets the TLS-related options of the connection to the upstream endpoint"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Clickhouse.TableEngine": {
             "properties": {
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Name is the name of the table engine (e.g. `MergeTree`)."
                 },
                 "params": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Params is the parameters of the table engine."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Table Engine"
+            "title": "Table Engine",
+            "description": "TableEngine sets the ClickHouse table engine that is used for the tables created by the exporter"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog": {
             "properties": {
                 "api": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.API",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "API sets the Datadog API-related configuration."
                 },
                 "hostname": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Hostname overrides the host name that the exported telemetry is attributed to. If unset, the host name is automatically detected."
                 },
                 "metrics": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Metrics",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Metrics sets the exported metrics-related configuration."
                 },
                 "logs": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Logs",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Logs sets the exported logs-related configuration."
                 },
                 "hostMetadata": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.HostMetadata",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "HostMetadata sets the host metadata-related configuration."
                 },
                 "hostnameDetectionTimeout": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "HostnameDetectionTimeout is the timeout of the automatic host name detection."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Datadog"
+            "title": "Datadog",
+            "description": "Datadog sets the Datadog exporter options."
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.API": {
             "properties": {
                 "key": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.APIKey",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Key is the Datadog API key. Required."
                 },
                 "site": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Site is the Datadog site that the telemetry is exported to (e.g. `datadoghq.com`, `datadoghq.eu`)."
                 },
                 "failOnInvalidKey": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "FailOnInvalidKey makes the Collector fail to start when the API key is rejected by Datadog instead of only logging a warning."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "API"
+            "title": "API",
+            "description": "API sets the Datadog API-related options"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.APIKey": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the API key"
                 }
             },
             "additionalProperties": false,
@@ -767,91 +867,112 @@
                     ]
                 }
             ],
-            "title": "API Key"
+            "title": "API Key",
+            "description": "APIKey is the Datadog API key"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.HostMetadata": {
             "properties": {
                 "enabled": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Enabled enables reporting the host metadata to Datadog."
                 },
                 "reporterPeriod": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ReporterPeriod is the interval at which the host metadata is reported."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Host Metadata"
+            "title": "Host Metadata",
+            "description": "HostMetadata sets the host metadata-related options"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Logs": {
             "properties": {
                 "endpoint": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Endpoint overrides the URL that the logs are exported to. If unset, the URL is derived from the Site."
                 },
                 "useCompression": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "UseCompression enables compressing the exported log payloads."
                 },
                 "compressionLevel": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "CompressionLevel is the compression level that is used when UseCompression is enabled."
                 },
                 "batchWait": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "BatchWait is the maximum duration that the exporter waits to batch more logs together before sending them."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Logs"
+            "title": "Logs",
+            "description": "Logs sets the exported logs-related options"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Datadog.Metrics": {
             "properties": {
                 "endpoint": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Endpoint overrides the URL that the metrics are exported to. If unset, the URL is derived from the Site."
                 },
                 "resourceAttributesAsTags": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "ResourceAttributesAsTags exports the OpenTelemetry resource attributes as Datadog tags."
                 },
                 "instrumentationScopeMetadataAsTags": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "InstrumentationScopeMetadataAsTags exports the instrumentation scope name and version as Datadog tags."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Metrics"
+            "title": "Metrics",
+            "description": "Metrics sets the exported metrics-related options"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch": {
             "properties": {
                 "endpoint": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Endpoint is the URL of the upstream Elasticsearch cluster (e.g. `https://elasticsearch.example.com:9200`)."
                 },
                 "endpoints": {
                     "items": {
                         "type": "string"
                     },
-                    "type": "array"
+                    "type": "array",
+                    "description": "Endpoints is the list of URLs of the upstream Elasticsearch cluster nodes. It is used instead of Endpoint when the requests need to be spread over more than one node."
                 },
                 "cloudID": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "CloudID is the Elastic Cloud ID. It is used instead of Endpoint and Endpoints when the upstream is an Elastic Cloud deployment."
                 },
                 "pipeline": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Pipeline is the name of the Elasticsearch ingest pipeline that the exported documents are processed by."
                 },
                 "logsIndex": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "LogsIndex is the name of the index or data stream that the logs are written to."
                 },
                 "metricsIndex": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "MetricsIndex is the name of the index or data stream that the metrics are written to."
                 },
                 "headers": {
                     "items": {
                         "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Header"
                     },
                     "additionalProperties": false,
-                    "type": "array"
+                    "type": "array",
+                    "description": "Headers is the list of additional headers that are set in every request sent to the upstream endpoint."
                 },
                 "auth": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Auth sets the authentication-related configuration."
                 },
                 "compression": {
                     "enum": [
@@ -860,30 +981,36 @@
                         "NONE"
                     ],
                     "type": "string",
-                    "title": "Compression"
+                    "title": "Compression",
+                    "description": "Compression is the compression algorithm used for the exported payloads."
                 },
                 "timeout": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Timeout is the timeout of every export request."
                 },
                 "tls": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.TLS",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "TLS sets the TLS-related configuration."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Elasticsearch"
+            "title": "Elasticsearch",
+            "description": "Elasticsearch sets the Elasticsearch exporter options."
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth": {
             "properties": {
                 "apiKey": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.APIKey",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "APIKey sets the API key authentication options."
                 },
                 "basic": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.Basic",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Basic sets the HTTP basic authentication options."
                 }
             },
             "additionalProperties": false,
@@ -920,12 +1047,14 @@
                     ]
                 }
             ],
-            "title": "Auth"
+            "title": "Auth",
+            "description": "Auth sets the credentials that are used by the Collector to authenticate to the upstream Elasticsearch cluster"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.APIKey": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the API key"
                 }
             },
             "additionalProperties": false,
@@ -952,26 +1081,31 @@
                     ]
                 }
             ],
-            "title": "API Key"
+            "title": "API Key",
+            "description": "APIKey is the Elasticsearch API key"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.Basic": {
             "properties": {
                 "user": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "User is the username value of HTTP basic authentication"
                 },
                 "password": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.Basic.Password",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Password is the password value of HTTP basic authentication"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Basic"
+            "title": "Basic",
+            "description": "Basic is the HTTP basic authentication credentials"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Auth.Basic.Password": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the Password"
                 }
             },
             "additionalProperties": false,
@@ -998,52 +1132,63 @@
                     ]
                 }
             ],
-            "title": "Password"
+            "title": "Password",
+            "description": "Password is the password value of HTTP basic authentication"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.Header": {
             "properties": {
                 "key": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Key is the name of the header"
                 },
                 "value": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Value is the value of the header"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Header"
+            "title": "Header",
+            "description": "Header is an additional header that is set in every request sent to the upstream endpoint"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Elasticsearch.TLS": {
             "properties": {
                 "insecureSkipVerify": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "InsecureSkipVerify skips the verification of the upstream endpoint's certificate chain and hostname. It is not recommended in production environments."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "TLS"
+            "title": "TLS",
+            "description": "TLS sets the TLS-related options of the connection to the upstream Elasticsearch cluster"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB": {
             "properties": {
                 "endpoint": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Endpoint is the URL of the upstream InfluxDB server (e.g. `https://influxdb.example.com:8086`). Required."
                 },
                 "org": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Org is the name of the InfluxDB organization that owns the Bucket."
                 },
                 "bucket": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Bucket is the name of the InfluxDB bucket that the telemetry is written to."
                 },
                 "token": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Token",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Token is the InfluxDB API token."
                 },
                 "headers": {
                     "items": {
                         "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Header"
                     },
                     "additionalProperties": false,
-                    "type": "array"
+                    "type": "array",
+                    "description": "Headers is the list of additional headers that are set in every request sent to the upstream endpoint."
                 },
                 "metricsSchema": {
                     "enum": [
@@ -1052,7 +1197,8 @@
                         "TELEGRAF_PROMETHEUS_V2"
                     ],
                     "type": "string",
-                    "title": "Metrics Schema"
+                    "title": "Metrics Schema",
+                    "description": "MetricsSchema is the schema used to map the OpenTelemetry metrics into InfluxDB points."
                 },
                 "precision": {
                     "enum": [
@@ -1063,50 +1209,61 @@
                         "S"
                     ],
                     "type": "string",
-                    "title": "Precision"
+                    "title": "Precision",
+                    "description": "Precision is the timestamp precision of the exported points."
                 },
                 "payloadMaxLines": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "PayloadMaxLines is the maximum number of lines of a single export request payload."
                 },
                 "payloadMaxBytes": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "PayloadMaxBytes is the maximum size in bytes of a single export request payload."
                 },
                 "timeout": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Timeout is the timeout of every export request."
                 },
                 "logRecordDimensions": {
                     "items": {
                         "type": "string"
                     },
-                    "type": "array"
+                    "type": "array",
+                    "description": "LogRecordDimensions is the list of log record attribute names that are exported as InfluxDB tags instead of fields."
                 },
                 "v1Compatibility": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "V1Compatibility sets the InfluxDB v1.x compatibility-related configuration."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Influx DB"
+            "title": "Influx DB",
+            "description": "InfluxDB sets the InfluxDB exporter options."
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Header": {
             "properties": {
                 "key": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Key is the name of the header"
                 },
                 "value": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Value is the value of the header"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Header"
+            "title": "Header",
+            "description": "Header is an additional header that is set in every request sent to the upstream endpoint"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.Token": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the Token"
                 }
             },
             "additionalProperties": false,
@@ -1133,32 +1290,39 @@
                     ]
                 }
             ],
-            "title": "Token"
+            "title": "Token",
+            "description": "Token is the InfluxDB API token"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility": {
             "properties": {
                 "enabled": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Enabled enables the InfluxDB v1.x compatibility mode."
                 },
                 "db": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "DB is the name of the InfluxDB v1.x database that the telemetry is written to."
                 },
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Username is the username of the InfluxDB v1.x user."
                 },
                 "password": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility.Password",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Password is the password of the InfluxDB v1.x user."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "V 1 Compatibility"
+            "title": "V 1 Compatibility",
+            "description": "V1Compatibility sets the options that are used to export to an InfluxDB v1.x server instead of a v2.x one"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.InfluxDB.V1Compatibility.Password": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the Password"
                 }
             },
             "additionalProperties": false,
@@ -1185,7 +1349,8 @@
                     ]
                 }
             ],
-            "title": "Password"
+            "title": "Password",
+            "description": "Password is the password of the InfluxDB v1.x user"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka": {
             "properties": {
@@ -1193,65 +1358,80 @@
                     "items": {
                         "type": "string"
                     },
-                    "type": "array"
+                    "type": "array",
+                    "description": "Brokers is the list of the upstream Kafka broker addresses (e.g. `kafka.example.com:9092`). Required."
                 },
                 "protocolVersion": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ProtocolVersion is the Kafka protocol version that is negotiated with the brokers (e.g. `3.6.0`)."
                 },
                 "clientID": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ClientID is the client identifier that is reported to the brokers."
                 },
                 "logs": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Signal",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Logs sets the topic and encoding of the exported logs. If unset, the logs are not exported."
                 },
                 "metrics": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Signal",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Metrics sets the topic and encoding of the exported metrics. If unset, the metrics are not exported."
                 },
                 "recordHeaders": {
                     "items": {
                         "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Header"
                     },
                     "additionalProperties": false,
-                    "type": "array"
+                    "type": "array",
+                    "description": "RecordHeaders is the list of additional headers that are set in every produced Kafka record."
                 },
                 "auth": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Auth sets the authentication-related configuration."
                 },
                 "tls": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.TLS",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "TLS sets the TLS-related configuration."
                 },
                 "timeout": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Timeout is the timeout of every export request."
                 },
                 "connIdleTimeout": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ConnIdleTimeout is the duration of inactivity after which an idle connection to a broker is closed."
                 },
                 "producer": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Producer",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Producer sets the Kafka producer-related configuration."
                 },
                 "partitionLogsByResourceAttributes": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "PartitionLogsByResourceAttributes derives the record key of the exported logs from their resource attributes so that the logs of the same resource land on the same partition."
                 },
                 "partitionMetricsByResourceAttributes": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "PartitionMetricsByResourceAttributes derives the record key of the exported metrics from their resource attributes so that the metrics of the same resource land on the same partition."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Kafka"
+            "title": "Kafka",
+            "description": "Kafka sets the Kafka exporter options."
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth": {
             "properties": {
                 "sasl": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "SASL sets the SASL authentication options."
                 }
             },
             "additionalProperties": false,
@@ -1278,16 +1458,19 @@
                     ]
                 }
             ],
-            "title": "Auth"
+            "title": "Auth",
+            "description": "Auth sets the credentials that are used by the Collector to authenticate to the upstream Kafka brokers"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL": {
             "properties": {
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Username is the username of the SASL user."
                 },
                 "password": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.Password",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Password is the password of the SASL user."
                 },
                 "mechanism": {
                     "enum": [
@@ -1297,17 +1480,20 @@
                         "SCRAM_SHA_512"
                     ],
                     "type": "string",
-                    "title": "Mechanism"
+                    "title": "Mechanism",
+                    "description": "Mechanism is the SASL mechanism used to authenticate."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "SASL"
+            "title": "SASL",
+            "description": "SASL is the SASL authentication credentials"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Auth.SASL.Password": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the Password"
                 }
             },
             "additionalProperties": false,
@@ -1334,28 +1520,34 @@
                     ]
                 }
             ],
-            "title": "Password"
+            "title": "Password",
+            "description": "Password is the password of the SASL user"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Header": {
             "properties": {
                 "key": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Key is the name of the header"
                 },
                 "value": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Value is the value of the header"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Header"
+            "title": "Header",
+            "description": "Header is an additional header that is set in every request sent to the upstream endpoint"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Producer": {
             "properties": {
                 "maxMessageBytes": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "MaxMessageBytes is the maximum size in bytes of a single produced record."
                 },
                 "requiredAcks": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "RequiredAcks is the number of broker acknowledgements that are required before a produce request is considered complete (i.e. `0` for none, `1` for the leader only and `-1` for all the in-sync replicas)."
                 },
                 "compression": {
                     "enum": [
@@ -1367,27 +1559,33 @@
                         "ZSTD"
                     ],
                     "type": "string",
-                    "title": "Producer Compression"
+                    "title": "Producer Compression",
+                    "description": "ProducerCompression is the compression algorithm used by the Kafka producer."
                 },
                 "flushMaxMessages": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "FlushMaxMessages is the maximum number of records that are buffered before they are flushed to the brokers."
                 },
                 "allowAutoTopicCreation": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "AllowAutoTopicCreation allows the brokers to automatically create the topics that do not already exist."
                 },
                 "linger": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Linger is the duration that the producer waits to batch more records together before sending them to the brokers."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Producer"
+            "title": "Producer",
+            "description": "Producer sets the Kafka producer options"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.Signal": {
             "properties": {
                 "topic": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Topic is the name of the Kafka topic that the signal is produced to."
                 },
                 "encoding": {
                     "enum": [
@@ -1397,51 +1595,62 @@
                         "RAW"
                     ],
                     "type": "string",
-                    "title": "Encoding"
+                    "title": "Encoding",
+                    "description": "Encoding is the wire encoding of the produced Kafka records."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Signal"
+            "title": "Signal",
+            "description": "Signal sets the Kafka topic and encoding of a single telemetry signal (i.e. logs or metrics)"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Kafka.TLS": {
             "properties": {
                 "insecure": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Insecure disables TLS entirely and connects to the brokers over plaintext."
                 },
                 "insecureSkipVerify": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "InsecureSkipVerify skips the verification of the brokers' certificate chain and hostname. It is not recommended in production environments."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "TLS"
+            "title": "TLS",
+            "description": "TLS sets the TLS-related options of the connections to the upstream Kafka brokers"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio": {
             "properties": {
                 "token": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio.Token",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Token is the Logz.io shipping token. Required."
                 },
                 "region": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Region is the Logz.io account region code (e.g. `us`, `eu`). It is used to determine the listener URL."
                 },
                 "endpoint": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Endpoint overrides the Logz.io listener URL that is derived from the Region."
                 },
                 "timeout": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Timeout is the timeout of every export request."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Logzio"
+            "title": "Logzio",
+            "description": "Logzio sets the Logz.io exporter options."
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Logzio.Token": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the Token"
                 }
             },
             "additionalProperties": false,
@@ -1468,27 +1677,32 @@
                     ]
                 }
             ],
-            "title": "Token"
+            "title": "Token",
+            "description": "Token is the Logz.io shipping token"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP": {
             "properties": {
                 "endpoint": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Endpoint is the address of the upstream OTLP gRPC endpoint (e.g. `otel-collector.example.com:4317`). Required."
                 },
                 "headers": {
                     "items": {
                         "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Header"
                     },
                     "additionalProperties": false,
-                    "type": "array"
+                    "type": "array",
+                    "description": "Headers is the list of additional headers that are set in every request sent to the upstream endpoint."
                 },
                 "auth": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Auth sets the authentication-related configuration."
                 },
                 "tls": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.TLS",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "TLS sets the TLS-related configuration."
                 },
                 "compression": {
                     "enum": [
@@ -1499,52 +1713,65 @@
                         "ZSTD"
                     ],
                     "type": "string",
-                    "title": "Compression"
+                    "title": "Compression",
+                    "description": "Compression is the compression algorithm used for the exported payloads."
                 },
                 "timeout": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Timeout is the timeout of every export request."
                 },
                 "waitForReady": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "WaitForReady makes the export requests block until the connection to the upstream endpoint is ready instead of failing immediately."
                 },
                 "authority": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Authority overrides the `:authority` pseudo-header that is set in the requests sent to the upstream endpoint."
                 },
                 "userAgent": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "UserAgent overrides the user agent that is set in the requests sent to the upstream endpoint."
                 },
                 "balancerName": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "BalancerName is the name of the gRPC load balancing policy that is used to connect to the upstream endpoint (e.g. `round_robin`)."
                 },
                 "readBufferSize": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "ReadBufferSize is the size in bytes of the read buffer of the connection to the upstream endpoint."
                 },
                 "writeBufferSize": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "WriteBufferSize is the size in bytes of the write buffer of the connection to the upstream endpoint."
                 },
                 "keepalive": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Keepalive",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Keepalive sets the gRPC keepalive-related configuration."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "OTLP"
+            "title": "OTLP",
+            "description": "OTLP sets the OpenTelemetry Protocol (OTLP) over gRPC exporter options."
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth": {
             "properties": {
                 "bearer": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Bearer",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Bearer sets the bearer token authentication options."
                 },
                 "basic": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Basic",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Basic sets the HTTP basic authentication options."
                 },
                 "custom": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Custom",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Custom sets the custom request header authentication options."
                 }
             },
             "additionalProperties": false,
@@ -1591,26 +1818,31 @@
                     ]
                 }
             ],
-            "title": "Auth"
+            "title": "Auth",
+            "description": "Auth sets the credentials that are used by the Collector to authenticate to the upstream endpoint"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Basic": {
             "properties": {
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Username is the username value of HTTP basic authentication"
                 },
                 "password": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Basic.Password",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Password is the password value of HTTP basic authentication"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Basic"
+            "title": "Basic",
+            "description": "Basic is the HTTP basic authentication credentials"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Basic.Password": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the Password"
                 }
             },
             "additionalProperties": false,
@@ -1637,12 +1869,14 @@
                     ]
                 }
             ],
-            "title": "Password"
+            "title": "Password",
+            "description": "Password is the password value of HTTP basic authentication"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Bearer": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the bearer token"
                 }
             },
             "additionalProperties": false,
@@ -1669,26 +1903,31 @@
                     ]
                 }
             ],
-            "title": "Bearer"
+            "title": "Bearer",
+            "description": "Bearer is the bearer token that is set in the `Authorization` request header"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Custom": {
             "properties": {
                 "header": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Header is the name of the header (e.g. \"X-Custom-Auth\")"
                 },
                 "value": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Custom.Value",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Value is the value of the header"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Custom"
+            "title": "Custom",
+            "description": "Custom is a credential that is set in a custom request header"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Auth.Custom.Value": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the header's Value"
                 }
             },
             "additionalProperties": false,
@@ -1715,79 +1954,97 @@
                     ]
                 }
             ],
-            "title": "Value"
+            "title": "Value",
+            "description": "Value is the value of the custom request header"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Header": {
             "properties": {
                 "key": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Key is the name of the header"
                 },
                 "value": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Value is the value of the header"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Header"
+            "title": "Header",
+            "description": "Header is an additional header that is set in every request sent to the upstream endpoint"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.Keepalive": {
             "properties": {
                 "time": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Time is the duration of inactivity after which a keepalive ping is sent to the upstream endpoint."
                 },
                 "timeout": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Timeout is the duration to wait for an acknowledgement of a keepalive ping before the connection is considered dead."
                 },
                 "permitWithoutStream": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "PermitWithoutStream enables sending keepalive pings even when there are no active streams."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Keepalive"
+            "title": "Keepalive",
+            "description": "Keepalive sets the gRPC keepalive options of the connection to the upstream endpoint"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLP.TLS": {
             "properties": {
                 "insecure": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Insecure disables TLS entirely and connects to the upstream endpoint over plaintext."
                 },
                 "insecureSkipVerify": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "InsecureSkipVerify skips the verification of the upstream endpoint's certificate chain and hostname. It is not recommended in production environments."
                 },
                 "serverNameOverride": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ServerNameOverride overrides the server name that is used to verify the hostname of the upstream endpoint's certificate. It is mainly useful when the endpoint address does not match the certificate."
                 },
                 "caPEM": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "CAPEM is the PEM-encoded CA certificate that is used to verify the upstream endpoint's certificate. If unset, the system CA pool is used."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "TLS"
+            "title": "TLS",
+            "description": "TLS sets the TLS-related options of the connection to the upstream endpoint"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP": {
             "properties": {
                 "endpoint": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Endpoint is the base URL of the upstream OTLP HTTP endpoint (e.g. `https://otel-collector.example.com:4318`). Required unless both LogsEndpoint and MetricsEndpoint are set."
                 },
                 "headers": {
                     "items": {
                         "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Header"
                     },
                     "additionalProperties": false,
-                    "type": "array"
+                    "type": "array",
+                    "description": "Headers is the list of additional headers that are set in every request sent to the upstream endpoint."
                 },
                 "auth": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Auth sets the authentication-related configuration."
                 },
                 "logsEndpoint": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "LogsEndpoint overrides the URL that logs are exported to. If unset, the logs are exported to the Endpoint."
                 },
                 "metricsEndpoint": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "MetricsEndpoint overrides the URL that metrics are exported to. If unset, the metrics are exported to the Endpoint."
                 },
                 "encoding": {
                     "enum": [
@@ -1796,7 +2053,8 @@
                         "JSON"
                     ],
                     "type": "string",
-                    "title": "Encoding"
+                    "title": "Encoding",
+                    "description": "Encoding is the wire encoding of the exported payloads."
                 },
                 "compression": {
                     "enum": [
@@ -1805,40 +2063,49 @@
                         "NONE"
                     ],
                     "type": "string",
-                    "title": "Compression"
+                    "title": "Compression",
+                    "description": "Compression is the compression algorithm used for the exported payloads."
                 },
                 "tls": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.TLS",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "TLS sets the TLS-related configuration."
                 },
                 "timeout": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Timeout is the timeout of every export request."
                 },
                 "readBufferSize": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "ReadBufferSize is the size in bytes of the read buffer of the connection to the upstream endpoint."
                 },
                 "writeBufferSize": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "WriteBufferSize is the size in bytes of the write buffer of the connection to the upstream endpoint."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "OTLPHTTP"
+            "title": "OTLPHTTP",
+            "description": "OTLPHTTP sets the OpenTelemetry Protocol (OTLP) over HTTP exporter options."
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth": {
             "properties": {
                 "bearer": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Bearer",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Bearer sets the bearer token authentication options."
                 },
                 "basic": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Basic",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Basic sets the HTTP basic authentication options."
                 },
                 "custom": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Custom",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Custom sets the custom request header authentication options."
                 }
             },
             "additionalProperties": false,
@@ -1885,26 +2152,31 @@
                     ]
                 }
             ],
-            "title": "Auth"
+            "title": "Auth",
+            "description": "Auth sets the credentials that are used by the Collector to authenticate to the upstream endpoint"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Basic": {
             "properties": {
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Username is the username value of HTTP basic authentication"
                 },
                 "password": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Basic.Password",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Password is the password value of HTTP basic authentication"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Basic"
+            "title": "Basic",
+            "description": "Basic is the HTTP basic authentication credentials"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Basic.Password": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the Password"
                 }
             },
             "additionalProperties": false,
@@ -1931,12 +2203,14 @@
                     ]
                 }
             ],
-            "title": "Password"
+            "title": "Password",
+            "description": "Password is the password value of HTTP basic authentication"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Bearer": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the bearer token"
                 }
             },
             "additionalProperties": false,
@@ -1963,26 +2237,31 @@
                     ]
                 }
             ],
-            "title": "Bearer"
+            "title": "Bearer",
+            "description": "Bearer is the bearer token that is set in the `Authorization` request header"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Custom": {
             "properties": {
                 "header": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Header is the name of the header (e.g. \"X-Custom-Auth\")"
                 },
                 "value": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Custom.Value",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Value is the value of the header"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Custom"
+            "title": "Custom",
+            "description": "Custom is a credential that is set in a custom request header"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Auth.Custom.Value": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the header's Value"
                 }
             },
             "additionalProperties": false,
@@ -2009,94 +2288,116 @@
                     ]
                 }
             ],
-            "title": "Value"
+            "title": "Value",
+            "description": "Value is the value of the custom request header"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.Header": {
             "properties": {
                 "key": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Key is the name of the header"
                 },
                 "value": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Value is the value of the header"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Header"
+            "title": "Header",
+            "description": "Header is an additional header that is set in every request sent to the upstream endpoint"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.OTLPHTTP.TLS": {
             "properties": {
                 "insecure": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Insecure disables TLS entirely and connects to the upstream endpoint over plaintext."
                 },
                 "insecureSkipVerify": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "InsecureSkipVerify skips the verification of the upstream endpoint's certificate chain and hostname. It is not recommended in production environments."
                 },
                 "serverNameOverride": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ServerNameOverride overrides the server name that is used to verify the hostname of the upstream endpoint's certificate. It is mainly useful when the endpoint address does not match the certificate."
                 },
                 "caPEM": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "CAPEM is the PEM-encoded CA certificate that is used to verify the upstream endpoint's certificate. If unset, the system CA pool is used."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "TLS"
+            "title": "TLS",
+            "description": "TLS sets the TLS-related options of the connection to the upstream endpoint"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite": {
             "properties": {
                 "endpoint": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Endpoint is the URL of the upstream Prometheus remote write endpoint (e.g. `https://prometheus.example.com/api/v1/write`). Required."
                 },
                 "namespace": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Namespace is a prefix that is prepended to every exported metric name."
                 },
                 "headers": {
                     "items": {
                         "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Header"
                     },
                     "additionalProperties": false,
-                    "type": "array"
+                    "type": "array",
+                    "description": "Headers is the list of additional headers that are set in every request sent to the upstream endpoint."
                 },
                 "auth": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Auth sets the authentication-related configuration."
                 },
                 "tls": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TLS",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "TLS sets the TLS-related configuration."
                 },
                 "externalLabels": {
                     "items": {
                         "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ExternalLabel"
                     },
                     "additionalProperties": false,
-                    "type": "array"
+                    "type": "array",
+                    "description": "ExternalLabels is the list of labels that are added to every exported metric."
                 },
                 "timeout": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Timeout is the timeout of every export request."
                 },
                 "remoteWriteQueue": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.RemoteWriteQueue",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RemoteWriteQueue sets the sending queue-related configuration."
                 },
                 "resourceToTelemetryConversion": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ResourceToTelemetryConversion",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ResourceToTelemetryConversion sets whether the resource attributes are converted into metric labels."
                 },
                 "targetInfo": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TargetInfo",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "TargetInfo sets whether the `target_info` metric is exported."
                 },
                 "disableScopeInfo": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "DisableScopeInfo disables exporting the `otel_scope_*` labels and the `otel_scope_info` metric that carry the instrumentation scope information."
                 },
                 "maxBatchSizeBytes": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "MaxBatchSizeBytes is the maximum size in bytes of a single remote write request. Larger batches are split into multiple requests."
                 },
                 "maxBatchRequestParallelism": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "MaxBatchRequestParallelism is the maximum number of remote write requests of the same batch that are sent concurrently."
                 },
                 "translationStrategy": {
                     "enum": [
@@ -2107,29 +2408,35 @@
                         "NO_TRANSLATION"
                     ],
                     "type": "string",
-                    "title": "Translation Strategy"
+                    "title": "Translation Strategy",
+                    "description": "TranslationStrategy is the strategy used to translate the OpenTelemetry metric and label names into Prometheus names."
                 },
                 "sendMetadata": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "SendMetadata enables sending the metric metadata (i.e. the help, type and unit information) alongside the metrics."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Prometheus Remote Write"
+            "title": "Prometheus Remote Write",
+            "description": "PrometheusRemoteWrite sets the Prometheus remote write exporter options. This exporter only handles metrics."
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth": {
             "properties": {
                 "bearer": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Bearer",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Bearer sets the bearer token authentication options."
                 },
                 "basic": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Basic",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Basic sets the HTTP basic authentication options."
                 },
                 "custom": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Custom",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Custom sets the custom request header authentication options."
                 }
             },
             "additionalProperties": false,
@@ -2176,26 +2483,31 @@
                     ]
                 }
             ],
-            "title": "Auth"
+            "title": "Auth",
+            "description": "Auth sets the credentials that are used by the Collector to authenticate to the upstream endpoint"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Basic": {
             "properties": {
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Username is the username value of HTTP basic authentication"
                 },
                 "password": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Basic.Password",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Password is the password value of HTTP basic authentication"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Basic"
+            "title": "Basic",
+            "description": "Basic is the HTTP basic authentication credentials"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Basic.Password": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the Password"
                 }
             },
             "additionalProperties": false,
@@ -2222,12 +2534,14 @@
                     ]
                 }
             ],
-            "title": "Password"
+            "title": "Password",
+            "description": "Password is the password value of HTTP basic authentication"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Bearer": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the bearer token"
                 }
             },
             "additionalProperties": false,
@@ -2254,26 +2568,31 @@
                     ]
                 }
             ],
-            "title": "Bearer"
+            "title": "Bearer",
+            "description": "Bearer is the bearer token that is set in the `Authorization` request header"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Custom": {
             "properties": {
                 "header": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Header is the name of the header (e.g. \"X-Custom-Auth\")"
                 },
                 "value": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Custom.Value",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Value is the value of the header"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Custom"
+            "title": "Custom",
+            "description": "Custom is a credential that is set in a custom request header"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Auth.Custom.Value": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the header's Value"
                 }
             },
             "additionalProperties": false,
@@ -2300,158 +2619,197 @@
                     ]
                 }
             ],
-            "title": "Value"
+            "title": "Value",
+            "description": "Value is the value of the custom request header"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ExternalLabel": {
             "properties": {
                 "key": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Key is the name of the label"
                 },
                 "value": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Value is the value of the label"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "External Label"
+            "title": "External Label",
+            "description": "ExternalLabel is a label that is added to every exported metric"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.Header": {
             "properties": {
                 "key": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Key is the name of the header"
                 },
                 "value": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Value is the value of the header"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Header"
+            "title": "Header",
+            "description": "Header is an additional header that is set in every request sent to the upstream endpoint"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.RemoteWriteQueue": {
             "properties": {
                 "enabled": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Enabled enables the queue. When disabled, the metrics are sent synchronously."
                 },
                 "queueSize": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "QueueSize is the maximum number of metric batches that are buffered in the queue."
                 },
                 "numConsumers": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "NumConsumers is the number of concurrent workers that read from the queue and send the metrics to the upstream endpoint."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Remote Write Queue"
+            "title": "Remote Write Queue",
+            "description": "RemoteWriteQueue sets the options of the queue that buffers the metrics before they are sent to the upstream endpoint"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.ResourceToTelemetryConversion": {
             "properties": {
                 "enabled": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Enabled enables the conversion of the resource attributes into metric labels."
                 },
                 "excludeServiceAttributes": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "ExcludeServiceAttributes excludes the `service.*` resource attributes from the conversion."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Resource To Telemetry Conversion"
+            "title": "Resource To Telemetry Conversion",
+            "description": "ResourceToTelemetryConversion sets whether the OpenTelemetry resource attributes are converted into Prometheus metric labels"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TLS": {
             "properties": {
                 "insecure": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Insecure disables TLS entirely and connects to the upstream endpoint over plaintext."
                 },
                 "insecureSkipVerify": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "InsecureSkipVerify skips the verification of the upstream endpoint's certificate chain and hostname. It is not recommended in production environments."
                 },
                 "serverNameOverride": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ServerNameOverride overrides the server name that is used to verify the hostname of the upstream endpoint's certificate. It is mainly useful when the endpoint address does not match the certificate."
                 },
                 "caPEM": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "CAPEM is the PEM-encoded CA certificate that is used to verify the upstream endpoint's certificate. If unset, the system CA pool is used."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "TLS"
+            "title": "TLS",
+            "description": "TLS sets the TLS-related options of the connection to the upstream endpoint"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.PrometheusRemoteWrite.TargetInfo": {
             "properties": {
                 "enabled": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Enabled enables exporting the `target_info` metric."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Target Info"
+            "title": "Target Info",
+            "description": "TargetInfo sets whether the `target_info` metric, which carries the OpenTelemetry resource attributes, is exported"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk": {
             "properties": {
                 "endpoint": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Endpoint is the URL of the upstream Splunk HEC endpoint (e.g. `https://splunk.example.com:8088/services/collector`). Required."
                 },
                 "token": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.Token",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Token is the Splunk HEC token. Required."
                 },
                 "source": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Source is the value of the Splunk `source` field of the exported events."
                 },
                 "sourceType": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "SourceType is the value of the Splunk `sourcetype` field of the exported events."
                 },
                 "index": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Index is the name of the Splunk index that the events are written to."
                 },
                 "useMultiMetricFormat": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "UseMultiMetricFormat enables the Splunk multi-metric format where several metrics that share the same dimensions are sent in a single event."
                 },
                 "appName": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "AppName is the application name that is reported to Splunk."
                 },
                 "appVersion": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "AppVersion is the application version that is reported to Splunk."
                 },
                 "maxContentLengthLogs": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "MaxContentLengthLogs is the maximum size in bytes of a single log export request payload."
                 },
                 "maxContentLengthMetrics": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "MaxContentLengthMetrics is the maximum size in bytes of a single metric export request payload."
                 },
                 "disableCompression": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "DisableCompression disables compressing the exported payloads."
                 },
                 "timeout": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Timeout is the timeout of every export request."
                 },
                 "maxIdleConns": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "MaxIdleConns is the maximum number of idle connections that are kept open to the upstream endpoint."
                 },
                 "tls": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.TLS",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "TLS sets the TLS-related configuration."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Splunk"
+            "title": "Splunk",
+            "description": "Splunk sets the Splunk HTTP Event Collector (HEC) exporter options."
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.TLS": {
             "properties": {
                 "insecureSkipVerify": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "InsecureSkipVerify skips the verification of the upstream endpoint's certificate chain and hostname. It is not recommended in production environments."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "TLS"
+            "title": "TLS",
+            "description": "TLS sets the TLS-related options of the connection to the upstream endpoint"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Spec.Splunk.Token": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the Token"
                 }
             },
             "additionalProperties": false,
@@ -2478,12 +2836,14 @@
                     ]
                 }
             ],
-            "title": "Token"
+            "title": "Token",
+            "description": "Token is the Splunk HEC token"
         },
         "octelium.api.main.enterprise.v1.CollectorExporter.Status": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Status"
+            "title": "Status",
+            "description": "Status is the current status of the CollectorExporter"
         },
         "octelium.api.main.meta.v1.Duration": {
             "properties": {

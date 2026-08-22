@@ -6,12 +6,14 @@
             "properties": {
                 "directoryProviderRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "DirectoryProviderRef is a reference to the DirectoryProvider that the Session belongs to."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Session Ext Info"
+            "title": "Session Ext Info",
+            "description": "SessionExtInfo is the enterprise-specific extension data of a Session. It is stored in the `enterpriseV1` key of the Session's `status.ext` map."
         },
         "octelium.api.main.meta.v1.ObjectReference": {
             "properties": {

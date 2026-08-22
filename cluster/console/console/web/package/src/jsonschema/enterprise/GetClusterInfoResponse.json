@@ -6,80 +6,99 @@
             "properties": {
                 "core": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.GetClusterInfoResponse.Core",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Core is the version information of the core Octelium package."
                 },
                 "packageEnterprise": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageEnterprise",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "PackageEnterprise is the version information of the enterprise package."
                 },
                 "packageCordium": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageCordium",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "PackageCordium is the version information of the Cordium package."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Get Cluster Info Response"
+            "title": "Get Cluster Info Response",
+            "description": "GetClusterInfoResponse is the response of the GetClusterInfo method."
         },
         "octelium.api.main.enterprise.v1.GetClusterInfoResponse.Core": {
             "properties": {
                 "currentVersion": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "CurrentVersion is the version that is currently installed."
                 },
                 "latestVersion": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "LatestVersion is the latest version that is available."
                 },
                 "canUpgrade": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "CanUpgrade is whether the package can be upgraded to the LatestVersion."
                 },
                 "setAt": {
                     "type": "string",
+                    "description": "SetAt is the date at which the CurrentVersion was installed.",
                     "format": "date-time"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Core"
+            "title": "Core",
+            "description": "Core is the version information of the core Octelium package"
         },
         "octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageCordium": {
             "properties": {
                 "currentVersion": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "CurrentVersion is the version that is currently installed."
                 },
                 "latestVersion": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "LatestVersion is the latest version that is available."
                 },
                 "canUpgrade": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "CanUpgrade is whether the package can be upgraded to the LatestVersion."
                 },
                 "setAt": {
                     "type": "string",
+                    "description": "SetAt is the date at which the CurrentVersion was installed.",
                     "format": "date-time"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Package Cordium"
+            "title": "Package Cordium",
+            "description": "PackageCordium is the version information of the Cordium package"
         },
         "octelium.api.main.enterprise.v1.GetClusterInfoResponse.PackageEnterprise": {
             "properties": {
                 "currentVersion": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "CurrentVersion is the version that is currently installed."
                 },
                 "latestVersion": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "LatestVersion is the latest version that is available."
                 },
                 "canUpgrade": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "CanUpgrade is whether the package can be upgraded to the LatestVersion."
                 },
                 "setAt": {
                     "type": "string",
+                    "description": "SetAt is the date at which the CurrentVersion was installed.",
                     "format": "date-time"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Package Enterprise"
+            "title": "Package Enterprise",
+            "description": "PackageEnterprise is the version information of the enterprise package"
         }
     }
 }

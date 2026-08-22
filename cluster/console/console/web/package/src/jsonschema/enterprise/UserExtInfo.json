@@ -6,12 +6,14 @@
             "properties": {
                 "directoryProviderRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "DirectoryProviderRef is a reference to the DirectoryProvider that the User belongs to."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "User Ext Info"
+            "title": "User Ext Info",
+            "description": "UserExtInfo is the enterprise-specific extension data of a User. It is stored in the `enterpriseV1` key of the User's `status.ext` map."
         },
         "octelium.api.main.meta.v1.ObjectReference": {
             "properties": {

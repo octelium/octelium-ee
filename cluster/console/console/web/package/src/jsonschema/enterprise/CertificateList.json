@@ -6,11 +6,11 @@
             "properties": {
                 "apiVersion": {
                     "type": "string",
-                    "description": "APIVersion is the API version of the object."
+                    "description": "APIVersion is the API version (i.e. \"enterprise/v1\")"
                 },
                 "kind": {
                     "type": "string",
-                    "description": "Kind is the resource name (i.e. `SecretList`)."
+                    "description": "Kind is the resource name (i.e. `CertificateList`)."
                 },
                 "items": {
                     "items": {
@@ -18,7 +18,7 @@
                     },
                     "additionalProperties": false,
                     "type": "array",
-                    "description": "Items is the list of Secrets."
+                    "description": "Items is the list of Certificates."
                 },
                 "listResponseMeta": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ListResponseMeta",
@@ -28,37 +28,39 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Certificate List"
+            "title": "Certificate List",
+            "description": "CertificateList is the list of Certificates returned by the ListCertificate method."
         },
         "octelium.api.main.enterprise.v1.Certificate": {
             "properties": {
                 "apiVersion": {
                     "type": "string",
-                    "description": "APIVersion is the API version of the object."
+                    "description": "APIVersion is the API version (i.e. \"enterprise/v1\")"
                 },
                 "kind": {
                     "type": "string",
-                    "description": "Kind is the resource name (i.e. `Secret`)."
+                    "description": "Kind is the resource name (i.e. `Certificate`)."
                 },
                 "metadata": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Metadata",
                     "additionalProperties": false,
-                    "description": "octelium.api.main.meta.v1.Metadata is the object's metadata."
+                    "description": "Metadata is the object's metadata."
                 },
                 "spec": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Certificate.Spec",
                     "additionalProperties": false,
-                    "description": "Spec is the Secret specification."
+                    "description": "Spec is the Certificate specification."
                 },
                 "status": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Certificate.Status",
                     "additionalProperties": false,
-                    "description": "Status is the current status of the Secret."
+                    "description": "Status is the current status of the Certificate."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Certificate"
+            "title": "Certificate",
+            "description": "Certificate represents a publicly trusted TLS certificate that is used by the Cluster (e.g. for the BeyondCorp mode and the TLS-enabled Services). A Certificate is automatically created by the Cluster for every Namespace and Service that needs one. Its certificate and private key are stored in a Cluster-managed Secret. Depending on its Mode, the certificate is either automatically issued from a CertificateIssuer or manually supplied via the SetCertificate method."
         },
         "octelium.api.main.enterprise.v1.Certificate.Spec": {
             "properties": {
@@ -69,91 +71,111 @@
                         "MANUAL"
                     ],
                     "type": "string",
-                    "title": "Mode"
+                    "title": "Mode",
+                    "description": "Mode is how the certificate is obtained."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Spec"
+            "title": "Spec",
+            "description": "Spec is the Certificate specification"
         },
         "octelium.api.main.enterprise.v1.Certificate.Status": {
             "properties": {
                 "secretRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "SecretRef is a reference to the Cluster-managed Secret that contains the certificate and its private key."
                 },
                 "issuance": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Certificate.Status.Issuance",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Issuance is the currently ongoing or last requested issuance."
                 },
                 "lastIssuances": {
                     "items": {
                         "$ref": "#/definitions/octelium.api.main.enterprise.v1.Certificate.Status.Issuance"
                     },
                     "additionalProperties": false,
-                    "type": "array"
+                    "type": "array",
+                    "description": "LastIssuances is the list of the most recent issuances."
                 },
                 "successfulIssuances": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "SuccessfulIssuances is the total number of the issuances that have successfully completed."
                 },
                 "failedIssuances": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "FailedIssuances is the total number of the issuances that have failed."
                 },
                 "certificateIssuerRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "CertificateIssuerRef is a reference to the CertificateIssuer that issues the certificate. It is only set for MANAGED Certificates."
                 },
                 "namespaceRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "NamespaceRef is a reference to the Namespace that the Certificate belongs to."
                 },
                 "serviceRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ServiceRef is a reference to the Service that the Certificate belongs to. It is unset for the Certificates that belong to a Namespace as a whole."
                 },
                 "info": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Certificate.Status.Info",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Info is the information parsed from the currently set certificate."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Status"
+            "title": "Status",
+            "description": "Status is the current status of the Certificate"
         },
         "octelium.api.main.enterprise.v1.Certificate.Status.Info": {
             "properties": {
                 "commonName": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "CommonName is the common name of the certificate's subject."
                 },
                 "subject": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Subject is the full distinguished name of the certificate's subject."
                 },
                 "issuer": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Issuer is the full distinguished name of the certificate's issuer."
                 },
                 "notBefore": {
                     "type": "string",
+                    "description": "NotBefore is the date starting from which the certificate is valid.",
                     "format": "date-time"
                 },
                 "notAfter": {
                     "type": "string",
+                    "description": "NotAfter is the expiry date of the certificate.",
                     "format": "date-time"
                 },
                 "dnsNames": {
                     "items": {
                         "type": "string"
                     },
-                    "type": "array"
+                    "type": "array",
+                    "description": "DNSNames is the list of the DNS names of the certificate's subject alternative names."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Info"
+            "title": "Info",
+            "description": "Info is the information parsed from the currently set certificate"
         },
         "octelium.api.main.enterprise.v1.Certificate.Status.Issuance": {
             "properties": {
                 "createdAt": {
                     "type": "string",
+                    "description": "CreatedAt is the date at which the issuance was requested.",
                     "format": "date-time"
                 },
                 "state": {
@@ -165,24 +187,29 @@
                         "FAILED"
                     ],
                     "type": "string",
-                    "title": "State"
+                    "title": "State",
+                    "description": "State is the current state of the issuance."
                 },
                 "issuanceStartedAt": {
                     "type": "string",
+                    "description": "IssuanceStartedAt is the date at which the issuance started.",
                     "format": "date-time"
                 },
                 "issuanceCompletedAt": {
                     "type": "string",
+                    "description": "IssuanceCompletedAt is the date at which the issuance completed or failed.",
                     "format": "date-time"
                 },
                 "expiresAt": {
                     "type": "string",
+                    "description": "ExpiresAt is the expiry date of the certificate that was issued.",
                     "format": "date-time"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Issuance"
+            "title": "Issuance",
+            "description": "Issuance is the state of an issuance of a MANAGED Certificate from its CertificateIssuer"
         },
         "octelium.api.main.meta.v1.ListResponseMeta": {
             "properties": {

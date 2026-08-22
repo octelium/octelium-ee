@@ -6,55 +6,61 @@
             "properties": {
                 "apiVersion": {
                     "type": "string",
-                    "description": "APIVersion is the API version of the object."
+                    "description": "APIVersion is the API version (i.e. \"enterprise/v1\")"
                 },
                 "kind": {
                     "type": "string",
-                    "description": "Kind is the resource name (i.e. `Secret`)."
+                    "description": "Kind is the resource name (i.e. `DirectoryProviderUser`)."
                 },
                 "metadata": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Metadata",
                     "additionalProperties": false,
-                    "description": "octelium.api.main.meta.v1.Metadata is the object's metadata."
+                    "description": "Metadata is the object's metadata."
                 },
                 "spec": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DirectoryProviderUser.Spec",
                     "additionalProperties": false,
-                    "description": "Spec is the Secret specification."
+                    "description": "Spec is the DirectoryProviderUser specification."
                 },
                 "status": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DirectoryProviderUser.Status",
                     "additionalProperties": false,
-                    "description": "Status is the current status of the Secret."
+                    "description": "Status is the current status of the DirectoryProviderUser."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Directory Provider User"
+            "title": "Directory Provider User",
+            "description": "DirectoryProviderUser is the link between a User of an external directory and the Cluster User that was created for it by a DirectoryProvider. It is entirely managed by the Cluster and it also carries the directory's own attributes of the User."
         },
         "octelium.api.main.enterprise.v1.DirectoryProviderUser.Spec": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Spec"
+            "title": "Spec",
+            "description": "Spec is the DirectoryProviderUser specification"
         },
         "octelium.api.main.enterprise.v1.DirectoryProviderUser.Status": {
             "properties": {
                 "directoryProviderRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "DirectoryProviderRef is a reference to the DirectoryProvider that the User was synchronized from."
                 },
                 "userRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "UserRef is a reference to the Cluster User that was created for the directory's User."
                 },
                 "attrs": {
                     "additionalProperties": true,
-                    "type": "object"
+                    "type": "object",
+                    "description": "Attrs is the set of the attributes of the User as they are provided by the directory."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Status"
+            "title": "Status",
+            "description": "Status is the current status of the DirectoryProviderUser"
         },
         "octelium.api.main.meta.v1.Metadata": {
             "properties": {

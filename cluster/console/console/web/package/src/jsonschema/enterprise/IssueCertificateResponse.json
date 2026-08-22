@@ -5,7 +5,8 @@
         "IssueCertificateResponse": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Issue Certificate Response"
+            "title": "Issue Certificate Response",
+            "description": "IssueCertificateResponse is the response of the IssueCertificate method."
         }
     }
 }

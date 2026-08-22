@@ -6,22 +6,26 @@
             "properties": {
                 "deviceManagerRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "DeviceManagerRef is a reference to the DeviceManager that the Device is bound to."
                 },
                 "deviceManagerDetails": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "DeviceManagerDetails is the provider-specific details of the inventory entry that the Device is bound to."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Device Ext Info"
+            "title": "Device Ext Info",
+            "description": "DeviceExtInfo is the enterprise-specific extension data of a Device. It is stored in the `enterpriseV1` key of the Device's `status.ext` map and it carries the provider-specific details of the DeviceManager that the Device is bound to."
         },
         "octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails": {
             "properties": {
                 "crowdstrike": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails.Crowdstrike",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Crowdstrike is the CrowdStrike Falcon specific details."
                 }
             },
             "additionalProperties": false,
@@ -48,71 +52,88 @@
                     ]
                 }
             ],
-            "title": "Device Manager Details"
+            "title": "Device Manager Details",
+            "description": "DeviceManagerDetails is the provider-specific details of the inventory entry that the Device is bound to"
         },
         "octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails.Crowdstrike": {
             "properties": {
                 "info": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails.Crowdstrike.Info",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Info is the inventory information of the host."
                 },
                 "assessment": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails.Crowdstrike.Assessment",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Assessment is the Zero Trust Assessment scores of the host."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Crowdstrike"
+            "title": "Crowdstrike",
+            "description": "Crowdstrike is the CrowdStrike Falcon specific details"
         },
         "octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails.Crowdstrike.Assessment": {
             "properties": {
                 "lastSyncAt": {
                     "type": "string",
+                    "description": "LastSyncAt is the date at which the assessment was last collected.",
                     "format": "date-time"
                 },
                 "overall": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "Overall is the overall Zero Trust Assessment score of the host."
                 },
                 "os": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "OS is the operating system Zero Trust Assessment score of the host."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Assessment"
+            "title": "Assessment",
+            "description": "Assessment is the CrowdStrike Zero Trust Assessment scores of the host"
         },
         "octelium.api.main.enterprise.v1.DeviceExtInfo.DeviceManagerDetails.Crowdstrike.Info": {
             "properties": {
                 "lastSyncAt": {
                     "type": "string",
+                    "description": "LastSyncAt is the date at which the information was last collected.",
                     "format": "date-time"
                 },
                 "serialNumber": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "SerialNumber is the serial number of the host."
                 },
                 "macAddress": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "MacAddress is the MAC address of the host."
                 },
                 "osBuild": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "OSBuild is the operating system build of the host."
                 },
                 "osVersion": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "OSVersion is the operating system version of the host."
                 },
                 "status": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Status is the status of the host as it is reported by CrowdStrike."
                 },
                 "agentVersion": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "AgentVersion is the version of the Falcon sensor that is installed on the host."
                 },
                 "deviceID": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "DeviceID is the CrowdStrike agent ID (i.e. AID) of the host."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Info"
+            "title": "Info",
+            "description": "Info is the inventory information of the host"
         },
         "octelium.api.main.meta.v1.ObjectReference": {
             "properties": {

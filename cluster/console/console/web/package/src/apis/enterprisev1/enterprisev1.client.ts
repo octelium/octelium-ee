@@ -76,114 +76,178 @@ import type { GetClusterConfigRequest } from "./enterprisev1";
 import type { UnaryCall } from "@protobuf-ts/runtime-rpc";
 import type { RpcOptions } from "@protobuf-ts/runtime-rpc";
 /**
+ * MainService is the main management API of the Octelium enterprise resources.
+ * It provides the CRUD operations over the enterprise-only resources (e.g.
+ * CollectorExporters, Certificates, CertificateIssuers, DNSProviders,
+ * DirectoryProviders, SecretStores, DeviceManagers, etc...) as well as over the
+ * enterprise Cluster configuration itself.
+ *
  * @generated from protobuf service octelium.api.main.enterprise.v1.MainService
  */
 export interface IMainServiceClient {
     /**
+     * GetClusterConfig retrieves the enterprise ClusterConfig
+     *
      * @generated from protobuf rpc: GetClusterConfig
      */
     getClusterConfig(input: GetClusterConfigRequest, options?: RpcOptions): UnaryCall<GetClusterConfigRequest, ClusterConfig>;
     /**
+     * UpdateClusterConfig updates the enterprise ClusterConfig
+     *
      * @generated from protobuf rpc: UpdateClusterConfig
      */
     updateClusterConfig(input: ClusterConfig, options?: RpcOptions): UnaryCall<ClusterConfig, ClusterConfig>;
     /**
+     * CreateCollectorExporter creates a CollectorExporter
+     *
      * @generated from protobuf rpc: CreateCollectorExporter
      */
     createCollectorExporter(input: CollectorExporter, options?: RpcOptions): UnaryCall<CollectorExporter, CollectorExporter>;
     /**
+     * GetCollectorExporter retrieves a specific CollectorExporter
+     *
      * @generated from protobuf rpc: GetCollectorExporter
      */
     getCollectorExporter(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, CollectorExporter>;
     /**
+     * ListCollectorExporter lists CollectorExporters
+     *
      * @generated from protobuf rpc: ListCollectorExporter
      */
     listCollectorExporter(input: ListCollectorExporterOptions, options?: RpcOptions): UnaryCall<ListCollectorExporterOptions, CollectorExporterList>;
     /**
+     * UpdateCollectorExporter updates a CollectorExporter
+     *
      * @generated from protobuf rpc: UpdateCollectorExporter
      */
     updateCollectorExporter(input: CollectorExporter, options?: RpcOptions): UnaryCall<CollectorExporter, CollectorExporter>;
     /**
+     * DeleteCollectorExporter deletes a CollectorExporter
+     *
      * @generated from protobuf rpc: DeleteCollectorExporter
      */
     deleteCollectorExporter(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult>;
     /**
+     * GetDNSProvider retrieves a specific DNSProvider
+     *
      * @generated from protobuf rpc: GetDNSProvider
      */
     getDNSProvider(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, DNSProvider>;
     /**
+     * ListDNSProvider lists DNSProviders
+     *
      * @generated from protobuf rpc: ListDNSProvider
      */
     listDNSProvider(input: ListDNSProviderOptions, options?: RpcOptions): UnaryCall<ListDNSProviderOptions, DNSProviderList>;
     /**
+     * UpdateDNSProvider updates a DNSProvider
+     *
      * @generated from protobuf rpc: UpdateDNSProvider
      */
     updateDNSProvider(input: DNSProvider, options?: RpcOptions): UnaryCall<DNSProvider, DNSProvider>;
     /**
+     * GetCertificate retrieves a specific Certificate
+     *
      * @generated from protobuf rpc: GetCertificate
      */
     getCertificate(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, Certificate>;
     /**
+     * UpdateCertificate updates a Certificate
+     *
      * @generated from protobuf rpc: UpdateCertificate
      */
     updateCertificate(input: Certificate, options?: RpcOptions): UnaryCall<Certificate, Certificate>;
     /**
+     * ListCertificate lists Certificates
+     *
      * @generated from protobuf rpc: ListCertificate
      */
     listCertificate(input: ListCertificateOptions, options?: RpcOptions): UnaryCall<ListCertificateOptions, CertificateList>;
     /**
+     * IssueCertificate requests an issuance of a MANAGED Certificate from its
+     * CertificateIssuer.
+     *
      * @generated from protobuf rpc: IssueCertificate
      */
     issueCertificate(input: IssueCertificateRequest, options?: RpcOptions): UnaryCall<IssueCertificateRequest, IssueCertificateResponse>;
     /**
+     * SetCertificate sets the certificate and private key of a MANUAL
+     * Certificate.
+     *
      * @generated from protobuf rpc: SetCertificate
      */
     setCertificate(input: SetCertificateRequest, options?: RpcOptions): UnaryCall<SetCertificateRequest, SetCertificateResponse>;
     /**
+     * GetCertificateIssuer retrieves a specific CertificateIssuer
+     *
      * @generated from protobuf rpc: GetCertificateIssuer
      */
     getCertificateIssuer(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, CertificateIssuer>;
     /**
+     * ListCertificateIssuer lists CertificateIssuers
+     *
      * @generated from protobuf rpc: ListCertificateIssuer
      */
     listCertificateIssuer(input: ListCertificateIssuerOptions, options?: RpcOptions): UnaryCall<ListCertificateIssuerOptions, CertificateIssuerList>;
     /**
+     * UpdateCertificateIssuer updates a CertificateIssuer
+     *
      * @generated from protobuf rpc: UpdateCertificateIssuer
      */
     updateCertificateIssuer(input: CertificateIssuer, options?: RpcOptions): UnaryCall<CertificateIssuer, CertificateIssuer>;
     /**
+     * CreateDirectoryProvider creates a DirectoryProvider
+     *
      * @generated from protobuf rpc: CreateDirectoryProvider
      */
     createDirectoryProvider(input: DirectoryProvider, options?: RpcOptions): UnaryCall<DirectoryProvider, DirectoryProvider>;
     /**
+     * GetDirectoryProvider retrieves a specific DirectoryProvider
+     *
      * @generated from protobuf rpc: GetDirectoryProvider
      */
     getDirectoryProvider(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, DirectoryProvider>;
     /**
+     * ListDirectoryProvider lists DirectoryProviders
+     *
      * @generated from protobuf rpc: ListDirectoryProvider
      */
     listDirectoryProvider(input: ListDirectoryProviderOptions, options?: RpcOptions): UnaryCall<ListDirectoryProviderOptions, DirectoryProviderList>;
     /**
+     * UpdateDirectoryProvider updates a DirectoryProvider
+     *
      * @generated from protobuf rpc: UpdateDirectoryProvider
      */
     updateDirectoryProvider(input: DirectoryProvider, options?: RpcOptions): UnaryCall<DirectoryProvider, DirectoryProvider>;
     /**
+     * DeleteDirectoryProvider deletes a DirectoryProvider
+     *
      * @generated from protobuf rpc: DeleteDirectoryProvider
      */
     deleteDirectoryProvider(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult>;
     /**
+     * GenerateDirectoryProviderCredential generates a credential that is used by
+     * a SCIM DirectoryProvider to authenticate its requests to the Cluster.
+     *
      * @generated from protobuf rpc: GenerateDirectoryProviderCredential
      */
     generateDirectoryProviderCredential(input: GenerateDirectoryProviderCredentialRequest, options?: RpcOptions): UnaryCall<GenerateDirectoryProviderCredentialRequest, GenerateDirectoryProviderCredentialResponse>;
     /**
+     * ListDirectoryProviderUser lists DirectoryProviderUsers
+     *
      * @generated from protobuf rpc: ListDirectoryProviderUser
      */
     listDirectoryProviderUser(input: ListDirectoryProviderUserOptions, options?: RpcOptions): UnaryCall<ListDirectoryProviderUserOptions, DirectoryProviderUserList>;
     /**
+     * ListDirectoryProviderGroup lists DirectoryProviderGroups
+     *
      * @generated from protobuf rpc: ListDirectoryProviderGroup
      */
     listDirectoryProviderGroup(input: ListDirectoryProviderGroupOptions, options?: RpcOptions): UnaryCall<ListDirectoryProviderGroupOptions, DirectoryProviderGroupList>;
     /**
+     * SynchronizeDirectoryProvider requests a synchronization of the Users and
+     * Groups of a DirectoryProvider.
+     *
      * @generated from protobuf rpc: SynchronizeDirectoryProvider
      */
     synchronizeDirectoryProvider(input: SynchronizeDirectoryProviderRequest, options?: RpcOptions): UnaryCall<SynchronizeDirectoryProviderRequest, SynchronizeDirectoryProviderResponse>;
@@ -212,53 +276,82 @@ export interface IMainServiceClient {
      */
     getSecret(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, Secret>;
     /**
-     * UpdateSecret creates a Secret
+     * UpdateSecret updates a Secret
      *
      * @generated from protobuf rpc: UpdateSecret
      */
     updateSecret(input: Secret, options?: RpcOptions): UnaryCall<Secret, Secret>;
     /**
+     * GetSecretStore retrieves a specific SecretStore
+     *
      * @generated from protobuf rpc: GetSecretStore
      */
     getSecretStore(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, SecretStore>;
     /**
+     * ListSecretStore lists SecretStores
+     *
      * @generated from protobuf rpc: ListSecretStore
      */
     listSecretStore(input: ListSecretStoreOptions, options?: RpcOptions): UnaryCall<ListSecretStoreOptions, SecretStoreList>;
     /**
+     * UpdateSecretStore updates a SecretStore
+     *
      * @generated from protobuf rpc: UpdateSecretStore
      */
     updateSecretStore(input: SecretStore, options?: RpcOptions): UnaryCall<SecretStore, SecretStore>;
     /**
+     * SynchronizeSecretStore requests a synchronization of a SecretStore
+     *
      * @generated from protobuf rpc: SynchronizeSecretStore
      */
     synchronizeSecretStore(input: SynchronizeSecretStoreRequest, options?: RpcOptions): UnaryCall<SynchronizeSecretStoreRequest, SynchronizeSecretStoreResponse>;
     /**
+     * CreateDeviceManager creates a DeviceManager
+     *
      * @generated from protobuf rpc: CreateDeviceManager
      */
     createDeviceManager(input: DeviceManager, options?: RpcOptions): UnaryCall<DeviceManager, DeviceManager>;
     /**
+     * GetDeviceManager retrieves a specific DeviceManager
+     *
      * @generated from protobuf rpc: GetDeviceManager
      */
     getDeviceManager(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, DeviceManager>;
     /**
+     * ListDeviceManager lists DeviceManagers
+     *
      * @generated from protobuf rpc: ListDeviceManager
      */
     listDeviceManager(input: ListDeviceManagerOptions, options?: RpcOptions): UnaryCall<ListDeviceManagerOptions, DeviceManagerList>;
     /**
+     * UpdateDeviceManager updates a DeviceManager
+     *
      * @generated from protobuf rpc: UpdateDeviceManager
      */
     updateDeviceManager(input: DeviceManager, options?: RpcOptions): UnaryCall<DeviceManager, DeviceManager>;
     /**
+     * DeleteDeviceManager deletes a DeviceManager
+     *
      * @generated from protobuf rpc: DeleteDeviceManager
      */
     deleteDeviceManager(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult>;
     /**
+     * GetCoreCondition compiles a structured enterprise Condition into its
+     * equivalent core Condition (i.e. a CEL expression) without applying it to
+     * any resource. It is mainly useful to preview and validate a Condition
+     * before it is used in a Policy.
+     *
      * @generated from protobuf rpc: GetCoreCondition
      */
     getCoreCondition(input: Condition, options?: RpcOptions): UnaryCall<Condition, Condition$>;
 }
 /**
+ * MainService is the main management API of the Octelium enterprise resources.
+ * It provides the CRUD operations over the enterprise-only resources (e.g.
+ * CollectorExporters, Certificates, CertificateIssuers, DNSProviders,
+ * DirectoryProviders, SecretStores, DeviceManagers, etc...) as well as over the
+ * enterprise Cluster configuration itself.
+ *
  * @generated from protobuf service octelium.api.main.enterprise.v1.MainService
  */
 export class MainServiceClient implements IMainServiceClient, ServiceInfo {
@@ -268,6 +361,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
     constructor(private readonly _transport: RpcTransport) {
     }
     /**
+     * GetClusterConfig retrieves the enterprise ClusterConfig
+     *
      * @generated from protobuf rpc: GetClusterConfig
      */
     getClusterConfig(input: GetClusterConfigRequest, options?: RpcOptions): UnaryCall<GetClusterConfigRequest, ClusterConfig> {
@@ -275,6 +370,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<GetClusterConfigRequest, ClusterConfig>("unary", this._transport, method, opt, input);
     }
     /**
+     * UpdateClusterConfig updates the enterprise ClusterConfig
+     *
      * @generated from protobuf rpc: UpdateClusterConfig
      */
     updateClusterConfig(input: ClusterConfig, options?: RpcOptions): UnaryCall<ClusterConfig, ClusterConfig> {
@@ -282,6 +379,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<ClusterConfig, ClusterConfig>("unary", this._transport, method, opt, input);
     }
     /**
+     * CreateCollectorExporter creates a CollectorExporter
+     *
      * @generated from protobuf rpc: CreateCollectorExporter
      */
     createCollectorExporter(input: CollectorExporter, options?: RpcOptions): UnaryCall<CollectorExporter, CollectorExporter> {
@@ -289,6 +388,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<CollectorExporter, CollectorExporter>("unary", this._transport, method, opt, input);
     }
     /**
+     * GetCollectorExporter retrieves a specific CollectorExporter
+     *
      * @generated from protobuf rpc: GetCollectorExporter
      */
     getCollectorExporter(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, CollectorExporter> {
@@ -296,6 +397,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<GetOptions, CollectorExporter>("unary", this._transport, method, opt, input);
     }
     /**
+     * ListCollectorExporter lists CollectorExporters
+     *
      * @generated from protobuf rpc: ListCollectorExporter
      */
     listCollectorExporter(input: ListCollectorExporterOptions, options?: RpcOptions): UnaryCall<ListCollectorExporterOptions, CollectorExporterList> {
@@ -303,6 +406,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<ListCollectorExporterOptions, CollectorExporterList>("unary", this._transport, method, opt, input);
     }
     /**
+     * UpdateCollectorExporter updates a CollectorExporter
+     *
      * @generated from protobuf rpc: UpdateCollectorExporter
      */
     updateCollectorExporter(input: CollectorExporter, options?: RpcOptions): UnaryCall<CollectorExporter, CollectorExporter> {
@@ -310,6 +415,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<CollectorExporter, CollectorExporter>("unary", this._transport, method, opt, input);
     }
     /**
+     * DeleteCollectorExporter deletes a CollectorExporter
+     *
      * @generated from protobuf rpc: DeleteCollectorExporter
      */
     deleteCollectorExporter(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult> {
@@ -317,6 +424,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<DeleteOptions, OperationResult>("unary", this._transport, method, opt, input);
     }
     /**
+     * GetDNSProvider retrieves a specific DNSProvider
+     *
      * @generated from protobuf rpc: GetDNSProvider
      */
     getDNSProvider(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, DNSProvider> {
@@ -324,6 +433,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<GetOptions, DNSProvider>("unary", this._transport, method, opt, input);
     }
     /**
+     * ListDNSProvider lists DNSProviders
+     *
      * @generated from protobuf rpc: ListDNSProvider
      */
     listDNSProvider(input: ListDNSProviderOptions, options?: RpcOptions): UnaryCall<ListDNSProviderOptions, DNSProviderList> {
@@ -331,6 +442,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<ListDNSProviderOptions, DNSProviderList>("unary", this._transport, method, opt, input);
     }
     /**
+     * UpdateDNSProvider updates a DNSProvider
+     *
      * @generated from protobuf rpc: UpdateDNSProvider
      */
     updateDNSProvider(input: DNSProvider, options?: RpcOptions): UnaryCall<DNSProvider, DNSProvider> {
@@ -338,6 +451,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<DNSProvider, DNSProvider>("unary", this._transport, method, opt, input);
     }
     /**
+     * GetCertificate retrieves a specific Certificate
+     *
      * @generated from protobuf rpc: GetCertificate
      */
     getCertificate(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, Certificate> {
@@ -345,6 +460,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<GetOptions, Certificate>("unary", this._transport, method, opt, input);
     }
     /**
+     * UpdateCertificate updates a Certificate
+     *
      * @generated from protobuf rpc: UpdateCertificate
      */
     updateCertificate(input: Certificate, options?: RpcOptions): UnaryCall<Certificate, Certificate> {
@@ -352,6 +469,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<Certificate, Certificate>("unary", this._transport, method, opt, input);
     }
     /**
+     * ListCertificate lists Certificates
+     *
      * @generated from protobuf rpc: ListCertificate
      */
     listCertificate(input: ListCertificateOptions, options?: RpcOptions): UnaryCall<ListCertificateOptions, CertificateList> {
@@ -359,6 +478,9 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<ListCertificateOptions, CertificateList>("unary", this._transport, method, opt, input);
     }
     /**
+     * IssueCertificate requests an issuance of a MANAGED Certificate from its
+     * CertificateIssuer.
+     *
      * @generated from protobuf rpc: IssueCertificate
      */
     issueCertificate(input: IssueCertificateRequest, options?: RpcOptions): UnaryCall<IssueCertificateRequest, IssueCertificateResponse> {
@@ -366,6 +488,9 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<IssueCertificateRequest, IssueCertificateResponse>("unary", this._transport, method, opt, input);
     }
     /**
+     * SetCertificate sets the certificate and private key of a MANUAL
+     * Certificate.
+     *
      * @generated from protobuf rpc: SetCertificate
      */
     setCertificate(input: SetCertificateRequest, options?: RpcOptions): UnaryCall<SetCertificateRequest, SetCertificateResponse> {
@@ -373,6 +498,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<SetCertificateRequest, SetCertificateResponse>("unary", this._transport, method, opt, input);
     }
     /**
+     * GetCertificateIssuer retrieves a specific CertificateIssuer
+     *
      * @generated from protobuf rpc: GetCertificateIssuer
      */
     getCertificateIssuer(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, CertificateIssuer> {
@@ -380,6 +507,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<GetOptions, CertificateIssuer>("unary", this._transport, method, opt, input);
     }
     /**
+     * ListCertificateIssuer lists CertificateIssuers
+     *
      * @generated from protobuf rpc: ListCertificateIssuer
      */
     listCertificateIssuer(input: ListCertificateIssuerOptions, options?: RpcOptions): UnaryCall<ListCertificateIssuerOptions, CertificateIssuerList> {
@@ -387,6 +516,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<ListCertificateIssuerOptions, CertificateIssuerList>("unary", this._transport, method, opt, input);
     }
     /**
+     * UpdateCertificateIssuer updates a CertificateIssuer
+     *
      * @generated from protobuf rpc: UpdateCertificateIssuer
      */
     updateCertificateIssuer(input: CertificateIssuer, options?: RpcOptions): UnaryCall<CertificateIssuer, CertificateIssuer> {
@@ -394,6 +525,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<CertificateIssuer, CertificateIssuer>("unary", this._transport, method, opt, input);
     }
     /**
+     * CreateDirectoryProvider creates a DirectoryProvider
+     *
      * @generated from protobuf rpc: CreateDirectoryProvider
      */
     createDirectoryProvider(input: DirectoryProvider, options?: RpcOptions): UnaryCall<DirectoryProvider, DirectoryProvider> {
@@ -401,6 +534,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<DirectoryProvider, DirectoryProvider>("unary", this._transport, method, opt, input);
     }
     /**
+     * GetDirectoryProvider retrieves a specific DirectoryProvider
+     *
      * @generated from protobuf rpc: GetDirectoryProvider
      */
     getDirectoryProvider(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, DirectoryProvider> {
@@ -408,6 +543,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<GetOptions, DirectoryProvider>("unary", this._transport, method, opt, input);
     }
     /**
+     * ListDirectoryProvider lists DirectoryProviders
+     *
      * @generated from protobuf rpc: ListDirectoryProvider
      */
     listDirectoryProvider(input: ListDirectoryProviderOptions, options?: RpcOptions): UnaryCall<ListDirectoryProviderOptions, DirectoryProviderList> {
@@ -415,6 +552,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<ListDirectoryProviderOptions, DirectoryProviderList>("unary", this._transport, method, opt, input);
     }
     /**
+     * UpdateDirectoryProvider updates a DirectoryProvider
+     *
      * @generated from protobuf rpc: UpdateDirectoryProvider
      */
     updateDirectoryProvider(input: DirectoryProvider, options?: RpcOptions): UnaryCall<DirectoryProvider, DirectoryProvider> {
@@ -422,6 +561,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<DirectoryProvider, DirectoryProvider>("unary", this._transport, method, opt, input);
     }
     /**
+     * DeleteDirectoryProvider deletes a DirectoryProvider
+     *
      * @generated from protobuf rpc: DeleteDirectoryProvider
      */
     deleteDirectoryProvider(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult> {
@@ -429,6 +570,9 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<DeleteOptions, OperationResult>("unary", this._transport, method, opt, input);
     }
     /**
+     * GenerateDirectoryProviderCredential generates a credential that is used by
+     * a SCIM DirectoryProvider to authenticate its requests to the Cluster.
+     *
      * @generated from protobuf rpc: GenerateDirectoryProviderCredential
      */
     generateDirectoryProviderCredential(input: GenerateDirectoryProviderCredentialRequest, options?: RpcOptions): UnaryCall<GenerateDirectoryProviderCredentialRequest, GenerateDirectoryProviderCredentialResponse> {
@@ -436,6 +580,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<GenerateDirectoryProviderCredentialRequest, GenerateDirectoryProviderCredentialResponse>("unary", this._transport, method, opt, input);
     }
     /**
+     * ListDirectoryProviderUser lists DirectoryProviderUsers
+     *
      * @generated from protobuf rpc: ListDirectoryProviderUser
      */
     listDirectoryProviderUser(input: ListDirectoryProviderUserOptions, options?: RpcOptions): UnaryCall<ListDirectoryProviderUserOptions, DirectoryProviderUserList> {
@@ -443,6 +589,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<ListDirectoryProviderUserOptions, DirectoryProviderUserList>("unary", this._transport, method, opt, input);
     }
     /**
+     * ListDirectoryProviderGroup lists DirectoryProviderGroups
+     *
      * @generated from protobuf rpc: ListDirectoryProviderGroup
      */
     listDirectoryProviderGroup(input: ListDirectoryProviderGroupOptions, options?: RpcOptions): UnaryCall<ListDirectoryProviderGroupOptions, DirectoryProviderGroupList> {
@@ -450,6 +598,9 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<ListDirectoryProviderGroupOptions, DirectoryProviderGroupList>("unary", this._transport, method, opt, input);
     }
     /**
+     * SynchronizeDirectoryProvider requests a synchronization of the Users and
+     * Groups of a DirectoryProvider.
+     *
      * @generated from protobuf rpc: SynchronizeDirectoryProvider
      */
     synchronizeDirectoryProvider(input: SynchronizeDirectoryProviderRequest, options?: RpcOptions): UnaryCall<SynchronizeDirectoryProviderRequest, SynchronizeDirectoryProviderResponse> {
@@ -493,7 +644,7 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<GetOptions, Secret>("unary", this._transport, method, opt, input);
     }
     /**
-     * UpdateSecret creates a Secret
+     * UpdateSecret updates a Secret
      *
      * @generated from protobuf rpc: UpdateSecret
      */
@@ -502,6 +653,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<Secret, Secret>("unary", this._transport, method, opt, input);
     }
     /**
+     * GetSecretStore retrieves a specific SecretStore
+     *
      * @generated from protobuf rpc: GetSecretStore
      */
     getSecretStore(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, SecretStore> {
@@ -509,6 +662,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<GetOptions, SecretStore>("unary", this._transport, method, opt, input);
     }
     /**
+     * ListSecretStore lists SecretStores
+     *
      * @generated from protobuf rpc: ListSecretStore
      */
     listSecretStore(input: ListSecretStoreOptions, options?: RpcOptions): UnaryCall<ListSecretStoreOptions, SecretStoreList> {
@@ -516,6 +671,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<ListSecretStoreOptions, SecretStoreList>("unary", this._transport, method, opt, input);
     }
     /**
+     * UpdateSecretStore updates a SecretStore
+     *
      * @generated from protobuf rpc: UpdateSecretStore
      */
     updateSecretStore(input: SecretStore, options?: RpcOptions): UnaryCall<SecretStore, SecretStore> {
@@ -523,6 +680,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<SecretStore, SecretStore>("unary", this._transport, method, opt, input);
     }
     /**
+     * SynchronizeSecretStore requests a synchronization of a SecretStore
+     *
      * @generated from protobuf rpc: SynchronizeSecretStore
      */
     synchronizeSecretStore(input: SynchronizeSecretStoreRequest, options?: RpcOptions): UnaryCall<SynchronizeSecretStoreRequest, SynchronizeSecretStoreResponse> {
@@ -530,6 +689,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<SynchronizeSecretStoreRequest, SynchronizeSecretStoreResponse>("unary", this._transport, method, opt, input);
     }
     /**
+     * CreateDeviceManager creates a DeviceManager
+     *
      * @generated from protobuf rpc: CreateDeviceManager
      */
     createDeviceManager(input: DeviceManager, options?: RpcOptions): UnaryCall<DeviceManager, DeviceManager> {
@@ -537,6 +698,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<DeviceManager, DeviceManager>("unary", this._transport, method, opt, input);
     }
     /**
+     * GetDeviceManager retrieves a specific DeviceManager
+     *
      * @generated from protobuf rpc: GetDeviceManager
      */
     getDeviceManager(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, DeviceManager> {
@@ -544,6 +707,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<GetOptions, DeviceManager>("unary", this._transport, method, opt, input);
     }
     /**
+     * ListDeviceManager lists DeviceManagers
+     *
      * @generated from protobuf rpc: ListDeviceManager
      */
     listDeviceManager(input: ListDeviceManagerOptions, options?: RpcOptions): UnaryCall<ListDeviceManagerOptions, DeviceManagerList> {
@@ -551,6 +716,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<ListDeviceManagerOptions, DeviceManagerList>("unary", this._transport, method, opt, input);
     }
     /**
+     * UpdateDeviceManager updates a DeviceManager
+     *
      * @generated from protobuf rpc: UpdateDeviceManager
      */
     updateDeviceManager(input: DeviceManager, options?: RpcOptions): UnaryCall<DeviceManager, DeviceManager> {
@@ -558,6 +725,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<DeviceManager, DeviceManager>("unary", this._transport, method, opt, input);
     }
     /**
+     * DeleteDeviceManager deletes a DeviceManager
+     *
      * @generated from protobuf rpc: DeleteDeviceManager
      */
     deleteDeviceManager(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult> {
@@ -565,6 +734,11 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<DeleteOptions, OperationResult>("unary", this._transport, method, opt, input);
     }
     /**
+     * GetCoreCondition compiles a structured enterprise Condition into its
+     * equivalent core Condition (i.e. a CEL expression) without applying it to
+     * any resource. It is mainly useful to preview and validate a Condition
+     * before it is used in a Policy.
+     *
      * @generated from protobuf rpc: GetCoreCondition
      */
     getCoreCondition(input: Condition, options?: RpcOptions): UnaryCall<Condition, Condition$> {
@@ -573,15 +747,28 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
     }
 }
 /**
+ * PolicyPortalService provides a read-only evaluation of the Cluster's
+ * authorization rules. It lets you check whether a downstream (e.g. a Session,
+ * a User or a Device) is authorized to access an upstream (i.e. a Service or a
+ * Namespace) without actually performing the access itself.
+ *
  * @generated from protobuf service octelium.api.main.enterprise.v1.PolicyPortalService
  */
 export interface IPolicyPortalServiceClient {
     /**
+     * IsAuthorized evaluates the Policies of a hypothetical access request and
+     * returns whether it is authorized.
+     *
      * @generated from protobuf rpc: IsAuthorized
      */
     isAuthorized(input: IsAuthorizedRequest, options?: RpcOptions): UnaryCall<IsAuthorizedRequest, IsAuthorizedResponse>;
 }
 /**
+ * PolicyPortalService provides a read-only evaluation of the Cluster's
+ * authorization rules. It lets you check whether a downstream (e.g. a Session,
+ * a User or a Device) is authorized to access an upstream (i.e. a Service or a
+ * Namespace) without actually performing the access itself.
+ *
  * @generated from protobuf service octelium.api.main.enterprise.v1.PolicyPortalService
  */
 export class PolicyPortalServiceClient implements IPolicyPortalServiceClient, ServiceInfo {
@@ -591,6 +778,9 @@ export class PolicyPortalServiceClient implements IPolicyPortalServiceClient, Se
     constructor(private readonly _transport: RpcTransport) {
     }
     /**
+     * IsAuthorized evaluates the Policies of a hypothetical access request and
+     * returns whether it is authorized.
+     *
      * @generated from protobuf rpc: IsAuthorized
      */
     isAuthorized(input: IsAuthorizedRequest, options?: RpcOptions): UnaryCall<IsAuthorizedRequest, IsAuthorizedResponse> {
@@ -599,31 +789,49 @@ export class PolicyPortalServiceClient implements IPolicyPortalServiceClient, Se
     }
 }
 /**
+ * ClusterService provides the Cluster lifecycle management operations (i.e.
+ * version information, upgrades and License management).
+ *
  * @generated from protobuf service octelium.api.main.enterprise.v1.ClusterService
  */
 export interface IClusterServiceClient {
     /**
+     * UpgradeCluster requests an upgrade of the Cluster components to a specific
+     * version.
+     *
      * @generated from protobuf rpc: UpgradeCluster
      */
     upgradeCluster(input: UpgradeClusterRequest, options?: RpcOptions): UnaryCall<UpgradeClusterRequest, UpgradeClusterResponse>;
     /**
+     * GetClusterInfo retrieves the currently installed and latest available
+     * versions of the Cluster packages.
+     *
      * @generated from protobuf rpc: GetClusterInfo
      */
     getClusterInfo(input: GetClusterInfoRequest, options?: RpcOptions): UnaryCall<GetClusterInfoRequest, GetClusterInfoResponse>;
     /**
+     * SetLicense sets the Cluster's License
+     *
      * @generated from protobuf rpc: SetLicense
      */
     setLicense(input: SetLicenseRequest, options?: RpcOptions): UnaryCall<SetLicenseRequest, SetLicenseResponse>;
     /**
+     * GetLicense retrieves the Cluster's currently set License
+     *
      * @generated from protobuf rpc: GetLicense
      */
     getLicense(input: GetLicenseRequest, options?: RpcOptions): UnaryCall<GetLicenseRequest, GetLicenseResponse>;
     /**
+     * DeleteLicense deletes the Cluster's currently set License
+     *
      * @generated from protobuf rpc: DeleteLicense
      */
     deleteLicense(input: DeleteLicenseRequest, options?: RpcOptions): UnaryCall<DeleteLicenseRequest, DeleteLicenseResponse>;
 }
 /**
+ * ClusterService provides the Cluster lifecycle management operations (i.e.
+ * version information, upgrades and License management).
+ *
  * @generated from protobuf service octelium.api.main.enterprise.v1.ClusterService
  */
 export class ClusterServiceClient implements IClusterServiceClient, ServiceInfo {
@@ -633,6 +841,9 @@ export class ClusterServiceClient implements IClusterServiceClient, ServiceInfo 
     constructor(private readonly _transport: RpcTransport) {
     }
     /**
+     * UpgradeCluster requests an upgrade of the Cluster components to a specific
+     * version.
+     *
      * @generated from protobuf rpc: UpgradeCluster
      */
     upgradeCluster(input: UpgradeClusterRequest, options?: RpcOptions): UnaryCall<UpgradeClusterRequest, UpgradeClusterResponse> {
@@ -640,6 +851,9 @@ export class ClusterServiceClient implements IClusterServiceClient, ServiceInfo 
         return stackIntercept<UpgradeClusterRequest, UpgradeClusterResponse>("unary", this._transport, method, opt, input);
     }
     /**
+     * GetClusterInfo retrieves the currently installed and latest available
+     * versions of the Cluster packages.
+     *
      * @generated from protobuf rpc: GetClusterInfo
      */
     getClusterInfo(input: GetClusterInfoRequest, options?: RpcOptions): UnaryCall<GetClusterInfoRequest, GetClusterInfoResponse> {
@@ -647,6 +861,8 @@ export class ClusterServiceClient implements IClusterServiceClient, ServiceInfo 
         return stackIntercept<GetClusterInfoRequest, GetClusterInfoResponse>("unary", this._transport, method, opt, input);
     }
     /**
+     * SetLicense sets the Cluster's License
+     *
      * @generated from protobuf rpc: SetLicense
      */
     setLicense(input: SetLicenseRequest, options?: RpcOptions): UnaryCall<SetLicenseRequest, SetLicenseResponse> {
@@ -654,6 +870,8 @@ export class ClusterServiceClient implements IClusterServiceClient, ServiceInfo 
         return stackIntercept<SetLicenseRequest, SetLicenseResponse>("unary", this._transport, method, opt, input);
     }
     /**
+     * GetLicense retrieves the Cluster's currently set License
+     *
      * @generated from protobuf rpc: GetLicense
      */
     getLicense(input: GetLicenseRequest, options?: RpcOptions): UnaryCall<GetLicenseRequest, GetLicenseResponse> {
@@ -661,6 +879,8 @@ export class ClusterServiceClient implements IClusterServiceClient, ServiceInfo 
         return stackIntercept<GetLicenseRequest, GetLicenseResponse>("unary", this._transport, method, opt, input);
     }
     /**
+     * DeleteLicense deletes the Cluster's currently set License
+     *
      * @generated from protobuf rpc: DeleteLicense
      */
     deleteLicense(input: DeleteLicenseRequest, options?: RpcOptions): UnaryCall<DeleteLicenseRequest, DeleteLicenseResponse> {

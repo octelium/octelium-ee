@@ -5,16 +5,19 @@
         "IsAuthorizedResponse": {
             "properties": {
                 "isAuthorized": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "IsAuthorized is whether the access request is authorized."
                 },
                 "reason": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Common.Reason",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Reason is the reason of the authorization decision (e.g. the Policy and rule that produced it)."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Is Authorized Response"
+            "title": "Is Authorized Response",
+            "description": "IsAuthorizedResponse is the response of the IsAuthorized method."
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Common.Reason": {
             "properties": {

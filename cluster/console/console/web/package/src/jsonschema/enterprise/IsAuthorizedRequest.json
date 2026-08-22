@@ -6,31 +6,38 @@
             "properties": {
                 "sessionRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "SessionRef is a reference to the Session that performs the access."
                 },
                 "userRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "UserRef is a reference to the User that performs the access. A synthetic Session of the User is used to evaluate the access."
                 },
                 "deviceRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "DeviceRef is a reference to the Device that performs the access."
                 },
                 "serviceRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ServiceRef is a reference to the Service that is accessed."
                 },
                 "namespaceRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "NamespaceRef is a reference to the Namespace that is accessed. A synthetic Service of the Namespace is used to evaluate the access."
                 },
                 "request": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Request is the request information (e.g. the HTTP path and method) that is used to evaluate the request-aware authorization rules."
                 },
                 "additional": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.IsAuthorizedRequest.Additional",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Additional sets the Policies that are evaluated in addition to the ones that already apply to the upstream."
                 }
             },
             "additionalProperties": false,
@@ -107,7 +114,8 @@
                     ]
                 }
             ],
-            "title": "Is Authorized Request"
+            "title": "Is Authorized Request",
+            "description": "IsAuthorizedRequest is the request of the IsAuthorized method. It describes a hypothetical access request whose authorization is evaluated."
         },
         "octelium.api.main.core.v1.Condition": {
             "properties": {
@@ -1130,7 +1138,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Additional"
+            "title": "Additional",
+            "description": "Additional sets the Policies that are evaluated in addition to the ones that already apply to the upstream"
         },
         "octelium.api.main.meta.v1.ObjectReference": {
             "properties": {

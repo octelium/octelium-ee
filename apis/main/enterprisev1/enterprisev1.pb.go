@@ -32,14 +32,22 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Compression is the compression algorithm used for the exported
+// payloads.
 type CollectorExporter_Spec_OTLP_Compression int32
 
 const (
+	// COMPRESSION_UNSET is the default unset value. The Collector's
+	// default compression is used.
 	CollectorExporter_Spec_OTLP_COMPRESSION_UNSET CollectorExporter_Spec_OTLP_Compression = 0
-	CollectorExporter_Spec_OTLP_GZIP              CollectorExporter_Spec_OTLP_Compression = 1
-	CollectorExporter_Spec_OTLP_NONE              CollectorExporter_Spec_OTLP_Compression = 2
-	CollectorExporter_Spec_OTLP_SNAPPY            CollectorExporter_Spec_OTLP_Compression = 3
-	CollectorExporter_Spec_OTLP_ZSTD              CollectorExporter_Spec_OTLP_Compression = 4
+	// GZIP uses gzip compression.
+	CollectorExporter_Spec_OTLP_GZIP CollectorExporter_Spec_OTLP_Compression = 1
+	// NONE disables compression.
+	CollectorExporter_Spec_OTLP_NONE CollectorExporter_Spec_OTLP_Compression = 2
+	// SNAPPY uses Snappy compression.
+	CollectorExporter_Spec_OTLP_SNAPPY CollectorExporter_Spec_OTLP_Compression = 3
+	// ZSTD uses Zstandard compression.
+	CollectorExporter_Spec_OTLP_ZSTD CollectorExporter_Spec_OTLP_Compression = 4
 )
 
 // Enum value maps for CollectorExporter_Spec_OTLP_Compression.
@@ -87,12 +95,17 @@ func (CollectorExporter_Spec_OTLP_Compression) EnumDescriptor() ([]byte, []int) 
 	return file_enterprisev1_proto_rawDescGZIP(), []int{2, 0, 0, 0}
 }
 
+// Encoding is the wire encoding of the exported payloads.
 type CollectorExporter_Spec_OTLPHTTP_Encoding int32
 
 const (
+	// ENCODING_UNSET is the default unset value. The Collector's default
+	// encoding is used.
 	CollectorExporter_Spec_OTLPHTTP_ENCODING_UNSET CollectorExporter_Spec_OTLPHTTP_Encoding = 0
-	CollectorExporter_Spec_OTLPHTTP_PROTO          CollectorExporter_Spec_OTLPHTTP_Encoding = 1
-	CollectorExporter_Spec_OTLPHTTP_JSON           CollectorExporter_Spec_OTLPHTTP_Encoding = 2
+	// PROTO encodes the payloads using Protobuf.
+	CollectorExporter_Spec_OTLPHTTP_PROTO CollectorExporter_Spec_OTLPHTTP_Encoding = 1
+	// JSON encodes the payloads using JSON.
+	CollectorExporter_Spec_OTLPHTTP_JSON CollectorExporter_Spec_OTLPHTTP_Encoding = 2
 )
 
 // Enum value maps for CollectorExporter_Spec_OTLPHTTP_Encoding.
@@ -136,12 +149,18 @@ func (CollectorExporter_Spec_OTLPHTTP_Encoding) EnumDescriptor() ([]byte, []int)
 	return file_enterprisev1_proto_rawDescGZIP(), []int{2, 0, 1, 0}
 }
 
+// Compression is the compression algorithm used for the exported
+// payloads.
 type CollectorExporter_Spec_OTLPHTTP_Compression int32
 
 const (
+	// COMPRESSION_UNSET is the default unset value. The Collector's
+	// default compression is used.
 	CollectorExporter_Spec_OTLPHTTP_COMPRESSION_UNSET CollectorExporter_Spec_OTLPHTTP_Compression = 0
-	CollectorExporter_Spec_OTLPHTTP_GZIP              CollectorExporter_Spec_OTLPHTTP_Compression = 1
-	CollectorExporter_Spec_OTLPHTTP_NONE              CollectorExporter_Spec_OTLPHTTP_Compression = 2
+	// GZIP uses gzip compression.
+	CollectorExporter_Spec_OTLPHTTP_GZIP CollectorExporter_Spec_OTLPHTTP_Compression = 1
+	// NONE disables compression.
+	CollectorExporter_Spec_OTLPHTTP_NONE CollectorExporter_Spec_OTLPHTTP_Compression = 2
 )
 
 // Enum value maps for CollectorExporter_Spec_OTLPHTTP_Compression.
@@ -185,14 +204,29 @@ func (CollectorExporter_Spec_OTLPHTTP_Compression) EnumDescriptor() ([]byte, []i
 	return file_enterprisev1_proto_rawDescGZIP(), []int{2, 0, 1, 1}
 }
 
+// TranslationStrategy is the strategy used to translate the
+// OpenTelemetry metric and label names into Prometheus names.
 type CollectorExporter_Spec_PrometheusRemoteWrite_TranslationStrategy int32
 
 const (
-	CollectorExporter_Spec_PrometheusRemoteWrite_TRANSLATION_STRATEGY_UNSET           CollectorExporter_Spec_PrometheusRemoteWrite_TranslationStrategy = 0
-	CollectorExporter_Spec_PrometheusRemoteWrite_UNDERSCORE_ESCAPING_WITH_SUFFIXES    CollectorExporter_Spec_PrometheusRemoteWrite_TranslationStrategy = 1
+	// TRANSLATION_STRATEGY_UNSET is the default unset value. The
+	// Collector's default strategy is used.
+	CollectorExporter_Spec_PrometheusRemoteWrite_TRANSLATION_STRATEGY_UNSET CollectorExporter_Spec_PrometheusRemoteWrite_TranslationStrategy = 0
+	// UNDERSCORE_ESCAPING_WITH_SUFFIXES escapes the characters that are
+	// not valid in Prometheus names into underscores and appends the unit
+	// and type suffixes to the metric names.
+	CollectorExporter_Spec_PrometheusRemoteWrite_UNDERSCORE_ESCAPING_WITH_SUFFIXES CollectorExporter_Spec_PrometheusRemoteWrite_TranslationStrategy = 1
+	// UNDERSCORE_ESCAPING_WITHOUT_SUFFIXES escapes the characters that are
+	// not valid in Prometheus names into underscores without appending the
+	// unit and type suffixes to the metric names.
 	CollectorExporter_Spec_PrometheusRemoteWrite_UNDERSCORE_ESCAPING_WITHOUT_SUFFIXES CollectorExporter_Spec_PrometheusRemoteWrite_TranslationStrategy = 2
-	CollectorExporter_Spec_PrometheusRemoteWrite_NO_UTF8_ESCAPING_WITH_SUFFIXES       CollectorExporter_Spec_PrometheusRemoteWrite_TranslationStrategy = 3
-	CollectorExporter_Spec_PrometheusRemoteWrite_NO_TRANSLATION                       CollectorExporter_Spec_PrometheusRemoteWrite_TranslationStrategy = 4
+	// NO_UTF8_ESCAPING_WITH_SUFFIXES keeps the UTF-8 names as they are and
+	// appends the unit and type suffixes to the metric names. It requires
+	// an upstream that supports UTF-8 names.
+	CollectorExporter_Spec_PrometheusRemoteWrite_NO_UTF8_ESCAPING_WITH_SUFFIXES CollectorExporter_Spec_PrometheusRemoteWrite_TranslationStrategy = 3
+	// NO_TRANSLATION exports the names as they are without any escaping or
+	// suffixes. It requires an upstream that supports UTF-8 names.
+	CollectorExporter_Spec_PrometheusRemoteWrite_NO_TRANSLATION CollectorExporter_Spec_PrometheusRemoteWrite_TranslationStrategy = 4
 )
 
 // Enum value maps for CollectorExporter_Spec_PrometheusRemoteWrite_TranslationStrategy.
@@ -240,16 +274,26 @@ func (CollectorExporter_Spec_PrometheusRemoteWrite_TranslationStrategy) EnumDesc
 	return file_enterprisev1_proto_rawDescGZIP(), []int{2, 0, 2, 0}
 }
 
+// Compression is the compression algorithm used for the exported
+// payloads.
 type CollectorExporter_Spec_Clickhouse_Compression int32
 
 const (
+	// COMPRESSION_UNSET is the default unset value. The Collector's
+	// default compression is used.
 	CollectorExporter_Spec_Clickhouse_COMPRESSION_UNSET CollectorExporter_Spec_Clickhouse_Compression = 0
-	CollectorExporter_Spec_Clickhouse_LZ4               CollectorExporter_Spec_Clickhouse_Compression = 1
-	CollectorExporter_Spec_Clickhouse_NONE              CollectorExporter_Spec_Clickhouse_Compression = 2
-	CollectorExporter_Spec_Clickhouse_ZSTD              CollectorExporter_Spec_Clickhouse_Compression = 3
-	CollectorExporter_Spec_Clickhouse_GZIP              CollectorExporter_Spec_Clickhouse_Compression = 4
-	CollectorExporter_Spec_Clickhouse_DEFLATE           CollectorExporter_Spec_Clickhouse_Compression = 5
-	CollectorExporter_Spec_Clickhouse_BR                CollectorExporter_Spec_Clickhouse_Compression = 6
+	// LZ4 uses LZ4 compression.
+	CollectorExporter_Spec_Clickhouse_LZ4 CollectorExporter_Spec_Clickhouse_Compression = 1
+	// NONE disables compression.
+	CollectorExporter_Spec_Clickhouse_NONE CollectorExporter_Spec_Clickhouse_Compression = 2
+	// ZSTD uses Zstandard compression.
+	CollectorExporter_Spec_Clickhouse_ZSTD CollectorExporter_Spec_Clickhouse_Compression = 3
+	// GZIP uses gzip compression.
+	CollectorExporter_Spec_Clickhouse_GZIP CollectorExporter_Spec_Clickhouse_Compression = 4
+	// DEFLATE uses DEFLATE compression.
+	CollectorExporter_Spec_Clickhouse_DEFLATE CollectorExporter_Spec_Clickhouse_Compression = 5
+	// BR uses Brotli compression.
+	CollectorExporter_Spec_Clickhouse_BR CollectorExporter_Spec_Clickhouse_Compression = 6
 )
 
 // Enum value maps for CollectorExporter_Spec_Clickhouse_Compression.
@@ -301,12 +345,18 @@ func (CollectorExporter_Spec_Clickhouse_Compression) EnumDescriptor() ([]byte, [
 	return file_enterprisev1_proto_rawDescGZIP(), []int{2, 0, 3, 0}
 }
 
+// Compression is the compression algorithm used for the exported
+// payloads.
 type CollectorExporter_Spec_Elasticsearch_Compression int32
 
 const (
+	// COMPRESSION_UNSET is the default unset value. The Collector's
+	// default compression is used.
 	CollectorExporter_Spec_Elasticsearch_COMPRESSION_UNSET CollectorExporter_Spec_Elasticsearch_Compression = 0
-	CollectorExporter_Spec_Elasticsearch_GZIP              CollectorExporter_Spec_Elasticsearch_Compression = 1
-	CollectorExporter_Spec_Elasticsearch_NONE              CollectorExporter_Spec_Elasticsearch_Compression = 2
+	// GZIP uses gzip compression.
+	CollectorExporter_Spec_Elasticsearch_GZIP CollectorExporter_Spec_Elasticsearch_Compression = 1
+	// NONE disables compression.
+	CollectorExporter_Spec_Elasticsearch_NONE CollectorExporter_Spec_Elasticsearch_Compression = 2
 )
 
 // Enum value maps for CollectorExporter_Spec_Elasticsearch_Compression.
@@ -350,11 +400,19 @@ func (CollectorExporter_Spec_Elasticsearch_Compression) EnumDescriptor() ([]byte
 	return file_enterprisev1_proto_rawDescGZIP(), []int{2, 0, 4, 0}
 }
 
+// MetricsSchema is the schema used to map the OpenTelemetry metrics into
+// InfluxDB points.
 type CollectorExporter_Spec_InfluxDB_MetricsSchema int32
 
 const (
-	CollectorExporter_Spec_InfluxDB_METRICS_SCHEMA_UNSET   CollectorExporter_Spec_InfluxDB_MetricsSchema = 0
+	// METRICS_SCHEMA_UNSET is the default unset value. The Collector's
+	// default schema is used.
+	CollectorExporter_Spec_InfluxDB_METRICS_SCHEMA_UNSET CollectorExporter_Spec_InfluxDB_MetricsSchema = 0
+	// TELEGRAF_PROMETHEUS_V1 uses the Telegraf Prometheus v1 schema where
+	// each metric is stored in its own measurement.
 	CollectorExporter_Spec_InfluxDB_TELEGRAF_PROMETHEUS_V1 CollectorExporter_Spec_InfluxDB_MetricsSchema = 1
+	// TELEGRAF_PROMETHEUS_V2 uses the Telegraf Prometheus v2 schema where
+	// the metrics are stored in a shared `prometheus` measurement.
 	CollectorExporter_Spec_InfluxDB_TELEGRAF_PROMETHEUS_V2 CollectorExporter_Spec_InfluxDB_MetricsSchema = 2
 )
 
@@ -399,14 +457,21 @@ func (CollectorExporter_Spec_InfluxDB_MetricsSchema) EnumDescriptor() ([]byte, [
 	return file_enterprisev1_proto_rawDescGZIP(), []int{2, 0, 6, 0}
 }
 
+// Precision is the timestamp precision of the exported points.
 type CollectorExporter_Spec_InfluxDB_Precision int32
 
 const (
+	// PRECISION_UNSET is the default unset value. The Collector's default
+	// precision is used.
 	CollectorExporter_Spec_InfluxDB_PRECISION_UNSET CollectorExporter_Spec_InfluxDB_Precision = 0
-	CollectorExporter_Spec_InfluxDB_NS              CollectorExporter_Spec_InfluxDB_Precision = 1
-	CollectorExporter_Spec_InfluxDB_US              CollectorExporter_Spec_InfluxDB_Precision = 2
-	CollectorExporter_Spec_InfluxDB_MS              CollectorExporter_Spec_InfluxDB_Precision = 3
-	CollectorExporter_Spec_InfluxDB_S               CollectorExporter_Spec_InfluxDB_Precision = 4
+	// NS uses a nanosecond precision.
+	CollectorExporter_Spec_InfluxDB_NS CollectorExporter_Spec_InfluxDB_Precision = 1
+	// US uses a microsecond precision.
+	CollectorExporter_Spec_InfluxDB_US CollectorExporter_Spec_InfluxDB_Precision = 2
+	// MS uses a millisecond precision.
+	CollectorExporter_Spec_InfluxDB_MS CollectorExporter_Spec_InfluxDB_Precision = 3
+	// S uses a second precision.
+	CollectorExporter_Spec_InfluxDB_S CollectorExporter_Spec_InfluxDB_Precision = 4
 )
 
 // Enum value maps for CollectorExporter_Spec_InfluxDB_Precision.
@@ -454,13 +519,20 @@ func (CollectorExporter_Spec_InfluxDB_Precision) EnumDescriptor() ([]byte, []int
 	return file_enterprisev1_proto_rawDescGZIP(), []int{2, 0, 6, 1}
 }
 
+// Encoding is the wire encoding of the produced Kafka records.
 type CollectorExporter_Spec_Kafka_Encoding int32
 
 const (
+	// ENCODING_UNSET is the default unset value. The Collector's default
+	// encoding is used.
 	CollectorExporter_Spec_Kafka_ENCODING_UNSET CollectorExporter_Spec_Kafka_Encoding = 0
-	CollectorExporter_Spec_Kafka_OTLP_PROTO     CollectorExporter_Spec_Kafka_Encoding = 1
-	CollectorExporter_Spec_Kafka_OTLP_JSON      CollectorExporter_Spec_Kafka_Encoding = 2
-	CollectorExporter_Spec_Kafka_RAW            CollectorExporter_Spec_Kafka_Encoding = 3 // Logs only.
+	// OTLP_PROTO encodes the records as Protobuf-encoded OTLP payloads.
+	CollectorExporter_Spec_Kafka_OTLP_PROTO CollectorExporter_Spec_Kafka_Encoding = 1
+	// OTLP_JSON encodes the records as JSON-encoded OTLP payloads.
+	CollectorExporter_Spec_Kafka_OTLP_JSON CollectorExporter_Spec_Kafka_Encoding = 2
+	// RAW writes the log record body as the record value without any
+	// additional encoding.
+	CollectorExporter_Spec_Kafka_RAW CollectorExporter_Spec_Kafka_Encoding = 3 // Logs only.
 )
 
 // Enum value maps for CollectorExporter_Spec_Kafka_Encoding.
@@ -506,15 +578,24 @@ func (CollectorExporter_Spec_Kafka_Encoding) EnumDescriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{2, 0, 7, 0}
 }
 
+// ProducerCompression is the compression algorithm used by the Kafka
+// producer.
 type CollectorExporter_Spec_Kafka_ProducerCompression int32
 
 const (
+	// PRODUCER_COMPRESSION_UNSET is the default unset value. The
+	// Collector's default compression is used.
 	CollectorExporter_Spec_Kafka_PRODUCER_COMPRESSION_UNSET CollectorExporter_Spec_Kafka_ProducerCompression = 0
-	CollectorExporter_Spec_Kafka_NONE                       CollectorExporter_Spec_Kafka_ProducerCompression = 1
-	CollectorExporter_Spec_Kafka_GZIP                       CollectorExporter_Spec_Kafka_ProducerCompression = 2
-	CollectorExporter_Spec_Kafka_SNAPPY                     CollectorExporter_Spec_Kafka_ProducerCompression = 3
-	CollectorExporter_Spec_Kafka_LZ4                        CollectorExporter_Spec_Kafka_ProducerCompression = 4
-	CollectorExporter_Spec_Kafka_ZSTD                       CollectorExporter_Spec_Kafka_ProducerCompression = 5
+	// NONE disables compression.
+	CollectorExporter_Spec_Kafka_NONE CollectorExporter_Spec_Kafka_ProducerCompression = 1
+	// GZIP uses gzip compression.
+	CollectorExporter_Spec_Kafka_GZIP CollectorExporter_Spec_Kafka_ProducerCompression = 2
+	// SNAPPY uses Snappy compression.
+	CollectorExporter_Spec_Kafka_SNAPPY CollectorExporter_Spec_Kafka_ProducerCompression = 3
+	// LZ4 uses LZ4 compression.
+	CollectorExporter_Spec_Kafka_LZ4 CollectorExporter_Spec_Kafka_ProducerCompression = 4
+	// ZSTD uses Zstandard compression.
+	CollectorExporter_Spec_Kafka_ZSTD CollectorExporter_Spec_Kafka_ProducerCompression = 5
 )
 
 // Enum value maps for CollectorExporter_Spec_Kafka_ProducerCompression.
@@ -564,13 +645,18 @@ func (CollectorExporter_Spec_Kafka_ProducerCompression) EnumDescriptor() ([]byte
 	return file_enterprisev1_proto_rawDescGZIP(), []int{2, 0, 7, 1}
 }
 
+// Mechanism is the SASL mechanism used to authenticate.
 type CollectorExporter_Spec_Kafka_Auth_SASL_Mechanism int32
 
 const (
+	// MECHANISM_UNSET is the default unset value.
 	CollectorExporter_Spec_Kafka_Auth_SASL_MECHANISM_UNSET CollectorExporter_Spec_Kafka_Auth_SASL_Mechanism = 0
-	CollectorExporter_Spec_Kafka_Auth_SASL_PLAIN           CollectorExporter_Spec_Kafka_Auth_SASL_Mechanism = 1
-	CollectorExporter_Spec_Kafka_Auth_SASL_SCRAM_SHA_256   CollectorExporter_Spec_Kafka_Auth_SASL_Mechanism = 2
-	CollectorExporter_Spec_Kafka_Auth_SASL_SCRAM_SHA_512   CollectorExporter_Spec_Kafka_Auth_SASL_Mechanism = 3
+	// PLAIN uses the SASL/PLAIN mechanism.
+	CollectorExporter_Spec_Kafka_Auth_SASL_PLAIN CollectorExporter_Spec_Kafka_Auth_SASL_Mechanism = 1
+	// SCRAM_SHA_256 uses the SASL/SCRAM-SHA-256 mechanism.
+	CollectorExporter_Spec_Kafka_Auth_SASL_SCRAM_SHA_256 CollectorExporter_Spec_Kafka_Auth_SASL_Mechanism = 2
+	// SCRAM_SHA_512 uses the SASL/SCRAM-SHA-512 mechanism.
+	CollectorExporter_Spec_Kafka_Auth_SASL_SCRAM_SHA_512 CollectorExporter_Spec_Kafka_Auth_SASL_Mechanism = 3
 )
 
 // Enum value maps for CollectorExporter_Spec_Kafka_Auth_SASL_Mechanism.
@@ -616,12 +702,20 @@ func (CollectorExporter_Spec_Kafka_Auth_SASL_Mechanism) EnumDescriptor() ([]byte
 	return file_enterprisev1_proto_rawDescGZIP(), []int{2, 0, 7, 1, 0, 0}
 }
 
+// IngestionType is the mode used to ingest the telemetry into Azure Data
+// Explorer.
 type CollectorExporter_Spec_AzureDataExplorer_IngestionType int32
 
 const (
+	// INGESTION_TYPE_UNSET is the default unset value. The Collector's
+	// default ingestion type is used.
 	CollectorExporter_Spec_AzureDataExplorer_INGESTION_TYPE_UNSET CollectorExporter_Spec_AzureDataExplorer_IngestionType = 0
-	CollectorExporter_Spec_AzureDataExplorer_QUEUED               CollectorExporter_Spec_AzureDataExplorer_IngestionType = 1
-	CollectorExporter_Spec_AzureDataExplorer_MANAGED              CollectorExporter_Spec_AzureDataExplorer_IngestionType = 2
+	// QUEUED uses the batched queued ingestion which is the recommended
+	// mode for high throughput.
+	CollectorExporter_Spec_AzureDataExplorer_QUEUED CollectorExporter_Spec_AzureDataExplorer_IngestionType = 1
+	// MANAGED uses the managed streaming ingestion which provides a lower
+	// latency at the expense of the throughput.
+	CollectorExporter_Spec_AzureDataExplorer_MANAGED CollectorExporter_Spec_AzureDataExplorer_IngestionType = 2
 )
 
 // Enum value maps for CollectorExporter_Spec_AzureDataExplorer_IngestionType.
@@ -665,12 +759,18 @@ func (CollectorExporter_Spec_AzureDataExplorer_IngestionType) EnumDescriptor() (
 	return file_enterprisev1_proto_rawDescGZIP(), []int{2, 0, 11, 0}
 }
 
+// Type is the telemetry signal that is routed by the Pipeline.
 type ClusterConfig_Spec_Collector_Pipeline_Type int32
 
 const (
+	// TYPE_UNSET is the default unset value which is not valid. The Type
+	// must be explicitly set.
 	ClusterConfig_Spec_Collector_Pipeline_TYPE_UNSET ClusterConfig_Spec_Collector_Pipeline_Type = 0
-	ClusterConfig_Spec_Collector_Pipeline_LOGS       ClusterConfig_Spec_Collector_Pipeline_Type = 1
-	ClusterConfig_Spec_Collector_Pipeline_METRICS    ClusterConfig_Spec_Collector_Pipeline_Type = 2
+	// LOGS routes the Cluster's logs (e.g. AccessLogs, AuditLogs,
+	// AuthenticationLogs, ComponentLogs).
+	ClusterConfig_Spec_Collector_Pipeline_LOGS ClusterConfig_Spec_Collector_Pipeline_Type = 1
+	// METRICS routes the Cluster's metrics.
+	ClusterConfig_Spec_Collector_Pipeline_METRICS ClusterConfig_Spec_Collector_Pipeline_Type = 2
 )
 
 // Enum value maps for ClusterConfig_Spec_Collector_Pipeline_Type.
@@ -714,14 +814,21 @@ func (ClusterConfig_Spec_Collector_Pipeline_Type) EnumDescriptor() ([]byte, []in
 	return file_enterprisev1_proto_rawDescGZIP(), []int{4, 0, 0, 0, 0}
 }
 
+// State is the current state of the upgrade.
 type ClusterConfig_Status_UpgradeRequest_State int32
 
 const (
-	ClusterConfig_Status_UpgradeRequest_STATE_UNSET       ClusterConfig_Status_UpgradeRequest_State = 0
+	// STATE_UNSET is the default unset value.
+	ClusterConfig_Status_UpgradeRequest_STATE_UNSET ClusterConfig_Status_UpgradeRequest_State = 0
+	// UPGRADE_REQUESTED means that the upgrade has been requested and is
+	// not started yet.
 	ClusterConfig_Status_UpgradeRequest_UPGRADE_REQUESTED ClusterConfig_Status_UpgradeRequest_State = 1
-	ClusterConfig_Status_UpgradeRequest_UPGRADING         ClusterConfig_Status_UpgradeRequest_State = 2
-	ClusterConfig_Status_UpgradeRequest_SUCCESS           ClusterConfig_Status_UpgradeRequest_State = 3
-	ClusterConfig_Status_UpgradeRequest_FAILED            ClusterConfig_Status_UpgradeRequest_State = 4
+	// UPGRADING means that the upgrade is currently in progress.
+	ClusterConfig_Status_UpgradeRequest_UPGRADING ClusterConfig_Status_UpgradeRequest_State = 2
+	// SUCCESS means that the upgrade has successfully completed.
+	ClusterConfig_Status_UpgradeRequest_SUCCESS ClusterConfig_Status_UpgradeRequest_State = 3
+	// FAILED means that the upgrade has failed.
+	ClusterConfig_Status_UpgradeRequest_FAILED ClusterConfig_Status_UpgradeRequest_State = 4
 )
 
 // Enum value maps for ClusterConfig_Status_UpgradeRequest_State.
@@ -769,15 +876,24 @@ func (ClusterConfig_Status_UpgradeRequest_State) EnumDescriptor() ([]byte, []int
 	return file_enterprisev1_proto_rawDescGZIP(), []int{4, 1, 0, 0}
 }
 
+// State is the current state of the Cluster's License.
 type ClusterConfig_Status_LicenseInfo_State int32
 
 const (
+	// STATE_UNKNOWN is the default unset value.
 	ClusterConfig_Status_LicenseInfo_STATE_UNKNOWN ClusterConfig_Status_LicenseInfo_State = 0
-	ClusterConfig_Status_LicenseInfo_NONE          ClusterConfig_Status_LicenseInfo_State = 1
-	ClusterConfig_Status_LicenseInfo_ACTIVE        ClusterConfig_Status_LicenseInfo_State = 2
+	// NONE means that the Cluster does not have a License set.
+	ClusterConfig_Status_LicenseInfo_NONE ClusterConfig_Status_LicenseInfo_State = 1
+	// ACTIVE means that the License is currently valid.
+	ClusterConfig_Status_LicenseInfo_ACTIVE ClusterConfig_Status_LicenseInfo_State = 2
+	// NOT_YET_VALID means that the License is not valid yet since its
+	// `notBefore` date is still in the future.
 	ClusterConfig_Status_LicenseInfo_NOT_YET_VALID ClusterConfig_Status_LicenseInfo_State = 3
-	ClusterConfig_Status_LicenseInfo_EXPIRED       ClusterConfig_Status_LicenseInfo_State = 4
-	ClusterConfig_Status_LicenseInfo_INVALID       ClusterConfig_Status_LicenseInfo_State = 5
+	// EXPIRED means that the License is no longer valid since its
+	// `notAfter` date is in the past.
+	ClusterConfig_Status_LicenseInfo_EXPIRED ClusterConfig_Status_LicenseInfo_State = 4
+	// INVALID means that the License could not be verified.
+	ClusterConfig_Status_LicenseInfo_INVALID ClusterConfig_Status_LicenseInfo_State = 5
 )
 
 // Enum value maps for ClusterConfig_Status_LicenseInfo_State.
@@ -827,12 +943,19 @@ func (ClusterConfig_Status_LicenseInfo_State) EnumDescriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{4, 1, 1, 0}
 }
 
+// Mode is how the certificate is obtained.
 type Certificate_Spec_Mode int32
 
 const (
+	// MODE_UNSET is the default unset value which is not valid. The Mode
+	// must be explicitly set.
 	Certificate_Spec_MODE_UNSET Certificate_Spec_Mode = 0
-	Certificate_Spec_MANAGED    Certificate_Spec_Mode = 1
-	Certificate_Spec_MANUAL     Certificate_Spec_Mode = 2
+	// MANAGED means that the certificate is automatically issued and renewed
+	// by the Cluster from a CertificateIssuer.
+	Certificate_Spec_MANAGED Certificate_Spec_Mode = 1
+	// MANUAL means that the certificate and its private key are manually
+	// supplied via the SetCertificate method.
+	Certificate_Spec_MANUAL Certificate_Spec_Mode = 2
 )
 
 // Enum value maps for Certificate_Spec_Mode.
@@ -876,14 +999,21 @@ func (Certificate_Spec_Mode) EnumDescriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{8, 0, 0}
 }
 
+// State is the current state of the issuance.
 type Certificate_Status_Issuance_State int32
 
 const (
-	Certificate_Status_Issuance_STATE_UNSET        Certificate_Status_Issuance_State = 0
+	// STATE_UNSET is the default unset value.
+	Certificate_Status_Issuance_STATE_UNSET Certificate_Status_Issuance_State = 0
+	// ISSUANCE_REQUESTED means that the issuance has been requested and is
+	// not started yet.
 	Certificate_Status_Issuance_ISSUANCE_REQUESTED Certificate_Status_Issuance_State = 1
-	Certificate_Status_Issuance_ISSUING            Certificate_Status_Issuance_State = 2
-	Certificate_Status_Issuance_SUCCESS            Certificate_Status_Issuance_State = 3
-	Certificate_Status_Issuance_FAILED             Certificate_Status_Issuance_State = 4
+	// ISSUING means that the issuance is currently in progress.
+	Certificate_Status_Issuance_ISSUING Certificate_Status_Issuance_State = 2
+	// SUCCESS means that the issuance has successfully completed.
+	Certificate_Status_Issuance_SUCCESS Certificate_Status_Issuance_State = 3
+	// FAILED means that the issuance has failed.
+	Certificate_Status_Issuance_FAILED Certificate_Status_Issuance_State = 4
 )
 
 // Enum value maps for Certificate_Status_Issuance_State.
@@ -931,13 +1061,20 @@ func (Certificate_Status_Issuance_State) EnumDescriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{8, 1, 0, 0}
 }
 
+// State is the current state of the CertificateIssuer.
 type CertificateIssuer_Status_State int32
 
 const (
+	// STATE_UNKNOWN is the default unset value.
 	CertificateIssuer_Status_STATE_UNKNOWN CertificateIssuer_Status_State = 0
-	CertificateIssuer_Status_PREPARING     CertificateIssuer_Status_State = 1
-	CertificateIssuer_Status_READY         CertificateIssuer_Status_State = 2
-	CertificateIssuer_Status_NOT_READY     CertificateIssuer_Status_State = 3
+	// PREPARING means that the CertificateIssuer is still being set up (e.g.
+	// the ACME account is being registered).
+	CertificateIssuer_Status_PREPARING CertificateIssuer_Status_State = 1
+	// READY means that the CertificateIssuer is ready to issue Certificates.
+	CertificateIssuer_Status_READY CertificateIssuer_Status_State = 2
+	// NOT_READY means that the CertificateIssuer cannot currently issue
+	// Certificates.
+	CertificateIssuer_Status_NOT_READY CertificateIssuer_Status_State = 3
 )
 
 // Enum value maps for CertificateIssuer_Status_State.
@@ -983,14 +1120,21 @@ func (CertificateIssuer_Status_State) EnumDescriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{10, 1, 0}
 }
 
+// State is the current state of the synchronization.
 type DirectoryProvider_Status_Synchronization_State int32
 
 const (
-	DirectoryProvider_Status_Synchronization_STATE_UNSET    DirectoryProvider_Status_Synchronization_State = 0
+	// STATE_UNSET is the default unset value.
+	DirectoryProvider_Status_Synchronization_STATE_UNSET DirectoryProvider_Status_Synchronization_State = 0
+	// SYNC_REQUESTED means that the synchronization has been requested and
+	// is not started yet.
 	DirectoryProvider_Status_Synchronization_SYNC_REQUESTED DirectoryProvider_Status_Synchronization_State = 1
-	DirectoryProvider_Status_Synchronization_SYNCING        DirectoryProvider_Status_Synchronization_State = 2
-	DirectoryProvider_Status_Synchronization_SUCCESS        DirectoryProvider_Status_Synchronization_State = 3
-	DirectoryProvider_Status_Synchronization_FAILED         DirectoryProvider_Status_Synchronization_State = 4
+	// SYNCING means that the synchronization is currently in progress.
+	DirectoryProvider_Status_Synchronization_SYNCING DirectoryProvider_Status_Synchronization_State = 2
+	// SUCCESS means that the synchronization has successfully completed.
+	DirectoryProvider_Status_Synchronization_SUCCESS DirectoryProvider_Status_Synchronization_State = 3
+	// FAILED means that the synchronization has failed.
+	DirectoryProvider_Status_Synchronization_FAILED DirectoryProvider_Status_Synchronization_State = 4
 )
 
 // Enum value maps for DirectoryProvider_Status_Synchronization_State.
@@ -1038,15 +1182,24 @@ func (DirectoryProvider_Status_Synchronization_State) EnumDescriptor() ([]byte, 
 	return file_enterprisev1_proto_rawDescGZIP(), []int{12, 1, 0, 0}
 }
 
+// Type is the currently set type of the SecretStore. It is derived by the
+// Cluster from the `type` field of the Spec.
 type SecretStore_Status_Type int32
 
 const (
-	SecretStore_Status_TYPE_UNKNOWN         SecretStore_Status_Type = 0
+	// TYPE_UNKNOWN is the default unset value.
+	SecretStore_Status_TYPE_UNKNOWN SecretStore_Status_Type = 0
+	// TYPE_AZURE_KEY_VAULT means that the key is stored in Azure Key Vault.
 	SecretStore_Status_TYPE_AZURE_KEY_VAULT SecretStore_Status_Type = 1
+	// TYPE_HASHICORP_VAULT means that the key is stored in HashiCorp Vault.
 	SecretStore_Status_TYPE_HASHICORP_VAULT SecretStore_Status_Type = 2
-	SecretStore_Status_TYPE_GCP_KMS         SecretStore_Status_Type = 3
-	SecretStore_Status_TYPE_AWS_KMS         SecretStore_Status_Type = 4
-	SecretStore_Status_KUBERNETES           SecretStore_Status_Type = 5
+	// TYPE_GCP_KMS means that the key is stored in Google Cloud KMS.
+	SecretStore_Status_TYPE_GCP_KMS SecretStore_Status_Type = 3
+	// TYPE_AWS_KMS means that the key is stored in AWS KMS.
+	SecretStore_Status_TYPE_AWS_KMS SecretStore_Status_Type = 4
+	// KUBERNETES means that the key is stored in a kubernetes Secret of the
+	// Cluster itself.
+	SecretStore_Status_KUBERNETES SecretStore_Status_Type = 5
 )
 
 // Enum value maps for SecretStore_Status_Type.
@@ -1096,12 +1249,16 @@ func (SecretStore_Status_Type) EnumDescriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{25, 1, 0}
 }
 
+// State is the current state of the SecretStore.
 type SecretStore_Status_State int32
 
 const (
+	// STATE_UNKNOWN is the default unset value.
 	SecretStore_Status_STATE_UNKNOWN SecretStore_Status_State = 0
-	SecretStore_Status_OK            SecretStore_Status_State = 1
-	SecretStore_Status_LOADING       SecretStore_Status_State = 2
+	// OK means that the SecretStore is ready to be used.
+	SecretStore_Status_OK SecretStore_Status_State = 1
+	// LOADING means that the SecretStore is still being set up.
+	SecretStore_Status_LOADING SecretStore_Status_State = 2
 )
 
 // Enum value maps for SecretStore_Status_State.
@@ -1145,14 +1302,21 @@ func (SecretStore_Status_State) EnumDescriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{25, 1, 1}
 }
 
+// State is the current state of the synchronization.
 type SecretStore_Status_Synchronization_State int32
 
 const (
-	SecretStore_Status_Synchronization_STATE_UNSET    SecretStore_Status_Synchronization_State = 0
+	// STATE_UNSET is the default unset value.
+	SecretStore_Status_Synchronization_STATE_UNSET SecretStore_Status_Synchronization_State = 0
+	// SYNC_REQUESTED means that the synchronization has been requested and
+	// is not started yet.
 	SecretStore_Status_Synchronization_SYNC_REQUESTED SecretStore_Status_Synchronization_State = 1
-	SecretStore_Status_Synchronization_SYNCING        SecretStore_Status_Synchronization_State = 2
-	SecretStore_Status_Synchronization_SUCCESS        SecretStore_Status_Synchronization_State = 3
-	SecretStore_Status_Synchronization_FAILED         SecretStore_Status_Synchronization_State = 4
+	// SYNCING means that the synchronization is currently in progress.
+	SecretStore_Status_Synchronization_SYNCING SecretStore_Status_Synchronization_State = 2
+	// SUCCESS means that the synchronization has successfully completed.
+	SecretStore_Status_Synchronization_SUCCESS SecretStore_Status_Synchronization_State = 3
+	// FAILED means that the synchronization has failed.
+	SecretStore_Status_Synchronization_FAILED SecretStore_Status_Synchronization_State = 4
 )
 
 // Enum value maps for SecretStore_Status_Synchronization_State.
@@ -1200,11 +1364,16 @@ func (SecretStore_Status_Synchronization_State) EnumDescriptor() ([]byte, []int)
 	return file_enterprisev1_proto_rawDescGZIP(), []int{25, 1, 0, 0}
 }
 
+// Mode is the type of the generated credential.
 type GenerateDirectoryProviderCredentialRequest_Mode int32
 
 const (
+	// MODE_UNSET is the default unset value which is not valid. The Mode must
+	// be explicitly set.
 	GenerateDirectoryProviderCredentialRequest_MODE_UNSET GenerateDirectoryProviderCredentialRequest_Mode = 0
-	GenerateDirectoryProviderCredentialRequest_BEARER     GenerateDirectoryProviderCredentialRequest_Mode = 1
+	// BEARER generates a bearer access token that is set in the
+	// `Authorization` request header by the directory.
+	GenerateDirectoryProviderCredentialRequest_BEARER GenerateDirectoryProviderCredentialRequest_Mode = 1
 )
 
 // Enum value maps for GenerateDirectoryProviderCredentialRequest_Mode.
@@ -1246,15 +1415,23 @@ func (GenerateDirectoryProviderCredentialRequest_Mode) EnumDescriptor() ([]byte,
 	return file_enterprisev1_proto_rawDescGZIP(), []int{27, 0}
 }
 
+// Region is the CrowdStrike Falcon cloud region.
 type DeviceManager_Spec_CrowdStrike_Region int32
 
 const (
+	// REGION_UNKNOWN is the default unset value. The region is
+	// automatically discovered.
 	DeviceManager_Spec_CrowdStrike_REGION_UNKNOWN DeviceManager_Spec_CrowdStrike_Region = 0
-	DeviceManager_Spec_CrowdStrike_US_1           DeviceManager_Spec_CrowdStrike_Region = 1
-	DeviceManager_Spec_CrowdStrike_US_2           DeviceManager_Spec_CrowdStrike_Region = 2
-	DeviceManager_Spec_CrowdStrike_EU_1           DeviceManager_Spec_CrowdStrike_Region = 3
-	DeviceManager_Spec_CrowdStrike_US_GOV_1       DeviceManager_Spec_CrowdStrike_Region = 4
-	DeviceManager_Spec_CrowdStrike_US_GOV_2       DeviceManager_Spec_CrowdStrike_Region = 5
+	// US_1 is the `us-1` Falcon cloud.
+	DeviceManager_Spec_CrowdStrike_US_1 DeviceManager_Spec_CrowdStrike_Region = 1
+	// US_2 is the `us-2` Falcon cloud.
+	DeviceManager_Spec_CrowdStrike_US_2 DeviceManager_Spec_CrowdStrike_Region = 2
+	// EU_1 is the `eu-1` Falcon cloud.
+	DeviceManager_Spec_CrowdStrike_EU_1 DeviceManager_Spec_CrowdStrike_Region = 3
+	// US_GOV_1 is the `us-gov-1` Falcon cloud.
+	DeviceManager_Spec_CrowdStrike_US_GOV_1 DeviceManager_Spec_CrowdStrike_Region = 4
+	// US_GOV_2 is the `us-gov-2` Falcon cloud.
+	DeviceManager_Spec_CrowdStrike_US_GOV_2 DeviceManager_Spec_CrowdStrike_Region = 5
 )
 
 // Enum value maps for DeviceManager_Spec_CrowdStrike_Region.
@@ -1304,13 +1481,19 @@ func (DeviceManager_Spec_CrowdStrike_Region) EnumDescriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{35, 0, 0, 0}
 }
 
+// Cloud is the Microsoft cloud environment.
 type DeviceManager_Spec_MicrosoftIntune_Cloud int32
 
 const (
+	// CLOUD_UNKNOWN is the default unset value which is equivalent to
+	// PUBLIC.
 	DeviceManager_Spec_MicrosoftIntune_CLOUD_UNKNOWN DeviceManager_Spec_MicrosoftIntune_Cloud = 0
-	DeviceManager_Spec_MicrosoftIntune_PUBLIC        DeviceManager_Spec_MicrosoftIntune_Cloud = 1
-	DeviceManager_Spec_MicrosoftIntune_US_GOV        DeviceManager_Spec_MicrosoftIntune_Cloud = 2
-	DeviceManager_Spec_MicrosoftIntune_CHINA         DeviceManager_Spec_MicrosoftIntune_Cloud = 3
+	// PUBLIC is the global Microsoft public cloud.
+	DeviceManager_Spec_MicrosoftIntune_PUBLIC DeviceManager_Spec_MicrosoftIntune_Cloud = 1
+	// US_GOV is the Microsoft US Government cloud.
+	DeviceManager_Spec_MicrosoftIntune_US_GOV DeviceManager_Spec_MicrosoftIntune_Cloud = 2
+	// CHINA is the Microsoft China (i.e. 21Vianet) cloud.
+	DeviceManager_Spec_MicrosoftIntune_CHINA DeviceManager_Spec_MicrosoftIntune_Cloud = 3
 )
 
 // Enum value maps for DeviceManager_Spec_MicrosoftIntune_Cloud.
@@ -1356,9 +1539,13 @@ func (DeviceManager_Spec_MicrosoftIntune_Cloud) EnumDescriptor() ([]byte, []int)
 	return file_enterprisev1_proto_rawDescGZIP(), []int{35, 0, 2, 0}
 }
 
+// Strategy is how the candidate inventory entries of a Device are
+// discovered.
 type DeviceManager_Spec_Linking_Strategy int32
 
 const (
+	// STRATEGY_UNSET is the default unset value which is equivalent to
+	// IDENTITY_AND_PROBE.
 	DeviceManager_Spec_Linking_STRATEGY_UNSET DeviceManager_Spec_Linking_Strategy = 0
 	// Discover and bind Devices only through provider inventory identity
 	// attributes available on both the Octelium Device and the
@@ -1421,13 +1608,22 @@ func (DeviceManager_Spec_Linking_Strategy) EnumDescriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{35, 0, 9, 0}
 }
 
+// ApprovalMode is how a discovered candidate binding between a Device
+// and an inventory entry is approved.
 type DeviceManager_Spec_Linking_ApprovalMode int32
 
 const (
+	// APPROVAL_MODE_UNSET is the default unset value which is equivalent
+	// to MANUAL.
 	DeviceManager_Spec_Linking_APPROVAL_MODE_UNSET DeviceManager_Spec_Linking_ApprovalMode = 0
-	DeviceManager_Spec_Linking_AUTOMATIC           DeviceManager_Spec_Linking_ApprovalMode = 1
-	DeviceManager_Spec_Linking_EMAIL               DeviceManager_Spec_Linking_ApprovalMode = 2
-	DeviceManager_Spec_Linking_MANUAL              DeviceManager_Spec_Linking_ApprovalMode = 3
+	// AUTOMATIC binds the Device as soon as a candidate is found without
+	// any further approval.
+	DeviceManager_Spec_Linking_AUTOMATIC DeviceManager_Spec_Linking_ApprovalMode = 1
+	// EMAIL binds the Device only when the email of the inventory entry's
+	// owner matches the email of the Device's User.
+	DeviceManager_Spec_Linking_EMAIL DeviceManager_Spec_Linking_ApprovalMode = 2
+	// MANUAL leaves the binding pending until it is explicitly approved.
+	DeviceManager_Spec_Linking_MANUAL DeviceManager_Spec_Linking_ApprovalMode = 3
 )
 
 // Enum value maps for DeviceManager_Spec_Linking_ApprovalMode.
@@ -1473,18 +1669,29 @@ func (DeviceManager_Spec_Linking_ApprovalMode) EnumDescriptor() ([]byte, []int) 
 	return file_enterprisev1_proto_rawDescGZIP(), []int{35, 0, 9, 1}
 }
 
+// Type is the currently set type of the DeviceManager. It is derived by
+// the Cluster from the `type` field of the Spec.
 type DeviceManager_Status_Type int32
 
 const (
-	DeviceManager_Status_TYPE_UNKNOWN     DeviceManager_Status_Type = 0
-	DeviceManager_Status_CROWDSTRIKE      DeviceManager_Status_Type = 1
-	DeviceManager_Status_SENTINELONE      DeviceManager_Status_Type = 2
+	// TYPE_UNKNOWN is the default unset value.
+	DeviceManager_Status_TYPE_UNKNOWN DeviceManager_Status_Type = 0
+	// CROWDSTRIKE means that the provider is CrowdStrike Falcon.
+	DeviceManager_Status_CROWDSTRIKE DeviceManager_Status_Type = 1
+	// SENTINELONE means that the provider is SentinelOne.
+	DeviceManager_Status_SENTINELONE DeviceManager_Status_Type = 2
+	// MICROSOFT_INTUNE means that the provider is Microsoft Intune.
 	DeviceManager_Status_MICROSOFT_INTUNE DeviceManager_Status_Type = 4
-	DeviceManager_Status_JAMF_PRO         DeviceManager_Status_Type = 5
-	DeviceManager_Status_ONEPASSWORD      DeviceManager_Status_Type = 6
-	DeviceManager_Status_FLEETDM          DeviceManager_Status_Type = 7
-	DeviceManager_Status_HUNTRESS         DeviceManager_Status_Type = 8
-	DeviceManager_Status_IRU              DeviceManager_Status_Type = 9
+	// JAMF_PRO means that the provider is Jamf Pro.
+	DeviceManager_Status_JAMF_PRO DeviceManager_Status_Type = 5
+	// ONEPASSWORD means that the provider is 1Password Device Trust.
+	DeviceManager_Status_ONEPASSWORD DeviceManager_Status_Type = 6
+	// FLEETDM means that the provider is Fleet.
+	DeviceManager_Status_FLEETDM DeviceManager_Status_Type = 7
+	// HUNTRESS means that the provider is Huntress.
+	DeviceManager_Status_HUNTRESS DeviceManager_Status_Type = 8
+	// IRU means that the provider is Iru.
+	DeviceManager_Status_IRU DeviceManager_Status_Type = 9
 )
 
 // Enum value maps for DeviceManager_Status_Type.
@@ -1540,14 +1747,21 @@ func (DeviceManager_Status_Type) EnumDescriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{35, 1, 0}
 }
 
+// State is the current state of the DeviceManager.
 type DeviceManager_Status_State int32
 
 const (
+	// STATE_UNKNOWN is the default unset value.
 	DeviceManager_Status_STATE_UNKNOWN DeviceManager_Status_State = 0
-	DeviceManager_Status_OK            DeviceManager_Status_State = 1
-	DeviceManager_Status_LOADING       DeviceManager_Status_State = 2
-	DeviceManager_Status_ERROR         DeviceManager_Status_State = 3
-	DeviceManager_Status_DEGRADED      DeviceManager_Status_State = 4
+	// OK means that the last collection from the provider succeeded.
+	DeviceManager_Status_OK DeviceManager_Status_State = 1
+	// LOADING means that the DeviceManager is still being set up and has not
+	// completed its first collection yet.
+	DeviceManager_Status_LOADING DeviceManager_Status_State = 2
+	// ERROR means that the last collection from the provider failed.
+	DeviceManager_Status_ERROR DeviceManager_Status_State = 3
+	// DEGRADED means that the DeviceManager is only partially operational.
+	DeviceManager_Status_DEGRADED DeviceManager_Status_State = 4
 )
 
 // Enum value maps for DeviceManager_Status_State.
@@ -1595,13 +1809,20 @@ func (DeviceManager_Status_State) EnumDescriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{35, 1, 1}
 }
 
+// Service is the gRPC service of the enterprise API that is matched.
 type Condition_Expression_APIServerEnterprise_Service int32
 
 const (
+	// SERVICE_UNSET is the default unset value which matches nothing. The
+	// Service must be explicitly set.
 	Condition_Expression_APIServerEnterprise_SERVICE_UNSET Condition_Expression_APIServerEnterprise_Service = 0
-	Condition_Expression_APIServerEnterprise_ANY           Condition_Expression_APIServerEnterprise_Service = 1
-	Condition_Expression_APIServerEnterprise_MAIN          Condition_Expression_APIServerEnterprise_Service = 2
-	Condition_Expression_APIServerEnterprise_CLUSTER       Condition_Expression_APIServerEnterprise_Service = 3
+	// ANY matches every service of the enterprise API.
+	Condition_Expression_APIServerEnterprise_ANY Condition_Expression_APIServerEnterprise_Service = 1
+	// MAIN matches the MainService.
+	Condition_Expression_APIServerEnterprise_MAIN Condition_Expression_APIServerEnterprise_Service = 2
+	// CLUSTER matches the ClusterService.
+	Condition_Expression_APIServerEnterprise_CLUSTER Condition_Expression_APIServerEnterprise_Service = 3
+	// POLICY_PORTAL matches the PolicyPortalService.
 	Condition_Expression_APIServerEnterprise_POLICY_PORTAL Condition_Expression_APIServerEnterprise_Service = 4
 )
 
@@ -1650,13 +1871,19 @@ func (Condition_Expression_APIServerEnterprise_Service) EnumDescriptor() ([]byte
 	return file_enterprisev1_proto_rawDescGZIP(), []int{44, 4, 98, 0}
 }
 
+// Service is the gRPC service of the Cordium API that is matched.
 type Condition_Expression_APIServerCordium_Service int32
 
 const (
+	// SERVICE_UNSET is the default unset value which matches nothing. The
+	// Service must be explicitly set.
 	Condition_Expression_APIServerCordium_SERVICE_UNSET Condition_Expression_APIServerCordium_Service = 0
-	Condition_Expression_APIServerCordium_MAIN          Condition_Expression_APIServerCordium_Service = 1
-	Condition_Expression_APIServerCordium_MANAGEMENT    Condition_Expression_APIServerCordium_Service = 2
-	Condition_Expression_APIServerCordium_WORKSPACE     Condition_Expression_APIServerCordium_Service = 3
+	// MAIN matches the MainService.
+	Condition_Expression_APIServerCordium_MAIN Condition_Expression_APIServerCordium_Service = 1
+	// MANAGEMENT matches the ManagementService.
+	Condition_Expression_APIServerCordium_MANAGEMENT Condition_Expression_APIServerCordium_Service = 2
+	// WORKSPACE matches the WorkspaceService.
+	Condition_Expression_APIServerCordium_WORKSPACE Condition_Expression_APIServerCordium_Service = 3
 )
 
 // Enum value maps for Condition_Expression_APIServerCordium_Service.
@@ -1702,14 +1929,21 @@ func (Condition_Expression_APIServerCordium_Service) EnumDescriptor() ([]byte, [
 	return file_enterprisev1_proto_rawDescGZIP(), []int{44, 4, 99, 0}
 }
 
+// Service is the gRPC service of the access API that is matched.
 type Condition_Expression_APIServerAccess_Service int32
 
 const (
+	// SERVICE_UNSET is the default unset value which matches nothing. The
+	// Service must be explicitly set.
 	Condition_Expression_APIServerAccess_SERVICE_UNSET Condition_Expression_APIServerAccess_Service = 0
-	Condition_Expression_APIServerAccess_ANY           Condition_Expression_APIServerAccess_Service = 1
-	Condition_Expression_APIServerAccess_MAIN          Condition_Expression_APIServerAccess_Service = 2
-	Condition_Expression_APIServerAccess_USER          Condition_Expression_APIServerAccess_Service = 3
-	Condition_Expression_APIServerAccess_REVIEWER      Condition_Expression_APIServerAccess_Service = 4
+	// ANY matches every service of the access API.
+	Condition_Expression_APIServerAccess_ANY Condition_Expression_APIServerAccess_Service = 1
+	// MAIN matches the MainService.
+	Condition_Expression_APIServerAccess_MAIN Condition_Expression_APIServerAccess_Service = 2
+	// USER matches the UserService.
+	Condition_Expression_APIServerAccess_USER Condition_Expression_APIServerAccess_Service = 3
+	// REVIEWER matches the ReviewerService.
+	Condition_Expression_APIServerAccess_REVIEWER Condition_Expression_APIServerAccess_Service = 4
 )
 
 // Enum value maps for Condition_Expression_APIServerAccess_Service.
@@ -1757,14 +1991,21 @@ func (Condition_Expression_APIServerAccess_Service) EnumDescriptor() ([]byte, []
 	return file_enterprisev1_proto_rawDescGZIP(), []int{44, 4, 100, 0}
 }
 
+// Type is the type of the License.
 type License_Type int32
 
 const (
+	// TYPE_UNKNOWN is the default unset value.
 	License_TYPE_UNKNOWN License_Type = 0
-	License_TRIAL        License_Type = 1
+	// TRIAL is a time-limited evaluation License.
+	License_TRIAL License_Type = 1
+	// SUBSCRIPTION is a License that is valid for the duration of an active
+	// subscription.
 	License_SUBSCRIPTION License_Type = 2
-	License_PERPETUAL    License_Type = 3
-	License_INTERNAL     License_Type = 4
+	// PERPETUAL is a License that does not need to be renewed.
+	License_PERPETUAL License_Type = 3
+	// INTERNAL is a License that is used by Octelium Labs internally.
+	License_INTERNAL License_Type = 4
 )
 
 // Enum value maps for License_Type.
@@ -1812,6 +2053,7 @@ func (License_Type) EnumDescriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{54, 0}
 }
 
+// GetClusterConfigRequest is the request of the GetClusterConfig method.
 type GetClusterConfigRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -1848,8 +2090,11 @@ func (*GetClusterConfigRequest) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{0}
 }
 
+// ListCollectorExporterOptions is the list options of the ListCollectorExporter
+// method.
 type ListCollectorExporterOptions struct {
-	state         protoimpl.MessageState    `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Common is the common list options.
 	Common        *metav1.CommonListOptions `protobuf:"bytes,1,opt,name=common,proto3" json:"common,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1892,17 +2137,22 @@ func (x *ListCollectorExporterOptions) GetCommon() *metav1.CommonListOptions {
 	return nil
 }
 
+// CollectorExporter represents a destination where the Cluster's telemetry
+// (i.e. logs and metrics) is exported to. Each CollectorExporter maps to an
+// exporter of the Cluster's OpenTelemetry Collector. A CollectorExporter is
+// only used once it is referenced by a pipeline in the `collector` field of the
+// enterprise ClusterConfig.
 type CollectorExporter struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// APIVersion is the API version of the object.
+	// APIVersion is the API version (i.e. "enterprise/v1")
 	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
-	// Kind is the resource name (i.e. `User`).
+	// Kind is the resource name (i.e. `CollectorExporter`).
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
 	// Metadata is the object's metadata.
 	Metadata *metav1.Metadata `protobuf:"bytes,3,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	// Spec is the User specification.
+	// Spec is the CollectorExporter specification.
 	Spec *CollectorExporter_Spec `protobuf:"bytes,4,opt,name=spec,proto3" json:"spec,omitempty"`
-	// Status is the current status of the User.
+	// Status is the current status of the CollectorExporter.
 	Status        *CollectorExporter_Status `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1973,13 +2223,15 @@ func (x *CollectorExporter) GetStatus() *CollectorExporter_Status {
 	return nil
 }
 
+// CollectorExporterList is the list of CollectorExporters returned by the
+// ListCollectorExporter method.
 type CollectorExporterList struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// APIVersion is the API version of the object.
+	// APIVersion is the API version (i.e. "enterprise/v1")
 	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
 	// Kind is the resource name (i.e. `CollectorExporterList`).
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
-	// Items is the list of CollectorExporter items.
+	// Items is the list of CollectorExporters.
 	Items []*CollectorExporter `protobuf:"bytes,3,rep,name=items,proto3" json:"items,omitempty"`
 	// ListResponseMeta is common information about the list.
 	ListResponseMeta *metav1.ListResponseMeta `protobuf:"bytes,4,opt,name=listResponseMeta,proto3" json:"listResponseMeta,omitempty"`
@@ -2045,13 +2297,23 @@ func (x *CollectorExporterList) GetListResponseMeta() *metav1.ListResponseMeta {
 	return nil
 }
 
+// ClusterConfig represents the Cluster-scoped configuration of the
+// enterprise-only features (e.g. the OpenTelemetry Collector, the scaling of
+// the Cluster components, the Certificate management defaults, etc...). It is a
+// singleton resource that is automatically created upon the Cluster's
+// installation. It is separate from, and complements, the core ClusterConfig.
 type ClusterConfig struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ApiVersion    string                 `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
-	Kind          string                 `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
-	Metadata      *metav1.Metadata       `protobuf:"bytes,3,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	Spec          *ClusterConfig_Spec    `protobuf:"bytes,4,opt,name=spec,proto3" json:"spec,omitempty"`
-	Status        *ClusterConfig_Status  `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// APIVersion is the API version (i.e. "enterprise/v1")
+	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
+	// Kind is the resource name (i.e. `ClusterConfig`).
+	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
+	// Metadata is the object's metadata.
+	Metadata *metav1.Metadata `protobuf:"bytes,3,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	// Spec is the ClusterConfig specification.
+	Spec *ClusterConfig_Spec `protobuf:"bytes,4,opt,name=spec,proto3" json:"spec,omitempty"`
+	// Status is the current status of the ClusterConfig.
+	Status        *ClusterConfig_Status `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2121,19 +2383,29 @@ func (x *ClusterConfig) GetStatus() *ClusterConfig_Status {
 	return nil
 }
 
+// Secret stores a sensitive value (e.g. an API key, a password, a private key
+// or a TLS certificate) that is referenced by its name from the other Cluster
+// resources. It avoids storing the sensitive data itself along with the rest
+// of the Cluster configuration. The Cluster does not expose the Secret's data
+// via the API, therefore a Secret that is read back from the API contains
+// everything but its data. This is the enterprise representation of the same
+// Secret resource that is also exposed by the core API. In addition to the
+// core API, it supports storing a map of keys as well as arbitrary structured
+// attributes.
 type Secret struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// APIVersion is the API version (i.e. "core/v1")
+	// APIVersion is the API version (i.e. "enterprise/v1")
 	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
 	// Kind is the resource name (i.e. `Secret`).
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
-	// octelium.api.main.meta.v1.Metadata is the object's metadata.
+	// Metadata is the object's metadata.
 	Metadata *metav1.Metadata `protobuf:"bytes,3,opt,name=metadata,proto3" json:"metadata,omitempty"`
 	// Spec is the Secret specification.
 	Spec *Secret_Spec `protobuf:"bytes,4,opt,name=spec,proto3" json:"spec,omitempty"`
 	// Status is the current status of the Secret.
 	Status *Secret_Status `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
-	// Data is the Secret data content.
+	// Data is the Secret's actual secret data content. It is never returned by
+	// the API.
 	Data          *Secret_Data `protobuf:"bytes,6,opt,name=data,proto3" json:"data,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2211,9 +2483,10 @@ func (x *Secret) GetData() *Secret_Data {
 	return nil
 }
 
+// SecretList is the list of Secrets returned by the ListSecret method.
 type SecretList struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// APIVersion is the API version of the object.
+	// APIVersion is the API version (i.e. "enterprise/v1")
 	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
 	// Kind is the resource name (i.e. `SecretList`).
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
@@ -2283,8 +2556,10 @@ func (x *SecretList) GetListResponseMeta() *metav1.ListResponseMeta {
 	return nil
 }
 
+// ListSecretOptions is the list options of the ListSecret method.
 type ListSecretOptions struct {
-	state         protoimpl.MessageState    `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Common is the common list options.
 	Common        *metav1.CommonListOptions `protobuf:"bytes,1,opt,name=common,proto3" json:"common,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2327,17 +2602,24 @@ func (x *ListSecretOptions) GetCommon() *metav1.CommonListOptions {
 	return nil
 }
 
+// Certificate represents a publicly trusted TLS certificate that is used by
+// the Cluster (e.g. for the BeyondCorp mode and the TLS-enabled Services). A
+// Certificate is automatically created by the Cluster for every Namespace and
+// Service that needs one. Its certificate and private key are stored in a
+// Cluster-managed Secret. Depending on its Mode, the certificate is either
+// automatically issued from a CertificateIssuer or manually supplied via the
+// SetCertificate method.
 type Certificate struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// APIVersion is the API version of the object.
+	// APIVersion is the API version (i.e. "enterprise/v1")
 	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
-	// Kind is the resource name (i.e. `Secret`).
+	// Kind is the resource name (i.e. `Certificate`).
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
-	// octelium.api.main.meta.v1.Metadata is the object's metadata.
+	// Metadata is the object's metadata.
 	Metadata *metav1.Metadata `protobuf:"bytes,3,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	// Spec is the Secret specification.
+	// Spec is the Certificate specification.
 	Spec *Certificate_Spec `protobuf:"bytes,4,opt,name=spec,proto3" json:"spec,omitempty"`
-	// Status is the current status of the Secret.
+	// Status is the current status of the Certificate.
 	Status        *Certificate_Status `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2408,13 +2690,15 @@ func (x *Certificate) GetStatus() *Certificate_Status {
 	return nil
 }
 
+// CertificateList is the list of Certificates returned by the ListCertificate
+// method.
 type CertificateList struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// APIVersion is the API version of the object.
+	// APIVersion is the API version (i.e. "enterprise/v1")
 	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
-	// Kind is the resource name (i.e. `SecretList`).
+	// Kind is the resource name (i.e. `CertificateList`).
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
-	// Items is the list of Secrets.
+	// Items is the list of Certificates.
 	Items []*Certificate `protobuf:"bytes,3,rep,name=items,proto3" json:"items,omitempty"`
 	// ListResponseMeta is common information about the list.
 	ListResponseMeta *metav1.ListResponseMeta `protobuf:"bytes,4,opt,name=listResponseMeta,proto3" json:"listResponseMeta,omitempty"`
@@ -2480,17 +2764,20 @@ func (x *CertificateList) GetListResponseMeta() *metav1.ListResponseMeta {
 	return nil
 }
 
+// CertificateIssuer represents the authority that issues the Cluster's MANAGED
+// Certificates. The `default` CertificateIssuer is automatically created upon
+// the Cluster's installation and is used by every MANAGED Certificate.
 type CertificateIssuer struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// APIVersion is the API version of the object.
+	// APIVersion is the API version (i.e. "enterprise/v1")
 	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
-	// Kind is the resource name (i.e. `Secret`).
+	// Kind is the resource name (i.e. `CertificateIssuer`).
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
-	// octelium.api.main.meta.v1.Metadata is the object's metadata.
+	// Metadata is the object's metadata.
 	Metadata *metav1.Metadata `protobuf:"bytes,3,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	// Spec is the Secret specification.
+	// Spec is the CertificateIssuer specification.
 	Spec *CertificateIssuer_Spec `protobuf:"bytes,4,opt,name=spec,proto3" json:"spec,omitempty"`
-	// Status is the current status of the Secret.
+	// Status is the current status of the CertificateIssuer.
 	Status        *CertificateIssuer_Status `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2561,13 +2848,15 @@ func (x *CertificateIssuer) GetStatus() *CertificateIssuer_Status {
 	return nil
 }
 
+// CertificateIssuerList is the list of CertificateIssuers returned by the
+// ListCertificateIssuer method.
 type CertificateIssuerList struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// APIVersion is the API version of the object.
+	// APIVersion is the API version (i.e. "enterprise/v1")
 	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
-	// Kind is the resource name (i.e. `SecretList`).
+	// Kind is the resource name (i.e. `CertificateIssuerList`).
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
-	// Items is the list of Secrets.
+	// Items is the list of CertificateIssuers.
 	Items []*CertificateIssuer `protobuf:"bytes,3,rep,name=items,proto3" json:"items,omitempty"`
 	// ListResponseMeta is common information about the list.
 	ListResponseMeta *metav1.ListResponseMeta `protobuf:"bytes,4,opt,name=listResponseMeta,proto3" json:"listResponseMeta,omitempty"`
@@ -2633,17 +2922,24 @@ func (x *CertificateIssuerList) GetListResponseMeta() *metav1.ListResponseMeta {
 	return nil
 }
 
+// DirectoryProvider represents an external identity directory (e.g. an
+// identity provider or a SCIM client) whose Users and Groups are synchronized
+// into the Cluster's Users and Groups. It saves you from having to manually
+// create and maintain the Users and Groups that already exist in your
+// organization's directory. Depending on its type, the directory either pushes
+// its changes to the Cluster (i.e. SCIM) or is periodically polled by the
+// Cluster.
 type DirectoryProvider struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// APIVersion is the API version of the object.
+	// APIVersion is the API version (i.e. "enterprise/v1")
 	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
-	// Kind is the resource name (i.e. `Secret`).
+	// Kind is the resource name (i.e. `DirectoryProvider`).
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
-	// octelium.api.main.meta.v1.Metadata is the object's metadata.
+	// Metadata is the object's metadata.
 	Metadata *metav1.Metadata `protobuf:"bytes,3,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	// Spec is the Secret specification.
+	// Spec is the DirectoryProvider specification.
 	Spec *DirectoryProvider_Spec `protobuf:"bytes,4,opt,name=spec,proto3" json:"spec,omitempty"`
-	// Status is the current status of the Secret.
+	// Status is the current status of the DirectoryProvider.
 	Status        *DirectoryProvider_Status `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2714,13 +3010,15 @@ func (x *DirectoryProvider) GetStatus() *DirectoryProvider_Status {
 	return nil
 }
 
+// DirectoryProviderList is the list of DirectoryProviders returned by the
+// ListDirectoryProvider method.
 type DirectoryProviderList struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// APIVersion is the API version of the object.
+	// APIVersion is the API version (i.e. "enterprise/v1")
 	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
-	// Kind is the resource name (i.e. `SecretList`).
+	// Kind is the resource name (i.e. `DirectoryProviderList`).
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
-	// Items is the list of Secrets.
+	// Items is the list of DirectoryProviders.
 	Items []*DirectoryProvider `protobuf:"bytes,3,rep,name=items,proto3" json:"items,omitempty"`
 	// ListResponseMeta is common information about the list.
 	ListResponseMeta *metav1.ListResponseMeta `protobuf:"bytes,4,opt,name=listResponseMeta,proto3" json:"listResponseMeta,omitempty"`
@@ -2786,17 +3084,21 @@ func (x *DirectoryProviderList) GetListResponseMeta() *metav1.ListResponseMeta {
 	return nil
 }
 
+// DirectoryProviderUser is the link between a User of an external directory
+// and the Cluster User that was created for it by a DirectoryProvider. It is
+// entirely managed by the Cluster and it also carries the directory's own
+// attributes of the User.
 type DirectoryProviderUser struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// APIVersion is the API version of the object.
+	// APIVersion is the API version (i.e. "enterprise/v1")
 	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
-	// Kind is the resource name (i.e. `Secret`).
+	// Kind is the resource name (i.e. `DirectoryProviderUser`).
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
-	// octelium.api.main.meta.v1.Metadata is the object's metadata.
+	// Metadata is the object's metadata.
 	Metadata *metav1.Metadata `protobuf:"bytes,3,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	// Spec is the Secret specification.
+	// Spec is the DirectoryProviderUser specification.
 	Spec *DirectoryProviderUser_Spec `protobuf:"bytes,4,opt,name=spec,proto3" json:"spec,omitempty"`
-	// Status is the current status of the Secret.
+	// Status is the current status of the DirectoryProviderUser.
 	Status        *DirectoryProviderUser_Status `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2867,13 +3169,15 @@ func (x *DirectoryProviderUser) GetStatus() *DirectoryProviderUser_Status {
 	return nil
 }
 
+// DirectoryProviderUserList is the list of DirectoryProviderUsers returned by
+// the ListDirectoryProviderUser method.
 type DirectoryProviderUserList struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// APIVersion is the API version of the object.
+	// APIVersion is the API version (i.e. "enterprise/v1")
 	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
-	// Kind is the resource name (i.e. `SecretList`).
+	// Kind is the resource name (i.e. `DirectoryProviderUserList`).
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
-	// Items is the list of Secrets.
+	// Items is the list of DirectoryProviderUsers.
 	Items []*DirectoryProviderUser `protobuf:"bytes,3,rep,name=items,proto3" json:"items,omitempty"`
 	// ListResponseMeta is common information about the list.
 	ListResponseMeta *metav1.ListResponseMeta `protobuf:"bytes,4,opt,name=listResponseMeta,proto3" json:"listResponseMeta,omitempty"`
@@ -2939,17 +3243,21 @@ func (x *DirectoryProviderUserList) GetListResponseMeta() *metav1.ListResponseMe
 	return nil
 }
 
+// DirectoryProviderGroup is the link between a Group of an external directory
+// and the Cluster Group that was created for it by a DirectoryProvider. It is
+// entirely managed by the Cluster and it also carries the directory's own
+// attributes of the Group.
 type DirectoryProviderGroup struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// APIVersion is the API version of the object.
+	// APIVersion is the API version (i.e. "enterprise/v1")
 	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
-	// Kind is the resource name (i.e. `Secret`).
+	// Kind is the resource name (i.e. `DirectoryProviderGroup`).
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
-	// octelium.api.main.meta.v1.Metadata is the object's metadata.
+	// Metadata is the object's metadata.
 	Metadata *metav1.Metadata `protobuf:"bytes,3,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	// Spec is the Secret specification.
+	// Spec is the DirectoryProviderGroup specification.
 	Spec *DirectoryProviderGroup_Spec `protobuf:"bytes,4,opt,name=spec,proto3" json:"spec,omitempty"`
-	// Status is the current status of the Secret.
+	// Status is the current status of the DirectoryProviderGroup.
 	Status        *DirectoryProviderGroup_Status `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -3020,13 +3328,15 @@ func (x *DirectoryProviderGroup) GetStatus() *DirectoryProviderGroup_Status {
 	return nil
 }
 
+// DirectoryProviderGroupList is the list of DirectoryProviderGroups returned by
+// the ListDirectoryProviderGroup method.
 type DirectoryProviderGroupList struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// APIVersion is the API version of the object.
+	// APIVersion is the API version (i.e. "enterprise/v1")
 	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
-	// Kind is the resource name (i.e. `SecretList`).
+	// Kind is the resource name (i.e. `DirectoryProviderGroupList`).
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
-	// Items is the list of Secrets.
+	// Items is the list of DirectoryProviderGroups.
 	Items []*DirectoryProviderGroup `protobuf:"bytes,3,rep,name=items,proto3" json:"items,omitempty"`
 	// ListResponseMeta is common information about the list.
 	ListResponseMeta *metav1.ListResponseMeta `protobuf:"bytes,4,opt,name=listResponseMeta,proto3" json:"listResponseMeta,omitempty"`
@@ -3092,17 +3402,21 @@ func (x *DirectoryProviderGroupList) GetListResponseMeta() *metav1.ListResponseM
 	return nil
 }
 
+// DNSProvider represents the DNS provider that hosts the Cluster's domain. It
+// is used by the Cluster to automatically manage the public DNS entries of the
+// Cluster domain as well as of the Namespaces that enable the BeyondCorp mode.
+// It is also used by the CertificateIssuer to solve the ACME DNS01 challenges.
 type DNSProvider struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// APIVersion is the API version of the object.
+	// APIVersion is the API version (i.e. "enterprise/v1")
 	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
-	// Kind is the resource name (i.e. `Secret`).
+	// Kind is the resource name (i.e. `DNSProvider`).
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
-	// octelium.api.main.meta.v1.Metadata is the object's metadata.
+	// Metadata is the object's metadata.
 	Metadata *metav1.Metadata `protobuf:"bytes,3,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	// Spec is the Secret specification.
+	// Spec is the DNSProvider specification.
 	Spec *DNSProvider_Spec `protobuf:"bytes,4,opt,name=spec,proto3" json:"spec,omitempty"`
-	// Status is the current status of the Secret.
+	// Status is the current status of the DNSProvider.
 	Status        *DNSProvider_Status `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -3173,13 +3487,15 @@ func (x *DNSProvider) GetStatus() *DNSProvider_Status {
 	return nil
 }
 
+// DNSProviderList is the list of DNSProviders returned by the ListDNSProvider
+// method.
 type DNSProviderList struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// APIVersion is the API version of the object.
+	// APIVersion is the API version (i.e. "enterprise/v1")
 	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
-	// Kind is the resource name (i.e. `SecretList`).
+	// Kind is the resource name (i.e. `DNSProviderList`).
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
-	// Items is the list of Secrets.
+	// Items is the list of DNSProviders.
 	Items []*DNSProvider `protobuf:"bytes,3,rep,name=items,proto3" json:"items,omitempty"`
 	// ListResponseMeta is common information about the list.
 	ListResponseMeta *metav1.ListResponseMeta `protobuf:"bytes,4,opt,name=listResponseMeta,proto3" json:"listResponseMeta,omitempty"`
@@ -3245,8 +3561,10 @@ func (x *DNSProviderList) GetListResponseMeta() *metav1.ListResponseMeta {
 	return nil
 }
 
+// ListDNSProviderOptions is the list options of the ListDNSProvider method.
 type ListDNSProviderOptions struct {
-	state         protoimpl.MessageState    `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Common is the common list options.
 	Common        *metav1.CommonListOptions `protobuf:"bytes,1,opt,name=common,proto3" json:"common,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -3289,8 +3607,11 @@ func (x *ListDNSProviderOptions) GetCommon() *metav1.CommonListOptions {
 	return nil
 }
 
+// ListDirectoryProviderOptions is the list options of the ListDirectoryProvider
+// method.
 type ListDirectoryProviderOptions struct {
-	state         protoimpl.MessageState    `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Common is the common list options.
 	Common        *metav1.CommonListOptions `protobuf:"bytes,1,opt,name=common,proto3" json:"common,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -3333,8 +3654,10 @@ func (x *ListDirectoryProviderOptions) GetCommon() *metav1.CommonListOptions {
 	return nil
 }
 
+// ListCertificateOptions is the list options of the ListCertificate method.
 type ListCertificateOptions struct {
-	state         protoimpl.MessageState    `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Common is the common list options.
 	Common        *metav1.CommonListOptions `protobuf:"bytes,1,opt,name=common,proto3" json:"common,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -3377,8 +3700,11 @@ func (x *ListCertificateOptions) GetCommon() *metav1.CommonListOptions {
 	return nil
 }
 
+// ListCertificateIssuerOptions is the list options of the ListCertificateIssuer
+// method.
 type ListCertificateIssuerOptions struct {
-	state         protoimpl.MessageState    `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Common is the common list options.
 	Common        *metav1.CommonListOptions `protobuf:"bytes,1,opt,name=common,proto3" json:"common,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -3421,8 +3747,12 @@ func (x *ListCertificateIssuerOptions) GetCommon() *metav1.CommonListOptions {
 	return nil
 }
 
+// SessionExtInfo is the enterprise-specific extension data of a Session. It is
+// stored in the `enterpriseV1` key of the Session's `status.ext` map.
 type SessionExtInfo struct {
-	state                protoimpl.MessageState  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// DirectoryProviderRef is a reference to the DirectoryProvider that the
+	// Session belongs to.
 	DirectoryProviderRef *metav1.ObjectReference `protobuf:"bytes,1,opt,name=directoryProviderRef,proto3" json:"directoryProviderRef,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
@@ -3465,17 +3795,21 @@ func (x *SessionExtInfo) GetDirectoryProviderRef() *metav1.ObjectReference {
 	return nil
 }
 
+// SecretStore represents the external key management system that holds the key
+// encryption key (KEK) which the Cluster uses to wrap the data encryption keys
+// (DEKs) that encrypt the Secrets at rest. The key itself never leaves the
+// external system, therefore the Secrets cannot be decrypted without it.
 type SecretStore struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// APIVersion is the API version of the object.
+	// APIVersion is the API version (i.e. "enterprise/v1")
 	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
-	// Kind is the resource name (i.e. `Secret`).
+	// Kind is the resource name (i.e. `SecretStore`).
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
-	// octelium.api.main.meta.v1.Metadata is the object's metadata.
+	// Metadata is the object's metadata.
 	Metadata *metav1.Metadata `protobuf:"bytes,3,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	// Spec is the Secret specification.
+	// Spec is the SecretStore specification.
 	Spec *SecretStore_Spec `protobuf:"bytes,4,opt,name=spec,proto3" json:"spec,omitempty"`
-	// Status is the current status of the Secret.
+	// Status is the current status of the SecretStore.
 	Status        *SecretStore_Status `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -3546,13 +3880,15 @@ func (x *SecretStore) GetStatus() *SecretStore_Status {
 	return nil
 }
 
+// SecretStoreList is the list of SecretStores returned by the ListSecretStore
+// method.
 type SecretStoreList struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// APIVersion is the API version of the object.
+	// APIVersion is the API version (i.e. "enterprise/v1")
 	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
-	// Kind is the resource name (i.e. `SecretList`).
+	// Kind is the resource name (i.e. `SecretStoreList`).
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
-	// Items is the list of Secrets.
+	// Items is the list of SecretStores.
 	Items []*SecretStore `protobuf:"bytes,3,rep,name=items,proto3" json:"items,omitempty"`
 	// ListResponseMeta is common information about the list.
 	ListResponseMeta *metav1.ListResponseMeta `protobuf:"bytes,4,opt,name=listResponseMeta,proto3" json:"listResponseMeta,omitempty"`
@@ -3618,12 +3954,18 @@ func (x *SecretStoreList) GetListResponseMeta() *metav1.ListResponseMeta {
 	return nil
 }
 
+// GenerateDirectoryProviderCredentialRequest is the request of the
+// GenerateDirectoryProviderCredential method.
 type GenerateDirectoryProviderCredentialRequest struct {
-	state                protoimpl.MessageState                          `protogen:"open.v1"`
-	DirectoryProviderRef *metav1.ObjectReference                         `protobuf:"bytes,1,opt,name=directoryProviderRef,proto3" json:"directoryProviderRef,omitempty"`
-	Mode                 GenerateDirectoryProviderCredentialRequest_Mode `protobuf:"varint,2,opt,name=mode,proto3,enum=octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialRequest_Mode" json:"mode,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// DirectoryProviderRef is a reference to the DirectoryProvider that the
+	// credential is generated for. Only SCIM DirectoryProviders support
+	// generated credentials.
+	DirectoryProviderRef *metav1.ObjectReference `protobuf:"bytes,1,opt,name=directoryProviderRef,proto3" json:"directoryProviderRef,omitempty"`
+	// Mode sets the type of the generated credential.
+	Mode          GenerateDirectoryProviderCredentialRequest_Mode `protobuf:"varint,2,opt,name=mode,proto3,enum=octelium.api.main.enterprise.v1.GenerateDirectoryProviderCredentialRequest_Mode" json:"mode,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GenerateDirectoryProviderCredentialRequest) Reset() {
@@ -3670,6 +4012,8 @@ func (x *GenerateDirectoryProviderCredentialRequest) GetMode() GenerateDirectory
 	return GenerateDirectoryProviderCredentialRequest_MODE_UNSET
 }
 
+// GenerateDirectoryProviderCredentialResponse is the response of the
+// GenerateDirectoryProviderCredential method.
 type GenerateDirectoryProviderCredentialResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -3731,14 +4075,18 @@ type isGenerateDirectoryProviderCredentialResponse_Type interface {
 }
 
 type GenerateDirectoryProviderCredentialResponse_Bearer_ struct {
+	// Bearer is the generated bearer credential.
 	Bearer *GenerateDirectoryProviderCredentialResponse_Bearer `protobuf:"bytes,1,opt,name=bearer,proto3,oneof"`
 }
 
 func (*GenerateDirectoryProviderCredentialResponse_Bearer_) isGenerateDirectoryProviderCredentialResponse_Type() {
 }
 
+// IssueCertificateRequest is the request of the IssueCertificate method.
 type IssueCertificateRequest struct {
-	state          protoimpl.MessageState  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// CertificateRef is a reference to the Certificate that is issued. Its Mode
+	// must be MANAGED.
 	CertificateRef *metav1.ObjectReference `protobuf:"bytes,1,opt,name=certificateRef,proto3" json:"certificateRef,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
@@ -3781,6 +4129,7 @@ func (x *IssueCertificateRequest) GetCertificateRef() *metav1.ObjectReference {
 	return nil
 }
 
+// IssueCertificateResponse is the response of the IssueCertificate method.
 type IssueCertificateResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -3817,13 +4166,18 @@ func (*IssueCertificateResponse) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{30}
 }
 
+// SetCertificateRequest is the request of the SetCertificate method.
 type SetCertificateRequest struct {
-	state          protoimpl.MessageState  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// CertificateRef is a reference to the Certificate that is set. Its Mode
+	// must be MANUAL.
 	CertificateRef *metav1.ObjectReference `protobuf:"bytes,1,opt,name=certificateRef,proto3" json:"certificateRef,omitempty"`
-	Certificate    string                  `protobuf:"bytes,2,opt,name=certificate,proto3" json:"certificate,omitempty"`
-	PrivateKey     string                  `protobuf:"bytes,3,opt,name=privateKey,proto3" json:"privateKey,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// Certificate is the PEM-encoded certificate chain. Required.
+	Certificate string `protobuf:"bytes,2,opt,name=certificate,proto3" json:"certificate,omitempty"`
+	// PrivateKey is the PEM-encoded private key of the certificate. Required.
+	PrivateKey    string `protobuf:"bytes,3,opt,name=privateKey,proto3" json:"privateKey,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SetCertificateRequest) Reset() {
@@ -3877,6 +4231,7 @@ func (x *SetCertificateRequest) GetPrivateKey() string {
 	return ""
 }
 
+// SetCertificateResponse is the response of the SetCertificate method.
 type SetCertificateResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -3913,11 +4268,15 @@ func (*SetCertificateResponse) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{32}
 }
 
+// AuditLog is a log entry that records a change that was made to a Cluster
+// resource via the API (e.g. the creation of a Service or the update of a
+// Policy). It answers who changed what and when, as opposed to the AccessLog
+// which records the access to the Services themselves.
 type AuditLog struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// APIVersion is the API version (i.e. "core/v1")
+	// APIVersion is the API version (i.e. "enterprise/v1")
 	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
-	// Kind is the kind (i.e. "Log")
+	// Kind is the kind (i.e. "AuditLog")
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
 	// Metadata is the metadata
 	Metadata *metav1.LogMetadata `protobuf:"bytes,3,opt,name=metadata,proto3" json:"metadata,omitempty"`
@@ -3985,8 +4344,10 @@ func (x *AuditLog) GetEntry() *AuditLog_Entry {
 	return nil
 }
 
+// ListSecretStoreOptions is the list options of the ListSecretStore method.
 type ListSecretStoreOptions struct {
-	state         protoimpl.MessageState    `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Common is the common list options.
 	Common        *metav1.CommonListOptions `protobuf:"bytes,1,opt,name=common,proto3" json:"common,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -4029,13 +4390,25 @@ func (x *ListSecretStoreOptions) GetCommon() *metav1.CommonListOptions {
 	return nil
 }
 
+// DeviceManager represents an external device management or endpoint security
+// platform (e.g. CrowdStrike Falcon, Microsoft Intune, Jamf Pro) whose device
+// inventory is used by the Cluster as a source of the Devices' posture
+// information. The Cluster periodically polls the platform's inventory, links
+// its entries to the Cluster's Devices and materializes the resulting posture
+// into the `status.posture` field of the Device where it can then be used in
+// the authorization rules.
 type DeviceManager struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ApiVersion    string                 `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
-	Kind          string                 `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
-	Metadata      *metav1.Metadata       `protobuf:"bytes,3,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	Spec          *DeviceManager_Spec    `protobuf:"bytes,4,opt,name=spec,proto3" json:"spec,omitempty"`
-	Status        *DeviceManager_Status  `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// APIVersion is the API version (i.e. "enterprise/v1")
+	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
+	// Kind is the resource name (i.e. `DeviceManager`).
+	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
+	// Metadata is the object's metadata.
+	Metadata *metav1.Metadata `protobuf:"bytes,3,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	// Spec is the DeviceManager specification.
+	Spec *DeviceManager_Spec `protobuf:"bytes,4,opt,name=spec,proto3" json:"spec,omitempty"`
+	// Status is the current status of the DeviceManager.
+	Status        *DeviceManager_Status `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -4105,13 +4478,15 @@ func (x *DeviceManager) GetStatus() *DeviceManager_Status {
 	return nil
 }
 
+// DeviceManagerList is the list of DeviceManagers returned by the
+// ListDeviceManager method.
 type DeviceManagerList struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// APIVersion is the API version of the object.
+	// APIVersion is the API version (i.e. "enterprise/v1")
 	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
-	// Kind is the resource name (i.e. `SecretList`).
+	// Kind is the resource name (i.e. `DeviceManagerList`).
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
-	// Items is the list of Secrets.
+	// Items is the list of DeviceManagers.
 	Items []*DeviceManager `protobuf:"bytes,3,rep,name=items,proto3" json:"items,omitempty"`
 	// ListResponseMeta is common information about the list.
 	ListResponseMeta *metav1.ListResponseMeta `protobuf:"bytes,4,opt,name=listResponseMeta,proto3" json:"listResponseMeta,omitempty"`
@@ -4177,8 +4552,10 @@ func (x *DeviceManagerList) GetListResponseMeta() *metav1.ListResponseMeta {
 	return nil
 }
 
+// ListDeviceManagerOptions is the list options of the ListDeviceManager method.
 type ListDeviceManagerOptions struct {
-	state         protoimpl.MessageState    `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Common is the common list options.
 	Common        *metav1.CommonListOptions `protobuf:"bytes,1,opt,name=common,proto3" json:"common,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -4221,9 +4598,17 @@ func (x *ListDeviceManagerOptions) GetCommon() *metav1.CommonListOptions {
 	return nil
 }
 
+// DeviceExtInfo is the enterprise-specific extension data of a Device. It is
+// stored in the `enterpriseV1` key of the Device's `status.ext` map and it
+// carries the provider-specific details of the DeviceManager that the Device is
+// bound to.
 type DeviceExtInfo struct {
-	state                protoimpl.MessageState              `protogen:"open.v1"`
-	DeviceManagerRef     *metav1.ObjectReference             `protobuf:"bytes,1,opt,name=deviceManagerRef,proto3" json:"deviceManagerRef,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// DeviceManagerRef is a reference to the DeviceManager that the Device is
+	// bound to.
+	DeviceManagerRef *metav1.ObjectReference `protobuf:"bytes,1,opt,name=deviceManagerRef,proto3" json:"deviceManagerRef,omitempty"`
+	// DeviceManagerDetails is the provider-specific details of the inventory
+	// entry that the Device is bound to.
 	DeviceManagerDetails *DeviceExtInfo_DeviceManagerDetails `protobuf:"bytes,2,opt,name=deviceManagerDetails,proto3" json:"deviceManagerDetails,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
@@ -4273,8 +4658,12 @@ func (x *DeviceExtInfo) GetDeviceManagerDetails() *DeviceExtInfo_DeviceManagerDe
 	return nil
 }
 
+// UserExtInfo is the enterprise-specific extension data of a User. It is stored
+// in the `enterpriseV1` key of the User's `status.ext` map.
 type UserExtInfo struct {
-	state                protoimpl.MessageState  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// DirectoryProviderRef is a reference to the DirectoryProvider that the User
+	// belongs to.
 	DirectoryProviderRef *metav1.ObjectReference `protobuf:"bytes,1,opt,name=directoryProviderRef,proto3" json:"directoryProviderRef,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
@@ -4317,10 +4706,15 @@ func (x *UserExtInfo) GetDirectoryProviderRef() *metav1.ObjectReference {
 	return nil
 }
 
+// ListDirectoryProviderUserOptions is the list options of the
+// ListDirectoryProviderUser method.
 type ListDirectoryProviderUserOptions struct {
-	state                protoimpl.MessageState    `protogen:"open.v1"`
-	Common               *metav1.CommonListOptions `protobuf:"bytes,1,opt,name=common,proto3" json:"common,omitempty"`
-	DirectoryProviderRef *metav1.ObjectReference   `protobuf:"bytes,2,opt,name=directoryProviderRef,proto3" json:"directoryProviderRef,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Common is the common list options.
+	Common *metav1.CommonListOptions `protobuf:"bytes,1,opt,name=common,proto3" json:"common,omitempty"`
+	// DirectoryProviderRef filters the results to the DirectoryProviderUsers of
+	// a specific DirectoryProvider.
+	DirectoryProviderRef *metav1.ObjectReference `protobuf:"bytes,2,opt,name=directoryProviderRef,proto3" json:"directoryProviderRef,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -4369,10 +4763,15 @@ func (x *ListDirectoryProviderUserOptions) GetDirectoryProviderRef() *metav1.Obj
 	return nil
 }
 
+// ListDirectoryProviderGroupOptions is the list options of the
+// ListDirectoryProviderGroup method.
 type ListDirectoryProviderGroupOptions struct {
-	state                protoimpl.MessageState    `protogen:"open.v1"`
-	Common               *metav1.CommonListOptions `protobuf:"bytes,1,opt,name=common,proto3" json:"common,omitempty"`
-	DirectoryProviderRef *metav1.ObjectReference   `protobuf:"bytes,2,opt,name=directoryProviderRef,proto3" json:"directoryProviderRef,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Common is the common list options.
+	Common *metav1.CommonListOptions `protobuf:"bytes,1,opt,name=common,proto3" json:"common,omitempty"`
+	// DirectoryProviderRef filters the results to the DirectoryProviderGroups of
+	// a specific DirectoryProvider.
+	DirectoryProviderRef *metav1.ObjectReference `protobuf:"bytes,2,opt,name=directoryProviderRef,proto3" json:"directoryProviderRef,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -4421,6 +4820,8 @@ func (x *ListDirectoryProviderGroupOptions) GetDirectoryProviderRef() *metav1.Ob
 	return nil
 }
 
+// IsAuthorizedRequest is the request of the IsAuthorized method. It describes a
+// hypothetical access request whose authorization is evaluated.
 type IsAuthorizedRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Downstream:
@@ -4433,8 +4834,12 @@ type IsAuthorizedRequest struct {
 	//
 	//	*IsAuthorizedRequest_ServiceRef
 	//	*IsAuthorizedRequest_NamespaceRef
-	Upstream      isIsAuthorizedRequest_Upstream  `protobuf_oneof:"upstream"`
-	Request       *corev1.RequestContext_Request  `protobuf:"bytes,6,opt,name=request,proto3" json:"request,omitempty"`
+	Upstream isIsAuthorizedRequest_Upstream `protobuf_oneof:"upstream"`
+	// Request is the request information (e.g. the HTTP path and method) that is
+	// used to evaluate the request-aware authorization rules.
+	Request *corev1.RequestContext_Request `protobuf:"bytes,6,opt,name=request,proto3" json:"request,omitempty"`
+	// Additional sets the Policies that are evaluated in addition to the ones
+	// that already apply to the upstream.
 	Additional    *IsAuthorizedRequest_Additional `protobuf:"bytes,7,opt,name=additional,proto3" json:"additional,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -4548,14 +4953,18 @@ type isIsAuthorizedRequest_Downstream interface {
 }
 
 type IsAuthorizedRequest_SessionRef struct {
+	// SessionRef is a reference to the Session that performs the access.
 	SessionRef *metav1.ObjectReference `protobuf:"bytes,1,opt,name=sessionRef,proto3,oneof"`
 }
 
 type IsAuthorizedRequest_UserRef struct {
+	// UserRef is a reference to the User that performs the access. A synthetic
+	// Session of the User is used to evaluate the access.
 	UserRef *metav1.ObjectReference `protobuf:"bytes,2,opt,name=userRef,proto3,oneof"`
 }
 
 type IsAuthorizedRequest_DeviceRef struct {
+	// DeviceRef is a reference to the Device that performs the access.
 	DeviceRef *metav1.ObjectReference `protobuf:"bytes,3,opt,name=deviceRef,proto3,oneof"`
 }
 
@@ -4570,10 +4979,13 @@ type isIsAuthorizedRequest_Upstream interface {
 }
 
 type IsAuthorizedRequest_ServiceRef struct {
+	// ServiceRef is a reference to the Service that is accessed.
 	ServiceRef *metav1.ObjectReference `protobuf:"bytes,4,opt,name=serviceRef,proto3,oneof"`
 }
 
 type IsAuthorizedRequest_NamespaceRef struct {
+	// NamespaceRef is a reference to the Namespace that is accessed. A
+	// synthetic Service of the Namespace is used to evaluate the access.
 	NamespaceRef *metav1.ObjectReference `protobuf:"bytes,5,opt,name=namespaceRef,proto3,oneof"`
 }
 
@@ -4581,9 +4993,13 @@ func (*IsAuthorizedRequest_ServiceRef) isIsAuthorizedRequest_Upstream() {}
 
 func (*IsAuthorizedRequest_NamespaceRef) isIsAuthorizedRequest_Upstream() {}
 
+// IsAuthorizedResponse is the response of the IsAuthorized method.
 type IsAuthorizedResponse struct {
-	state         protoimpl.MessageState                `protogen:"open.v1"`
-	IsAuthorized  bool                                  `protobuf:"varint,1,opt,name=isAuthorized,proto3" json:"isAuthorized,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// IsAuthorized is whether the access request is authorized.
+	IsAuthorized bool `protobuf:"varint,1,opt,name=isAuthorized,proto3" json:"isAuthorized,omitempty"`
+	// Reason is the reason of the authorization decision (e.g. the Policy and
+	// rule that produced it).
 	Reason        *corev1.AccessLog_Entry_Common_Reason `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -4633,6 +5049,13 @@ func (x *IsAuthorizedResponse) GetReason() *corev1.AccessLog_Entry_Common_Reason
 	return nil
 }
 
+// Condition is a structured, declarative representation of an Octelium
+// Condition. Unlike the core Condition which is written directly as a CEL or
+// OPA expression, it is built out of typed building blocks which makes it
+// suitable for the tools that need to programmatically construct, inspect and
+// render the authorization rules (e.g. a UI). The Cluster compiles it into an
+// equivalent core Condition which can also be previewed via the
+// GetCoreCondition method.
 type Condition struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -4744,26 +5167,32 @@ type isCondition_Type interface {
 }
 
 type Condition_All_ struct {
+	// All matches only when every one of its child Conditions matches.
 	All *Condition_All `protobuf:"bytes,1,opt,name=all,proto3,oneof"`
 }
 
 type Condition_Any_ struct {
+	// Any matches when at least one of its child Conditions matches.
 	Any *Condition_Any `protobuf:"bytes,2,opt,name=any,proto3,oneof"`
 }
 
 type Condition_None_ struct {
+	// None matches only when none of its child Conditions matches.
 	None *Condition_None `protobuf:"bytes,3,opt,name=none,proto3,oneof"`
 }
 
 type Condition_Not_ struct {
+	// Not matches when its Expression does not match.
 	Not *Condition_Not `protobuf:"bytes,4,opt,name=not,proto3,oneof"`
 }
 
 type Condition_MatchAny struct {
+	// MatchAny unconditionally matches every request when set to `true`.
 	MatchAny bool `protobuf:"varint,5,opt,name=matchAny,proto3,oneof"`
 }
 
 type Condition_Expression_ struct {
+	// Expression is a single typed check against the request context.
 	Expression *Condition_Expression `protobuf:"bytes,6,opt,name=expression,proto3,oneof"`
 }
 
@@ -4779,8 +5208,12 @@ func (*Condition_MatchAny) isCondition_Type() {}
 
 func (*Condition_Expression_) isCondition_Type() {}
 
+// SynchronizeDirectoryProviderRequest is the request of the
+// SynchronizeDirectoryProvider method.
 type SynchronizeDirectoryProviderRequest struct {
-	state                protoimpl.MessageState  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// DirectoryProviderRef is a reference to the DirectoryProvider that is
+	// synchronized.
 	DirectoryProviderRef *metav1.ObjectReference `protobuf:"bytes,1,opt,name=directoryProviderRef,proto3" json:"directoryProviderRef,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
@@ -4823,6 +5256,8 @@ func (x *SynchronizeDirectoryProviderRequest) GetDirectoryProviderRef() *metav1.
 	return nil
 }
 
+// SynchronizeDirectoryProviderResponse is the response of the
+// SynchronizeDirectoryProvider method.
 type SynchronizeDirectoryProviderResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -4859,11 +5294,14 @@ func (*SynchronizeDirectoryProviderResponse) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{46}
 }
 
+// AuthenticationLog is a log entry that records a single authentication of a
+// Session (e.g. an OIDC login or a Credential-based authentication). A Session
+// that re-authenticates produces more than one AuthenticationLog.
 type AuthenticationLog struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// APIVersion is the API version (i.e. "core/v1")
+	// APIVersion is the API version (i.e. "enterprise/v1")
 	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
-	// Kind is the kind (i.e. "Log")
+	// Kind is the kind (i.e. "AuthenticationLog")
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
 	// Metadata is the metadata
 	Metadata *metav1.LogMetadata `protobuf:"bytes,3,opt,name=metadata,proto3" json:"metadata,omitempty"`
@@ -4931,8 +5369,10 @@ func (x *AuthenticationLog) GetEntry() *AuthenticationLog_Entry {
 	return nil
 }
 
+// UpgradeClusterRequest is the request of the UpgradeCluster method.
 type UpgradeClusterRequest struct {
-	state         protoimpl.MessageState         `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Request is the set of the Cluster packages that are upgraded.
 	Request       *UpgradeClusterRequest_Request `protobuf:"bytes,1,opt,name=request,proto3" json:"request,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -4975,6 +5415,7 @@ func (x *UpgradeClusterRequest) GetRequest() *UpgradeClusterRequest_Request {
 	return nil
 }
 
+// UpgradeClusterResponse is the response of the UpgradeCluster method.
 type UpgradeClusterResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -5011,8 +5452,11 @@ func (*UpgradeClusterResponse) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{49}
 }
 
+// SynchronizeSecretStoreRequest is the request of the SynchronizeSecretStore
+// method.
 type SynchronizeSecretStoreRequest struct {
-	state          protoimpl.MessageState  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// SecretStoreRef is a reference to the SecretStore that is synchronized.
 	SecretStoreRef *metav1.ObjectReference `protobuf:"bytes,1,opt,name=secretStoreRef,proto3" json:"secretStoreRef,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
@@ -5055,6 +5499,8 @@ func (x *SynchronizeSecretStoreRequest) GetSecretStoreRef() *metav1.ObjectRefere
 	return nil
 }
 
+// SynchronizeSecretStoreResponse is the response of the SynchronizeSecretStore
+// method.
 type SynchronizeSecretStoreResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -5091,6 +5537,7 @@ func (*SynchronizeSecretStoreResponse) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{51}
 }
 
+// GetClusterInfoRequest is the request of the GetClusterInfo method.
 type GetClusterInfoRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -5127,13 +5574,17 @@ func (*GetClusterInfoRequest) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{52}
 }
 
+// GetClusterInfoResponse is the response of the GetClusterInfo method.
 type GetClusterInfoResponse struct {
-	state             protoimpl.MessageState                    `protogen:"open.v1"`
-	Core              *GetClusterInfoResponse_Core              `protobuf:"bytes,1,opt,name=core,proto3" json:"core,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Core is the version information of the core Octelium package.
+	Core *GetClusterInfoResponse_Core `protobuf:"bytes,1,opt,name=core,proto3" json:"core,omitempty"`
+	// PackageEnterprise is the version information of the enterprise package.
 	PackageEnterprise *GetClusterInfoResponse_PackageEnterprise `protobuf:"bytes,2,opt,name=packageEnterprise,proto3" json:"packageEnterprise,omitempty"`
-	PackageCordium    *GetClusterInfoResponse_PackageCordium    `protobuf:"bytes,3,opt,name=packageCordium,proto3" json:"packageCordium,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// PackageCordium is the version information of the Cordium package.
+	PackageCordium *GetClusterInfoResponse_PackageCordium `protobuf:"bytes,3,opt,name=packageCordium,proto3" json:"packageCordium,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *GetClusterInfoResponse) Reset() {
@@ -5187,16 +5638,30 @@ func (x *GetClusterInfoResponse) GetPackageCordium() *GetClusterInfoResponse_Pac
 	return nil
 }
 
+// License is the commercial License that entitles the Cluster to use the
+// enterprise features. It is issued by Octelium Labs as a signed JWT which is
+// supplied to the Cluster via the SetLicense method. The fields below are the
+// verified claims of that JWT.
 type License struct {
-	state                 protoimpl.MessageState `protogen:"open.v1"`
-	Version               uint32                 `protobuf:"varint,1,opt,name=version,proto3" json:"version,omitempty"`
-	Uid                   string                 `protobuf:"bytes,2,opt,name=uid,proto3" json:"uid,omitempty"`
-	Organization          *License_Organization  `protobuf:"bytes,3,opt,name=organization,proto3" json:"organization,omitempty"`
-	IssuedAt              *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=issuedAt,proto3" json:"issuedAt,omitempty"`
-	NotBefore             *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=notBefore,proto3" json:"notBefore,omitempty"`
-	NotAfter              *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=notAfter,proto3" json:"notAfter,omitempty"`
-	Type                  License_Type           `protobuf:"varint,7,opt,name=type,proto3,enum=octelium.api.main.enterprise.v1.License_Type" json:"type,omitempty"`
-	AllowedClusterDomains []string               `protobuf:"bytes,8,rep,name=allowedClusterDomains,proto3" json:"allowedClusterDomains,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Version is the version of the License format.
+	Version uint32 `protobuf:"varint,1,opt,name=version,proto3" json:"version,omitempty"`
+	// UID is the unique identifier of the License.
+	Uid string `protobuf:"bytes,2,opt,name=uid,proto3" json:"uid,omitempty"`
+	// Organization is the organization that the License was issued to.
+	Organization *License_Organization `protobuf:"bytes,3,opt,name=organization,proto3" json:"organization,omitempty"`
+	// IssuedAt is the date at which the License was issued.
+	IssuedAt *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=issuedAt,proto3" json:"issuedAt,omitempty"`
+	// NotBefore is the date starting from which the License is valid.
+	NotBefore *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=notBefore,proto3" json:"notBefore,omitempty"`
+	// NotAfter is the expiry date of the License.
+	NotAfter *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=notAfter,proto3" json:"notAfter,omitempty"`
+	// Type is the type of the License.
+	Type License_Type `protobuf:"varint,7,opt,name=type,proto3,enum=octelium.api.main.enterprise.v1.License_Type" json:"type,omitempty"`
+	// AllowedClusterDomains is the list of the Cluster domains that the License
+	// is valid for. An empty list means that the License is valid for every
+	// Cluster domain.
+	AllowedClusterDomains []string `protobuf:"bytes,8,rep,name=allowedClusterDomains,proto3" json:"allowedClusterDomains,omitempty"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -5287,10 +5752,14 @@ func (x *License) GetAllowedClusterDomains() []string {
 	return nil
 }
 
+// SetLicenseRequest is the request of the SetLicense method.
 type SetLicenseRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Jwt           string                 `protobuf:"bytes,1,opt,name=jwt,proto3" json:"jwt,omitempty"`
-	DryRun        bool                   `protobuf:"varint,2,opt,name=dryRun,proto3" json:"dryRun,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// JWT is the signed License JWT that was issued by Octelium Labs. Required.
+	Jwt string `protobuf:"bytes,1,opt,name=jwt,proto3" json:"jwt,omitempty"`
+	// DryRun only verifies the License and returns its claims without actually
+	// setting it in the Cluster.
+	DryRun        bool `protobuf:"varint,2,opt,name=dryRun,proto3" json:"dryRun,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -5339,9 +5808,12 @@ func (x *SetLicenseRequest) GetDryRun() bool {
 	return false
 }
 
+// SetLicenseResponse is the response of the SetLicense method.
 type SetLicenseResponse struct {
-	state         protoimpl.MessageState                 `protogen:"open.v1"`
-	License       *License                               `protobuf:"bytes,1,opt,name=license,proto3" json:"license,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// License is the verified claims of the License that was set.
+	License *License `protobuf:"bytes,1,opt,name=license,proto3" json:"license,omitempty"`
+	// State is the state of the License as of the time it was set.
 	State         ClusterConfig_Status_LicenseInfo_State `protobuf:"varint,2,opt,name=state,proto3,enum=octelium.api.main.enterprise.v1.ClusterConfig_Status_LicenseInfo_State" json:"state,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -5391,6 +5863,7 @@ func (x *SetLicenseResponse) GetState() ClusterConfig_Status_LicenseInfo_State {
 	return ClusterConfig_Status_LicenseInfo_STATE_UNKNOWN
 }
 
+// GetLicenseRequest is the request of the GetLicense method.
 type GetLicenseRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -5427,11 +5900,16 @@ func (*GetLicenseRequest) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{57}
 }
 
+// GetLicenseResponse is the response of the GetLicense method.
 type GetLicenseResponse struct {
-	state         protoimpl.MessageState                 `protogen:"open.v1"`
-	License       *License                               `protobuf:"bytes,1,opt,name=license,proto3" json:"license,omitempty"`
-	State         ClusterConfig_Status_LicenseInfo_State `protobuf:"varint,2,opt,name=state,proto3,enum=octelium.api.main.enterprise.v1.ClusterConfig_Status_LicenseInfo_State" json:"state,omitempty"`
-	SetAt         *timestamppb.Timestamp                 `protobuf:"bytes,3,opt,name=setAt,proto3" json:"setAt,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// License is the verified claims of the Cluster's currently set License. It
+	// is unset when the Cluster does not have a License set.
+	License *License `protobuf:"bytes,1,opt,name=license,proto3" json:"license,omitempty"`
+	// State is the current state of the License.
+	State ClusterConfig_Status_LicenseInfo_State `protobuf:"varint,2,opt,name=state,proto3,enum=octelium.api.main.enterprise.v1.ClusterConfig_Status_LicenseInfo_State" json:"state,omitempty"`
+	// SetAt is the date at which the License was set.
+	SetAt         *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=setAt,proto3" json:"setAt,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -5487,6 +5965,7 @@ func (x *GetLicenseResponse) GetSetAt() *timestamppb.Timestamp {
 	return nil
 }
 
+// DeleteLicenseRequest is the request of the DeleteLicense method.
 type DeleteLicenseRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -5523,6 +6002,7 @@ func (*DeleteLicenseRequest) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{59}
 }
 
+// DeleteLicenseResponse is the response of the DeleteLicense method.
 type DeleteLicenseResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -5559,9 +6039,13 @@ func (*DeleteLicenseResponse) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{60}
 }
 
+// Spec is the CollectorExporter specification
 type CollectorExporter_Spec struct {
-	state      protoimpl.MessageState `protogen:"open.v1"`
-	IsDisabled bool                   `protobuf:"varint,1,opt,name=isDisabled,proto3" json:"isDisabled,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// IsDisabled disables the CollectorExporter. A disabled CollectorExporter
+	// is skipped by the Collector even when it is still referenced by a
+	// pipeline.
+	IsDisabled bool `protobuf:"varint,1,opt,name=isDisabled,proto3" json:"isDisabled,omitempty"`
 	// Types that are valid to be assigned to Type:
 	//
 	//	*CollectorExporter_Spec_Otlp
@@ -5738,50 +6222,64 @@ type isCollectorExporter_Spec_Type interface {
 }
 
 type CollectorExporter_Spec_Otlp struct {
+	// OTLP sets the OTLP over gRPC exporter specific options.
 	Otlp *CollectorExporter_Spec_OTLP `protobuf:"bytes,2,opt,name=otlp,proto3,oneof"`
 }
 
 type CollectorExporter_Spec_OtlpHTTP struct {
+	// OTLPHTTP sets the OTLP over HTTP exporter specific options.
 	OtlpHTTP *CollectorExporter_Spec_OTLPHTTP `protobuf:"bytes,3,opt,name=otlpHTTP,proto3,oneof"`
 }
 
 type CollectorExporter_Spec_Clickhouse_ struct {
+	// Clickhouse sets the ClickHouse exporter specific options.
 	Clickhouse *CollectorExporter_Spec_Clickhouse `protobuf:"bytes,4,opt,name=clickhouse,proto3,oneof"`
 }
 
 type CollectorExporter_Spec_Elasticsearch_ struct {
+	// Elasticsearch sets the Elasticsearch exporter specific options.
 	Elasticsearch *CollectorExporter_Spec_Elasticsearch `protobuf:"bytes,5,opt,name=elasticsearch,proto3,oneof"`
 }
 
 type CollectorExporter_Spec_Logzio_ struct {
+	// Logzio sets the Logz.io exporter specific options.
 	Logzio *CollectorExporter_Spec_Logzio `protobuf:"bytes,6,opt,name=logzio,proto3,oneof"`
 }
 
 type CollectorExporter_Spec_InfluxDB_ struct {
+	// InfluxDB sets the InfluxDB exporter specific options.
 	InfluxDB *CollectorExporter_Spec_InfluxDB `protobuf:"bytes,7,opt,name=influxDB,proto3,oneof"`
 }
 
 type CollectorExporter_Spec_Kafka_ struct {
+	// Kafka sets the Kafka exporter specific options.
 	Kafka *CollectorExporter_Spec_Kafka `protobuf:"bytes,8,opt,name=kafka,proto3,oneof"`
 }
 
 type CollectorExporter_Spec_Datadog_ struct {
+	// Datadog sets the Datadog exporter specific options.
 	Datadog *CollectorExporter_Spec_Datadog `protobuf:"bytes,9,opt,name=datadog,proto3,oneof"`
 }
 
 type CollectorExporter_Spec_Splunk_ struct {
+	// Splunk sets the Splunk HEC exporter specific options.
 	Splunk *CollectorExporter_Spec_Splunk `protobuf:"bytes,10,opt,name=splunk,proto3,oneof"`
 }
 
 type CollectorExporter_Spec_AzureMonitor_ struct {
+	// AzureMonitor sets the Azure Monitor exporter specific options.
 	AzureMonitor *CollectorExporter_Spec_AzureMonitor `protobuf:"bytes,11,opt,name=azureMonitor,proto3,oneof"`
 }
 
 type CollectorExporter_Spec_AzureDataExplorer_ struct {
+	// AzureDataExplorer sets the Azure Data Explorer exporter specific
+	// options.
 	AzureDataExplorer *CollectorExporter_Spec_AzureDataExplorer `protobuf:"bytes,12,opt,name=azureDataExplorer,proto3,oneof"`
 }
 
 type CollectorExporter_Spec_PrometheusRemoteWrite_ struct {
+	// PrometheusRemoteWrite sets the Prometheus remote write exporter
+	// specific options.
 	PrometheusRemoteWrite *CollectorExporter_Spec_PrometheusRemoteWrite `protobuf:"bytes,13,opt,name=prometheusRemoteWrite,proto3,oneof"`
 }
 
@@ -5809,6 +6307,7 @@ func (*CollectorExporter_Spec_AzureDataExplorer_) isCollectorExporter_Spec_Type(
 
 func (*CollectorExporter_Spec_PrometheusRemoteWrite_) isCollectorExporter_Spec_Type() {}
 
+// Status is the current status of the CollectorExporter
 type CollectorExporter_Status struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -5845,23 +6344,45 @@ func (*CollectorExporter_Status) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{2, 1}
 }
 
+// OTLP sets the OpenTelemetry Protocol (OTLP) over gRPC exporter options.
 type CollectorExporter_Spec_OTLP struct {
-	state           protoimpl.MessageState                  `protogen:"open.v1"`
-	Endpoint        string                                  `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
-	Headers         []*CollectorExporter_Spec_OTLP_Header   `protobuf:"bytes,2,rep,name=headers,proto3" json:"headers,omitempty"`
-	Auth            *CollectorExporter_Spec_OTLP_Auth       `protobuf:"bytes,3,opt,name=auth,proto3" json:"auth,omitempty"`
-	Tls             *CollectorExporter_Spec_OTLP_TLS        `protobuf:"bytes,4,opt,name=tls,proto3" json:"tls,omitempty"`
-	Compression     CollectorExporter_Spec_OTLP_Compression `protobuf:"varint,5,opt,name=compression,proto3,enum=octelium.api.main.enterprise.v1.CollectorExporter_Spec_OTLP_Compression" json:"compression,omitempty"`
-	Timeout         *metav1.Duration                        `protobuf:"bytes,6,opt,name=timeout,proto3" json:"timeout,omitempty"`
-	WaitForReady    bool                                    `protobuf:"varint,7,opt,name=waitForReady,proto3" json:"waitForReady,omitempty"`
-	Authority       string                                  `protobuf:"bytes,8,opt,name=authority,proto3" json:"authority,omitempty"`
-	UserAgent       string                                  `protobuf:"bytes,9,opt,name=userAgent,proto3" json:"userAgent,omitempty"`
-	BalancerName    string                                  `protobuf:"bytes,10,opt,name=balancerName,proto3" json:"balancerName,omitempty"`
-	ReadBufferSize  int32                                   `protobuf:"varint,11,opt,name=readBufferSize,proto3" json:"readBufferSize,omitempty"`
-	WriteBufferSize int32                                   `protobuf:"varint,12,opt,name=writeBufferSize,proto3" json:"writeBufferSize,omitempty"`
-	Keepalive       *CollectorExporter_Spec_OTLP_Keepalive  `protobuf:"bytes,13,opt,name=keepalive,proto3" json:"keepalive,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Endpoint is the address of the upstream OTLP gRPC endpoint (e.g.
+	// `otel-collector.example.com:4317`). Required.
+	Endpoint string `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
+	// Headers is the list of additional headers that are set in every
+	// request sent to the upstream endpoint.
+	Headers []*CollectorExporter_Spec_OTLP_Header `protobuf:"bytes,2,rep,name=headers,proto3" json:"headers,omitempty"`
+	// Auth sets the authentication-related configuration.
+	Auth *CollectorExporter_Spec_OTLP_Auth `protobuf:"bytes,3,opt,name=auth,proto3" json:"auth,omitempty"`
+	// TLS sets the TLS-related configuration.
+	Tls *CollectorExporter_Spec_OTLP_TLS `protobuf:"bytes,4,opt,name=tls,proto3" json:"tls,omitempty"`
+	// Compression sets the compression algorithm of the exported payloads.
+	Compression CollectorExporter_Spec_OTLP_Compression `protobuf:"varint,5,opt,name=compression,proto3,enum=octelium.api.main.enterprise.v1.CollectorExporter_Spec_OTLP_Compression" json:"compression,omitempty"`
+	// Timeout is the timeout of every export request.
+	Timeout *metav1.Duration `protobuf:"bytes,6,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	// WaitForReady makes the export requests block until the connection to
+	// the upstream endpoint is ready instead of failing immediately.
+	WaitForReady bool `protobuf:"varint,7,opt,name=waitForReady,proto3" json:"waitForReady,omitempty"`
+	// Authority overrides the `:authority` pseudo-header that is set in the
+	// requests sent to the upstream endpoint.
+	Authority string `protobuf:"bytes,8,opt,name=authority,proto3" json:"authority,omitempty"`
+	// UserAgent overrides the user agent that is set in the requests sent to
+	// the upstream endpoint.
+	UserAgent string `protobuf:"bytes,9,opt,name=userAgent,proto3" json:"userAgent,omitempty"`
+	// BalancerName is the name of the gRPC load balancing policy that is
+	// used to connect to the upstream endpoint (e.g. `round_robin`).
+	BalancerName string `protobuf:"bytes,10,opt,name=balancerName,proto3" json:"balancerName,omitempty"`
+	// ReadBufferSize is the size in bytes of the read buffer of the
+	// connection to the upstream endpoint.
+	ReadBufferSize int32 `protobuf:"varint,11,opt,name=readBufferSize,proto3" json:"readBufferSize,omitempty"`
+	// WriteBufferSize is the size in bytes of the write buffer of the
+	// connection to the upstream endpoint.
+	WriteBufferSize int32 `protobuf:"varint,12,opt,name=writeBufferSize,proto3" json:"writeBufferSize,omitempty"`
+	// Keepalive sets the gRPC keepalive-related configuration.
+	Keepalive     *CollectorExporter_Spec_OTLP_Keepalive `protobuf:"bytes,13,opt,name=keepalive,proto3" json:"keepalive,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CollectorExporter_Spec_OTLP) Reset() {
@@ -5985,19 +6506,39 @@ func (x *CollectorExporter_Spec_OTLP) GetKeepalive() *CollectorExporter_Spec_OTL
 	return nil
 }
 
+// OTLPHTTP sets the OpenTelemetry Protocol (OTLP) over HTTP exporter
+// options.
 type CollectorExporter_Spec_OTLPHTTP struct {
-	state           protoimpl.MessageState                      `protogen:"open.v1"`
-	Endpoint        string                                      `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
-	Headers         []*CollectorExporter_Spec_OTLPHTTP_Header   `protobuf:"bytes,2,rep,name=headers,proto3" json:"headers,omitempty"`
-	Auth            *CollectorExporter_Spec_OTLPHTTP_Auth       `protobuf:"bytes,3,opt,name=auth,proto3" json:"auth,omitempty"`
-	LogsEndpoint    string                                      `protobuf:"bytes,4,opt,name=logsEndpoint,proto3" json:"logsEndpoint,omitempty"`
-	MetricsEndpoint string                                      `protobuf:"bytes,5,opt,name=metricsEndpoint,proto3" json:"metricsEndpoint,omitempty"`
-	Encoding        CollectorExporter_Spec_OTLPHTTP_Encoding    `protobuf:"varint,6,opt,name=encoding,proto3,enum=octelium.api.main.enterprise.v1.CollectorExporter_Spec_OTLPHTTP_Encoding" json:"encoding,omitempty"`
-	Compression     CollectorExporter_Spec_OTLPHTTP_Compression `protobuf:"varint,7,opt,name=compression,proto3,enum=octelium.api.main.enterprise.v1.CollectorExporter_Spec_OTLPHTTP_Compression" json:"compression,omitempty"`
-	Tls             *CollectorExporter_Spec_OTLPHTTP_TLS        `protobuf:"bytes,8,opt,name=tls,proto3" json:"tls,omitempty"`
-	Timeout         *metav1.Duration                            `protobuf:"bytes,9,opt,name=timeout,proto3" json:"timeout,omitempty"`
-	ReadBufferSize  int32                                       `protobuf:"varint,10,opt,name=readBufferSize,proto3" json:"readBufferSize,omitempty"`
-	WriteBufferSize int32                                       `protobuf:"varint,11,opt,name=writeBufferSize,proto3" json:"writeBufferSize,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Endpoint is the base URL of the upstream OTLP HTTP endpoint (e.g.
+	// `https://otel-collector.example.com:4318`). Required unless both
+	// LogsEndpoint and MetricsEndpoint are set.
+	Endpoint string `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
+	// Headers is the list of additional headers that are set in every
+	// request sent to the upstream endpoint.
+	Headers []*CollectorExporter_Spec_OTLPHTTP_Header `protobuf:"bytes,2,rep,name=headers,proto3" json:"headers,omitempty"`
+	// Auth sets the authentication-related configuration.
+	Auth *CollectorExporter_Spec_OTLPHTTP_Auth `protobuf:"bytes,3,opt,name=auth,proto3" json:"auth,omitempty"`
+	// LogsEndpoint overrides the URL that logs are exported to. If unset,
+	// the logs are exported to the Endpoint.
+	LogsEndpoint string `protobuf:"bytes,4,opt,name=logsEndpoint,proto3" json:"logsEndpoint,omitempty"`
+	// MetricsEndpoint overrides the URL that metrics are exported to. If
+	// unset, the metrics are exported to the Endpoint.
+	MetricsEndpoint string `protobuf:"bytes,5,opt,name=metricsEndpoint,proto3" json:"metricsEndpoint,omitempty"`
+	// Encoding sets the wire encoding of the exported payloads.
+	Encoding CollectorExporter_Spec_OTLPHTTP_Encoding `protobuf:"varint,6,opt,name=encoding,proto3,enum=octelium.api.main.enterprise.v1.CollectorExporter_Spec_OTLPHTTP_Encoding" json:"encoding,omitempty"`
+	// Compression sets the compression algorithm of the exported payloads.
+	Compression CollectorExporter_Spec_OTLPHTTP_Compression `protobuf:"varint,7,opt,name=compression,proto3,enum=octelium.api.main.enterprise.v1.CollectorExporter_Spec_OTLPHTTP_Compression" json:"compression,omitempty"`
+	// TLS sets the TLS-related configuration.
+	Tls *CollectorExporter_Spec_OTLPHTTP_TLS `protobuf:"bytes,8,opt,name=tls,proto3" json:"tls,omitempty"`
+	// Timeout is the timeout of every export request.
+	Timeout *metav1.Duration `protobuf:"bytes,9,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	// ReadBufferSize is the size in bytes of the read buffer of the
+	// connection to the upstream endpoint.
+	ReadBufferSize int32 `protobuf:"varint,10,opt,name=readBufferSize,proto3" json:"readBufferSize,omitempty"`
+	// WriteBufferSize is the size in bytes of the write buffer of the
+	// connection to the upstream endpoint.
+	WriteBufferSize int32 `protobuf:"varint,11,opt,name=writeBufferSize,proto3" json:"writeBufferSize,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -6109,25 +6650,52 @@ func (x *CollectorExporter_Spec_OTLPHTTP) GetWriteBufferSize() int32 {
 	return 0
 }
 
+// PrometheusRemoteWrite sets the Prometheus remote write exporter options.
+// This exporter only handles metrics.
 type CollectorExporter_Spec_PrometheusRemoteWrite struct {
-	state                         protoimpl.MessageState                                                      `protogen:"open.v1"`
-	Endpoint                      string                                                                      `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
-	Namespace                     string                                                                      `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	Headers                       []*CollectorExporter_Spec_PrometheusRemoteWrite_Header                      `protobuf:"bytes,3,rep,name=headers,proto3" json:"headers,omitempty"`
-	Auth                          *CollectorExporter_Spec_PrometheusRemoteWrite_Auth                          `protobuf:"bytes,4,opt,name=auth,proto3" json:"auth,omitempty"`
-	Tls                           *CollectorExporter_Spec_PrometheusRemoteWrite_TLS                           `protobuf:"bytes,5,opt,name=tls,proto3" json:"tls,omitempty"`
-	ExternalLabels                []*CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel               `protobuf:"bytes,6,rep,name=externalLabels,proto3" json:"externalLabels,omitempty"`
-	Timeout                       *metav1.Duration                                                            `protobuf:"bytes,7,opt,name=timeout,proto3" json:"timeout,omitempty"`
-	RemoteWriteQueue              *CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue              `protobuf:"bytes,8,opt,name=remoteWriteQueue,proto3" json:"remoteWriteQueue,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Endpoint is the URL of the upstream Prometheus remote write endpoint
+	// (e.g. `https://prometheus.example.com/api/v1/write`). Required.
+	Endpoint string `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
+	// Namespace is a prefix that is prepended to every exported metric name.
+	Namespace string `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	// Headers is the list of additional headers that are set in every
+	// request sent to the upstream endpoint.
+	Headers []*CollectorExporter_Spec_PrometheusRemoteWrite_Header `protobuf:"bytes,3,rep,name=headers,proto3" json:"headers,omitempty"`
+	// Auth sets the authentication-related configuration.
+	Auth *CollectorExporter_Spec_PrometheusRemoteWrite_Auth `protobuf:"bytes,4,opt,name=auth,proto3" json:"auth,omitempty"`
+	// TLS sets the TLS-related configuration.
+	Tls *CollectorExporter_Spec_PrometheusRemoteWrite_TLS `protobuf:"bytes,5,opt,name=tls,proto3" json:"tls,omitempty"`
+	// ExternalLabels is the list of labels that are added to every exported
+	// metric.
+	ExternalLabels []*CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel `protobuf:"bytes,6,rep,name=externalLabels,proto3" json:"externalLabels,omitempty"`
+	// Timeout is the timeout of every export request.
+	Timeout *metav1.Duration `protobuf:"bytes,7,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	// RemoteWriteQueue sets the sending queue-related configuration.
+	RemoteWriteQueue *CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue `protobuf:"bytes,8,opt,name=remoteWriteQueue,proto3" json:"remoteWriteQueue,omitempty"`
+	// ResourceToTelemetryConversion sets whether the resource attributes are
+	// converted into metric labels.
 	ResourceToTelemetryConversion *CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion `protobuf:"bytes,9,opt,name=resourceToTelemetryConversion,proto3" json:"resourceToTelemetryConversion,omitempty"`
-	TargetInfo                    *CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo                    `protobuf:"bytes,10,opt,name=targetInfo,proto3" json:"targetInfo,omitempty"`
-	DisableScopeInfo              bool                                                                        `protobuf:"varint,11,opt,name=disableScopeInfo,proto3" json:"disableScopeInfo,omitempty"`
-	MaxBatchSizeBytes             int64                                                                       `protobuf:"varint,12,opt,name=maxBatchSizeBytes,proto3" json:"maxBatchSizeBytes,omitempty"`
-	MaxBatchRequestParallelism    int32                                                                       `protobuf:"varint,13,opt,name=maxBatchRequestParallelism,proto3" json:"maxBatchRequestParallelism,omitempty"`
-	TranslationStrategy           CollectorExporter_Spec_PrometheusRemoteWrite_TranslationStrategy            `protobuf:"varint,14,opt,name=translationStrategy,proto3,enum=octelium.api.main.enterprise.v1.CollectorExporter_Spec_PrometheusRemoteWrite_TranslationStrategy" json:"translationStrategy,omitempty"`
-	SendMetadata                  bool                                                                        `protobuf:"varint,15,opt,name=sendMetadata,proto3" json:"sendMetadata,omitempty"`
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	// TargetInfo sets whether the `target_info` metric is exported.
+	TargetInfo *CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo `protobuf:"bytes,10,opt,name=targetInfo,proto3" json:"targetInfo,omitempty"`
+	// DisableScopeInfo disables exporting the `otel_scope_*` labels and the
+	// `otel_scope_info` metric that carry the instrumentation scope
+	// information.
+	DisableScopeInfo bool `protobuf:"varint,11,opt,name=disableScopeInfo,proto3" json:"disableScopeInfo,omitempty"`
+	// MaxBatchSizeBytes is the maximum size in bytes of a single remote
+	// write request. Larger batches are split into multiple requests.
+	MaxBatchSizeBytes int64 `protobuf:"varint,12,opt,name=maxBatchSizeBytes,proto3" json:"maxBatchSizeBytes,omitempty"`
+	// MaxBatchRequestParallelism is the maximum number of remote write
+	// requests of the same batch that are sent concurrently.
+	MaxBatchRequestParallelism int32 `protobuf:"varint,13,opt,name=maxBatchRequestParallelism,proto3" json:"maxBatchRequestParallelism,omitempty"`
+	// TranslationStrategy sets the strategy used to translate the
+	// OpenTelemetry names into Prometheus names.
+	TranslationStrategy CollectorExporter_Spec_PrometheusRemoteWrite_TranslationStrategy `protobuf:"varint,14,opt,name=translationStrategy,proto3,enum=octelium.api.main.enterprise.v1.CollectorExporter_Spec_PrometheusRemoteWrite_TranslationStrategy" json:"translationStrategy,omitempty"`
+	// SendMetadata enables sending the metric metadata (i.e. the help, type
+	// and unit information) alongside the metrics.
+	SendMetadata  bool `protobuf:"varint,15,opt,name=sendMetadata,proto3" json:"sendMetadata,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CollectorExporter_Spec_PrometheusRemoteWrite) Reset() {
@@ -6265,26 +6833,54 @@ func (x *CollectorExporter_Spec_PrometheusRemoteWrite) GetSendMetadata() bool {
 	return false
 }
 
+// Clickhouse sets the ClickHouse exporter options.
 type CollectorExporter_Spec_Clickhouse struct {
-	state            protoimpl.MessageState                               `protogen:"open.v1"`
-	Endpoint         string                                               `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
-	Username         string                                               `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
-	Password         *CollectorExporter_Spec_Clickhouse_Password          `protobuf:"bytes,3,opt,name=password,proto3" json:"password,omitempty"`
-	Database         string                                               `protobuf:"bytes,4,opt,name=database,proto3" json:"database,omitempty"`
-	Tls              *CollectorExporter_Spec_Clickhouse_TLS               `protobuf:"bytes,5,opt,name=tls,proto3" json:"tls,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Endpoint is the address of the upstream ClickHouse server (e.g.
+	// `tcp://clickhouse.example.com:9000`). Required.
+	Endpoint string `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
+	// Username is the username of the ClickHouse user.
+	Username string `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
+	// Password is the password of the ClickHouse user.
+	Password *CollectorExporter_Spec_Clickhouse_Password `protobuf:"bytes,3,opt,name=password,proto3" json:"password,omitempty"`
+	// Database is the name of the ClickHouse database that the telemetry is
+	// written to.
+	Database string `protobuf:"bytes,4,opt,name=database,proto3" json:"database,omitempty"`
+	// TLS sets the TLS-related configuration.
+	Tls *CollectorExporter_Spec_Clickhouse_TLS `protobuf:"bytes,5,opt,name=tls,proto3" json:"tls,omitempty"`
+	// ConnectionParams is the list of additional parameters that are set in
+	// the ClickHouse connection string.
 	ConnectionParams []*CollectorExporter_Spec_Clickhouse_ConnectionParam `protobuf:"bytes,6,rep,name=connectionParams,proto3" json:"connectionParams,omitempty"`
-	LogsTableName    string                                               `protobuf:"bytes,7,opt,name=logsTableName,proto3" json:"logsTableName,omitempty"`
-	MetricsTables    *CollectorExporter_Spec_Clickhouse_MetricsTables     `protobuf:"bytes,8,opt,name=metricsTables,proto3" json:"metricsTables,omitempty"`
-	Ttl              *metav1.Duration                                     `protobuf:"bytes,9,opt,name=ttl,proto3" json:"ttl,omitempty"`
-	CreateSchema     bool                                                 `protobuf:"varint,10,opt,name=createSchema,proto3" json:"createSchema,omitempty"`
-	Compression      CollectorExporter_Spec_Clickhouse_Compression        `protobuf:"varint,11,opt,name=compression,proto3,enum=octelium.api.main.enterprise.v1.CollectorExporter_Spec_Clickhouse_Compression" json:"compression,omitempty"`
-	AsyncInsert      bool                                                 `protobuf:"varint,12,opt,name=asyncInsert,proto3" json:"asyncInsert,omitempty"`
-	Json             bool                                                 `protobuf:"varint,13,opt,name=json,proto3" json:"json,omitempty"`
-	ClusterName      string                                               `protobuf:"bytes,14,opt,name=clusterName,proto3" json:"clusterName,omitempty"`
-	TableEngine      *CollectorExporter_Spec_Clickhouse_TableEngine       `protobuf:"bytes,15,opt,name=tableEngine,proto3" json:"tableEngine,omitempty"`
-	Timeout          *metav1.Duration                                     `protobuf:"bytes,16,opt,name=timeout,proto3" json:"timeout,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// LogsTableName is the name of the table that the logs are written to.
+	LogsTableName string `protobuf:"bytes,7,opt,name=logsTableName,proto3" json:"logsTableName,omitempty"`
+	// MetricsTables sets the names of the tables that the metrics are
+	// written to.
+	MetricsTables *CollectorExporter_Spec_Clickhouse_MetricsTables `protobuf:"bytes,8,opt,name=metricsTables,proto3" json:"metricsTables,omitempty"`
+	// TTL is the retention duration of the exported telemetry. Once set, the
+	// tables created by the exporter automatically delete the rows that are
+	// older than this duration.
+	Ttl *metav1.Duration `protobuf:"bytes,9,opt,name=ttl,proto3" json:"ttl,omitempty"`
+	// CreateSchema enables automatically creating the database and the
+	// tables used by the exporter if they do not already exist.
+	CreateSchema bool `protobuf:"varint,10,opt,name=createSchema,proto3" json:"createSchema,omitempty"`
+	// Compression sets the compression algorithm of the exported payloads.
+	Compression CollectorExporter_Spec_Clickhouse_Compression `protobuf:"varint,11,opt,name=compression,proto3,enum=octelium.api.main.enterprise.v1.CollectorExporter_Spec_Clickhouse_Compression" json:"compression,omitempty"`
+	// AsyncInsert enables ClickHouse asynchronous inserts where the server
+	// buffers the rows and flushes them in the background.
+	AsyncInsert bool `protobuf:"varint,12,opt,name=asyncInsert,proto3" json:"asyncInsert,omitempty"`
+	// JSON enables using the ClickHouse `JSON` column type instead of maps
+	// for the attribute columns.
+	Json bool `protobuf:"varint,13,opt,name=json,proto3" json:"json,omitempty"`
+	// ClusterName is the name of the ClickHouse cluster. Once set, the
+	// exporter creates the tables using `ON CLUSTER`.
+	ClusterName string `protobuf:"bytes,14,opt,name=clusterName,proto3" json:"clusterName,omitempty"`
+	// TableEngine sets the table engine of the tables created by the
+	// exporter.
+	TableEngine *CollectorExporter_Spec_Clickhouse_TableEngine `protobuf:"bytes,15,opt,name=tableEngine,proto3" json:"tableEngine,omitempty"`
+	// Timeout is the timeout of every export request.
+	Timeout       *metav1.Duration `protobuf:"bytes,16,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CollectorExporter_Spec_Clickhouse) Reset() {
@@ -6429,19 +7025,39 @@ func (x *CollectorExporter_Spec_Clickhouse) GetTimeout() *metav1.Duration {
 	return nil
 }
 
+// Elasticsearch sets the Elasticsearch exporter options.
 type CollectorExporter_Spec_Elasticsearch struct {
-	state         protoimpl.MessageState                           `protogen:"open.v1"`
-	Endpoint      string                                           `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
-	Endpoints     []string                                         `protobuf:"bytes,2,rep,name=endpoints,proto3" json:"endpoints,omitempty"`
-	CloudID       string                                           `protobuf:"bytes,3,opt,name=cloudID,proto3" json:"cloudID,omitempty"`
-	Pipeline      string                                           `protobuf:"bytes,4,opt,name=pipeline,proto3" json:"pipeline,omitempty"`
-	LogsIndex     string                                           `protobuf:"bytes,5,opt,name=logsIndex,proto3" json:"logsIndex,omitempty"`
-	MetricsIndex  string                                           `protobuf:"bytes,6,opt,name=metricsIndex,proto3" json:"metricsIndex,omitempty"`
-	Headers       []*CollectorExporter_Spec_Elasticsearch_Header   `protobuf:"bytes,7,rep,name=headers,proto3" json:"headers,omitempty"`
-	Auth          *CollectorExporter_Spec_Elasticsearch_Auth       `protobuf:"bytes,8,opt,name=auth,proto3" json:"auth,omitempty"`
-	Compression   CollectorExporter_Spec_Elasticsearch_Compression `protobuf:"varint,9,opt,name=compression,proto3,enum=octelium.api.main.enterprise.v1.CollectorExporter_Spec_Elasticsearch_Compression" json:"compression,omitempty"`
-	Timeout       *metav1.Duration                                 `protobuf:"bytes,10,opt,name=timeout,proto3" json:"timeout,omitempty"`
-	Tls           *CollectorExporter_Spec_Elasticsearch_TLS        `protobuf:"bytes,11,opt,name=tls,proto3" json:"tls,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Endpoint is the URL of the upstream Elasticsearch cluster (e.g.
+	// `https://elasticsearch.example.com:9200`).
+	Endpoint string `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
+	// Endpoints is the list of URLs of the upstream Elasticsearch cluster
+	// nodes. It is used instead of Endpoint when the requests need to be
+	// spread over more than one node.
+	Endpoints []string `protobuf:"bytes,2,rep,name=endpoints,proto3" json:"endpoints,omitempty"`
+	// CloudID is the Elastic Cloud ID. It is used instead of Endpoint and
+	// Endpoints when the upstream is an Elastic Cloud deployment.
+	CloudID string `protobuf:"bytes,3,opt,name=cloudID,proto3" json:"cloudID,omitempty"`
+	// Pipeline is the name of the Elasticsearch ingest pipeline that the
+	// exported documents are processed by.
+	Pipeline string `protobuf:"bytes,4,opt,name=pipeline,proto3" json:"pipeline,omitempty"`
+	// LogsIndex is the name of the index or data stream that the logs are
+	// written to.
+	LogsIndex string `protobuf:"bytes,5,opt,name=logsIndex,proto3" json:"logsIndex,omitempty"`
+	// MetricsIndex is the name of the index or data stream that the metrics
+	// are written to.
+	MetricsIndex string `protobuf:"bytes,6,opt,name=metricsIndex,proto3" json:"metricsIndex,omitempty"`
+	// Headers is the list of additional headers that are set in every
+	// request sent to the upstream endpoint.
+	Headers []*CollectorExporter_Spec_Elasticsearch_Header `protobuf:"bytes,7,rep,name=headers,proto3" json:"headers,omitempty"`
+	// Auth sets the authentication-related configuration.
+	Auth *CollectorExporter_Spec_Elasticsearch_Auth `protobuf:"bytes,8,opt,name=auth,proto3" json:"auth,omitempty"`
+	// Compression sets the compression algorithm of the exported payloads.
+	Compression CollectorExporter_Spec_Elasticsearch_Compression `protobuf:"varint,9,opt,name=compression,proto3,enum=octelium.api.main.enterprise.v1.CollectorExporter_Spec_Elasticsearch_Compression" json:"compression,omitempty"`
+	// Timeout is the timeout of every export request.
+	Timeout *metav1.Duration `protobuf:"bytes,10,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	// TLS sets the TLS-related configuration.
+	Tls           *CollectorExporter_Spec_Elasticsearch_TLS `protobuf:"bytes,11,opt,name=tls,proto3" json:"tls,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -6553,12 +7169,19 @@ func (x *CollectorExporter_Spec_Elasticsearch) GetTls() *CollectorExporter_Spec_
 	return nil
 }
 
+// Logzio sets the Logz.io exporter options.
 type CollectorExporter_Spec_Logzio struct {
-	state         protoimpl.MessageState               `protogen:"open.v1"`
-	Token         *CollectorExporter_Spec_Logzio_Token `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
-	Region        string                               `protobuf:"bytes,2,opt,name=region,proto3" json:"region,omitempty"`
-	Endpoint      string                               `protobuf:"bytes,3,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
-	Timeout       *metav1.Duration                     `protobuf:"bytes,4,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Token is the Logz.io shipping token. Required.
+	Token *CollectorExporter_Spec_Logzio_Token `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	// Region is the Logz.io account region code (e.g. `us`, `eu`). It is
+	// used to determine the listener URL.
+	Region string `protobuf:"bytes,2,opt,name=region,proto3" json:"region,omitempty"`
+	// Endpoint overrides the Logz.io listener URL that is derived from the
+	// Region.
+	Endpoint string `protobuf:"bytes,3,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
+	// Timeout is the timeout of every export request.
+	Timeout       *metav1.Duration `protobuf:"bytes,4,opt,name=timeout,proto3" json:"timeout,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -6621,22 +7244,43 @@ func (x *CollectorExporter_Spec_Logzio) GetTimeout() *metav1.Duration {
 	return nil
 }
 
+// InfluxDB sets the InfluxDB exporter options.
 type CollectorExporter_Spec_InfluxDB struct {
-	state               protoimpl.MessageState                           `protogen:"open.v1"`
-	Endpoint            string                                           `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
-	Org                 string                                           `protobuf:"bytes,2,opt,name=org,proto3" json:"org,omitempty"`
-	Bucket              string                                           `protobuf:"bytes,3,opt,name=bucket,proto3" json:"bucket,omitempty"`
-	Token               *CollectorExporter_Spec_InfluxDB_Token           `protobuf:"bytes,4,opt,name=token,proto3" json:"token,omitempty"`
-	Headers             []*CollectorExporter_Spec_InfluxDB_Header        `protobuf:"bytes,5,rep,name=headers,proto3" json:"headers,omitempty"`
-	MetricsSchema       CollectorExporter_Spec_InfluxDB_MetricsSchema    `protobuf:"varint,6,opt,name=metricsSchema,proto3,enum=octelium.api.main.enterprise.v1.CollectorExporter_Spec_InfluxDB_MetricsSchema" json:"metricsSchema,omitempty"`
-	Precision           CollectorExporter_Spec_InfluxDB_Precision        `protobuf:"varint,7,opt,name=precision,proto3,enum=octelium.api.main.enterprise.v1.CollectorExporter_Spec_InfluxDB_Precision" json:"precision,omitempty"`
-	PayloadMaxLines     int64                                            `protobuf:"varint,8,opt,name=payloadMaxLines,proto3" json:"payloadMaxLines,omitempty"`
-	PayloadMaxBytes     int64                                            `protobuf:"varint,9,opt,name=payloadMaxBytes,proto3" json:"payloadMaxBytes,omitempty"`
-	Timeout             *metav1.Duration                                 `protobuf:"bytes,10,opt,name=timeout,proto3" json:"timeout,omitempty"`
-	LogRecordDimensions []string                                         `protobuf:"bytes,11,rep,name=logRecordDimensions,proto3" json:"logRecordDimensions,omitempty"`
-	V1Compatibility     *CollectorExporter_Spec_InfluxDB_V1Compatibility `protobuf:"bytes,12,opt,name=v1Compatibility,proto3" json:"v1Compatibility,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Endpoint is the URL of the upstream InfluxDB server (e.g.
+	// `https://influxdb.example.com:8086`). Required.
+	Endpoint string `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
+	// Org is the name of the InfluxDB organization that owns the Bucket.
+	Org string `protobuf:"bytes,2,opt,name=org,proto3" json:"org,omitempty"`
+	// Bucket is the name of the InfluxDB bucket that the telemetry is
+	// written to.
+	Bucket string `protobuf:"bytes,3,opt,name=bucket,proto3" json:"bucket,omitempty"`
+	// Token is the InfluxDB API token.
+	Token *CollectorExporter_Spec_InfluxDB_Token `protobuf:"bytes,4,opt,name=token,proto3" json:"token,omitempty"`
+	// Headers is the list of additional headers that are set in every
+	// request sent to the upstream endpoint.
+	Headers []*CollectorExporter_Spec_InfluxDB_Header `protobuf:"bytes,5,rep,name=headers,proto3" json:"headers,omitempty"`
+	// MetricsSchema sets the schema used to map the metrics into InfluxDB
+	// points.
+	MetricsSchema CollectorExporter_Spec_InfluxDB_MetricsSchema `protobuf:"varint,6,opt,name=metricsSchema,proto3,enum=octelium.api.main.enterprise.v1.CollectorExporter_Spec_InfluxDB_MetricsSchema" json:"metricsSchema,omitempty"`
+	// Precision sets the timestamp precision of the exported points.
+	Precision CollectorExporter_Spec_InfluxDB_Precision `protobuf:"varint,7,opt,name=precision,proto3,enum=octelium.api.main.enterprise.v1.CollectorExporter_Spec_InfluxDB_Precision" json:"precision,omitempty"`
+	// PayloadMaxLines is the maximum number of lines of a single export
+	// request payload.
+	PayloadMaxLines int64 `protobuf:"varint,8,opt,name=payloadMaxLines,proto3" json:"payloadMaxLines,omitempty"`
+	// PayloadMaxBytes is the maximum size in bytes of a single export
+	// request payload.
+	PayloadMaxBytes int64 `protobuf:"varint,9,opt,name=payloadMaxBytes,proto3" json:"payloadMaxBytes,omitempty"`
+	// Timeout is the timeout of every export request.
+	Timeout *metav1.Duration `protobuf:"bytes,10,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	// LogRecordDimensions is the list of log record attribute names that are
+	// exported as InfluxDB tags instead of fields.
+	LogRecordDimensions []string `protobuf:"bytes,11,rep,name=logRecordDimensions,proto3" json:"logRecordDimensions,omitempty"`
+	// V1Compatibility sets the InfluxDB v1.x compatibility-related
+	// configuration.
+	V1Compatibility *CollectorExporter_Spec_InfluxDB_V1Compatibility `protobuf:"bytes,12,opt,name=v1Compatibility,proto3" json:"v1Compatibility,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *CollectorExporter_Spec_InfluxDB) Reset() {
@@ -6753,21 +7397,45 @@ func (x *CollectorExporter_Spec_InfluxDB) GetV1Compatibility() *CollectorExporte
 	return nil
 }
 
+// Kafka sets the Kafka exporter options.
 type CollectorExporter_Spec_Kafka struct {
-	state                                protoimpl.MessageState                 `protogen:"open.v1"`
-	Brokers                              []string                               `protobuf:"bytes,1,rep,name=brokers,proto3" json:"brokers,omitempty"`
-	ProtocolVersion                      string                                 `protobuf:"bytes,2,opt,name=protocolVersion,proto3" json:"protocolVersion,omitempty"`
-	ClientID                             string                                 `protobuf:"bytes,3,opt,name=clientID,proto3" json:"clientID,omitempty"`
-	Logs                                 *CollectorExporter_Spec_Kafka_Signal   `protobuf:"bytes,4,opt,name=logs,proto3" json:"logs,omitempty"`
-	Metrics                              *CollectorExporter_Spec_Kafka_Signal   `protobuf:"bytes,5,opt,name=metrics,proto3" json:"metrics,omitempty"`
-	RecordHeaders                        []*CollectorExporter_Spec_Kafka_Header `protobuf:"bytes,6,rep,name=recordHeaders,proto3" json:"recordHeaders,omitempty"`
-	Auth                                 *CollectorExporter_Spec_Kafka_Auth     `protobuf:"bytes,7,opt,name=auth,proto3" json:"auth,omitempty"`
-	Tls                                  *CollectorExporter_Spec_Kafka_TLS      `protobuf:"bytes,8,opt,name=tls,proto3" json:"tls,omitempty"`
-	Timeout                              *metav1.Duration                       `protobuf:"bytes,9,opt,name=timeout,proto3" json:"timeout,omitempty"`
-	ConnIdleTimeout                      *metav1.Duration                       `protobuf:"bytes,10,opt,name=connIdleTimeout,proto3" json:"connIdleTimeout,omitempty"`
-	Producer                             *CollectorExporter_Spec_Kafka_Producer `protobuf:"bytes,11,opt,name=producer,proto3" json:"producer,omitempty"`
-	PartitionLogsByResourceAttributes    bool                                   `protobuf:"varint,12,opt,name=partitionLogsByResourceAttributes,proto3" json:"partitionLogsByResourceAttributes,omitempty"`
-	PartitionMetricsByResourceAttributes bool                                   `protobuf:"varint,13,opt,name=partitionMetricsByResourceAttributes,proto3" json:"partitionMetricsByResourceAttributes,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Brokers is the list of the upstream Kafka broker addresses (e.g.
+	// `kafka.example.com:9092`). Required.
+	Brokers []string `protobuf:"bytes,1,rep,name=brokers,proto3" json:"brokers,omitempty"`
+	// ProtocolVersion is the Kafka protocol version that is negotiated with
+	// the brokers (e.g. `3.6.0`).
+	ProtocolVersion string `protobuf:"bytes,2,opt,name=protocolVersion,proto3" json:"protocolVersion,omitempty"`
+	// ClientID is the client identifier that is reported to the brokers.
+	ClientID string `protobuf:"bytes,3,opt,name=clientID,proto3" json:"clientID,omitempty"`
+	// Logs sets the topic and encoding of the exported logs. If unset, the
+	// logs are not exported.
+	Logs *CollectorExporter_Spec_Kafka_Signal `protobuf:"bytes,4,opt,name=logs,proto3" json:"logs,omitempty"`
+	// Metrics sets the topic and encoding of the exported metrics. If unset,
+	// the metrics are not exported.
+	Metrics *CollectorExporter_Spec_Kafka_Signal `protobuf:"bytes,5,opt,name=metrics,proto3" json:"metrics,omitempty"`
+	// RecordHeaders is the list of additional headers that are set in every
+	// produced Kafka record.
+	RecordHeaders []*CollectorExporter_Spec_Kafka_Header `protobuf:"bytes,6,rep,name=recordHeaders,proto3" json:"recordHeaders,omitempty"`
+	// Auth sets the authentication-related configuration.
+	Auth *CollectorExporter_Spec_Kafka_Auth `protobuf:"bytes,7,opt,name=auth,proto3" json:"auth,omitempty"`
+	// TLS sets the TLS-related configuration.
+	Tls *CollectorExporter_Spec_Kafka_TLS `protobuf:"bytes,8,opt,name=tls,proto3" json:"tls,omitempty"`
+	// Timeout is the timeout of every export request.
+	Timeout *metav1.Duration `protobuf:"bytes,9,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	// ConnIdleTimeout is the duration of inactivity after which an idle
+	// connection to a broker is closed.
+	ConnIdleTimeout *metav1.Duration `protobuf:"bytes,10,opt,name=connIdleTimeout,proto3" json:"connIdleTimeout,omitempty"`
+	// Producer sets the Kafka producer-related configuration.
+	Producer *CollectorExporter_Spec_Kafka_Producer `protobuf:"bytes,11,opt,name=producer,proto3" json:"producer,omitempty"`
+	// PartitionLogsByResourceAttributes derives the record key of the
+	// exported logs from their resource attributes so that the logs of the
+	// same resource land on the same partition.
+	PartitionLogsByResourceAttributes bool `protobuf:"varint,12,opt,name=partitionLogsByResourceAttributes,proto3" json:"partitionLogsByResourceAttributes,omitempty"`
+	// PartitionMetricsByResourceAttributes derives the record key of the
+	// exported metrics from their resource attributes so that the metrics of
+	// the same resource land on the same partition.
+	PartitionMetricsByResourceAttributes bool `protobuf:"varint,13,opt,name=partitionMetricsByResourceAttributes,proto3" json:"partitionMetricsByResourceAttributes,omitempty"`
 	unknownFields                        protoimpl.UnknownFields
 	sizeCache                            protoimpl.SizeCache
 }
@@ -6893,14 +7561,23 @@ func (x *CollectorExporter_Spec_Kafka) GetPartitionMetricsByResourceAttributes()
 	return false
 }
 
+// Datadog sets the Datadog exporter options.
 type CollectorExporter_Spec_Datadog struct {
-	state                    protoimpl.MessageState                       `protogen:"open.v1"`
-	Api                      *CollectorExporter_Spec_Datadog_API          `protobuf:"bytes,1,opt,name=api,proto3" json:"api,omitempty"`
-	Hostname                 string                                       `protobuf:"bytes,2,opt,name=hostname,proto3" json:"hostname,omitempty"`
-	Metrics                  *CollectorExporter_Spec_Datadog_Metrics      `protobuf:"bytes,3,opt,name=metrics,proto3" json:"metrics,omitempty"`
-	Logs                     *CollectorExporter_Spec_Datadog_Logs         `protobuf:"bytes,4,opt,name=logs,proto3" json:"logs,omitempty"`
-	HostMetadata             *CollectorExporter_Spec_Datadog_HostMetadata `protobuf:"bytes,5,opt,name=hostMetadata,proto3" json:"hostMetadata,omitempty"`
-	HostnameDetectionTimeout *metav1.Duration                             `protobuf:"bytes,6,opt,name=hostnameDetectionTimeout,proto3" json:"hostnameDetectionTimeout,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// API sets the Datadog API-related configuration.
+	Api *CollectorExporter_Spec_Datadog_API `protobuf:"bytes,1,opt,name=api,proto3" json:"api,omitempty"`
+	// Hostname overrides the host name that the exported telemetry is
+	// attributed to. If unset, the host name is automatically detected.
+	Hostname string `protobuf:"bytes,2,opt,name=hostname,proto3" json:"hostname,omitempty"`
+	// Metrics sets the exported metrics-related configuration.
+	Metrics *CollectorExporter_Spec_Datadog_Metrics `protobuf:"bytes,3,opt,name=metrics,proto3" json:"metrics,omitempty"`
+	// Logs sets the exported logs-related configuration.
+	Logs *CollectorExporter_Spec_Datadog_Logs `protobuf:"bytes,4,opt,name=logs,proto3" json:"logs,omitempty"`
+	// HostMetadata sets the host metadata-related configuration.
+	HostMetadata *CollectorExporter_Spec_Datadog_HostMetadata `protobuf:"bytes,5,opt,name=hostMetadata,proto3" json:"hostMetadata,omitempty"`
+	// HostnameDetectionTimeout is the timeout of the automatic host name
+	// detection.
+	HostnameDetectionTimeout *metav1.Duration `protobuf:"bytes,6,opt,name=hostnameDetectionTimeout,proto3" json:"hostnameDetectionTimeout,omitempty"`
 	unknownFields            protoimpl.UnknownFields
 	sizeCache                protoimpl.SizeCache
 }
@@ -6977,24 +7654,47 @@ func (x *CollectorExporter_Spec_Datadog) GetHostnameDetectionTimeout() *metav1.D
 	return nil
 }
 
+// Splunk sets the Splunk HTTP Event Collector (HEC) exporter options.
 type CollectorExporter_Spec_Splunk struct {
-	state                   protoimpl.MessageState               `protogen:"open.v1"`
-	Endpoint                string                               `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
-	Token                   *CollectorExporter_Spec_Splunk_Token `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"`
-	Source                  string                               `protobuf:"bytes,3,opt,name=source,proto3" json:"source,omitempty"`
-	SourceType              string                               `protobuf:"bytes,4,opt,name=sourceType,proto3" json:"sourceType,omitempty"`
-	Index                   string                               `protobuf:"bytes,5,opt,name=index,proto3" json:"index,omitempty"`
-	UseMultiMetricFormat    bool                                 `protobuf:"varint,6,opt,name=useMultiMetricFormat,proto3" json:"useMultiMetricFormat,omitempty"`
-	AppName                 string                               `protobuf:"bytes,7,opt,name=appName,proto3" json:"appName,omitempty"`
-	AppVersion              string                               `protobuf:"bytes,8,opt,name=appVersion,proto3" json:"appVersion,omitempty"`
-	MaxContentLengthLogs    int64                                `protobuf:"varint,9,opt,name=maxContentLengthLogs,proto3" json:"maxContentLengthLogs,omitempty"`
-	MaxContentLengthMetrics int64                                `protobuf:"varint,10,opt,name=maxContentLengthMetrics,proto3" json:"maxContentLengthMetrics,omitempty"`
-	DisableCompression      bool                                 `protobuf:"varint,11,opt,name=disableCompression,proto3" json:"disableCompression,omitempty"`
-	Timeout                 *metav1.Duration                     `protobuf:"bytes,12,opt,name=timeout,proto3" json:"timeout,omitempty"`
-	MaxIdleConns            int64                                `protobuf:"varint,13,opt,name=maxIdleConns,proto3" json:"maxIdleConns,omitempty"`
-	Tls                     *CollectorExporter_Spec_Splunk_TLS   `protobuf:"bytes,14,opt,name=tls,proto3" json:"tls,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Endpoint is the URL of the upstream Splunk HEC endpoint (e.g.
+	// `https://splunk.example.com:8088/services/collector`). Required.
+	Endpoint string `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
+	// Token is the Splunk HEC token. Required.
+	Token *CollectorExporter_Spec_Splunk_Token `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"`
+	// Source is the value of the Splunk `source` field of the exported
+	// events.
+	Source string `protobuf:"bytes,3,opt,name=source,proto3" json:"source,omitempty"`
+	// SourceType is the value of the Splunk `sourcetype` field of the
+	// exported events.
+	SourceType string `protobuf:"bytes,4,opt,name=sourceType,proto3" json:"sourceType,omitempty"`
+	// Index is the name of the Splunk index that the events are written to.
+	Index string `protobuf:"bytes,5,opt,name=index,proto3" json:"index,omitempty"`
+	// UseMultiMetricFormat enables the Splunk multi-metric format where
+	// several metrics that share the same dimensions are sent in a single
+	// event.
+	UseMultiMetricFormat bool `protobuf:"varint,6,opt,name=useMultiMetricFormat,proto3" json:"useMultiMetricFormat,omitempty"`
+	// AppName is the application name that is reported to Splunk.
+	AppName string `protobuf:"bytes,7,opt,name=appName,proto3" json:"appName,omitempty"`
+	// AppVersion is the application version that is reported to Splunk.
+	AppVersion string `protobuf:"bytes,8,opt,name=appVersion,proto3" json:"appVersion,omitempty"`
+	// MaxContentLengthLogs is the maximum size in bytes of a single log
+	// export request payload.
+	MaxContentLengthLogs int64 `protobuf:"varint,9,opt,name=maxContentLengthLogs,proto3" json:"maxContentLengthLogs,omitempty"`
+	// MaxContentLengthMetrics is the maximum size in bytes of a single
+	// metric export request payload.
+	MaxContentLengthMetrics int64 `protobuf:"varint,10,opt,name=maxContentLengthMetrics,proto3" json:"maxContentLengthMetrics,omitempty"`
+	// DisableCompression disables compressing the exported payloads.
+	DisableCompression bool `protobuf:"varint,11,opt,name=disableCompression,proto3" json:"disableCompression,omitempty"`
+	// Timeout is the timeout of every export request.
+	Timeout *metav1.Duration `protobuf:"bytes,12,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	// MaxIdleConns is the maximum number of idle connections that are kept
+	// open to the upstream endpoint.
+	MaxIdleConns int64 `protobuf:"varint,13,opt,name=maxIdleConns,proto3" json:"maxIdleConns,omitempty"`
+	// TLS sets the TLS-related configuration.
+	Tls           *CollectorExporter_Spec_Splunk_TLS `protobuf:"bytes,14,opt,name=tls,proto3" json:"tls,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CollectorExporter_Spec_Splunk) Reset() {
@@ -7125,16 +7825,36 @@ func (x *CollectorExporter_Spec_Splunk) GetTls() *CollectorExporter_Spec_Splunk_
 	return nil
 }
 
+// AzureMonitor sets the Azure Monitor (i.e. Application Insights) exporter
+// options.
 type CollectorExporter_Spec_AzureMonitor struct {
-	state                  protoimpl.MessageState                                  `protogen:"open.v1"`
-	ConnectionString       *CollectorExporter_Spec_AzureMonitor_ConnectionString   `protobuf:"bytes,1,opt,name=connectionString,proto3" json:"connectionString,omitempty"`
-	InstrumentationKey     *CollectorExporter_Spec_AzureMonitor_InstrumentationKey `protobuf:"bytes,2,opt,name=instrumentationKey,proto3" json:"instrumentationKey,omitempty"`
-	Endpoint               string                                                  `protobuf:"bytes,3,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
-	MaxBatchSize           int64                                                   `protobuf:"varint,4,opt,name=maxBatchSize,proto3" json:"maxBatchSize,omitempty"`
-	MaxBatchInterval       *metav1.Duration                                        `protobuf:"bytes,5,opt,name=maxBatchInterval,proto3" json:"maxBatchInterval,omitempty"`
-	ShutdownTimeout        *metav1.Duration                                        `protobuf:"bytes,6,opt,name=shutdownTimeout,proto3" json:"shutdownTimeout,omitempty"`
-	CustomEventsEnabled    bool                                                    `protobuf:"varint,7,opt,name=customEventsEnabled,proto3" json:"customEventsEnabled,omitempty"`
-	ExceptionEventsEnabled bool                                                    `protobuf:"varint,8,opt,name=exceptionEventsEnabled,proto3" json:"exceptionEventsEnabled,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ConnectionString is the Application Insights connection string. It is
+	// the recommended way to configure the exporter since it also carries
+	// the ingestion endpoints.
+	ConnectionString *CollectorExporter_Spec_AzureMonitor_ConnectionString `protobuf:"bytes,1,opt,name=connectionString,proto3" json:"connectionString,omitempty"`
+	// InstrumentationKey is the Application Insights instrumentation key. It
+	// is used instead of the ConnectionString.
+	InstrumentationKey *CollectorExporter_Spec_AzureMonitor_InstrumentationKey `protobuf:"bytes,2,opt,name=instrumentationKey,proto3" json:"instrumentationKey,omitempty"`
+	// Endpoint overrides the ingestion endpoint that the telemetry is
+	// exported to.
+	Endpoint string `protobuf:"bytes,3,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
+	// MaxBatchSize is the maximum number of telemetry items that are batched
+	// together before they are sent.
+	MaxBatchSize int64 `protobuf:"varint,4,opt,name=maxBatchSize,proto3" json:"maxBatchSize,omitempty"`
+	// MaxBatchInterval is the maximum duration that the exporter waits to
+	// batch more telemetry items together before sending them.
+	MaxBatchInterval *metav1.Duration `protobuf:"bytes,5,opt,name=maxBatchInterval,proto3" json:"maxBatchInterval,omitempty"`
+	// ShutdownTimeout is the duration that the exporter waits to flush the
+	// buffered telemetry upon shutdown.
+	ShutdownTimeout *metav1.Duration `protobuf:"bytes,6,opt,name=shutdownTimeout,proto3" json:"shutdownTimeout,omitempty"`
+	// CustomEventsEnabled exports the log records that carry a
+	// `microsoft.custom_event.name` attribute as Application Insights custom
+	// events.
+	CustomEventsEnabled bool `protobuf:"varint,7,opt,name=customEventsEnabled,proto3" json:"customEventsEnabled,omitempty"`
+	// ExceptionEventsEnabled exports the log records that carry exception
+	// attributes as Application Insights exception telemetry.
+	ExceptionEventsEnabled bool `protobuf:"varint,8,opt,name=exceptionEventsEnabled,proto3" json:"exceptionEventsEnabled,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -7225,19 +7945,34 @@ func (x *CollectorExporter_Spec_AzureMonitor) GetExceptionEventsEnabled() bool {
 	return false
 }
 
+// AzureDataExplorer sets the Azure Data Explorer (i.e. Kusto) exporter
+// options.
 type CollectorExporter_Spec_AzureDataExplorer struct {
-	state               protoimpl.MessageState                                 `protogen:"open.v1"`
-	ClusterURI          string                                                 `protobuf:"bytes,1,opt,name=clusterURI,proto3" json:"clusterURI,omitempty"`
-	Auth                *CollectorExporter_Spec_AzureDataExplorer_Auth         `protobuf:"bytes,2,opt,name=auth,proto3" json:"auth,omitempty"`
-	Database            string                                                 `protobuf:"bytes,3,opt,name=database,proto3" json:"database,omitempty"`
-	MetricsTable        string                                                 `protobuf:"bytes,4,opt,name=metricsTable,proto3" json:"metricsTable,omitempty"`
-	LogsTable           string                                                 `protobuf:"bytes,5,opt,name=logsTable,proto3" json:"logsTable,omitempty"`
-	MetricsTableMapping string                                                 `protobuf:"bytes,6,opt,name=metricsTableMapping,proto3" json:"metricsTableMapping,omitempty"`
-	LogsTableMapping    string                                                 `protobuf:"bytes,7,opt,name=logsTableMapping,proto3" json:"logsTableMapping,omitempty"`
-	IngestionType       CollectorExporter_Spec_AzureDataExplorer_IngestionType `protobuf:"varint,8,opt,name=ingestionType,proto3,enum=octelium.api.main.enterprise.v1.CollectorExporter_Spec_AzureDataExplorer_IngestionType" json:"ingestionType,omitempty"`
-	Timeout             *metav1.Duration                                       `protobuf:"bytes,9,opt,name=timeout,proto3" json:"timeout,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ClusterURI is the URI of the upstream Azure Data Explorer cluster
+	// (e.g. `https://mycluster.westeurope.kusto.windows.net`). Required.
+	ClusterURI string `protobuf:"bytes,1,opt,name=clusterURI,proto3" json:"clusterURI,omitempty"`
+	// Auth sets the authentication-related configuration.
+	Auth *CollectorExporter_Spec_AzureDataExplorer_Auth `protobuf:"bytes,2,opt,name=auth,proto3" json:"auth,omitempty"`
+	// Database is the name of the Azure Data Explorer database that the
+	// telemetry is written to.
+	Database string `protobuf:"bytes,3,opt,name=database,proto3" json:"database,omitempty"`
+	// MetricsTable is the name of the table that the metrics are written to.
+	MetricsTable string `protobuf:"bytes,4,opt,name=metricsTable,proto3" json:"metricsTable,omitempty"`
+	// LogsTable is the name of the table that the logs are written to.
+	LogsTable string `protobuf:"bytes,5,opt,name=logsTable,proto3" json:"logsTable,omitempty"`
+	// MetricsTableMapping is the name of the ingestion mapping that is used
+	// for the MetricsTable.
+	MetricsTableMapping string `protobuf:"bytes,6,opt,name=metricsTableMapping,proto3" json:"metricsTableMapping,omitempty"`
+	// LogsTableMapping is the name of the ingestion mapping that is used for
+	// the LogsTable.
+	LogsTableMapping string `protobuf:"bytes,7,opt,name=logsTableMapping,proto3" json:"logsTableMapping,omitempty"`
+	// IngestionType sets the mode used to ingest the telemetry.
+	IngestionType CollectorExporter_Spec_AzureDataExplorer_IngestionType `protobuf:"varint,8,opt,name=ingestionType,proto3,enum=octelium.api.main.enterprise.v1.CollectorExporter_Spec_AzureDataExplorer_IngestionType" json:"ingestionType,omitempty"`
+	// Timeout is the timeout of every export request.
+	Timeout       *metav1.Duration `protobuf:"bytes,9,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CollectorExporter_Spec_AzureDataExplorer) Reset() {
@@ -7333,10 +8068,14 @@ func (x *CollectorExporter_Spec_AzureDataExplorer) GetTimeout() *metav1.Duration
 	return nil
 }
 
+// Header is an additional header that is set in every request sent to
+// the upstream endpoint
 type CollectorExporter_Spec_OTLP_Header struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Value         string                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Key is the name of the header
+	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	// Value is the value of the header
+	Value         string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -7385,6 +8124,8 @@ func (x *CollectorExporter_Spec_OTLP_Header) GetValue() string {
 	return ""
 }
 
+// Auth sets the credentials that are used by the Collector to
+// authenticate to the upstream endpoint
 type CollectorExporter_Spec_OTLP_Auth struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -7466,14 +8207,17 @@ type isCollectorExporter_Spec_OTLP_Auth_Type interface {
 }
 
 type CollectorExporter_Spec_OTLP_Auth_Bearer_ struct {
+	// Bearer sets the bearer token authentication options.
 	Bearer *CollectorExporter_Spec_OTLP_Auth_Bearer `protobuf:"bytes,1,opt,name=bearer,proto3,oneof"`
 }
 
 type CollectorExporter_Spec_OTLP_Auth_Basic_ struct {
+	// Basic sets the HTTP basic authentication options.
 	Basic *CollectorExporter_Spec_OTLP_Auth_Basic `protobuf:"bytes,2,opt,name=basic,proto3,oneof"`
 }
 
 type CollectorExporter_Spec_OTLP_Auth_Custom_ struct {
+	// Custom sets the custom request header authentication options.
 	Custom *CollectorExporter_Spec_OTLP_Auth_Custom `protobuf:"bytes,3,opt,name=custom,proto3,oneof"`
 }
 
@@ -7483,14 +8227,27 @@ func (*CollectorExporter_Spec_OTLP_Auth_Basic_) isCollectorExporter_Spec_OTLP_Au
 
 func (*CollectorExporter_Spec_OTLP_Auth_Custom_) isCollectorExporter_Spec_OTLP_Auth_Type() {}
 
+// TLS sets the TLS-related options of the connection to the upstream
+// endpoint
 type CollectorExporter_Spec_OTLP_TLS struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
-	Insecure           bool                   `protobuf:"varint,1,opt,name=insecure,proto3" json:"insecure,omitempty"`
-	InsecureSkipVerify bool                   `protobuf:"varint,2,opt,name=insecureSkipVerify,proto3" json:"insecureSkipVerify,omitempty"`
-	ServerNameOverride string                 `protobuf:"bytes,3,opt,name=serverNameOverride,proto3" json:"serverNameOverride,omitempty"`
-	CaPEM              string                 `protobuf:"bytes,4,opt,name=caPEM,proto3" json:"caPEM,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Insecure disables TLS entirely and connects to the upstream endpoint
+	// over plaintext.
+	Insecure bool `protobuf:"varint,1,opt,name=insecure,proto3" json:"insecure,omitempty"`
+	// InsecureSkipVerify skips the verification of the upstream endpoint's
+	// certificate chain and hostname. It is not recommended in production
+	// environments.
+	InsecureSkipVerify bool `protobuf:"varint,2,opt,name=insecureSkipVerify,proto3" json:"insecureSkipVerify,omitempty"`
+	// ServerNameOverride overrides the server name that is used to verify
+	// the hostname of the upstream endpoint's certificate. It is mainly
+	// useful when the endpoint address does not match the certificate.
+	ServerNameOverride string `protobuf:"bytes,3,opt,name=serverNameOverride,proto3" json:"serverNameOverride,omitempty"`
+	// CAPEM is the PEM-encoded CA certificate that is used to verify the
+	// upstream endpoint's certificate. If unset, the system CA pool is
+	// used.
+	CaPEM         string `protobuf:"bytes,4,opt,name=caPEM,proto3" json:"caPEM,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CollectorExporter_Spec_OTLP_TLS) Reset() {
@@ -7551,11 +8308,19 @@ func (x *CollectorExporter_Spec_OTLP_TLS) GetCaPEM() string {
 	return ""
 }
 
+// Keepalive sets the gRPC keepalive options of the connection to the
+// upstream endpoint
 type CollectorExporter_Spec_OTLP_Keepalive struct {
-	state               protoimpl.MessageState `protogen:"open.v1"`
-	Time                *metav1.Duration       `protobuf:"bytes,1,opt,name=time,proto3" json:"time,omitempty"`
-	Timeout             *metav1.Duration       `protobuf:"bytes,2,opt,name=timeout,proto3" json:"timeout,omitempty"`
-	PermitWithoutStream bool                   `protobuf:"varint,3,opt,name=permitWithoutStream,proto3" json:"permitWithoutStream,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Time is the duration of inactivity after which a keepalive ping is
+	// sent to the upstream endpoint.
+	Time *metav1.Duration `protobuf:"bytes,1,opt,name=time,proto3" json:"time,omitempty"`
+	// Timeout is the duration to wait for an acknowledgement of a
+	// keepalive ping before the connection is considered dead.
+	Timeout *metav1.Duration `protobuf:"bytes,2,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	// PermitWithoutStream enables sending keepalive pings even when there
+	// are no active streams.
+	PermitWithoutStream bool `protobuf:"varint,3,opt,name=permitWithoutStream,proto3" json:"permitWithoutStream,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -7611,6 +8376,8 @@ func (x *CollectorExporter_Spec_OTLP_Keepalive) GetPermitWithoutStream() bool {
 	return false
 }
 
+// Bearer is the bearer token that is set in the `Authorization`
+// request header
 type CollectorExporter_Spec_OTLP_Auth_Bearer struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -7672,15 +8439,20 @@ type isCollectorExporter_Spec_OTLP_Auth_Bearer_Type interface {
 }
 
 type CollectorExporter_Spec_OTLP_Auth_Bearer_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains the
+	// bearer token
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*CollectorExporter_Spec_OTLP_Auth_Bearer_FromSecret) isCollectorExporter_Spec_OTLP_Auth_Bearer_Type() {
 }
 
+// Basic is the HTTP basic authentication credentials
 type CollectorExporter_Spec_OTLP_Auth_Basic struct {
-	state         protoimpl.MessageState                           `protogen:"open.v1"`
-	Username      string                                           `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Username is the username value of HTTP basic authentication
+	Username string `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	// Password is the password value of HTTP basic authentication
 	Password      *CollectorExporter_Spec_OTLP_Auth_Basic_Password `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -7730,9 +8502,12 @@ func (x *CollectorExporter_Spec_OTLP_Auth_Basic) GetPassword() *CollectorExporte
 	return nil
 }
 
+// Custom is a credential that is set in a custom request header
 type CollectorExporter_Spec_OTLP_Auth_Custom struct {
-	state         protoimpl.MessageState                         `protogen:"open.v1"`
-	Header        string                                         `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Header is the name of the header (e.g. "X-Custom-Auth")
+	Header string `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`
+	// Value is the value of the header
 	Value         *CollectorExporter_Spec_OTLP_Auth_Custom_Value `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -7782,6 +8557,7 @@ func (x *CollectorExporter_Spec_OTLP_Auth_Custom) GetValue() *CollectorExporter_
 	return nil
 }
 
+// Password is the password value of HTTP basic authentication
 type CollectorExporter_Spec_OTLP_Auth_Basic_Password struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -7843,12 +8619,15 @@ type isCollectorExporter_Spec_OTLP_Auth_Basic_Password_Type interface {
 }
 
 type CollectorExporter_Spec_OTLP_Auth_Basic_Password_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains
+	// the Password
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*CollectorExporter_Spec_OTLP_Auth_Basic_Password_FromSecret) isCollectorExporter_Spec_OTLP_Auth_Basic_Password_Type() {
 }
 
+// Value is the value of the custom request header
 type CollectorExporter_Spec_OTLP_Auth_Custom_Value struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -7910,16 +8689,22 @@ type isCollectorExporter_Spec_OTLP_Auth_Custom_Value_Type interface {
 }
 
 type CollectorExporter_Spec_OTLP_Auth_Custom_Value_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains
+	// the header's Value
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*CollectorExporter_Spec_OTLP_Auth_Custom_Value_FromSecret) isCollectorExporter_Spec_OTLP_Auth_Custom_Value_Type() {
 }
 
+// Header is an additional header that is set in every request sent to
+// the upstream endpoint
 type CollectorExporter_Spec_OTLPHTTP_Header struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Value         string                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Key is the name of the header
+	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	// Value is the value of the header
+	Value         string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -7968,6 +8753,8 @@ func (x *CollectorExporter_Spec_OTLPHTTP_Header) GetValue() string {
 	return ""
 }
 
+// Auth sets the credentials that are used by the Collector to
+// authenticate to the upstream endpoint
 type CollectorExporter_Spec_OTLPHTTP_Auth struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -8049,14 +8836,17 @@ type isCollectorExporter_Spec_OTLPHTTP_Auth_Type interface {
 }
 
 type CollectorExporter_Spec_OTLPHTTP_Auth_Bearer_ struct {
+	// Bearer sets the bearer token authentication options.
 	Bearer *CollectorExporter_Spec_OTLPHTTP_Auth_Bearer `protobuf:"bytes,1,opt,name=bearer,proto3,oneof"`
 }
 
 type CollectorExporter_Spec_OTLPHTTP_Auth_Basic_ struct {
+	// Basic sets the HTTP basic authentication options.
 	Basic *CollectorExporter_Spec_OTLPHTTP_Auth_Basic `protobuf:"bytes,2,opt,name=basic,proto3,oneof"`
 }
 
 type CollectorExporter_Spec_OTLPHTTP_Auth_Custom_ struct {
+	// Custom sets the custom request header authentication options.
 	Custom *CollectorExporter_Spec_OTLPHTTP_Auth_Custom `protobuf:"bytes,3,opt,name=custom,proto3,oneof"`
 }
 
@@ -8066,14 +8856,27 @@ func (*CollectorExporter_Spec_OTLPHTTP_Auth_Basic_) isCollectorExporter_Spec_OTL
 
 func (*CollectorExporter_Spec_OTLPHTTP_Auth_Custom_) isCollectorExporter_Spec_OTLPHTTP_Auth_Type() {}
 
+// TLS sets the TLS-related options of the connection to the upstream
+// endpoint
 type CollectorExporter_Spec_OTLPHTTP_TLS struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
-	Insecure           bool                   `protobuf:"varint,1,opt,name=insecure,proto3" json:"insecure,omitempty"`
-	InsecureSkipVerify bool                   `protobuf:"varint,2,opt,name=insecureSkipVerify,proto3" json:"insecureSkipVerify,omitempty"`
-	ServerNameOverride string                 `protobuf:"bytes,3,opt,name=serverNameOverride,proto3" json:"serverNameOverride,omitempty"`
-	CaPEM              string                 `protobuf:"bytes,4,opt,name=caPEM,proto3" json:"caPEM,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Insecure disables TLS entirely and connects to the upstream endpoint
+	// over plaintext.
+	Insecure bool `protobuf:"varint,1,opt,name=insecure,proto3" json:"insecure,omitempty"`
+	// InsecureSkipVerify skips the verification of the upstream endpoint's
+	// certificate chain and hostname. It is not recommended in production
+	// environments.
+	InsecureSkipVerify bool `protobuf:"varint,2,opt,name=insecureSkipVerify,proto3" json:"insecureSkipVerify,omitempty"`
+	// ServerNameOverride overrides the server name that is used to verify
+	// the hostname of the upstream endpoint's certificate. It is mainly
+	// useful when the endpoint address does not match the certificate.
+	ServerNameOverride string `protobuf:"bytes,3,opt,name=serverNameOverride,proto3" json:"serverNameOverride,omitempty"`
+	// CAPEM is the PEM-encoded CA certificate that is used to verify the
+	// upstream endpoint's certificate. If unset, the system CA pool is
+	// used.
+	CaPEM         string `protobuf:"bytes,4,opt,name=caPEM,proto3" json:"caPEM,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CollectorExporter_Spec_OTLPHTTP_TLS) Reset() {
@@ -8134,6 +8937,8 @@ func (x *CollectorExporter_Spec_OTLPHTTP_TLS) GetCaPEM() string {
 	return ""
 }
 
+// Bearer is the bearer token that is set in the `Authorization`
+// request header
 type CollectorExporter_Spec_OTLPHTTP_Auth_Bearer struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -8195,15 +9000,20 @@ type isCollectorExporter_Spec_OTLPHTTP_Auth_Bearer_Type interface {
 }
 
 type CollectorExporter_Spec_OTLPHTTP_Auth_Bearer_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains the
+	// bearer token
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*CollectorExporter_Spec_OTLPHTTP_Auth_Bearer_FromSecret) isCollectorExporter_Spec_OTLPHTTP_Auth_Bearer_Type() {
 }
 
+// Basic is the HTTP basic authentication credentials
 type CollectorExporter_Spec_OTLPHTTP_Auth_Basic struct {
-	state         protoimpl.MessageState                               `protogen:"open.v1"`
-	Username      string                                               `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Username is the username value of HTTP basic authentication
+	Username string `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	// Password is the password value of HTTP basic authentication
 	Password      *CollectorExporter_Spec_OTLPHTTP_Auth_Basic_Password `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -8253,9 +9063,12 @@ func (x *CollectorExporter_Spec_OTLPHTTP_Auth_Basic) GetPassword() *CollectorExp
 	return nil
 }
 
+// Custom is a credential that is set in a custom request header
 type CollectorExporter_Spec_OTLPHTTP_Auth_Custom struct {
-	state         protoimpl.MessageState                             `protogen:"open.v1"`
-	Header        string                                             `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Header is the name of the header (e.g. "X-Custom-Auth")
+	Header string `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`
+	// Value is the value of the header
 	Value         *CollectorExporter_Spec_OTLPHTTP_Auth_Custom_Value `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -8305,6 +9118,7 @@ func (x *CollectorExporter_Spec_OTLPHTTP_Auth_Custom) GetValue() *CollectorExpor
 	return nil
 }
 
+// Password is the password value of HTTP basic authentication
 type CollectorExporter_Spec_OTLPHTTP_Auth_Basic_Password struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -8366,12 +9180,15 @@ type isCollectorExporter_Spec_OTLPHTTP_Auth_Basic_Password_Type interface {
 }
 
 type CollectorExporter_Spec_OTLPHTTP_Auth_Basic_Password_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains
+	// the Password
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*CollectorExporter_Spec_OTLPHTTP_Auth_Basic_Password_FromSecret) isCollectorExporter_Spec_OTLPHTTP_Auth_Basic_Password_Type() {
 }
 
+// Value is the value of the custom request header
 type CollectorExporter_Spec_OTLPHTTP_Auth_Custom_Value struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -8433,16 +9250,22 @@ type isCollectorExporter_Spec_OTLPHTTP_Auth_Custom_Value_Type interface {
 }
 
 type CollectorExporter_Spec_OTLPHTTP_Auth_Custom_Value_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains
+	// the header's Value
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*CollectorExporter_Spec_OTLPHTTP_Auth_Custom_Value_FromSecret) isCollectorExporter_Spec_OTLPHTTP_Auth_Custom_Value_Type() {
 }
 
+// Header is an additional header that is set in every request sent to
+// the upstream endpoint
 type CollectorExporter_Spec_PrometheusRemoteWrite_Header struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Value         string                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Key is the name of the header
+	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	// Value is the value of the header
+	Value         string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -8491,10 +9314,13 @@ func (x *CollectorExporter_Spec_PrometheusRemoteWrite_Header) GetValue() string 
 	return ""
 }
 
+// ExternalLabel is a label that is added to every exported metric
 type CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Value         string                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Key is the name of the label
+	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	// Value is the value of the label
+	Value         string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -8543,6 +9369,8 @@ func (x *CollectorExporter_Spec_PrometheusRemoteWrite_ExternalLabel) GetValue() 
 	return ""
 }
 
+// Auth sets the credentials that are used by the Collector to
+// authenticate to the upstream endpoint
 type CollectorExporter_Spec_PrometheusRemoteWrite_Auth struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -8624,14 +9452,17 @@ type isCollectorExporter_Spec_PrometheusRemoteWrite_Auth_Type interface {
 }
 
 type CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Bearer_ struct {
+	// Bearer sets the bearer token authentication options.
 	Bearer *CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Bearer `protobuf:"bytes,1,opt,name=bearer,proto3,oneof"`
 }
 
 type CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic_ struct {
+	// Basic sets the HTTP basic authentication options.
 	Basic *CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic `protobuf:"bytes,2,opt,name=basic,proto3,oneof"`
 }
 
 type CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom_ struct {
+	// Custom sets the custom request header authentication options.
 	Custom *CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom `protobuf:"bytes,3,opt,name=custom,proto3,oneof"`
 }
 
@@ -8644,14 +9475,27 @@ func (*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic_) isCollectorExpo
 func (*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom_) isCollectorExporter_Spec_PrometheusRemoteWrite_Auth_Type() {
 }
 
+// TLS sets the TLS-related options of the connection to the upstream
+// endpoint
 type CollectorExporter_Spec_PrometheusRemoteWrite_TLS struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
-	Insecure           bool                   `protobuf:"varint,1,opt,name=insecure,proto3" json:"insecure,omitempty"`
-	InsecureSkipVerify bool                   `protobuf:"varint,2,opt,name=insecureSkipVerify,proto3" json:"insecureSkipVerify,omitempty"`
-	ServerNameOverride string                 `protobuf:"bytes,3,opt,name=serverNameOverride,proto3" json:"serverNameOverride,omitempty"`
-	CaPEM              string                 `protobuf:"bytes,4,opt,name=caPEM,proto3" json:"caPEM,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Insecure disables TLS entirely and connects to the upstream endpoint
+	// over plaintext.
+	Insecure bool `protobuf:"varint,1,opt,name=insecure,proto3" json:"insecure,omitempty"`
+	// InsecureSkipVerify skips the verification of the upstream endpoint's
+	// certificate chain and hostname. It is not recommended in production
+	// environments.
+	InsecureSkipVerify bool `protobuf:"varint,2,opt,name=insecureSkipVerify,proto3" json:"insecureSkipVerify,omitempty"`
+	// ServerNameOverride overrides the server name that is used to verify
+	// the hostname of the upstream endpoint's certificate. It is mainly
+	// useful when the endpoint address does not match the certificate.
+	ServerNameOverride string `protobuf:"bytes,3,opt,name=serverNameOverride,proto3" json:"serverNameOverride,omitempty"`
+	// CAPEM is the PEM-encoded CA certificate that is used to verify the
+	// upstream endpoint's certificate. If unset, the system CA pool is
+	// used.
+	CaPEM         string `protobuf:"bytes,4,opt,name=caPEM,proto3" json:"caPEM,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CollectorExporter_Spec_PrometheusRemoteWrite_TLS) Reset() {
@@ -8712,11 +9556,19 @@ func (x *CollectorExporter_Spec_PrometheusRemoteWrite_TLS) GetCaPEM() string {
 	return ""
 }
 
+// RemoteWriteQueue sets the options of the queue that buffers the
+// metrics before they are sent to the upstream endpoint
 type CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Enabled       bool                   `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
-	QueueSize     int64                  `protobuf:"varint,2,opt,name=queueSize,proto3" json:"queueSize,omitempty"`
-	NumConsumers  int32                  `protobuf:"varint,3,opt,name=numConsumers,proto3" json:"numConsumers,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Enabled enables the queue. When disabled, the metrics are sent
+	// synchronously.
+	Enabled bool `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	// QueueSize is the maximum number of metric batches that are buffered
+	// in the queue.
+	QueueSize int64 `protobuf:"varint,2,opt,name=queueSize,proto3" json:"queueSize,omitempty"`
+	// NumConsumers is the number of concurrent workers that read from the
+	// queue and send the metrics to the upstream endpoint.
+	NumConsumers  int32 `protobuf:"varint,3,opt,name=numConsumers,proto3" json:"numConsumers,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -8772,10 +9624,16 @@ func (x *CollectorExporter_Spec_PrometheusRemoteWrite_RemoteWriteQueue) GetNumCo
 	return 0
 }
 
+// ResourceToTelemetryConversion sets whether the OpenTelemetry resource
+// attributes are converted into Prometheus metric labels
 type CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConversion struct {
-	state                    protoimpl.MessageState `protogen:"open.v1"`
-	Enabled                  bool                   `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
-	ExcludeServiceAttributes bool                   `protobuf:"varint,2,opt,name=excludeServiceAttributes,proto3" json:"excludeServiceAttributes,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Enabled enables the conversion of the resource attributes into
+	// metric labels.
+	Enabled bool `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	// ExcludeServiceAttributes excludes the `service.*` resource
+	// attributes from the conversion.
+	ExcludeServiceAttributes bool `protobuf:"varint,2,opt,name=excludeServiceAttributes,proto3" json:"excludeServiceAttributes,omitempty"`
 	unknownFields            protoimpl.UnknownFields
 	sizeCache                protoimpl.SizeCache
 }
@@ -8824,9 +9682,12 @@ func (x *CollectorExporter_Spec_PrometheusRemoteWrite_ResourceToTelemetryConvers
 	return false
 }
 
+// TargetInfo sets whether the `target_info` metric, which carries the
+// OpenTelemetry resource attributes, is exported
 type CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Enabled       bool                   `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Enabled enables exporting the `target_info` metric.
+	Enabled       bool `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -8868,6 +9729,8 @@ func (x *CollectorExporter_Spec_PrometheusRemoteWrite_TargetInfo) GetEnabled() b
 	return false
 }
 
+// Bearer is the bearer token that is set in the `Authorization`
+// request header
 type CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Bearer struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -8929,15 +9792,20 @@ type isCollectorExporter_Spec_PrometheusRemoteWrite_Auth_Bearer_Type interface {
 }
 
 type CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Bearer_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains the
+	// bearer token
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Bearer_FromSecret) isCollectorExporter_Spec_PrometheusRemoteWrite_Auth_Bearer_Type() {
 }
 
+// Basic is the HTTP basic authentication credentials
 type CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic struct {
-	state         protoimpl.MessageState                                            `protogen:"open.v1"`
-	Username      string                                                            `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Username is the username value of HTTP basic authentication
+	Username string `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	// Password is the password value of HTTP basic authentication
 	Password      *CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic_Password `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -8987,9 +9855,12 @@ func (x *CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic) GetPassword() 
 	return nil
 }
 
+// Custom is a credential that is set in a custom request header
 type CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom struct {
-	state         protoimpl.MessageState                                          `protogen:"open.v1"`
-	Header        string                                                          `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Header is the name of the header (e.g. "X-Custom-Auth")
+	Header string `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`
+	// Value is the value of the header
 	Value         *CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom_Value `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -9039,6 +9910,7 @@ func (x *CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom) GetValue() *C
 	return nil
 }
 
+// Password is the password value of HTTP basic authentication
 type CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic_Password struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -9100,12 +9972,15 @@ type isCollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic_Password_Type int
 }
 
 type CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic_Password_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains
+	// the Password
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic_Password_FromSecret) isCollectorExporter_Spec_PrometheusRemoteWrite_Auth_Basic_Password_Type() {
 }
 
+// Value is the value of the custom request header
 type CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom_Value struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -9167,12 +10042,15 @@ type isCollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom_Value_Type inter
 }
 
 type CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom_Value_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains
+	// the header's Value
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*CollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom_Value_FromSecret) isCollectorExporter_Spec_PrometheusRemoteWrite_Auth_Custom_Value_Type() {
 }
 
+// Password is the password of the ClickHouse user
 type CollectorExporter_Spec_Clickhouse_Password struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -9234,20 +10112,35 @@ type isCollectorExporter_Spec_Clickhouse_Password_Type interface {
 }
 
 type CollectorExporter_Spec_Clickhouse_Password_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains the
+	// Password
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*CollectorExporter_Spec_Clickhouse_Password_FromSecret) isCollectorExporter_Spec_Clickhouse_Password_Type() {
 }
 
+// TLS sets the TLS-related options of the connection to the upstream
+// endpoint
 type CollectorExporter_Spec_Clickhouse_TLS struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
-	Insecure           bool                   `protobuf:"varint,1,opt,name=insecure,proto3" json:"insecure,omitempty"`
-	InsecureSkipVerify bool                   `protobuf:"varint,2,opt,name=insecureSkipVerify,proto3" json:"insecureSkipVerify,omitempty"`
-	ServerNameOverride string                 `protobuf:"bytes,3,opt,name=serverNameOverride,proto3" json:"serverNameOverride,omitempty"`
-	CaPEM              string                 `protobuf:"bytes,4,opt,name=caPEM,proto3" json:"caPEM,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Insecure disables TLS entirely and connects to the upstream endpoint
+	// over plaintext.
+	Insecure bool `protobuf:"varint,1,opt,name=insecure,proto3" json:"insecure,omitempty"`
+	// InsecureSkipVerify skips the verification of the upstream endpoint's
+	// certificate chain and hostname. It is not recommended in production
+	// environments.
+	InsecureSkipVerify bool `protobuf:"varint,2,opt,name=insecureSkipVerify,proto3" json:"insecureSkipVerify,omitempty"`
+	// ServerNameOverride overrides the server name that is used to verify
+	// the hostname of the upstream endpoint's certificate. It is mainly
+	// useful when the endpoint address does not match the certificate.
+	ServerNameOverride string `protobuf:"bytes,3,opt,name=serverNameOverride,proto3" json:"serverNameOverride,omitempty"`
+	// CAPEM is the PEM-encoded CA certificate that is used to verify the
+	// upstream endpoint's certificate. If unset, the system CA pool is
+	// used.
+	CaPEM         string `protobuf:"bytes,4,opt,name=caPEM,proto3" json:"caPEM,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CollectorExporter_Spec_Clickhouse_TLS) Reset() {
@@ -9308,10 +10201,14 @@ func (x *CollectorExporter_Spec_Clickhouse_TLS) GetCaPEM() string {
 	return ""
 }
 
+// ConnectionParam is an additional parameter that is set in the
+// ClickHouse connection string
 type CollectorExporter_Spec_Clickhouse_ConnectionParam struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Value         string                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Key is the name of the parameter
+	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	// Value is the value of the parameter
+	Value         string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -9360,10 +10257,14 @@ func (x *CollectorExporter_Spec_Clickhouse_ConnectionParam) GetValue() string {
 	return ""
 }
 
+// TableEngine sets the ClickHouse table engine that is used for the
+// tables created by the exporter
 type CollectorExporter_Spec_Clickhouse_TableEngine struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Params        string                 `protobuf:"bytes,2,opt,name=params,proto3" json:"params,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Name is the name of the table engine (e.g. `MergeTree`).
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// Params is the parameters of the table engine.
+	Params        string `protobuf:"bytes,2,opt,name=params,proto3" json:"params,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -9412,13 +10313,21 @@ func (x *CollectorExporter_Spec_Clickhouse_TableEngine) GetParams() string {
 	return ""
 }
 
+// MetricsTables sets the names of the tables that the metrics are
+// written to. Each OpenTelemetry metric type is stored in its own table.
 type CollectorExporter_Spec_Clickhouse_MetricsTables struct {
-	state                protoimpl.MessageState `protogen:"open.v1"`
-	Gauge                string                 `protobuf:"bytes,1,opt,name=gauge,proto3" json:"gauge,omitempty"`
-	Sum                  string                 `protobuf:"bytes,2,opt,name=sum,proto3" json:"sum,omitempty"`
-	Summary              string                 `protobuf:"bytes,3,opt,name=summary,proto3" json:"summary,omitempty"`
-	Histogram            string                 `protobuf:"bytes,4,opt,name=histogram,proto3" json:"histogram,omitempty"`
-	ExponentialHistogram string                 `protobuf:"bytes,5,opt,name=exponentialHistogram,proto3" json:"exponentialHistogram,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Gauge is the name of the table of the gauge metrics.
+	Gauge string `protobuf:"bytes,1,opt,name=gauge,proto3" json:"gauge,omitempty"`
+	// Sum is the name of the table of the sum metrics.
+	Sum string `protobuf:"bytes,2,opt,name=sum,proto3" json:"sum,omitempty"`
+	// Summary is the name of the table of the summary metrics.
+	Summary string `protobuf:"bytes,3,opt,name=summary,proto3" json:"summary,omitempty"`
+	// Histogram is the name of the table of the histogram metrics.
+	Histogram string `protobuf:"bytes,4,opt,name=histogram,proto3" json:"histogram,omitempty"`
+	// ExponentialHistogram is the name of the table of the exponential
+	// histogram metrics.
+	ExponentialHistogram string `protobuf:"bytes,5,opt,name=exponentialHistogram,proto3" json:"exponentialHistogram,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -9488,10 +10397,14 @@ func (x *CollectorExporter_Spec_Clickhouse_MetricsTables) GetExponentialHistogra
 	return ""
 }
 
+// Header is an additional header that is set in every request sent to
+// the upstream endpoint
 type CollectorExporter_Spec_Elasticsearch_Header struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Value         string                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Key is the name of the header
+	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	// Value is the value of the header
+	Value         string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -9540,6 +10453,8 @@ func (x *CollectorExporter_Spec_Elasticsearch_Header) GetValue() string {
 	return ""
 }
 
+// Auth sets the credentials that are used by the Collector to
+// authenticate to the upstream Elasticsearch cluster
 type CollectorExporter_Spec_Elasticsearch_Auth struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -9611,10 +10526,12 @@ type isCollectorExporter_Spec_Elasticsearch_Auth_Type interface {
 }
 
 type CollectorExporter_Spec_Elasticsearch_Auth_ApiKey struct {
+	// APIKey sets the API key authentication options.
 	ApiKey *CollectorExporter_Spec_Elasticsearch_Auth_APIKey `protobuf:"bytes,1,opt,name=apiKey,proto3,oneof"`
 }
 
 type CollectorExporter_Spec_Elasticsearch_Auth_Basic_ struct {
+	// Basic sets the HTTP basic authentication options.
 	Basic *CollectorExporter_Spec_Elasticsearch_Auth_Basic `protobuf:"bytes,2,opt,name=basic,proto3,oneof"`
 }
 
@@ -9624,9 +10541,14 @@ func (*CollectorExporter_Spec_Elasticsearch_Auth_ApiKey) isCollectorExporter_Spe
 func (*CollectorExporter_Spec_Elasticsearch_Auth_Basic_) isCollectorExporter_Spec_Elasticsearch_Auth_Type() {
 }
 
+// TLS sets the TLS-related options of the connection to the upstream
+// Elasticsearch cluster
 type CollectorExporter_Spec_Elasticsearch_TLS struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
-	InsecureSkipVerify bool                   `protobuf:"varint,1,opt,name=insecureSkipVerify,proto3" json:"insecureSkipVerify,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// InsecureSkipVerify skips the verification of the upstream endpoint's
+	// certificate chain and hostname. It is not recommended in production
+	// environments.
+	InsecureSkipVerify bool `protobuf:"varint,1,opt,name=insecureSkipVerify,proto3" json:"insecureSkipVerify,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -9668,6 +10590,7 @@ func (x *CollectorExporter_Spec_Elasticsearch_TLS) GetInsecureSkipVerify() bool 
 	return false
 }
 
+// APIKey is the Elasticsearch API key
 type CollectorExporter_Spec_Elasticsearch_Auth_APIKey struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -9729,15 +10652,20 @@ type isCollectorExporter_Spec_Elasticsearch_Auth_APIKey_Type interface {
 }
 
 type CollectorExporter_Spec_Elasticsearch_Auth_APIKey_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains the
+	// API key
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*CollectorExporter_Spec_Elasticsearch_Auth_APIKey_FromSecret) isCollectorExporter_Spec_Elasticsearch_Auth_APIKey_Type() {
 }
 
+// Basic is the HTTP basic authentication credentials
 type CollectorExporter_Spec_Elasticsearch_Auth_Basic struct {
-	state         protoimpl.MessageState                                    `protogen:"open.v1"`
-	User          string                                                    `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// User is the username value of HTTP basic authentication
+	User string `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	// Password is the password value of HTTP basic authentication
 	Password      *CollectorExporter_Spec_Elasticsearch_Auth_Basic_Password `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -9787,6 +10715,7 @@ func (x *CollectorExporter_Spec_Elasticsearch_Auth_Basic) GetPassword() *Collect
 	return nil
 }
 
+// Password is the password value of HTTP basic authentication
 type CollectorExporter_Spec_Elasticsearch_Auth_Basic_Password struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -9848,12 +10777,15 @@ type isCollectorExporter_Spec_Elasticsearch_Auth_Basic_Password_Type interface {
 }
 
 type CollectorExporter_Spec_Elasticsearch_Auth_Basic_Password_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains
+	// the Password
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*CollectorExporter_Spec_Elasticsearch_Auth_Basic_Password_FromSecret) isCollectorExporter_Spec_Elasticsearch_Auth_Basic_Password_Type() {
 }
 
+// Token is the Logz.io shipping token
 type CollectorExporter_Spec_Logzio_Token struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -9915,15 +10847,21 @@ type isCollectorExporter_Spec_Logzio_Token_Type interface {
 }
 
 type CollectorExporter_Spec_Logzio_Token_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains the
+	// Token
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*CollectorExporter_Spec_Logzio_Token_FromSecret) isCollectorExporter_Spec_Logzio_Token_Type() {}
 
+// Header is an additional header that is set in every request sent to
+// the upstream endpoint
 type CollectorExporter_Spec_InfluxDB_Header struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Value         string                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Key is the name of the header
+	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	// Value is the value of the header
+	Value         string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -9972,6 +10910,7 @@ func (x *CollectorExporter_Spec_InfluxDB_Header) GetValue() string {
 	return ""
 }
 
+// Token is the InfluxDB API token
 type CollectorExporter_Spec_InfluxDB_Token struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -10033,17 +10972,26 @@ type isCollectorExporter_Spec_InfluxDB_Token_Type interface {
 }
 
 type CollectorExporter_Spec_InfluxDB_Token_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains the
+	// Token
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*CollectorExporter_Spec_InfluxDB_Token_FromSecret) isCollectorExporter_Spec_InfluxDB_Token_Type() {
 }
 
+// V1Compatibility sets the options that are used to export to an
+// InfluxDB v1.x server instead of a v2.x one
 type CollectorExporter_Spec_InfluxDB_V1Compatibility struct {
-	state         protoimpl.MessageState                                    `protogen:"open.v1"`
-	Enabled       bool                                                      `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
-	Db            string                                                    `protobuf:"bytes,2,opt,name=db,proto3" json:"db,omitempty"`
-	Username      string                                                    `protobuf:"bytes,3,opt,name=username,proto3" json:"username,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Enabled enables the InfluxDB v1.x compatibility mode.
+	Enabled bool `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	// DB is the name of the InfluxDB v1.x database that the telemetry is
+	// written to.
+	Db string `protobuf:"bytes,2,opt,name=db,proto3" json:"db,omitempty"`
+	// Username is the username of the InfluxDB v1.x user.
+	Username string `protobuf:"bytes,3,opt,name=username,proto3" json:"username,omitempty"`
+	// Password is the password of the InfluxDB v1.x user.
 	Password      *CollectorExporter_Spec_InfluxDB_V1Compatibility_Password `protobuf:"bytes,4,opt,name=password,proto3" json:"password,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -10107,6 +11055,7 @@ func (x *CollectorExporter_Spec_InfluxDB_V1Compatibility) GetPassword() *Collect
 	return nil
 }
 
+// Password is the password of the InfluxDB v1.x user
 type CollectorExporter_Spec_InfluxDB_V1Compatibility_Password struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -10168,16 +11117,22 @@ type isCollectorExporter_Spec_InfluxDB_V1Compatibility_Password_Type interface {
 }
 
 type CollectorExporter_Spec_InfluxDB_V1Compatibility_Password_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains the
+	// Password
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*CollectorExporter_Spec_InfluxDB_V1Compatibility_Password_FromSecret) isCollectorExporter_Spec_InfluxDB_V1Compatibility_Password_Type() {
 }
 
+// Header is an additional header that is set in every request sent to
+// the upstream endpoint
 type CollectorExporter_Spec_Kafka_Header struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Value         string                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Key is the name of the header
+	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	// Value is the value of the header
+	Value         string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -10226,6 +11181,8 @@ func (x *CollectorExporter_Spec_Kafka_Header) GetValue() string {
 	return ""
 }
 
+// Auth sets the credentials that are used by the Collector to
+// authenticate to the upstream Kafka brokers
 type CollectorExporter_Spec_Kafka_Auth struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -10287,15 +11244,23 @@ type isCollectorExporter_Spec_Kafka_Auth_Type interface {
 }
 
 type CollectorExporter_Spec_Kafka_Auth_Sasl struct {
+	// SASL sets the SASL authentication options.
 	Sasl *CollectorExporter_Spec_Kafka_Auth_SASL `protobuf:"bytes,1,opt,name=sasl,proto3,oneof"`
 }
 
 func (*CollectorExporter_Spec_Kafka_Auth_Sasl) isCollectorExporter_Spec_Kafka_Auth_Type() {}
 
+// TLS sets the TLS-related options of the connections to the upstream
+// Kafka brokers
 type CollectorExporter_Spec_Kafka_TLS struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
-	Insecure           bool                   `protobuf:"varint,1,opt,name=insecure,proto3" json:"insecure,omitempty"`
-	InsecureSkipVerify bool                   `protobuf:"varint,2,opt,name=insecureSkipVerify,proto3" json:"insecureSkipVerify,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Insecure disables TLS entirely and connects to the brokers over
+	// plaintext.
+	Insecure bool `protobuf:"varint,1,opt,name=insecure,proto3" json:"insecure,omitempty"`
+	// InsecureSkipVerify skips the verification of the brokers'
+	// certificate chain and hostname. It is not recommended in production
+	// environments.
+	InsecureSkipVerify bool `protobuf:"varint,2,opt,name=insecureSkipVerify,proto3" json:"insecureSkipVerify,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -10344,9 +11309,13 @@ func (x *CollectorExporter_Spec_Kafka_TLS) GetInsecureSkipVerify() bool {
 	return false
 }
 
+// Signal sets the Kafka topic and encoding of a single telemetry signal
+// (i.e. logs or metrics)
 type CollectorExporter_Spec_Kafka_Signal struct {
-	state         protoimpl.MessageState                `protogen:"open.v1"`
-	Topic         string                                `protobuf:"bytes,1,opt,name=topic,proto3" json:"topic,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Topic is the name of the Kafka topic that the signal is produced to.
+	Topic string `protobuf:"bytes,1,opt,name=topic,proto3" json:"topic,omitempty"`
+	// Encoding sets the wire encoding of the produced records.
 	Encoding      CollectorExporter_Spec_Kafka_Encoding `protobuf:"varint,2,opt,name=encoding,proto3,enum=octelium.api.main.enterprise.v1.CollectorExporter_Spec_Kafka_Encoding" json:"encoding,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -10396,16 +11365,30 @@ func (x *CollectorExporter_Spec_Kafka_Signal) GetEncoding() CollectorExporter_Sp
 	return CollectorExporter_Spec_Kafka_ENCODING_UNSET
 }
 
+// Producer sets the Kafka producer options
 type CollectorExporter_Spec_Kafka_Producer struct {
-	state                  protoimpl.MessageState                           `protogen:"open.v1"`
-	MaxMessageBytes        int64                                            `protobuf:"varint,1,opt,name=maxMessageBytes,proto3" json:"maxMessageBytes,omitempty"`
-	RequiredAcks           int32                                            `protobuf:"varint,2,opt,name=requiredAcks,proto3" json:"requiredAcks,omitempty"`
-	Compression            CollectorExporter_Spec_Kafka_ProducerCompression `protobuf:"varint,3,opt,name=compression,proto3,enum=octelium.api.main.enterprise.v1.CollectorExporter_Spec_Kafka_ProducerCompression" json:"compression,omitempty"`
-	FlushMaxMessages       int64                                            `protobuf:"varint,4,opt,name=flushMaxMessages,proto3" json:"flushMaxMessages,omitempty"`
-	AllowAutoTopicCreation bool                                             `protobuf:"varint,5,opt,name=allowAutoTopicCreation,proto3" json:"allowAutoTopicCreation,omitempty"`
-	Linger                 *metav1.Duration                                 `protobuf:"bytes,6,opt,name=linger,proto3" json:"linger,omitempty"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// MaxMessageBytes is the maximum size in bytes of a single produced
+	// record.
+	MaxMessageBytes int64 `protobuf:"varint,1,opt,name=maxMessageBytes,proto3" json:"maxMessageBytes,omitempty"`
+	// RequiredAcks is the number of broker acknowledgements that are
+	// required before a produce request is considered complete (i.e. `0`
+	// for none, `1` for the leader only and `-1` for all the in-sync
+	// replicas).
+	RequiredAcks int32 `protobuf:"varint,2,opt,name=requiredAcks,proto3" json:"requiredAcks,omitempty"`
+	// Compression sets the compression algorithm of the produced records.
+	Compression CollectorExporter_Spec_Kafka_ProducerCompression `protobuf:"varint,3,opt,name=compression,proto3,enum=octelium.api.main.enterprise.v1.CollectorExporter_Spec_Kafka_ProducerCompression" json:"compression,omitempty"`
+	// FlushMaxMessages is the maximum number of records that are buffered
+	// before they are flushed to the brokers.
+	FlushMaxMessages int64 `protobuf:"varint,4,opt,name=flushMaxMessages,proto3" json:"flushMaxMessages,omitempty"`
+	// AllowAutoTopicCreation allows the brokers to automatically create
+	// the topics that do not already exist.
+	AllowAutoTopicCreation bool `protobuf:"varint,5,opt,name=allowAutoTopicCreation,proto3" json:"allowAutoTopicCreation,omitempty"`
+	// Linger is the duration that the producer waits to batch more records
+	// together before sending them to the brokers.
+	Linger        *metav1.Duration `protobuf:"bytes,6,opt,name=linger,proto3" json:"linger,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CollectorExporter_Spec_Kafka_Producer) Reset() {
@@ -10480,10 +11463,14 @@ func (x *CollectorExporter_Spec_Kafka_Producer) GetLinger() *metav1.Duration {
 	return nil
 }
 
+// SASL is the SASL authentication credentials
 type CollectorExporter_Spec_Kafka_Auth_SASL struct {
-	state         protoimpl.MessageState                           `protogen:"open.v1"`
-	Username      string                                           `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
-	Password      *CollectorExporter_Spec_Kafka_Auth_SASL_Password `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Username is the username of the SASL user.
+	Username string `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	// Password is the password of the SASL user.
+	Password *CollectorExporter_Spec_Kafka_Auth_SASL_Password `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	// Mechanism sets the SASL mechanism used to authenticate.
 	Mechanism     CollectorExporter_Spec_Kafka_Auth_SASL_Mechanism `protobuf:"varint,3,opt,name=mechanism,proto3,enum=octelium.api.main.enterprise.v1.CollectorExporter_Spec_Kafka_Auth_SASL_Mechanism" json:"mechanism,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -10540,6 +11527,7 @@ func (x *CollectorExporter_Spec_Kafka_Auth_SASL) GetMechanism() CollectorExporte
 	return CollectorExporter_Spec_Kafka_Auth_SASL_MECHANISM_UNSET
 }
 
+// Password is the password of the SASL user
 type CollectorExporter_Spec_Kafka_Auth_SASL_Password struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -10601,12 +11589,15 @@ type isCollectorExporter_Spec_Kafka_Auth_SASL_Password_Type interface {
 }
 
 type CollectorExporter_Spec_Kafka_Auth_SASL_Password_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains
+	// the Password
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*CollectorExporter_Spec_Kafka_Auth_SASL_Password_FromSecret) isCollectorExporter_Spec_Kafka_Auth_SASL_Password_Type() {
 }
 
+// APIKey is the Datadog API key
 type CollectorExporter_Spec_Datadog_APIKey struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -10668,17 +11659,25 @@ type isCollectorExporter_Spec_Datadog_APIKey_Type interface {
 }
 
 type CollectorExporter_Spec_Datadog_APIKey_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains the
+	// API key
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*CollectorExporter_Spec_Datadog_APIKey_FromSecret) isCollectorExporter_Spec_Datadog_APIKey_Type() {
 }
 
+// API sets the Datadog API-related options
 type CollectorExporter_Spec_Datadog_API struct {
-	state            protoimpl.MessageState                 `protogen:"open.v1"`
-	Key              *CollectorExporter_Spec_Datadog_APIKey `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Site             string                                 `protobuf:"bytes,2,opt,name=site,proto3" json:"site,omitempty"`
-	FailOnInvalidKey bool                                   `protobuf:"varint,3,opt,name=failOnInvalidKey,proto3" json:"failOnInvalidKey,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Key is the Datadog API key. Required.
+	Key *CollectorExporter_Spec_Datadog_APIKey `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	// Site is the Datadog site that the telemetry is exported to (e.g.
+	// `datadoghq.com`, `datadoghq.eu`).
+	Site string `protobuf:"bytes,2,opt,name=site,proto3" json:"site,omitempty"`
+	// FailOnInvalidKey makes the Collector fail to start when the API key
+	// is rejected by Datadog instead of only logging a warning.
+	FailOnInvalidKey bool `protobuf:"varint,3,opt,name=failOnInvalidKey,proto3" json:"failOnInvalidKey,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -10734,11 +11733,18 @@ func (x *CollectorExporter_Spec_Datadog_API) GetFailOnInvalidKey() bool {
 	return false
 }
 
+// Metrics sets the exported metrics-related options
 type CollectorExporter_Spec_Datadog_Metrics struct {
-	state                              protoimpl.MessageState `protogen:"open.v1"`
-	Endpoint                           string                 `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
-	ResourceAttributesAsTags           bool                   `protobuf:"varint,2,opt,name=resourceAttributesAsTags,proto3" json:"resourceAttributesAsTags,omitempty"`
-	InstrumentationScopeMetadataAsTags bool                   `protobuf:"varint,3,opt,name=instrumentationScopeMetadataAsTags,proto3" json:"instrumentationScopeMetadataAsTags,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Endpoint overrides the URL that the metrics are exported to. If
+	// unset, the URL is derived from the Site.
+	Endpoint string `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
+	// ResourceAttributesAsTags exports the OpenTelemetry resource
+	// attributes as Datadog tags.
+	ResourceAttributesAsTags bool `protobuf:"varint,2,opt,name=resourceAttributesAsTags,proto3" json:"resourceAttributesAsTags,omitempty"`
+	// InstrumentationScopeMetadataAsTags exports the instrumentation scope
+	// name and version as Datadog tags.
+	InstrumentationScopeMetadataAsTags bool `protobuf:"varint,3,opt,name=instrumentationScopeMetadataAsTags,proto3" json:"instrumentationScopeMetadataAsTags,omitempty"`
 	unknownFields                      protoimpl.UnknownFields
 	sizeCache                          protoimpl.SizeCache
 }
@@ -10794,14 +11800,22 @@ func (x *CollectorExporter_Spec_Datadog_Metrics) GetInstrumentationScopeMetadata
 	return false
 }
 
+// Logs sets the exported logs-related options
 type CollectorExporter_Spec_Datadog_Logs struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	Endpoint         string                 `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
-	UseCompression   bool                   `protobuf:"varint,2,opt,name=useCompression,proto3" json:"useCompression,omitempty"`
-	CompressionLevel int32                  `protobuf:"varint,3,opt,name=compressionLevel,proto3" json:"compressionLevel,omitempty"`
-	BatchWait        *metav1.Duration       `protobuf:"bytes,4,opt,name=batchWait,proto3" json:"batchWait,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Endpoint overrides the URL that the logs are exported to. If unset,
+	// the URL is derived from the Site.
+	Endpoint string `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
+	// UseCompression enables compressing the exported log payloads.
+	UseCompression bool `protobuf:"varint,2,opt,name=useCompression,proto3" json:"useCompression,omitempty"`
+	// CompressionLevel is the compression level that is used when
+	// UseCompression is enabled.
+	CompressionLevel int32 `protobuf:"varint,3,opt,name=compressionLevel,proto3" json:"compressionLevel,omitempty"`
+	// BatchWait is the maximum duration that the exporter waits to batch
+	// more logs together before sending them.
+	BatchWait     *metav1.Duration `protobuf:"bytes,4,opt,name=batchWait,proto3" json:"batchWait,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CollectorExporter_Spec_Datadog_Logs) Reset() {
@@ -10862,10 +11876,14 @@ func (x *CollectorExporter_Spec_Datadog_Logs) GetBatchWait() *metav1.Duration {
 	return nil
 }
 
+// HostMetadata sets the host metadata-related options
 type CollectorExporter_Spec_Datadog_HostMetadata struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	Enabled        bool                   `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
-	ReporterPeriod *metav1.Duration       `protobuf:"bytes,2,opt,name=reporterPeriod,proto3" json:"reporterPeriod,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Enabled enables reporting the host metadata to Datadog.
+	Enabled bool `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	// ReporterPeriod is the interval at which the host metadata is
+	// reported.
+	ReporterPeriod *metav1.Duration `protobuf:"bytes,2,opt,name=reporterPeriod,proto3" json:"reporterPeriod,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -10914,6 +11932,7 @@ func (x *CollectorExporter_Spec_Datadog_HostMetadata) GetReporterPeriod() *metav
 	return nil
 }
 
+// Token is the Splunk HEC token
 type CollectorExporter_Spec_Splunk_Token struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -10975,14 +11994,21 @@ type isCollectorExporter_Spec_Splunk_Token_Type interface {
 }
 
 type CollectorExporter_Spec_Splunk_Token_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains the
+	// Token
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*CollectorExporter_Spec_Splunk_Token_FromSecret) isCollectorExporter_Spec_Splunk_Token_Type() {}
 
+// TLS sets the TLS-related options of the connection to the upstream
+// endpoint
 type CollectorExporter_Spec_Splunk_TLS struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
-	InsecureSkipVerify bool                   `protobuf:"varint,1,opt,name=insecureSkipVerify,proto3" json:"insecureSkipVerify,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// InsecureSkipVerify skips the verification of the upstream endpoint's
+	// certificate chain and hostname. It is not recommended in production
+	// environments.
+	InsecureSkipVerify bool `protobuf:"varint,1,opt,name=insecureSkipVerify,proto3" json:"insecureSkipVerify,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -11024,6 +12050,7 @@ func (x *CollectorExporter_Spec_Splunk_TLS) GetInsecureSkipVerify() bool {
 	return false
 }
 
+// ConnectionString is the Application Insights connection string
 type CollectorExporter_Spec_AzureMonitor_ConnectionString struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -11085,12 +12112,15 @@ type isCollectorExporter_Spec_AzureMonitor_ConnectionString_Type interface {
 }
 
 type CollectorExporter_Spec_AzureMonitor_ConnectionString_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains the
+	// connection string
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*CollectorExporter_Spec_AzureMonitor_ConnectionString_FromSecret) isCollectorExporter_Spec_AzureMonitor_ConnectionString_Type() {
 }
 
+// InstrumentationKey is the Application Insights instrumentation key
 type CollectorExporter_Spec_AzureMonitor_InstrumentationKey struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -11152,12 +12182,15 @@ type isCollectorExporter_Spec_AzureMonitor_InstrumentationKey_Type interface {
 }
 
 type CollectorExporter_Spec_AzureMonitor_InstrumentationKey_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains the
+	// instrumentation key
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*CollectorExporter_Spec_AzureMonitor_InstrumentationKey_FromSecret) isCollectorExporter_Spec_AzureMonitor_InstrumentationKey_Type() {
 }
 
+// ApplicationKey is the client secret of the Entra ID application
 type CollectorExporter_Spec_AzureDataExplorer_ApplicationKey struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -11219,19 +12252,26 @@ type isCollectorExporter_Spec_AzureDataExplorer_ApplicationKey_Type interface {
 }
 
 type CollectorExporter_Spec_AzureDataExplorer_ApplicationKey_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains the
+	// application key
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*CollectorExporter_Spec_AzureDataExplorer_ApplicationKey_FromSecret) isCollectorExporter_Spec_AzureDataExplorer_ApplicationKey_Type() {
 }
 
+// ServicePrincipal authenticates to Azure Data Explorer using an Entra
+// ID application (i.e. a service principal)
 type CollectorExporter_Spec_AzureDataExplorer_ServicePrincipal struct {
-	state          protoimpl.MessageState                                   `protogen:"open.v1"`
-	ApplicationID  string                                                   `protobuf:"bytes,1,opt,name=applicationID,proto3" json:"applicationID,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ApplicationID is the client ID of the Entra ID application.
+	ApplicationID string `protobuf:"bytes,1,opt,name=applicationID,proto3" json:"applicationID,omitempty"`
+	// ApplicationKey is the client secret of the Entra ID application.
 	ApplicationKey *CollectorExporter_Spec_AzureDataExplorer_ApplicationKey `protobuf:"bytes,2,opt,name=applicationKey,proto3" json:"applicationKey,omitempty"`
-	TenantID       string                                                   `protobuf:"bytes,3,opt,name=tenantID,proto3" json:"tenantID,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// TenantID is the ID of the Entra ID tenant that owns the application.
+	TenantID      string `protobuf:"bytes,3,opt,name=tenantID,proto3" json:"tenantID,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CollectorExporter_Spec_AzureDataExplorer_ServicePrincipal) Reset() {
@@ -11285,9 +12325,13 @@ func (x *CollectorExporter_Spec_AzureDataExplorer_ServicePrincipal) GetTenantID(
 	return ""
 }
 
+// ManagedIdentity authenticates to Azure Data Explorer using an Azure
+// managed identity
 type CollectorExporter_Spec_AzureDataExplorer_ManagedIdentity struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ID is the client ID of the user-assigned managed identity. If unset,
+	// the system-assigned managed identity is used.
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -11329,6 +12373,9 @@ func (x *CollectorExporter_Spec_AzureDataExplorer_ManagedIdentity) GetId() strin
 	return ""
 }
 
+// AzureDefaultAuth authenticates to Azure Data Explorer using the Azure
+// default credential chain (e.g. the environment variables, the workload
+// identity, the managed identity, etc...)
 type CollectorExporter_Spec_AzureDataExplorer_AzureDefaultAuth struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -11365,6 +12412,8 @@ func (*CollectorExporter_Spec_AzureDataExplorer_AzureDefaultAuth) Descriptor() (
 	return file_enterprisev1_proto_rawDescGZIP(), []int{2, 0, 11, 3}
 }
 
+// Auth sets the credentials that are used by the Collector to
+// authenticate to Azure Data Explorer
 type CollectorExporter_Spec_AzureDataExplorer_Auth struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -11446,14 +12495,20 @@ type isCollectorExporter_Spec_AzureDataExplorer_Auth_Type interface {
 }
 
 type CollectorExporter_Spec_AzureDataExplorer_Auth_ServicePrincipal struct {
+	// ServicePrincipal sets the Entra ID application authentication
+	// options.
 	ServicePrincipal *CollectorExporter_Spec_AzureDataExplorer_ServicePrincipal `protobuf:"bytes,1,opt,name=servicePrincipal,proto3,oneof"`
 }
 
 type CollectorExporter_Spec_AzureDataExplorer_Auth_ManagedIdentity struct {
+	// ManagedIdentity sets the Azure managed identity authentication
+	// options.
 	ManagedIdentity *CollectorExporter_Spec_AzureDataExplorer_ManagedIdentity `protobuf:"bytes,2,opt,name=managedIdentity,proto3,oneof"`
 }
 
 type CollectorExporter_Spec_AzureDataExplorer_Auth_AzureDefault struct {
+	// AzureDefault sets the Azure default credential chain
+	// authentication options.
 	AzureDefault *CollectorExporter_Spec_AzureDataExplorer_AzureDefaultAuth `protobuf:"bytes,3,opt,name=azureDefault,proto3,oneof"`
 }
 
@@ -11466,11 +12521,14 @@ func (*CollectorExporter_Spec_AzureDataExplorer_Auth_ManagedIdentity) isCollecto
 func (*CollectorExporter_Spec_AzureDataExplorer_Auth_AzureDefault) isCollectorExporter_Spec_AzureDataExplorer_Auth_Type() {
 }
 
+// Spec is the ClusterConfig specification
 type ClusterConfig_Spec struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Collector sets the OpenTelemetry collector specific-options.
-	Collector     *ClusterConfig_Spec_Collector   `protobuf:"bytes,1,opt,name=collector,proto3" json:"collector,omitempty"`
-	Scaler        *ClusterConfig_Spec_Scaler      `protobuf:"bytes,2,opt,name=scaler,proto3" json:"scaler,omitempty"`
+	Collector *ClusterConfig_Spec_Collector `protobuf:"bytes,1,opt,name=collector,proto3" json:"collector,omitempty"`
+	// Scaler sets the scaling-related configuration of the Cluster components.
+	Scaler *ClusterConfig_Spec_Scaler `protobuf:"bytes,2,opt,name=scaler,proto3" json:"scaler,omitempty"`
+	// Certificate sets the Certificate management-related configuration.
 	Certificate   *ClusterConfig_Spec_Certificate `protobuf:"bytes,3,opt,name=certificate,proto3" json:"certificate,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -11527,15 +12585,25 @@ func (x *ClusterConfig_Spec) GetCertificate() *ClusterConfig_Spec_Certificate {
 	return nil
 }
 
+// Status is the current status of the ClusterConfig
 type ClusterConfig_Status struct {
-	state                   protoimpl.MessageState                 `protogen:"open.v1"`
-	UpgradeRequest          *ClusterConfig_Status_UpgradeRequest   `protobuf:"bytes,1,opt,name=upgradeRequest,proto3" json:"upgradeRequest,omitempty"`
-	LastUpgradeRequests     []*ClusterConfig_Status_UpgradeRequest `protobuf:"bytes,2,rep,name=lastUpgradeRequests,proto3" json:"lastUpgradeRequests,omitempty"`
-	TotalSuccessfulUpgrades uint64                                 `protobuf:"varint,3,opt,name=totalSuccessfulUpgrades,proto3" json:"totalSuccessfulUpgrades,omitempty"`
-	TotalFailedUpgrades     uint64                                 `protobuf:"varint,4,opt,name=totalFailedUpgrades,proto3" json:"totalFailedUpgrades,omitempty"`
-	LicenseInfo             *ClusterConfig_Status_LicenseInfo      `protobuf:"bytes,5,opt,name=licenseInfo,proto3" json:"licenseInfo,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// UpgradeRequest is the currently ongoing or last requested Cluster
+	// upgrade.
+	UpgradeRequest *ClusterConfig_Status_UpgradeRequest `protobuf:"bytes,1,opt,name=upgradeRequest,proto3" json:"upgradeRequest,omitempty"`
+	// LastUpgradeRequests is the list of the most recent Cluster upgrades.
+	LastUpgradeRequests []*ClusterConfig_Status_UpgradeRequest `protobuf:"bytes,2,rep,name=lastUpgradeRequests,proto3" json:"lastUpgradeRequests,omitempty"`
+	// TotalSuccessfulUpgrades is the total number of the Cluster upgrades that
+	// have successfully completed.
+	TotalSuccessfulUpgrades uint64 `protobuf:"varint,3,opt,name=totalSuccessfulUpgrades,proto3" json:"totalSuccessfulUpgrades,omitempty"`
+	// TotalFailedUpgrades is the total number of the Cluster upgrades that
+	// have failed.
+	TotalFailedUpgrades uint64 `protobuf:"varint,4,opt,name=totalFailedUpgrades,proto3" json:"totalFailedUpgrades,omitempty"`
+	// LicenseInfo is the information about the Cluster's currently set
+	// License.
+	LicenseInfo   *ClusterConfig_Status_LicenseInfo `protobuf:"bytes,5,opt,name=licenseInfo,proto3" json:"licenseInfo,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ClusterConfig_Status) Reset() {
@@ -11603,10 +12671,16 @@ func (x *ClusterConfig_Status) GetLicenseInfo() *ClusterConfig_Status_LicenseInf
 	return nil
 }
 
+// Collector sets the OpenTelemetry Collector specific options
 type ClusterConfig_Spec_Collector struct {
-	state                  protoimpl.MessageState                   `protogen:"open.v1"`
-	Pipelines              []*ClusterConfig_Spec_Collector_Pipeline `protobuf:"bytes,1,rep,name=pipelines,proto3" json:"pipelines,omitempty"`
-	AdditionalInlineConfig string                                   `protobuf:"bytes,2,opt,name=additionalInlineConfig,proto3" json:"additionalInlineConfig,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Pipelines is the list of the Collector pipelines.
+	Pipelines []*ClusterConfig_Spec_Collector_Pipeline `protobuf:"bytes,1,rep,name=pipelines,proto3" json:"pipelines,omitempty"`
+	// AdditionalInlineConfig is an additional raw YAML OpenTelemetry
+	// Collector configuration that is merged into the configuration
+	// generated by the Cluster. It is meant as an escape hatch for the
+	// options that are not exposed by the API.
+	AdditionalInlineConfig string `protobuf:"bytes,2,opt,name=additionalInlineConfig,proto3" json:"additionalInlineConfig,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -11655,10 +12729,15 @@ func (x *ClusterConfig_Spec_Collector) GetAdditionalInlineConfig() string {
 	return ""
 }
 
+// Scaler sets the number of replicas of the horizontally scalable Cluster
+// components
 type ClusterConfig_Spec_Scaler struct {
-	state         protoimpl.MessageState               `protogen:"open.v1"`
-	Octovigil     *ClusterConfig_Spec_Scaler_Octovigil `protobuf:"bytes,1,opt,name=octovigil,proto3" json:"octovigil,omitempty"`
-	Ingress       *ClusterConfig_Spec_Scaler_Ingress   `protobuf:"bytes,2,opt,name=ingress,proto3" json:"ingress,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Octovigil sets the Octovigil scaling-related configuration.
+	Octovigil *ClusterConfig_Spec_Scaler_Octovigil `protobuf:"bytes,1,opt,name=octovigil,proto3" json:"octovigil,omitempty"`
+	// Ingress sets the Ingress scaling-related configuration.
+	Ingress *ClusterConfig_Spec_Scaler_Ingress `protobuf:"bytes,2,opt,name=ingress,proto3" json:"ingress,omitempty"`
+	// Collector sets the Collector scaling-related configuration.
 	Collector     *ClusterConfig_Spec_Scaler_Collector `protobuf:"bytes,3,opt,name=collector,proto3" json:"collector,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -11715,9 +12794,13 @@ func (x *ClusterConfig_Spec_Scaler) GetCollector() *ClusterConfig_Spec_Scaler_Co
 	return nil
 }
 
+// Certificate sets the Cluster-wide Certificate management options
 type ClusterConfig_Spec_Certificate struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	DefaultMode   Certificate_Spec_Mode  `protobuf:"varint,1,opt,name=defaultMode,proto3,enum=octelium.api.main.enterprise.v1.Certificate_Spec_Mode" json:"defaultMode,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// DefaultMode is the Mode of the Certificates that are automatically
+	// created by the Cluster for the Namespaces and Services that need one.
+	// If unset, the Cluster's own default Mode is used.
+	DefaultMode   Certificate_Spec_Mode `protobuf:"varint,1,opt,name=defaultMode,proto3,enum=octelium.api.main.enterprise.v1.Certificate_Spec_Mode" json:"defaultMode,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -11759,12 +12842,22 @@ func (x *ClusterConfig_Spec_Certificate) GetDefaultMode() Certificate_Spec_Mode 
 	return Certificate_Spec_MODE_UNSET
 }
 
+// Pipeline is a Collector pipeline that routes a single telemetry signal
+// to a set of CollectorExporters
 type ClusterConfig_Spec_Collector_Pipeline struct {
-	state         protoimpl.MessageState                     `protogen:"open.v1"`
-	Name          string                                     `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Type          ClusterConfig_Spec_Collector_Pipeline_Type `protobuf:"varint,2,opt,name=type,proto3,enum=octelium.api.main.enterprise.v1.ClusterConfig_Spec_Collector_Pipeline_Type" json:"type,omitempty"`
-	IsDisabled    bool                                       `protobuf:"varint,3,opt,name=isDisabled,proto3" json:"isDisabled,omitempty"`
-	Exporters     []string                                   `protobuf:"bytes,4,rep,name=exporters,proto3" json:"exporters,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Name is the name of the Pipeline. It must be unique among the
+	// Pipelines.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// Type sets the telemetry signal that is routed by the Pipeline.
+	Type ClusterConfig_Spec_Collector_Pipeline_Type `protobuf:"varint,2,opt,name=type,proto3,enum=octelium.api.main.enterprise.v1.ClusterConfig_Spec_Collector_Pipeline_Type" json:"type,omitempty"`
+	// IsDisabled disables the Pipeline.
+	IsDisabled bool `protobuf:"varint,3,opt,name=isDisabled,proto3" json:"isDisabled,omitempty"`
+	// Exporters is the list of the names of the CollectorExporters that
+	// the signal is exported to. Every name must correspond to an existing
+	// CollectorExporter. A CollectorExporter that does not support the
+	// Pipeline's Type is silently skipped.
+	Exporters     []string `protobuf:"bytes,4,rep,name=exporters,proto3" json:"exporters,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -11827,9 +12920,11 @@ func (x *ClusterConfig_Spec_Collector_Pipeline) GetExporters() []string {
 	return nil
 }
 
+// Octovigil sets the scaling options of Octovigil
 type ClusterConfig_Spec_Scaler_Octovigil struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Replicas      int32                  `protobuf:"varint,1,opt,name=replicas,proto3" json:"replicas,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Replicas is the number of Octovigil replicas.
+	Replicas      int32 `protobuf:"varint,1,opt,name=replicas,proto3" json:"replicas,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -11871,9 +12966,11 @@ func (x *ClusterConfig_Spec_Scaler_Octovigil) GetReplicas() int32 {
 	return 0
 }
 
+// Ingress sets the scaling options of Ingress
 type ClusterConfig_Spec_Scaler_Ingress struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Replicas      int32                  `protobuf:"varint,1,opt,name=replicas,proto3" json:"replicas,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Replicas is the number of Ingress replicas.
+	Replicas      int32 `protobuf:"varint,1,opt,name=replicas,proto3" json:"replicas,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -11915,9 +13012,11 @@ func (x *ClusterConfig_Spec_Scaler_Ingress) GetReplicas() int32 {
 	return 0
 }
 
+// Collector sets the scaling options of the OpenTelemetry Collector
 type ClusterConfig_Spec_Scaler_Collector struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Replicas      int32                  `protobuf:"varint,1,opt,name=replicas,proto3" json:"replicas,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Replicas is the number of Collector replicas.
+	Replicas      int32 `protobuf:"varint,1,opt,name=replicas,proto3" json:"replicas,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -11959,12 +13058,19 @@ func (x *ClusterConfig_Spec_Scaler_Collector) GetReplicas() int32 {
 	return 0
 }
 
+// UpgradeRequest is the state of a Cluster upgrade that was requested via
+// the UpgradeCluster method
 type ClusterConfig_Status_UpgradeRequest struct {
-	state         protoimpl.MessageState                    `protogen:"open.v1"`
-	CreatedAt     *timestamppb.Timestamp                    `protobuf:"bytes,1,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
-	State         ClusterConfig_Status_UpgradeRequest_State `protobuf:"varint,2,opt,name=state,proto3,enum=octelium.api.main.enterprise.v1.ClusterConfig_Status_UpgradeRequest_State" json:"state,omitempty"`
-	DoneAt        *timestamppb.Timestamp                    `protobuf:"bytes,3,opt,name=doneAt,proto3" json:"doneAt,omitempty"`
-	Request       *UpgradeClusterRequest_Request            `protobuf:"bytes,4,opt,name=request,proto3" json:"request,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// CreatedAt is the date at which the upgrade was requested.
+	CreatedAt *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
+	// State is the current state of the upgrade.
+	State ClusterConfig_Status_UpgradeRequest_State `protobuf:"varint,2,opt,name=state,proto3,enum=octelium.api.main.enterprise.v1.ClusterConfig_Status_UpgradeRequest_State" json:"state,omitempty"`
+	// DoneAt is the date at which the upgrade completed or failed.
+	DoneAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=doneAt,proto3" json:"doneAt,omitempty"`
+	// Request is the upgrade request that was originally supplied to the
+	// UpgradeCluster method.
+	Request       *UpgradeClusterRequest_Request `protobuf:"bytes,4,opt,name=request,proto3" json:"request,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -12027,14 +13133,20 @@ func (x *ClusterConfig_Status_UpgradeRequest) GetRequest() *UpgradeClusterReques
 	return nil
 }
 
+// LicenseInfo is the information about the Cluster's currently set License
 type ClusterConfig_Status_LicenseInfo struct {
-	state            protoimpl.MessageState                 `protogen:"open.v1"`
-	LicenseSecretRef *metav1.ObjectReference                `protobuf:"bytes,1,opt,name=licenseSecretRef,proto3" json:"licenseSecretRef,omitempty"`
-	State            ClusterConfig_Status_LicenseInfo_State `protobuf:"varint,2,opt,name=state,proto3,enum=octelium.api.main.enterprise.v1.ClusterConfig_Status_LicenseInfo_State" json:"state,omitempty"`
-	SetAt            *timestamppb.Timestamp                 `protobuf:"bytes,3,opt,name=setAt,proto3" json:"setAt,omitempty"`
-	StateCheckedAt   *timestamppb.Timestamp                 `protobuf:"bytes,4,opt,name=stateCheckedAt,proto3" json:"stateCheckedAt,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// LicenseSecretRef is a reference to the Cluster-managed Secret that
+	// contains the License itself.
+	LicenseSecretRef *metav1.ObjectReference `protobuf:"bytes,1,opt,name=licenseSecretRef,proto3" json:"licenseSecretRef,omitempty"`
+	// State is the state of the License as of the last time it was checked.
+	State ClusterConfig_Status_LicenseInfo_State `protobuf:"varint,2,opt,name=state,proto3,enum=octelium.api.main.enterprise.v1.ClusterConfig_Status_LicenseInfo_State" json:"state,omitempty"`
+	// SetAt is the date at which the License was set.
+	SetAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=setAt,proto3" json:"setAt,omitempty"`
+	// StateCheckedAt is the date at which the State was last checked.
+	StateCheckedAt *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=stateCheckedAt,proto3" json:"stateCheckedAt,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *ClusterConfig_Status_LicenseInfo) Reset() {
@@ -12095,9 +13207,11 @@ func (x *ClusterConfig_Status_LicenseInfo) GetStateCheckedAt() *timestamppb.Time
 	return nil
 }
 
+// Spec is the Secret specification
 type Secret_Spec struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Data          *Secret_Spec_Data      `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Data is the Secret's sensitive data content
+	Data          *Secret_Spec_Data `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -12139,8 +13253,10 @@ func (x *Secret_Spec) GetData() *Secret_Spec_Data {
 	return nil
 }
 
+// Status is the current status of the Secret
 type Secret_Status struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Ext is a map of internal Cluster-managed extension data
 	Ext           map[string]*structpb.Struct `protobuf:"bytes,1,rep,name=ext,proto3" json:"ext,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -12183,8 +13299,11 @@ func (x *Secret_Status) GetExt() map[string]*structpb.Struct {
 	return nil
 }
 
+// Data is the Secret's sensitive data content
 type Secret_Data struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
+	// Type sets the format of the Secret's data
+	//
 	// Types that are valid to be assigned to Type:
 	//
 	//	*Secret_Data_Value
@@ -12274,18 +13393,22 @@ type isSecret_Data_Type interface {
 }
 
 type Secret_Data_Value struct {
+	// Value is a string value
 	Value string `protobuf:"bytes,1,opt,name=value,proto3,oneof"`
 }
 
 type Secret_Data_ValueBytes struct {
+	// ValueBytes is a raw sequence of bytes value
 	ValueBytes []byte `protobuf:"bytes,2,opt,name=valueBytes,proto3,oneof"`
 }
 
 type Secret_Data_DataMap_ struct {
+	// DataMap is a map of named values
 	DataMap *Secret_Data_DataMap `protobuf:"bytes,3,opt,name=dataMap,proto3,oneof"`
 }
 
 type Secret_Data_Attrs struct {
+	// Attrs is an arbitrary structured value
 	Attrs *structpb.Struct `protobuf:"bytes,5,opt,name=attrs,proto3,oneof"`
 }
 
@@ -12297,8 +13420,11 @@ func (*Secret_Data_DataMap_) isSecret_Data_Type() {}
 
 func (*Secret_Data_Attrs) isSecret_Data_Type() {}
 
+// Data is the Secret's sensitive data content
 type Secret_Spec_Data struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
+	// Type sets the format of the Secret's data
+	//
 	// Types that are valid to be assigned to Type:
 	//
 	//	*Secret_Spec_Data_Value
@@ -12378,14 +13504,17 @@ type isSecret_Spec_Data_Type interface {
 }
 
 type Secret_Spec_Data_Value struct {
+	// Value is a string value
 	Value string `protobuf:"bytes,1,opt,name=value,proto3,oneof"`
 }
 
 type Secret_Spec_Data_ValueBytes struct {
+	// ValueBytes is a raw sequence of bytes value
 	ValueBytes []byte `protobuf:"bytes,2,opt,name=valueBytes,proto3,oneof"`
 }
 
 type Secret_Spec_Data_Attrs struct {
+	// Attrs is an arbitrary structured value
 	Attrs *structpb.Struct `protobuf:"bytes,3,opt,name=attrs,proto3,oneof"`
 }
 
@@ -12395,9 +13524,13 @@ func (*Secret_Spec_Data_ValueBytes) isSecret_Spec_Data_Type() {}
 
 func (*Secret_Spec_Data_Attrs) isSecret_Spec_Data_Type() {}
 
+// DataMap is a map of named sensitive values which is useful to store more
+// than one related value (e.g. a certificate and its private key) in a
+// single Secret
 type Secret_Data_DataMap struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Map           map[string][]byte      `protobuf:"bytes,1,rep,name=map,proto3" json:"map,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Map is the map of the names and values of the Secret's data
+	Map           map[string][]byte `protobuf:"bytes,1,rep,name=map,proto3" json:"map,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -12439,9 +13572,11 @@ func (x *Secret_Data_DataMap) GetMap() map[string][]byte {
 	return nil
 }
 
+// Spec is the Certificate specification
 type Certificate_Spec struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Mode          Certificate_Spec_Mode  `protobuf:"varint,1,opt,name=mode,proto3,enum=octelium.api.main.enterprise.v1.Certificate_Spec_Mode" json:"mode,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Mode sets how the certificate is obtained.
+	Mode          Certificate_Spec_Mode `protobuf:"varint,1,opt,name=mode,proto3,enum=octelium.api.main.enterprise.v1.Certificate_Spec_Mode" json:"mode,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -12483,19 +13618,35 @@ func (x *Certificate_Spec) GetMode() Certificate_Spec_Mode {
 	return Certificate_Spec_MODE_UNSET
 }
 
+// Status is the current status of the Certificate
 type Certificate_Status struct {
-	state                protoimpl.MessageState         `protogen:"open.v1"`
-	SecretRef            *metav1.ObjectReference        `protobuf:"bytes,1,opt,name=secretRef,proto3" json:"secretRef,omitempty"`
-	Issuance             *Certificate_Status_Issuance   `protobuf:"bytes,3,opt,name=issuance,proto3" json:"issuance,omitempty"`
-	LastIssuances        []*Certificate_Status_Issuance `protobuf:"bytes,4,rep,name=lastIssuances,proto3" json:"lastIssuances,omitempty"`
-	SuccessfulIssuances  uint32                         `protobuf:"varint,5,opt,name=successfulIssuances,proto3" json:"successfulIssuances,omitempty"`
-	FailedIssuances      uint32                         `protobuf:"varint,6,opt,name=failedIssuances,proto3" json:"failedIssuances,omitempty"`
-	CertificateIssuerRef *metav1.ObjectReference        `protobuf:"bytes,2,opt,name=certificateIssuerRef,proto3" json:"certificateIssuerRef,omitempty"`
-	NamespaceRef         *metav1.ObjectReference        `protobuf:"bytes,7,opt,name=namespaceRef,proto3" json:"namespaceRef,omitempty"`
-	ServiceRef           *metav1.ObjectReference        `protobuf:"bytes,8,opt,name=serviceRef,proto3" json:"serviceRef,omitempty"`
-	Info                 *Certificate_Status_Info       `protobuf:"bytes,9,opt,name=info,proto3" json:"info,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// SecretRef is a reference to the Cluster-managed Secret that contains the
+	// certificate and its private key.
+	SecretRef *metav1.ObjectReference `protobuf:"bytes,1,opt,name=secretRef,proto3" json:"secretRef,omitempty"`
+	// Issuance is the currently ongoing or last requested issuance.
+	Issuance *Certificate_Status_Issuance `protobuf:"bytes,3,opt,name=issuance,proto3" json:"issuance,omitempty"`
+	// LastIssuances is the list of the most recent issuances.
+	LastIssuances []*Certificate_Status_Issuance `protobuf:"bytes,4,rep,name=lastIssuances,proto3" json:"lastIssuances,omitempty"`
+	// SuccessfulIssuances is the total number of the issuances that have
+	// successfully completed.
+	SuccessfulIssuances uint32 `protobuf:"varint,5,opt,name=successfulIssuances,proto3" json:"successfulIssuances,omitempty"`
+	// FailedIssuances is the total number of the issuances that have failed.
+	FailedIssuances uint32 `protobuf:"varint,6,opt,name=failedIssuances,proto3" json:"failedIssuances,omitempty"`
+	// CertificateIssuerRef is a reference to the CertificateIssuer that issues
+	// the certificate. It is only set for MANAGED Certificates.
+	CertificateIssuerRef *metav1.ObjectReference `protobuf:"bytes,2,opt,name=certificateIssuerRef,proto3" json:"certificateIssuerRef,omitempty"`
+	// NamespaceRef is a reference to the Namespace that the Certificate
+	// belongs to.
+	NamespaceRef *metav1.ObjectReference `protobuf:"bytes,7,opt,name=namespaceRef,proto3" json:"namespaceRef,omitempty"`
+	// ServiceRef is a reference to the Service that the Certificate belongs
+	// to. It is unset for the Certificates that belong to a Namespace as a
+	// whole.
+	ServiceRef *metav1.ObjectReference `protobuf:"bytes,8,opt,name=serviceRef,proto3" json:"serviceRef,omitempty"`
+	// Info is the information parsed from the currently set certificate.
+	Info          *Certificate_Status_Info `protobuf:"bytes,9,opt,name=info,proto3" json:"info,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Certificate_Status) Reset() {
@@ -12591,15 +13742,23 @@ func (x *Certificate_Status) GetInfo() *Certificate_Status_Info {
 	return nil
 }
 
+// Issuance is the state of an issuance of a MANAGED Certificate from its
+// CertificateIssuer
 type Certificate_Status_Issuance struct {
-	state               protoimpl.MessageState            `protogen:"open.v1"`
-	CreatedAt           *timestamppb.Timestamp            `protobuf:"bytes,1,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
-	State               Certificate_Status_Issuance_State `protobuf:"varint,2,opt,name=state,proto3,enum=octelium.api.main.enterprise.v1.Certificate_Status_Issuance_State" json:"state,omitempty"`
-	IssuanceStartedAt   *timestamppb.Timestamp            `protobuf:"bytes,3,opt,name=issuanceStartedAt,proto3" json:"issuanceStartedAt,omitempty"`
-	IssuanceCompletedAt *timestamppb.Timestamp            `protobuf:"bytes,4,opt,name=issuanceCompletedAt,proto3" json:"issuanceCompletedAt,omitempty"`
-	ExpiresAt           *timestamppb.Timestamp            `protobuf:"bytes,5,opt,name=expiresAt,proto3" json:"expiresAt,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// CreatedAt is the date at which the issuance was requested.
+	CreatedAt *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
+	// State is the current state of the issuance.
+	State Certificate_Status_Issuance_State `protobuf:"varint,2,opt,name=state,proto3,enum=octelium.api.main.enterprise.v1.Certificate_Status_Issuance_State" json:"state,omitempty"`
+	// IssuanceStartedAt is the date at which the issuance started.
+	IssuanceStartedAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=issuanceStartedAt,proto3" json:"issuanceStartedAt,omitempty"`
+	// IssuanceCompletedAt is the date at which the issuance completed or
+	// failed.
+	IssuanceCompletedAt *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=issuanceCompletedAt,proto3" json:"issuanceCompletedAt,omitempty"`
+	// ExpiresAt is the expiry date of the certificate that was issued.
+	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expiresAt,proto3" json:"expiresAt,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Certificate_Status_Issuance) Reset() {
@@ -12667,14 +13826,22 @@ func (x *Certificate_Status_Issuance) GetExpiresAt() *timestamppb.Timestamp {
 	return nil
 }
 
+// Info is the information parsed from the currently set certificate
 type Certificate_Status_Info struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CommonName    string                 `protobuf:"bytes,1,opt,name=commonName,proto3" json:"commonName,omitempty"`
-	Subject       string                 `protobuf:"bytes,2,opt,name=subject,proto3" json:"subject,omitempty"`
-	Issuer        string                 `protobuf:"bytes,3,opt,name=issuer,proto3" json:"issuer,omitempty"`
-	NotBefore     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=notBefore,proto3" json:"notBefore,omitempty"`
-	NotAfter      *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=notAfter,proto3" json:"notAfter,omitempty"`
-	DnsNames      []string               `protobuf:"bytes,6,rep,name=dnsNames,proto3" json:"dnsNames,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// CommonName is the common name of the certificate's subject.
+	CommonName string `protobuf:"bytes,1,opt,name=commonName,proto3" json:"commonName,omitempty"`
+	// Subject is the full distinguished name of the certificate's subject.
+	Subject string `protobuf:"bytes,2,opt,name=subject,proto3" json:"subject,omitempty"`
+	// Issuer is the full distinguished name of the certificate's issuer.
+	Issuer string `protobuf:"bytes,3,opt,name=issuer,proto3" json:"issuer,omitempty"`
+	// NotBefore is the date starting from which the certificate is valid.
+	NotBefore *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=notBefore,proto3" json:"notBefore,omitempty"`
+	// NotAfter is the expiry date of the certificate.
+	NotAfter *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=notAfter,proto3" json:"notAfter,omitempty"`
+	// DNSNames is the list of the DNS names of the certificate's subject
+	// alternative names.
+	DnsNames      []string `protobuf:"bytes,6,rep,name=dnsNames,proto3" json:"dnsNames,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -12751,6 +13918,7 @@ func (x *Certificate_Status_Info) GetDnsNames() []string {
 	return nil
 }
 
+// Spec is the CertificateIssuer specification
 type CertificateIssuer_Spec struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -12812,13 +13980,16 @@ type isCertificateIssuer_Spec_Type interface {
 }
 
 type CertificateIssuer_Spec_Acme struct {
+	// ACME sets the ACME specific options.
 	Acme *CertificateIssuer_Spec_ACME `protobuf:"bytes,1,opt,name=acme,proto3,oneof"`
 }
 
 func (*CertificateIssuer_Spec_Acme) isCertificateIssuer_Spec_Type() {}
 
+// Status is the current status of the CertificateIssuer
 type CertificateIssuer_Status struct {
-	state protoimpl.MessageState         `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// State is the current state of the CertificateIssuer.
 	State CertificateIssuer_Status_State `protobuf:"varint,1,opt,name=state,proto3,enum=octelium.api.main.enterprise.v1.CertificateIssuer_Status_State" json:"state,omitempty"`
 	// Types that are valid to be assigned to Type:
 	//
@@ -12886,11 +14057,13 @@ type isCertificateIssuer_Status_Type interface {
 }
 
 type CertificateIssuer_Status_Acme struct {
+	// ACME is the ACME specific status.
 	Acme *CertificateIssuer_Status_ACME `protobuf:"bytes,2,opt,name=acme,proto3,oneof"`
 }
 
 func (*CertificateIssuer_Status_Acme) isCertificateIssuer_Status_Type() {}
 
+// ACME sets the ACME (e.g. Let's Encrypt) specific options
 type CertificateIssuer_Spec_ACME struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Server is the ACME server URL (e.g.
@@ -12899,7 +14072,7 @@ type CertificateIssuer_Spec_ACME struct {
 	// Email is the email provided to your ACME provider (e.g.
 	// `contact@example.com`). Required.
 	Email string `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
-	// Solver is the  challenge solver.
+	// Solver is the challenge solver.
 	Solver        *CertificateIssuer_Spec_ACME_Solver `protobuf:"bytes,3,opt,name=solver,proto3" json:"solver,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -12956,6 +14129,7 @@ func (x *CertificateIssuer_Spec_ACME) GetSolver() *CertificateIssuer_Spec_ACME_S
 	return nil
 }
 
+// Solver is the ACME challenge solver
 type CertificateIssuer_Spec_ACME_Solver struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -13023,6 +14197,8 @@ type CertificateIssuer_Spec_ACME_Solver_Dns struct {
 
 func (*CertificateIssuer_Spec_ACME_Solver_Dns) isCertificateIssuer_Spec_ACME_Solver_Type() {}
 
+// DNS sets the DNS01 challenge solver options. The challenge records
+// are created using the Cluster's DNSProvider.
 type CertificateIssuer_Spec_ACME_Solver_DNS struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -13059,8 +14235,11 @@ func (*CertificateIssuer_Spec_ACME_Solver_DNS) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{10, 0, 0, 0, 0}
 }
 
+// ACME is the ACME specific status
 type CertificateIssuer_Status_ACME struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// SecretRef is a reference to the Cluster-managed Secret that contains
+	// the ACME account's private key.
 	SecretRef     *metav1.ObjectReference `protobuf:"bytes,1,opt,name=secretRef,proto3" json:"secretRef,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -13103,9 +14282,12 @@ func (x *CertificateIssuer_Status_ACME) GetSecretRef() *metav1.ObjectReference {
 	return nil
 }
 
+// Spec is the DirectoryProvider specification
 type DirectoryProvider_Spec struct {
-	state      protoimpl.MessageState `protogen:"open.v1"`
-	IsDisabled bool                   `protobuf:"varint,1,opt,name=isDisabled,proto3" json:"isDisabled,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// IsDisabled disables the DirectoryProvider. A disabled DirectoryProvider
+	// is no longer synchronized.
+	IsDisabled bool `protobuf:"varint,1,opt,name=isDisabled,proto3" json:"isDisabled,omitempty"`
 	// Types that are valid to be assigned to Type:
 	//
 	//	*DirectoryProvider_Spec_Scim
@@ -13192,14 +14374,17 @@ type isDirectoryProvider_Spec_Type interface {
 }
 
 type DirectoryProvider_Spec_Scim struct {
+	// SCIM sets the SCIM specific options.
 	Scim *DirectoryProvider_Spec_SCIM `protobuf:"bytes,2,opt,name=scim,proto3,oneof"`
 }
 
 type DirectoryProvider_Spec_GoogleWorkspace_ struct {
+	// GoogleWorkspace sets the Google Workspace specific options.
 	GoogleWorkspace *DirectoryProvider_Spec_GoogleWorkspace `protobuf:"bytes,3,opt,name=googleWorkspace,proto3,oneof"`
 }
 
 type DirectoryProvider_Spec_Keycloak_ struct {
+	// Keycloak sets the Keycloak specific options.
 	Keycloak *DirectoryProvider_Spec_Keycloak `protobuf:"bytes,4,opt,name=keycloak,proto3,oneof"`
 }
 
@@ -13209,12 +14394,24 @@ func (*DirectoryProvider_Spec_GoogleWorkspace_) isDirectoryProvider_Spec_Type() 
 
 func (*DirectoryProvider_Spec_Keycloak_) isDirectoryProvider_Spec_Type() {}
 
+// Status is the current status of the DirectoryProvider
 type DirectoryProvider_Status struct {
-	state                protoimpl.MessageState                      `protogen:"open.v1"`
-	Id                   string                                      `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	UserRef              *metav1.ObjectReference                     `protobuf:"bytes,2,opt,name=userRef,proto3" json:"userRef,omitempty"`
-	SessionRef           *metav1.ObjectReference                     `protobuf:"bytes,3,opt,name=sessionRef,proto3" json:"sessionRef,omitempty"`
-	Synchronization      *DirectoryProvider_Status_Synchronization   `protobuf:"bytes,4,opt,name=synchronization,proto3" json:"synchronization,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ID is an opaque identifier that is generated by the Cluster upon the
+	// DirectoryProvider's creation. For SCIM DirectoryProviders it is also the
+	// path segment of the Cluster's SCIM base URL (i.e. `/scim/<ID>`).
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// UserRef is a reference to the Cluster-managed WORKLOAD User that is used
+	// by a SCIM DirectoryProvider to authenticate its requests to the Cluster.
+	UserRef *metav1.ObjectReference `protobuf:"bytes,2,opt,name=userRef,proto3" json:"userRef,omitempty"`
+	// SessionRef is a reference to the Session of the UserRef User that was
+	// created by the last call to the GenerateDirectoryProviderCredential
+	// method.
+	SessionRef *metav1.ObjectReference `protobuf:"bytes,3,opt,name=sessionRef,proto3" json:"sessionRef,omitempty"`
+	// Synchronization is the currently ongoing or last requested
+	// synchronization.
+	Synchronization *DirectoryProvider_Status_Synchronization `protobuf:"bytes,4,opt,name=synchronization,proto3" json:"synchronization,omitempty"`
+	// LastSynchronizations is the list of the most recent synchronizations.
 	LastSynchronizations []*DirectoryProvider_Status_Synchronization `protobuf:"bytes,5,rep,name=lastSynchronizations,proto3" json:"lastSynchronizations,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
@@ -13285,6 +14482,10 @@ func (x *DirectoryProvider_Status) GetLastSynchronizations() []*DirectoryProvide
 	return nil
 }
 
+// SCIM sets the SCIM (i.e. System for Cross-domain Identity Management)
+// specific options. In this mode the directory itself pushes its changes
+// to the Cluster's SCIM endpoint using a credential that is generated via
+// the GenerateDirectoryProviderCredential method.
 type DirectoryProvider_Spec_SCIM struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -13321,14 +14522,24 @@ func (*DirectoryProvider_Spec_SCIM) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{12, 0, 0}
 }
 
+// GoogleWorkspace sets the Google Workspace specific options
 type DirectoryProvider_Spec_GoogleWorkspace struct {
-	state              protoimpl.MessageState                                 `protogen:"open.v1"`
-	Customer           string                                                 `protobuf:"bytes,1,opt,name=customer,proto3" json:"customer,omitempty"`
-	ServiceAccount     *DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount `protobuf:"bytes,2,opt,name=serviceAccount,proto3" json:"serviceAccount,omitempty"`
-	ImpersonateSubject string                                                 `protobuf:"bytes,3,opt,name=impersonateSubject,proto3" json:"impersonateSubject,omitempty"`
-	Polling            *DirectoryProvider_Spec_GoogleWorkspace_Polling        `protobuf:"bytes,4,opt,name=polling,proto3" json:"polling,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Customer is the Google Workspace customer ID whose Users and Groups
+	// are synchronized. If unset, the customer of the impersonated account
+	// is used.
+	Customer string `protobuf:"bytes,1,opt,name=customer,proto3" json:"customer,omitempty"`
+	// ServiceAccount is the credentials of the Google Cloud service account
+	// that is used to access the Google Workspace Directory API. Required.
+	ServiceAccount *DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount `protobuf:"bytes,2,opt,name=serviceAccount,proto3" json:"serviceAccount,omitempty"`
+	// ImpersonateSubject is the email of the Google Workspace administrator
+	// that is impersonated by the service account via domain-wide
+	// delegation. Required.
+	ImpersonateSubject string `protobuf:"bytes,3,opt,name=impersonateSubject,proto3" json:"impersonateSubject,omitempty"`
+	// Polling sets the periodic synchronization-related configuration.
+	Polling       *DirectoryProvider_Spec_GoogleWorkspace_Polling `protobuf:"bytes,4,opt,name=polling,proto3" json:"polling,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DirectoryProvider_Spec_GoogleWorkspace) Reset() {
@@ -13389,16 +14600,28 @@ func (x *DirectoryProvider_Spec_GoogleWorkspace) GetPolling() *DirectoryProvider
 	return nil
 }
 
+// Keycloak sets the Keycloak specific options
 type DirectoryProvider_Spec_Keycloak struct {
-	state              protoimpl.MessageState                        `protogen:"open.v1"`
-	Url                string                                        `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
-	Realm              string                                        `protobuf:"bytes,2,opt,name=realm,proto3" json:"realm,omitempty"`
-	ClientID           string                                        `protobuf:"bytes,3,opt,name=clientID,proto3" json:"clientID,omitempty"`
-	ClientSecret       *DirectoryProvider_Spec_Keycloak_ClientSecret `protobuf:"bytes,4,opt,name=clientSecret,proto3" json:"clientSecret,omitempty"`
-	InsecureSkipVerify bool                                          `protobuf:"varint,5,opt,name=insecureSkipVerify,proto3" json:"insecureSkipVerify,omitempty"`
-	Polling            *DirectoryProvider_Spec_Keycloak_Polling      `protobuf:"bytes,6,opt,name=polling,proto3" json:"polling,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// URL is the base URL of the Keycloak server (e.g.
+	// `https://keycloak.example.com`). Required.
+	Url string `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
+	// Realm is the name of the Keycloak realm whose Users and Groups are
+	// synchronized. Required.
+	Realm string `protobuf:"bytes,2,opt,name=realm,proto3" json:"realm,omitempty"`
+	// ClientID is the client ID of the Keycloak client that is used to
+	// access the Keycloak Admin API. Required.
+	ClientID string `protobuf:"bytes,3,opt,name=clientID,proto3" json:"clientID,omitempty"`
+	// ClientSecret is the client secret of the Keycloak client. Required.
+	ClientSecret *DirectoryProvider_Spec_Keycloak_ClientSecret `protobuf:"bytes,4,opt,name=clientSecret,proto3" json:"clientSecret,omitempty"`
+	// InsecureSkipVerify skips the verification of the Keycloak server's
+	// certificate chain and hostname. It is not recommended in production
+	// environments.
+	InsecureSkipVerify bool `protobuf:"varint,5,opt,name=insecureSkipVerify,proto3" json:"insecureSkipVerify,omitempty"`
+	// Polling sets the periodic synchronization-related configuration.
+	Polling       *DirectoryProvider_Spec_Keycloak_Polling `protobuf:"bytes,6,opt,name=polling,proto3" json:"polling,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DirectoryProvider_Spec_Keycloak) Reset() {
@@ -13473,6 +14696,8 @@ func (x *DirectoryProvider_Spec_Keycloak) GetPolling() *DirectoryProvider_Spec_K
 	return nil
 }
 
+// ServiceAccount is the JSON key of the Google Cloud service account
+// that is used to access the Google Workspace Directory API
 type DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -13534,15 +14759,20 @@ type isDirectoryProvider_Spec_GoogleWorkspace_ServiceAccount_Type interface {
 }
 
 type DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains the
+	// service account key
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*DirectoryProvider_Spec_GoogleWorkspace_ServiceAccount_FromSecret) isDirectoryProvider_Spec_GoogleWorkspace_ServiceAccount_Type() {
 }
 
+// Polling sets the options of the periodic synchronization from the
+// directory
 type DirectoryProvider_Spec_GoogleWorkspace_Polling struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Interval      *metav1.Duration       `protobuf:"bytes,1,opt,name=interval,proto3" json:"interval,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Interval is the interval at which the directory is synchronized.
+	Interval      *metav1.Duration `protobuf:"bytes,1,opt,name=interval,proto3" json:"interval,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -13584,6 +14814,7 @@ func (x *DirectoryProvider_Spec_GoogleWorkspace_Polling) GetInterval() *metav1.D
 	return nil
 }
 
+// ClientSecret is the client secret of the Keycloak client
 type DirectoryProvider_Spec_Keycloak_ClientSecret struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -13645,15 +14876,20 @@ type isDirectoryProvider_Spec_Keycloak_ClientSecret_Type interface {
 }
 
 type DirectoryProvider_Spec_Keycloak_ClientSecret_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains the
+	// client secret
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*DirectoryProvider_Spec_Keycloak_ClientSecret_FromSecret) isDirectoryProvider_Spec_Keycloak_ClientSecret_Type() {
 }
 
+// Polling sets the options of the periodic synchronization from the
+// directory
 type DirectoryProvider_Spec_Keycloak_Polling struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Interval      *metav1.Duration       `protobuf:"bytes,1,opt,name=interval,proto3" json:"interval,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Interval is the interval at which the directory is synchronized.
+	Interval      *metav1.Duration `protobuf:"bytes,1,opt,name=interval,proto3" json:"interval,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -13695,11 +14931,17 @@ func (x *DirectoryProvider_Spec_Keycloak_Polling) GetInterval() *metav1.Duration
 	return nil
 }
 
+// Synchronization is the state of a synchronization of the Users and
+// Groups from the directory
 type DirectoryProvider_Status_Synchronization struct {
-	state         protoimpl.MessageState                         `protogen:"open.v1"`
-	CreatedAt     *timestamppb.Timestamp                         `protobuf:"bytes,1,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
-	State         DirectoryProvider_Status_Synchronization_State `protobuf:"varint,2,opt,name=state,proto3,enum=octelium.api.main.enterprise.v1.DirectoryProvider_Status_Synchronization_State" json:"state,omitempty"`
-	CompletedAt   *timestamppb.Timestamp                         `protobuf:"bytes,3,opt,name=completedAt,proto3" json:"completedAt,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// CreatedAt is the date at which the synchronization was requested.
+	CreatedAt *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
+	// State is the current state of the synchronization.
+	State DirectoryProvider_Status_Synchronization_State `protobuf:"varint,2,opt,name=state,proto3,enum=octelium.api.main.enterprise.v1.DirectoryProvider_Status_Synchronization_State" json:"state,omitempty"`
+	// CompletedAt is the date at which the synchronization completed or
+	// failed.
+	CompletedAt   *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=completedAt,proto3" json:"completedAt,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -13755,6 +14997,7 @@ func (x *DirectoryProvider_Status_Synchronization) GetCompletedAt() *timestamppb
 	return nil
 }
 
+// Spec is the DirectoryProviderUser specification
 type DirectoryProviderUser_Spec struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -13791,13 +15034,20 @@ func (*DirectoryProviderUser_Spec) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{14, 0}
 }
 
+// Status is the current status of the DirectoryProviderUser
 type DirectoryProviderUser_Status struct {
-	state                protoimpl.MessageState  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// DirectoryProviderRef is a reference to the DirectoryProvider that the
+	// User was synchronized from.
 	DirectoryProviderRef *metav1.ObjectReference `protobuf:"bytes,1,opt,name=directoryProviderRef,proto3" json:"directoryProviderRef,omitempty"`
-	UserRef              *metav1.ObjectReference `protobuf:"bytes,2,opt,name=userRef,proto3" json:"userRef,omitempty"`
-	Attrs                *structpb.Struct        `protobuf:"bytes,3,opt,name=attrs,proto3" json:"attrs,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	// UserRef is a reference to the Cluster User that was created for the
+	// directory's User.
+	UserRef *metav1.ObjectReference `protobuf:"bytes,2,opt,name=userRef,proto3" json:"userRef,omitempty"`
+	// Attrs is the set of the attributes of the User as they are provided by
+	// the directory.
+	Attrs         *structpb.Struct `protobuf:"bytes,3,opt,name=attrs,proto3" json:"attrs,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DirectoryProviderUser_Status) Reset() {
@@ -13851,6 +15101,7 @@ func (x *DirectoryProviderUser_Status) GetAttrs() *structpb.Struct {
 	return nil
 }
 
+// Spec is the DirectoryProviderGroup specification
 type DirectoryProviderGroup_Spec struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -13887,13 +15138,20 @@ func (*DirectoryProviderGroup_Spec) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{16, 0}
 }
 
+// Status is the current status of the DirectoryProviderGroup
 type DirectoryProviderGroup_Status struct {
-	state                protoimpl.MessageState  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// DirectoryProviderRef is a reference to the DirectoryProvider that the
+	// Group was synchronized from.
 	DirectoryProviderRef *metav1.ObjectReference `protobuf:"bytes,1,opt,name=directoryProviderRef,proto3" json:"directoryProviderRef,omitempty"`
-	GroupRef             *metav1.ObjectReference `protobuf:"bytes,2,opt,name=groupRef,proto3" json:"groupRef,omitempty"`
-	Attrs                *structpb.Struct        `protobuf:"bytes,3,opt,name=attrs,proto3" json:"attrs,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	// GroupRef is a reference to the Cluster Group that was created for the
+	// directory's Group.
+	GroupRef *metav1.ObjectReference `protobuf:"bytes,2,opt,name=groupRef,proto3" json:"groupRef,omitempty"`
+	// Attrs is the set of the attributes of the Group as they are provided by
+	// the directory.
+	Attrs         *structpb.Struct `protobuf:"bytes,3,opt,name=attrs,proto3" json:"attrs,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DirectoryProviderGroup_Status) Reset() {
@@ -13947,6 +15205,7 @@ func (x *DirectoryProviderGroup_Status) GetAttrs() *structpb.Struct {
 	return nil
 }
 
+// Spec is the DNSProvider specification
 type DNSProvider_Spec struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -14068,6 +15327,7 @@ type isDNSProvider_Spec_Type interface {
 }
 
 type DNSProvider_Spec_Cloudflare_ struct {
+	// Cloudflare is Cloudflare's specific options.
 	Cloudflare *DNSProvider_Spec_Cloudflare `protobuf:"bytes,2,opt,name=cloudflare,proto3,oneof"`
 }
 
@@ -14115,6 +15375,7 @@ func (*DNSProvider_Spec_Linode_) isDNSProvider_Spec_Type() {}
 
 func (*DNSProvider_Spec_Ovh) isDNSProvider_Spec_Type() {}
 
+// Status is the current status of the DNSProvider
 type DNSProvider_Status struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -14151,10 +15412,12 @@ func (*DNSProvider_Status) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{18, 1}
 }
 
+// Cloudflare sets the Cloudflare specific options
 type DNSProvider_Spec_Cloudflare struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Email is the Cloudflare's account email
-	Email    string                                `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	Email string `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	// APIToken is the Cloudflare's API token.
 	ApiToken *DNSProvider_Spec_Cloudflare_APIToken `protobuf:"bytes,2,opt,name=apiToken,proto3" json:"apiToken,omitempty"`
 	// Proxied sets the IP addresses to proxied mode. Not used currently.
 	Proxied       bool `protobuf:"varint,3,opt,name=proxied,proto3" json:"proxied,omitempty"`
@@ -14213,10 +15476,13 @@ func (x *DNSProvider_Spec_Cloudflare) GetProxied() bool {
 	return false
 }
 
+// AWS sets the AWS Route 53 specific options
 type DNSProvider_Spec_AWS struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// AccessKeyID is the `AWS_ACCESS_KEY_ID` value of your credentials.
-	AccessKeyID     string                                `protobuf:"bytes,1,opt,name=accessKeyID,proto3" json:"accessKeyID,omitempty"`
+	AccessKeyID string `protobuf:"bytes,1,opt,name=accessKeyID,proto3" json:"accessKeyID,omitempty"`
+	// SecretAccessKey is the `AWS_SECRET_ACCESS_KEY` value for your
+	// credentials.
 	SecretAccessKey *DNSProvider_Spec_AWS_SecretAccessKey `protobuf:"bytes,2,opt,name=secretAccessKey,proto3" json:"secretAccessKey,omitempty"`
 	// Region is the AWS region code (e.g. `us-east-1`).
 	Region string `protobuf:"bytes,3,opt,name=region,proto3" json:"region,omitempty"`
@@ -14285,8 +15551,10 @@ func (x *DNSProvider_Spec_AWS) GetAssumeRoleARN() string {
 	return ""
 }
 
+// DigitalOcean sets the DigitalOcean specific options
 type DNSProvider_Spec_DigitalOcean struct {
-	state         protoimpl.MessageState                  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// APIToken is the DigitalOcean's API token.
 	ApiToken      *DNSProvider_Spec_DigitalOcean_APIToken `protobuf:"bytes,1,opt,name=apiToken,proto3" json:"apiToken,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -14329,10 +15597,13 @@ func (x *DNSProvider_Spec_DigitalOcean) GetApiToken() *DNSProvider_Spec_DigitalO
 	return nil
 }
 
+// Google sets the Google Cloud DNS specific options
 type DNSProvider_Spec_Google struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Project is the GCP project name.
-	Project        string                                  `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
+	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
+	// ServiceAccount is the credentials of the GCP service account that is
+	// used to manage the DNS entries.
 	ServiceAccount *DNSProvider_Spec_Google_ServiceAccount `protobuf:"bytes,2,opt,name=serviceAccount,proto3" json:"serviceAccount,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
@@ -14382,13 +15653,22 @@ func (x *DNSProvider_Spec_Google) GetServiceAccount() *DNSProvider_Spec_Google_S
 	return nil
 }
 
+// Azure sets the Azure DNS specific options
 type DNSProvider_Spec_Azure struct {
-	state             protoimpl.MessageState               `protogen:"open.v1"`
-	ClientID          string                               `protobuf:"bytes,1,opt,name=clientID,proto3" json:"clientID,omitempty"`
-	ClientSecret      *DNSProvider_Spec_Azure_ClientSecret `protobuf:"bytes,2,opt,name=clientSecret,proto3" json:"clientSecret,omitempty"`
-	SubscriptionID    string                               `protobuf:"bytes,3,opt,name=subscriptionID,proto3" json:"subscriptionID,omitempty"`
-	TenantID          string                               `protobuf:"bytes,4,opt,name=tenantID,proto3" json:"tenantID,omitempty"`
-	ResourceGroupName string                               `protobuf:"bytes,5,opt,name=resourceGroupName,proto3" json:"resourceGroupName,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ClientID is the client ID of the Entra ID application that is used to
+	// manage the DNS entries.
+	ClientID string `protobuf:"bytes,1,opt,name=clientID,proto3" json:"clientID,omitempty"`
+	// ClientSecret is the client secret of the Entra ID application.
+	ClientSecret *DNSProvider_Spec_Azure_ClientSecret `protobuf:"bytes,2,opt,name=clientSecret,proto3" json:"clientSecret,omitempty"`
+	// SubscriptionID is the ID of the Azure subscription that owns the DNS
+	// zone.
+	SubscriptionID string `protobuf:"bytes,3,opt,name=subscriptionID,proto3" json:"subscriptionID,omitempty"`
+	// TenantID is the ID of the Entra ID tenant that owns the application.
+	TenantID string `protobuf:"bytes,4,opt,name=tenantID,proto3" json:"tenantID,omitempty"`
+	// ResourceGroupName is the name of the Azure resource group that
+	// contains the DNS zone.
+	ResourceGroupName string `protobuf:"bytes,5,opt,name=resourceGroupName,proto3" json:"resourceGroupName,omitempty"`
 	// Cloud is the Azure cloud environment, valid values are `public`,
 	// `china`, `usgovernment` and `german`. Empty value is equivalent to
 	// `public`.
@@ -14469,8 +15749,10 @@ func (x *DNSProvider_Spec_Azure) GetCloud() string {
 	return ""
 }
 
+// Linode sets the Linode specific options
 type DNSProvider_Spec_Linode struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// APIToken is the Linode's API token.
 	ApiToken      *DNSProvider_Spec_Linode_APIToken `protobuf:"bytes,1,opt,name=apiToken,proto3" json:"apiToken,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -14513,15 +15795,20 @@ func (x *DNSProvider_Spec_Linode) GetApiToken() *DNSProvider_Spec_Linode_APIToke
 	return nil
 }
 
+// OVH sets the OVH specific options
 type DNSProvider_Spec_OVH struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Endpoint is the API endpoint (e.g. `ovh-eu`)
-	Endpoint          string                                  `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
-	ApplicationKey    string                                  `protobuf:"bytes,2,opt,name=applicationKey,proto3" json:"applicationKey,omitempty"`
+	Endpoint string `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
+	// ApplicationKey is the OVH application key.
+	ApplicationKey string `protobuf:"bytes,2,opt,name=applicationKey,proto3" json:"applicationKey,omitempty"`
+	// ApplicationSecret is the OVH application secret.
 	ApplicationSecret *DNSProvider_Spec_OVH_ApplicationSecret `protobuf:"bytes,3,opt,name=applicationSecret,proto3" json:"applicationSecret,omitempty"`
-	ConsumerKey       string                                  `protobuf:"bytes,4,opt,name=consumerKey,proto3" json:"consumerKey,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// ConsumerKey is the OVH consumer key that authorizes the application to
+	// manage the DNS entries.
+	ConsumerKey   string `protobuf:"bytes,4,opt,name=consumerKey,proto3" json:"consumerKey,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DNSProvider_Spec_OVH) Reset() {
@@ -14644,6 +15931,8 @@ type isDNSProvider_Spec_Cloudflare_APIToken_Type interface {
 }
 
 type DNSProvider_Spec_Cloudflare_APIToken_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains the
+	// API token
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
@@ -14711,12 +16000,15 @@ type isDNSProvider_Spec_AWS_SecretAccessKey_Type interface {
 }
 
 type DNSProvider_Spec_AWS_SecretAccessKey_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains the
+	// secret access key
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*DNSProvider_Spec_AWS_SecretAccessKey_FromSecret) isDNSProvider_Spec_AWS_SecretAccessKey_Type() {
 }
 
+// APIToken is the DigitalOcean's API token
 type DNSProvider_Spec_DigitalOcean_APIToken struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -14778,12 +16070,15 @@ type isDNSProvider_Spec_DigitalOcean_APIToken_Type interface {
 }
 
 type DNSProvider_Spec_DigitalOcean_APIToken_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains the
+	// API token
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*DNSProvider_Spec_DigitalOcean_APIToken_FromSecret) isDNSProvider_Spec_DigitalOcean_APIToken_Type() {
 }
 
+// ServiceAccount is the JSON key of the GCP service account
 type DNSProvider_Spec_Google_ServiceAccount struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -14845,12 +16140,15 @@ type isDNSProvider_Spec_Google_ServiceAccount_Type interface {
 }
 
 type DNSProvider_Spec_Google_ServiceAccount_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains the
+	// service account key
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*DNSProvider_Spec_Google_ServiceAccount_FromSecret) isDNSProvider_Spec_Google_ServiceAccount_Type() {
 }
 
+// ClientSecret is the client secret of the Entra ID application
 type DNSProvider_Spec_Azure_ClientSecret struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -14912,11 +16210,14 @@ type isDNSProvider_Spec_Azure_ClientSecret_Type interface {
 }
 
 type DNSProvider_Spec_Azure_ClientSecret_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains the
+	// client secret
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*DNSProvider_Spec_Azure_ClientSecret_FromSecret) isDNSProvider_Spec_Azure_ClientSecret_Type() {}
 
+// APIToken is the Linode's API token
 type DNSProvider_Spec_Linode_APIToken struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -14978,11 +16279,14 @@ type isDNSProvider_Spec_Linode_APIToken_Type interface {
 }
 
 type DNSProvider_Spec_Linode_APIToken_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains the
+	// API token
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*DNSProvider_Spec_Linode_APIToken_FromSecret) isDNSProvider_Spec_Linode_APIToken_Type() {}
 
+// ApplicationSecret is the OVH application secret
 type DNSProvider_Spec_OVH_ApplicationSecret struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -15044,12 +16348,15 @@ type isDNSProvider_Spec_OVH_ApplicationSecret_Type interface {
 }
 
 type DNSProvider_Spec_OVH_ApplicationSecret_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains the
+	// application secret
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*DNSProvider_Spec_OVH_ApplicationSecret_FromSecret) isDNSProvider_Spec_OVH_ApplicationSecret_Type() {
 }
 
+// Spec is the SecretStore specification
 type SecretStore_Spec struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -15151,22 +16458,28 @@ type isSecretStore_Spec_Type interface {
 }
 
 type SecretStore_Spec_AzureKeyVault_ struct {
+	// AzureKeyVault sets the Azure Key Vault specific options.
 	AzureKeyVault *SecretStore_Spec_AzureKeyVault `protobuf:"bytes,1,opt,name=azureKeyVault,proto3,oneof"`
 }
 
 type SecretStore_Spec_HashicorpVault_ struct {
+	// HashicorpVault sets the HashiCorp Vault specific options.
 	HashicorpVault *SecretStore_Spec_HashicorpVault `protobuf:"bytes,2,opt,name=hashicorpVault,proto3,oneof"`
 }
 
 type SecretStore_Spec_GoogleCloudKeyManagementService_ struct {
+	// GoogleCloudKeyManagementService sets the Google Cloud KMS specific
+	// options.
 	GoogleCloudKeyManagementService *SecretStore_Spec_GoogleCloudKeyManagementService `protobuf:"bytes,3,opt,name=googleCloudKeyManagementService,proto3,oneof"`
 }
 
 type SecretStore_Spec_AwsKeyManagementService struct {
+	// AWSKeyManagementService sets the AWS KMS specific options.
 	AwsKeyManagementService *SecretStore_Spec_AWSKeyManagementService `protobuf:"bytes,4,opt,name=awsKeyManagementService,proto3,oneof"`
 }
 
 type SecretStore_Spec_Kubernetes_ struct {
+	// Kubernetes sets the kubernetes Secret specific options.
 	Kubernetes *SecretStore_Spec_Kubernetes `protobuf:"bytes,5,opt,name=kubernetes,proto3,oneof"`
 }
 
@@ -15180,11 +16493,17 @@ func (*SecretStore_Spec_AwsKeyManagementService) isSecretStore_Spec_Type() {}
 
 func (*SecretStore_Spec_Kubernetes_) isSecretStore_Spec_Type() {}
 
+// Status is the current status of the SecretStore
 type SecretStore_Status struct {
-	state                protoimpl.MessageState                `protogen:"open.v1"`
-	Type                 SecretStore_Status_Type               `protobuf:"varint,1,opt,name=type,proto3,enum=octelium.api.main.enterprise.v1.SecretStore_Status_Type" json:"type,omitempty"`
-	State                SecretStore_Status_State              `protobuf:"varint,2,opt,name=state,proto3,enum=octelium.api.main.enterprise.v1.SecretStore_Status_State" json:"state,omitempty"`
-	Synchronization      *SecretStore_Status_Synchronization   `protobuf:"bytes,3,opt,name=synchronization,proto3" json:"synchronization,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Type is the currently set type of the SecretStore.
+	Type SecretStore_Status_Type `protobuf:"varint,1,opt,name=type,proto3,enum=octelium.api.main.enterprise.v1.SecretStore_Status_Type" json:"type,omitempty"`
+	// State is the current state of the SecretStore.
+	State SecretStore_Status_State `protobuf:"varint,2,opt,name=state,proto3,enum=octelium.api.main.enterprise.v1.SecretStore_Status_State" json:"state,omitempty"`
+	// Synchronization is the currently ongoing or last requested
+	// synchronization.
+	Synchronization *SecretStore_Status_Synchronization `protobuf:"bytes,3,opt,name=synchronization,proto3" json:"synchronization,omitempty"`
+	// LastSynchronizations is the list of the most recent synchronizations.
 	LastSynchronizations []*SecretStore_Status_Synchronization `protobuf:"bytes,4,rep,name=lastSynchronizations,proto3" json:"lastSynchronizations,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
@@ -15248,11 +16567,18 @@ func (x *SecretStore_Status) GetLastSynchronizations() []*SecretStore_Status_Syn
 	return nil
 }
 
+// HashicorpVault sets the HashiCorp Vault transit engine specific options
 type SecretStore_Spec_HashicorpVault struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Address       string                 `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
-	Role          string                 `protobuf:"bytes,2,opt,name=role,proto3" json:"role,omitempty"`
-	Key           string                 `protobuf:"bytes,3,opt,name=key,proto3" json:"key,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Address is the URL of the Vault server (e.g.
+	// `https://vault.example.com:8200`). Required.
+	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
+	// Role is the name of the Vault Kubernetes auth role that the Cluster
+	// logs in as. Required.
+	Role string `protobuf:"bytes,2,opt,name=role,proto3" json:"role,omitempty"`
+	// Key is the name of the Vault transit key that is used to wrap the data
+	// encryption keys. Required.
+	Key           string `protobuf:"bytes,3,opt,name=key,proto3" json:"key,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -15308,12 +16634,20 @@ func (x *SecretStore_Spec_HashicorpVault) GetKey() string {
 	return ""
 }
 
+// GoogleCloudKeyManagementService sets the Google Cloud KMS specific
+// options
 type SecretStore_Spec_GoogleCloudKeyManagementService struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Project       string                 `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
-	Location      string                 `protobuf:"bytes,2,opt,name=location,proto3" json:"location,omitempty"`
-	KeyRing       string                 `protobuf:"bytes,3,opt,name=keyRing,proto3" json:"keyRing,omitempty"`
-	Key           string                 `protobuf:"bytes,4,opt,name=key,proto3" json:"key,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Project is the GCP project name. Required.
+	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
+	// Location is the GCP location of the key ring (e.g. `global`,
+	// `europe-west1`). Required.
+	Location string `protobuf:"bytes,2,opt,name=location,proto3" json:"location,omitempty"`
+	// KeyRing is the name of the Cloud KMS key ring. Required.
+	KeyRing string `protobuf:"bytes,3,opt,name=keyRing,proto3" json:"keyRing,omitempty"`
+	// Key is the name of the Cloud KMS key that is used to wrap the data
+	// encryption keys. Required.
+	Key           string `protobuf:"bytes,4,opt,name=key,proto3" json:"key,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -15376,11 +16710,16 @@ func (x *SecretStore_Spec_GoogleCloudKeyManagementService) GetKey() string {
 	return ""
 }
 
+// AWSKeyManagementService sets the AWS KMS specific options
 type SecretStore_Spec_AWSKeyManagementService struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	KeyID         string                 `protobuf:"bytes,1,opt,name=keyID,proto3" json:"keyID,omitempty"`
-	Region        string                 `protobuf:"bytes,2,opt,name=region,proto3" json:"region,omitempty"`
-	RoleARN       string                 `protobuf:"bytes,3,opt,name=roleARN,proto3" json:"roleARN,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// KeyID is the ID or ARN of the KMS key that is used to wrap the data
+	// encryption keys. Required.
+	KeyID string `protobuf:"bytes,1,opt,name=keyID,proto3" json:"keyID,omitempty"`
+	// Region is the AWS region code of the key (e.g. `us-east-1`).
+	Region string `protobuf:"bytes,2,opt,name=region,proto3" json:"region,omitempty"`
+	// RoleARN is the ARN of the IAM role that is assumed to access the key.
+	RoleARN       string `protobuf:"bytes,3,opt,name=roleARN,proto3" json:"roleARN,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -15436,12 +16775,21 @@ func (x *SecretStore_Spec_AWSKeyManagementService) GetRoleARN() string {
 	return ""
 }
 
+// AzureKeyVault sets the Azure Key Vault specific options
 type SecretStore_Spec_AzureKeyVault struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ClientID      string                 `protobuf:"bytes,1,opt,name=clientID,proto3" json:"clientID,omitempty"`
-	TenantID      string                 `protobuf:"bytes,2,opt,name=tenantID,proto3" json:"tenantID,omitempty"`
-	VaultURL      string                 `protobuf:"bytes,3,opt,name=vaultURL,proto3" json:"vaultURL,omitempty"`
-	Key           string                 `protobuf:"bytes,4,opt,name=key,proto3" json:"key,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ClientID is the client ID of the Entra ID application that is used to
+	// access the vault. Required.
+	ClientID string `protobuf:"bytes,1,opt,name=clientID,proto3" json:"clientID,omitempty"`
+	// TenantID is the ID of the Entra ID tenant that owns the application.
+	// Required.
+	TenantID string `protobuf:"bytes,2,opt,name=tenantID,proto3" json:"tenantID,omitempty"`
+	// VaultURL is the URL of the Key Vault (e.g.
+	// `https://myvault.vault.azure.net`). Required.
+	VaultURL string `protobuf:"bytes,3,opt,name=vaultURL,proto3" json:"vaultURL,omitempty"`
+	// Key is the name of the Key Vault key that is used to wrap the data
+	// encryption keys. Required.
+	Key           string `protobuf:"bytes,4,opt,name=key,proto3" json:"key,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -15504,6 +16852,9 @@ func (x *SecretStore_Spec_AzureKeyVault) GetKey() string {
 	return ""
 }
 
+// Kubernetes stores the key encryption key in a kubernetes Secret of the
+// Cluster itself. It is the default mode which requires no external key
+// management system. It is not recommended in production environments.
 type SecretStore_Spec_Kubernetes struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -15540,11 +16891,17 @@ func (*SecretStore_Spec_Kubernetes) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{25, 0, 4}
 }
 
+// Synchronization is the state of a re-wrapping of the Cluster's data
+// encryption keys with the SecretStore's key encryption key
 type SecretStore_Status_Synchronization struct {
-	state         protoimpl.MessageState                   `protogen:"open.v1"`
-	CreatedAt     *timestamppb.Timestamp                   `protobuf:"bytes,1,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
-	State         SecretStore_Status_Synchronization_State `protobuf:"varint,2,opt,name=state,proto3,enum=octelium.api.main.enterprise.v1.SecretStore_Status_Synchronization_State" json:"state,omitempty"`
-	CompletedAt   *timestamppb.Timestamp                   `protobuf:"bytes,3,opt,name=completedAt,proto3" json:"completedAt,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// CreatedAt is the date at which the synchronization was requested.
+	CreatedAt *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
+	// State is the current state of the synchronization.
+	State SecretStore_Status_Synchronization_State `protobuf:"varint,2,opt,name=state,proto3,enum=octelium.api.main.enterprise.v1.SecretStore_Status_Synchronization_State" json:"state,omitempty"`
+	// CompletedAt is the date at which the synchronization completed or
+	// failed.
+	CompletedAt   *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=completedAt,proto3" json:"completedAt,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -15600,9 +16957,13 @@ func (x *SecretStore_Status_Synchronization) GetCompletedAt() *timestamppb.Times
 	return nil
 }
 
+// Bearer is the generated bearer credential
 type GenerateDirectoryProviderCredentialResponse_Bearer struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	AccessToken   string                 `protobuf:"bytes,1,opt,name=accessToken,proto3" json:"accessToken,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// AccessToken is the access token that is set in the `Authorization`
+	// request header by the directory. It is only returned once upon its
+	// generation.
+	AccessToken   string `protobuf:"bytes,1,opt,name=accessToken,proto3" json:"accessToken,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -15644,16 +17005,27 @@ func (x *GenerateDirectoryProviderCredentialResponse_Bearer) GetAccessToken() st
 	return ""
 }
 
+// Entry is the AuditLog entry information
 type AuditLog_Entry struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
-	ResourceRef   *metav1.ObjectReference `protobuf:"bytes,1,opt,name=resourceRef,proto3" json:"resourceRef,omitempty"`
-	Operation     string                  `protobuf:"bytes,2,opt,name=operation,proto3" json:"operation,omitempty"`
-	SessionRef    *metav1.ObjectReference `protobuf:"bytes,3,opt,name=sessionRef,proto3" json:"sessionRef,omitempty"`
-	UserRef       *metav1.ObjectReference `protobuf:"bytes,4,opt,name=userRef,proto3" json:"userRef,omitempty"`
-	DeviceRef     *metav1.ObjectReference `protobuf:"bytes,5,opt,name=deviceRef,proto3" json:"deviceRef,omitempty"`
-	Package       string                  `protobuf:"bytes,6,opt,name=package,proto3" json:"package,omitempty"`
-	Service       string                  `protobuf:"bytes,7,opt,name=service,proto3" json:"service,omitempty"`
-	Method        string                  `protobuf:"bytes,8,opt,name=method,proto3" json:"method,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ResourceRef is a reference to the resource that was changed.
+	ResourceRef *metav1.ObjectReference `protobuf:"bytes,1,opt,name=resourceRef,proto3" json:"resourceRef,omitempty"`
+	// Operation is the full name of the API method that performed the change
+	// (i.e. `<PACKAGE>.<SERVICE>/<METHOD>`).
+	Operation string `protobuf:"bytes,2,opt,name=operation,proto3" json:"operation,omitempty"`
+	// SessionRef is a reference to the Session that performed the change.
+	SessionRef *metav1.ObjectReference `protobuf:"bytes,3,opt,name=sessionRef,proto3" json:"sessionRef,omitempty"`
+	// UserRef is a reference to the User that owns the Session.
+	UserRef *metav1.ObjectReference `protobuf:"bytes,4,opt,name=userRef,proto3" json:"userRef,omitempty"`
+	// DeviceRef is a reference to the Device of the Session.
+	DeviceRef *metav1.ObjectReference `protobuf:"bytes,5,opt,name=deviceRef,proto3" json:"deviceRef,omitempty"`
+	// Package is the protobuf package of the API method (e.g.
+	// `octelium.api.main.core.v1`).
+	Package string `protobuf:"bytes,6,opt,name=package,proto3" json:"package,omitempty"`
+	// Service is the gRPC service name of the API method (e.g. `MainService`).
+	Service string `protobuf:"bytes,7,opt,name=service,proto3" json:"service,omitempty"`
+	// Method is the gRPC method name of the API method (e.g. `CreateService`).
+	Method        string `protobuf:"bytes,8,opt,name=method,proto3" json:"method,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -15744,11 +17116,16 @@ func (x *AuditLog_Entry) GetMethod() string {
 	return ""
 }
 
+// Spec is the DeviceManager specification
 type DeviceManager_Spec struct {
-	state     protoimpl.MessageState      `protogen:"open.v1"`
-	Condition *corev1.Condition           `protobuf:"bytes,12,opt,name=condition,proto3" json:"condition,omitempty"`
-	Polling   *DeviceManager_Spec_Polling `protobuf:"bytes,10,opt,name=polling,proto3" json:"polling,omitempty"`
-	Linking   *DeviceManager_Spec_Linking `protobuf:"bytes,11,opt,name=linking,proto3" json:"linking,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Condition restricts the Devices that the DeviceManager applies to. A
+	// DeviceManager without a Condition applies to every Device.
+	Condition *corev1.Condition `protobuf:"bytes,12,opt,name=condition,proto3" json:"condition,omitempty"`
+	// Polling sets the inventory collection-related configuration.
+	Polling *DeviceManager_Spec_Polling `protobuf:"bytes,10,opt,name=polling,proto3" json:"polling,omitempty"`
+	// Linking sets the Device linking-related configuration.
+	Linking *DeviceManager_Spec_Linking `protobuf:"bytes,11,opt,name=linking,proto3" json:"linking,omitempty"`
 	// Types that are valid to be assigned to Type:
 	//
 	//	*DeviceManager_Spec_CrowdStrike_
@@ -15899,34 +17276,42 @@ type isDeviceManager_Spec_Type interface {
 }
 
 type DeviceManager_Spec_CrowdStrike_ struct {
+	// CrowdStrike sets the CrowdStrike Falcon specific options.
 	CrowdStrike *DeviceManager_Spec_CrowdStrike `protobuf:"bytes,1,opt,name=crowdStrike,proto3,oneof"`
 }
 
 type DeviceManager_Spec_SentinelOne_ struct {
+	// SentinelOne sets the SentinelOne specific options.
 	SentinelOne *DeviceManager_Spec_SentinelOne `protobuf:"bytes,2,opt,name=sentinelOne,proto3,oneof"`
 }
 
 type DeviceManager_Spec_MicrosoftIntune_ struct {
+	// MicrosoftIntune sets the Microsoft Intune specific options.
 	MicrosoftIntune *DeviceManager_Spec_MicrosoftIntune `protobuf:"bytes,3,opt,name=microsoftIntune,proto3,oneof"`
 }
 
 type DeviceManager_Spec_Jamf_ struct {
+	// Jamf sets the Jamf Pro specific options.
 	Jamf *DeviceManager_Spec_Jamf `protobuf:"bytes,4,opt,name=jamf,proto3,oneof"`
 }
 
 type DeviceManager_Spec_OnePassword_ struct {
+	// OnePassword sets the 1Password Device Trust specific options.
 	OnePassword *DeviceManager_Spec_OnePassword `protobuf:"bytes,5,opt,name=onePassword,proto3,oneof"`
 }
 
 type DeviceManager_Spec_FleetDM_ struct {
+	// FleetDM sets the Fleet specific options.
 	FleetDM *DeviceManager_Spec_FleetDM `protobuf:"bytes,6,opt,name=fleetDM,proto3,oneof"`
 }
 
 type DeviceManager_Spec_Huntress_ struct {
+	// Huntress sets the Huntress specific options.
 	Huntress *DeviceManager_Spec_Huntress `protobuf:"bytes,7,opt,name=huntress,proto3,oneof"`
 }
 
 type DeviceManager_Spec_Iru_ struct {
+	// Iru sets the Iru specific options.
 	Iru *DeviceManager_Spec_Iru `protobuf:"bytes,8,opt,name=iru,proto3,oneof"`
 }
 
@@ -15946,12 +17331,17 @@ func (*DeviceManager_Spec_Huntress_) isDeviceManager_Spec_Type() {}
 
 func (*DeviceManager_Spec_Iru_) isDeviceManager_Spec_Type() {}
 
+// Status is the current status of the DeviceManager
 type DeviceManager_Status struct {
-	state         protoimpl.MessageState           `protogen:"open.v1"`
-	Type          DeviceManager_Status_Type        `protobuf:"varint,1,opt,name=type,proto3,enum=octelium.api.main.enterprise.v1.DeviceManager_Status_Type" json:"type,omitempty"`
-	State         DeviceManager_Status_State       `protobuf:"varint,2,opt,name=state,proto3,enum=octelium.api.main.enterprise.v1.DeviceManager_Status_State" json:"state,omitempty"`
-	Collection    *DeviceManager_Status_Collection `protobuf:"bytes,3,opt,name=collection,proto3" json:"collection,omitempty"`
-	Linking       *DeviceManager_Status_Linking    `protobuf:"bytes,4,opt,name=linking,proto3" json:"linking,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Type is the currently set type of the DeviceManager.
+	Type DeviceManager_Status_Type `protobuf:"varint,1,opt,name=type,proto3,enum=octelium.api.main.enterprise.v1.DeviceManager_Status_Type" json:"type,omitempty"`
+	// State is the current state of the DeviceManager.
+	State DeviceManager_Status_State `protobuf:"varint,2,opt,name=state,proto3,enum=octelium.api.main.enterprise.v1.DeviceManager_Status_State" json:"state,omitempty"`
+	// Collection is the inventory collection-related status.
+	Collection *DeviceManager_Status_Collection `protobuf:"bytes,3,opt,name=collection,proto3" json:"collection,omitempty"`
+	// Linking is the Device linking-related status.
+	Linking       *DeviceManager_Status_Linking `protobuf:"bytes,4,opt,name=linking,proto3" json:"linking,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -16014,14 +17404,24 @@ func (x *DeviceManager_Status) GetLinking() *DeviceManager_Status_Linking {
 	return nil
 }
 
+// CrowdStrike sets the CrowdStrike Falcon specific options
 type DeviceManager_Spec_CrowdStrike struct {
-	state                      protoimpl.MessageState                       `protogen:"open.v1"`
-	Region                     DeviceManager_Spec_CrowdStrike_Region        `protobuf:"varint,1,opt,name=region,proto3,enum=octelium.api.main.enterprise.v1.DeviceManager_Spec_CrowdStrike_Region" json:"region,omitempty"`
-	ClientID                   string                                       `protobuf:"bytes,2,opt,name=clientID,proto3" json:"clientID,omitempty"`
-	ClientSecret               *DeviceManager_Spec_CrowdStrike_ClientSecret `protobuf:"bytes,4,opt,name=clientSecret,proto3" json:"clientSecret,omitempty"`
-	MemberCID                  string                                       `protobuf:"bytes,5,opt,name=memberCID,proto3" json:"memberCID,omitempty"`
-	HostFilter                 string                                       `protobuf:"bytes,6,opt,name=hostFilter,proto3" json:"hostFilter,omitempty"`
-	DisableZeroTrustAssessment bool                                         `protobuf:"varint,7,opt,name=disableZeroTrustAssessment,proto3" json:"disableZeroTrustAssessment,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Region sets the CrowdStrike Falcon cloud region.
+	Region DeviceManager_Spec_CrowdStrike_Region `protobuf:"varint,1,opt,name=region,proto3,enum=octelium.api.main.enterprise.v1.DeviceManager_Spec_CrowdStrike_Region" json:"region,omitempty"`
+	// ClientID is the client ID of the Falcon API client. Required.
+	ClientID string `protobuf:"bytes,2,opt,name=clientID,proto3" json:"clientID,omitempty"`
+	// ClientSecret is the client secret of the Falcon API client. Required.
+	ClientSecret *DeviceManager_Spec_CrowdStrike_ClientSecret `protobuf:"bytes,4,opt,name=clientSecret,proto3" json:"clientSecret,omitempty"`
+	// MemberCID is the customer ID of the member tenant whose hosts are
+	// collected. It is only used in the multi-tenant Falcon environments.
+	MemberCID string `protobuf:"bytes,5,opt,name=memberCID,proto3" json:"memberCID,omitempty"`
+	// HostFilter is an FQL filter that restricts the hosts that are
+	// collected from the Falcon inventory.
+	HostFilter string `protobuf:"bytes,6,opt,name=hostFilter,proto3" json:"hostFilter,omitempty"`
+	// DisableZeroTrustAssessment disables collecting the CrowdStrike Zero
+	// Trust Assessment scores of the hosts.
+	DisableZeroTrustAssessment bool `protobuf:"varint,7,opt,name=disableZeroTrustAssessment,proto3" json:"disableZeroTrustAssessment,omitempty"`
 	unknownFields              protoimpl.UnknownFields
 	sizeCache                  protoimpl.SizeCache
 }
@@ -16098,13 +17498,24 @@ func (x *DeviceManager_Spec_CrowdStrike) GetDisableZeroTrustAssessment() bool {
 	return false
 }
 
+// SentinelOne sets the SentinelOne specific options
 type DeviceManager_Spec_SentinelOne struct {
-	state         protoimpl.MessageState                   `protogen:"open.v1"`
-	ManagementURL string                                   `protobuf:"bytes,1,opt,name=managementURL,proto3" json:"managementURL,omitempty"`
-	ApiToken      *DeviceManager_Spec_SentinelOne_APIToken `protobuf:"bytes,2,opt,name=apiToken,proto3" json:"apiToken,omitempty"`
-	SiteIDs       string                                   `protobuf:"bytes,3,opt,name=siteIDs,proto3" json:"siteIDs,omitempty"`
-	AccountIDs    string                                   `protobuf:"bytes,4,opt,name=accountIDs,proto3" json:"accountIDs,omitempty"`
-	AgentQuery    string                                   `protobuf:"bytes,5,opt,name=agentQuery,proto3" json:"agentQuery,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ManagementURL is the URL of the SentinelOne management console (e.g.
+	// `https://example.sentinelone.net`). Required.
+	ManagementURL string `protobuf:"bytes,1,opt,name=managementURL,proto3" json:"managementURL,omitempty"`
+	// APIToken is the SentinelOne API token. Required.
+	ApiToken *DeviceManager_Spec_SentinelOne_APIToken `protobuf:"bytes,2,opt,name=apiToken,proto3" json:"apiToken,omitempty"`
+	// SiteIDs is a comma-separated list of the SentinelOne site IDs whose
+	// agents are collected.
+	SiteIDs string `protobuf:"bytes,3,opt,name=siteIDs,proto3" json:"siteIDs,omitempty"`
+	// AccountIDs is a comma-separated list of the SentinelOne account IDs
+	// whose agents are collected.
+	AccountIDs string `protobuf:"bytes,4,opt,name=accountIDs,proto3" json:"accountIDs,omitempty"`
+	// AgentQuery is a URL-encoded set of additional query parameters that
+	// are set in the SentinelOne agents listing requests in order to further
+	// restrict the agents that are collected.
+	AgentQuery    string `protobuf:"bytes,5,opt,name=agentQuery,proto3" json:"agentQuery,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -16174,13 +17585,22 @@ func (x *DeviceManager_Spec_SentinelOne) GetAgentQuery() string {
 	return ""
 }
 
+// MicrosoftIntune sets the Microsoft Intune specific options
 type DeviceManager_Spec_MicrosoftIntune struct {
-	state         protoimpl.MessageState                           `protogen:"open.v1"`
-	TenantID      string                                           `protobuf:"bytes,1,opt,name=tenantID,proto3" json:"tenantID,omitempty"`
-	ClientID      string                                           `protobuf:"bytes,2,opt,name=clientID,proto3" json:"clientID,omitempty"`
-	ClientSecret  *DeviceManager_Spec_MicrosoftIntune_ClientSecret `protobuf:"bytes,3,opt,name=clientSecret,proto3" json:"clientSecret,omitempty"`
-	Cloud         DeviceManager_Spec_MicrosoftIntune_Cloud         `protobuf:"varint,4,opt,name=cloud,proto3,enum=octelium.api.main.enterprise.v1.DeviceManager_Spec_MicrosoftIntune_Cloud" json:"cloud,omitempty"`
-	Filter        string                                           `protobuf:"bytes,5,opt,name=filter,proto3" json:"filter,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// TenantID is the ID of the Entra ID tenant. Required.
+	TenantID string `protobuf:"bytes,1,opt,name=tenantID,proto3" json:"tenantID,omitempty"`
+	// ClientID is the client ID of the Entra ID application that is used to
+	// access the Microsoft Graph API. Required.
+	ClientID string `protobuf:"bytes,2,opt,name=clientID,proto3" json:"clientID,omitempty"`
+	// ClientSecret is the client secret of the Entra ID application.
+	// Required.
+	ClientSecret *DeviceManager_Spec_MicrosoftIntune_ClientSecret `protobuf:"bytes,3,opt,name=clientSecret,proto3" json:"clientSecret,omitempty"`
+	// Cloud sets the Microsoft cloud environment.
+	Cloud DeviceManager_Spec_MicrosoftIntune_Cloud `protobuf:"varint,4,opt,name=cloud,proto3,enum=octelium.api.main.enterprise.v1.DeviceManager_Spec_MicrosoftIntune_Cloud" json:"cloud,omitempty"`
+	// Filter is a Microsoft Graph `$filter` expression that restricts the
+	// managed devices that are collected.
+	Filter        string `protobuf:"bytes,5,opt,name=filter,proto3" json:"filter,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -16250,12 +17670,20 @@ func (x *DeviceManager_Spec_MicrosoftIntune) GetFilter() string {
 	return ""
 }
 
+// Jamf sets the Jamf Pro specific options
 type DeviceManager_Spec_Jamf struct {
-	state         protoimpl.MessageState                `protogen:"open.v1"`
-	BaseURL       string                                `protobuf:"bytes,1,opt,name=baseURL,proto3" json:"baseURL,omitempty"`
-	ClientID      string                                `protobuf:"bytes,2,opt,name=clientID,proto3" json:"clientID,omitempty"`
-	ClientSecret  *DeviceManager_Spec_Jamf_ClientSecret `protobuf:"bytes,3,opt,name=clientSecret,proto3" json:"clientSecret,omitempty"`
-	Filter        string                                `protobuf:"bytes,4,opt,name=filter,proto3" json:"filter,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// BaseURL is the base URL of the Jamf Pro server (e.g.
+	// `https://example.jamfcloud.com`). Required.
+	BaseURL string `protobuf:"bytes,1,opt,name=baseURL,proto3" json:"baseURL,omitempty"`
+	// ClientID is the client ID of the Jamf Pro API client. Required.
+	ClientID string `protobuf:"bytes,2,opt,name=clientID,proto3" json:"clientID,omitempty"`
+	// ClientSecret is the client secret of the Jamf Pro API client.
+	// Required.
+	ClientSecret *DeviceManager_Spec_Jamf_ClientSecret `protobuf:"bytes,3,opt,name=clientSecret,proto3" json:"clientSecret,omitempty"`
+	// Filter is a Jamf Pro RSQL filter expression that restricts the
+	// computers that are collected.
+	Filter        string `protobuf:"bytes,4,opt,name=filter,proto3" json:"filter,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -16318,9 +17746,14 @@ func (x *DeviceManager_Spec_Jamf) GetFilter() string {
 	return ""
 }
 
+// OnePassword sets the 1Password Device Trust (i.e. Kolide) specific
+// options
 type DeviceManager_Spec_OnePassword struct {
-	state         protoimpl.MessageState                   `protogen:"open.v1"`
-	BaseURL       string                                   `protobuf:"bytes,1,opt,name=baseURL,proto3" json:"baseURL,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// BaseURL overrides the base URL of the 1Password Device Trust API. If
+	// unset, the default public API URL is used.
+	BaseURL string `protobuf:"bytes,1,opt,name=baseURL,proto3" json:"baseURL,omitempty"`
+	// APIToken is the 1Password Device Trust API token. Required.
 	ApiToken      *DeviceManager_Spec_OnePassword_APIToken `protobuf:"bytes,2,opt,name=apiToken,proto3" json:"apiToken,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -16370,11 +17803,17 @@ func (x *DeviceManager_Spec_OnePassword) GetApiToken() *DeviceManager_Spec_OnePa
 	return nil
 }
 
+// FleetDM sets the Fleet (i.e. FleetDM) specific options
 type DeviceManager_Spec_FleetDM struct {
-	state         protoimpl.MessageState               `protogen:"open.v1"`
-	BaseURL       string                               `protobuf:"bytes,1,opt,name=baseURL,proto3" json:"baseURL,omitempty"`
-	ApiToken      *DeviceManager_Spec_FleetDM_APIToken `protobuf:"bytes,2,opt,name=apiToken,proto3" json:"apiToken,omitempty"`
-	TeamID        uint32                               `protobuf:"varint,3,opt,name=teamID,proto3" json:"teamID,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// BaseURL is the base URL of the Fleet server (e.g.
+	// `https://fleet.example.com`). Required.
+	BaseURL string `protobuf:"bytes,1,opt,name=baseURL,proto3" json:"baseURL,omitempty"`
+	// APIToken is the Fleet API token. Required.
+	ApiToken *DeviceManager_Spec_FleetDM_APIToken `protobuf:"bytes,2,opt,name=apiToken,proto3" json:"apiToken,omitempty"`
+	// TeamID is the ID of the Fleet team whose hosts are collected. If
+	// unset, the hosts of every team are collected.
+	TeamID        uint32 `protobuf:"varint,3,opt,name=teamID,proto3" json:"teamID,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -16430,10 +17869,17 @@ func (x *DeviceManager_Spec_FleetDM) GetTeamID() uint32 {
 	return 0
 }
 
+// Huntress sets the Huntress specific options
 type DeviceManager_Spec_Huntress struct {
-	state         protoimpl.MessageState                 `protogen:"open.v1"`
-	BaseURL       string                                 `protobuf:"bytes,1,opt,name=baseURL,proto3" json:"baseURL,omitempty"`
-	ApiKey        string                                 `protobuf:"bytes,2,opt,name=apiKey,proto3" json:"apiKey,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// BaseURL overrides the base URL of the Huntress API. If unset, the
+	// default public API URL is used.
+	BaseURL string `protobuf:"bytes,1,opt,name=baseURL,proto3" json:"baseURL,omitempty"`
+	// APIKey is the public part of the Huntress API credentials which is
+	// used as the HTTP basic authentication username. Required.
+	ApiKey string `protobuf:"bytes,2,opt,name=apiKey,proto3" json:"apiKey,omitempty"`
+	// APISecret is the secret part of the Huntress API credentials which is
+	// used as the HTTP basic authentication password. Required.
 	ApiSecret     *DeviceManager_Spec_Huntress_APISecret `protobuf:"bytes,3,opt,name=apiSecret,proto3" json:"apiSecret,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -16490,9 +17936,12 @@ func (x *DeviceManager_Spec_Huntress) GetApiSecret() *DeviceManager_Spec_Huntres
 	return nil
 }
 
+// Iru sets the Iru specific options
 type DeviceManager_Spec_Iru struct {
-	state         protoimpl.MessageState           `protogen:"open.v1"`
-	BaseURL       string                           `protobuf:"bytes,1,opt,name=baseURL,proto3" json:"baseURL,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// BaseURL is the base URL of the Iru API. Required.
+	BaseURL string `protobuf:"bytes,1,opt,name=baseURL,proto3" json:"baseURL,omitempty"`
+	// APIToken is the Iru API token. Required.
 	ApiToken      *DeviceManager_Spec_Iru_APIToken `protobuf:"bytes,2,opt,name=apiToken,proto3" json:"apiToken,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -16542,12 +17991,21 @@ func (x *DeviceManager_Spec_Iru) GetApiToken() *DeviceManager_Spec_Iru_APIToken 
 	return nil
 }
 
+// Polling sets the options of the periodic collection of the provider's
+// device inventory
 type DeviceManager_Spec_Polling struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Interval      *metav1.Duration       `protobuf:"bytes,1,opt,name=interval,proto3" json:"interval,omitempty"`
-	Timeout       *metav1.Duration       `protobuf:"bytes,2,opt,name=timeout,proto3" json:"timeout,omitempty"`
-	StaleAfter    *metav1.Duration       `protobuf:"bytes,3,opt,name=staleAfter,proto3" json:"staleAfter,omitempty"`
-	IsDisabled    bool                   `protobuf:"varint,4,opt,name=isDisabled,proto3" json:"isDisabled,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Interval is the interval at which the provider's inventory is
+	// collected. If unset, the Cluster's own default interval is used.
+	Interval *metav1.Duration `protobuf:"bytes,1,opt,name=interval,proto3" json:"interval,omitempty"`
+	// Timeout is the timeout of a single collection.
+	Timeout *metav1.Duration `protobuf:"bytes,2,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	// StaleAfter is the duration after which the last collected inventory
+	// snapshot is considered stale and is no longer used to link the Devices
+	// or to refresh their posture.
+	StaleAfter *metav1.Duration `protobuf:"bytes,3,opt,name=staleAfter,proto3" json:"staleAfter,omitempty"`
+	// IsDisabled disables the periodic collection.
+	IsDisabled    bool `protobuf:"varint,4,opt,name=isDisabled,proto3" json:"isDisabled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -16610,15 +18068,28 @@ func (x *DeviceManager_Spec_Polling) GetIsDisabled() bool {
 	return false
 }
 
+// Linking sets the options of how the Cluster's Devices are discovered in
+// and bound to the provider's device inventory
 type DeviceManager_Spec_Linking struct {
-	state            protoimpl.MessageState                   `protogen:"open.v1"`
-	Strategy         DeviceManager_Spec_Linking_Strategy      `protobuf:"varint,1,opt,name=strategy,proto3,enum=octelium.api.main.enterprise.v1.DeviceManager_Spec_Linking_Strategy" json:"strategy,omitempty"`
-	ApprovalMode     DeviceManager_Spec_Linking_ApprovalMode  `protobuf:"varint,2,opt,name=approvalMode,proto3,enum=octelium.api.main.enterprise.v1.DeviceManager_Spec_Linking_ApprovalMode" json:"approvalMode,omitempty"`
-	RequireAgreement bool                                     `protobuf:"varint,3,opt,name=requireAgreement,proto3" json:"requireAgreement,omitempty"`
-	Priority         uint32                                   `protobuf:"varint,4,opt,name=priority,proto3" json:"priority,omitempty"`
-	Verification     *DeviceManager_Spec_Linking_Verification `protobuf:"bytes,5,opt,name=verification,proto3" json:"verification,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Strategy sets how the Devices are discovered in the provider's
+	// inventory. If unset, IDENTITY_AND_PROBE is used.
+	Strategy DeviceManager_Spec_Linking_Strategy `protobuf:"varint,1,opt,name=strategy,proto3,enum=octelium.api.main.enterprise.v1.DeviceManager_Spec_Linking_Strategy" json:"strategy,omitempty"`
+	// ApprovalMode sets how a discovered candidate binding is approved. If
+	// unset, MANUAL is used.
+	ApprovalMode DeviceManager_Spec_Linking_ApprovalMode `protobuf:"varint,2,opt,name=approvalMode,proto3,enum=octelium.api.main.enterprise.v1.DeviceManager_Spec_Linking_ApprovalMode" json:"approvalMode,omitempty"`
+	// RequireAgreement only accepts a candidate binding when both the probe
+	// and the identity sources agree on the same inventory entry.
+	RequireAgreement bool `protobuf:"varint,3,opt,name=requireAgreement,proto3" json:"requireAgreement,omitempty"`
+	// Priority is used to break the ties when more than one DeviceManager
+	// matches the same Device. The DeviceManager with the highest Priority
+	// wins. A tie between the DeviceManagers of an equal Priority is
+	// surfaced as ambiguous instead of being arbitrarily resolved.
+	Priority uint32 `protobuf:"varint,4,opt,name=priority,proto3" json:"priority,omitempty"`
+	// Verification sets the re-verification-related configuration.
+	Verification  *DeviceManager_Spec_Linking_Verification `protobuf:"bytes,5,opt,name=verification,proto3" json:"verification,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeviceManager_Spec_Linking) Reset() {
@@ -16686,6 +18157,7 @@ func (x *DeviceManager_Spec_Linking) GetVerification() *DeviceManager_Spec_Linki
 	return nil
 }
 
+// ClientSecret is the client secret of the Falcon API client
 type DeviceManager_Spec_CrowdStrike_ClientSecret struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -16747,12 +18219,15 @@ type isDeviceManager_Spec_CrowdStrike_ClientSecret_Type interface {
 }
 
 type DeviceManager_Spec_CrowdStrike_ClientSecret_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains the
+	// client secret
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*DeviceManager_Spec_CrowdStrike_ClientSecret_FromSecret) isDeviceManager_Spec_CrowdStrike_ClientSecret_Type() {
 }
 
+// APIToken is the SentinelOne API token
 type DeviceManager_Spec_SentinelOne_APIToken struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -16814,12 +18289,15 @@ type isDeviceManager_Spec_SentinelOne_APIToken_Type interface {
 }
 
 type DeviceManager_Spec_SentinelOne_APIToken_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains the
+	// API token
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*DeviceManager_Spec_SentinelOne_APIToken_FromSecret) isDeviceManager_Spec_SentinelOne_APIToken_Type() {
 }
 
+// ClientSecret is the client secret of the Entra ID application
 type DeviceManager_Spec_MicrosoftIntune_ClientSecret struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -16881,12 +18359,15 @@ type isDeviceManager_Spec_MicrosoftIntune_ClientSecret_Type interface {
 }
 
 type DeviceManager_Spec_MicrosoftIntune_ClientSecret_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains the
+	// client secret
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*DeviceManager_Spec_MicrosoftIntune_ClientSecret_FromSecret) isDeviceManager_Spec_MicrosoftIntune_ClientSecret_Type() {
 }
 
+// ClientSecret is the client secret of the Jamf Pro API client
 type DeviceManager_Spec_Jamf_ClientSecret struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -16948,12 +18429,15 @@ type isDeviceManager_Spec_Jamf_ClientSecret_Type interface {
 }
 
 type DeviceManager_Spec_Jamf_ClientSecret_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains the
+	// client secret
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*DeviceManager_Spec_Jamf_ClientSecret_FromSecret) isDeviceManager_Spec_Jamf_ClientSecret_Type() {
 }
 
+// APIToken is the 1Password Device Trust API token
 type DeviceManager_Spec_OnePassword_APIToken struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -17015,12 +18499,15 @@ type isDeviceManager_Spec_OnePassword_APIToken_Type interface {
 }
 
 type DeviceManager_Spec_OnePassword_APIToken_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains the
+	// API token
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*DeviceManager_Spec_OnePassword_APIToken_FromSecret) isDeviceManager_Spec_OnePassword_APIToken_Type() {
 }
 
+// APIToken is the Fleet API token
 type DeviceManager_Spec_FleetDM_APIToken struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -17082,11 +18569,14 @@ type isDeviceManager_Spec_FleetDM_APIToken_Type interface {
 }
 
 type DeviceManager_Spec_FleetDM_APIToken_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains the
+	// API token
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*DeviceManager_Spec_FleetDM_APIToken_FromSecret) isDeviceManager_Spec_FleetDM_APIToken_Type() {}
 
+// APISecret is the secret part of the Huntress API credentials
 type DeviceManager_Spec_Huntress_APISecret struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -17148,12 +18638,15 @@ type isDeviceManager_Spec_Huntress_APISecret_Type interface {
 }
 
 type DeviceManager_Spec_Huntress_APISecret_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains the
+	// API secret
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*DeviceManager_Spec_Huntress_APISecret_FromSecret) isDeviceManager_Spec_Huntress_APISecret_Type() {
 }
 
+// APIToken is the Iru API token
 type DeviceManager_Spec_Iru_APIToken struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -17215,14 +18708,20 @@ type isDeviceManager_Spec_Iru_APIToken_Type interface {
 }
 
 type DeviceManager_Spec_Iru_APIToken_FromSecret struct {
+	// FromSecret sets the name of the Secret whose value contains the
+	// API token
 	FromSecret string `protobuf:"bytes,1,opt,name=fromSecret,proto3,oneof"`
 }
 
 func (*DeviceManager_Spec_Iru_APIToken_FromSecret) isDeviceManager_Spec_Iru_APIToken_Type() {}
 
+// Verification sets the options of the periodic re-verification of the
+// already bound Devices
 type DeviceManager_Spec_Linking_Verification struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Interval      *metav1.Duration       `protobuf:"bytes,1,opt,name=interval,proto3" json:"interval,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Interval is the interval at which the bound Devices are
+	// re-verified.
+	Interval      *metav1.Duration `protobuf:"bytes,1,opt,name=interval,proto3" json:"interval,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -17264,14 +18763,21 @@ func (x *DeviceManager_Spec_Linking_Verification) GetInterval() *metav1.Duration
 	return nil
 }
 
+// Collection is the state of the periodic collection of the provider's
+// device inventory
 type DeviceManager_Status_Collection struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	LastAttemptAt  *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=lastAttemptAt,proto3" json:"lastAttemptAt,omitempty"`
-	LastSuccessAt  *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=lastSuccessAt,proto3" json:"lastSuccessAt,omitempty"`
-	ManagedDevices uint32                 `protobuf:"varint,3,opt,name=managedDevices,proto3" json:"managedDevices,omitempty"`
-	LastError      string                 `protobuf:"bytes,4,opt,name=lastError,proto3" json:"lastError,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// LastAttemptAt is the date of the last collection attempt.
+	LastAttemptAt *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=lastAttemptAt,proto3" json:"lastAttemptAt,omitempty"`
+	// LastSuccessAt is the date of the last successful collection.
+	LastSuccessAt *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=lastSuccessAt,proto3" json:"lastSuccessAt,omitempty"`
+	// ManagedDevices is the number of the devices of the last successfully
+	// collected inventory snapshot.
+	ManagedDevices uint32 `protobuf:"varint,3,opt,name=managedDevices,proto3" json:"managedDevices,omitempty"`
+	// LastError is the error message of the last failed collection.
+	LastError     string `protobuf:"bytes,4,opt,name=lastError,proto3" json:"lastError,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeviceManager_Status_Collection) Reset() {
@@ -17332,15 +18838,26 @@ func (x *DeviceManager_Status_Collection) GetLastError() string {
 	return ""
 }
 
+// Linking is the state of the linking between the Cluster's Devices and
+// the provider's inventory entries
 type DeviceManager_Status_Linking struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	LastSweepAt     *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=lastSweepAt,proto3" json:"lastSweepAt,omitempty"`
-	LinkedDevices   uint32                 `protobuf:"varint,2,opt,name=linkedDevices,proto3" json:"linkedDevices,omitempty"`
-	WaitingApproval uint32                 `protobuf:"varint,3,opt,name=waitingApproval,proto3" json:"waitingApproval,omitempty"`
-	Ambiguous       uint32                 `protobuf:"varint,4,opt,name=ambiguous,proto3" json:"ambiguous,omitempty"`
-	FailedUpdates   uint32                 `protobuf:"varint,5,opt,name=failedUpdates,proto3" json:"failedUpdates,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// LastSweepAt is the date of the last linking sweep over the Devices.
+	LastSweepAt *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=lastSweepAt,proto3" json:"lastSweepAt,omitempty"`
+	// LinkedDevices is the number of the Devices that are currently bound to
+	// an inventory entry of the DeviceManager.
+	LinkedDevices uint32 `protobuf:"varint,2,opt,name=linkedDevices,proto3" json:"linkedDevices,omitempty"`
+	// WaitingApproval is the number of the Devices whose binding is pending
+	// a manual approval.
+	WaitingApproval uint32 `protobuf:"varint,3,opt,name=waitingApproval,proto3" json:"waitingApproval,omitempty"`
+	// Ambiguous is the number of the Devices that could not be bound since
+	// more than one candidate matched them.
+	Ambiguous uint32 `protobuf:"varint,4,opt,name=ambiguous,proto3" json:"ambiguous,omitempty"`
+	// FailedUpdates is the number of the Devices that could not be updated
+	// during the last linking sweep.
+	FailedUpdates uint32 `protobuf:"varint,5,opt,name=failedUpdates,proto3" json:"failedUpdates,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeviceManager_Status_Linking) Reset() {
@@ -17408,6 +18925,8 @@ func (x *DeviceManager_Status_Linking) GetFailedUpdates() uint32 {
 	return 0
 }
 
+// DeviceManagerDetails is the provider-specific details of the inventory
+// entry that the Device is bound to
 type DeviceExtInfo_DeviceManagerDetails struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -17469,14 +18988,18 @@ type isDeviceExtInfo_DeviceManagerDetails_Type interface {
 }
 
 type DeviceExtInfo_DeviceManagerDetails_Crowdstrike_ struct {
+	// Crowdstrike is the CrowdStrike Falcon specific details.
 	Crowdstrike *DeviceExtInfo_DeviceManagerDetails_Crowdstrike `protobuf:"bytes,1,opt,name=crowdstrike,proto3,oneof"`
 }
 
 func (*DeviceExtInfo_DeviceManagerDetails_Crowdstrike_) isDeviceExtInfo_DeviceManagerDetails_Type() {}
 
+// Crowdstrike is the CrowdStrike Falcon specific details
 type DeviceExtInfo_DeviceManagerDetails_Crowdstrike struct {
-	state         protoimpl.MessageState                                     `protogen:"open.v1"`
-	Info          *DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Info       `protobuf:"bytes,1,opt,name=info,proto3" json:"info,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Info is the inventory information of the host.
+	Info *DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Info `protobuf:"bytes,1,opt,name=info,proto3" json:"info,omitempty"`
+	// Assessment is the Zero Trust Assessment scores of the host.
 	Assessment    *DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Assessment `protobuf:"bytes,2,opt,name=assessment,proto3" json:"assessment,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -17526,11 +19049,15 @@ func (x *DeviceExtInfo_DeviceManagerDetails_Crowdstrike) GetAssessment() *Device
 	return nil
 }
 
+// Assessment is the CrowdStrike Zero Trust Assessment scores of the host
 type DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Assessment struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	LastSyncAt    *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=lastSyncAt,proto3" json:"lastSyncAt,omitempty"`
-	Overall       int32                  `protobuf:"varint,2,opt,name=overall,proto3" json:"overall,omitempty"`
-	Os            int32                  `protobuf:"varint,3,opt,name=os,proto3" json:"os,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// LastSyncAt is the date at which the assessment was last collected.
+	LastSyncAt *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=lastSyncAt,proto3" json:"lastSyncAt,omitempty"`
+	// Overall is the overall Zero Trust Assessment score of the host.
+	Overall int32 `protobuf:"varint,2,opt,name=overall,proto3" json:"overall,omitempty"`
+	// OS is the operating system Zero Trust Assessment score of the host.
+	Os            int32 `protobuf:"varint,3,opt,name=os,proto3" json:"os,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -17586,16 +19113,26 @@ func (x *DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Assessment) GetOs() int3
 	return 0
 }
 
+// Info is the inventory information of the host
 type DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Info struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	LastSyncAt    *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=lastSyncAt,proto3" json:"lastSyncAt,omitempty"`
-	SerialNumber  string                 `protobuf:"bytes,2,opt,name=serialNumber,proto3" json:"serialNumber,omitempty"`
-	MacAddress    string                 `protobuf:"bytes,3,opt,name=macAddress,proto3" json:"macAddress,omitempty"`
-	OsBuild       string                 `protobuf:"bytes,4,opt,name=osBuild,proto3" json:"osBuild,omitempty"`
-	OsVersion     string                 `protobuf:"bytes,5,opt,name=osVersion,proto3" json:"osVersion,omitempty"`
-	Status        string                 `protobuf:"bytes,6,opt,name=status,proto3" json:"status,omitempty"`
-	AgentVersion  string                 `protobuf:"bytes,7,opt,name=agentVersion,proto3" json:"agentVersion,omitempty"`
-	DeviceID      string                 `protobuf:"bytes,8,opt,name=deviceID,proto3" json:"deviceID,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// LastSyncAt is the date at which the information was last collected.
+	LastSyncAt *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=lastSyncAt,proto3" json:"lastSyncAt,omitempty"`
+	// SerialNumber is the serial number of the host.
+	SerialNumber string `protobuf:"bytes,2,opt,name=serialNumber,proto3" json:"serialNumber,omitempty"`
+	// MacAddress is the MAC address of the host.
+	MacAddress string `protobuf:"bytes,3,opt,name=macAddress,proto3" json:"macAddress,omitempty"`
+	// OSBuild is the operating system build of the host.
+	OsBuild string `protobuf:"bytes,4,opt,name=osBuild,proto3" json:"osBuild,omitempty"`
+	// OSVersion is the operating system version of the host.
+	OsVersion string `protobuf:"bytes,5,opt,name=osVersion,proto3" json:"osVersion,omitempty"`
+	// Status is the status of the host as it is reported by CrowdStrike.
+	Status string `protobuf:"bytes,6,opt,name=status,proto3" json:"status,omitempty"`
+	// AgentVersion is the version of the Falcon sensor that is installed
+	// on the host.
+	AgentVersion string `protobuf:"bytes,7,opt,name=agentVersion,proto3" json:"agentVersion,omitempty"`
+	// DeviceID is the CrowdStrike agent ID (i.e. AID) of the host.
+	DeviceID      string `protobuf:"bytes,8,opt,name=deviceID,proto3" json:"deviceID,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -17686,6 +19223,8 @@ func (x *DeviceExtInfo_DeviceManagerDetails_Crowdstrike_Info) GetDeviceID() stri
 	return ""
 }
 
+// Additional sets the Policies that are evaluated in addition to the ones
+// that already apply to the upstream
 type IsAuthorizedRequest_Additional struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Policies is the list of standalone Policies
@@ -17740,9 +19279,11 @@ func (x *IsAuthorizedRequest_Additional) GetInlinePolicies() []*corev1.InlinePol
 	return nil
 }
 
+// All matches only when every one of its child Conditions matches
 type Condition_All struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Of            []*Condition           `protobuf:"bytes,1,rep,name=of,proto3" json:"of,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Of is the list of the child Conditions.
+	Of            []*Condition `protobuf:"bytes,1,rep,name=of,proto3" json:"of,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -17784,9 +19325,11 @@ func (x *Condition_All) GetOf() []*Condition {
 	return nil
 }
 
+// Any matches when at least one of its child Conditions matches
 type Condition_Any struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Of            []*Condition           `protobuf:"bytes,1,rep,name=of,proto3" json:"of,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Of is the list of the child Conditions.
+	Of            []*Condition `protobuf:"bytes,1,rep,name=of,proto3" json:"of,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -17828,9 +19371,11 @@ func (x *Condition_Any) GetOf() []*Condition {
 	return nil
 }
 
+// None matches only when none of its child Conditions matches
 type Condition_None struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Of            []*Condition           `protobuf:"bytes,1,rep,name=of,proto3" json:"of,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Of is the list of the child Conditions.
+	Of            []*Condition `protobuf:"bytes,1,rep,name=of,proto3" json:"of,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -17872,9 +19417,11 @@ func (x *Condition_None) GetOf() []*Condition {
 	return nil
 }
 
+// Not matches when its Expression does not match
 type Condition_Not struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Expression    *Condition_Expression  `protobuf:"bytes,1,opt,name=expression,proto3" json:"expression,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Expression is the Expression that is negated.
+	Expression    *Condition_Expression `protobuf:"bytes,1,opt,name=expression,proto3" json:"expression,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -17916,6 +19463,9 @@ func (x *Condition_Not) GetExpression() *Condition_Expression {
 	return nil
 }
 
+// Expression is a single typed check against the request context (e.g. the
+// User, the Session, the Device, the Service or the request itself). Exactly
+// one of its arms is set.
 type Condition_Expression struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -18947,394 +20497,546 @@ type isCondition_Expression_Type interface {
 }
 
 type Condition_Expression_User_ struct {
+	// User matches a specific User.
 	User *Condition_Expression_User `protobuf:"bytes,1,opt,name=user,proto3,oneof"`
 }
 
 type Condition_Expression_Device_ struct {
+	// Device matches a specific Device.
 	Device *Condition_Expression_Device `protobuf:"bytes,2,opt,name=device,proto3,oneof"`
 }
 
 type Condition_Expression_Session_ struct {
+	// Session matches a specific Session.
 	Session *Condition_Expression_Session `protobuf:"bytes,3,opt,name=session,proto3,oneof"`
 }
 
 type Condition_Expression_Service_ struct {
+	// Service matches a specific Service.
 	Service *Condition_Expression_Service `protobuf:"bytes,4,opt,name=service,proto3,oneof"`
 }
 
 type Condition_Expression_Namespace_ struct {
+	// Namespace matches a specific Namespace.
 	Namespace *Condition_Expression_Namespace `protobuf:"bytes,20,opt,name=namespace,proto3,oneof"`
 }
 
 type Condition_Expression_Group_ struct {
+	// Group matches the Users that belong to a specific Group.
 	Group *Condition_Expression_Group `protobuf:"bytes,21,opt,name=group,proto3,oneof"`
 }
 
 type Condition_Expression_SessionType_ struct {
+	// SessionType matches the type of the Session.
 	SessionType *Condition_Expression_SessionType `protobuf:"bytes,5,opt,name=sessionType,proto3,oneof"`
 }
 
 type Condition_Expression_UserType_ struct {
+	// UserType matches the type of the User.
 	UserType *Condition_Expression_UserType `protobuf:"bytes,6,opt,name=userType,proto3,oneof"`
 }
 
 type Condition_Expression_DeviceOSType_ struct {
+	// DeviceOSType matches the operating system type of the Device.
 	DeviceOSType *Condition_Expression_DeviceOSType `protobuf:"bytes,7,opt,name=deviceOSType,proto3,oneof"`
 }
 
 type Condition_Expression_ServiceMode_ struct {
+	// ServiceMode matches the mode of the Service.
 	ServiceMode *Condition_Expression_ServiceMode `protobuf:"bytes,8,opt,name=serviceMode,proto3,oneof"`
 }
 
 type Condition_Expression_ServicePublic_ struct {
+	// ServicePublic matches the Services that enable the BeyondCorp mode.
 	ServicePublic *Condition_Expression_ServicePublic `protobuf:"bytes,9,opt,name=servicePublic,proto3,oneof"`
 }
 
 type Condition_Expression_SessionAuthenticationType_ struct {
+	// SessionAuthenticationType matches the type of the Session's current
+	// authentication.
 	SessionAuthenticationType *Condition_Expression_SessionAuthenticationType `protobuf:"bytes,10,opt,name=sessionAuthenticationType,proto3,oneof"`
 }
 
 type Condition_Expression_SessionAuthenticationAAL_ struct {
+	// SessionAuthenticationAAL matches the authenticator assurance level of
+	// the Session's current authentication.
 	SessionAuthenticationAAL *Condition_Expression_SessionAuthenticationAAL `protobuf:"bytes,11,opt,name=sessionAuthenticationAAL,proto3,oneof"`
 }
 
 type Condition_Expression_SessionAuthenticationIdentityProvider_ struct {
+	// SessionAuthenticationIdentityProvider matches the Sessions that
+	// authenticated via a specific IdentityProvider.
 	SessionAuthenticationIdentityProvider *Condition_Expression_SessionAuthenticationIdentityProvider `protobuf:"bytes,12,opt,name=sessionAuthenticationIdentityProvider,proto3,oneof"`
 }
 
 type Condition_Expression_SessionAuthenticationCredential_ struct {
+	// SessionAuthenticationCredential matches the Sessions that
+	// authenticated via a specific Credential.
 	SessionAuthenticationCredential *Condition_Expression_SessionAuthenticationCredential `protobuf:"bytes,13,opt,name=sessionAuthenticationCredential,proto3,oneof"`
 }
 
 type Condition_Expression_SessionBrowser_ struct {
+	// SessionBrowser matches the Sessions that are performed from a web
+	// browser.
 	SessionBrowser *Condition_Expression_SessionBrowser `protobuf:"bytes,14,opt,name=sessionBrowser,proto3,oneof"`
 }
 
 type Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOPasskey_ struct {
+	// SessionAuthenticationCredAuthenticatorFIDOPasskey matches the Sessions
+	// whose FIDO Authenticator is a passkey.
 	SessionAuthenticationCredAuthenticatorFIDOPasskey *Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOPasskey `protobuf:"bytes,15,opt,name=sessionAuthenticationCredAuthenticatorFIDOPasskey,proto3,oneof"`
 }
 
 type Condition_Expression_SessionAuthenticationCredAuthenticatorAAGUID_ struct {
+	// SessionAuthenticationCredAuthenticatorAAGUID matches the Sessions
+	// whose FIDO Authenticator has a specific model identifier.
 	SessionAuthenticationCredAuthenticatorAAGUID *Condition_Expression_SessionAuthenticationCredAuthenticatorAAGUID `protobuf:"bytes,16,opt,name=sessionAuthenticationCredAuthenticatorAAGUID,proto3,oneof"`
 }
 
 type Condition_Expression_TimeBefore_ struct {
+	// TimeBefore matches only before a specific point in time.
 	TimeBefore *Condition_Expression_TimeBefore `protobuf:"bytes,17,opt,name=timeBefore,proto3,oneof"`
 }
 
 type Condition_Expression_TimeAfter_ struct {
+	// TimeAfter matches only after a specific point in time.
 	TimeAfter *Condition_Expression_TimeAfter `protobuf:"bytes,18,opt,name=timeAfter,proto3,oneof"`
 }
 
 type Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOHardware_ struct {
+	// SessionAuthenticationCredAuthenticatorFIDOHardware matches the
+	// Sessions whose FIDO Authenticator is a hardware security key.
 	SessionAuthenticationCredAuthenticatorFIDOHardware *Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOHardware `protobuf:"bytes,19,opt,name=sessionAuthenticationCredAuthenticatorFIDOHardware,proto3,oneof"`
 }
 
 type Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOAttestationVerified_ struct {
+	// SessionAuthenticationCredAuthenticatorFIDOAttestationVerified matches
+	// the Sessions whose FIDO Authenticator's attestation was verified.
 	SessionAuthenticationCredAuthenticatorFIDOAttestationVerified *Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOAttestationVerified `protobuf:"bytes,22,opt,name=sessionAuthenticationCredAuthenticatorFIDOAttestationVerified,proto3,oneof"`
 }
 
 type Condition_Expression_SessionAuthenticationCredentialType_ struct {
+	// SessionAuthenticationCredentialType matches the type of the Credential
+	// that the Session authenticated with.
 	SessionAuthenticationCredentialType *Condition_Expression_SessionAuthenticationCredentialType `protobuf:"bytes,23,opt,name=sessionAuthenticationCredentialType,proto3,oneof"`
 }
 
 type Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserVerified_ struct {
+	// SessionAuthenticationCredAuthenticatorFIDOUserVerified matches the
+	// Sessions whose FIDO Authenticator verified the User.
 	SessionAuthenticationCredAuthenticatorFIDOUserVerified *Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserVerified `protobuf:"bytes,24,opt,name=sessionAuthenticationCredAuthenticatorFIDOUserVerified,proto3,oneof"`
 }
 
 type Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserPresent_ struct {
+	// SessionAuthenticationCredAuthenticatorFIDOUserPresent matches the
+	// Sessions whose FIDO Authenticator confirmed the User's presence.
 	SessionAuthenticationCredAuthenticatorFIDOUserPresent *Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserPresent `protobuf:"bytes,25,opt,name=sessionAuthenticationCredAuthenticatorFIDOUserPresent,proto3,oneof"`
 }
 
 type Condition_Expression_SessionAuthenticationGeoipCountryCode_ struct {
+	// SessionAuthenticationGeoipCountryCode matches the country that the
+	// Session authenticated from.
 	SessionAuthenticationGeoipCountryCode *Condition_Expression_SessionAuthenticationGeoipCountryCode `protobuf:"bytes,26,opt,name=sessionAuthenticationGeoipCountryCode,proto3,oneof"`
 }
 
 type Condition_Expression_RequestHTTPPath_ struct {
+	// RequestHTTPPath matches the path of the HTTP request.
 	RequestHTTPPath *Condition_Expression_RequestHTTPPath `protobuf:"bytes,27,opt,name=requestHTTPPath,proto3,oneof"`
 }
 
 type Condition_Expression_RequestHTTPMethod_ struct {
+	// RequestHTTPMethod matches the method of the HTTP request.
 	RequestHTTPMethod *Condition_Expression_RequestHTTPMethod `protobuf:"bytes,29,opt,name=requestHTTPMethod,proto3,oneof"`
 }
 
 type Condition_Expression_RequestHTTPHasHeader_ struct {
+	// RequestHTTPHasHeader matches the HTTP requests that carry a specific
+	// header.
 	RequestHTTPHasHeader *Condition_Expression_RequestHTTPHasHeader `protobuf:"bytes,30,opt,name=requestHTTPHasHeader,proto3,oneof"`
 }
 
 type Condition_Expression_RequestHTTPHeaderValue_ struct {
+	// RequestHTTPHeaderValue matches the value of a specific header of the
+	// HTTP request.
 	RequestHTTPHeaderValue *Condition_Expression_RequestHTTPHeaderValue `protobuf:"bytes,31,opt,name=requestHTTPHeaderValue,proto3,oneof"`
 }
 
 type Condition_Expression_RequestIP_ struct {
+	// RequestIP matches the source IP address of the request.
 	RequestIP *Condition_Expression_RequestIP `protobuf:"bytes,32,opt,name=requestIP,proto3,oneof"`
 }
 
 type Condition_Expression_RequestIPInRange_ struct {
+	// RequestIPInRange matches the requests whose source IP address belongs
+	// to a specific network.
 	RequestIPInRange *Condition_Expression_RequestIPInRange `protobuf:"bytes,33,opt,name=requestIPInRange,proto3,oneof"`
 }
 
 type Condition_Expression_ApiServerReadOnlyMethods struct {
+	// APIServerReadOnlyMethods matches the read-only methods of the
+	// Cluster's API server.
 	ApiServerReadOnlyMethods *Condition_Expression_APIServerReadOnlyMethods `protobuf:"bytes,34,opt,name=apiServerReadOnlyMethods,proto3,oneof"`
 }
 
 type Condition_Expression_ApiServerMethods struct {
+	// APIServerMethods matches a specific set of the methods of the
+	// Cluster's API server.
 	ApiServerMethods *Condition_Expression_APIServerMethods `protobuf:"bytes,35,opt,name=apiServerMethods,proto3,oneof"`
 }
 
 type Condition_Expression_ApiServerServices struct {
+	// APIServerServices matches a specific set of the gRPC services of the
+	// Cluster's API server.
 	ApiServerServices *Condition_Expression_APIServerServices `protobuf:"bytes,36,opt,name=apiServerServices,proto3,oneof"`
 }
 
 type Condition_Expression_ApiServerCore struct {
+	// APIServerCore matches the requests to the core API.
 	ApiServerCore *Condition_Expression_APIServerCore `protobuf:"bytes,37,opt,name=apiServerCore,proto3,oneof"`
 }
 
 type Condition_Expression_ApiServerUser struct {
+	// APIServerUser matches the requests to the user API.
 	ApiServerUser *Condition_Expression_APIServerUser `protobuf:"bytes,38,opt,name=apiServerUser,proto3,oneof"`
 }
 
 type Condition_Expression_ApiServerEnterprise struct {
+	// APIServerEnterprise matches the requests to the enterprise API.
 	ApiServerEnterprise *Condition_Expression_APIServerEnterprise `protobuf:"bytes,39,opt,name=apiServerEnterprise,proto3,oneof"`
 }
 
 type Condition_Expression_ApiServerCordium struct {
+	// APIServerCordium matches the requests to the Cordium API.
 	ApiServerCordium *Condition_Expression_APIServerCordium `protobuf:"bytes,40,opt,name=apiServerCordium,proto3,oneof"`
 }
 
 type Condition_Expression_ApiServerAccess struct {
+	// APIServerAccess matches the requests to the access API.
 	ApiServerAccess *Condition_Expression_APIServerAccess `protobuf:"bytes,41,opt,name=apiServerAccess,proto3,oneof"`
 }
 
 type Condition_Expression_RequestMCPProtocolVersion struct {
+	// RequestMCPProtocolVersion matches the MCP protocol version of the
+	// request.
 	RequestMCPProtocolVersion *Condition_Expression_MCPProtocolVersion `protobuf:"bytes,42,opt,name=requestMCPProtocolVersion,proto3,oneof"`
 }
 
 type Condition_Expression_RequestMCPMethod struct {
+	// RequestMCPMethod matches the MCP method of the request.
 	RequestMCPMethod *Condition_Expression_MCPMethod `protobuf:"bytes,43,opt,name=requestMCPMethod,proto3,oneof"`
 }
 
 type Condition_Expression_RequestMCPToolName struct {
+	// RequestMCPToolName matches the name of the tool of an MCP `tools/call`
+	// request.
 	RequestMCPToolName *Condition_Expression_MCPToolName `protobuf:"bytes,44,opt,name=requestMCPToolName,proto3,oneof"`
 }
 
 type Condition_Expression_RequestMCPPromptName struct {
+	// RequestMCPPromptName matches the name of the prompt of an MCP
+	// `prompts/get` request.
 	RequestMCPPromptName *Condition_Expression_MCPPromptName `protobuf:"bytes,45,opt,name=requestMCPPromptName,proto3,oneof"`
 }
 
 type Condition_Expression_RequestMCPResourceURI struct {
+	// RequestMCPResourceURI matches the URI of the resource of an MCP
+	// `resources/read` request.
 	RequestMCPResourceURI *Condition_Expression_MCPResourceURI `protobuf:"bytes,46,opt,name=requestMCPResourceURI,proto3,oneof"`
 }
 
 type Condition_Expression_RequestMCPIsNotification struct {
+	// RequestMCPIsNotification matches the MCP requests that are
+	// notifications.
 	RequestMCPIsNotification *Condition_Expression_MCPIsNotification `protobuf:"bytes,47,opt,name=requestMCPIsNotification,proto3,oneof"`
 }
 
 type Condition_Expression_RequestLLMProtocol struct {
+	// RequestLLMProtocol matches the LLM API protocol of the request.
 	RequestLLMProtocol *Condition_Expression_LLMProtocol `protobuf:"bytes,48,opt,name=requestLLMProtocol,proto3,oneof"`
 }
 
 type Condition_Expression_RequestLLMOperation struct {
+	// RequestLLMOperation matches the LLM operation of the request.
 	RequestLLMOperation *Condition_Expression_LLMOperation `protobuf:"bytes,49,opt,name=requestLLMOperation,proto3,oneof"`
 }
 
 type Condition_Expression_RequestLLMModel struct {
+	// RequestLLMModel matches the model that is requested from the LLM.
 	RequestLLMModel *Condition_Expression_LLMModel `protobuf:"bytes,50,opt,name=requestLLMModel,proto3,oneof"`
 }
 
 type Condition_Expression_RequestLLMStream struct {
+	// RequestLLMStream matches the LLM requests that ask for a streamed
+	// response.
 	RequestLLMStream *Condition_Expression_LLMStream `protobuf:"bytes,51,opt,name=requestLLMStream,proto3,oneof"`
 }
 
 type Condition_Expression_RequestLLMEstimatedInputTokens struct {
+	// RequestLLMEstimatedInputTokens matches the estimated number of the
+	// input tokens of the LLM request.
 	RequestLLMEstimatedInputTokens *Condition_Expression_LLMEstimatedInputTokens `protobuf:"bytes,52,opt,name=requestLLMEstimatedInputTokens,proto3,oneof"`
 }
 
 type Condition_Expression_RequestLLMEstimateQuality struct {
+	// RequestLLMEstimateQuality matches how complete the estimate of the LLM
+	// request's input tokens is.
 	RequestLLMEstimateQuality *Condition_Expression_LLMEstimateQuality `protobuf:"bytes,53,opt,name=requestLLMEstimateQuality,proto3,oneof"`
 }
 
 type Condition_Expression_RequestLLMMaxOutputTokens struct {
+	// RequestLLMMaxOutputTokens matches the maximum number of the output
+	// tokens that the LLM request asks for.
 	RequestLLMMaxOutputTokens *Condition_Expression_LLMMaxOutputTokens `protobuf:"bytes,54,opt,name=requestLLMMaxOutputTokens,proto3,oneof"`
 }
 
 type Condition_Expression_RequestLLMHasTools struct {
+	// RequestLLMHasTools matches the LLM requests that declare at least one
+	// tool.
 	RequestLLMHasTools *Condition_Expression_LLMHasTools `protobuf:"bytes,55,opt,name=requestLLMHasTools,proto3,oneof"`
 }
 
 type Condition_Expression_RequestLLMToolCount struct {
+	// RequestLLMToolCount matches the number of the tools that the LLM
+	// request declares.
 	RequestLLMToolCount *Condition_Expression_LLMToolCount `protobuf:"bytes,56,opt,name=requestLLMToolCount,proto3,oneof"`
 }
 
 type Condition_Expression_RequestLLMToolName struct {
+	// RequestLLMToolName matches the LLM requests that declare a tool of a
+	// specific name.
 	RequestLLMToolName *Condition_Expression_LLMToolName `protobuf:"bytes,57,opt,name=requestLLMToolName,proto3,oneof"`
 }
 
 type Condition_Expression_RequestLLMInputItemCount struct {
+	// RequestLLMInputItemCount matches the number of the input items of the
+	// LLM request.
 	RequestLLMInputItemCount *Condition_Expression_LLMInputItemCount `protobuf:"bytes,58,opt,name=requestLLMInputItemCount,proto3,oneof"`
 }
 
 type Condition_Expression_RequestLLMHasImageInput struct {
+	// RequestLLMHasImageInput matches the LLM requests that carry an image
+	// input.
 	RequestLLMHasImageInput *Condition_Expression_LLMHasImageInput `protobuf:"bytes,59,opt,name=requestLLMHasImageInput,proto3,oneof"`
 }
 
 type Condition_Expression_RequestLLMHasAudioInput struct {
+	// RequestLLMHasAudioInput matches the LLM requests that carry an audio
+	// input.
 	RequestLLMHasAudioInput *Condition_Expression_LLMHasAudioInput `protobuf:"bytes,60,opt,name=requestLLMHasAudioInput,proto3,oneof"`
 }
 
 type Condition_Expression_RequestHTTPHost_ struct {
+	// RequestHTTPHost matches the host of the HTTP request.
 	RequestHTTPHost *Condition_Expression_RequestHTTPHost `protobuf:"bytes,61,opt,name=requestHTTPHost,proto3,oneof"`
 }
 
 type Condition_Expression_RequestHTTPProtocol_ struct {
+	// RequestHTTPProtocol matches the protocol version of the HTTP request.
 	RequestHTTPProtocol *Condition_Expression_RequestHTTPProtocol `protobuf:"bytes,62,opt,name=requestHTTPProtocol,proto3,oneof"`
 }
 
 type Condition_Expression_RequestHTTPScheme_ struct {
+	// RequestHTTPScheme matches the scheme of the HTTP request.
 	RequestHTTPScheme *Condition_Expression_RequestHTTPScheme `protobuf:"bytes,63,opt,name=requestHTTPScheme,proto3,oneof"`
 }
 
 type Condition_Expression_RequestHTTPURI_ struct {
+	// RequestHTTPURI matches the full URI of the HTTP request.
 	RequestHTTPURI *Condition_Expression_RequestHTTPURI `protobuf:"bytes,64,opt,name=requestHTTPURI,proto3,oneof"`
 }
 
 type Condition_Expression_RequestHTTPSize_ struct {
+	// RequestHTTPSize matches the body size of the HTTP request.
 	RequestHTTPSize *Condition_Expression_RequestHTTPSize `protobuf:"bytes,65,opt,name=requestHTTPSize,proto3,oneof"`
 }
 
 type Condition_Expression_RequestHTTPHasQueryParam_ struct {
+	// RequestHTTPHasQueryParam matches the HTTP requests that carry a
+	// specific query parameter.
 	RequestHTTPHasQueryParam *Condition_Expression_RequestHTTPHasQueryParam `protobuf:"bytes,66,opt,name=requestHTTPHasQueryParam,proto3,oneof"`
 }
 
 type Condition_Expression_RequestHTTPQueryParamValue_ struct {
+	// RequestHTTPQueryParamValue matches the value of a specific query
+	// parameter of the HTTP request.
 	RequestHTTPQueryParamValue *Condition_Expression_RequestHTTPQueryParamValue `protobuf:"bytes,67,opt,name=requestHTTPQueryParamValue,proto3,oneof"`
 }
 
 type Condition_Expression_RequestSSH_ struct {
+	// RequestSSH matches the SSH requests.
 	RequestSSH *Condition_Expression_RequestSSH `protobuf:"bytes,68,opt,name=requestSSH,proto3,oneof"`
 }
 
 type Condition_Expression_RequestSSHUser_ struct {
+	// RequestSSHUser matches the upstream user of the SSH connection.
 	RequestSSHUser *Condition_Expression_RequestSSHUser `protobuf:"bytes,69,opt,name=requestSSHUser,proto3,oneof"`
 }
 
 type Condition_Expression_RequestKubernetes_ struct {
+	// RequestKubernetes matches the Kubernetes API requests.
 	RequestKubernetes *Condition_Expression_RequestKubernetes `protobuf:"bytes,70,opt,name=requestKubernetes,proto3,oneof"`
 }
 
 type Condition_Expression_RequestKubernetesVerb_ struct {
+	// RequestKubernetesVerb matches the verb of the Kubernetes API request.
 	RequestKubernetesVerb *Condition_Expression_RequestKubernetesVerb `protobuf:"bytes,71,opt,name=requestKubernetesVerb,proto3,oneof"`
 }
 
 type Condition_Expression_RequestKubernetesAPIPrefix_ struct {
+	// RequestKubernetesAPIPrefix matches the API prefix of the Kubernetes
+	// API request.
 	RequestKubernetesAPIPrefix *Condition_Expression_RequestKubernetesAPIPrefix `protobuf:"bytes,72,opt,name=requestKubernetesAPIPrefix,proto3,oneof"`
 }
 
 type Condition_Expression_RequestKubernetesAPIGroup_ struct {
+	// RequestKubernetesAPIGroup matches the API group of the Kubernetes API
+	// request.
 	RequestKubernetesAPIGroup *Condition_Expression_RequestKubernetesAPIGroup `protobuf:"bytes,73,opt,name=requestKubernetesAPIGroup,proto3,oneof"`
 }
 
 type Condition_Expression_RequestKubernetesAPIVersion_ struct {
+	// RequestKubernetesAPIVersion matches the API version of the Kubernetes
+	// API request.
 	RequestKubernetesAPIVersion *Condition_Expression_RequestKubernetesAPIVersion `protobuf:"bytes,74,opt,name=requestKubernetesAPIVersion,proto3,oneof"`
 }
 
 type Condition_Expression_RequestKubernetesNamespace_ struct {
+	// RequestKubernetesNamespace matches the namespace of the Kubernetes API
+	// request.
 	RequestKubernetesNamespace *Condition_Expression_RequestKubernetesNamespace `protobuf:"bytes,75,opt,name=requestKubernetesNamespace,proto3,oneof"`
 }
 
 type Condition_Expression_RequestKubernetesResource_ struct {
+	// RequestKubernetesResource matches the resource of the Kubernetes API
+	// request.
 	RequestKubernetesResource *Condition_Expression_RequestKubernetesResource `protobuf:"bytes,76,opt,name=requestKubernetesResource,proto3,oneof"`
 }
 
 type Condition_Expression_RequestKubernetesSubresource_ struct {
+	// RequestKubernetesSubresource matches the subresource of the Kubernetes
+	// API request.
 	RequestKubernetesSubresource *Condition_Expression_RequestKubernetesSubresource `protobuf:"bytes,77,opt,name=requestKubernetesSubresource,proto3,oneof"`
 }
 
 type Condition_Expression_RequestKubernetesName_ struct {
+	// RequestKubernetesName matches the name of the object of the Kubernetes
+	// API request.
 	RequestKubernetesName *Condition_Expression_RequestKubernetesName `protobuf:"bytes,78,opt,name=requestKubernetesName,proto3,oneof"`
 }
 
 type Condition_Expression_RequestGRPC_ struct {
+	// RequestGRPC matches the gRPC requests.
 	RequestGRPC *Condition_Expression_RequestGRPC `protobuf:"bytes,79,opt,name=requestGRPC,proto3,oneof"`
 }
 
 type Condition_Expression_RequestGRPCMethod_ struct {
+	// RequestGRPCMethod matches the method name of the gRPC request.
 	RequestGRPCMethod *Condition_Expression_RequestGRPCMethod `protobuf:"bytes,80,opt,name=requestGRPCMethod,proto3,oneof"`
 }
 
 type Condition_Expression_RequestGRPCService_ struct {
+	// RequestGRPCService matches the service name of the gRPC request.
 	RequestGRPCService *Condition_Expression_RequestGRPCService `protobuf:"bytes,81,opt,name=requestGRPCService,proto3,oneof"`
 }
 
 type Condition_Expression_RequestGRPCServiceFullName_ struct {
+	// RequestGRPCServiceFullName matches the fully qualified service name of
+	// the gRPC request.
 	RequestGRPCServiceFullName *Condition_Expression_RequestGRPCServiceFullName `protobuf:"bytes,82,opt,name=requestGRPCServiceFullName,proto3,oneof"`
 }
 
 type Condition_Expression_RequestGRPCPackage_ struct {
+	// RequestGRPCPackage matches the protobuf package of the gRPC request.
 	RequestGRPCPackage *Condition_Expression_RequestGRPCPackage `protobuf:"bytes,83,opt,name=requestGRPCPackage,proto3,oneof"`
 }
 
 type Condition_Expression_RequestPostgresConnect_ struct {
+	// RequestPostgresConnect matches the PostgreSQL connection requests.
 	RequestPostgresConnect *Condition_Expression_RequestPostgresConnect `protobuf:"bytes,84,opt,name=requestPostgresConnect,proto3,oneof"`
 }
 
 type Condition_Expression_RequestPostgresConnectUser_ struct {
+	// RequestPostgresConnectUser matches the upstream user of the PostgreSQL
+	// connection.
 	RequestPostgresConnectUser *Condition_Expression_RequestPostgresConnectUser `protobuf:"bytes,85,opt,name=requestPostgresConnectUser,proto3,oneof"`
 }
 
 type Condition_Expression_RequestPostgresConnectDatabase_ struct {
+	// RequestPostgresConnectDatabase matches the database of the PostgreSQL
+	// connection.
 	RequestPostgresConnectDatabase *Condition_Expression_RequestPostgresConnectDatabase `protobuf:"bytes,86,opt,name=requestPostgresConnectDatabase,proto3,oneof"`
 }
 
 type Condition_Expression_RequestPostgresConnectApplicationName_ struct {
+	// RequestPostgresConnectApplicationName matches the application name
+	// that is reported by the PostgreSQL client.
 	RequestPostgresConnectApplicationName *Condition_Expression_RequestPostgresConnectApplicationName `protobuf:"bytes,87,opt,name=requestPostgresConnectApplicationName,proto3,oneof"`
 }
 
 type Condition_Expression_RequestPostgresQuery_ struct {
+	// RequestPostgresQuery matches the PostgreSQL simple query requests.
 	RequestPostgresQuery *Condition_Expression_RequestPostgresQuery `protobuf:"bytes,88,opt,name=requestPostgresQuery,proto3,oneof"`
 }
 
 type Condition_Expression_RequestPostgresQueryText_ struct {
+	// RequestPostgresQueryText matches the SQL text of the PostgreSQL simple
+	// query request.
 	RequestPostgresQueryText *Condition_Expression_RequestPostgresQueryText `protobuf:"bytes,89,opt,name=requestPostgresQueryText,proto3,oneof"`
 }
 
 type Condition_Expression_RequestPostgresParse_ struct {
+	// RequestPostgresParse matches the PostgreSQL prepared statement parse
+	// requests.
 	RequestPostgresParse *Condition_Expression_RequestPostgresParse `protobuf:"bytes,90,opt,name=requestPostgresParse,proto3,oneof"`
 }
 
 type Condition_Expression_RequestPostgresParseName_ struct {
+	// RequestPostgresParseName matches the name of the PostgreSQL prepared
+	// statement.
 	RequestPostgresParseName *Condition_Expression_RequestPostgresParseName `protobuf:"bytes,91,opt,name=requestPostgresParseName,proto3,oneof"`
 }
 
 type Condition_Expression_RequestPostgresParseQuery_ struct {
+	// RequestPostgresParseQuery matches the SQL text of the PostgreSQL
+	// prepared statement.
 	RequestPostgresParseQuery *Condition_Expression_RequestPostgresParseQuery `protobuf:"bytes,92,opt,name=requestPostgresParseQuery,proto3,oneof"`
 }
 
 type Condition_Expression_RequestDNS_ struct {
+	// RequestDNS matches the DNS requests.
 	RequestDNS *Condition_Expression_RequestDNS `protobuf:"bytes,93,opt,name=requestDNS,proto3,oneof"`
 }
 
 type Condition_Expression_RequestDNSName_ struct {
+	// RequestDNSName matches the queried name of the DNS request.
 	RequestDNSName *Condition_Expression_RequestDNSName `protobuf:"bytes,94,opt,name=requestDNSName,proto3,oneof"`
 }
 
 type Condition_Expression_RequestDNSTypeID_ struct {
+	// RequestDNSTypeID matches the numeric query type of the DNS request.
 	RequestDNSTypeID *Condition_Expression_RequestDNSTypeID `protobuf:"bytes,95,opt,name=requestDNSTypeID,proto3,oneof"`
 }
 
 type Condition_Expression_RequestSOCKS5_ struct {
+	// RequestSOCKS5 matches the SOCKS5 requests.
 	RequestSOCKS5 *Condition_Expression_RequestSOCKS5 `protobuf:"bytes,96,opt,name=requestSOCKS5,proto3,oneof"`
 }
 
 type Condition_Expression_RequestSOCKS5Host_ struct {
+	// RequestSOCKS5Host matches the destination host of the SOCKS5
+	// connection.
 	RequestSOCKS5Host *Condition_Expression_RequestSOCKS5Host `protobuf:"bytes,97,opt,name=requestSOCKS5Host,proto3,oneof"`
 }
 
 type Condition_Expression_RequestSOCKS5Port_ struct {
+	// RequestSOCKS5Port matches the destination port of the SOCKS5
+	// connection.
 	RequestSOCKS5Port *Condition_Expression_RequestSOCKS5Port `protobuf:"bytes,98,opt,name=requestSOCKS5Port,proto3,oneof"`
 }
 
 type Condition_Expression_RequestSOCKS5AddressType_ struct {
+	// RequestSOCKS5AddressType matches the address type of the SOCKS5
+	// connection.
 	RequestSOCKS5AddressType *Condition_Expression_RequestSOCKS5AddressType `protobuf:"bytes,99,opt,name=requestSOCKS5AddressType,proto3,oneof"`
 }
 
@@ -19540,8 +21242,10 @@ func (*Condition_Expression_RequestSOCKS5Port_) isCondition_Expression_Type() {}
 
 func (*Condition_Expression_RequestSOCKS5AddressType_) isCondition_Expression_Type() {}
 
+// User matches a specific User
 type Condition_Expression_User struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// UserRef is a reference to the User that is matched.
 	UserRef       *metav1.ObjectReference `protobuf:"bytes,1,opt,name=userRef,proto3" json:"userRef,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -19584,9 +21288,11 @@ func (x *Condition_Expression_User) GetUserRef() *metav1.ObjectReference {
 	return nil
 }
 
+// UserType matches the type of the User
 type Condition_Expression_UserType struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Type          corev1.User_Spec_Type  `protobuf:"varint,1,opt,name=type,proto3,enum=octelium.api.main.core.v1.User_Spec_Type" json:"type,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Type is the User type that is matched.
+	Type          corev1.User_Spec_Type `protobuf:"varint,1,opt,name=type,proto3,enum=octelium.api.main.core.v1.User_Spec_Type" json:"type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -19628,8 +21334,10 @@ func (x *Condition_Expression_UserType) GetType() corev1.User_Spec_Type {
 	return corev1.User_Spec_Type(0)
 }
 
+// Group matches the Users that belong to a specific Group
 type Condition_Expression_Group struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// GroupRef is a reference to the Group that is matched.
 	GroupRef      *metav1.ObjectReference `protobuf:"bytes,1,opt,name=groupRef,proto3" json:"groupRef,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -19672,8 +21380,10 @@ func (x *Condition_Expression_Group) GetGroupRef() *metav1.ObjectReference {
 	return nil
 }
 
+// Session matches a specific Session
 type Condition_Expression_Session struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// SessionRef is a reference to the Session that is matched.
 	SessionRef    *metav1.ObjectReference `protobuf:"bytes,1,opt,name=sessionRef,proto3" json:"sessionRef,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -19716,8 +21426,10 @@ func (x *Condition_Expression_Session) GetSessionRef() *metav1.ObjectReference {
 	return nil
 }
 
+// Device matches a specific Device
 type Condition_Expression_Device struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// DeviceRef is a reference to the Device that is matched.
 	DeviceRef     *metav1.ObjectReference `protobuf:"bytes,1,opt,name=deviceRef,proto3" json:"deviceRef,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -19760,8 +21472,10 @@ func (x *Condition_Expression_Device) GetDeviceRef() *metav1.ObjectReference {
 	return nil
 }
 
+// DeviceOSType matches the operating system type of the Device
 type Condition_Expression_DeviceOSType struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// OSType is the Device operating system type that is matched.
 	OsType        corev1.Device_Status_OSType `protobuf:"varint,1,opt,name=osType,proto3,enum=octelium.api.main.core.v1.Device_Status_OSType" json:"osType,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -19804,8 +21518,10 @@ func (x *Condition_Expression_DeviceOSType) GetOsType() corev1.Device_Status_OST
 	return corev1.Device_Status_OSType(0)
 }
 
+// Service matches a specific Service
 type Condition_Expression_Service struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ServiceRef is a reference to the Service that is matched.
 	ServiceRef    *metav1.ObjectReference `protobuf:"bytes,1,opt,name=serviceRef,proto3" json:"serviceRef,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -19848,8 +21564,10 @@ func (x *Condition_Expression_Service) GetServiceRef() *metav1.ObjectReference {
 	return nil
 }
 
+// Namespace matches a specific Namespace
 type Condition_Expression_Namespace struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// NamespaceRef is a reference to the Namespace that is matched.
 	NamespaceRef  *metav1.ObjectReference `protobuf:"bytes,1,opt,name=namespaceRef,proto3" json:"namespaceRef,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -19892,8 +21610,10 @@ func (x *Condition_Expression_Namespace) GetNamespaceRef() *metav1.ObjectReferen
 	return nil
 }
 
+// ServiceMode matches the mode of the Service
 type Condition_Expression_ServiceMode struct {
-	state         protoimpl.MessageState   `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Mode is the Service mode that is matched.
 	Mode          corev1.Service_Spec_Mode `protobuf:"varint,1,opt,name=mode,proto3,enum=octelium.api.main.core.v1.Service_Spec_Mode" json:"mode,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -19936,6 +21656,8 @@ func (x *Condition_Expression_ServiceMode) GetMode() corev1.Service_Spec_Mode {
 	return corev1.Service_Spec_Mode(0)
 }
 
+// ServicePublic matches the Services that enable the BeyondCorp mode (i.e.
+// whose `isPublic` field is set)
 type Condition_Expression_ServicePublic struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -19972,8 +21694,10 @@ func (*Condition_Expression_ServicePublic) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{44, 4, 9}
 }
 
+// SessionType matches the type of the Session
 type Condition_Expression_SessionType struct {
-	state         protoimpl.MessageState     `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Type is the Session type that is matched.
 	Type          corev1.Session_Status_Type `protobuf:"varint,1,opt,name=type,proto3,enum=octelium.api.main.core.v1.Session_Status_Type" json:"type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -20016,8 +21740,11 @@ func (x *Condition_Expression_SessionType) GetType() corev1.Session_Status_Type 
 	return corev1.Session_Status_Type(0)
 }
 
+// SessionAuthenticationType matches the type of the Session's current
+// authentication
 type Condition_Expression_SessionAuthenticationType struct {
-	state         protoimpl.MessageState                         `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Type is the authentication type that is matched.
 	Type          corev1.Session_Status_Authentication_Info_Type `protobuf:"varint,1,opt,name=type,proto3,enum=octelium.api.main.core.v1.Session_Status_Authentication_Info_Type" json:"type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -20060,8 +21787,11 @@ func (x *Condition_Expression_SessionAuthenticationType) GetType() corev1.Sessio
 	return corev1.Session_Status_Authentication_Info_Type(0)
 }
 
+// SessionAuthenticationAAL matches the authenticator assurance level (AAL)
+// of the Session's current authentication
 type Condition_Expression_SessionAuthenticationAAL struct {
-	state         protoimpl.MessageState                        `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// AAL is the authenticator assurance level that is matched.
 	Aal           corev1.Session_Status_Authentication_Info_AAL `protobuf:"varint,5,opt,name=aal,proto3,enum=octelium.api.main.core.v1.Session_Status_Authentication_Info_AAL" json:"aal,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -20104,8 +21834,12 @@ func (x *Condition_Expression_SessionAuthenticationAAL) GetAal() corev1.Session_
 	return corev1.Session_Status_Authentication_Info_AAL(0)
 }
 
+// SessionAuthenticationIdentityProvider matches the Sessions that
+// authenticated via a specific IdentityProvider
 type Condition_Expression_SessionAuthenticationIdentityProvider struct {
-	state               protoimpl.MessageState  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// IdentityProviderRef is a reference to the IdentityProvider that is
+	// matched.
 	IdentityProviderRef *metav1.ObjectReference `protobuf:"bytes,1,opt,name=identityProviderRef,proto3" json:"identityProviderRef,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
@@ -20148,8 +21882,11 @@ func (x *Condition_Expression_SessionAuthenticationIdentityProvider) GetIdentity
 	return nil
 }
 
+// SessionAuthenticationCredential matches the Sessions that authenticated
+// via a specific Credential
 type Condition_Expression_SessionAuthenticationCredential struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// CredentialRef is a reference to the Credential that is matched.
 	CredentialRef *metav1.ObjectReference `protobuf:"bytes,1,opt,name=credentialRef,proto3" json:"credentialRef,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -20192,6 +21929,8 @@ func (x *Condition_Expression_SessionAuthenticationCredential) GetCredentialRef(
 	return nil
 }
 
+// SessionAuthenticationCredAuthenticatorFIDOPasskey matches the Sessions
+// whose FIDO Authenticator is a discoverable credential (i.e. a passkey)
 type Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOPasskey struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -20228,6 +21967,9 @@ func (*Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOPasskey) D
 	return file_enterprisev1_proto_rawDescGZIP(), []int{44, 4, 15}
 }
 
+// SessionAuthenticationCredAuthenticatorFIDOHardware matches the Sessions
+// whose FIDO Authenticator is a hardware security key as opposed to a
+// platform authenticator
 type Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOHardware struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -20264,6 +22006,9 @@ func (*Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOHardware) 
 	return file_enterprisev1_proto_rawDescGZIP(), []int{44, 4, 16}
 }
 
+// SessionAuthenticationCredAuthenticatorFIDOUserVerified matches the
+// Sessions whose FIDO Authenticator verified the User (e.g. via a PIN or a
+// biometric) during the authentication
 type Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserVerified struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -20300,6 +22045,9 @@ func (*Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserVerifi
 	return file_enterprisev1_proto_rawDescGZIP(), []int{44, 4, 17}
 }
 
+// SessionAuthenticationCredAuthenticatorFIDOUserPresent matches the
+// Sessions whose FIDO Authenticator confirmed the User's presence during
+// the authentication
 type Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserPresent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -20336,6 +22084,9 @@ func (*Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserPresen
 	return file_enterprisev1_proto_rawDescGZIP(), []int{44, 4, 18}
 }
 
+// SessionAuthenticationCredAuthenticatorFIDOAttestationVerified matches
+// the Sessions whose FIDO Authenticator's attestation was verified upon
+// its registration
 type Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOAttestationVerified struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -20373,9 +22124,12 @@ func (*Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOAttestatio
 	return file_enterprisev1_proto_rawDescGZIP(), []int{44, 4, 19}
 }
 
+// SessionAuthenticationCredAuthenticatorAAGUID matches the Sessions whose
+// FIDO Authenticator has a specific model identifier (i.e. AAGUID)
 type Condition_Expression_SessionAuthenticationCredAuthenticatorAAGUID struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Aaguid        string                 `protobuf:"bytes,1,opt,name=aaguid,proto3" json:"aaguid,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// AAGUID is the FIDO Authenticator model identifier that is matched.
+	Aaguid        string `protobuf:"bytes,1,opt,name=aaguid,proto3" json:"aaguid,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -20417,6 +22171,8 @@ func (x *Condition_Expression_SessionAuthenticationCredAuthenticatorAAGUID) GetA
 	return ""
 }
 
+// SessionBrowser matches the Sessions that are performed from a web
+// browser
 type Condition_Expression_SessionBrowser struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -20453,8 +22209,10 @@ func (*Condition_Expression_SessionBrowser) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{44, 4, 21}
 }
 
+// TimeBefore matches only before a specific point in time
 type Condition_Expression_TimeBefore struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Timestamp is the date that the current time must be before.
 	Timestamp     *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -20497,8 +22255,10 @@ func (x *Condition_Expression_TimeBefore) GetTimestamp() *timestamppb.Timestamp 
 	return nil
 }
 
+// TimeAfter matches only after a specific point in time
 type Condition_Expression_TimeAfter struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Timestamp is the date that the current time must be after.
 	Timestamp     *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -20541,8 +22301,11 @@ func (x *Condition_Expression_TimeAfter) GetTimestamp() *timestamppb.Timestamp {
 	return nil
 }
 
+// SessionAuthenticationCredentialType matches the type of the Credential
+// that the Session authenticated with
 type Condition_Expression_SessionAuthenticationCredentialType struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Type is the Credential type that is matched.
 	Type          corev1.Credential_Spec_Type `protobuf:"varint,1,opt,name=type,proto3,enum=octelium.api.main.core.v1.Credential_Spec_Type" json:"type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -20585,9 +22348,13 @@ func (x *Condition_Expression_SessionAuthenticationCredentialType) GetType() cor
 	return corev1.Credential_Spec_Type(0)
 }
 
+// SessionAuthenticationGeoipCountryCode matches the country that the
+// Session authenticated from
 type Condition_Expression_SessionAuthenticationGeoipCountryCode struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Code is the ISO 3166-1 alpha-2 country code that is matched (e.g.
+	// `DE`).
+	Code          string `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -20629,8 +22396,10 @@ func (x *Condition_Expression_SessionAuthenticationGeoipCountryCode) GetCode() s
 	return ""
 }
 
+// RequestHTTPPath matches the path of the HTTP request
 type Condition_Expression_RequestHTTPPath struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the request's path.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -20673,8 +22442,11 @@ func (x *Condition_Expression_RequestHTTPPath) GetMatch() *Condition_Expression_
 	return nil
 }
 
+// RequestHTTPMethod matches the method of the HTTP request
 type Condition_Expression_RequestHTTPMethod struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the request's method. The matched values are
+	// upper-cased.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -20717,8 +22489,12 @@ func (x *Condition_Expression_RequestHTTPMethod) GetMatch() *Condition_Expressio
 	return nil
 }
 
+// RequestHTTPHasHeader matches the HTTP requests that carry a specific
+// header regardless of its value
 type Condition_Expression_RequestHTTPHasHeader struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the header's name. The matched values are
+	// lower-cased.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -20761,9 +22537,14 @@ func (x *Condition_Expression_RequestHTTPHasHeader) GetMatch() *Condition_Expres
 	return nil
 }
 
+// RequestHTTPHeaderValue matches the value of a specific header of the
+// HTTP request
 type Condition_Expression_RequestHTTPHeaderValue struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
-	Header        *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Header is the matcher of the header's name. The matched values are
+	// lower-cased.
+	Header *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`
+	// Value is the matcher of the header's value.
 	Value         *Condition_Expression_StringMatch `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -20813,9 +22594,11 @@ func (x *Condition_Expression_RequestHTTPHeaderValue) GetValue() *Condition_Expr
 	return nil
 }
 
+// RequestIP matches the source IP address of the request
 type Condition_Expression_RequestIP struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Value         string                 `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Value is the IP address that is matched.
+	Value         string `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -20857,9 +22640,13 @@ func (x *Condition_Expression_RequestIP) GetValue() string {
 	return ""
 }
 
+// RequestIPInRange matches the requests whose source IP address belongs to
+// a specific network
 type Condition_Expression_RequestIPInRange struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Value         string                 `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Value is the CIDR of the network that is matched (e.g.
+	// `10.0.0.0/8`).
+	Value         string `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -21005,22 +22792,27 @@ type isCondition_Expression_StringMatch_Type interface {
 }
 
 type Condition_Expression_StringMatch_Exact struct {
+	// Exact matches when the field's value is exactly equal to this value.
 	Exact string `protobuf:"bytes,1,opt,name=exact,proto3,oneof"`
 }
 
 type Condition_Expression_StringMatch_Prefix struct {
+	// Prefix matches when the field's value starts with this value.
 	Prefix string `protobuf:"bytes,2,opt,name=prefix,proto3,oneof"`
 }
 
 type Condition_Expression_StringMatch_Suffix struct {
+	// Suffix matches when the field's value ends with this value.
 	Suffix string `protobuf:"bytes,3,opt,name=suffix,proto3,oneof"`
 }
 
 type Condition_Expression_StringMatch_Contains struct {
+	// Contains matches when the field's value contains this value.
 	Contains string `protobuf:"bytes,4,opt,name=contains,proto3,oneof"`
 }
 
 type Condition_Expression_StringMatch_In_ struct {
+	// In matches when the field's value is one of a set of values.
 	In *Condition_Expression_StringMatch_In `protobuf:"bytes,5,opt,name=in,proto3,oneof"`
 }
 
@@ -21137,22 +22929,30 @@ type isCondition_Expression_UIntMatch_Type interface {
 }
 
 type Condition_Expression_UIntMatch_Exact struct {
+	// Exact matches when the field's value is equal to this value.
 	Exact uint64 `protobuf:"varint,1,opt,name=exact,proto3,oneof"`
 }
 
 type Condition_Expression_UIntMatch_LessThan struct {
+	// LessThan matches when the field's value is less than this value.
 	LessThan uint64 `protobuf:"varint,2,opt,name=lessThan,proto3,oneof"`
 }
 
 type Condition_Expression_UIntMatch_LessThanOrEqual struct {
+	// LessThanOrEqual matches when the field's value is less than or equal
+	// to this value.
 	LessThanOrEqual uint64 `protobuf:"varint,3,opt,name=lessThanOrEqual,proto3,oneof"`
 }
 
 type Condition_Expression_UIntMatch_GreaterThan struct {
+	// GreaterThan matches when the field's value is greater than this
+	// value.
 	GreaterThan uint64 `protobuf:"varint,4,opt,name=greaterThan,proto3,oneof"`
 }
 
 type Condition_Expression_UIntMatch_GreaterThanOrEqual struct {
+	// GreaterThanOrEqual matches when the field's value is greater than or
+	// equal to this value.
 	GreaterThanOrEqual uint64 `protobuf:"varint,5,opt,name=greaterThanOrEqual,proto3,oneof"`
 }
 
@@ -21269,22 +23069,30 @@ type isCondition_Expression_IntMatch_Type interface {
 }
 
 type Condition_Expression_IntMatch_Exact struct {
+	// Exact matches when the field's value is equal to this value.
 	Exact int64 `protobuf:"varint,1,opt,name=exact,proto3,oneof"`
 }
 
 type Condition_Expression_IntMatch_LessThan struct {
+	// LessThan matches when the field's value is less than this value.
 	LessThan int64 `protobuf:"varint,2,opt,name=lessThan,proto3,oneof"`
 }
 
 type Condition_Expression_IntMatch_LessThanOrEqual struct {
+	// LessThanOrEqual matches when the field's value is less than or equal
+	// to this value.
 	LessThanOrEqual int64 `protobuf:"varint,3,opt,name=lessThanOrEqual,proto3,oneof"`
 }
 
 type Condition_Expression_IntMatch_GreaterThan struct {
+	// GreaterThan matches when the field's value is greater than this
+	// value.
 	GreaterThan int64 `protobuf:"varint,4,opt,name=greaterThan,proto3,oneof"`
 }
 
 type Condition_Expression_IntMatch_GreaterThanOrEqual struct {
+	// GreaterThanOrEqual matches when the field's value is greater than or
+	// equal to this value.
 	GreaterThanOrEqual int64 `protobuf:"varint,5,opt,name=greaterThanOrEqual,proto3,oneof"`
 }
 
@@ -21298,8 +23106,10 @@ func (*Condition_Expression_IntMatch_GreaterThan) isCondition_Expression_IntMatc
 
 func (*Condition_Expression_IntMatch_GreaterThanOrEqual) isCondition_Expression_IntMatch_Type() {}
 
+// RequestHTTPHost matches the host of the HTTP request
 type Condition_Expression_RequestHTTPHost struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the request's host.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -21342,8 +23152,11 @@ func (x *Condition_Expression_RequestHTTPHost) GetMatch() *Condition_Expression_
 	return nil
 }
 
+// RequestHTTPProtocol matches the protocol version of the HTTP request
+// (e.g. `HTTP/1.1`, `HTTP/2`)
 type Condition_Expression_RequestHTTPProtocol struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the request's protocol version.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -21386,8 +23199,12 @@ func (x *Condition_Expression_RequestHTTPProtocol) GetMatch() *Condition_Express
 	return nil
 }
 
+// RequestHTTPScheme matches the scheme of the HTTP request (i.e. `http` or
+// `https`)
 type Condition_Expression_RequestHTTPScheme struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the request's scheme. The matched values are
+	// lower-cased.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -21430,8 +23247,10 @@ func (x *Condition_Expression_RequestHTTPScheme) GetMatch() *Condition_Expressio
 	return nil
 }
 
+// RequestHTTPURI matches the full URI of the HTTP request
 type Condition_Expression_RequestHTTPURI struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the request's URI.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -21474,8 +23293,10 @@ func (x *Condition_Expression_RequestHTTPURI) GetMatch() *Condition_Expression_S
 	return nil
 }
 
+// RequestHTTPSize matches the body size in bytes of the HTTP request
 type Condition_Expression_RequestHTTPSize struct {
-	state         protoimpl.MessageState         `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the request's body size.
 	Match         *Condition_Expression_IntMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -21518,9 +23339,12 @@ func (x *Condition_Expression_RequestHTTPSize) GetMatch() *Condition_Expression_
 	return nil
 }
 
+// RequestHTTPHasQueryParam matches the HTTP requests that carry a specific
+// query parameter regardless of its value
 type Condition_Expression_RequestHTTPHasQueryParam struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Name is the name of the query parameter that is matched.
+	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -21562,9 +23386,13 @@ func (x *Condition_Expression_RequestHTTPHasQueryParam) GetName() string {
 	return ""
 }
 
+// RequestHTTPQueryParamValue matches the value of a specific query
+// parameter of the HTTP request
 type Condition_Expression_RequestHTTPQueryParamValue struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
-	Name          string                            `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Name is the name of the query parameter whose value is matched.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// Match is the matcher of the query parameter's value.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,2,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -21614,6 +23442,7 @@ func (x *Condition_Expression_RequestHTTPQueryParamValue) GetMatch() *Condition_
 	return nil
 }
 
+// RequestSSH matches the SSH requests
 type Condition_Expression_RequestSSH struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -21650,8 +23479,10 @@ func (*Condition_Expression_RequestSSH) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{44, 4, 42}
 }
 
+// RequestSSHUser matches the upstream user of the SSH connection
 type Condition_Expression_RequestSSHUser struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the SSH user.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -21694,6 +23525,7 @@ func (x *Condition_Expression_RequestSSHUser) GetMatch() *Condition_Expression_S
 	return nil
 }
 
+// RequestKubernetes matches the Kubernetes API requests
 type Condition_Expression_RequestKubernetes struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -21730,8 +23562,11 @@ func (*Condition_Expression_RequestKubernetes) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{44, 4, 44}
 }
 
+// RequestKubernetesVerb matches the verb of the Kubernetes API request
+// (e.g. `get`, `list`, `create`)
 type Condition_Expression_RequestKubernetesVerb struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the request's verb.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -21774,8 +23609,11 @@ func (x *Condition_Expression_RequestKubernetesVerb) GetMatch() *Condition_Expre
 	return nil
 }
 
+// RequestKubernetesAPIPrefix matches the API prefix of the Kubernetes API
+// request (i.e. `api` or `apis`)
 type Condition_Expression_RequestKubernetesAPIPrefix struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the request's API prefix.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -21818,8 +23656,11 @@ func (x *Condition_Expression_RequestKubernetesAPIPrefix) GetMatch() *Condition_
 	return nil
 }
 
+// RequestKubernetesAPIGroup matches the API group of the Kubernetes API
+// request (e.g. `apps`)
 type Condition_Expression_RequestKubernetesAPIGroup struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the request's API group.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -21862,8 +23703,11 @@ func (x *Condition_Expression_RequestKubernetesAPIGroup) GetMatch() *Condition_E
 	return nil
 }
 
+// RequestKubernetesAPIVersion matches the API version of the Kubernetes
+// API request (e.g. `v1`)
 type Condition_Expression_RequestKubernetesAPIVersion struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the request's API version.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -21906,8 +23750,11 @@ func (x *Condition_Expression_RequestKubernetesAPIVersion) GetMatch() *Condition
 	return nil
 }
 
+// RequestKubernetesNamespace matches the namespace of the Kubernetes API
+// request
 type Condition_Expression_RequestKubernetesNamespace struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the request's namespace.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -21950,8 +23797,11 @@ func (x *Condition_Expression_RequestKubernetesNamespace) GetMatch() *Condition_
 	return nil
 }
 
+// RequestKubernetesResource matches the resource of the Kubernetes API
+// request (e.g. `pods`)
 type Condition_Expression_RequestKubernetesResource struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the request's resource.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -21994,8 +23844,11 @@ func (x *Condition_Expression_RequestKubernetesResource) GetMatch() *Condition_E
 	return nil
 }
 
+// RequestKubernetesSubresource matches the subresource of the Kubernetes
+// API request (e.g. `log`, `exec`)
 type Condition_Expression_RequestKubernetesSubresource struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the request's subresource.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -22038,8 +23891,11 @@ func (x *Condition_Expression_RequestKubernetesSubresource) GetMatch() *Conditio
 	return nil
 }
 
+// RequestKubernetesName matches the name of the object of the Kubernetes
+// API request
 type Condition_Expression_RequestKubernetesName struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the object's name.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -22082,6 +23938,7 @@ func (x *Condition_Expression_RequestKubernetesName) GetMatch() *Condition_Expre
 	return nil
 }
 
+// RequestGRPC matches the gRPC requests
 type Condition_Expression_RequestGRPC struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -22118,8 +23975,11 @@ func (*Condition_Expression_RequestGRPC) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{44, 4, 53}
 }
 
+// RequestGRPCMethod matches the method name of the gRPC request (e.g.
+// `ListUser`)
 type Condition_Expression_RequestGRPCMethod struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the request's method name.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -22162,8 +24022,11 @@ func (x *Condition_Expression_RequestGRPCMethod) GetMatch() *Condition_Expressio
 	return nil
 }
 
+// RequestGRPCService matches the service name of the gRPC request (e.g.
+// `MainService`)
 type Condition_Expression_RequestGRPCService struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the request's service name.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -22206,8 +24069,11 @@ func (x *Condition_Expression_RequestGRPCService) GetMatch() *Condition_Expressi
 	return nil
 }
 
+// RequestGRPCServiceFullName matches the fully qualified service name of
+// the gRPC request (e.g. `octelium.api.main.core.v1.MainService`)
 type Condition_Expression_RequestGRPCServiceFullName struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the request's fully qualified service name.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -22250,8 +24116,11 @@ func (x *Condition_Expression_RequestGRPCServiceFullName) GetMatch() *Condition_
 	return nil
 }
 
+// RequestGRPCPackage matches the protobuf package of the gRPC request
+// (e.g. `octelium.api.main.core.v1`)
 type Condition_Expression_RequestGRPCPackage struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the request's protobuf package.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -22294,6 +24163,7 @@ func (x *Condition_Expression_RequestGRPCPackage) GetMatch() *Condition_Expressi
 	return nil
 }
 
+// RequestPostgresConnect matches the PostgreSQL connection requests
 type Condition_Expression_RequestPostgresConnect struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -22330,8 +24200,11 @@ func (*Condition_Expression_RequestPostgresConnect) Descriptor() ([]byte, []int)
 	return file_enterprisev1_proto_rawDescGZIP(), []int{44, 4, 58}
 }
 
+// RequestPostgresConnectUser matches the upstream user of the PostgreSQL
+// connection
 type Condition_Expression_RequestPostgresConnectUser struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the connection's user.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -22374,8 +24247,11 @@ func (x *Condition_Expression_RequestPostgresConnectUser) GetMatch() *Condition_
 	return nil
 }
 
+// RequestPostgresConnectDatabase matches the database of the PostgreSQL
+// connection
 type Condition_Expression_RequestPostgresConnectDatabase struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the connection's database.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -22418,8 +24294,11 @@ func (x *Condition_Expression_RequestPostgresConnectDatabase) GetMatch() *Condit
 	return nil
 }
 
+// RequestPostgresConnectApplicationName matches the application name that
+// is reported by the PostgreSQL client
 type Condition_Expression_RequestPostgresConnectApplicationName struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the connection's application name.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -22462,6 +24341,7 @@ func (x *Condition_Expression_RequestPostgresConnectApplicationName) GetMatch() 
 	return nil
 }
 
+// RequestPostgresQuery matches the PostgreSQL simple query requests
 type Condition_Expression_RequestPostgresQuery struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -22498,8 +24378,11 @@ func (*Condition_Expression_RequestPostgresQuery) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{44, 4, 62}
 }
 
+// RequestPostgresQueryText matches the SQL text of the PostgreSQL simple
+// query request
 type Condition_Expression_RequestPostgresQueryText struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the query's SQL text.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -22542,6 +24425,8 @@ func (x *Condition_Expression_RequestPostgresQueryText) GetMatch() *Condition_Ex
 	return nil
 }
 
+// RequestPostgresParse matches the PostgreSQL prepared statement parse
+// requests
 type Condition_Expression_RequestPostgresParse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -22578,8 +24463,11 @@ func (*Condition_Expression_RequestPostgresParse) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{44, 4, 64}
 }
 
+// RequestPostgresParseName matches the name of the PostgreSQL prepared
+// statement
 type Condition_Expression_RequestPostgresParseName struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the prepared statement's name.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -22622,8 +24510,11 @@ func (x *Condition_Expression_RequestPostgresParseName) GetMatch() *Condition_Ex
 	return nil
 }
 
+// RequestPostgresParseQuery matches the SQL text of the PostgreSQL
+// prepared statement
 type Condition_Expression_RequestPostgresParseQuery struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the prepared statement's SQL text.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -22666,6 +24557,7 @@ func (x *Condition_Expression_RequestPostgresParseQuery) GetMatch() *Condition_E
 	return nil
 }
 
+// RequestDNS matches the DNS requests
 type Condition_Expression_RequestDNS struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -22702,8 +24594,11 @@ func (*Condition_Expression_RequestDNS) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{44, 4, 67}
 }
 
+// RequestDNSName matches the queried name of the DNS request
 type Condition_Expression_RequestDNSName struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the queried name. The matched values are
+	// lower-cased.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -22746,8 +24641,11 @@ func (x *Condition_Expression_RequestDNSName) GetMatch() *Condition_Expression_S
 	return nil
 }
 
+// RequestDNSTypeID matches the numeric query type of the DNS request (e.g.
+// `1` for `A`, `28` for `AAAA`)
 type Condition_Expression_RequestDNSTypeID struct {
-	state         protoimpl.MessageState         `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the query type.
 	Match         *Condition_Expression_IntMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -22790,6 +24688,7 @@ func (x *Condition_Expression_RequestDNSTypeID) GetMatch() *Condition_Expression
 	return nil
 }
 
+// RequestSOCKS5 matches the SOCKS5 requests
 type Condition_Expression_RequestSOCKS5 struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -22826,8 +24725,11 @@ func (*Condition_Expression_RequestSOCKS5) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{44, 4, 70}
 }
 
+// RequestSOCKS5Host matches the destination host of the SOCKS5 connection
 type Condition_Expression_RequestSOCKS5Host struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the destination host. The matched values are
+	// lower-cased.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -22870,8 +24772,10 @@ func (x *Condition_Expression_RequestSOCKS5Host) GetMatch() *Condition_Expressio
 	return nil
 }
 
+// RequestSOCKS5Port matches the destination port of the SOCKS5 connection
 type Condition_Expression_RequestSOCKS5Port struct {
-	state         protoimpl.MessageState          `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the destination port.
 	Match         *Condition_Expression_UIntMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -22914,8 +24818,11 @@ func (x *Condition_Expression_RequestSOCKS5Port) GetMatch() *Condition_Expressio
 	return nil
 }
 
+// RequestSOCKS5AddressType matches the address type of the SOCKS5
+// connection
 type Condition_Expression_RequestSOCKS5AddressType struct {
-	state         protoimpl.MessageState                                   `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// AddressType is the SOCKS5 address type that is matched.
 	AddressType   corev1.RequestContext_Request_SOCKS5_Connect_AddressType `protobuf:"varint,1,opt,name=addressType,proto3,enum=octelium.api.main.core.v1.RequestContext_Request_SOCKS5_Connect_AddressType" json:"addressType,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -22958,8 +24865,10 @@ func (x *Condition_Expression_RequestSOCKS5AddressType) GetAddressType() corev1.
 	return corev1.RequestContext_Request_SOCKS5_Connect_AddressType(0)
 }
 
+// MCPProtocolVersion matches the MCP protocol version of the request
 type Condition_Expression_MCPProtocolVersion struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the protocol version.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -23002,8 +24911,10 @@ func (x *Condition_Expression_MCPProtocolVersion) GetMatch() *Condition_Expressi
 	return nil
 }
 
+// MCPMethod matches the MCP method of the request (e.g. `tools/call`)
 type Condition_Expression_MCPMethod struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the MCP method.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -23046,8 +24957,10 @@ func (x *Condition_Expression_MCPMethod) GetMatch() *Condition_Expression_String
 	return nil
 }
 
+// MCPToolName matches the name of the tool of an MCP `tools/call` request
 type Condition_Expression_MCPToolName struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the tool's name.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -23090,8 +25003,11 @@ func (x *Condition_Expression_MCPToolName) GetMatch() *Condition_Expression_Stri
 	return nil
 }
 
+// MCPPromptName matches the name of the prompt of an MCP `prompts/get`
+// request
 type Condition_Expression_MCPPromptName struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the prompt's name.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -23134,8 +25050,11 @@ func (x *Condition_Expression_MCPPromptName) GetMatch() *Condition_Expression_St
 	return nil
 }
 
+// MCPResourceURI matches the URI of the resource of an MCP
+// `resources/read` request
 type Condition_Expression_MCPResourceURI struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the resource's URI.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -23178,6 +25097,8 @@ func (x *Condition_Expression_MCPResourceURI) GetMatch() *Condition_Expression_S
 	return nil
 }
 
+// MCPIsNotification matches the MCP requests that are notifications (i.e.
+// the requests that do not expect a response)
 type Condition_Expression_MCPIsNotification struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -23214,8 +25135,10 @@ func (*Condition_Expression_MCPIsNotification) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{44, 4, 79}
 }
 
+// LLMProtocol matches the LLM API protocol of the request
 type Condition_Expression_LLMProtocol struct {
-	state         protoimpl.MessageState                  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Protocol is the LLM protocol that is matched.
 	Protocol      corev1.Service_Spec_Config_LLM_Protocol `protobuf:"varint,1,opt,name=protocol,proto3,enum=octelium.api.main.core.v1.Service_Spec_Config_LLM_Protocol" json:"protocol,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -23258,8 +25181,11 @@ func (x *Condition_Expression_LLMProtocol) GetProtocol() corev1.Service_Spec_Con
 	return corev1.Service_Spec_Config_LLM_Protocol(0)
 }
 
+// LLMOperation matches the LLM operation of the request (e.g. a chat
+// completion or an embedding)
 type Condition_Expression_LLMOperation struct {
-	state         protoimpl.MessageState                      `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Operation is the LLM operation that is matched.
 	Operation     corev1.RequestContext_Request_LLM_Operation `protobuf:"varint,1,opt,name=operation,proto3,enum=octelium.api.main.core.v1.RequestContext_Request_LLM_Operation" json:"operation,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -23302,8 +25228,10 @@ func (x *Condition_Expression_LLMOperation) GetOperation() corev1.RequestContext
 	return corev1.RequestContext_Request_LLM_Operation(0)
 }
 
+// LLMModel matches the model that is requested from the LLM
 type Condition_Expression_LLMModel struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the model's name.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -23346,6 +25274,7 @@ func (x *Condition_Expression_LLMModel) GetMatch() *Condition_Expression_StringM
 	return nil
 }
 
+// LLMStream matches the LLM requests that ask for a streamed response
 type Condition_Expression_LLMStream struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -23382,8 +25311,11 @@ func (*Condition_Expression_LLMStream) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{44, 4, 83}
 }
 
+// LLMEstimatedInputTokens matches the estimated number of the input tokens
+// of the LLM request
 type Condition_Expression_LLMEstimatedInputTokens struct {
-	state protoimpl.MessageState          `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the estimated input tokens.
 	Match *Condition_Expression_UIntMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	// RequireComplete only permits the estimate when Octelium accounted for
 	// the entire textual input. It prevents PARTIAL and UNAVAILABLE
@@ -23437,8 +25369,11 @@ func (x *Condition_Expression_LLMEstimatedInputTokens) GetRequireComplete() bool
 	return false
 }
 
+// LLMEstimateQuality matches how complete the estimate of the LLM
+// request's input tokens is
 type Condition_Expression_LLMEstimateQuality struct {
-	state         protoimpl.MessageState                            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Quality is the estimate quality that is matched.
 	Quality       corev1.RequestContext_Request_LLM_EstimateQuality `protobuf:"varint,1,opt,name=quality,proto3,enum=octelium.api.main.core.v1.RequestContext_Request_LLM_EstimateQuality" json:"quality,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -23481,8 +25416,11 @@ func (x *Condition_Expression_LLMEstimateQuality) GetQuality() corev1.RequestCon
 	return corev1.RequestContext_Request_LLM_EstimateQuality(0)
 }
 
+// LLMMaxOutputTokens matches the maximum number of the output tokens that
+// the LLM request asks for
 type Condition_Expression_LLMMaxOutputTokens struct {
-	state         protoimpl.MessageState          `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the maximum output tokens.
 	Match         *Condition_Expression_UIntMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -23525,6 +25463,7 @@ func (x *Condition_Expression_LLMMaxOutputTokens) GetMatch() *Condition_Expressi
 	return nil
 }
 
+// LLMHasTools matches the LLM requests that declare at least one tool
 type Condition_Expression_LLMHasTools struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -23561,8 +25500,11 @@ func (*Condition_Expression_LLMHasTools) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{44, 4, 87}
 }
 
+// LLMToolCount matches the number of the tools that the LLM request
+// declares
 type Condition_Expression_LLMToolCount struct {
-	state         protoimpl.MessageState          `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the number of the declared tools.
 	Match         *Condition_Expression_UIntMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -23605,8 +25547,11 @@ func (x *Condition_Expression_LLMToolCount) GetMatch() *Condition_Expression_UIn
 	return nil
 }
 
+// LLMToolName matches the LLM requests that declare a tool of a specific
+// name
 type Condition_Expression_LLMToolName struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the tool's name.
 	Match         *Condition_Expression_StringMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -23649,8 +25594,11 @@ func (x *Condition_Expression_LLMToolName) GetMatch() *Condition_Expression_Stri
 	return nil
 }
 
+// LLMInputItemCount matches the number of the input items (e.g. the
+// messages) of the LLM request
 type Condition_Expression_LLMInputItemCount struct {
-	state         protoimpl.MessageState          `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Match is the matcher of the number of the input items.
 	Match         *Condition_Expression_UIntMatch `protobuf:"bytes,1,opt,name=match,proto3" json:"match,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -23693,6 +25641,7 @@ func (x *Condition_Expression_LLMInputItemCount) GetMatch() *Condition_Expressio
 	return nil
 }
 
+// LLMHasImageInput matches the LLM requests that carry an image input
 type Condition_Expression_LLMHasImageInput struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -23729,6 +25678,7 @@ func (*Condition_Expression_LLMHasImageInput) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{44, 4, 91}
 }
 
+// LLMHasAudioInput matches the LLM requests that carry an audio input
 type Condition_Expression_LLMHasAudioInput struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -23765,6 +25715,8 @@ func (*Condition_Expression_LLMHasAudioInput) Descriptor() ([]byte, []int) {
 	return file_enterprisev1_proto_rawDescGZIP(), []int{44, 4, 92}
 }
 
+// APIServerReadOnlyMethods matches the read-only (i.e. `Get` and `List`)
+// methods of the Cluster's API server
 type Condition_Expression_APIServerReadOnlyMethods struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -23801,9 +25753,13 @@ func (*Condition_Expression_APIServerReadOnlyMethods) Descriptor() ([]byte, []in
 	return file_enterprisev1_proto_rawDescGZIP(), []int{44, 4, 93}
 }
 
+// APIServerMethods matches a specific set of the methods of the Cluster's
+// API server
 type Condition_Expression_APIServerMethods struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Methods       []string               `protobuf:"bytes,1,rep,name=methods,proto3" json:"methods,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Methods is the list of the method names that are matched (e.g.
+	// `CreateUser`).
+	Methods       []string `protobuf:"bytes,1,rep,name=methods,proto3" json:"methods,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -23845,9 +25801,13 @@ func (x *Condition_Expression_APIServerMethods) GetMethods() []string {
 	return nil
 }
 
+// APIServerServices matches a specific set of the gRPC services of the
+// Cluster's API server
 type Condition_Expression_APIServerServices struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Services      []string               `protobuf:"bytes,1,rep,name=services,proto3" json:"services,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Services is the list of the gRPC service names that are matched (e.g.
+	// `MainService`).
+	Services      []string `protobuf:"bytes,1,rep,name=services,proto3" json:"services,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -23889,9 +25849,12 @@ func (x *Condition_Expression_APIServerServices) GetServices() []string {
 	return nil
 }
 
+// APIServerCore matches the requests to the core API
 type Condition_Expression_APIServerCore struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	ReadOnlyMethods bool                   `protobuf:"varint,1,opt,name=readOnlyMethods,proto3" json:"readOnlyMethods,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ReadOnlyMethods further restricts the match to the read-only (i.e.
+	// `Get` and `List`) methods.
+	ReadOnlyMethods bool `protobuf:"varint,1,opt,name=readOnlyMethods,proto3" json:"readOnlyMethods,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -23933,9 +25896,12 @@ func (x *Condition_Expression_APIServerCore) GetReadOnlyMethods() bool {
 	return false
 }
 
+// APIServerUser matches the requests to the user API
 type Condition_Expression_APIServerUser struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	ReadOnlyMethods bool                   `protobuf:"varint,1,opt,name=readOnlyMethods,proto3" json:"readOnlyMethods,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ReadOnlyMethods further restricts the match to the read-only (i.e.
+	// `Get` and `List`) methods.
+	ReadOnlyMethods bool `protobuf:"varint,1,opt,name=readOnlyMethods,proto3" json:"readOnlyMethods,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -23977,8 +25943,10 @@ func (x *Condition_Expression_APIServerUser) GetReadOnlyMethods() bool {
 	return false
 }
 
+// APIServerEnterprise matches the requests to the enterprise API
 type Condition_Expression_APIServerEnterprise struct {
-	state         protoimpl.MessageState                           `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Service sets the gRPC service of the enterprise API that is matched.
 	Service       Condition_Expression_APIServerEnterprise_Service `protobuf:"varint,1,opt,name=service,proto3,enum=octelium.api.main.enterprise.v1.Condition_Expression_APIServerEnterprise_Service" json:"service,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -24021,8 +25989,10 @@ func (x *Condition_Expression_APIServerEnterprise) GetService() Condition_Expres
 	return Condition_Expression_APIServerEnterprise_SERVICE_UNSET
 }
 
+// APIServerCordium matches the requests to the Cordium API
 type Condition_Expression_APIServerCordium struct {
-	state         protoimpl.MessageState                        `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Service sets the gRPC service of the Cordium API that is matched.
 	Service       Condition_Expression_APIServerCordium_Service `protobuf:"varint,1,opt,name=service,proto3,enum=octelium.api.main.enterprise.v1.Condition_Expression_APIServerCordium_Service" json:"service,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -24065,8 +26035,10 @@ func (x *Condition_Expression_APIServerCordium) GetService() Condition_Expressio
 	return Condition_Expression_APIServerCordium_SERVICE_UNSET
 }
 
+// APIServerAccess matches the requests to the access API
 type Condition_Expression_APIServerAccess struct {
-	state         protoimpl.MessageState                       `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Service sets the gRPC service of the access API that is matched.
 	Service       Condition_Expression_APIServerAccess_Service `protobuf:"varint,1,opt,name=service,proto3,enum=octelium.api.main.enterprise.v1.Condition_Expression_APIServerAccess_Service" json:"service,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -24109,9 +26081,11 @@ func (x *Condition_Expression_APIServerAccess) GetService() Condition_Expression
 	return Condition_Expression_APIServerAccess_SERVICE_UNSET
 }
 
+// In matches when the field's value is one of a set of values
 type Condition_Expression_StringMatch_In struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Values        []string               `protobuf:"bytes,1,rep,name=values,proto3" json:"values,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Values is the set of the values that are matched.
+	Values        []string `protobuf:"bytes,1,rep,name=values,proto3" json:"values,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -24153,13 +26127,21 @@ func (x *Condition_Expression_StringMatch_In) GetValues() []string {
 	return nil
 }
 
+// Entry is the AuthenticationLog entry information
 type AuthenticationLog_Entry struct {
-	state               protoimpl.MessageState                `protogen:"open.v1"`
-	SessionRef          *metav1.ObjectReference               `protobuf:"bytes,1,opt,name=sessionRef,proto3" json:"sessionRef,omitempty"`
-	UserRef             *metav1.ObjectReference               `protobuf:"bytes,2,opt,name=userRef,proto3" json:"userRef,omitempty"`
-	DeviceRef           *metav1.ObjectReference               `protobuf:"bytes,3,opt,name=deviceRef,proto3" json:"deviceRef,omitempty"`
-	Authentication      *corev1.Session_Status_Authentication `protobuf:"bytes,4,opt,name=authentication,proto3" json:"authentication,omitempty"`
-	AuthenticationIndex uint32                                `protobuf:"varint,5,opt,name=authenticationIndex,proto3" json:"authenticationIndex,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// SessionRef is a reference to the Session that authenticated.
+	SessionRef *metav1.ObjectReference `protobuf:"bytes,1,opt,name=sessionRef,proto3" json:"sessionRef,omitempty"`
+	// UserRef is a reference to the User that owns the Session.
+	UserRef *metav1.ObjectReference `protobuf:"bytes,2,opt,name=userRef,proto3" json:"userRef,omitempty"`
+	// DeviceRef is a reference to the Device of the Session.
+	DeviceRef *metav1.ObjectReference `protobuf:"bytes,3,opt,name=deviceRef,proto3" json:"deviceRef,omitempty"`
+	// Authentication is the authentication information of the Session (e.g.
+	// its type, its assurance level and its GeoIP information).
+	Authentication *corev1.Session_Status_Authentication `protobuf:"bytes,4,opt,name=authentication,proto3" json:"authentication,omitempty"`
+	// AuthenticationIndex is the zero-based index of this authentication among
+	// the Session's total authentications.
+	AuthenticationIndex uint32 `protobuf:"varint,5,opt,name=authenticationIndex,proto3" json:"authenticationIndex,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -24229,13 +26211,17 @@ func (x *AuthenticationLog_Entry) GetAuthenticationIndex() uint32 {
 	return 0
 }
 
+// Request is the set of the Cluster packages that are upgraded
 type UpgradeClusterRequest_Request struct {
-	state             protoimpl.MessageState                           `protogen:"open.v1"`
-	Core              *UpgradeClusterRequest_Request_Core              `protobuf:"bytes,2,opt,name=core,proto3" json:"core,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Core sets the version of the core Octelium package.
+	Core *UpgradeClusterRequest_Request_Core `protobuf:"bytes,2,opt,name=core,proto3" json:"core,omitempty"`
+	// PackageEnterprise sets the version of the enterprise package.
 	PackageEnterprise *UpgradeClusterRequest_Request_PackageEnterprise `protobuf:"bytes,3,opt,name=packageEnterprise,proto3" json:"packageEnterprise,omitempty"`
-	PackageCordium    *UpgradeClusterRequest_Request_PackageCordium    `protobuf:"bytes,4,opt,name=packageCordium,proto3" json:"packageCordium,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// PackageCordium sets the version of the Cordium package.
+	PackageCordium *UpgradeClusterRequest_Request_PackageCordium `protobuf:"bytes,4,opt,name=packageCordium,proto3" json:"packageCordium,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *UpgradeClusterRequest_Request) Reset() {
@@ -24289,9 +26275,11 @@ func (x *UpgradeClusterRequest_Request) GetPackageCordium() *UpgradeClusterReque
 	return nil
 }
 
+// Core sets the version of the core Octelium package
 type UpgradeClusterRequest_Request_Core struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Version       string                 `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Version is the version that the package is upgraded to.
+	Version       string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -24333,9 +26321,11 @@ func (x *UpgradeClusterRequest_Request_Core) GetVersion() string {
 	return ""
 }
 
+// PackageEnterprise sets the version of the enterprise package
 type UpgradeClusterRequest_Request_PackageEnterprise struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Version       string                 `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Version is the version that the package is upgraded to.
+	Version       string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -24377,9 +26367,11 @@ func (x *UpgradeClusterRequest_Request_PackageEnterprise) GetVersion() string {
 	return ""
 }
 
+// PackageCordium sets the version of the Cordium package
 type UpgradeClusterRequest_Request_PackageCordium struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Version       string                 `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Version is the version that the package is upgraded to.
+	Version       string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -24421,14 +26413,19 @@ func (x *UpgradeClusterRequest_Request_PackageCordium) GetVersion() string {
 	return ""
 }
 
+// Core is the version information of the core Octelium package
 type GetClusterInfoResponse_Core struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	CurrentVersion string                 `protobuf:"bytes,1,opt,name=currentVersion,proto3" json:"currentVersion,omitempty"`
-	LatestVersion  string                 `protobuf:"bytes,2,opt,name=latestVersion,proto3" json:"latestVersion,omitempty"`
-	CanUpgrade     bool                   `protobuf:"varint,3,opt,name=canUpgrade,proto3" json:"canUpgrade,omitempty"`
-	SetAt          *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=setAt,proto3" json:"setAt,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// CurrentVersion is the version that is currently installed.
+	CurrentVersion string `protobuf:"bytes,1,opt,name=currentVersion,proto3" json:"currentVersion,omitempty"`
+	// LatestVersion is the latest version that is available.
+	LatestVersion string `protobuf:"bytes,2,opt,name=latestVersion,proto3" json:"latestVersion,omitempty"`
+	// CanUpgrade is whether the package can be upgraded to the LatestVersion.
+	CanUpgrade bool `protobuf:"varint,3,opt,name=canUpgrade,proto3" json:"canUpgrade,omitempty"`
+	// SetAt is the date at which the CurrentVersion was installed.
+	SetAt         *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=setAt,proto3" json:"setAt,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetClusterInfoResponse_Core) Reset() {
@@ -24489,14 +26486,19 @@ func (x *GetClusterInfoResponse_Core) GetSetAt() *timestamppb.Timestamp {
 	return nil
 }
 
+// PackageEnterprise is the version information of the enterprise package
 type GetClusterInfoResponse_PackageEnterprise struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	CurrentVersion string                 `protobuf:"bytes,1,opt,name=currentVersion,proto3" json:"currentVersion,omitempty"`
-	LatestVersion  string                 `protobuf:"bytes,2,opt,name=latestVersion,proto3" json:"latestVersion,omitempty"`
-	CanUpgrade     bool                   `protobuf:"varint,3,opt,name=canUpgrade,proto3" json:"canUpgrade,omitempty"`
-	SetAt          *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=setAt,proto3" json:"setAt,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// CurrentVersion is the version that is currently installed.
+	CurrentVersion string `protobuf:"bytes,1,opt,name=currentVersion,proto3" json:"currentVersion,omitempty"`
+	// LatestVersion is the latest version that is available.
+	LatestVersion string `protobuf:"bytes,2,opt,name=latestVersion,proto3" json:"latestVersion,omitempty"`
+	// CanUpgrade is whether the package can be upgraded to the LatestVersion.
+	CanUpgrade bool `protobuf:"varint,3,opt,name=canUpgrade,proto3" json:"canUpgrade,omitempty"`
+	// SetAt is the date at which the CurrentVersion was installed.
+	SetAt         *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=setAt,proto3" json:"setAt,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetClusterInfoResponse_PackageEnterprise) Reset() {
@@ -24557,14 +26559,19 @@ func (x *GetClusterInfoResponse_PackageEnterprise) GetSetAt() *timestamppb.Times
 	return nil
 }
 
+// PackageCordium is the version information of the Cordium package
 type GetClusterInfoResponse_PackageCordium struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	CurrentVersion string                 `protobuf:"bytes,1,opt,name=currentVersion,proto3" json:"currentVersion,omitempty"`
-	LatestVersion  string                 `protobuf:"bytes,2,opt,name=latestVersion,proto3" json:"latestVersion,omitempty"`
-	CanUpgrade     bool                   `protobuf:"varint,3,opt,name=canUpgrade,proto3" json:"canUpgrade,omitempty"`
-	SetAt          *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=setAt,proto3" json:"setAt,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// CurrentVersion is the version that is currently installed.
+	CurrentVersion string `protobuf:"bytes,1,opt,name=currentVersion,proto3" json:"currentVersion,omitempty"`
+	// LatestVersion is the latest version that is available.
+	LatestVersion string `protobuf:"bytes,2,opt,name=latestVersion,proto3" json:"latestVersion,omitempty"`
+	// CanUpgrade is whether the package can be upgraded to the LatestVersion.
+	CanUpgrade bool `protobuf:"varint,3,opt,name=canUpgrade,proto3" json:"canUpgrade,omitempty"`
+	// SetAt is the date at which the CurrentVersion was installed.
+	SetAt         *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=setAt,proto3" json:"setAt,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetClusterInfoResponse_PackageCordium) Reset() {
@@ -24625,10 +26632,13 @@ func (x *GetClusterInfoResponse_PackageCordium) GetSetAt() *timestamppb.Timestam
 	return nil
 }
 
+// Organization is the organization that the License was issued to
 type License_Organization struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Uid           string                 `protobuf:"bytes,1,opt,name=uid,proto3" json:"uid,omitempty"`
-	DisplayName   string                 `protobuf:"bytes,2,opt,name=displayName,proto3" json:"displayName,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// UID is the unique identifier of the organization.
+	Uid string `protobuf:"bytes,1,opt,name=uid,proto3" json:"uid,omitempty"`
+	// DisplayName is the human-readable name of the organization.
+	DisplayName   string `protobuf:"bytes,2,opt,name=displayName,proto3" json:"displayName,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

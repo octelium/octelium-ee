@@ -76,33 +76,70 @@ const (
 // MainServiceClient is the client API for MainService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// MainService is the main management API of the Octelium enterprise resources.
+// It provides the CRUD operations over the enterprise-only resources (e.g.
+// CollectorExporters, Certificates, CertificateIssuers, DNSProviders,
+// DirectoryProviders, SecretStores, DeviceManagers, etc...) as well as over the
+// enterprise Cluster configuration itself.
 type MainServiceClient interface {
+	// GetClusterConfig retrieves the enterprise ClusterConfig
 	GetClusterConfig(ctx context.Context, in *GetClusterConfigRequest, opts ...grpc.CallOption) (*ClusterConfig, error)
+	// UpdateClusterConfig updates the enterprise ClusterConfig
 	UpdateClusterConfig(ctx context.Context, in *ClusterConfig, opts ...grpc.CallOption) (*ClusterConfig, error)
+	// CreateCollectorExporter creates a CollectorExporter
 	CreateCollectorExporter(ctx context.Context, in *CollectorExporter, opts ...grpc.CallOption) (*CollectorExporter, error)
+	// GetCollectorExporter retrieves a specific CollectorExporter
 	GetCollectorExporter(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*CollectorExporter, error)
+	// ListCollectorExporter lists CollectorExporters
 	ListCollectorExporter(ctx context.Context, in *ListCollectorExporterOptions, opts ...grpc.CallOption) (*CollectorExporterList, error)
+	// UpdateCollectorExporter updates a CollectorExporter
 	UpdateCollectorExporter(ctx context.Context, in *CollectorExporter, opts ...grpc.CallOption) (*CollectorExporter, error)
+	// DeleteCollectorExporter deletes a CollectorExporter
 	DeleteCollectorExporter(ctx context.Context, in *metav1.DeleteOptions, opts ...grpc.CallOption) (*metav1.OperationResult, error)
+	// GetDNSProvider retrieves a specific DNSProvider
 	GetDNSProvider(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*DNSProvider, error)
+	// ListDNSProvider lists DNSProviders
 	ListDNSProvider(ctx context.Context, in *ListDNSProviderOptions, opts ...grpc.CallOption) (*DNSProviderList, error)
+	// UpdateDNSProvider updates a DNSProvider
 	UpdateDNSProvider(ctx context.Context, in *DNSProvider, opts ...grpc.CallOption) (*DNSProvider, error)
+	// GetCertificate retrieves a specific Certificate
 	GetCertificate(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*Certificate, error)
+	// UpdateCertificate updates a Certificate
 	UpdateCertificate(ctx context.Context, in *Certificate, opts ...grpc.CallOption) (*Certificate, error)
+	// ListCertificate lists Certificates
 	ListCertificate(ctx context.Context, in *ListCertificateOptions, opts ...grpc.CallOption) (*CertificateList, error)
+	// IssueCertificate requests an issuance of a MANAGED Certificate from its
+	// CertificateIssuer.
 	IssueCertificate(ctx context.Context, in *IssueCertificateRequest, opts ...grpc.CallOption) (*IssueCertificateResponse, error)
+	// SetCertificate sets the certificate and private key of a MANUAL
+	// Certificate.
 	SetCertificate(ctx context.Context, in *SetCertificateRequest, opts ...grpc.CallOption) (*SetCertificateResponse, error)
+	// GetCertificateIssuer retrieves a specific CertificateIssuer
 	GetCertificateIssuer(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*CertificateIssuer, error)
+	// ListCertificateIssuer lists CertificateIssuers
 	ListCertificateIssuer(ctx context.Context, in *ListCertificateIssuerOptions, opts ...grpc.CallOption) (*CertificateIssuerList, error)
+	// UpdateCertificateIssuer updates a CertificateIssuer
 	UpdateCertificateIssuer(ctx context.Context, in *CertificateIssuer, opts ...grpc.CallOption) (*CertificateIssuer, error)
+	// CreateDirectoryProvider creates a DirectoryProvider
 	CreateDirectoryProvider(ctx context.Context, in *DirectoryProvider, opts ...grpc.CallOption) (*DirectoryProvider, error)
+	// GetDirectoryProvider retrieves a specific DirectoryProvider
 	GetDirectoryProvider(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*DirectoryProvider, error)
+	// ListDirectoryProvider lists DirectoryProviders
 	ListDirectoryProvider(ctx context.Context, in *ListDirectoryProviderOptions, opts ...grpc.CallOption) (*DirectoryProviderList, error)
+	// UpdateDirectoryProvider updates a DirectoryProvider
 	UpdateDirectoryProvider(ctx context.Context, in *DirectoryProvider, opts ...grpc.CallOption) (*DirectoryProvider, error)
+	// DeleteDirectoryProvider deletes a DirectoryProvider
 	DeleteDirectoryProvider(ctx context.Context, in *metav1.DeleteOptions, opts ...grpc.CallOption) (*metav1.OperationResult, error)
+	// GenerateDirectoryProviderCredential generates a credential that is used by
+	// a SCIM DirectoryProvider to authenticate its requests to the Cluster.
 	GenerateDirectoryProviderCredential(ctx context.Context, in *GenerateDirectoryProviderCredentialRequest, opts ...grpc.CallOption) (*GenerateDirectoryProviderCredentialResponse, error)
+	// ListDirectoryProviderUser lists DirectoryProviderUsers
 	ListDirectoryProviderUser(ctx context.Context, in *ListDirectoryProviderUserOptions, opts ...grpc.CallOption) (*DirectoryProviderUserList, error)
+	// ListDirectoryProviderGroup lists DirectoryProviderGroups
 	ListDirectoryProviderGroup(ctx context.Context, in *ListDirectoryProviderGroupOptions, opts ...grpc.CallOption) (*DirectoryProviderGroupList, error)
+	// SynchronizeDirectoryProvider requests a synchronization of the Users and
+	// Groups of a DirectoryProvider.
 	SynchronizeDirectoryProvider(ctx context.Context, in *SynchronizeDirectoryProviderRequest, opts ...grpc.CallOption) (*SynchronizeDirectoryProviderResponse, error)
 	// CreateSecret creates a Secret
 	CreateSecret(ctx context.Context, in *Secret, opts ...grpc.CallOption) (*Secret, error)
@@ -112,17 +149,30 @@ type MainServiceClient interface {
 	DeleteSecret(ctx context.Context, in *metav1.DeleteOptions, opts ...grpc.CallOption) (*metav1.OperationResult, error)
 	// GetSecret retrieves a specific Secret
 	GetSecret(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*Secret, error)
-	// UpdateSecret creates a Secret
+	// UpdateSecret updates a Secret
 	UpdateSecret(ctx context.Context, in *Secret, opts ...grpc.CallOption) (*Secret, error)
+	// GetSecretStore retrieves a specific SecretStore
 	GetSecretStore(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*SecretStore, error)
+	// ListSecretStore lists SecretStores
 	ListSecretStore(ctx context.Context, in *ListSecretStoreOptions, opts ...grpc.CallOption) (*SecretStoreList, error)
+	// UpdateSecretStore updates a SecretStore
 	UpdateSecretStore(ctx context.Context, in *SecretStore, opts ...grpc.CallOption) (*SecretStore, error)
+	// SynchronizeSecretStore requests a synchronization of a SecretStore
 	SynchronizeSecretStore(ctx context.Context, in *SynchronizeSecretStoreRequest, opts ...grpc.CallOption) (*SynchronizeSecretStoreResponse, error)
+	// CreateDeviceManager creates a DeviceManager
 	CreateDeviceManager(ctx context.Context, in *DeviceManager, opts ...grpc.CallOption) (*DeviceManager, error)
+	// GetDeviceManager retrieves a specific DeviceManager
 	GetDeviceManager(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*DeviceManager, error)
+	// ListDeviceManager lists DeviceManagers
 	ListDeviceManager(ctx context.Context, in *ListDeviceManagerOptions, opts ...grpc.CallOption) (*DeviceManagerList, error)
+	// UpdateDeviceManager updates a DeviceManager
 	UpdateDeviceManager(ctx context.Context, in *DeviceManager, opts ...grpc.CallOption) (*DeviceManager, error)
+	// DeleteDeviceManager deletes a DeviceManager
 	DeleteDeviceManager(ctx context.Context, in *metav1.DeleteOptions, opts ...grpc.CallOption) (*metav1.OperationResult, error)
+	// GetCoreCondition compiles a structured enterprise Condition into its
+	// equivalent core Condition (i.e. a CEL expression) without applying it to
+	// any resource. It is mainly useful to preview and validate a Condition
+	// before it is used in a Policy.
 	GetCoreCondition(ctx context.Context, in *Condition, opts ...grpc.CallOption) (*corev1.Condition, error)
 }
 
@@ -557,33 +607,70 @@ func (c *mainServiceClient) GetCoreCondition(ctx context.Context, in *Condition,
 // MainServiceServer is the server API for MainService service.
 // All implementations must embed UnimplementedMainServiceServer
 // for forward compatibility.
+//
+// MainService is the main management API of the Octelium enterprise resources.
+// It provides the CRUD operations over the enterprise-only resources (e.g.
+// CollectorExporters, Certificates, CertificateIssuers, DNSProviders,
+// DirectoryProviders, SecretStores, DeviceManagers, etc...) as well as over the
+// enterprise Cluster configuration itself.
 type MainServiceServer interface {
+	// GetClusterConfig retrieves the enterprise ClusterConfig
 	GetClusterConfig(context.Context, *GetClusterConfigRequest) (*ClusterConfig, error)
+	// UpdateClusterConfig updates the enterprise ClusterConfig
 	UpdateClusterConfig(context.Context, *ClusterConfig) (*ClusterConfig, error)
+	// CreateCollectorExporter creates a CollectorExporter
 	CreateCollectorExporter(context.Context, *CollectorExporter) (*CollectorExporter, error)
+	// GetCollectorExporter retrieves a specific CollectorExporter
 	GetCollectorExporter(context.Context, *metav1.GetOptions) (*CollectorExporter, error)
+	// ListCollectorExporter lists CollectorExporters
 	ListCollectorExporter(context.Context, *ListCollectorExporterOptions) (*CollectorExporterList, error)
+	// UpdateCollectorExporter updates a CollectorExporter
 	UpdateCollectorExporter(context.Context, *CollectorExporter) (*CollectorExporter, error)
+	// DeleteCollectorExporter deletes a CollectorExporter
 	DeleteCollectorExporter(context.Context, *metav1.DeleteOptions) (*metav1.OperationResult, error)
+	// GetDNSProvider retrieves a specific DNSProvider
 	GetDNSProvider(context.Context, *metav1.GetOptions) (*DNSProvider, error)
+	// ListDNSProvider lists DNSProviders
 	ListDNSProvider(context.Context, *ListDNSProviderOptions) (*DNSProviderList, error)
+	// UpdateDNSProvider updates a DNSProvider
 	UpdateDNSProvider(context.Context, *DNSProvider) (*DNSProvider, error)
+	// GetCertificate retrieves a specific Certificate
 	GetCertificate(context.Context, *metav1.GetOptions) (*Certificate, error)
+	// UpdateCertificate updates a Certificate
 	UpdateCertificate(context.Context, *Certificate) (*Certificate, error)
+	// ListCertificate lists Certificates
 	ListCertificate(context.Context, *ListCertificateOptions) (*CertificateList, error)
+	// IssueCertificate requests an issuance of a MANAGED Certificate from its
+	// CertificateIssuer.
 	IssueCertificate(context.Context, *IssueCertificateRequest) (*IssueCertificateResponse, error)
+	// SetCertificate sets the certificate and private key of a MANUAL
+	// Certificate.
 	SetCertificate(context.Context, *SetCertificateRequest) (*SetCertificateResponse, error)
+	// GetCertificateIssuer retrieves a specific CertificateIssuer
 	GetCertificateIssuer(context.Context, *metav1.GetOptions) (*CertificateIssuer, error)
+	// ListCertificateIssuer lists CertificateIssuers
 	ListCertificateIssuer(context.Context, *ListCertificateIssuerOptions) (*CertificateIssuerList, error)
+	// UpdateCertificateIssuer updates a CertificateIssuer
 	UpdateCertificateIssuer(context.Context, *CertificateIssuer) (*CertificateIssuer, error)
+	// CreateDirectoryProvider creates a DirectoryProvider
 	CreateDirectoryProvider(context.Context, *DirectoryProvider) (*DirectoryProvider, error)
+	// GetDirectoryProvider retrieves a specific DirectoryProvider
 	GetDirectoryProvider(context.Context, *metav1.GetOptions) (*DirectoryProvider, error)
+	// ListDirectoryProvider lists DirectoryProviders
 	ListDirectoryProvider(context.Context, *ListDirectoryProviderOptions) (*DirectoryProviderList, error)
+	// UpdateDirectoryProvider updates a DirectoryProvider
 	UpdateDirectoryProvider(context.Context, *DirectoryProvider) (*DirectoryProvider, error)
+	// DeleteDirectoryProvider deletes a DirectoryProvider
 	DeleteDirectoryProvider(context.Context, *metav1.DeleteOptions) (*metav1.OperationResult, error)
+	// GenerateDirectoryProviderCredential generates a credential that is used by
+	// a SCIM DirectoryProvider to authenticate its requests to the Cluster.
 	GenerateDirectoryProviderCredential(context.Context, *GenerateDirectoryProviderCredentialRequest) (*GenerateDirectoryProviderCredentialResponse, error)
+	// ListDirectoryProviderUser lists DirectoryProviderUsers
 	ListDirectoryProviderUser(context.Context, *ListDirectoryProviderUserOptions) (*DirectoryProviderUserList, error)
+	// ListDirectoryProviderGroup lists DirectoryProviderGroups
 	ListDirectoryProviderGroup(context.Context, *ListDirectoryProviderGroupOptions) (*DirectoryProviderGroupList, error)
+	// SynchronizeDirectoryProvider requests a synchronization of the Users and
+	// Groups of a DirectoryProvider.
 	SynchronizeDirectoryProvider(context.Context, *SynchronizeDirectoryProviderRequest) (*SynchronizeDirectoryProviderResponse, error)
 	// CreateSecret creates a Secret
 	CreateSecret(context.Context, *Secret) (*Secret, error)
@@ -593,17 +680,30 @@ type MainServiceServer interface {
 	DeleteSecret(context.Context, *metav1.DeleteOptions) (*metav1.OperationResult, error)
 	// GetSecret retrieves a specific Secret
 	GetSecret(context.Context, *metav1.GetOptions) (*Secret, error)
-	// UpdateSecret creates a Secret
+	// UpdateSecret updates a Secret
 	UpdateSecret(context.Context, *Secret) (*Secret, error)
+	// GetSecretStore retrieves a specific SecretStore
 	GetSecretStore(context.Context, *metav1.GetOptions) (*SecretStore, error)
+	// ListSecretStore lists SecretStores
 	ListSecretStore(context.Context, *ListSecretStoreOptions) (*SecretStoreList, error)
+	// UpdateSecretStore updates a SecretStore
 	UpdateSecretStore(context.Context, *SecretStore) (*SecretStore, error)
+	// SynchronizeSecretStore requests a synchronization of a SecretStore
 	SynchronizeSecretStore(context.Context, *SynchronizeSecretStoreRequest) (*SynchronizeSecretStoreResponse, error)
+	// CreateDeviceManager creates a DeviceManager
 	CreateDeviceManager(context.Context, *DeviceManager) (*DeviceManager, error)
+	// GetDeviceManager retrieves a specific DeviceManager
 	GetDeviceManager(context.Context, *metav1.GetOptions) (*DeviceManager, error)
+	// ListDeviceManager lists DeviceManagers
 	ListDeviceManager(context.Context, *ListDeviceManagerOptions) (*DeviceManagerList, error)
+	// UpdateDeviceManager updates a DeviceManager
 	UpdateDeviceManager(context.Context, *DeviceManager) (*DeviceManager, error)
+	// DeleteDeviceManager deletes a DeviceManager
 	DeleteDeviceManager(context.Context, *metav1.DeleteOptions) (*metav1.OperationResult, error)
+	// GetCoreCondition compiles a structured enterprise Condition into its
+	// equivalent core Condition (i.e. a CEL expression) without applying it to
+	// any resource. It is mainly useful to preview and validate a Condition
+	// before it is used in a Policy.
 	GetCoreCondition(context.Context, *Condition) (*corev1.Condition, error)
 	mustEmbedUnimplementedMainServiceServer()
 }
@@ -1705,7 +1805,14 @@ const (
 // PolicyPortalServiceClient is the client API for PolicyPortalService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// PolicyPortalService provides a read-only evaluation of the Cluster's
+// authorization rules. It lets you check whether a downstream (e.g. a Session,
+// a User or a Device) is authorized to access an upstream (i.e. a Service or a
+// Namespace) without actually performing the access itself.
 type PolicyPortalServiceClient interface {
+	// IsAuthorized evaluates the Policies of a hypothetical access request and
+	// returns whether it is authorized.
 	IsAuthorized(ctx context.Context, in *IsAuthorizedRequest, opts ...grpc.CallOption) (*IsAuthorizedResponse, error)
 }
 
@@ -1730,7 +1837,14 @@ func (c *policyPortalServiceClient) IsAuthorized(ctx context.Context, in *IsAuth
 // PolicyPortalServiceServer is the server API for PolicyPortalService service.
 // All implementations must embed UnimplementedPolicyPortalServiceServer
 // for forward compatibility.
+//
+// PolicyPortalService provides a read-only evaluation of the Cluster's
+// authorization rules. It lets you check whether a downstream (e.g. a Session,
+// a User or a Device) is authorized to access an upstream (i.e. a Service or a
+// Namespace) without actually performing the access itself.
 type PolicyPortalServiceServer interface {
+	// IsAuthorized evaluates the Policies of a hypothetical access request and
+	// returns whether it is authorized.
 	IsAuthorized(context.Context, *IsAuthorizedRequest) (*IsAuthorizedResponse, error)
 	mustEmbedUnimplementedPolicyPortalServiceServer()
 }
@@ -1811,11 +1925,21 @@ const (
 // ClusterServiceClient is the client API for ClusterService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// ClusterService provides the Cluster lifecycle management operations (i.e.
+// version information, upgrades and License management).
 type ClusterServiceClient interface {
+	// UpgradeCluster requests an upgrade of the Cluster components to a specific
+	// version.
 	UpgradeCluster(ctx context.Context, in *UpgradeClusterRequest, opts ...grpc.CallOption) (*UpgradeClusterResponse, error)
+	// GetClusterInfo retrieves the currently installed and latest available
+	// versions of the Cluster packages.
 	GetClusterInfo(ctx context.Context, in *GetClusterInfoRequest, opts ...grpc.CallOption) (*GetClusterInfoResponse, error)
+	// SetLicense sets the Cluster's License
 	SetLicense(ctx context.Context, in *SetLicenseRequest, opts ...grpc.CallOption) (*SetLicenseResponse, error)
+	// GetLicense retrieves the Cluster's currently set License
 	GetLicense(ctx context.Context, in *GetLicenseRequest, opts ...grpc.CallOption) (*GetLicenseResponse, error)
+	// DeleteLicense deletes the Cluster's currently set License
 	DeleteLicense(ctx context.Context, in *DeleteLicenseRequest, opts ...grpc.CallOption) (*DeleteLicenseResponse, error)
 }
 
@@ -1880,11 +2004,21 @@ func (c *clusterServiceClient) DeleteLicense(ctx context.Context, in *DeleteLice
 // ClusterServiceServer is the server API for ClusterService service.
 // All implementations must embed UnimplementedClusterServiceServer
 // for forward compatibility.
+//
+// ClusterService provides the Cluster lifecycle management operations (i.e.
+// version information, upgrades and License management).
 type ClusterServiceServer interface {
+	// UpgradeCluster requests an upgrade of the Cluster components to a specific
+	// version.
 	UpgradeCluster(context.Context, *UpgradeClusterRequest) (*UpgradeClusterResponse, error)
+	// GetClusterInfo retrieves the currently installed and latest available
+	// versions of the Cluster packages.
 	GetClusterInfo(context.Context, *GetClusterInfoRequest) (*GetClusterInfoResponse, error)
+	// SetLicense sets the Cluster's License
 	SetLicense(context.Context, *SetLicenseRequest) (*SetLicenseResponse, error)
+	// GetLicense retrieves the Cluster's currently set License
 	GetLicense(context.Context, *GetLicenseRequest) (*GetLicenseResponse, error)
+	// DeleteLicense deletes the Cluster's currently set License
 	DeleteLicense(context.Context, *DeleteLicenseRequest) (*DeleteLicenseResponse, error)
 	mustEmbedUnimplementedClusterServiceServer()
 }

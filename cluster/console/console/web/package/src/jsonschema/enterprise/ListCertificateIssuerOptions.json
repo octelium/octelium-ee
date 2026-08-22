@@ -6,12 +6,14 @@
             "properties": {
                 "common": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.CommonListOptions",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Common is the common list options."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "List Certificate Issuer Options"
+            "title": "List Certificate Issuer Options",
+            "description": "ListCertificateIssuerOptions is the list options of the ListCertificateIssuer method."
         },
         "octelium.api.main.meta.v1.CommonListOptions": {
             "properties": {

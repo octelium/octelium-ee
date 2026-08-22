@@ -5,7 +5,8 @@
         "GetLicenseRequest": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Get License Request"
+            "title": "Get License Request",
+            "description": "GetLicenseRequest is the request of the GetLicense method."
         }
     }
 }

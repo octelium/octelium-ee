@@ -5,7 +5,8 @@
         "UpgradeClusterResponse": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Upgrade Cluster Response"
+            "title": "Upgrade Cluster Response",
+            "description": "UpgradeClusterResponse is the response of the UpgradeCluster method."
         }
     }
 }

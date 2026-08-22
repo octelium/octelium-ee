@@ -6,18 +6,22 @@
             "properties": {
                 "certificateRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "CertificateRef is a reference to the Certificate that is set. Its Mode must be MANUAL."
                 },
                 "certificate": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Certificate is the PEM-encoded certificate chain. Required."
                 },
                 "privateKey": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "PrivateKey is the PEM-encoded private key of the certificate. Required."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Set Certificate Request"
+            "title": "Set Certificate Request",
+            "description": "SetCertificateRequest is the request of the SetCertificate method."
         },
         "octelium.api.main.meta.v1.ObjectReference": {
             "properties": {

@@ -6,26 +6,32 @@
             "properties": {
                 "all": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.All",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "All matches only when every one of its child Conditions matches."
                 },
                 "any": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Any",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Any matches when at least one of its child Conditions matches."
                 },
                 "none": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.None",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "None matches only when none of its child Conditions matches."
                 },
                 "not": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Not",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Not matches when its Expression does not match."
                 },
                 "matchAny": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "MatchAny unconditionally matches every request when set to `true`."
                 },
                 "expression": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Expression is a single typed check against the request context."
                 }
             },
             "additionalProperties": false,
@@ -102,7 +108,8 @@
                     ]
                 }
             ],
-            "title": "Condition"
+            "title": "Condition",
+            "description": "Condition is a structured, declarative representation of an Octelium Condition. Unlike the core Condition which is written directly as a CEL or OPA expression, it is built out of typed building blocks which makes it suitable for the tools that need to programmatically construct, inspect and render the authorization rules (e.g. a UI). The Cluster compiles it into an equivalent core Condition which can also be previewed via the GetCoreCondition method."
         },
         "octelium.api.main.enterprise.v1.Condition.All": {
             "properties": {
@@ -111,12 +118,14 @@
                         "$ref": "#/definitions/Condition"
                     },
                     "additionalProperties": false,
-                    "type": "array"
+                    "type": "array",
+                    "description": "Of is the list of the child Conditions."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "All"
+            "title": "All",
+            "description": "All matches only when every one of its child Conditions matches"
         },
         "octelium.api.main.enterprise.v1.Condition.Any": {
             "properties": {
@@ -125,406 +134,506 @@
                         "$ref": "#/definitions/Condition"
                     },
                     "additionalProperties": false,
-                    "type": "array"
+                    "type": "array",
+                    "description": "Of is the list of the child Conditions."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Any"
+            "title": "Any",
+            "description": "Any matches when at least one of its child Conditions matches"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression": {
             "properties": {
                 "user": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.User",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "User matches a specific User."
                 },
                 "device": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.Device",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Device matches a specific Device."
                 },
                 "session": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.Session",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Session matches a specific Session."
                 },
                 "service": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.Service",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Service matches a specific Service."
                 },
                 "namespace": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.Namespace",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Namespace matches a specific Namespace."
                 },
                 "group": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.Group",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Group matches the Users that belong to a specific Group."
                 },
                 "sessionType": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.SessionType",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "SessionType matches the type of the Session."
                 },
                 "userType": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.UserType",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "UserType matches the type of the User."
                 },
                 "deviceOSType": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.DeviceOSType",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "DeviceOSType matches the operating system type of the Device."
                 },
                 "serviceMode": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.ServiceMode",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ServiceMode matches the mode of the Service."
                 },
                 "servicePublic": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.ServicePublic",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ServicePublic matches the Services that enable the BeyondCorp mode."
                 },
                 "sessionAuthenticationType": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationType",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "SessionAuthenticationType matches the type of the Session's current authentication."
                 },
                 "sessionAuthenticationAAL": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationAAL",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "SessionAuthenticationAAL matches the authenticator assurance level of the Session's current authentication."
                 },
                 "sessionAuthenticationIdentityProvider": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationIdentityProvider",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "SessionAuthenticationIdentityProvider matches the Sessions that authenticated via a specific IdentityProvider."
                 },
                 "sessionAuthenticationCredential": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredential",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "SessionAuthenticationCredential matches the Sessions that authenticated via a specific Credential."
                 },
                 "sessionBrowser": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.SessionBrowser",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "SessionBrowser matches the Sessions that are performed from a web browser."
                 },
                 "sessionAuthenticationCredAuthenticatorFIDOPasskey": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOPasskey",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "SessionAuthenticationCredAuthenticatorFIDOPasskey matches the Sessions whose FIDO Authenticator is a passkey."
                 },
                 "sessionAuthenticationCredAuthenticatorAAGUID": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorAAGUID",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "SessionAuthenticationCredAuthenticatorAAGUID matches the Sessions whose FIDO Authenticator has a specific model identifier."
                 },
                 "timeBefore": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.TimeBefore",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "TimeBefore matches only before a specific point in time."
                 },
                 "timeAfter": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.TimeAfter",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "TimeAfter matches only after a specific point in time."
                 },
                 "sessionAuthenticationCredAuthenticatorFIDOHardware": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOHardware",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "SessionAuthenticationCredAuthenticatorFIDOHardware matches the Sessions whose FIDO Authenticator is a hardware security key."
                 },
                 "sessionAuthenticationCredAuthenticatorFIDOAttestationVerified": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOAttestationVerified",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "SessionAuthenticationCredAuthenticatorFIDOAttestationVerified matches the Sessions whose FIDO Authenticator's attestation was verified."
                 },
                 "sessionAuthenticationCredentialType": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredentialType",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "SessionAuthenticationCredentialType matches the type of the Credential that the Session authenticated with."
                 },
                 "sessionAuthenticationCredAuthenticatorFIDOUserVerified": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserVerified",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "SessionAuthenticationCredAuthenticatorFIDOUserVerified matches the Sessions whose FIDO Authenticator verified the User."
                 },
                 "sessionAuthenticationCredAuthenticatorFIDOUserPresent": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserPresent",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "SessionAuthenticationCredAuthenticatorFIDOUserPresent matches the Sessions whose FIDO Authenticator confirmed the User's presence."
                 },
                 "sessionAuthenticationGeoipCountryCode": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipCountryCode",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "SessionAuthenticationGeoipCountryCode matches the country that the Session authenticated from."
                 },
                 "requestHTTPPath": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPath",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestHTTPPath matches the path of the HTTP request."
                 },
                 "requestHTTPMethod": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestHTTPMethod matches the method of the HTTP request."
                 },
                 "requestHTTPHasHeader": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestHTTPHasHeader matches the HTTP requests that carry a specific header."
                 },
                 "requestHTTPHeaderValue": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestHTTPHeaderValue matches the value of a specific header of the HTTP request."
                 },
                 "requestIP": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestIP",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestIP matches the source IP address of the request."
                 },
                 "requestIPInRange": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestIPInRange",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestIPInRange matches the requests whose source IP address belongs to a specific network."
                 },
                 "apiServerReadOnlyMethods": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.APIServerReadOnlyMethods",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "APIServerReadOnlyMethods matches the read-only methods of the Cluster's API server."
                 },
                 "apiServerMethods": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.APIServerMethods",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "APIServerMethods matches a specific set of the methods of the Cluster's API server."
                 },
                 "apiServerServices": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.APIServerServices",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "APIServerServices matches a specific set of the gRPC services of the Cluster's API server."
                 },
                 "apiServerCore": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.APIServerCore",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "APIServerCore matches the requests to the core API."
                 },
                 "apiServerUser": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.APIServerUser",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "APIServerUser matches the requests to the user API."
                 },
                 "apiServerEnterprise": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "APIServerEnterprise matches the requests to the enterprise API."
                 },
                 "apiServerCordium": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "APIServerCordium matches the requests to the Cordium API."
                 },
                 "apiServerAccess": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "APIServerAccess matches the requests to the access API."
                 },
                 "requestMCPProtocolVersion": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.MCPProtocolVersion",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestMCPProtocolVersion matches the MCP protocol version of the request."
                 },
                 "requestMCPMethod": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.MCPMethod",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestMCPMethod matches the MCP method of the request."
                 },
                 "requestMCPToolName": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.MCPToolName",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestMCPToolName matches the name of the tool of an MCP `tools/call` request."
                 },
                 "requestMCPPromptName": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.MCPPromptName",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestMCPPromptName matches the name of the prompt of an MCP `prompts/get` request."
                 },
                 "requestMCPResourceURI": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.MCPResourceURI",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestMCPResourceURI matches the URI of the resource of an MCP `resources/read` request."
                 },
                 "requestMCPIsNotification": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.MCPIsNotification",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestMCPIsNotification matches the MCP requests that are notifications."
                 },
                 "requestLLMProtocol": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.LLMProtocol",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestLLMProtocol matches the LLM API protocol of the request."
                 },
                 "requestLLMOperation": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.LLMOperation",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestLLMOperation matches the LLM operation of the request."
                 },
                 "requestLLMModel": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.LLMModel",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestLLMModel matches the model that is requested from the LLM."
                 },
                 "requestLLMStream": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.LLMStream",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestLLMStream matches the LLM requests that ask for a streamed response."
                 },
                 "requestLLMEstimatedInputTokens": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimatedInputTokens",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestLLMEstimatedInputTokens matches the estimated number of the input tokens of the LLM request."
                 },
                 "requestLLMEstimateQuality": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimateQuality",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestLLMEstimateQuality matches how complete the estimate of the LLM request's input tokens is."
                 },
                 "requestLLMMaxOutputTokens": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.LLMMaxOutputTokens",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestLLMMaxOutputTokens matches the maximum number of the output tokens that the LLM request asks for."
                 },
                 "requestLLMHasTools": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.LLMHasTools",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestLLMHasTools matches the LLM requests that declare at least one tool."
                 },
                 "requestLLMToolCount": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.LLMToolCount",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestLLMToolCount matches the number of the tools that the LLM request declares."
                 },
                 "requestLLMToolName": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.LLMToolName",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestLLMToolName matches the LLM requests that declare a tool of a specific name."
                 },
                 "requestLLMInputItemCount": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.LLMInputItemCount",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestLLMInputItemCount matches the number of the input items of the LLM request."
                 },
                 "requestLLMHasImageInput": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.LLMHasImageInput",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestLLMHasImageInput matches the LLM requests that carry an image input."
                 },
                 "requestLLMHasAudioInput": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.LLMHasAudioInput",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestLLMHasAudioInput matches the LLM requests that carry an audio input."
                 },
                 "requestHTTPHost": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHost",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestHTTPHost matches the host of the HTTP request."
                 },
                 "requestHTTPProtocol": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPProtocol",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestHTTPProtocol matches the protocol version of the HTTP request."
                 },
                 "requestHTTPScheme": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPScheme",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestHTTPScheme matches the scheme of the HTTP request."
                 },
                 "requestHTTPURI": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPURI",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestHTTPURI matches the full URI of the HTTP request."
                 },
                 "requestHTTPSize": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPSize",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestHTTPSize matches the body size of the HTTP request."
                 },
                 "requestHTTPHasQueryParam": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasQueryParam",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestHTTPHasQueryParam matches the HTTP requests that carry a specific query parameter."
                 },
                 "requestHTTPQueryParamValue": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPQueryParamValue",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestHTTPQueryParamValue matches the value of a specific query parameter of the HTTP request."
                 },
                 "requestSSH": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestSSH",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestSSH matches the SSH requests."
                 },
                 "requestSSHUser": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestSSHUser",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestSSHUser matches the upstream user of the SSH connection."
                 },
                 "requestKubernetes": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetes",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestKubernetes matches the Kubernetes API requests."
                 },
                 "requestKubernetesVerb": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesVerb",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestKubernetesVerb matches the verb of the Kubernetes API request."
                 },
                 "requestKubernetesAPIPrefix": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIPrefix",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestKubernetesAPIPrefix matches the API prefix of the Kubernetes API request."
                 },
                 "requestKubernetesAPIGroup": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIGroup",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestKubernetesAPIGroup matches the API group of the Kubernetes API request."
                 },
                 "requestKubernetesAPIVersion": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIVersion",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestKubernetesAPIVersion matches the API version of the Kubernetes API request."
                 },
                 "requestKubernetesNamespace": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesNamespace",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestKubernetesNamespace matches the namespace of the Kubernetes API request."
                 },
                 "requestKubernetesResource": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesResource",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestKubernetesResource matches the resource of the Kubernetes API request."
                 },
                 "requestKubernetesSubresource": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesSubresource",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestKubernetesSubresource matches the subresource of the Kubernetes API request."
                 },
                 "requestKubernetesName": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesName",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestKubernetesName matches the name of the object of the Kubernetes API request."
                 },
                 "requestGRPC": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPC",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestGRPC matches the gRPC requests."
                 },
                 "requestGRPCMethod": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCMethod",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestGRPCMethod matches the method name of the gRPC request."
                 },
                 "requestGRPCService": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCService",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestGRPCService matches the service name of the gRPC request."
                 },
                 "requestGRPCServiceFullName": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCServiceFullName",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestGRPCServiceFullName matches the fully qualified service name of the gRPC request."
                 },
                 "requestGRPCPackage": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCPackage",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestGRPCPackage matches the protobuf package of the gRPC request."
                 },
                 "requestPostgresConnect": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnect",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestPostgresConnect matches the PostgreSQL connection requests."
                 },
                 "requestPostgresConnectUser": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectUser",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestPostgresConnectUser matches the upstream user of the PostgreSQL connection."
                 },
                 "requestPostgresConnectDatabase": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectDatabase",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestPostgresConnectDatabase matches the database of the PostgreSQL connection."
                 },
                 "requestPostgresConnectApplicationName": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectApplicationName",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestPostgresConnectApplicationName matches the application name that is reported by the PostgreSQL client."
                 },
                 "requestPostgresQuery": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQuery",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestPostgresQuery matches the PostgreSQL simple query requests."
                 },
                 "requestPostgresQueryText": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQueryText",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestPostgresQueryText matches the SQL text of the PostgreSQL simple query request."
                 },
                 "requestPostgresParse": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParse",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestPostgresParse matches the PostgreSQL prepared statement parse requests."
                 },
                 "requestPostgresParseName": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseName",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestPostgresParseName matches the name of the PostgreSQL prepared statement."
                 },
                 "requestPostgresParseQuery": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseQuery",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestPostgresParseQuery matches the SQL text of the PostgreSQL prepared statement."
                 },
                 "requestDNS": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestDNS",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestDNS matches the DNS requests."
                 },
                 "requestDNSName": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSName",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestDNSName matches the queried name of the DNS request."
                 },
                 "requestDNSTypeID": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSTypeID",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestDNSTypeID matches the numeric query type of the DNS request."
                 },
                 "requestSOCKS5": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestSOCKS5 matches the SOCKS5 requests."
                 },
                 "requestSOCKS5Host": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Host",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestSOCKS5Host matches the destination host of the SOCKS5 connection."
                 },
                 "requestSOCKS5Port": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Port",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestSOCKS5Port matches the destination port of the SOCKS5 connection."
                 },
                 "requestSOCKS5AddressType": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5AddressType",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestSOCKS5AddressType matches the address type of the SOCKS5 connection."
                 }
             },
             "additionalProperties": false,
@@ -1521,7 +1630,8 @@
                     ]
                 }
             ],
-            "title": "Expression"
+            "title": "Expression",
+            "description": "Expression is a single typed check against the request context (e.g. the User, the Session, the Device, the Service or the request itself). Exactly one of its arms is set."
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.APIServerAccess": {
             "properties": {
@@ -1534,12 +1644,14 @@
                         "REVIEWER"
                     ],
                     "type": "string",
-                    "title": "Service"
+                    "title": "Service",
+                    "description": "Service is the gRPC service of the access API that is matched."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "API Server Access"
+            "title": "API Server Access",
+            "description": "APIServerAccess matches the requests to the access API"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.APIServerCordium": {
             "properties": {
@@ -1551,22 +1663,26 @@
                         "WORKSPACE"
                     ],
                     "type": "string",
-                    "title": "Service"
+                    "title": "Service",
+                    "description": "Service is the gRPC service of the Cordium API that is matched."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "API Server Cordium"
+            "title": "API Server Cordium",
+            "description": "APIServerCordium matches the requests to the Cordium API"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.APIServerCore": {
             "properties": {
                 "readOnlyMethods": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "ReadOnlyMethods further restricts the match to the read-only (i.e. `Get` and `List`) methods."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "API Server Core"
+            "title": "API Server Core",
+            "description": "APIServerCore matches the requests to the core API"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.APIServerEnterprise": {
             "properties": {
@@ -1579,12 +1695,14 @@
                         "POLICY_PORTAL"
                     ],
                     "type": "string",
-                    "title": "Service"
+                    "title": "Service",
+                    "description": "Service is the gRPC service of the enterprise API that is matched."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "API Server Enterprise"
+            "title": "API Server Enterprise",
+            "description": "APIServerEnterprise matches the requests to the enterprise API"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.APIServerMethods": {
             "properties": {
@@ -1592,17 +1710,20 @@
                     "items": {
                         "type": "string"
                     },
-                    "type": "array"
+                    "type": "array",
+                    "description": "Methods is the list of the method names that are matched (e.g. `CreateUser`)."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "API Server Methods"
+            "title": "API Server Methods",
+            "description": "APIServerMethods matches a specific set of the methods of the Cluster's API server"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.APIServerReadOnlyMethods": {
             "additionalProperties": false,
             "type": "object",
-            "title": "API Server Read Only Methods"
+            "title": "API Server Read Only Methods",
+            "description": "APIServerReadOnlyMethods matches the read-only (i.e. `Get` and `List`) methods of the Cluster's API server"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.APIServerServices": {
             "properties": {
@@ -1610,33 +1731,39 @@
                     "items": {
                         "type": "string"
                     },
-                    "type": "array"
+                    "type": "array",
+                    "description": "Services is the list of the gRPC service names that are matched (e.g. `MainService`)."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "API Server Services"
+            "title": "API Server Services",
+            "description": "APIServerServices matches a specific set of the gRPC services of the Cluster's API server"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.APIServerUser": {
             "properties": {
                 "readOnlyMethods": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "ReadOnlyMethods further restricts the match to the read-only (i.e. `Get` and `List`) methods."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "API Server User"
+            "title": "API Server User",
+            "description": "APIServerUser matches the requests to the user API"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.Device": {
             "properties": {
                 "deviceRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "DeviceRef is a reference to the Device that is matched."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Device"
+            "title": "Device",
+            "description": "Device matches a specific Device"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.DeviceOSType": {
             "properties": {
@@ -1656,35 +1783,43 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Device OS Type"
+            "title": "Device OS Type",
+            "description": "DeviceOSType matches the operating system type of the Device"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.Group": {
             "properties": {
                 "groupRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "GroupRef is a reference to the Group that is matched."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Group"
+            "title": "Group",
+            "description": "Group matches the Users that belong to a specific Group"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.IntMatch": {
             "properties": {
                 "exact": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "Exact matches when the field's value is equal to this value."
                 },
                 "lessThan": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "LessThan matches when the field's value is less than this value."
                 },
                 "lessThanOrEqual": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "LessThanOrEqual matches when the field's value is less than or equal to this value."
                 },
                 "greaterThan": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "GreaterThan matches when the field's value is greater than this value."
                 },
                 "greaterThanOrEqual": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "GreaterThanOrEqual matches when the field's value is greater than or equal to this value."
                 }
             },
             "additionalProperties": false,
@@ -1770,13 +1905,15 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "LLM Estimate Quality"
+            "title": "LLM Estimate Quality",
+            "description": "LLMEstimateQuality matches how complete the estimate of the LLM request's input tokens is"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.LLMEstimatedInputTokens": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the estimated input tokens."
                 },
                 "requireComplete": {
                     "type": "boolean",
@@ -1785,55 +1922,65 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "LLM Estimated Input Tokens"
+            "title": "LLM Estimated Input Tokens",
+            "description": "LLMEstimatedInputTokens matches the estimated number of the input tokens of the LLM request"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.LLMHasAudioInput": {
             "additionalProperties": false,
             "type": "object",
-            "title": "LLM Has Audio Input"
+            "title": "LLM Has Audio Input",
+            "description": "LLMHasAudioInput matches the LLM requests that carry an audio input"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.LLMHasImageInput": {
             "additionalProperties": false,
             "type": "object",
-            "title": "LLM Has Image Input"
+            "title": "LLM Has Image Input",
+            "description": "LLMHasImageInput matches the LLM requests that carry an image input"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.LLMHasTools": {
             "additionalProperties": false,
             "type": "object",
-            "title": "LLM Has Tools"
+            "title": "LLM Has Tools",
+            "description": "LLMHasTools matches the LLM requests that declare at least one tool"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.LLMInputItemCount": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the number of the input items."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "LLM Input Item Count"
+            "title": "LLM Input Item Count",
+            "description": "LLMInputItemCount matches the number of the input items (e.g. the messages) of the LLM request"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.LLMMaxOutputTokens": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the maximum output tokens."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "LLM Max Output Tokens"
+            "title": "LLM Max Output Tokens",
+            "description": "LLMMaxOutputTokens matches the maximum number of the output tokens that the LLM request asks for"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.LLMModel": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the model's name."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "LLM Model"
+            "title": "LLM Model",
+            "description": "LLMModel matches the model that is requested from the LLM"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.LLMOperation": {
             "properties": {
@@ -1857,7 +2004,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "LLM Operation"
+            "title": "LLM Operation",
+            "description": "LLMOperation matches the LLM operation of the request (e.g. a chat completion or an embedding)"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.LLMProtocol": {
             "properties": {
@@ -1874,507 +2022,601 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "LLM Protocol"
+            "title": "LLM Protocol",
+            "description": "LLMProtocol matches the LLM API protocol of the request"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.LLMStream": {
             "additionalProperties": false,
             "type": "object",
-            "title": "LLM Stream"
+            "title": "LLM Stream",
+            "description": "LLMStream matches the LLM requests that ask for a streamed response"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.LLMToolCount": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the number of the declared tools."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "LLM Tool Count"
+            "title": "LLM Tool Count",
+            "description": "LLMToolCount matches the number of the tools that the LLM request declares"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.LLMToolName": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the tool's name."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "LLM Tool Name"
+            "title": "LLM Tool Name",
+            "description": "LLMToolName matches the LLM requests that declare a tool of a specific name"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.MCPIsNotification": {
             "additionalProperties": false,
             "type": "object",
-            "title": "MCP Is Notification"
+            "title": "MCP Is Notification",
+            "description": "MCPIsNotification matches the MCP requests that are notifications (i.e. the requests that do not expect a response)"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.MCPMethod": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the MCP method."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "MCP Method"
+            "title": "MCP Method",
+            "description": "MCPMethod matches the MCP method of the request (e.g. `tools/call`)"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.MCPPromptName": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the prompt's name."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "MCP Prompt Name"
+            "title": "MCP Prompt Name",
+            "description": "MCPPromptName matches the name of the prompt of an MCP `prompts/get` request"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.MCPProtocolVersion": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the protocol version."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "MCP Protocol Version"
+            "title": "MCP Protocol Version",
+            "description": "MCPProtocolVersion matches the MCP protocol version of the request"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.MCPResourceURI": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the resource's URI."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "MCP Resource URI"
+            "title": "MCP Resource URI",
+            "description": "MCPResourceURI matches the URI of the resource of an MCP `resources/read` request"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.MCPToolName": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the tool's name."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "MCP Tool Name"
+            "title": "MCP Tool Name",
+            "description": "MCPToolName matches the name of the tool of an MCP `tools/call` request"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.Namespace": {
             "properties": {
                 "namespaceRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "NamespaceRef is a reference to the Namespace that is matched."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Namespace"
+            "title": "Namespace",
+            "description": "Namespace matches a specific Namespace"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestDNS": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Request DNS"
+            "title": "Request DNS",
+            "description": "RequestDNS matches the DNS requests"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSName": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the queried name. The matched values are lower-cased."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request DNS Name"
+            "title": "Request DNS Name",
+            "description": "RequestDNSName matches the queried name of the DNS request"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestDNSTypeID": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.IntMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the query type."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request DNS Type ID"
+            "title": "Request DNS Type ID",
+            "description": "RequestDNSTypeID matches the numeric query type of the DNS request (e.g. `1` for `A`, `28` for `AAAA`)"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPC": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Request GRPC"
+            "title": "Request GRPC",
+            "description": "RequestGRPC matches the gRPC requests"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCMethod": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the request's method name."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request GRPC Method"
+            "title": "Request GRPC Method",
+            "description": "RequestGRPCMethod matches the method name of the gRPC request (e.g. `ListUser`)"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCPackage": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the request's protobuf package."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request GRPC Package"
+            "title": "Request GRPC Package",
+            "description": "RequestGRPCPackage matches the protobuf package of the gRPC request (e.g. `octelium.api.main.core.v1`)"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCService": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the request's service name."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request GRPC Service"
+            "title": "Request GRPC Service",
+            "description": "RequestGRPCService matches the service name of the gRPC request (e.g. `MainService`)"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestGRPCServiceFullName": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the request's fully qualified service name."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request GRPC Service Full Name"
+            "title": "Request GRPC Service Full Name",
+            "description": "RequestGRPCServiceFullName matches the fully qualified service name of the gRPC request (e.g. `octelium.api.main.core.v1.MainService`)"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasHeader": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the header's name. The matched values are lower-cased."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request HTTP Has Header"
+            "title": "Request HTTP Has Header",
+            "description": "RequestHTTPHasHeader matches the HTTP requests that carry a specific header regardless of its value"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHasQueryParam": {
             "properties": {
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Name is the name of the query parameter that is matched."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request HTTP Has Query Param"
+            "title": "Request HTTP Has Query Param",
+            "description": "RequestHTTPHasQueryParam matches the HTTP requests that carry a specific query parameter regardless of its value"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHeaderValue": {
             "properties": {
                 "header": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Header is the matcher of the header's name. The matched values are lower-cased."
                 },
                 "value": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Value is the matcher of the header's value."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request HTTP Header Value"
+            "title": "Request HTTP Header Value",
+            "description": "RequestHTTPHeaderValue matches the value of a specific header of the HTTP request"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHost": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the request's host."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request HTTP Host"
+            "title": "Request HTTP Host",
+            "description": "RequestHTTPHost matches the host of the HTTP request"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPMethod": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the request's method. The matched values are upper-cased."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request HTTP Method"
+            "title": "Request HTTP Method",
+            "description": "RequestHTTPMethod matches the method of the HTTP request"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPath": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the request's path."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request HTTP Path"
+            "title": "Request HTTP Path",
+            "description": "RequestHTTPPath matches the path of the HTTP request"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPProtocol": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the request's protocol version."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request HTTP Protocol"
+            "title": "Request HTTP Protocol",
+            "description": "RequestHTTPProtocol matches the protocol version of the HTTP request (e.g. `HTTP/1.1`, `HTTP/2`)"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPQueryParamValue": {
             "properties": {
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Name is the name of the query parameter whose value is matched."
                 },
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the query parameter's value."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request HTTP Query Param Value"
+            "title": "Request HTTP Query Param Value",
+            "description": "RequestHTTPQueryParamValue matches the value of a specific query parameter of the HTTP request"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPScheme": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the request's scheme. The matched values are lower-cased."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request HTTP Scheme"
+            "title": "Request HTTP Scheme",
+            "description": "RequestHTTPScheme matches the scheme of the HTTP request (i.e. `http` or `https`)"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPSize": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.IntMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the request's body size."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request HTTP Size"
+            "title": "Request HTTP Size",
+            "description": "RequestHTTPSize matches the body size in bytes of the HTTP request"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPURI": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the request's URI."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request HTTPURI"
+            "title": "Request HTTPURI",
+            "description": "RequestHTTPURI matches the full URI of the HTTP request"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestIP": {
             "properties": {
                 "value": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Value is the IP address that is matched."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request IP"
+            "title": "Request IP",
+            "description": "RequestIP matches the source IP address of the request"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestIPInRange": {
             "properties": {
                 "value": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Value is the CIDR of the network that is matched (e.g. `10.0.0.0/8`)."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request IP In Range"
+            "title": "Request IP In Range",
+            "description": "RequestIPInRange matches the requests whose source IP address belongs to a specific network"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetes": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Request Kubernetes"
+            "title": "Request Kubernetes",
+            "description": "RequestKubernetes matches the Kubernetes API requests"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIGroup": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the request's API group."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request Kubernetes API Group"
+            "title": "Request Kubernetes API Group",
+            "description": "RequestKubernetesAPIGroup matches the API group of the Kubernetes API request (e.g. `apps`)"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIPrefix": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the request's API prefix."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request Kubernetes API Prefix"
+            "title": "Request Kubernetes API Prefix",
+            "description": "RequestKubernetesAPIPrefix matches the API prefix of the Kubernetes API request (i.e. `api` or `apis`)"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesAPIVersion": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the request's API version."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request Kubernetes API Version"
+            "title": "Request Kubernetes API Version",
+            "description": "RequestKubernetesAPIVersion matches the API version of the Kubernetes API request (e.g. `v1`)"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesName": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the object's name."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request Kubernetes Name"
+            "title": "Request Kubernetes Name",
+            "description": "RequestKubernetesName matches the name of the object of the Kubernetes API request"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesNamespace": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the request's namespace."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request Kubernetes Namespace"
+            "title": "Request Kubernetes Namespace",
+            "description": "RequestKubernetesNamespace matches the namespace of the Kubernetes API request"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesResource": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the request's resource."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request Kubernetes Resource"
+            "title": "Request Kubernetes Resource",
+            "description": "RequestKubernetesResource matches the resource of the Kubernetes API request (e.g. `pods`)"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesSubresource": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the request's subresource."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request Kubernetes Subresource"
+            "title": "Request Kubernetes Subresource",
+            "description": "RequestKubernetesSubresource matches the subresource of the Kubernetes API request (e.g. `log`, `exec`)"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestKubernetesVerb": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the request's verb."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request Kubernetes Verb"
+            "title": "Request Kubernetes Verb",
+            "description": "RequestKubernetesVerb matches the verb of the Kubernetes API request (e.g. `get`, `list`, `create`)"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnect": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Request Postgres Connect"
+            "title": "Request Postgres Connect",
+            "description": "RequestPostgresConnect matches the PostgreSQL connection requests"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectApplicationName": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the connection's application name."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request Postgres Connect Application Name"
+            "title": "Request Postgres Connect Application Name",
+            "description": "RequestPostgresConnectApplicationName matches the application name that is reported by the PostgreSQL client"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectDatabase": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the connection's database."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request Postgres Connect Database"
+            "title": "Request Postgres Connect Database",
+            "description": "RequestPostgresConnectDatabase matches the database of the PostgreSQL connection"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresConnectUser": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the connection's user."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request Postgres Connect User"
+            "title": "Request Postgres Connect User",
+            "description": "RequestPostgresConnectUser matches the upstream user of the PostgreSQL connection"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParse": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Request Postgres Parse"
+            "title": "Request Postgres Parse",
+            "description": "RequestPostgresParse matches the PostgreSQL prepared statement parse requests"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseName": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the prepared statement's name."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request Postgres Parse Name"
+            "title": "Request Postgres Parse Name",
+            "description": "RequestPostgresParseName matches the name of the PostgreSQL prepared statement"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresParseQuery": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the prepared statement's SQL text."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request Postgres Parse Query"
+            "title": "Request Postgres Parse Query",
+            "description": "RequestPostgresParseQuery matches the SQL text of the PostgreSQL prepared statement"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQuery": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Request Postgres Query"
+            "title": "Request Postgres Query",
+            "description": "RequestPostgresQuery matches the PostgreSQL simple query requests"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestPostgresQueryText": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the query's SQL text."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request Postgres Query Text"
+            "title": "Request Postgres Query Text",
+            "description": "RequestPostgresQueryText matches the SQL text of the PostgreSQL simple query request"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Request SOCKS 5"
+            "title": "Request SOCKS 5",
+            "description": "RequestSOCKS5 matches the SOCKS5 requests"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5AddressType": {
             "properties": {
@@ -2392,56 +2634,66 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request SOCKS 5 Address Type"
+            "title": "Request SOCKS 5 Address Type",
+            "description": "RequestSOCKS5AddressType matches the address type of the SOCKS5 connection"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Host": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the destination host. The matched values are lower-cased."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request SOCKS 5 Host"
+            "title": "Request SOCKS 5 Host",
+            "description": "RequestSOCKS5Host matches the destination host of the SOCKS5 connection"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestSOCKS5Port": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the destination port."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request SOCKS 5 Port"
+            "title": "Request SOCKS 5 Port",
+            "description": "RequestSOCKS5Port matches the destination port of the SOCKS5 connection"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestSSH": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Request SSH"
+            "title": "Request SSH",
+            "description": "RequestSSH matches the SSH requests"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.RequestSSHUser": {
             "properties": {
                 "match": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Match is the matcher of the SSH user."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request SSH User"
+            "title": "Request SSH User",
+            "description": "RequestSSHUser matches the upstream user of the SSH connection"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.Service": {
             "properties": {
                 "serviceRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ServiceRef is a reference to the Service that is matched."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Service"
+            "title": "Service",
+            "description": "Service matches a specific Service"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.ServiceMode": {
             "properties": {
@@ -2470,23 +2722,27 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Service Mode"
+            "title": "Service Mode",
+            "description": "ServiceMode matches the mode of the Service"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.ServicePublic": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Service Public"
+            "title": "Service Public",
+            "description": "ServicePublic matches the Services that enable the BeyondCorp mode (i.e. whose `isPublic` field is set)"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.Session": {
             "properties": {
                 "sessionRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "SessionRef is a reference to the Session that is matched."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Session"
+            "title": "Session",
+            "description": "Session matches a specific Session"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationAAL": {
             "properties": {
@@ -2504,53 +2760,63 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Session Authentication AAL"
+            "title": "Session Authentication AAL",
+            "description": "SessionAuthenticationAAL matches the authenticator assurance level (AAL) of the Session's current authentication"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorAAGUID": {
             "properties": {
                 "aaguid": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "AAGUID is the FIDO Authenticator model identifier that is matched."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Session Authentication Cred Authenticator AAGUID"
+            "title": "Session Authentication Cred Authenticator AAGUID",
+            "description": "SessionAuthenticationCredAuthenticatorAAGUID matches the Sessions whose FIDO Authenticator has a specific model identifier (i.e. AAGUID)"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOAttestationVerified": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Session Authentication Cred Authenticator FIDO Attestation Verified"
+            "title": "Session Authentication Cred Authenticator FIDO Attestation Verified",
+            "description": "SessionAuthenticationCredAuthenticatorFIDOAttestationVerified matches the Sessions whose FIDO Authenticator's attestation was verified upon its registration"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOHardware": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Session Authentication Cred Authenticator FIDO Hardware"
+            "title": "Session Authentication Cred Authenticator FIDO Hardware",
+            "description": "SessionAuthenticationCredAuthenticatorFIDOHardware matches the Sessions whose FIDO Authenticator is a hardware security key as opposed to a platform authenticator"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOPasskey": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Session Authentication Cred Authenticator FIDO Passkey"
+            "title": "Session Authentication Cred Authenticator FIDO Passkey",
+            "description": "SessionAuthenticationCredAuthenticatorFIDOPasskey matches the Sessions whose FIDO Authenticator is a discoverable credential (i.e. a passkey)"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserPresent": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Session Authentication Cred Authenticator FIDO User Present"
+            "title": "Session Authentication Cred Authenticator FIDO User Present",
+            "description": "SessionAuthenticationCredAuthenticatorFIDOUserPresent matches the Sessions whose FIDO Authenticator confirmed the User's presence during the authentication"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredAuthenticatorFIDOUserVerified": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Session Authentication Cred Authenticator FIDO User Verified"
+            "title": "Session Authentication Cred Authenticator FIDO User Verified",
+            "description": "SessionAuthenticationCredAuthenticatorFIDOUserVerified matches the Sessions whose FIDO Authenticator verified the User (e.g. via a PIN or a biometric) during the authentication"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredential": {
             "properties": {
                 "credentialRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "CredentialRef is a reference to the Credential that is matched."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Session Authentication Credential"
+            "title": "Session Authentication Credential",
+            "description": "SessionAuthenticationCredential matches the Sessions that authenticated via a specific Credential"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationCredentialType": {
             "properties": {
@@ -2568,28 +2834,33 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Session Authentication Credential Type"
+            "title": "Session Authentication Credential Type",
+            "description": "SessionAuthenticationCredentialType matches the type of the Credential that the Session authenticated with"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipCountryCode": {
             "properties": {
                 "code": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Code is the ISO 3166-1 alpha-2 country code that is matched (e.g. `DE`)."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Session Authentication Geoip Country Code"
+            "title": "Session Authentication Geoip Country Code",
+            "description": "SessionAuthenticationGeoipCountryCode matches the country that the Session authenticated from"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationIdentityProvider": {
             "properties": {
                 "identityProviderRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "IdentityProviderRef is a reference to the IdentityProvider that is matched."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Session Authentication Identity Provider"
+            "title": "Session Authentication Identity Provider",
+            "description": "SessionAuthenticationIdentityProvider matches the Sessions that authenticated via a specific IdentityProvider"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationType": {
             "properties": {
@@ -2610,12 +2881,14 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Session Authentication Type"
+            "title": "Session Authentication Type",
+            "description": "SessionAuthenticationType matches the type of the Session's current authentication"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.SessionBrowser": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Session Browser"
+            "title": "Session Browser",
+            "description": "SessionBrowser matches the Sessions that are performed from a web browser"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.SessionType": {
             "properties": {
@@ -2632,25 +2905,31 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Session Type"
+            "title": "Session Type",
+            "description": "SessionType matches the type of the Session"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.StringMatch": {
             "properties": {
                 "exact": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Exact matches when the field's value is exactly equal to this value."
                 },
                 "prefix": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Prefix matches when the field's value starts with this value."
                 },
                 "suffix": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Suffix matches when the field's value ends with this value."
                 },
                 "contains": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Contains matches when the field's value contains this value."
                 },
                 "in": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch.In",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "In matches when the field's value is one of a set of values."
                 }
             },
             "additionalProperties": false,
@@ -2726,51 +3005,62 @@
                     "items": {
                         "type": "string"
                     },
-                    "type": "array"
+                    "type": "array",
+                    "description": "Values is the set of the values that are matched."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "In"
+            "title": "In",
+            "description": "In matches when the field's value is one of a set of values"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.TimeAfter": {
             "properties": {
                 "timestamp": {
                     "type": "string",
+                    "description": "Timestamp is the date that the current time must be after.",
                     "format": "date-time"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Time After"
+            "title": "Time After",
+            "description": "TimeAfter matches only after a specific point in time"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.TimeBefore": {
             "properties": {
                 "timestamp": {
                     "type": "string",
+                    "description": "Timestamp is the date that the current time must be before.",
                     "format": "date-time"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Time Before"
+            "title": "Time Before",
+            "description": "TimeBefore matches only before a specific point in time"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.UIntMatch": {
             "properties": {
                 "exact": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "Exact matches when the field's value is equal to this value."
                 },
                 "lessThan": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "LessThan matches when the field's value is less than this value."
                 },
                 "lessThanOrEqual": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "LessThanOrEqual matches when the field's value is less than or equal to this value."
                 },
                 "greaterThan": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "GreaterThan matches when the field's value is greater than this value."
                 },
                 "greaterThanOrEqual": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "GreaterThanOrEqual matches when the field's value is greater than or equal to this value."
                 }
             },
             "additionalProperties": false,
@@ -2844,12 +3134,14 @@
             "properties": {
                 "userRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "UserRef is a reference to the User that is matched."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "User"
+            "title": "User",
+            "description": "User matches a specific User"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.UserType": {
             "properties": {
@@ -2866,7 +3158,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "User Type"
+            "title": "User Type",
+            "description": "UserType matches the type of the User"
         },
         "octelium.api.main.enterprise.v1.Condition.None": {
             "properties": {
@@ -2875,23 +3168,27 @@
                         "$ref": "#/definitions/Condition"
                     },
                     "additionalProperties": false,
-                    "type": "array"
+                    "type": "array",
+                    "description": "Of is the list of the child Conditions."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "None"
+            "title": "None",
+            "description": "None matches only when none of its child Conditions matches"
         },
         "octelium.api.main.enterprise.v1.Condition.Not": {
             "properties": {
                 "expression": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Expression is the Expression that is negated."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Not"
+            "title": "Not",
+            "description": "Not matches when its Expression does not match"
         },
         "octelium.api.main.meta.v1.ObjectReference": {
             "properties": {

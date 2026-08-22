@@ -5,15 +5,18 @@
         "SetLicenseRequest": {
             "properties": {
                 "jwt": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "JWT is the signed License JWT that was issued by Octelium Labs. Required."
                 },
                 "dryRun": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "DryRun only verifies the License and returns its claims without actually setting it in the Cluster."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Set License Request"
+            "title": "Set License Request",
+            "description": "SetLicenseRequest is the request of the SetLicense method."
         }
     }
 }

@@ -6,11 +6,11 @@
             "properties": {
                 "apiVersion": {
                     "type": "string",
-                    "description": "APIVersion is the API version (i.e. \"core/v1\")"
+                    "description": "APIVersion is the API version (i.e. \"enterprise/v1\")"
                 },
                 "kind": {
                     "type": "string",
-                    "description": "Kind is the kind (i.e. \"Log\")"
+                    "description": "Kind is the kind (i.e. \"AuthenticationLog\")"
                 },
                 "metadata": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.LogMetadata",
@@ -25,7 +25,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Authentication Log"
+            "title": "Authentication Log",
+            "description": "AuthenticationLog is a log entry that records a single authentication of a Session (e.g. an OIDC login or a Credential-based authentication). A Session that re-authenticates produces more than one AuthenticationLog."
         },
         "octelium.api.main.core.v1.GeoIP": {
             "properties": {
@@ -572,27 +573,33 @@
             "properties": {
                 "sessionRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "SessionRef is a reference to the Session that authenticated."
                 },
                 "userRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "UserRef is a reference to the User that owns the Session."
                 },
                 "deviceRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "DeviceRef is a reference to the Device of the Session."
                 },
                 "authentication": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Session.Status.Authentication",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Authentication is the authentication information of the Session (e.g. its type, its assurance level and its GeoIP information)."
                 },
                 "authenticationIndex": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "AuthenticationIndex is the zero-based index of this authentication among the Session's total authentications."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Entry"
+            "title": "Entry",
+            "description": "Entry is the AuthenticationLog entry information"
         },
         "octelium.api.main.meta.v1.Duration": {
             "properties": {

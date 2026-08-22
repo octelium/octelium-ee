@@ -6,16 +6,19 @@
             "properties": {
                 "common": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.CommonListOptions",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Common is the common list options."
                 },
                 "directoryProviderRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "DirectoryProviderRef filters the results to the DirectoryProviderGroups of a specific DirectoryProvider."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "List Directory Provider Group Options"
+            "title": "List Directory Provider Group Options",
+            "description": "ListDirectoryProviderGroupOptions is the list options of the ListDirectoryProviderGroup method."
         },
         "octelium.api.main.meta.v1.CommonListOptions": {
             "properties": {

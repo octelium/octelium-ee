@@ -5,7 +5,8 @@
         "GetClusterInfoRequest": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Get Cluster Info Request"
+            "title": "Get Cluster Info Request",
+            "description": "GetClusterInfoRequest is the request of the GetClusterInfo method."
         }
     }
 }

@@ -6,7 +6,8 @@
             "properties": {
                 "license": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.License",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "License is the verified claims of the License that was set."
                 },
                 "state": {
                     "enum": [
@@ -18,35 +19,43 @@
                         "INVALID"
                     ],
                     "type": "string",
-                    "title": "State"
+                    "title": "State",
+                    "description": "State is the current state of the Cluster's License."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Set License Response"
+            "title": "Set License Response",
+            "description": "SetLicenseResponse is the response of the SetLicense method."
         },
         "octelium.api.main.enterprise.v1.License": {
             "properties": {
                 "version": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "Version is the version of the License format."
                 },
                 "uid": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "UID is the unique identifier of the License."
                 },
                 "organization": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.License.Organization",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Organization is the organization that the License was issued to."
                 },
                 "issuedAt": {
                     "type": "string",
+                    "description": "IssuedAt is the date at which the License was issued.",
                     "format": "date-time"
                 },
                 "notBefore": {
                     "type": "string",
+                    "description": "NotBefore is the date starting from which the License is valid.",
                     "format": "date-time"
                 },
                 "notAfter": {
                     "type": "string",
+                    "description": "NotAfter is the expiry date of the License.",
                     "format": "date-time"
                 },
                 "type": {
@@ -58,31 +67,37 @@
                         "INTERNAL"
                     ],
                     "type": "string",
-                    "title": "Type"
+                    "title": "Type",
+                    "description": "Type is the type of the License."
                 },
                 "allowedClusterDomains": {
                     "items": {
                         "type": "string"
                     },
-                    "type": "array"
+                    "type": "array",
+                    "description": "AllowedClusterDomains is the list of the Cluster domains that the License is valid for. An empty list means that the License is valid for every Cluster domain."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "License"
+            "title": "License",
+            "description": "License is the commercial License that entitles the Cluster to use the enterprise features. It is issued by Octelium Labs as a signed JWT which is supplied to the Cluster via the SetLicense method. The fields below are the verified claims of that JWT."
         },
         "octelium.api.main.enterprise.v1.License.Organization": {
             "properties": {
                 "uid": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "UID is the unique identifier of the organization."
                 },
                 "displayName": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "DisplayName is the human-readable name of the organization."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Organization"
+            "title": "Organization",
+            "description": "Organization is the organization that the License was issued to"
         }
     }
 }

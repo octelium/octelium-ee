@@ -6,11 +6,11 @@
             "properties": {
                 "apiVersion": {
                     "type": "string",
-                    "description": "APIVersion is the API version (i.e. \"core/v1\")"
+                    "description": "APIVersion is the API version (i.e. \"enterprise/v1\")"
                 },
                 "kind": {
                     "type": "string",
-                    "description": "Kind is the kind (i.e. \"Log\")"
+                    "description": "Kind is the kind (i.e. \"AuditLog\")"
                 },
                 "metadata": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.LogMetadata",
@@ -25,42 +25,52 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Audit Log"
+            "title": "Audit Log",
+            "description": "AuditLog is a log entry that records a change that was made to a Cluster resource via the API (e.g. the creation of a Service or the update of a Policy). It answers who changed what and when, as opposed to the AccessLog which records the access to the Services themselves."
         },
         "octelium.api.main.enterprise.v1.AuditLog.Entry": {
             "properties": {
                 "resourceRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ResourceRef is a reference to the resource that was changed."
                 },
                 "operation": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Operation is the full name of the API method that performed the change (i.e. `\u003cPACKAGE\u003e.\u003cSERVICE\u003e/\u003cMETHOD\u003e`)."
                 },
                 "sessionRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "SessionRef is a reference to the Session that performed the change."
                 },
                 "userRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "UserRef is a reference to the User that owns the Session."
                 },
                 "deviceRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "DeviceRef is a reference to the Device of the Session."
                 },
                 "package": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Package is the protobuf package of the API method (e.g. `octelium.api.main.core.v1`)."
                 },
                 "service": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Service is the gRPC service name of the API method (e.g. `MainService`)."
                 },
                 "method": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Method is the gRPC method name of the API method (e.g. `CreateService`)."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Entry"
+            "title": "Entry",
+            "description": "Entry is the AuditLog entry information"
         },
         "octelium.api.main.meta.v1.LogMetadata": {
             "properties": {

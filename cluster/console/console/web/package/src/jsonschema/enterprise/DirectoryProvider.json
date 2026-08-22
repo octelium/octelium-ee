@@ -6,48 +6,53 @@
             "properties": {
                 "apiVersion": {
                     "type": "string",
-                    "description": "APIVersion is the API version of the object."
+                    "description": "APIVersion is the API version (i.e. \"enterprise/v1\")"
                 },
                 "kind": {
                     "type": "string",
-                    "description": "Kind is the resource name (i.e. `Secret`)."
+                    "description": "Kind is the resource name (i.e. `DirectoryProvider`)."
                 },
                 "metadata": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Metadata",
                     "additionalProperties": false,
-                    "description": "octelium.api.main.meta.v1.Metadata is the object's metadata."
+                    "description": "Metadata is the object's metadata."
                 },
                 "spec": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DirectoryProvider.Spec",
                     "additionalProperties": false,
-                    "description": "Spec is the Secret specification."
+                    "description": "Spec is the DirectoryProvider specification."
                 },
                 "status": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DirectoryProvider.Status",
                     "additionalProperties": false,
-                    "description": "Status is the current status of the Secret."
+                    "description": "Status is the current status of the DirectoryProvider."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Directory Provider"
+            "title": "Directory Provider",
+            "description": "DirectoryProvider represents an external identity directory (e.g. an identity provider or a SCIM client) whose Users and Groups are synchronized into the Cluster's Users and Groups. It saves you from having to manually create and maintain the Users and Groups that already exist in your organization's directory. Depending on its type, the directory either pushes its changes to the Cluster (i.e. SCIM) or is periodically polled by the Cluster."
         },
         "octelium.api.main.enterprise.v1.DirectoryProvider.Spec": {
             "properties": {
                 "isDisabled": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "IsDisabled disables the DirectoryProvider. A disabled DirectoryProvider is no longer synchronized."
                 },
                 "scim": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DirectoryProvider.Spec.SCIM",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "SCIM sets the SCIM specific options."
                 },
                 "googleWorkspace": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "GoogleWorkspace sets the Google Workspace specific options."
                 },
                 "keycloak": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Keycloak sets the Keycloak specific options."
                 }
             },
             "additionalProperties": false,
@@ -94,44 +99,53 @@
                     ]
                 }
             ],
-            "title": "Spec"
+            "title": "Spec",
+            "description": "Spec is the DirectoryProvider specification"
         },
         "octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace": {
             "properties": {
                 "customer": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Customer is the Google Workspace customer ID whose Users and Groups are synchronized. If unset, the customer of the impersonated account is used."
                 },
                 "serviceAccount": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.ServiceAccount",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ServiceAccount is the credentials of the Google Cloud service account that is used to access the Google Workspace Directory API. Required."
                 },
                 "impersonateSubject": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ImpersonateSubject is the email of the Google Workspace administrator that is impersonated by the service account via domain-wide delegation. Required."
                 },
                 "polling": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.Polling",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Polling sets the periodic synchronization-related configuration."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Google Workspace"
+            "title": "Google Workspace",
+            "description": "GoogleWorkspace sets the Google Workspace specific options"
         },
         "octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.Polling": {
             "properties": {
                 "interval": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Interval is the interval at which the directory is synchronized."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Polling"
+            "title": "Polling",
+            "description": "Polling sets the options of the periodic synchronization from the directory"
         },
         "octelium.api.main.enterprise.v1.DirectoryProvider.Spec.GoogleWorkspace.ServiceAccount": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the service account key"
                 }
             },
             "additionalProperties": false,
@@ -158,39 +172,48 @@
                     ]
                 }
             ],
-            "title": "Service Account"
+            "title": "Service Account",
+            "description": "ServiceAccount is the JSON key of the Google Cloud service account that is used to access the Google Workspace Directory API"
         },
         "octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak": {
             "properties": {
                 "url": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "URL is the base URL of the Keycloak server (e.g. `https://keycloak.example.com`). Required."
                 },
                 "realm": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Realm is the name of the Keycloak realm whose Users and Groups are synchronized. Required."
                 },
                 "clientID": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ClientID is the client ID of the Keycloak client that is used to access the Keycloak Admin API. Required."
                 },
                 "clientSecret": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.ClientSecret",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ClientSecret is the client secret of the Keycloak client. Required."
                 },
                 "insecureSkipVerify": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "InsecureSkipVerify skips the verification of the Keycloak server's certificate chain and hostname. It is not recommended in production environments."
                 },
                 "polling": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.Polling",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Polling sets the periodic synchronization-related configuration."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Keycloak"
+            "title": "Keycloak",
+            "description": "Keycloak sets the Keycloak specific options"
         },
         "octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.ClientSecret": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the client secret"
                 }
             },
             "additionalProperties": false,
@@ -217,57 +240,68 @@
                     ]
                 }
             ],
-            "title": "Client Secret"
+            "title": "Client Secret",
+            "description": "ClientSecret is the client secret of the Keycloak client"
         },
         "octelium.api.main.enterprise.v1.DirectoryProvider.Spec.Keycloak.Polling": {
             "properties": {
                 "interval": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Interval is the interval at which the directory is synchronized."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Polling"
+            "title": "Polling",
+            "description": "Polling sets the options of the periodic synchronization from the directory"
         },
         "octelium.api.main.enterprise.v1.DirectoryProvider.Spec.SCIM": {
             "additionalProperties": false,
             "type": "object",
-            "title": "SCIM"
+            "title": "SCIM",
+            "description": "SCIM sets the SCIM (i.e. System for Cross-domain Identity Management) specific options. In this mode the directory itself pushes its changes to the Cluster's SCIM endpoint using a credential that is generated via the GenerateDirectoryProviderCredential method."
         },
         "octelium.api.main.enterprise.v1.DirectoryProvider.Status": {
             "properties": {
                 "id": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ID is an opaque identifier that is generated by the Cluster upon the DirectoryProvider's creation. For SCIM DirectoryProviders it is also the path segment of the Cluster's SCIM base URL (i.e. `/scim/\u003cID\u003e`)."
                 },
                 "userRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "UserRef is a reference to the Cluster-managed WORKLOAD User that is used by a SCIM DirectoryProvider to authenticate its requests to the Cluster."
                 },
                 "sessionRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "SessionRef is a reference to the Session of the UserRef User that was created by the last call to the GenerateDirectoryProviderCredential method."
                 },
                 "synchronization": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DirectoryProvider.Status.Synchronization",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Synchronization is the currently ongoing or last requested synchronization."
                 },
                 "lastSynchronizations": {
                     "items": {
                         "$ref": "#/definitions/octelium.api.main.enterprise.v1.DirectoryProvider.Status.Synchronization"
                     },
                     "additionalProperties": false,
-                    "type": "array"
+                    "type": "array",
+                    "description": "LastSynchronizations is the list of the most recent synchronizations."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Status"
+            "title": "Status",
+            "description": "Status is the current status of the DirectoryProvider"
         },
         "octelium.api.main.enterprise.v1.DirectoryProvider.Status.Synchronization": {
             "properties": {
                 "createdAt": {
                     "type": "string",
+                    "description": "CreatedAt is the date at which the synchronization was requested.",
                     "format": "date-time"
                 },
                 "state": {
@@ -279,16 +313,19 @@
                         "FAILED"
                     ],
                     "type": "string",
-                    "title": "State"
+                    "title": "State",
+                    "description": "State is the current state of the synchronization."
                 },
                 "completedAt": {
                     "type": "string",
+                    "description": "CompletedAt is the date at which the synchronization completed or failed.",
                     "format": "date-time"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Synchronization"
+            "title": "Synchronization",
+            "description": "Synchronization is the state of a synchronization of the Users and Groups from the directory"
         },
         "octelium.api.main.meta.v1.Duration": {
             "properties": {

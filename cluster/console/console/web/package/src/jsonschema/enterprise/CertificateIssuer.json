@@ -6,37 +6,39 @@
             "properties": {
                 "apiVersion": {
                     "type": "string",
-                    "description": "APIVersion is the API version of the object."
+                    "description": "APIVersion is the API version (i.e. \"enterprise/v1\")"
                 },
                 "kind": {
                     "type": "string",
-                    "description": "Kind is the resource name (i.e. `Secret`)."
+                    "description": "Kind is the resource name (i.e. `CertificateIssuer`)."
                 },
                 "metadata": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Metadata",
                     "additionalProperties": false,
-                    "description": "octelium.api.main.meta.v1.Metadata is the object's metadata."
+                    "description": "Metadata is the object's metadata."
                 },
                 "spec": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CertificateIssuer.Spec",
                     "additionalProperties": false,
-                    "description": "Spec is the Secret specification."
+                    "description": "Spec is the CertificateIssuer specification."
                 },
                 "status": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CertificateIssuer.Status",
                     "additionalProperties": false,
-                    "description": "Status is the current status of the Secret."
+                    "description": "Status is the current status of the CertificateIssuer."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Certificate Issuer"
+            "title": "Certificate Issuer",
+            "description": "CertificateIssuer represents the authority that issues the Cluster's MANAGED Certificates. The `default` CertificateIssuer is automatically created upon the Cluster's installation and is used by every MANAGED Certificate."
         },
         "octelium.api.main.enterprise.v1.CertificateIssuer.Spec": {
             "properties": {
                 "acme": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ACME sets the ACME specific options."
                 }
             },
             "additionalProperties": false,
@@ -63,7 +65,8 @@
                     ]
                 }
             ],
-            "title": "Spec"
+            "title": "Spec",
+            "description": "Spec is the CertificateIssuer specification"
         },
         "octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME": {
             "properties": {
@@ -78,12 +81,13 @@
                 "solver": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME.Solver",
                     "additionalProperties": false,
-                    "description": "Solver is the  challenge solver."
+                    "description": "Solver is the challenge solver."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "ACME"
+            "title": "ACME",
+            "description": "ACME sets the ACME (e.g. Let's Encrypt) specific options"
         },
         "octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME.Solver": {
             "properties": {
@@ -117,12 +121,14 @@
                     ]
                 }
             ],
-            "title": "Solver"
+            "title": "Solver",
+            "description": "Solver is the ACME challenge solver"
         },
         "octelium.api.main.enterprise.v1.CertificateIssuer.Spec.ACME.Solver.DNS": {
             "additionalProperties": false,
             "type": "object",
-            "title": "DNS"
+            "title": "DNS",
+            "description": "DNS sets the DNS01 challenge solver options. The challenge records are created using the Cluster's DNSProvider."
         },
         "octelium.api.main.enterprise.v1.CertificateIssuer.Status": {
             "properties": {
@@ -134,11 +140,13 @@
                         "NOT_READY"
                     ],
                     "type": "string",
-                    "title": "State"
+                    "title": "State",
+                    "description": "State is the current state of the CertificateIssuer."
                 },
                 "acme": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.CertificateIssuer.Status.ACME",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ACME is the ACME specific status."
                 }
             },
             "additionalProperties": false,
@@ -165,18 +173,21 @@
                     ]
                 }
             ],
-            "title": "Status"
+            "title": "Status",
+            "description": "Status is the current status of the CertificateIssuer"
         },
         "octelium.api.main.enterprise.v1.CertificateIssuer.Status.ACME": {
             "properties": {
                 "secretRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "SecretRef is a reference to the Cluster-managed Secret that contains the ACME account's private key."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "ACME"
+            "title": "ACME",
+            "description": "ACME is the ACME specific status"
         },
         "octelium.api.main.meta.v1.Metadata": {
             "properties": {

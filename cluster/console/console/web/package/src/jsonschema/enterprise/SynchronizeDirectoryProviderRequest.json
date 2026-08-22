@@ -6,12 +6,14 @@
             "properties": {
                 "directoryProviderRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "DirectoryProviderRef is a reference to the DirectoryProvider that is synchronized."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Synchronize Directory Provider Request"
+            "title": "Synchronize Directory Provider Request",
+            "description": "SynchronizeDirectoryProviderRequest is the request of the SynchronizeDirectoryProvider method."
         },
         "octelium.api.main.meta.v1.ObjectReference": {
             "properties": {

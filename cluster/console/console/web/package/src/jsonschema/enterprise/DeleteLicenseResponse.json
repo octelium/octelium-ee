@@ -5,7 +5,8 @@
         "DeleteLicenseResponse": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Delete License Response"
+            "title": "Delete License Response",
+            "description": "DeleteLicenseResponse is the response of the DeleteLicense method."
         }
     }
 }

@@ -6,61 +6,73 @@
             "properties": {
                 "request": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Request is the set of the Cluster packages that are upgraded."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Upgrade Cluster Request"
+            "title": "Upgrade Cluster Request",
+            "description": "UpgradeClusterRequest is the request of the UpgradeCluster method."
         },
         "octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request": {
             "properties": {
                 "core": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.Core",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Core sets the version of the core Octelium package."
                 },
                 "packageEnterprise": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.PackageEnterprise",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "PackageEnterprise sets the version of the enterprise package."
                 },
                 "packageCordium": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.PackageCordium",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "PackageCordium sets the version of the Cordium package."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Request"
+            "title": "Request",
+            "description": "Request is the set of the Cluster packages that are upgraded"
         },
         "octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.Core": {
             "properties": {
                 "version": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Version is the version that the package is upgraded to."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Core"
+            "title": "Core",
+            "description": "Core sets the version of the core Octelium package"
         },
         "octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.PackageCordium": {
             "properties": {
                 "version": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Version is the version that the package is upgraded to."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Package Cordium"
+            "title": "Package Cordium",
+            "description": "PackageCordium sets the version of the Cordium package"
         },
         "octelium.api.main.enterprise.v1.UpgradeClusterRequest.Request.PackageEnterprise": {
             "properties": {
                 "version": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Version is the version that the package is upgraded to."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Package Enterprise"
+            "title": "Package Enterprise",
+            "description": "PackageEnterprise sets the version of the enterprise package"
         }
     }
 }

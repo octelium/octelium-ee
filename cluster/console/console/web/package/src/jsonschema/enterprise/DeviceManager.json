@@ -5,27 +5,33 @@
         "DeviceManager": {
             "properties": {
                 "apiVersion": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "APIVersion is the API version (i.e. \"enterprise/v1\")"
                 },
                 "kind": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Kind is the resource name (i.e. `DeviceManager`)."
                 },
                 "metadata": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Metadata",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Metadata is the object's metadata."
                 },
                 "spec": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Spec is the DeviceManager specification."
                 },
                 "status": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Status",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Status is the current status of the DeviceManager."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Device Manager"
+            "title": "Device Manager",
+            "description": "DeviceManager represents an external device management or endpoint security platform (e.g. CrowdStrike Falcon, Microsoft Intune, Jamf Pro) whose device inventory is used by the Cluster as a source of the Devices' posture information. The Cluster periodically polls the platform's inventory, links its entries to the Cluster's Devices and materializes the resulting posture into the `status.posture` field of the Device where it can then be used in the authorization rules."
         },
         "octelium.api.main.core.v1.Condition": {
             "properties": {
@@ -235,47 +241,58 @@
             "properties": {
                 "condition": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Condition",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Condition restricts the Devices that the DeviceManager applies to. A DeviceManager without a Condition applies to every Device."
                 },
                 "polling": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Polling sets the inventory collection-related configuration."
                 },
                 "linking": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Linking sets the Device linking-related configuration."
                 },
                 "crowdStrike": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "CrowdStrike sets the CrowdStrike Falcon specific options."
                 },
                 "sentinelOne": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "SentinelOne sets the SentinelOne specific options."
                 },
                 "microsoftIntune": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "MicrosoftIntune sets the Microsoft Intune specific options."
                 },
                 "jamf": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.Jamf",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Jamf sets the Jamf Pro specific options."
                 },
                 "onePassword": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "OnePassword sets the 1Password Device Trust specific options."
                 },
                 "fleetDM": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.FleetDM",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "FleetDM sets the Fleet specific options."
                 },
                 "huntress": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.Huntress",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Huntress sets the Huntress specific options."
                 },
                 "iru": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Iru sets the Iru specific options."
                 }
             },
             "additionalProperties": false,
@@ -372,7 +389,8 @@
                     ]
                 }
             ],
-            "title": "Spec"
+            "title": "Spec",
+            "description": "Spec is the DeviceManager specification"
         },
         "octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike": {
             "properties": {
@@ -386,33 +404,41 @@
                         "US_GOV_2"
                     ],
                     "type": "string",
-                    "title": "Region"
+                    "title": "Region",
+                    "description": "Region is the CrowdStrike Falcon cloud region."
                 },
                 "clientID": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ClientID is the client ID of the Falcon API client. Required."
                 },
                 "clientSecret": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike.ClientSecret",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ClientSecret is the client secret of the Falcon API client. Required."
                 },
                 "memberCID": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "MemberCID is the customer ID of the member tenant whose hosts are collected. It is only used in the multi-tenant Falcon environments."
                 },
                 "hostFilter": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "HostFilter is an FQL filter that restricts the hosts that are collected from the Falcon inventory."
                 },
                 "disableZeroTrustAssessment": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "DisableZeroTrustAssessment disables collecting the CrowdStrike Zero Trust Assessment scores of the hosts."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Crowd Strike"
+            "title": "Crowd Strike",
+            "description": "CrowdStrike sets the CrowdStrike Falcon specific options"
         },
         "octelium.api.main.enterprise.v1.DeviceManager.Spec.CrowdStrike.ClientSecret": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the client secret"
                 }
             },
             "additionalProperties": false,
@@ -439,29 +465,35 @@
                     ]
                 }
             ],
-            "title": "Client Secret"
+            "title": "Client Secret",
+            "description": "ClientSecret is the client secret of the Falcon API client"
         },
         "octelium.api.main.enterprise.v1.DeviceManager.Spec.FleetDM": {
             "properties": {
                 "baseURL": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "BaseURL is the base URL of the Fleet server (e.g. `https://fleet.example.com`). Required."
                 },
                 "apiToken": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.FleetDM.APIToken",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "APIToken is the Fleet API token. Required."
                 },
                 "teamID": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "TeamID is the ID of the Fleet team whose hosts are collected. If unset, the hosts of every team are collected."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Fleet DM"
+            "title": "Fleet DM",
+            "description": "FleetDM sets the Fleet (i.e. FleetDM) specific options"
         },
         "octelium.api.main.enterprise.v1.DeviceManager.Spec.FleetDM.APIToken": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the API token"
                 }
             },
             "additionalProperties": false,
@@ -488,29 +520,35 @@
                     ]
                 }
             ],
-            "title": "API Token"
+            "title": "API Token",
+            "description": "APIToken is the Fleet API token"
         },
         "octelium.api.main.enterprise.v1.DeviceManager.Spec.Huntress": {
             "properties": {
                 "baseURL": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "BaseURL overrides the base URL of the Huntress API. If unset, the default public API URL is used."
                 },
                 "apiKey": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "APIKey is the public part of the Huntress API credentials which is used as the HTTP basic authentication username. Required."
                 },
                 "apiSecret": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.Huntress.APISecret",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "APISecret is the secret part of the Huntress API credentials which is used as the HTTP basic authentication password. Required."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Huntress"
+            "title": "Huntress",
+            "description": "Huntress sets the Huntress specific options"
         },
         "octelium.api.main.enterprise.v1.DeviceManager.Spec.Huntress.APISecret": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the API secret"
                 }
             },
             "additionalProperties": false,
@@ -537,26 +575,31 @@
                     ]
                 }
             ],
-            "title": "API Secret"
+            "title": "API Secret",
+            "description": "APISecret is the secret part of the Huntress API credentials"
         },
         "octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru": {
             "properties": {
                 "baseURL": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "BaseURL is the base URL of the Iru API. Required."
                 },
                 "apiToken": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru.APIToken",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "APIToken is the Iru API token. Required."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Iru"
+            "title": "Iru",
+            "description": "Iru sets the Iru specific options"
         },
         "octelium.api.main.enterprise.v1.DeviceManager.Spec.Iru.APIToken": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the API token"
                 }
             },
             "additionalProperties": false,
@@ -583,32 +626,39 @@
                     ]
                 }
             ],
-            "title": "API Token"
+            "title": "API Token",
+            "description": "APIToken is the Iru API token"
         },
         "octelium.api.main.enterprise.v1.DeviceManager.Spec.Jamf": {
             "properties": {
                 "baseURL": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "BaseURL is the base URL of the Jamf Pro server (e.g. `https://example.jamfcloud.com`). Required."
                 },
                 "clientID": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ClientID is the client ID of the Jamf Pro API client. Required."
                 },
                 "clientSecret": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.Jamf.ClientSecret",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ClientSecret is the client secret of the Jamf Pro API client. Required."
                 },
                 "filter": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Filter is a Jamf Pro RSQL filter expression that restricts the computers that are collected."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Jamf"
+            "title": "Jamf",
+            "description": "Jamf sets the Jamf Pro specific options"
         },
         "octelium.api.main.enterprise.v1.DeviceManager.Spec.Jamf.ClientSecret": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the client secret"
                 }
             },
             "additionalProperties": false,
@@ -635,7 +685,8 @@
                     ]
                 }
             ],
-            "title": "Client Secret"
+            "title": "Client Secret",
+            "description": "ClientSecret is the client secret of the Jamf Pro API client"
         },
         "octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking": {
             "properties": {
@@ -647,7 +698,8 @@
                         "IDENTITY_AND_PROBE"
                     ],
                     "type": "string",
-                    "title": "Strategy"
+                    "title": "Strategy",
+                    "description": "Strategy is how the candidate inventory entries of a Device are discovered."
                 },
                 "approvalMode": {
                     "enum": [
@@ -657,45 +709,55 @@
                         "MANUAL"
                     ],
                     "type": "string",
-                    "title": "Approval Mode"
+                    "title": "Approval Mode",
+                    "description": "ApprovalMode is how a discovered candidate binding between a Device and an inventory entry is approved."
                 },
                 "requireAgreement": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "RequireAgreement only accepts a candidate binding when both the probe and the identity sources agree on the same inventory entry."
                 },
                 "priority": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "Priority is used to break the ties when more than one DeviceManager matches the same Device. The DeviceManager with the highest Priority wins. A tie between the DeviceManagers of an equal Priority is surfaced as ambiguous instead of being arbitrarily resolved."
                 },
                 "verification": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Verification",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Verification sets the re-verification-related configuration."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Linking"
+            "title": "Linking",
+            "description": "Linking sets the options of how the Cluster's Devices are discovered in and bound to the provider's device inventory"
         },
         "octelium.api.main.enterprise.v1.DeviceManager.Spec.Linking.Verification": {
             "properties": {
                 "interval": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Interval is the interval at which the bound Devices are re-verified."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Verification"
+            "title": "Verification",
+            "description": "Verification sets the options of the periodic re-verification of the already bound Devices"
         },
         "octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune": {
             "properties": {
                 "tenantID": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "TenantID is the ID of the Entra ID tenant. Required."
                 },
                 "clientID": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ClientID is the client ID of the Entra ID application that is used to access the Microsoft Graph API. Required."
                 },
                 "clientSecret": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune.ClientSecret",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ClientSecret is the client secret of the Entra ID application. Required."
                 },
                 "cloud": {
                     "enum": [
@@ -705,20 +767,24 @@
                         "CHINA"
                     ],
                     "type": "string",
-                    "title": "Cloud"
+                    "title": "Cloud",
+                    "description": "Cloud is the Microsoft cloud environment."
                 },
                 "filter": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Filter is a Microsoft Graph `$filter` expression that restricts the managed devices that are collected."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Microsoft Intune"
+            "title": "Microsoft Intune",
+            "description": "MicrosoftIntune sets the Microsoft Intune specific options"
         },
         "octelium.api.main.enterprise.v1.DeviceManager.Spec.MicrosoftIntune.ClientSecret": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the client secret"
                 }
             },
             "additionalProperties": false,
@@ -745,26 +811,31 @@
                     ]
                 }
             ],
-            "title": "Client Secret"
+            "title": "Client Secret",
+            "description": "ClientSecret is the client secret of the Entra ID application"
         },
         "octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword": {
             "properties": {
                 "baseURL": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "BaseURL overrides the base URL of the 1Password Device Trust API. If unset, the default public API URL is used."
                 },
                 "apiToken": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword.APIToken",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "APIToken is the 1Password Device Trust API token. Required."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "One Password"
+            "title": "One Password",
+            "description": "OnePassword sets the 1Password Device Trust (i.e. Kolide) specific options"
         },
         "octelium.api.main.enterprise.v1.DeviceManager.Spec.OnePassword.APIToken": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the API token"
                 }
             },
             "additionalProperties": false,
@@ -791,57 +862,70 @@
                     ]
                 }
             ],
-            "title": "API Token"
+            "title": "API Token",
+            "description": "APIToken is the 1Password Device Trust API token"
         },
         "octelium.api.main.enterprise.v1.DeviceManager.Spec.Polling": {
             "properties": {
                 "interval": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Interval is the interval at which the provider's inventory is collected. If unset, the Cluster's own default interval is used."
                 },
                 "timeout": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Timeout is the timeout of a single collection."
                 },
                 "staleAfter": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "StaleAfter is the duration after which the last collected inventory snapshot is considered stale and is no longer used to link the Devices or to refresh their posture."
                 },
                 "isDisabled": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "IsDisabled disables the periodic collection."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Polling"
+            "title": "Polling",
+            "description": "Polling sets the options of the periodic collection of the provider's device inventory"
         },
         "octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne": {
             "properties": {
                 "managementURL": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ManagementURL is the URL of the SentinelOne management console (e.g. `https://example.sentinelone.net`). Required."
                 },
                 "apiToken": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne.APIToken",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "APIToken is the SentinelOne API token. Required."
                 },
                 "siteIDs": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "SiteIDs is a comma-separated list of the SentinelOne site IDs whose agents are collected."
                 },
                 "accountIDs": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "AccountIDs is a comma-separated list of the SentinelOne account IDs whose agents are collected."
                 },
                 "agentQuery": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "AgentQuery is a URL-encoded set of additional query parameters that are set in the SentinelOne agents listing requests in order to further restrict the agents that are collected."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Sentinel One"
+            "title": "Sentinel One",
+            "description": "SentinelOne sets the SentinelOne specific options"
         },
         "octelium.api.main.enterprise.v1.DeviceManager.Spec.SentinelOne.APIToken": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the API token"
                 }
             },
             "additionalProperties": false,
@@ -868,7 +952,8 @@
                     ]
                 }
             ],
-            "title": "API Token"
+            "title": "API Token",
+            "description": "APIToken is the SentinelOne API token"
         },
         "octelium.api.main.enterprise.v1.DeviceManager.Status": {
             "properties": {
@@ -885,7 +970,8 @@
                         "IRU"
                     ],
                     "type": "string",
-                    "title": "Type"
+                    "title": "Type",
+                    "description": "Type is the currently set type of the DeviceManager. It is derived by the Cluster from the `type` field of the Spec."
                 },
                 "state": {
                     "enum": [
@@ -896,64 +982,79 @@
                         "DEGRADED"
                     ],
                     "type": "string",
-                    "title": "State"
+                    "title": "State",
+                    "description": "State is the current state of the DeviceManager."
                 },
                 "collection": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Status.Collection",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Collection is the inventory collection-related status."
                 },
                 "linking": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DeviceManager.Status.Linking",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Linking is the Device linking-related status."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Status"
+            "title": "Status",
+            "description": "Status is the current status of the DeviceManager"
         },
         "octelium.api.main.enterprise.v1.DeviceManager.Status.Collection": {
             "properties": {
                 "lastAttemptAt": {
                     "type": "string",
+                    "description": "LastAttemptAt is the date of the last collection attempt.",
                     "format": "date-time"
                 },
                 "lastSuccessAt": {
                     "type": "string",
+                    "description": "LastSuccessAt is the date of the last successful collection.",
                     "format": "date-time"
                 },
                 "managedDevices": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "ManagedDevices is the number of the devices of the last successfully collected inventory snapshot."
                 },
                 "lastError": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "LastError is the error message of the last failed collection."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Collection"
+            "title": "Collection",
+            "description": "Collection is the state of the periodic collection of the provider's device inventory"
         },
         "octelium.api.main.enterprise.v1.DeviceManager.Status.Linking": {
             "properties": {
                 "lastSweepAt": {
                     "type": "string",
+                    "description": "LastSweepAt is the date of the last linking sweep over the Devices.",
                     "format": "date-time"
                 },
                 "linkedDevices": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "LinkedDevices is the number of the Devices that are currently bound to an inventory entry of the DeviceManager."
                 },
                 "waitingApproval": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "WaitingApproval is the number of the Devices whose binding is pending a manual approval."
                 },
                 "ambiguous": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "Ambiguous is the number of the Devices that could not be bound since more than one candidate matched them."
                 },
                 "failedUpdates": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "FailedUpdates is the number of the Devices that could not be updated during the last linking sweep."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Linking"
+            "title": "Linking",
+            "description": "Linking is the state of the linking between the Cluster's Devices and the provider's inventory entries"
         },
         "octelium.api.main.meta.v1.Duration": {
             "properties": {

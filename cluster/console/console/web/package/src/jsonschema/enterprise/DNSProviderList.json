@@ -6,11 +6,11 @@
             "properties": {
                 "apiVersion": {
                     "type": "string",
-                    "description": "APIVersion is the API version of the object."
+                    "description": "APIVersion is the API version (i.e. \"enterprise/v1\")"
                 },
                 "kind": {
                     "type": "string",
-                    "description": "Kind is the resource name (i.e. `SecretList`)."
+                    "description": "Kind is the resource name (i.e. `DNSProviderList`)."
                 },
                 "items": {
                     "items": {
@@ -18,7 +18,7 @@
                     },
                     "additionalProperties": false,
                     "type": "array",
-                    "description": "Items is the list of Secrets."
+                    "description": "Items is the list of DNSProviders."
                 },
                 "listResponseMeta": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ListResponseMeta",
@@ -28,43 +28,46 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "DNS Provider List"
+            "title": "DNS Provider List",
+            "description": "DNSProviderList is the list of DNSProviders returned by the ListDNSProvider method."
         },
         "octelium.api.main.enterprise.v1.DNSProvider": {
             "properties": {
                 "apiVersion": {
                     "type": "string",
-                    "description": "APIVersion is the API version of the object."
+                    "description": "APIVersion is the API version (i.e. \"enterprise/v1\")"
                 },
                 "kind": {
                     "type": "string",
-                    "description": "Kind is the resource name (i.e. `Secret`)."
+                    "description": "Kind is the resource name (i.e. `DNSProvider`)."
                 },
                 "metadata": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Metadata",
                     "additionalProperties": false,
-                    "description": "octelium.api.main.meta.v1.Metadata is the object's metadata."
+                    "description": "Metadata is the object's metadata."
                 },
                 "spec": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DNSProvider.Spec",
                     "additionalProperties": false,
-                    "description": "Spec is the Secret specification."
+                    "description": "Spec is the DNSProvider specification."
                 },
                 "status": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DNSProvider.Status",
                     "additionalProperties": false,
-                    "description": "Status is the current status of the Secret."
+                    "description": "Status is the current status of the DNSProvider."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "DNS Provider"
+            "title": "DNS Provider",
+            "description": "DNSProvider represents the DNS provider that hosts the Cluster's domain. It is used by the Cluster to automatically manage the public DNS entries of the Cluster domain as well as of the Namespaces that enable the BeyondCorp mode. It is also used by the CertificateIssuer to solve the ACME DNS01 challenges."
         },
         "octelium.api.main.enterprise.v1.DNSProvider.Spec": {
             "properties": {
                 "cloudflare": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DNSProvider.Spec.Cloudflare",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Cloudflare is Cloudflare's specific options."
                 },
                 "aws": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DNSProvider.Spec.AWS",
@@ -181,7 +184,8 @@
                     ]
                 }
             ],
-            "title": "Spec"
+            "title": "Spec",
+            "description": "Spec is the DNSProvider specification"
         },
         "octelium.api.main.enterprise.v1.DNSProvider.Spec.AWS": {
             "properties": {
@@ -191,7 +195,8 @@
                 },
                 "secretAccessKey": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DNSProvider.Spec.AWS.SecretAccessKey",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "SecretAccessKey is the `AWS_SECRET_ACCESS_KEY` value for your credentials."
                 },
                 "region": {
                     "type": "string",
@@ -204,12 +209,14 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "AWS"
+            "title": "AWS",
+            "description": "AWS sets the AWS Route 53 specific options"
         },
         "octelium.api.main.enterprise.v1.DNSProvider.Spec.AWS.SecretAccessKey": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the secret access key"
                 }
             },
             "additionalProperties": false,
@@ -241,20 +248,25 @@
         "octelium.api.main.enterprise.v1.DNSProvider.Spec.Azure": {
             "properties": {
                 "clientID": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ClientID is the client ID of the Entra ID application that is used to manage the DNS entries."
                 },
                 "clientSecret": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DNSProvider.Spec.Azure.ClientSecret",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ClientSecret is the client secret of the Entra ID application."
                 },
                 "subscriptionID": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "SubscriptionID is the ID of the Azure subscription that owns the DNS zone."
                 },
                 "tenantID": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "TenantID is the ID of the Entra ID tenant that owns the application."
                 },
                 "resourceGroupName": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ResourceGroupName is the name of the Azure resource group that contains the DNS zone."
                 },
                 "cloud": {
                     "type": "string",
@@ -263,12 +275,14 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Azure"
+            "title": "Azure",
+            "description": "Azure sets the Azure DNS specific options"
         },
         "octelium.api.main.enterprise.v1.DNSProvider.Spec.Azure.ClientSecret": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the client secret"
                 }
             },
             "additionalProperties": false,
@@ -295,7 +309,8 @@
                     ]
                 }
             ],
-            "title": "Client Secret"
+            "title": "Client Secret",
+            "description": "ClientSecret is the client secret of the Entra ID application"
         },
         "octelium.api.main.enterprise.v1.DNSProvider.Spec.Cloudflare": {
             "properties": {
@@ -305,7 +320,8 @@
                 },
                 "apiToken": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DNSProvider.Spec.Cloudflare.APIToken",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "APIToken is the Cloudflare's API token."
                 },
                 "proxied": {
                     "type": "boolean",
@@ -314,12 +330,14 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Cloudflare"
+            "title": "Cloudflare",
+            "description": "Cloudflare sets the Cloudflare specific options"
         },
         "octelium.api.main.enterprise.v1.DNSProvider.Spec.Cloudflare.APIToken": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the API token"
                 }
             },
             "additionalProperties": false,
@@ -353,17 +371,20 @@
             "properties": {
                 "apiToken": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DNSProvider.Spec.DigitalOcean.APIToken",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "APIToken is the DigitalOcean's API token."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Digital Ocean"
+            "title": "Digital Ocean",
+            "description": "DigitalOcean sets the DigitalOcean specific options"
         },
         "octelium.api.main.enterprise.v1.DNSProvider.Spec.DigitalOcean.APIToken": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the API token"
                 }
             },
             "additionalProperties": false,
@@ -390,7 +411,8 @@
                     ]
                 }
             ],
-            "title": "API Token"
+            "title": "API Token",
+            "description": "APIToken is the DigitalOcean's API token"
         },
         "octelium.api.main.enterprise.v1.DNSProvider.Spec.Google": {
             "properties": {
@@ -400,17 +422,20 @@
                 },
                 "serviceAccount": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DNSProvider.Spec.Google.ServiceAccount",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ServiceAccount is the credentials of the GCP service account that is used to manage the DNS entries."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Google"
+            "title": "Google",
+            "description": "Google sets the Google Cloud DNS specific options"
         },
         "octelium.api.main.enterprise.v1.DNSProvider.Spec.Google.ServiceAccount": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the service account key"
                 }
             },
             "additionalProperties": false,
@@ -437,23 +462,27 @@
                     ]
                 }
             ],
-            "title": "Service Account"
+            "title": "Service Account",
+            "description": "ServiceAccount is the JSON key of the GCP service account"
         },
         "octelium.api.main.enterprise.v1.DNSProvider.Spec.Linode": {
             "properties": {
                 "apiToken": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DNSProvider.Spec.Linode.APIToken",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "APIToken is the Linode's API token."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Linode"
+            "title": "Linode",
+            "description": "Linode sets the Linode specific options"
         },
         "octelium.api.main.enterprise.v1.DNSProvider.Spec.Linode.APIToken": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the API token"
                 }
             },
             "additionalProperties": false,
@@ -480,7 +509,8 @@
                     ]
                 }
             ],
-            "title": "API Token"
+            "title": "API Token",
+            "description": "APIToken is the Linode's API token"
         },
         "octelium.api.main.enterprise.v1.DNSProvider.Spec.OVH": {
             "properties": {
@@ -489,24 +519,29 @@
                     "description": "Endpoint is the API endpoint (e.g. `ovh-eu`)"
                 },
                 "applicationKey": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ApplicationKey is the OVH application key."
                 },
                 "applicationSecret": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.DNSProvider.Spec.OVH.ApplicationSecret",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ApplicationSecret is the OVH application secret."
                 },
                 "consumerKey": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "ConsumerKey is the OVH consumer key that authorizes the application to manage the DNS entries."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "OVH"
+            "title": "OVH",
+            "description": "OVH sets the OVH specific options"
         },
         "octelium.api.main.enterprise.v1.DNSProvider.Spec.OVH.ApplicationSecret": {
             "properties": {
                 "fromSecret": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the application secret"
                 }
             },
             "additionalProperties": false,
@@ -533,12 +568,14 @@
                     ]
                 }
             ],
-            "title": "Application Secret"
+            "title": "Application Secret",
+            "description": "ApplicationSecret is the OVH application secret"
         },
         "octelium.api.main.enterprise.v1.DNSProvider.Status": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Status"
+            "title": "Status",
+            "description": "Status is the current status of the DNSProvider"
         },
         "octelium.api.main.meta.v1.ListResponseMeta": {
             "properties": {
