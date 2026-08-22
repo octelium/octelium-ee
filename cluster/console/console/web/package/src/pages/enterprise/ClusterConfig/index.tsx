@@ -63,7 +63,7 @@ const Edit = ({
     <div className="w-full space-y-5 py-2">
       <EditItem
         title="Scaler"
-        description="Set replica counts for enterprise cluster components"
+        description="Configure the number of replicas for enterprise cluster components."
         obj={req.spec?.scaler}
         onUnset={() => update((next) => (next.spec!.scaler = undefined))}
         onSet={() =>
@@ -87,7 +87,7 @@ const Edit = ({
 
       <EditItem
         title="Collector"
-        description="Configure telemetry pipelines and their exporters"
+        description="Define which telemetry signals are routed to the configured Collector exporters."
         obj={req.spec?.collector}
         onUnset={() => update((next) => (next.spec!.collector = undefined))}
         onSet={() => update((next) => { next.spec!.collector = EnterpriseP.ClusterConfig_Spec_Collector.create(); })}
@@ -108,15 +108,15 @@ const Edit = ({
                     <Button type="button" size="compact-xs" variant="subtle" color="red" leftSection={<Trash2 size={13} />} onClick={() => { pipelineIDs.current.splice(index, 1); update((next) => { next.spec!.collector!.pipelines.splice(index, 1); }); }}>Remove</Button>
                   </div>
                   <div className="grid items-start gap-4 lg:grid-cols-3">
-                    <TextInput required label="Name" description="A unique pipeline name" placeholder="application-logs" value={pipeline.name} onChange={(event) => update((next) => { next.spec!.collector!.pipelines[index].name = event.currentTarget.value; })} />
+                    <TextInput required label="Name" description="Unique name for this Collector pipeline." placeholder="application-logs" value={pipeline.name} onChange={(event) => update((next) => { next.spec!.collector!.pipelines[index].name = event.currentTarget.value; })} />
                     <div>
                       <div className="mb-1 text-sm font-semibold text-slate-700">Signal type <span className="text-red-500">*</span></div>
-                      <div className="mb-2 text-xs text-slate-500">Choose the telemetry signal handled by this pipeline</div>
+                      <div className="mb-2 text-xs text-slate-500">Telemetry signal routed by this pipeline.</div>
                       <SegmentedControl fullWidth value={pipelineTypes[pipeline.type]} data={[{ label: "Logs", value: "LOGS" }, { label: "Metrics", value: "METRICS" }]} onChange={(value) => update((next) => { next.spec!.collector!.pipelines[index].type = pipelineTypes[value as "LOGS" | "METRICS"]; })} />
                     </div>
-                    <SelectResourceMultiple api="enterprise" kind="CollectorExporter" label="Collector exporters" description="Destinations that receive this pipeline" defaultValue={pipeline.exporters} clearable onChange={(value) => update((next) => { next.spec!.collector!.pipelines[index].exporters = value?.map((resource) => resource.metadata!.name) ?? []; })} />
+                      <SelectResourceMultiple api="enterprise" kind="CollectorExporter" label="Collector exporters" description="CollectorExporter resources that receive this pipeline’s signal." defaultValue={pipeline.exporters} clearable onChange={(value) => update((next) => { next.spec!.collector!.pipelines[index].exporters = value?.map((resource) => resource.metadata!.name) ?? []; })} />
                   </div>
-                  <Switch className="mt-4" label="Disable this pipeline" checked={pipeline.isDisabled} onChange={(event) => update((next) => { next.spec!.collector!.pipelines[index].isDisabled = event.currentTarget.checked; })} />
+                  <Switch className="mt-4" label="Disable this pipeline" description="Prevent this pipeline from processing telemetry while preserving its configuration." checked={pipeline.isDisabled} onChange={(event) => update((next) => { next.spec!.collector!.pipelines[index].isDisabled = event.currentTarget.checked; })} />
                 </div>
               ))}
             </div>
@@ -126,7 +126,7 @@ const Edit = ({
 
       <EditItem
         title="Certificate"
-        description="Choose the default certificate lifecycle mode"
+        description="Choose how certificates are obtained when a resource does not specify a mode."
         obj={req.spec?.certificate}
         onUnset={() => update((next) => (next.spec!.certificate = undefined))}
         onSet={() => update((next) => { next.spec!.certificate = EnterpriseP.ClusterConfig_Spec_Certificate.create({ defaultMode: EnterpriseP.Certificate_Spec_Mode.MANAGED }); })}
@@ -134,7 +134,7 @@ const Edit = ({
         {req.spec?.certificate && (
           <div className="max-w-md">
             <div className="mb-1 text-sm font-semibold text-slate-700">Default mode</div>
-            <div className="mb-2 text-xs text-slate-500">Apply managed or manual handling to certificates by default</div>
+            <div className="mb-2 text-xs text-slate-500">Default certificate acquisition mode for the cluster.</div>
             <SegmentedControl fullWidth value={EnterpriseP.Certificate_Spec_Mode[req.spec.certificate.defaultMode] || "MANAGED"} data={[{ label: "Managed", value: "MANAGED" }, { label: "Manual", value: "MANUAL" }]} onChange={(value) => update((next) => { next.spec!.certificate!.defaultMode = EnterpriseP.Certificate_Spec_Mode[value as "MANAGED" | "MANUAL"]; })} />
           </div>
         )}

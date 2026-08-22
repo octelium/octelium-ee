@@ -115,6 +115,7 @@ const Edit = (props: {
         </div>
         <Switch
           label="Disabled"
+          description="Disable synchronization for this provider."
           checked={req.spec.isDisabled}
           onChange={(event) => {
             req.spec!.isDisabled = event.currentTarget.checked;
@@ -223,6 +224,7 @@ const Edit = (props: {
               <DurationPicker
                 value={type.googleWorkspace.polling.interval}
                 title="Polling interval"
+                description="How often the Google Workspace directory is synchronized."
                 onChange={(value) => {
                   type.googleWorkspace.polling!.interval = value;
                   updateReq();
@@ -255,6 +257,7 @@ const Edit = (props: {
             <TextInput
               required
               label="Realm"
+              description="Keycloak realm whose users and groups are synchronized."
               placeholder="master"
               value={type.keycloak.realm}
               onChange={(event) => {
@@ -265,6 +268,7 @@ const Edit = (props: {
             <TextInput
               required
               label="Client ID"
+              description="Keycloak client used to access the Admin API."
               placeholder="octelium-dirsync"
               value={type.keycloak.clientID}
               onChange={(event) => {
@@ -303,6 +307,7 @@ const Edit = (props: {
           )}
           <Switch
             label="Skip TLS verification"
+            description="Skip Keycloak certificate-chain and hostname verification. Avoid this in production."
             checked={type.keycloak.insecureSkipVerify}
             onChange={(event) => {
               type.keycloak.insecureSkipVerify = event.currentTarget.checked;
@@ -328,6 +333,7 @@ const Edit = (props: {
               <DurationPicker
                 value={type.keycloak.polling.interval}
                 title="Polling interval"
+                description="How often the Keycloak directory is synchronized."
                 onChange={(value) => {
                   type.keycloak.polling!.interval = value;
                   updateReq();

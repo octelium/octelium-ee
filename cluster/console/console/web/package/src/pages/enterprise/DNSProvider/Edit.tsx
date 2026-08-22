@@ -195,7 +195,7 @@ const Edit = (props: {
 
         {type.oneofKind === "aws" && (
           <div className="grid gap-4 md:grid-cols-2">
-            <TextInput required label="Access Key ID" placeholder="AKIA…" value={type.aws.accessKeyID} onChange={(event) => { type.aws.accessKeyID = event.currentTarget.value; updateReq(); }} />
+            <TextInput required label="Access Key ID" description="AWS access key ID used for Route 53." placeholder="AKIA…" value={type.aws.accessKeyID} onChange={(event) => { type.aws.accessKeyID = event.currentTarget.value; updateReq(); }} />
             {secretPicker("Secret Access Key", "Secret containing the AWS secret access key.", secretName(type.aws.secretAccessKey), (name) => { type.aws.secretAccessKey = fromSecret(name); updateReq(); })}
             <TextInput required label="Region" description="AWS region containing the Route 53 configuration." placeholder="us-east-1" value={type.aws.region} onChange={(event) => { type.aws.region = event.currentTarget.value; updateReq(); }} />
             <TextInput label="Assume Role ARN" description="Optional IAM role assumed for DNS management." placeholder="arn:aws:iam::123456789012:role/dns-manager" value={type.aws.assumeRoleARN} error={type.aws.assumeRoleARN && !/^arn:aws[a-z-]*:iam::\d{12}:role\/.+/.test(type.aws.assumeRoleARN) ? "Enter a valid IAM role ARN" : undefined} onChange={(event) => { type.aws.assumeRoleARN = event.currentTarget.value; updateReq(); }} />
@@ -214,11 +214,11 @@ const Edit = (props: {
 
         {type.oneofKind === "azure" && (
           <div className="grid gap-4 md:grid-cols-2">
-            <TextInput required label="Client ID" value={type.azure.clientID} onChange={(event) => { type.azure.clientID = event.currentTarget.value; updateReq(); }} />
+            <TextInput required label="Client ID" description="Entra ID application used to manage Azure DNS entries." value={type.azure.clientID} onChange={(event) => { type.azure.clientID = event.currentTarget.value; updateReq(); }} />
             {secretPicker("Client Secret", "Secret containing the Azure application client secret.", secretName(type.azure.clientSecret), (name) => { type.azure.clientSecret = fromSecret(name); updateReq(); })}
-            <TextInput required label="Tenant ID" value={type.azure.tenantID} onChange={(event) => { type.azure.tenantID = event.currentTarget.value; updateReq(); }} />
-            <TextInput required label="Subscription ID" value={type.azure.subscriptionID} onChange={(event) => { type.azure.subscriptionID = event.currentTarget.value; updateReq(); }} />
-            <TextInput required label="Resource group" value={type.azure.resourceGroupName} onChange={(event) => { type.azure.resourceGroupName = event.currentTarget.value; updateReq(); }} />
+            <TextInput required label="Tenant ID" description="Entra ID tenant that owns the application." value={type.azure.tenantID} onChange={(event) => { type.azure.tenantID = event.currentTarget.value; updateReq(); }} />
+            <TextInput required label="Subscription ID" description="Azure subscription that owns the DNS zone." value={type.azure.subscriptionID} onChange={(event) => { type.azure.subscriptionID = event.currentTarget.value; updateReq(); }} />
+            <TextInput required label="Resource group" description="Azure resource group containing the DNS zone." value={type.azure.resourceGroupName} onChange={(event) => { type.azure.resourceGroupName = event.currentTarget.value; updateReq(); }} />
             <Select label="Azure cloud" description="Azure cloud environment. Empty values use Public Azure." value={type.azure.cloud || "public"} data={[{ label: "Public", value: "public" }, { label: "China", value: "china" }, { label: "US Government", value: "usgovernment" }, { label: "German", value: "german" }]} onChange={(value) => { type.azure.cloud = value === "public" ? "" : value ?? ""; updateReq(); }} />
           </div>
         )}
@@ -229,8 +229,8 @@ const Edit = (props: {
         {type.oneofKind === "ovh" && (
           <div className="grid gap-4 md:grid-cols-2">
             <TextInput required label="Endpoint" description="OVH API endpoint, such as ovh-eu." placeholder="ovh-eu" value={type.ovh.endpoint} onChange={(event) => { type.ovh.endpoint = event.currentTarget.value; updateReq(); }} />
-            <TextInput required label="Application key" value={type.ovh.applicationKey} onChange={(event) => { type.ovh.applicationKey = event.currentTarget.value; updateReq(); }} />
-            <TextInput required label="Consumer key" value={type.ovh.consumerKey} onChange={(event) => { type.ovh.consumerKey = event.currentTarget.value; updateReq(); }} />
+            <TextInput required label="Application key" description="OVH application key authorized to manage DNS entries." value={type.ovh.applicationKey} onChange={(event) => { type.ovh.applicationKey = event.currentTarget.value; updateReq(); }} />
+            <TextInput required label="Consumer key" description="OVH consumer key authorizing the application." value={type.ovh.consumerKey} onChange={(event) => { type.ovh.consumerKey = event.currentTarget.value; updateReq(); }} />
             {secretPicker("Application Secret", "Secret containing the OVH application secret.", secretName(type.ovh.applicationSecret), (name) => { type.ovh.applicationSecret = fromSecret(name); updateReq(); })}
           </div>
         )}

@@ -37,8 +37,9 @@ const Edit = (props: {
           Certificate management mode
         </div>
         <div className="mt-0.5 text-[0.67rem] font-semibold text-slate-400">
-          Managed certificates are issued by the cluster. Manual certificates
-          are supplied and rotated by an administrator.
+          Managed certificates are issued and renewed through the configured
+          CertificateIssuer. Manual certificates are supplied and rotated by
+          an administrator.
         </div>
       </div>
       <SegmentedControl

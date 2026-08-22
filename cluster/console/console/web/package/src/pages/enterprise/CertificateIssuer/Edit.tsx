@@ -70,7 +70,8 @@ const Edit = (props: {
           </h3>
           <p className="mt-0.5 text-[0.68rem] font-semibold leading-relaxed text-slate-400">
             Configure the ACME account used to issue and renew managed cluster
-            certificates.
+            certificates. The directory URL and contact email are sent to the
+            selected ACME provider.
           </p>
         </div>
       </div>
@@ -114,7 +115,8 @@ const Edit = (props: {
               DNS-01
             </span>
             <span className="text-[0.68rem] font-semibold text-slate-500">
-              Domain ownership is verified using DNS challenge records.
+              Domain ownership is verified using DNS challenge records managed
+              by the configured DNS provider.
             </span>
           </div>
         </div>

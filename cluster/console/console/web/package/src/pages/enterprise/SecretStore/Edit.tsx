@@ -166,26 +166,26 @@ const Edit = (props: {
         {type.oneofKind === "awsKeyManagementService" && (
           <div className="grid gap-4 md:grid-cols-2">
             <TextInput required label="Key ID" description="KMS key ID, ARN, or alias." placeholder="alias/octelium-secrets" value={type.awsKeyManagementService.keyID} onChange={(event) => { type.awsKeyManagementService.keyID = event.currentTarget.value; updateReq(); }} />
-            <TextInput required label="Region" placeholder="us-east-1" value={type.awsKeyManagementService.region} onChange={(event) => { type.awsKeyManagementService.region = event.currentTarget.value; updateReq(); }} />
+            <TextInput required label="Region" description="AWS region containing the KMS key." placeholder="us-east-1" value={type.awsKeyManagementService.region} onChange={(event) => { type.awsKeyManagementService.region = event.currentTarget.value; updateReq(); }} />
             <TextInput required label="Role ARN" description="IAM role assumed to access the KMS key." placeholder="arn:aws:iam::123456789012:role/octelium-kms" value={type.awsKeyManagementService.roleARN} error={type.awsKeyManagementService.roleARN && !/^arn:aws[a-z-]*:iam::\d{12}:role\/.+/.test(type.awsKeyManagementService.roleARN) ? "Enter a valid IAM role ARN" : undefined} className="md:col-span-2" onChange={(event) => { type.awsKeyManagementService.roleARN = event.currentTarget.value; updateReq(); }} />
           </div>
         )}
 
         {type.oneofKind === "azureKeyVault" && (
           <div className="grid gap-4 md:grid-cols-2">
-            <TextInput required label="Client ID" placeholder="00000000-0000-0000-0000-000000000000" value={type.azureKeyVault.clientID} onChange={(event) => { type.azureKeyVault.clientID = event.currentTarget.value; updateReq(); }} />
-            <TextInput required label="Tenant ID" placeholder="00000000-0000-0000-0000-000000000000" value={type.azureKeyVault.tenantID} onChange={(event) => { type.azureKeyVault.tenantID = event.currentTarget.value; updateReq(); }} />
-            <TextInput required type="url" label="Vault URL" placeholder="https://example.vault.azure.net" value={type.azureKeyVault.vaultURL} error={isValidURL(type.azureKeyVault.vaultURL) ? undefined : "Enter a valid HTTP or HTTPS URL"} onChange={(event) => { type.azureKeyVault.vaultURL = event.currentTarget.value; updateReq(); }} />
+            <TextInput required label="Client ID" description="Entra ID application used to access the vault." placeholder="00000000-0000-0000-0000-000000000000" value={type.azureKeyVault.clientID} onChange={(event) => { type.azureKeyVault.clientID = event.currentTarget.value; updateReq(); }} />
+            <TextInput required label="Tenant ID" description="Entra ID tenant that owns the application." placeholder="00000000-0000-0000-0000-000000000000" value={type.azureKeyVault.tenantID} onChange={(event) => { type.azureKeyVault.tenantID = event.currentTarget.value; updateReq(); }} />
+            <TextInput required type="url" label="Vault URL" description="URL of the Azure Key Vault." placeholder="https://example.vault.azure.net" value={type.azureKeyVault.vaultURL} error={isValidURL(type.azureKeyVault.vaultURL) ? undefined : "Enter a valid HTTP or HTTPS URL"} onChange={(event) => { type.azureKeyVault.vaultURL = event.currentTarget.value; updateReq(); }} />
             <TextInput required label="Key" description="Azure Key Vault key name." placeholder="octelium-secrets" value={type.azureKeyVault.key} onChange={(event) => { type.azureKeyVault.key = event.currentTarget.value; updateReq(); }} />
           </div>
         )}
 
         {type.oneofKind === "googleCloudKeyManagementService" && (
           <div className="grid gap-4 md:grid-cols-2">
-            <TextInput required label="Project" placeholder="production-infrastructure" value={type.googleCloudKeyManagementService.project} onChange={(event) => { type.googleCloudKeyManagementService.project = event.currentTarget.value; updateReq(); }} />
-            <TextInput required label="Location" placeholder="global" value={type.googleCloudKeyManagementService.location} onChange={(event) => { type.googleCloudKeyManagementService.location = event.currentTarget.value; updateReq(); }} />
-            <TextInput required label="Key ring" placeholder="octelium" value={type.googleCloudKeyManagementService.keyRing} onChange={(event) => { type.googleCloudKeyManagementService.keyRing = event.currentTarget.value; updateReq(); }} />
-            <TextInput required label="Key" placeholder="cluster-secrets" value={type.googleCloudKeyManagementService.key} onChange={(event) => { type.googleCloudKeyManagementService.key = event.currentTarget.value; updateReq(); }} />
+            <TextInput required label="Project" description="Google Cloud project containing the KMS key ring." placeholder="production-infrastructure" value={type.googleCloudKeyManagementService.project} onChange={(event) => { type.googleCloudKeyManagementService.project = event.currentTarget.value; updateReq(); }} />
+            <TextInput required label="Location" description="Google Cloud location of the key ring." placeholder="global" value={type.googleCloudKeyManagementService.location} onChange={(event) => { type.googleCloudKeyManagementService.location = event.currentTarget.value; updateReq(); }} />
+            <TextInput required label="Key ring" description="Cloud KMS key ring containing the encryption key." placeholder="octelium" value={type.googleCloudKeyManagementService.keyRing} onChange={(event) => { type.googleCloudKeyManagementService.keyRing = event.currentTarget.value; updateReq(); }} />
+            <TextInput required label="Key" description="Cloud KMS key used to wrap data-encryption keys." placeholder="cluster-secrets" value={type.googleCloudKeyManagementService.key} onChange={(event) => { type.googleCloudKeyManagementService.key = event.currentTarget.value; updateReq(); }} />
           </div>
         )}
         </section>
