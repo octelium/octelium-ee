@@ -45,19 +45,26 @@ func TestMetricAttributeGroupCapability(t *testing.T) {
 
 func TestMetricCatalogMatchesStoredMetricKinds(t *testing.T) {
 	s := &srvMetric{}
-	response, err := s.ListMetricCatalog(context.Background(), nil)
-	assert.NoError(t, err)
-	assert.Len(t, response.Items, 2)
-	for _, item := range response.Items {
-		assert.Equal(t, vmetricsv1.MetricDescriptor_GAUGE, item.Metric.Kind)
-	}
 
-	response, err = s.ListMetricCatalog(context.Background(), &vmetricsv1.ListMetricCatalogRequest{
+	response, err := s.ListMetricCatalog(context.Background(), &vmetricsv1.ListMetricCatalogRequest{
 		Component: &vmetricsv1.ComponentSelector{Type: "rscserver"},
 	})
 	assert.NoError(t, err)
-	assert.Len(t, response.Items, 5)
+	assert.Len(t, response.Items, 7)
 	assert.Equal(t, "us", response.Items[4].Unit)
+	assert.Equal(t, "resource_operations_rate", response.Items[5].Id)
+	assert.Equal(t, []string{"op"}, response.Items[5].DefaultGroupBy)
+	assert.Equal(t, "resource_operations_error_rate", response.Items[6].Id)
+	assert.Equal(t, []string{"op"}, response.Items[6].DefaultGroupBy)
+
+	response, err = s.ListMetricCatalog(context.Background(), &vmetricsv1.ListMetricCatalogRequest{
+		Component: &vmetricsv1.ComponentSelector{Type: "vigil"},
+	})
+	assert.NoError(t, err)
+	assert.Len(t, response.Items, 11)
+	assert.Equal(t, "session.active", response.Items[5].Metric.GetName())
+	assert.Equal(t, "conn.rejected", response.Items[7].Metric.GetName())
+	assert.Equal(t, "req.ttfb", response.Items[10].Metric.GetName())
 
 	response, err = s.ListMetricCatalog(context.Background(), &vmetricsv1.ListMetricCatalogRequest{
 		Component: &vmetricsv1.ComponentSelector{Type: "octovigil"},
@@ -66,6 +73,51 @@ func TestMetricCatalogMatchesStoredMetricKinds(t *testing.T) {
 	assert.Len(t, response.Items, 5)
 	assert.Equal(t, "authorization.req.total", response.Items[2].Metric.GetName())
 	assert.Equal(t, "us", response.Items[4].Unit)
+}
+
+func TestMetricCatalogWithoutAComponentSelector(t *testing.T) {
+	s := &srvMetric{}
+
+	response, err := s.ListMetricCatalog(context.Background(), nil)
+	assert.NoError(t, err)
+
+	empty, err := s.ListMetricCatalog(context.Background(), &vmetricsv1.ListMetricCatalogRequest{
+		Component: &vmetricsv1.ComponentSelector{},
+	})
+	assert.NoError(t, err)
+	assert.Len(t, response.Items, len(empty.Items))
+
+	ids := map[string]struct{}{}
+	for _, item := range response.Items {
+		_, ok := ids[item.Id]
+		assert.False(t, ok, item.Id)
+		ids[item.Id] = struct{}{}
+	}
+
+	for _, id := range []string{
+		"process_goroutines",
+		"requests_rate",
+		"resource_operations_rate",
+		"active_sessions",
+		"authorization_requests_rate",
+	} {
+		_, ok := ids[id]
+		assert.True(t, ok, id)
+	}
+}
+
+func TestMetricCatalogGroupByKeysAreEmitted(t *testing.T) {
+	s := &srvMetric{}
+
+	response, err := s.ListMetricCatalog(context.Background(), nil)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, response.Items)
+
+	for _, item := range response.Items {
+		for _, key := range item.DefaultGroupBy {
+			assert.NotEqual(t, "octelium.component.name", key, item.Id)
+		}
+	}
 }
 
 func TestMetricAttributeFilterCapabilityAllowsFutureDimensions(t *testing.T) {

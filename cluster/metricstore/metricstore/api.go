@@ -489,8 +489,7 @@ func (s *srvMetric) ListMetricCatalog(ctx context.Context,
 		},
 	)
 
-	if req != nil && req.Component != nil &&
-		catalogMatchesComponent(req, "rscserver", "vigil") {
+	if catalogMatchesComponent(req, "rscserver", "vigil") {
 		items = append(items,
 			&vmetricsv1.MetricCatalogItem{
 				Id:          "requests_rate",
@@ -550,8 +549,172 @@ func (s *srvMetric) ListMetricCatalog(ctx context.Context,
 		)
 	}
 
-	if req != nil && req.Component != nil &&
-		catalogMatchesComponent(req, "octovigil") {
+	if catalogMatchesComponent(req, "rscserver") {
+		items = append(items,
+			&vmetricsv1.MetricCatalogItem{
+				Id:          "resource_operations_rate",
+				DisplayName: "Resource operations rate",
+				Description: "Per-second resource operation rate by operation",
+				Metric: &vmetricsv1.MetricSelector{
+					Selector: &vmetricsv1.MetricSelector_Name{Name: "req.total"},
+					Kind:     vmetricsv1.MetricDescriptor_COUNTER,
+				},
+				DefaultOperation: &vmetricsv1.QueryOperation{
+					Type: &vmetricsv1.QueryOperation_Counter{Counter: &vmetricsv1.CounterOperation{
+						Function: vmetricsv1.CounterOperation_RATE,
+					}},
+				},
+				DefaultGroupBy:           []string{"op"},
+				Unit:                     "requests/s",
+				DefaultSeriesAggregation: vmetricsv1.QueryMetricsRequest_SUM,
+				DefaultStep:              durationPB(time.Minute),
+			},
+			&vmetricsv1.MetricCatalogItem{
+				Id:          "resource_operations_error_rate",
+				DisplayName: "Resource operations error rate",
+				Description: "Per-second failed resource operation rate by operation",
+				Metric: &vmetricsv1.MetricSelector{
+					Selector: &vmetricsv1.MetricSelector_Name{Name: "req.total"},
+					Kind:     vmetricsv1.MetricDescriptor_COUNTER,
+				},
+				DefaultOperation: &vmetricsv1.QueryOperation{
+					Type: &vmetricsv1.QueryOperation_Counter{Counter: &vmetricsv1.CounterOperation{
+						Function: vmetricsv1.CounterOperation_RATE,
+					}},
+				},
+				DefaultGroupBy: []string{"op"},
+				DefaultFilters: []*vmetricsv1.AttributeFilter{
+					{
+						Key:      "error",
+						Operator: vmetricsv1.AttributeFilter_EQ,
+						Value: &vmetricsv1.AttributeValue{
+							Value: &vmetricsv1.AttributeValue_BoolValue{BoolValue: true},
+						},
+					},
+				},
+				Unit:                     "requests/s",
+				DefaultSeriesAggregation: vmetricsv1.QueryMetricsRequest_SUM,
+				DefaultStep:              durationPB(time.Minute),
+			},
+		)
+	}
+
+	if catalogMatchesComponent(req, "vigil") {
+		items = append(items,
+			&vmetricsv1.MetricCatalogItem{
+				Id:          "active_sessions",
+				DisplayName: "Active sessions",
+				Description: "Current active sessions by Service mode",
+				Metric: &vmetricsv1.MetricSelector{
+					Selector: &vmetricsv1.MetricSelector_Name{Name: "session.active"},
+					Kind:     vmetricsv1.MetricDescriptor_UP_DOWN_COUNTER,
+				},
+				DefaultOperation: &vmetricsv1.QueryOperation{
+					Type: &vmetricsv1.QueryOperation_Gauge{Gauge: &vmetricsv1.GaugeOperation{
+						Function: vmetricsv1.GaugeOperation_LAST,
+					}},
+				},
+				DefaultGroupBy:           []string{"octelium.vigil.svc.mode"},
+				Unit:                     "sessions",
+				DefaultSeriesAggregation: vmetricsv1.QueryMetricsRequest_SUM,
+				DefaultStep:              durationPB(time.Minute),
+			},
+			&vmetricsv1.MetricCatalogItem{
+				Id:          "session_p95_duration",
+				DisplayName: "Session p95 duration",
+				Description: "p95 session duration by Service mode",
+				Metric: &vmetricsv1.MetricSelector{
+					Selector: &vmetricsv1.MetricSelector_Name{Name: "session.duration"},
+					Kind:     vmetricsv1.MetricDescriptor_HISTOGRAM,
+				},
+				DefaultOperation: &vmetricsv1.QueryOperation{
+					Type: &vmetricsv1.QueryOperation_Histogram{Histogram: &vmetricsv1.HistogramOperation{
+						Function:  vmetricsv1.HistogramOperation_QUANTILE,
+						Quantiles: []float64{0.95},
+					}},
+				},
+				DefaultGroupBy:           []string{"octelium.vigil.svc.mode"},
+				Unit:                     "ms",
+				DefaultSeriesAggregation: vmetricsv1.QueryMetricsRequest_MERGE,
+				DefaultStep:              durationPB(time.Minute),
+			},
+			&vmetricsv1.MetricCatalogItem{
+				Id:          "rejected_connections_rate",
+				DisplayName: "Rejected connections rate",
+				Description: "Per-second rate of connections rejected before a session is established",
+				Metric: &vmetricsv1.MetricSelector{
+					Selector: &vmetricsv1.MetricSelector_Name{Name: "conn.rejected"},
+					Kind:     vmetricsv1.MetricDescriptor_COUNTER,
+				},
+				DefaultOperation: &vmetricsv1.QueryOperation{
+					Type: &vmetricsv1.QueryOperation_Counter{Counter: &vmetricsv1.CounterOperation{
+						Function: vmetricsv1.CounterOperation_RATE,
+					}},
+				},
+				DefaultGroupBy:           []string{"octelium.vigil.svc.mode", "stage"},
+				Unit:                     "connections/s",
+				DefaultSeriesAggregation: vmetricsv1.QueryMetricsRequest_SUM,
+				DefaultStep:              durationPB(time.Minute),
+			},
+			&vmetricsv1.MetricCatalogItem{
+				Id:          "bytes_sent_rate",
+				DisplayName: "Bytes sent rate",
+				Description: "Per-second bytes sent downstream by Service mode",
+				Metric: &vmetricsv1.MetricSelector{
+					Selector: &vmetricsv1.MetricSelector_Name{Name: "req.bytes_sent"},
+					Kind:     vmetricsv1.MetricDescriptor_COUNTER,
+				},
+				DefaultOperation: &vmetricsv1.QueryOperation{
+					Type: &vmetricsv1.QueryOperation_Counter{Counter: &vmetricsv1.CounterOperation{
+						Function: vmetricsv1.CounterOperation_RATE,
+					}},
+				},
+				DefaultGroupBy:           []string{"octelium.vigil.svc.mode"},
+				Unit:                     "bytes/s",
+				DefaultSeriesAggregation: vmetricsv1.QueryMetricsRequest_SUM,
+				DefaultStep:              durationPB(time.Minute),
+			},
+			&vmetricsv1.MetricCatalogItem{
+				Id:          "bytes_received_rate",
+				DisplayName: "Bytes received rate",
+				Description: "Per-second bytes received from downstream by Service mode",
+				Metric: &vmetricsv1.MetricSelector{
+					Selector: &vmetricsv1.MetricSelector_Name{Name: "req.bytes_received"},
+					Kind:     vmetricsv1.MetricDescriptor_COUNTER,
+				},
+				DefaultOperation: &vmetricsv1.QueryOperation{
+					Type: &vmetricsv1.QueryOperation_Counter{Counter: &vmetricsv1.CounterOperation{
+						Function: vmetricsv1.CounterOperation_RATE,
+					}},
+				},
+				DefaultGroupBy:           []string{"octelium.vigil.svc.mode"},
+				Unit:                     "bytes/s",
+				DefaultSeriesAggregation: vmetricsv1.QueryMetricsRequest_SUM,
+				DefaultStep:              durationPB(time.Minute),
+			},
+			&vmetricsv1.MetricCatalogItem{
+				Id:          "request_p95_ttfb",
+				DisplayName: "Request p95 TTFB",
+				Description: "p95 time to first response byte",
+				Metric: &vmetricsv1.MetricSelector{
+					Selector: &vmetricsv1.MetricSelector_Name{Name: "req.ttfb"},
+					Kind:     vmetricsv1.MetricDescriptor_HISTOGRAM,
+				},
+				DefaultOperation: &vmetricsv1.QueryOperation{
+					Type: &vmetricsv1.QueryOperation_Histogram{Histogram: &vmetricsv1.HistogramOperation{
+						Function:  vmetricsv1.HistogramOperation_QUANTILE,
+						Quantiles: []float64{0.95},
+					}},
+				},
+				DefaultGroupBy:           []string{"octelium.vigil.svc.mode"},
+				Unit:                     "ms",
+				DefaultSeriesAggregation: vmetricsv1.QueryMetricsRequest_MERGE,
+				DefaultStep:              durationPB(time.Minute),
+			},
+		)
+	}
+
+	if catalogMatchesComponent(req, "octovigil") {
 		items = append(items,
 			&vmetricsv1.MetricCatalogItem{
 				Id:          "authorization_requests_rate",
@@ -566,7 +729,7 @@ func (s *srvMetric) ListMetricCatalog(ctx context.Context,
 						Function: vmetricsv1.CounterOperation_RATE,
 					}},
 				},
-				DefaultGroupBy:           []string{"octelium.component.name"},
+				DefaultGroupBy:           []string{"octelium.component.type", "octelium.component.namespace"},
 				Unit:                     "requests/s",
 				DefaultSeriesAggregation: vmetricsv1.QueryMetricsRequest_SUM,
 				DefaultStep:              durationPB(time.Minute),
@@ -584,7 +747,7 @@ func (s *srvMetric) ListMetricCatalog(ctx context.Context,
 						Function: vmetricsv1.GaugeOperation_LAST,
 					}},
 				},
-				DefaultGroupBy:           []string{"octelium.component.name"},
+				DefaultGroupBy:           []string{"octelium.component.type", "octelium.component.namespace"},
 				Unit:                     "requests",
 				DefaultSeriesAggregation: vmetricsv1.QueryMetricsRequest_SUM,
 				DefaultStep:              durationPB(time.Minute),
@@ -603,7 +766,7 @@ func (s *srvMetric) ListMetricCatalog(ctx context.Context,
 						Quantiles: []float64{0.95},
 					}},
 				},
-				DefaultGroupBy:           []string{"octelium.component.name"},
+				DefaultGroupBy:           []string{"octelium.component.type", "octelium.component.namespace"},
 				Unit:                     "us",
 				DefaultSeriesAggregation: vmetricsv1.QueryMetricsRequest_MERGE,
 				DefaultStep:              durationPB(time.Minute),
