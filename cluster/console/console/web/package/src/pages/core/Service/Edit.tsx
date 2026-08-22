@@ -168,6 +168,7 @@ const ContainerProbe = (props: {
                     <Group grow>
                       <TextInput
                         label="Path"
+                        description="HTTP path requested to check the container's health."
                         placeholder="/healthz"
                         value={httpGet.httpGet.path}
                         onChange={(v) => {
@@ -177,6 +178,7 @@ const ContainerProbe = (props: {
                       />
                       <NumberInput
                         label="Port"
+                        description="Port on which the container health endpoint listens."
                         min={0}
                         max={65535}
                         value={httpGet.httpGet.port}
@@ -200,6 +202,7 @@ const ContainerProbe = (props: {
                   (tcpSocket) => (
                     <NumberInput
                       label="Port"
+                      description="Port checked by the TCP socket probe."
                       min={0}
                       max={65535}
                       value={tcpSocket.tcpSocket.port}
@@ -222,6 +225,7 @@ const ContainerProbe = (props: {
                   (grpc) => (
                     <NumberInput
                       label="Port"
+                      description="Port checked by the gRPC health probe."
                       min={0}
                       max={65535}
                       value={grpc.grpc.port}
@@ -241,6 +245,7 @@ const ContainerProbe = (props: {
           <Group grow>
             <NumberInput
               label="Initial delay (s)"
+              description="Delay before the first health check runs."
               min={0}
               value={probe.initialDelaySeconds}
               onChange={(v) => {
@@ -250,6 +255,7 @@ const ContainerProbe = (props: {
             />
             <NumberInput
               label="Timeout (s)"
+              description="Maximum time allowed for each health check."
               min={0}
               value={probe.timeoutSeconds}
               onChange={(v) => {
@@ -259,6 +265,7 @@ const ContainerProbe = (props: {
             />
             <NumberInput
               label="Period (s)"
+              description="Interval between consecutive health checks."
               min={0}
               value={probe.periodSeconds}
               onChange={(v) => {
@@ -268,6 +275,7 @@ const ContainerProbe = (props: {
             />
             <NumberInput
               label="Success threshold"
+              description="Consecutive successes required to become healthy."
               min={0}
               value={probe.successThreshold}
               onChange={(v) => {
@@ -277,6 +285,7 @@ const ContainerProbe = (props: {
             />
             <NumberInput
               label="Failure threshold"
+              description="Consecutive failures required to become unhealthy."
               min={0}
               value={probe.failureThreshold}
               onChange={(v) => {
@@ -462,6 +471,7 @@ const StringListEditor = (props: {
   values: string[];
   onChange: (values: string[]) => void;
   placeholder?: string;
+  description?: string;
 }) => (
   <ItemMessage
     title={props.title}
@@ -484,6 +494,7 @@ const StringListEditor = (props: {
         <TextInput
           className="flex-1"
           label={`${props.title} ${index + 1}`}
+          description={props.description}
           placeholder={props.placeholder}
           value={value}
           onChange={(event) => {
@@ -515,6 +526,7 @@ const CORSConfigEditor = (props: {
         <Group grow>
           <TextInput
             label="Allow methods"
+            description="Methods sent in the access-control-allow-methods response header."
             placeholder="POST, GET, OPTIONS"
             value={props.cors.allowMethods}
             onChange={(event) => {
@@ -524,6 +536,7 @@ const CORSConfigEditor = (props: {
           />
           <TextInput
             label="Allow headers"
+            description="Request headers permitted by the CORS policy."
             placeholder="X-PINGOTHER, Content-Type"
             value={props.cors.allowHeaders}
             onChange={(event) => {
@@ -544,6 +557,7 @@ const CORSConfigEditor = (props: {
         <Group grow>
           <TextInput
             label="Expose headers"
+            description="Response headers browser clients are allowed to read."
             placeholder="Content-Encoding, Kuma-Revision"
             value={props.cors.exposeHeaders}
             onChange={(event) => {
@@ -553,6 +567,7 @@ const CORSConfigEditor = (props: {
           />
           <TextInput
             label="Max age"
+            description="How long browsers may cache the CORS preflight result."
             placeholder="86400"
             value={props.cors.maxAge}
             onChange={(event) => {
@@ -572,6 +587,7 @@ const CORSConfigEditor = (props: {
         </Group>
         <StringListEditor
           title="Allowed origin patterns"
+          description="Origins allowed by the CORS policy; use an exact origin or * for all origins."
           values={props.cors.allowOriginStringMatch}
           onChange={(values) => {
             props.cors!.allowOriginStringMatch = values;
@@ -695,6 +711,7 @@ const GatewayAuthEditor = (props: {
                 api="core"
                 kind="Secret"
                 label="Bearer token Secret"
+                description="Secret whose value is sent as the upstream bearer token."
                 defaultValue={
                   auth.bearer.type.oneofKind === "fromSecret"
                     ? auth.bearer.type.fromSecret
@@ -712,6 +729,7 @@ const GatewayAuthEditor = (props: {
               <Group grow align="flex-start">
                 <TextInput
                   label="Username"
+                  description="Username sent to the upstream for HTTP Basic authentication."
                   value={auth.basic.username}
                   onChange={(event) => {
                     auth.basic.username = event.target.value;
@@ -723,6 +741,7 @@ const GatewayAuthEditor = (props: {
                     api="core"
                     kind="Secret"
                     label="Password Secret"
+                    description="Secret whose value is sent as the Basic authentication password."
                     defaultValue={auth.basic.password.type.fromSecret}
                     onChange={(value) => {
                       if (auth.basic.password?.type.oneofKind === "fromSecret") {
@@ -739,6 +758,7 @@ const GatewayAuthEditor = (props: {
               <Group grow align="flex-start">
                 <TextInput
                   label="Header name"
+                  description="Header that carries the custom upstream credential."
                   placeholder="X-API-Key"
                   value={auth.custom.header}
                   onChange={(event) => {
@@ -751,6 +771,7 @@ const GatewayAuthEditor = (props: {
                     api="core"
                     kind="Secret"
                     label="Header value Secret"
+                    description="Secret whose value is sent in the custom authentication header."
                     defaultValue={auth.custom.value.type.fromSecret}
                     onChange={(value) => {
                       if (auth.custom.value?.type.oneofKind === "fromSecret") {
@@ -768,6 +789,7 @@ const GatewayAuthEditor = (props: {
                 <Group grow align="flex-start">
                   <TextInput
                     label="Client ID"
+                    description="OAuth2 client identifier sent to the token endpoint."
                     value={auth.oauth2ClientCredentials.clientID}
                     onChange={(event) => {
                       auth.oauth2ClientCredentials.clientID = event.target.value;
@@ -776,6 +798,7 @@ const GatewayAuthEditor = (props: {
                   />
                   <TextInput
                     label="Token endpoint URL"
+                    description="OAuth2 endpoint used to obtain an access token."
                     value={auth.oauth2ClientCredentials.tokenURL}
                     onChange={(event) => {
                       auth.oauth2ClientCredentials.tokenURL = event.target.value;
@@ -789,6 +812,7 @@ const GatewayAuthEditor = (props: {
                     api="core"
                     kind="Secret"
                     label="Client Secret"
+                    description="Secret containing the OAuth2 client secret."
                     defaultValue={
                       auth.oauth2ClientCredentials.clientSecret.type.fromSecret
                     }
@@ -806,6 +830,7 @@ const GatewayAuthEditor = (props: {
                 )}
                 <StringListEditor
                   title="OAuth2 scopes"
+                  description="Scopes requested from the OAuth2 provider."
                   values={auth.oauth2ClientCredentials.scopes}
                   onChange={(values) => {
                     auth.oauth2ClientCredentials.scopes = values;
@@ -820,6 +845,7 @@ const GatewayAuthEditor = (props: {
                 <Group grow align="flex-start">
                   <TextInput
                     label="Access key ID"
+                    description="AWS access key ID used to sign upstream requests."
                     value={auth.sigv4.accessKeyID}
                     onChange={(event) => {
                       auth.sigv4.accessKeyID = event.target.value;
@@ -828,6 +854,7 @@ const GatewayAuthEditor = (props: {
                   />
                   <TextInput
                     label="Region"
+                    description="AWS region used when generating the SigV4 signature."
                     value={auth.sigv4.region}
                     onChange={(event) => {
                       auth.sigv4.region = event.target.value;
@@ -836,6 +863,7 @@ const GatewayAuthEditor = (props: {
                   />
                   <TextInput
                     label="Service"
+                    description="AWS service name used when generating the SigV4 signature."
                     value={auth.sigv4.service}
                     onChange={(event) => {
                       auth.sigv4.service = event.target.value;
@@ -848,6 +876,7 @@ const GatewayAuthEditor = (props: {
                     api="core"
                     kind="Secret"
                     label="Secret access key"
+                    description="Secret containing the AWS SigV4 secret access key."
                     defaultValue={auth.sigv4.secretAccessKey.type.fromSecret}
                     onChange={(value) => {
                       if (auth.sigv4.secretAccessKey?.type.oneofKind === "fromSecret") {
@@ -888,6 +917,7 @@ const GatewayPathEditor = (props: {
       <Group grow>
         <TextInput
           label="Add prefix"
+          description="Prefix added to the request path before forwarding."
           placeholder="/api"
           value={props.config.path.addPrefix}
           onChange={(event) => {
@@ -897,6 +927,7 @@ const GatewayPathEditor = (props: {
         />
         <TextInput
           label="Remove prefix"
+          description="Prefix removed from the request path before forwarding."
           placeholder="/v1"
           value={props.config.path.removePrefix}
           onChange={(event) => {
@@ -930,6 +961,7 @@ const GatewayHeaderEditor = (props: {
       <Group grow>
         <Select
           label="Forwarded headers"
+          description="How the downstream Forwarded header is handled."
           data={["DROP", "OBFUSCATE", "TRANSPARENT"]}
           value={
             CoreP.Service_Spec_Config_HTTP_Header_ForwardedMode[
@@ -947,6 +979,7 @@ const GatewayHeaderEditor = (props: {
         />
         <Select
           label="Authorization header"
+          description="Whether the downstream Authorization header is removed or passed upstream."
           data={["DELETE", "PASS"]}
           value={
             CoreP.Service_Spec_Config_HTTP_Header_AuthorizationMode[
@@ -1036,6 +1069,7 @@ const GatewayPluginsEditor = (props: {
           <TextInput
             label="Name"
             required
+            description="Unique name used to identify this HTTP plugin."
             placeholder="my-plugin"
             value={plugin.name}
             onChange={(event) => {
@@ -1045,6 +1079,7 @@ const GatewayPluginsEditor = (props: {
           />
           <Select
             label="Phase"
+            description="Run the plugin before or after authentication and authorization."
             data={["PRE_AUTH", "POST_AUTH"]}
             value={
               CoreP.Service_Spec_Config_HTTP_Plugin_Phase[plugin.phase] ??
@@ -1061,6 +1096,7 @@ const GatewayPluginsEditor = (props: {
           />
           <Switch
             label="Disabled"
+            description="Disable this plugin without removing its configuration."
             checked={plugin.isDisabled}
             onChange={(event) => {
               plugin.isDisabled = event.currentTarget.checked;
@@ -1146,6 +1182,7 @@ const GatewayPluginsEditor = (props: {
           .with({ oneofKind: "direct" }, (type) => (
             <NumberInput
               label="Status code"
+              description="HTTP status returned by the direct response."
               min={100}
               max={599}
               value={type.direct.statusCode}
@@ -1158,6 +1195,7 @@ const GatewayPluginsEditor = (props: {
           .with({ oneofKind: "rateLimit" }, (type) => (
             <NumberInput
               label="Request limit"
+              description="Maximum requests allowed during the configured rate-limit window."
               min={0}
               value={type.rateLimit.limit}
               onChange={(value) => {
@@ -1183,6 +1221,7 @@ const GatewayPluginsEditor = (props: {
             <Group grow>
               <TextInput
                 label="Add prefix"
+                description="Prefix added to the request path before forwarding."
                 value={type.path.addPrefix}
                 onChange={(event) => {
                   type.path.addPrefix = event.target.value;
@@ -1191,6 +1230,7 @@ const GatewayPluginsEditor = (props: {
               />
               <TextInput
                 label="Remove prefix"
+                description="Prefix removed from the request path before forwarding."
                 value={type.path.removePrefix}
                 onChange={(event) => {
                   type.path.removePrefix = event.target.value;
@@ -1203,6 +1243,7 @@ const GatewayPluginsEditor = (props: {
             <div>
               <NumberInput
                 label="Status code"
+                description="HTTP status returned when JSON validation fails."
                 min={100}
                 max={599}
                 value={type.jsonSchema.statusCode}
@@ -1212,6 +1253,7 @@ const GatewayPluginsEditor = (props: {
                 }}
               />
               <TextAreaCustom
+                description="Inline JSON Schema used to validate the request body."
                 value={
                   type.jsonSchema.type.oneofKind === "inline"
                     ? type.jsonSchema.type.inline
@@ -1231,6 +1273,7 @@ const GatewayPluginsEditor = (props: {
             <Group grow>
               <Select
                 label="Endpoint type"
+                description="Use a fixed address or a managed container for ext_proc."
                 data={["address", "container"]}
                 value={type.extProc.type.oneofKind ?? "address"}
                 onChange={(value) => {
@@ -1249,6 +1292,7 @@ const GatewayPluginsEditor = (props: {
               {type.extProc.type.oneofKind === "address" ? (
                 <TextInput
                   label="Address"
+                  description="Address of the Envoy ext_proc gRPC server."
                   value={type.extProc.type.address}
                   onChange={(event) => {
                     if (type.extProc.type.oneofKind === "address") {
@@ -1260,6 +1304,7 @@ const GatewayPluginsEditor = (props: {
               ) : (
                 <TextInput
                   label="Container image"
+                  description="Container image that serves the ext_proc gRPC endpoint."
                   value={
                     type.extProc.type.oneofKind === "container"
                       ? type.extProc.type.container.image
@@ -1366,6 +1411,7 @@ const MCPConfigEditor = (props: {
           <Group grow>
             <Switch
               label="Require protocol version"
+              description="Reject requests that do not provide an accepted MCP-Protocol-Version."
               checked={props.config.protocol.requireVersion}
               onChange={(event) => {
                 props.config.protocol!.requireVersion = event.currentTarget.checked;
@@ -1374,6 +1420,7 @@ const MCPConfigEditor = (props: {
             />
             <Switch
               label="Reject unknown methods"
+              description="Reject MCP methods that are not part of the known method set."
               checked={props.config.protocol.rejectUnknownMethods}
               onChange={(event) => {
                 props.config.protocol!.rejectUnknownMethods =
@@ -1402,6 +1449,7 @@ const MCPConfigEditor = (props: {
         <Group grow>
           <NumberInput
             label="Max request bytes"
+            description="Maximum MCP request body size inspected by Vigil."
             min={0}
             value={props.config.limits.maxRequestBytes}
             onChange={(value) => {
@@ -1411,6 +1459,7 @@ const MCPConfigEditor = (props: {
           />
           <NumberInput
             label="Max stream event bytes"
+            description="Maximum size of an individual MCP stream event inspected by Vigil."
             min={0}
             value={props.config.limits.maxStreamEventBytes}
             onChange={(value) => {
@@ -1456,6 +1505,7 @@ const MCPConfigEditor = (props: {
           <Group grow>
             <Switch
               label="Disable request body"
+              description="Do not record MCP request bodies in visibility logs."
               checked={props.config.visibility.disableRequestBody}
               onChange={(event) => {
                 props.config.visibility!.disableRequestBody =
@@ -1465,6 +1515,7 @@ const MCPConfigEditor = (props: {
             />
             <Switch
               label="Disable response body"
+              description="Do not record MCP response bodies in visibility logs."
               checked={props.config.visibility.disableResponseBody}
               onChange={(event) => {
                 props.config.visibility!.disableResponseBody =
@@ -1475,6 +1526,7 @@ const MCPConfigEditor = (props: {
           </Group>
           <StringListEditor
             title="Request header allowlist"
+            description="Request headers to include in visibility logs."
             values={props.config.visibility.includeRequestHeaders}
             onChange={(values) => {
               props.config.visibility!.includeRequestHeaders = values;
@@ -1483,6 +1535,7 @@ const MCPConfigEditor = (props: {
           />
           <StringListEditor
             title="Response header allowlist"
+            description="Response headers to include in visibility logs."
             values={props.config.visibility.includeResponseHeaders}
             onChange={(values) => {
               props.config.visibility!.includeResponseHeaders = values;
@@ -1492,6 +1545,7 @@ const MCPConfigEditor = (props: {
           <Group grow>
             <Switch
               label="Include all request headers"
+              description="Record every request header instead of only the allowlist."
               checked={props.config.visibility.includeAllRequestHeaders}
               onChange={(event) => {
                 props.config.visibility!.includeAllRequestHeaders =
@@ -1501,6 +1555,7 @@ const MCPConfigEditor = (props: {
             />
             <Switch
               label="Include all response headers"
+              description="Record every response header instead of only the allowlist."
               checked={props.config.visibility.includeAllResponseHeaders}
               onChange={(event) => {
                 props.config.visibility!.includeAllResponseHeaders =
@@ -1511,6 +1566,7 @@ const MCPConfigEditor = (props: {
           </Group>
           <StringListEditor
             title="Request header denylist"
+            description="Request headers to omit from visibility logs."
             values={props.config.visibility.excludeRequestHeaders}
             onChange={(values) => {
               props.config.visibility!.excludeRequestHeaders = values;
@@ -1519,6 +1575,7 @@ const MCPConfigEditor = (props: {
           />
           <StringListEditor
             title="Response header denylist"
+            description="Response headers to omit from visibility logs."
             values={props.config.visibility.excludeResponseHeaders}
             onChange={(values) => {
               props.config.visibility!.excludeResponseHeaders = values;
@@ -1570,6 +1627,7 @@ const LLMConfigEditor = (props: {
         <Group grow align="flex-start">
           <Select
             label="Rewrite source"
+            description="Use a fixed model name or evaluate a CEL expression."
             data={["value", "eval"]}
             value={props.config.model.type.oneofKind ?? "value"}
             onChange={(value) => {
@@ -1584,6 +1642,7 @@ const LLMConfigEditor = (props: {
           {props.config.model.type.oneofKind === "value" ? (
             <TextInput
               label="Model name"
+              description="Model name sent to the upstream provider."
               placeholder="gpt-4.1"
               value={props.config.model.type.value}
               onChange={(event) => {
@@ -1596,6 +1655,7 @@ const LLMConfigEditor = (props: {
           ) : (
             <TextInput
               label="CEL expression"
+              description="CEL expression that resolves to the upstream model name."
               placeholder="ctx.request.llm.model"
               value={
                 props.config.model.type.oneofKind === "eval"
@@ -1630,6 +1690,7 @@ const LLMConfigEditor = (props: {
         <Group grow>
           <NumberInput
             label="Max request bytes"
+            description="Maximum LLM request body size inspected by Vigil."
             min={0}
             value={props.config.limits.maxRequestBytes}
             onChange={(value) => {
@@ -1639,6 +1700,7 @@ const LLMConfigEditor = (props: {
           />
           <NumberInput
             label="Max stream event bytes"
+            description="Maximum size of an individual streamed LLM event."
             min={0}
             value={props.config.limits.maxStreamEventBytes}
             onChange={(value) => {
@@ -1648,6 +1710,7 @@ const LLMConfigEditor = (props: {
           />
           <NumberInput
             label="Max estimated input tokens"
+            description="Maximum estimated input tokens accepted in a request."
             min={0}
             value={props.config.limits.maxEstimatedInputTokens}
             onChange={(value) => {
@@ -1657,6 +1720,7 @@ const LLMConfigEditor = (props: {
           />
           <NumberInput
             label="Max output tokens"
+            description="Maximum output tokens requested from the upstream provider."
             min={0}
             value={props.config.limits.maxOutputTokens}
             onChange={(value) => {
@@ -1666,6 +1730,7 @@ const LLMConfigEditor = (props: {
           />
           <NumberInput
             label="Max tools"
+            description="Maximum number of tools accepted in an LLM request."
             min={0}
             value={props.config.limits.maxTools}
             onChange={(value) => {
@@ -1695,6 +1760,7 @@ const LLMConfigEditor = (props: {
           <Group grow>
             <Switch
               label="Record request body"
+              description="Include the raw request body in visibility logs."
               checked={props.config.visibility.enableRequestBody}
               onChange={(event) => {
                 props.config.visibility!.enableRequestBody =
@@ -1704,6 +1770,7 @@ const LLMConfigEditor = (props: {
             />
             <Switch
               label="Record request body map"
+              description="Include the parsed request body map in visibility logs."
               checked={props.config.visibility.enableRequestBodyMap}
               onChange={(event) => {
                 props.config.visibility!.enableRequestBodyMap =
@@ -1713,6 +1780,7 @@ const LLMConfigEditor = (props: {
             />
             <Switch
               label="Record response body"
+              description="Include the raw response body in visibility logs."
               checked={props.config.visibility.enableResponseBody}
               onChange={(event) => {
                 props.config.visibility!.enableResponseBody =
@@ -1722,6 +1790,7 @@ const LLMConfigEditor = (props: {
             />
             <Switch
               label="Record response body map"
+              description="Include the parsed response body map in visibility logs."
               checked={props.config.visibility.enableResponseBodyMap}
               onChange={(event) => {
                 props.config.visibility!.enableResponseBodyMap =
@@ -1732,6 +1801,7 @@ const LLMConfigEditor = (props: {
           </Group>
           <StringListEditor
             title="Request header allowlist"
+            description="Request headers to include in visibility logs."
             values={props.config.visibility.includeRequestHeaders}
             onChange={(values) => {
               props.config.visibility!.includeRequestHeaders = values;
@@ -1740,6 +1810,7 @@ const LLMConfigEditor = (props: {
           />
           <StringListEditor
             title="Response header allowlist"
+            description="Response headers to include in visibility logs."
             values={props.config.visibility.includeResponseHeaders}
             onChange={(values) => {
               props.config.visibility!.includeResponseHeaders = values;
@@ -1749,6 +1820,7 @@ const LLMConfigEditor = (props: {
           <Group grow>
             <Switch
               label="Include all request headers"
+              description="Record every request header instead of only the allowlist."
               checked={props.config.visibility.includeAllRequestHeaders}
               onChange={(event) => {
                 props.config.visibility!.includeAllRequestHeaders =
@@ -1758,6 +1830,7 @@ const LLMConfigEditor = (props: {
             />
             <Switch
               label="Include all response headers"
+              description="Record every response header instead of only the allowlist."
               checked={props.config.visibility.includeAllResponseHeaders}
               onChange={(event) => {
                 props.config.visibility!.includeAllResponseHeaders =
@@ -1768,6 +1841,7 @@ const LLMConfigEditor = (props: {
           </Group>
           <StringListEditor
             title="Request header denylist"
+            description="Request headers to omit from visibility logs."
             values={props.config.visibility.excludeRequestHeaders}
             onChange={(values) => {
               props.config.visibility!.excludeRequestHeaders = values;
@@ -1776,6 +1850,7 @@ const LLMConfigEditor = (props: {
           />
           <StringListEditor
             title="Response header denylist"
+            description="Response headers to omit from visibility logs."
             values={props.config.visibility.excludeResponseHeaders}
             onChange={(values) => {
               props.config.visibility!.excludeResponseHeaders = values;
@@ -2062,7 +2137,7 @@ const Config = (props: {
                                     />
                                     <Select
                                       label="Value type"
-                                      description="Set the value source"
+                                      description="Choose whether the environment variable is a literal value or comes from a Secret."
                                       data={[
                                         { label: "Value", value: "value" },
                                         {
@@ -2496,6 +2571,7 @@ const Config = (props: {
                                 <TextInput
                                   required
                                   label="Command"
+                                  description="Executable started as the container entrypoint."
                                   placeholder="/bin/sh"
                                   className="flex-1"
                                   value={container.container.command[idx]}
@@ -2535,6 +2611,7 @@ const Config = (props: {
                                 <TextInput
                                   required
                                   label="Arg"
+                                  description="Argument passed to the container command."
                                   placeholder="-c"
                                   className="flex-1"
                                   value={container.container.args[idx]}
@@ -2567,6 +2644,7 @@ const Config = (props: {
                                 <Group grow>
                                   <Switch
                                     label="Read-only root filesystem"
+                                    description="Prevent processes from writing to the container root filesystem."
                                     checked={
                                       container.container.securityContext
                                         .readOnlyRootFilesystem
@@ -2579,6 +2657,7 @@ const Config = (props: {
                                   />
                                   <NumberInput
                                     label="Run as user (UID)"
+                                    description="Numeric user ID used to run the container process."
                                     min={0}
                                     value={
                                       container.container.securityContext
@@ -2652,6 +2731,7 @@ const Config = (props: {
                                               <TextInput
                                                 required
                                                 label="Capability"
+                                                description="Linux capability added to the container process."
                                                 placeholder="NET_ADMIN"
                                                 className="flex-1"
                                                 value={
@@ -2710,6 +2790,7 @@ const Config = (props: {
                                               <TextInput
                                                 required
                                                 label="Capability"
+                                                description="Linux capability removed from the container process."
                                                 placeholder="ALL"
                                                 className="flex-1"
                                                 value={
@@ -2829,6 +2910,7 @@ const Config = (props: {
                                         (emptyDir) => (
                                           <NumberInput
                                             label="Size limit (megabytes)"
+                                            description="Maximum size of the emptyDir volume."
                                             placeholder="100"
                                             min={0}
                                             value={
@@ -2858,6 +2940,7 @@ const Config = (props: {
                                           <TextInput
                                             required
                                             label="Claim name"
+                                            description="Name of the PersistentVolumeClaim mounted by the container."
                                             placeholder="my-pvc"
                                             value={
                                               pvc.persistentVolumeClaim.name
@@ -2924,6 +3007,7 @@ const Config = (props: {
                                     <TextInput
                                       required
                                       label="Mount path"
+                                      description="Path inside the container where the volume is mounted."
                                       placeholder="/data"
                                       value={volumeMount.mountPath}
                                       onChange={(v) => {
@@ -2933,6 +3017,7 @@ const Config = (props: {
                                     />
                                     <TextInput
                                       label="Sub path"
+                                      description="Optional subdirectory within the volume to mount."
                                       placeholder="subdir"
                                       value={volumeMount.subPath}
                                       onChange={(v) => {
@@ -2942,6 +3027,7 @@ const Config = (props: {
                                     />
                                     <Switch
                                       label="Read-only"
+                                      description="Mount the volume without write access."
                                       checked={volumeMount.readOnly}
                                       onChange={(v) => {
                                         volumeMount.readOnly = v.target.checked;
@@ -3204,6 +3290,7 @@ const Config = (props: {
                                   <SelectResource
                                     api="core"
                                     kind="Secret"
+                                    description="Secret containing the Kubernetes kubeconfig."
                                     defaultValue={
                                       kubeconfig.kubeconfig.type.oneofKind ===
                                       `fromSecret`
@@ -3253,6 +3340,7 @@ const Config = (props: {
                                   <SelectResource
                                     api="core"
                                     kind="Secret"
+                                    description="Secret containing the Kubernetes bearer token."
                                     defaultValue={
                                       bearerToken.bearerToken.type.oneofKind ===
                                       `fromSecret`
@@ -3529,6 +3617,7 @@ const Config = (props: {
                                     />
                                     <Select
                                       label="Value type"
+                                      description="Use a literal header value or evaluate it with CEL."
                                       data={[
                                         { label: "Literal", value: "value" },
                                         { label: "Eval (CEL)", value: "eval" },
@@ -3669,6 +3758,7 @@ const Config = (props: {
                                     />
                                     <Select
                                       label="Value type"
+                                      description="Use a literal header value or evaluate it with CEL."
                                       data={[
                                         { label: "Literal", value: "value" },
                                         { label: "Eval (CEL)", value: "eval" },
@@ -4117,6 +4207,7 @@ const Config = (props: {
                                           <div>
                                             <TextAreaCustom
                                               label="Inline response body"
+                                              description="Body returned directly to the downstream client."
                                               placeholder='{ "message": "ok" }'
                                               value={inline.inline}
                                               onChange={(v) => {
@@ -4140,6 +4231,7 @@ const Config = (props: {
                                           <div>
                                             <TextAreaCustom
                                               label="Inline response bytes"
+                                              description="Raw bytes returned directly to the downstream client."
                                               placeholder="Raw bytes content"
                                               value={new TextDecoder().decode(
                                                 inlineBytes.inlineBytes,
@@ -4574,6 +4666,7 @@ const Config = (props: {
                                         <TextInput
                                           required
                                           label="Client ID"
+                                          description="OAuth2 client identifier sent to the token endpoint."
                                           placeholder="user1234"
                                           value={
                                             oauth2ClientCredentials
@@ -4614,9 +4707,10 @@ const Config = (props: {
                                             <></>
                                           ))}
 
-                                        <TextInput
-                                          required
-                                          label="Token endpoint URL"
+                                      <TextInput
+                                        required
+                                        label="Token endpoint URL"
+                                        description="OAuth2 endpoint used to obtain an upstream access token."
                                           placeholder="https://oauth2.example.com/token"
                                           value={
                                             oauth2ClientCredentials
@@ -4647,6 +4741,7 @@ const Config = (props: {
                                         <TextInput
                                           required
                                           label="Username"
+                                          description="Username sent to the upstream for Basic authentication."
                                           placeholder="user1234"
                                           value={basic.basic.username}
                                           onChange={(v) => {
@@ -4697,6 +4792,7 @@ const Config = (props: {
                                         <TextInput
                                           required
                                           label="Header Name"
+                                          description="Custom header used to carry the upstream credential."
                                           placeholder="X-CUSTOM-AUTH-HEADER"
                                           value={custom.custom.header}
                                           onChange={(v) => {
@@ -4748,6 +4844,7 @@ const Config = (props: {
                                         <TextInput
                                           required
                                           label="Access Key ID"
+                                          description="AWS access key ID used to sign upstream requests."
                                           placeholder="ABCDEDF123456"
                                           value={sigv4.sigv4.accessKeyID}
                                           onChange={(v) => {
@@ -4759,6 +4856,7 @@ const Config = (props: {
                                         <TextInput
                                           required
                                           label="Region"
+                                          description="AWS region used to generate the SigV4 signature."
                                           placeholder="eu-west-1"
                                           value={sigv4.sigv4.region}
                                           onChange={(v) => {
@@ -4769,6 +4867,7 @@ const Config = (props: {
                                         <TextInput
                                           required
                                           label="Service"
+                                          description="AWS service name used to generate the SigV4 signature."
                                           placeholder="s3"
                                           value={sigv4.sigv4.service}
                                           onChange={(v) => {
@@ -4876,6 +4975,7 @@ const Config = (props: {
                             <DurationPicker
                               value={http.http.retry!.initialInterval}
                               title="Initial interval"
+                              description="Backoff delay before the first retry."
                               onChange={(v) => {
                                 http.http.retry!.initialInterval = v;
                                 updateReq();
@@ -4885,6 +4985,7 @@ const Config = (props: {
                             <DurationPicker
                               value={http.http.retry!.maxInterval}
                               title="Max interval"
+                              description="Maximum backoff delay between retries."
                               onChange={(v) => {
                                 http.http.retry!.maxInterval = v;
                                 updateReq();
@@ -4894,6 +4995,7 @@ const Config = (props: {
                             <DurationPicker
                               value={http.http.retry!.maxElapsedTime}
                               title="Max elapsed time"
+                              description="Maximum total time spent retrying a request."
                               onChange={(v) => {
                                 http.http.retry!.maxElapsedTime = v;
                                 updateReq();
@@ -4931,6 +5033,7 @@ const Config = (props: {
                                 <NumberInput
                                   required
                                   label="Status code"
+                                  description="HTTP status code that triggers an upstream retry."
                                   placeholder="503"
                                   className="flex-1"
                                   min={100}
@@ -5067,6 +5170,7 @@ const Config = (props: {
                                   <TextInput
                                     required
                                     label="Origin pattern"
+                                    description="Exact origin or wildcard allowed to call this Service."
                                     placeholder="https://example.com"
                                     className="flex-1"
                                     value={
@@ -5187,6 +5291,7 @@ const Config = (props: {
                                     <TextInput
                                       required
                                       label="Header"
+                                      description="Request header included in visibility logs."
                                       placeholder="X-Custom-Header"
                                       className="flex-1"
                                       value={
@@ -5239,6 +5344,7 @@ const Config = (props: {
                                     <TextInput
                                       required
                                       label="Header"
+                                      description="Response header included in visibility logs."
                                       placeholder="X-Custom-Header"
                                       className="flex-1"
                                       value={
@@ -5296,6 +5402,7 @@ const Config = (props: {
                                     <TextInput
                                       required
                                       label="Header"
+                                      description="Request header excluded from visibility logs."
                                       placeholder="Authorization"
                                       className="flex-1"
                                       value={
@@ -5353,6 +5460,7 @@ const Config = (props: {
                                     <TextInput
                                       required
                                       label="Header"
+                                      description="Response header excluded from visibility logs."
                                       placeholder="Set-Cookie"
                                       className="flex-1"
                                       value={
@@ -5374,6 +5482,7 @@ const Config = (props: {
                             <Group grow>
                               <Switch
                                 label="Include all request headers"
+                                description="Record every request header instead of only the allowlist."
                                 checked={
                                   http.http.visibility!.includeAllRequestHeaders
                                 }
@@ -5385,6 +5494,7 @@ const Config = (props: {
                               />
                               <Switch
                                 label="Include all response headers"
+                                description="Record every response header instead of only the allowlist."
                                 checked={
                                   http.http.visibility!
                                     .includeAllResponseHeaders
@@ -5682,6 +5792,7 @@ const Config = (props: {
                                                     <div>
                                                       <TextAreaCustom
                                                         label="Inline body"
+                                                        description="Response body returned directly to the downstream client."
                                                         placeholder='{ "message": "ok" }'
                                                         value={inline.inline}
                                                         onChange={(v) => {
@@ -5708,6 +5819,7 @@ const Config = (props: {
                                                     <div>
                                                       <TextAreaCustom
                                                         label="Inline bytes"
+                                                        description="Raw response bytes returned directly to the downstream client."
                                                         placeholder="Raw bytes content"
                                                         value={new TextDecoder().decode(
                                                           inlineBytes.inlineBytes,
@@ -5773,6 +5885,7 @@ const Config = (props: {
                                                 <TextInput
                                                   required
                                                   label="Key"
+                                                  description="Response header name."
                                                   placeholder="Content-Type"
                                                   value={
                                                     direct.direct.headers[hIdx]
@@ -5788,6 +5901,7 @@ const Config = (props: {
                                                 <TextInput
                                                   required
                                                   label="Value"
+                                                  description="Response header value."
                                                   placeholder="application/json"
                                                   value={
                                                     direct.direct.headers[hIdx]
@@ -5849,6 +5963,7 @@ const Config = (props: {
                                         <DurationPicker
                                           value={rateLimit.rateLimit.window}
                                           title="Window"
+                                          description="Sliding time window used to count requests."
                                           onChange={(v) => {
                                             rateLimit.rateLimit.window = v;
                                             updateReq();
@@ -5883,6 +5998,7 @@ const Config = (props: {
                                       <DurationPicker
                                         value={cache.cache.ttl}
                                         title="TTL"
+                                        description="How long a cached response remains valid."
                                         onChange={(v) => {
                                           cache.cache.ttl = v;
                                           updateReq();
@@ -5890,6 +6006,7 @@ const Config = (props: {
                                       />
                                       <Switch
                                         label="Use X-Cache header"
+                                        description="Add an X-Cache response header indicating cache status."
                                         checked={cache.cache.useXCacheHeader}
                                         onChange={(v) => {
                                           cache.cache.useXCacheHeader =
@@ -5899,6 +6016,7 @@ const Config = (props: {
                                       />
                                       <Switch
                                         label="Allow unsafe methods"
+                                        description="Allow caching methods beyond GET and HEAD."
                                         checked={cache.cache.allowUnsafeMethods}
                                         onChange={(v) => {
                                           cache.cache.allowUnsafeMethods =
@@ -5964,6 +6082,7 @@ const Config = (props: {
                                       </Group>
                                       <TextAreaCustom
                                         label="JSON Schema"
+                                        description="JSON Schema used to validate request bodies before forwarding."
                                         placeholder='{ "type": "object" }'
                                         value={
                                           jsonSchema.jsonSchema.type
@@ -6010,6 +6129,7 @@ const Config = (props: {
                                                 <div>
                                                   <TextAreaCustom
                                                     label="Inline body"
+                                                    description="Response body returned when validation fails."
                                                     placeholder="Invalid request body"
                                                     value={inline.inline}
                                                     onChange={(v) => {
@@ -6065,6 +6185,7 @@ const Config = (props: {
                                                 <TextInput
                                                   required
                                                   label="Key"
+                                                  description="Response header name returned when validation fails."
                                                   placeholder="Content-Type"
                                                   value={
                                                     jsonSchema.jsonSchema
@@ -6080,6 +6201,7 @@ const Config = (props: {
                                                 <TextInput
                                                   required
                                                   label="Value"
+                                                  description="Response header value returned when validation fails."
                                                   placeholder="application/json"
                                                   value={
                                                     jsonSchema.jsonSchema
@@ -6153,6 +6275,7 @@ const Config = (props: {
                                                 <TextInput
                                                   required
                                                   label="Address"
+                                                  description="Address of the Envoy ext_proc gRPC server."
                                                   placeholder="ext-proc.default.svc:9000"
                                                   value={address.address}
                                                   onChange={(v) => {
@@ -6178,6 +6301,7 @@ const Config = (props: {
                                                   <TextInput
                                                     required
                                                     label="Image"
+                                                    description="Container image that serves the ext_proc gRPC endpoint."
                                                     placeholder="ghcr.io/org/ext-proc:latest"
                                                     value={
                                                       container.container.image
@@ -6190,6 +6314,7 @@ const Config = (props: {
                                                   />
                                                   <NumberInput
                                                     label="Port"
+                                                    description="Port on which the ext_proc container listens."
                                                     min={0}
                                                     max={65535}
                                                     value={
@@ -6213,6 +6338,7 @@ const Config = (props: {
                                       <DurationPicker
                                         value={extProc.extProc.messageTimeout}
                                         title="Message timeout"
+                                        description="Maximum time to wait for ext_proc processing."
                                         onChange={(v) => {
                                           extProc.extProc.messageTimeout = v;
                                           updateReq();
@@ -6238,6 +6364,7 @@ const Config = (props: {
                                           <Group grow>
                                             <Select
                                               label="Request header mode"
+                                              description="Choose whether request headers are sent to ext_proc."
                                               data={[
                                                 {
                                                   label: "Send",
@@ -6278,6 +6405,7 @@ const Config = (props: {
                                             />
                                             <Select
                                               label="Response header mode"
+                                              description="Choose whether response headers are sent to ext_proc."
                                               data={[
                                                 {
                                                   label: "Send",
@@ -6318,6 +6446,7 @@ const Config = (props: {
                                             />
                                             <Select
                                               label="Request body mode"
+                                              description="Choose whether request body content is sent to ext_proc."
                                               data={[
                                                 {
                                                   label: "None",
@@ -6358,6 +6487,7 @@ const Config = (props: {
                                             />
                                             <Select
                                               label="Response body mode"
+                                              description="Choose whether response body content is sent to ext_proc."
                                               data={[
                                                 {
                                                   label: "None",
@@ -6415,6 +6545,7 @@ const Config = (props: {
                                     <Group grow>
                                       <TextInput
                                         label="Add prefix"
+                                        description="Prefix to add to the forwarded request path."
                                         placeholder="/api/v1"
                                         value={path.path.addPrefix}
                                         onChange={(v) => {
@@ -6424,6 +6555,7 @@ const Config = (props: {
                                       />
                                       <TextInput
                                         label="Remove prefix"
+                                        description="Prefix to remove from the request path before forwarding."
                                         placeholder="/api/v2"
                                         value={path.path.removePrefix}
                                         onChange={(v) => {
@@ -6530,6 +6662,8 @@ const Config = (props: {
                                   return (
                                     <div>
                                       <TextAreaCustom
+                                        label="Host public key"
+                                        description="Public key used to verify the upstream SSH host."
                                         placeholder="ssh-rsa AAAAB3NzaC1y..."
                                         value={key.key}
                                         onChange={(v) => {
@@ -6773,6 +6907,7 @@ const Config = (props: {
                         <Group grow>
                           <Switch
                             label="Disable session recording"
+                            description="Do not record SSH sessions in access logs."
                             checked={ssh.ssh.visibility.disableSessionRecording}
                             onChange={(v) => {
                               ssh.ssh.visibility!.disableSessionRecording =
@@ -7017,6 +7152,8 @@ const Config = (props: {
                                     <SelectResource
                                       api="core"
                                       kind="Secret"
+                                      label="Password Secret"
+                                      description="Secret whose value contains the upstream MySQL password."
                                       defaultValue={x.fromSecret}
                                       onChange={(v) => {
                                         x.fromSecret = v?.metadata?.name ?? "";
@@ -7121,6 +7258,7 @@ const Config = (props: {
                                 <Group grow>
                                   <TextInput
                                     label="Username"
+                                    description="Username presented to the SOCKS5 upstream."
                                     placeholder="user1234"
                                     value={up.usernamePassword.username}
                                     onChange={(v) => {
@@ -7189,6 +7327,7 @@ const Config = (props: {
                         <Group grow>
                           <TextInput
                             label="User"
+                            description="Username used to authenticate to the upstream RDP server."
                             placeholder="administrator"
                             value={rdp.rdp.auth.user}
                             onChange={(v) => {
@@ -7198,6 +7337,7 @@ const Config = (props: {
                           />
                           <TextInput
                             label="Domain"
+                            description="Optional Windows domain for the upstream RDP account."
                             placeholder="CORP"
                             value={rdp.rdp.auth.domain}
                             onChange={(v) => {
@@ -7294,6 +7434,7 @@ const Config = (props: {
                                 <TextInput
                                   required
                                   label="SHA256 fingerprint"
+                                  description="SHA-256 fingerprint of a certificate trusted for the upstream RDP connection."
                                   placeholder="ab:cd:ef:12:34:..."
                                   className="flex-1"
                                   value={
@@ -7384,6 +7525,8 @@ const Config = (props: {
                     }}
                   >
                     <TextAreaCustom
+                      label="PEM certificate authority"
+                      description="PEM-encoded root CA trusted for the upstream TLS connection."
                       value={req.tls!.trustedCAs[ruleIdx]}
                       placeholder={`-----BEGIN CERTIFICATE-----
 MIIDazCCAlOgAwIBAgIUQyOS38lJDJ1dkt6oV5yal6UferUwDQYJKoZIhvcNAQEL
@@ -7428,6 +7571,8 @@ BQAwRTELMAkGA1UEBhMCQ...wpk+geq0
                         <SelectResource
                           api="core"
                           kind="Secret"
+                          label="Client certificate Secret"
+                          description="Secret containing the client certificate chain and private key for mTLS."
                           defaultValue={x.fromSecret}
                           onChange={(v) => {
                             x.fromSecret = v?.metadata?.name ?? "";
@@ -7488,7 +7633,7 @@ const Edit = (props: {
         <Select
           label="Service Mode"
           required
-          description="Set the Service mode (e.g. HTTP, SSH, PostgreSQL)"
+          description="Application-layer protocol used by this Service."
           data={[
             {
               label: "HTTP",
@@ -7859,7 +8004,7 @@ const Edit = (props: {
         <NumberInput
           label="Port"
           placeholder="8080"
-          description="Port listen number"
+          description="Listener port; when unset, the port can be inferred from the upstream URL."
           min={0}
           max={65535}
           value={req.spec!.port}
@@ -7871,7 +8016,7 @@ const Edit = (props: {
 
         <Switch
           label="Disabled"
-          description="Disable/deactivate the Service to stop serving requests"
+          description="Disable the Service so it stops serving requests."
           checked={req.spec!.isDisabled}
           onChange={(v) => {
             req.spec!.isDisabled = v.target.checked;
@@ -7890,7 +8035,7 @@ const Edit = (props: {
           <Switch
             className="my-2"
             label="Enable Public"
-            description="This enables Client-less BeyondCorp mode"
+            description="Allow access without a client connection (clientless/public mode)."
             checked={req.spec!.isPublic}
             onChange={(v) => {
               req.spec!.isPublic = v.target.checked;
@@ -7906,7 +8051,7 @@ const Edit = (props: {
 
           <Switch
             label="Enable TLS"
-            description="Set the Service to listen over TLS"
+            description="Serve the public listener over TLS."
             checked={req.spec!.isTLS}
             onChange={(v) => {
               req.spec!.isTLS = v.target.checked;
@@ -7916,7 +8061,7 @@ const Edit = (props: {
 
           <Switch
             label="Enable Anonymous Access"
-            description="Set the Service to be publicly and anonymously accessible over the internet"
+            description="Allow unauthenticated public access when the Service is public."
             checked={req.spec!.isAnonymous}
             disabled={!req.spec?.isPublic}
             onChange={(v) => {
