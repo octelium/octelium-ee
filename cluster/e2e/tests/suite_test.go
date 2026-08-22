@@ -1,3 +1,5 @@
+//go:build e2e
+
 // Copyright (c) 2025-present Octelium Labs, LLC. All rights reserved.
 //
 // This software is licensed under the Octelium Enterprise Source-Available License.
