@@ -6,12 +6,14 @@
             "properties": {
                 "userRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "UserRef is the reference of the User."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Get Subject User Request"
+            "title": "Get Subject User Request",
+            "description": "GetSubjectUserRequest is the request of the GetSubjectUser method."
         },
         "octelium.api.main.meta.v1.ObjectReference": {
             "properties": {

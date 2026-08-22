@@ -6,7 +6,8 @@
             "properties": {
                 "common": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.CommonListOptions",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Common is the common list options."
                 },
                 "query": {
                     "type": "string",
@@ -15,7 +16,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "List Subject User Options"
+            "title": "List Subject User Options",
+            "description": "ListSubjectUserOptions is the list options of the ListSubjectUser method."
         },
         "octelium.api.main.meta.v1.CommonListOptions": {
             "properties": {

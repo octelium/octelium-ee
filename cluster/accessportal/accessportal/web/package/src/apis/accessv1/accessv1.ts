@@ -40,83 +40,120 @@ import { Duration } from "../metav1/metav1";
 import { ObjectReference } from "../metav1/metav1";
 import { Metadata } from "../metav1/metav1";
 /**
+ * Policy controls what happens to the access Requests. Once a Request is
+ * created, the Cluster evaluates the Policies and the first Rule whose
+ * Condition matches decides whether the Request is immediately rejected,
+ * automatically approved or handed over to a review workflow. Note that this
+ * is a different resource than the core Policy which controls the
+ * authorization of the access itself.
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Policy
  */
 export interface Policy {
     /**
-     * apiVersion is the API version of the Policy object.
+     * APIVersion is the API version (i.e. "access/v1")
      *
      * @generated from protobuf field: string apiVersion = 1
      */
     apiVersion: string;
     /**
-     * kind is the resource kind. It should be `Policy`.
+     * Kind is the resource name (i.e. `Policy`).
      *
      * @generated from protobuf field: string kind = 2
      */
     kind: string;
     /**
-     * metadata is the Policy object's metadata.
+     * Metadata is the object's metadata.
      *
      * @generated from protobuf field: octelium.api.main.meta.v1.Metadata metadata = 3
      */
     metadata?: Metadata;
     /**
-     * spec is the Policy specification.
+     * Spec is the Policy specification.
      *
      * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec spec = 4
      */
     spec?: Policy_Spec;
     /**
-     * status is the current Policy status.
+     * Status is the current status of the Policy.
      *
      * @generated from protobuf field: octelium.api.main.access.v1.Policy.Status status = 5
      */
     status?: Policy_Status;
 }
 /**
+ * Spec is the Policy specification
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Policy.Spec
  */
 export interface Policy_Spec {
     /**
+     * Rules is the list of the Policy's Rules.
+     *
      * @generated from protobuf field: repeated octelium.api.main.access.v1.Policy.Spec.Rule rules = 1
      */
     rules: Policy_Spec_Rule[];
     /**
+     * IsDisabled disables the Policy. Disabled Policies are entirely skipped
+     * when the access Requests are evaluated.
+     *
      * @generated from protobuf field: bool isDisabled = 2
      */
     isDisabled: boolean;
 }
 /**
+ * Rule decides the fate of the access Requests that match its Condition
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Policy.Spec.Rule
  */
 export interface Policy_Spec_Rule {
     /**
+     * Condition is the Rule's condition that must match in order for the
+     * Rule, and subsequently the Policy as a whole, to match.
+     *
      * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Condition condition = 1
      */
     condition?: Policy_Spec_Rule_Condition;
     /**
+     * Effect is the effect of the Rule on the matched Request.
+     *
      * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Effect effect = 2
      */
     effect: Policy_Spec_Rule_Effect;
     /**
+     * Priority is an integer that sets the Rule priority level. The lower
+     * the number, the higher the priority.
+     *
      * @generated from protobuf field: int32 priority = 3
      */
     priority: number;
     /**
+     * Action is what the Cluster does with the matched Request. It is
+     * required for the REVIEW effect and it must not be set for the other
+     * ones.
+     *
      * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Action action = 4
      */
     action?: Policy_Spec_Rule_Action;
     /**
+     * Authorization is the access that is granted to the subject once the
+     * Request is approved. It must not be set for the DENY effect.
+     *
      * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Authorization authorization = 5
      */
     authorization?: Policy_Spec_Rule_Authorization;
     /**
+     * Name is the name of the Rule. It is required and it must be unique
+     * within the Policy.
+     *
      * @generated from protobuf field: string name = 6
      */
     name: string;
 }
 /**
+ * Condition is the Rule's condition that has to match the access
+ * Request in order for the Rule to be applied to it
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.Condition
  */
 export interface Policy_Spec_Rule_Condition {
@@ -126,37 +163,48 @@ export interface Policy_Spec_Rule_Condition {
     type: {
         oneofKind: "matchAny";
         /**
+         * MatchAny matches every Request. It must be set to `true`.
+         *
          * @generated from protobuf field: bool matchAny = 1
          */
         matchAny: boolean;
     } | {
         oneofKind: "subject";
         /**
+         * Subject matches the subject of the Request.
+         *
          * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Condition.Subject subject = 2
          */
         subject: Policy_Spec_Rule_Condition_Subject;
     } | {
         oneofKind: "resource";
         /**
+         * Resource matches the resource that the access is requested for.
+         *
          * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Condition.Resource resource = 3
          */
         resource: Policy_Spec_Rule_Condition_Resource;
     } | {
         oneofKind: "all";
         /**
+         * All matches only when every one of its child Conditions matches.
+         *
          * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Condition.All all = 4
          */
         all: Policy_Spec_Rule_Condition_All;
     } | {
         oneofKind: "any";
         /**
+         * Any matches when at least one of its child Conditions matches.
+         *
          * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Condition.Any any = 5
          */
         any: Policy_Spec_Rule_Condition_Any;
     } | {
         oneofKind: "userRef";
         /**
-         * Matches the requester.
+         * UserRef matches the requester (i.e. the User that created the
+         * Request) which is not necessarily the Request's subject.
          *
          * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference userRef = 6
          */
@@ -174,6 +222,8 @@ export interface Policy_Spec_Rule_Condition {
     };
 }
 /**
+ * Resource matches the resource that the access is requested for
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.Condition.Resource
  */
 export interface Policy_Spec_Rule_Condition_Resource {
@@ -183,12 +233,16 @@ export interface Policy_Spec_Rule_Condition_Resource {
     type: {
         oneofKind: "serviceRef";
         /**
+         * ServiceRef matches a specific Service
+         *
          * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference serviceRef = 1
          */
         serviceRef: ObjectReference;
     } | {
         oneofKind: "catalogRef";
         /**
+         * CatalogRef matches a specific Catalog
+         *
          * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference catalogRef = 2
          */
         catalogRef: ObjectReference;
@@ -197,6 +251,10 @@ export interface Policy_Spec_Rule_Condition_Resource {
     };
 }
 /**
+ * Subject matches the subject of the Request (i.e. the User that the
+ * access is requested for) which is not necessarily the same User
+ * that created the Request
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.Condition.Subject
  */
 export interface Policy_Spec_Rule_Condition_Subject {
@@ -206,12 +264,16 @@ export interface Policy_Spec_Rule_Condition_Subject {
     type: {
         oneofKind: "userRef";
         /**
+         * UserRef matches a specific User
+         *
          * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference userRef = 1
          */
         userRef: ObjectReference;
     } | {
         oneofKind: "groupRef";
         /**
+         * GroupRef matches the Users belonging to a specific Group
+         *
          * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference groupRef = 2
          */
         groupRef: ObjectReference;
@@ -220,24 +282,35 @@ export interface Policy_Spec_Rule_Condition_Subject {
     };
 }
 /**
+ * All acts as a logical AND operator on its list of Conditions
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.Condition.All
  */
 export interface Policy_Spec_Rule_Condition_All {
     /**
+     * Of is the list of the Conditions that must all match
+     *
      * @generated from protobuf field: repeated octelium.api.main.access.v1.Policy.Spec.Rule.Condition of = 1
      */
     of: Policy_Spec_Rule_Condition[];
 }
 /**
+ * Any acts as a logical OR operator on its list of Conditions
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.Condition.Any
  */
 export interface Policy_Spec_Rule_Condition_Any {
     /**
+     * Of is the list of the Conditions of which at least one must match
+     *
      * @generated from protobuf field: repeated octelium.api.main.access.v1.Policy.Spec.Rule.Condition of = 1
      */
     of: Policy_Spec_Rule_Condition[];
 }
 /**
+ * Action is what the Cluster does with a Request matching a Rule whose
+ * effect is REVIEW
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.Action
  */
 export interface Policy_Spec_Rule_Action {
@@ -247,6 +320,8 @@ export interface Policy_Spec_Rule_Action {
     type: {
         oneofKind: "review";
         /**
+         * Review is the review workflow of the Request.
+         *
          * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review review = 1
          */
         review: Policy_Spec_Rule_Action_Review;
@@ -255,40 +330,72 @@ export interface Policy_Spec_Rule_Action {
     };
 }
 /**
+ * Review is the multi-step review workflow that the Request has to go
+ * through in order to be approved
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review
  */
 export interface Policy_Spec_Rule_Action_Review {
     /**
+     * Steps is the ordered list of the review Steps. At least one Step
+     * must be set.
+     *
      * @generated from protobuf field: repeated octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step steps = 1
      */
     steps: Policy_Spec_Rule_Action_Review_Step[];
 }
 /**
+ * Step is a single stage of the review workflow. The Request only
+ * moves to the next Step once the current Step's approval
+ * requirement is satisfied and it is approved once the last Step is
+ * satisfied.
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step
  */
 export interface Policy_Spec_Rule_Action_Review_Step {
     /**
+     * Reviewers is the list of the Users that are allowed to review
+     * the Requests that reach the Step.
+     *
      * @generated from protobuf field: repeated octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer reviewers = 1
      */
     reviewers: Policy_Spec_Rule_Action_Review_Step_Reviewer[];
     /**
+     * ApprovalRequirement is the condition that the Step's Reviews
+     * have to satisfy in order for the Step to be approved.
+     *
      * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.ApprovalRequirement approvalRequirement = 2
      */
     approvalRequirement: Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement;
     /**
+     * ApprovalCount is the number of the distinct Reviewers that have
+     * to approve the Request. It is required for the COUNT approval
+     * requirement and it must not be set for the other ones.
+     *
      * @generated from protobuf field: uint32 approvalCount = 3
      */
     approvalCount: number;
     /**
+     * Timeout is how long the Step can stay waiting for a decision.
+     * It is measured from the time at which the Step started (i.e.
+     * `status.review.currentStepStartedAt` of the Request). The
+     * Step does not time out at all if it is unset.
+     *
      * @generated from protobuf field: octelium.api.main.meta.v1.Duration timeout = 4
      */
     timeout?: Duration;
     /**
+     * OnTimeout is what happens to the Request once the Step's
+     * timeout is reached.
+     *
      * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.OnTimeout onTimeout = 5
      */
     onTimeout: Policy_Spec_Rule_Action_Review_Step_OnTimeout;
 }
 /**
+ * Reviewer is a User that is allowed to review the Requests that
+ * reach the Step
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer
  */
 export interface Policy_Spec_Rule_Action_Review_Step_Reviewer {
@@ -298,12 +405,16 @@ export interface Policy_Spec_Rule_Action_Review_Step_Reviewer {
     type: {
         oneofKind: "user";
         /**
+         * User is a single User reviewer.
+         *
          * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer.User user = 1
          */
         user: Policy_Spec_Rule_Action_Review_Step_Reviewer_User;
     } | {
         oneofKind: "group";
         /**
+         * Group is a Group of User reviewers.
+         *
          * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer.Group group = 2
          */
         group: Policy_Spec_Rule_Action_Review_Step_Reviewer_Group;
@@ -312,298 +423,422 @@ export interface Policy_Spec_Rule_Action_Review_Step_Reviewer {
     };
 }
 /**
+ * User sets a specific User as a reviewer
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer.User
  */
 export interface Policy_Spec_Rule_Action_Review_Step_Reviewer_User {
     /**
+     * UserRef is the reference of the User.
+     *
      * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference userRef = 1
      */
     userRef?: ObjectReference;
 }
 /**
+ * Group sets every User belonging to a Group as a reviewer
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.Reviewer.Group
  */
 export interface Policy_Spec_Rule_Action_Review_Step_Reviewer_Group {
     /**
+     * GroupRef is the reference of the Group.
+     *
      * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference groupRef = 1
      */
     groupRef?: ObjectReference;
 }
 /**
+ * OnTimeout is what happens to the Request once the Step's
+ * timeout is reached
+ *
  * @generated from protobuf enum octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.OnTimeout
  */
 export enum Policy_Spec_Rule_Action_Review_Step_OnTimeout {
     /**
+     * ON_TIMEOUT_UNSET sets the Request's state to EXPIRED. It is
+     * the default behavior.
+     *
      * @generated from protobuf enum value: ON_TIMEOUT_UNSET = 0;
      */
     UNSET = 0,
     /**
+     * ON_TIMEOUT_GOTO_NEXT_STEP moves the Request to the next Step.
+     * The Request's state is set to EXPIRED if there is no next
+     * Step.
+     *
      * @generated from protobuf enum value: ON_TIMEOUT_GOTO_NEXT_STEP = 1;
      */
     GOTO_NEXT_STEP = 1,
     /**
+     * ON_TIMEOUT_REJECT sets the Request's state to REJECTED.
+     *
      * @generated from protobuf enum value: ON_TIMEOUT_REJECT = 2;
      */
     REJECT = 2
 }
 /**
+ * ApprovalRequirement is the condition that the Step's Reviews
+ * have to satisfy in order for the Step to be approved
+ *
  * @generated from protobuf enum octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.ApprovalRequirement
  */
 export enum Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement {
     /**
+     * APPROVAL_REQUIREMENT_UNSET is an invalid requirement. The
+     * approval requirement must be explicitly set.
+     *
      * @generated from protobuf enum value: APPROVAL_REQUIREMENT_UNSET = 0;
      */
     APPROVAL_REQUIREMENT_UNSET = 0,
     /**
+     * ANY approves the Step once any one of the Reviewers approves
+     * the Request.
+     *
      * @generated from protobuf enum value: ANY = 1;
      */
     ANY = 1,
     /**
+     * ALL approves the Step only once every one of the Reviewers
+     * approves the Request. Group Reviewers are expanded to all the
+     * Users belonging to them.
+     *
      * @generated from protobuf enum value: ALL = 2;
      */
     ALL = 2,
     /**
+     * COUNT approves the Step once the number of the Reviewers who
+     * approved the Request reaches `approvalCount`.
+     *
      * @generated from protobuf enum value: COUNT = 3;
      */
     COUNT = 3
 }
 /**
+ * Authorization is the access that is granted to the subject of an
+ * approved Request. The Cluster enforces it by creating a hidden
+ * PolicyTrigger that applies these Policies to the subject User for the
+ * requested Services and Namespaces until the access ends.
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.Authorization
  */
 export interface Policy_Spec_Rule_Authorization {
     /**
+     * Policies is the list of the standalone core Policies that are
+     * applied to the granted access.
+     *
      * @generated from protobuf field: repeated string policies = 1
      */
     policies: string[];
     /**
+     * InlinePolicies is the list of the inline core Policies that are
+     * applied to the granted access.
+     *
      * @generated from protobuf field: repeated octelium.api.main.core.v1.InlinePolicy inlinePolicies = 2
      */
     inlinePolicies: InlinePolicy[];
     /**
+     * MaxAccessDuration is the upper bound of the access duration that
+     * the requester can ask for in the Request's `spec.duration`. It
+     * defaults to 24 hours.
+     *
      * @generated from protobuf field: octelium.api.main.meta.v1.Duration maxAccessDuration = 3
      */
     maxAccessDuration?: Duration;
 }
 /**
+ * Effect is the effect of the Rule on the matched access Request
+ *
  * @generated from protobuf enum octelium.api.main.access.v1.Policy.Spec.Rule.Effect
  */
 export enum Policy_Spec_Rule_Effect {
     /**
+     * EFFECT_UNSET is an invalid effect. The effect must be explicitly
+     * set.
+     *
      * @generated from protobuf enum value: EFFECT_UNSET = 0;
      */
     EFFECT_UNSET = 0,
     /**
+     * DENY immediately sets the Request's state to REJECTED.
+     *
      * @generated from protobuf enum value: DENY = 1;
      */
     DENY = 1,
     /**
+     * REVIEW hands the Request over to the review workflow that is set by
+     * the Rule's Action.
+     *
      * @generated from protobuf enum value: REVIEW = 2;
      */
     REVIEW = 2,
     /**
+     * AUTO_APPROVE immediately sets the Request's state to APPROVED
+     * without any review.
+     *
      * @generated from protobuf enum value: AUTO_APPROVE = 3;
      */
     AUTO_APPROVE = 3
 }
 /**
+ * Status is the current status of the Policy
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Policy.Status
  */
 export interface Policy_Status {
 }
 /**
+ * Catalog is a named collection of the Cluster's resources that the Users can
+ * request access to as a single unit instead of having to request the access
+ * to each Service individually.
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Catalog
  */
 export interface Catalog {
     /**
-     * apiVersion is the API version of the Catalog object.
+     * APIVersion is the API version (i.e. "access/v1")
      *
      * @generated from protobuf field: string apiVersion = 1
      */
     apiVersion: string;
     /**
-     * kind is the resource kind. It should be `Catalog`.
+     * Kind is the resource name (i.e. `Catalog`).
      *
      * @generated from protobuf field: string kind = 2
      */
     kind: string;
     /**
-     * metadata is the Catalog object's metadata.
+     * Metadata is the object's metadata.
      *
      * @generated from protobuf field: octelium.api.main.meta.v1.Metadata metadata = 3
      */
     metadata?: Metadata;
     /**
-     * spec is the Catalog specification.
+     * Spec is the Catalog specification.
      *
      * @generated from protobuf field: octelium.api.main.access.v1.Catalog.Spec spec = 4
      */
     spec?: Catalog_Spec;
     /**
-     * status is the current Catalog status.
+     * Status is the current status of the Catalog.
      *
      * @generated from protobuf field: octelium.api.main.access.v1.Catalog.Status status = 5
      */
     status?: Catalog_Status;
 }
 /**
+ * Spec is the Catalog specification
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Catalog.Spec
  */
 export interface Catalog_Spec {
     /**
+     * ResourceCollection is the set of the resources that belong to the
+     * Catalog.
+     *
      * @generated from protobuf field: octelium.api.main.access.v1.Catalog.Spec.ResourceCollection resourceCollection = 1
      */
     resourceCollection?: Catalog_Spec_ResourceCollection;
 }
 /**
+ * ResourceCollection is the set of the resources that belong to the
+ * Catalog
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Catalog.Spec.ResourceCollection
  */
 export interface Catalog_Spec_ResourceCollection {
     /**
+     * Service is the Catalog's collection of Services. At least one Service
+     * or Namespace must be set.
+     *
      * @generated from protobuf field: octelium.api.main.access.v1.Catalog.Spec.ResourceCollection.Service service = 1
      */
     service?: Catalog_Spec_ResourceCollection_Service;
 }
 /**
+ * Service is the collection of the Cluster's Services
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Catalog.Spec.ResourceCollection.Service
  */
 export interface Catalog_Spec_ResourceCollection_Service {
     /**
+     * Services is the list of the Service names.
+     *
      * @generated from protobuf field: repeated string services = 1
      */
     services: string[];
     /**
+     * Namespaces is the list of the Namespace names. Every Service
+     * belonging to these Namespaces is included in the Catalog.
+     *
      * @generated from protobuf field: repeated string namespaces = 2
      */
     namespaces: string[];
 }
 /**
+ * Status is the current status of the Catalog
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Catalog.Status
  */
 export interface Catalog_Status {
 }
 /**
+ * CatalogList is the list of Catalogs returned by the ListCatalog method.
+ *
  * @generated from protobuf message octelium.api.main.access.v1.CatalogList
  */
 export interface CatalogList {
     /**
-     * apiVersion is the API version of the CatalogList object.
+     * APIVersion is the API version (i.e. "access/v1")
      *
      * @generated from protobuf field: string apiVersion = 1
      */
     apiVersion: string;
     /**
-     * kind is the resource kind. It should be `CatalogList`.
+     * Kind is the resource name (i.e. `CatalogList`).
      *
      * @generated from protobuf field: string kind = 2
      */
     kind: string;
     /**
-     * items is the list of Catalogs.
+     * Items is the list of Catalogs.
      *
      * @generated from protobuf field: repeated octelium.api.main.access.v1.Catalog items = 3
      */
     items: Catalog[];
     /**
-     * listResponseMeta is common information about the list response.
+     * ListResponseMeta is common information about the list.
      *
      * @generated from protobuf field: octelium.api.main.meta.v1.ListResponseMeta listResponseMeta = 4
      */
     listResponseMeta?: ListResponseMeta;
 }
 /**
+ * PolicyList is the list of Policies returned by the ListPolicy method.
+ *
  * @generated from protobuf message octelium.api.main.access.v1.PolicyList
  */
 export interface PolicyList {
     /**
-     * apiVersion is the API version of the PolicyList object.
+     * APIVersion is the API version (i.e. "access/v1")
      *
      * @generated from protobuf field: string apiVersion = 1
      */
     apiVersion: string;
     /**
-     * kind is the resource kind. It should be `PolicyList`.
+     * Kind is the resource name (i.e. `PolicyList`).
      *
      * @generated from protobuf field: string kind = 2
      */
     kind: string;
     /**
-     * items is the list of Policies.
+     * Items is the list of Policies.
      *
      * @generated from protobuf field: repeated octelium.api.main.access.v1.Policy items = 3
      */
     items: Policy[];
     /**
-     * listResponseMeta is common information about the list response.
+     * ListResponseMeta is common information about the list.
      *
      * @generated from protobuf field: octelium.api.main.meta.v1.ListResponseMeta listResponseMeta = 4
      */
     listResponseMeta?: ListResponseMeta;
 }
 /**
+ * Request is a User's request for a just-in-time access to a Service or to a
+ * Catalog. Once it is created, the Cluster matches it against the access
+ * Policies and, depending on the effect of the matched Rule, the Request is
+ * either immediately rejected, immediately approved or put into a review
+ * workflow until the reviewers decide its fate. An approved Request grants
+ * its subject the access that is set by the matched Rule's Authorization
+ * until the access ends.
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Request
  */
 export interface Request {
     /**
-     * apiVersion is the API version of the Request object.
+     * APIVersion is the API version (i.e. "access/v1")
      *
      * @generated from protobuf field: string apiVersion = 1
      */
     apiVersion: string;
     /**
-     * kind is the resource kind. It should be `Request`.
+     * Kind is the resource name (i.e. `Request`).
      *
      * @generated from protobuf field: string kind = 2
      */
     kind: string;
     /**
-     * metadata is the Request object's metadata.
+     * Metadata is the object's metadata.
      *
      * @generated from protobuf field: octelium.api.main.meta.v1.Metadata metadata = 3
      */
     metadata?: Metadata;
     /**
-     * spec is the Request specification.
+     * Spec is the Request specification.
      *
      * @generated from protobuf field: octelium.api.main.access.v1.Request.Spec spec = 4
      */
     spec?: Request_Spec;
     /**
-     * status is the current Request status.
+     * Status is the current status of the Request.
      *
      * @generated from protobuf field: octelium.api.main.access.v1.Request.Status status = 5
      */
     status?: Request_Status;
 }
 /**
+ * Spec is the Request specification
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Request.Spec
  */
 export interface Request_Spec {
     /**
+     * Urgency is how urgent the requester considers the Request to be.
+     *
      * @generated from protobuf field: octelium.api.main.access.v1.Request.Spec.Urgency urgency = 1
      */
     urgency: Request_Spec_Urgency;
     /**
+     * Resource is the resource that the access is requested for.
+     *
      * @generated from protobuf field: octelium.api.main.access.v1.Request.Spec.Resource resource = 2
      */
     resource?: Request_Spec_Resource;
     /**
+     * Subject is the User that the access is requested for. It is
+     * automatically set to the calling User by the CreateRequest method and
+     * it must be explicitly set for the CreateRequestForSubject method.
+     *
      * @generated from protobuf field: octelium.api.main.access.v1.Request.Spec.Subject subject = 3
      */
     subject?: Request_Spec_Subject;
     /**
+     * Justification is the requester's free-form explanation of why the
+     * access is needed. It cannot be longer than 1500 characters.
+     *
      * @generated from protobuf field: string justification = 4
      */
     justification: string;
     /**
+     * Deadline is the time after which a still pending Request is
+     * automatically expired.
+     *
      * @generated from protobuf field: google.protobuf.Timestamp deadline = 5
      */
     deadline?: Timestamp;
     /**
+     * Duration is how long the access should last for once the Request is
+     * approved. It is capped by the `maxAccessDuration` of the matched Rule's
+     * Authorization which defaults to 24 hours.
+     *
      * @generated from protobuf field: octelium.api.main.meta.v1.Duration duration = 6
      */
     duration?: Duration;
 }
 /**
+ * Resource is the resource that the access is requested for
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Request.Spec.Resource
  */
 export interface Request_Spec_Resource {
@@ -613,12 +848,16 @@ export interface Request_Spec_Resource {
     type: {
         oneofKind: "serviceRef";
         /**
+         * ServiceRef is a request for the access to a single Service.
+         *
          * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference serviceRef = 1
          */
         serviceRef: ObjectReference;
     } | {
         oneofKind: "catalog";
         /**
+         * Catalog is a request for the access to a Catalog.
+         *
          * @generated from protobuf field: octelium.api.main.access.v1.Request.Spec.Resource.Catalog catalog = 2
          */
         catalog: Request_Spec_Resource_Catalog;
@@ -627,15 +866,23 @@ export interface Request_Spec_Resource {
     };
 }
 /**
+ * Catalog is a request for the access to every Service belonging to a
+ * Catalog
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Request.Spec.Resource.Catalog
  */
 export interface Request_Spec_Resource_Catalog {
     /**
+     * CatalogRef is the reference of the Catalog.
+     *
      * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference catalogRef = 1
      */
     catalogRef?: ObjectReference;
 }
 /**
+ * Subject is the User that the access is requested for which is not
+ * necessarily the same User that created the Request
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Request.Spec.Subject
  */
 export interface Request_Spec_Subject {
@@ -645,6 +892,8 @@ export interface Request_Spec_Subject {
     type: {
         oneofKind: "userRef";
         /**
+         * UserRef is the reference of the subject User.
+         *
          * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference userRef = 1
          */
         userRef: ObjectReference;
@@ -653,478 +902,680 @@ export interface Request_Spec_Subject {
     };
 }
 /**
+ * Urgency is how urgent the requester considers the Request to be
+ *
  * @generated from protobuf enum octelium.api.main.access.v1.Request.Spec.Urgency
  */
 export enum Request_Spec_Urgency {
     /**
+     * URGENCY_UNSET means that no urgency level is set.
+     *
      * @generated from protobuf enum value: URGENCY_UNSET = 0;
      */
     URGENCY_UNSET = 0,
     /**
+     * VERY_LOW is a very low urgency level.
+     *
      * @generated from protobuf enum value: VERY_LOW = 1;
      */
     VERY_LOW = 1,
     /**
+     * LOW is a low urgency level.
+     *
      * @generated from protobuf enum value: LOW = 2;
      */
     LOW = 2,
     /**
+     * NORMAL is a normal urgency level.
+     *
      * @generated from protobuf enum value: NORMAL = 3;
      */
     NORMAL = 3,
     /**
+     * HIGH is a high urgency level.
+     *
      * @generated from protobuf enum value: HIGH = 4;
      */
     HIGH = 4,
     /**
+     * VERY_HIGH is a very high urgency level.
+     *
      * @generated from protobuf enum value: VERY_HIGH = 5;
      */
     VERY_HIGH = 5,
     /**
+     * HIGHEST is the highest urgency level.
+     *
      * @generated from protobuf enum value: HIGHEST = 6;
      */
     HIGHEST = 6
 }
 /**
+ * Status is the current status of the Request
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Request.Status
  */
 export interface Request_Status {
     /**
+     * State is the current state of the Request.
+     *
      * @generated from protobuf field: octelium.api.main.access.v1.Request.Status.State state = 1
      */
     state?: Request_Status_State;
     /**
+     * UserRef is the reference of the User that created the Request which is
+     * not necessarily the same User set as the Request's subject.
+     *
      * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference userRef = 2
      */
     userRef?: ObjectReference;
     /**
+     * ApprovalStartAt is the time at which the Request started waiting for a
+     * decision.
+     *
      * @generated from protobuf field: google.protobuf.Timestamp approvalStartAt = 3
      */
     approvalStartAt?: Timestamp;
     /**
+     * ApprovalEndAt is the time at which the Request reached a final state
+     * (i.e. APPROVED, REJECTED, REVOKED, EXPIRED or CANCELLED).
+     *
      * @generated from protobuf field: google.protobuf.Timestamp approvalEndAt = 4
      */
     approvalEndAt?: Timestamp;
     /**
+     * LastStates is the list of the previous states of the Request, ordered
+     * from the most recent to the oldest.
+     *
      * @generated from protobuf field: repeated octelium.api.main.access.v1.Request.Status.State lastStates = 5
      */
     lastStates: Request_Status_State[];
     /**
+     * PolicyTriggerRef is the reference of the hidden PolicyTrigger that the
+     * Cluster creates in order to grant the access of an approved Request. It
+     * is removed once the Request is no longer approved.
+     *
      * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference policyTriggerRef = 6
      */
     policyTriggerRef?: ObjectReference;
     /**
+     * PolicyRef is the reference of the Policy whose Rule matched the
+     * Request.
+     *
      * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference policyRef = 7
      */
     policyRef?: ObjectReference;
     /**
+     * Rule is a copy of the Policy Rule that matched the Request at the time
+     * it was evaluated. It is kept here so that the subsequent changes to the
+     * Policy do not affect the Requests that are already in flight.
+     *
      * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule rule = 8
      */
     rule?: Policy_Spec_Rule;
     /**
+     * Review is the current progress of the Request in the review workflow.
+     *
      * @generated from protobuf field: octelium.api.main.access.v1.Request.Status.Review review = 9
      */
     review?: Request_Status_Review;
     /**
+     * AccessEndsAt is the time at which the granted access ends. The
+     * Request's state is set to EXPIRED once it passes.
+     *
      * @generated from protobuf field: google.protobuf.Timestamp accessEndsAt = 10
      */
     accessEndsAt?: Timestamp;
 }
 /**
+ * State is a state of the Request at a certain point in time
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Request.Status.State
  */
 export interface Request_Status_State {
     /**
+     * CreatedAt is the time at which the state was set.
+     *
      * @generated from protobuf field: google.protobuf.Timestamp createdAt = 1
      */
     createdAt?: Timestamp;
     /**
+     * Status is the state of the Request.
+     *
      * @generated from protobuf field: octelium.api.main.access.v1.Request.Status.State.Status status = 2
      */
     status: Request_Status_State_Status;
 }
 /**
+ * Status is the state of the Request
+ *
  * @generated from protobuf enum octelium.api.main.access.v1.Request.Status.State.Status
  */
 export enum Request_Status_State_Status {
     /**
+     * STATUS_UNKNOWN means that the Request has not been evaluated by the
+     * Cluster yet.
+     *
      * @generated from protobuf enum value: STATUS_UNKNOWN = 0;
      */
     STATUS_UNKNOWN = 0,
     /**
+     * PENDING means that the Request is still waiting for a decision.
+     *
      * @generated from protobuf enum value: PENDING = 1;
      */
     PENDING = 1,
     /**
+     * APPROVED means that the Request has been approved and that the
+     * access is granted until it ends.
+     *
      * @generated from protobuf enum value: APPROVED = 2;
      */
     APPROVED = 2,
     /**
+     * REJECTED means that the Request has been rejected either by a
+     * matched DENY Rule or by a reviewer.
+     *
      * @generated from protobuf enum value: REJECTED = 3;
      */
     REJECTED = 3,
     /**
+     * REVOKED means that the Request has been revoked via the
+     * RevokeRequest method.
+     *
      * @generated from protobuf enum value: REVOKED = 4;
      */
     REVOKED = 4,
     /**
+     * EXPIRED means that the Request's deadline, review Step timeout or
+     * granted access has passed.
+     *
      * @generated from protobuf enum value: EXPIRED = 5;
      */
     EXPIRED = 5,
     /**
+     * CANCELLED means that the Request has been cancelled by its own
+     * requester via the CancelRequest method.
+     *
      * @generated from protobuf enum value: CANCELLED = 6;
      */
     CANCELLED = 6
 }
 /**
+ * Review is the current progress of the Request in the review workflow
+ * that is set by the matched Rule's Action
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Request.Status.Review
  */
 export interface Request_Status_Review {
     /**
+     * CurrentStep is the zero-based index of the review Step that the
+     * Request is currently waiting for.
+     *
      * @generated from protobuf field: int32 currentStep = 1
      */
     currentStep: number;
     /**
+     * LastSteps is the list of the Reviews that have already been applied
+     * to the Request.
+     *
      * @generated from protobuf field: repeated octelium.api.main.access.v1.Request.Status.Review.Step lastSteps = 2
      */
     lastSteps: Request_Status_Review_Step[];
     /**
+     * CurrentStepStartedAt is the time at which the current review Step
+     * started. It is the point from which the Step's timeout is measured.
+     *
      * @generated from protobuf field: google.protobuf.Timestamp currentStepStartedAt = 3
      */
     currentStepStartedAt?: Timestamp;
 }
 /**
+ * Step is a Review that has already been applied to the Request
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Request.Status.Review.Step
  */
 export interface Request_Status_Review_Step {
     /**
+     * ReviewRef is the reference of the applied Review.
+     *
      * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference reviewRef = 1
      */
     reviewRef?: ObjectReference;
     /**
+     * SetAt is the time at which the Review's decision was set.
+     *
      * @generated from protobuf field: google.protobuf.Timestamp setAt = 2
      */
     setAt?: Timestamp;
     /**
+     * StepIndex is the zero-based index of the review Step that the
+     * Review was applied to.
+     *
      * @generated from protobuf field: int32 stepIndex = 3
      */
     stepIndex: number;
 }
 /**
+ * RequestList is the list of Requests returned by the ListRequest method.
+ *
  * @generated from protobuf message octelium.api.main.access.v1.RequestList
  */
 export interface RequestList {
     /**
-     * apiVersion is the API version of the RequestList object.
+     * APIVersion is the API version (i.e. "access/v1")
      *
      * @generated from protobuf field: string apiVersion = 1
      */
     apiVersion: string;
     /**
-     * kind is the resource kind. It should be `RequestList`.
+     * Kind is the resource name (i.e. `RequestList`).
      *
      * @generated from protobuf field: string kind = 2
      */
     kind: string;
     /**
-     * items is the list of Requests.
+     * Items is the list of Requests.
      *
      * @generated from protobuf field: repeated octelium.api.main.access.v1.Request items = 3
      */
     items: Request[];
     /**
-     * listResponseMeta is common information about the list response.
+     * ListResponseMeta is common information about the list.
      *
      * @generated from protobuf field: octelium.api.main.meta.v1.ListResponseMeta listResponseMeta = 4
      */
     listResponseMeta?: ListResponseMeta;
 }
 /**
+ * Review is a reviewer's decision on a pending access Request. A Review is
+ * created via the ReviewerService by a User that is set as a Reviewer of the
+ * Request's current review Step. Once the Reviews of the current Step satisfy
+ * its approval requirement, the Request either moves to the next Step or, if
+ * there is no next Step, it is approved. A single rejecting Review, on the
+ * other hand, immediately rejects the Request.
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Review
  */
 export interface Review {
     /**
-     * apiVersion is the API version of the Review object.
+     * APIVersion is the API version (i.e. "access/v1")
      *
      * @generated from protobuf field: string apiVersion = 1
      */
     apiVersion: string;
     /**
-     * kind is the resource kind. It should be `Review`.
+     * Kind is the resource name (i.e. `Review`).
      *
      * @generated from protobuf field: string kind = 2
      */
     kind: string;
     /**
-     * metadata is the Review object's metadata.
+     * Metadata is the object's metadata.
      *
      * @generated from protobuf field: octelium.api.main.meta.v1.Metadata metadata = 3
      */
     metadata?: Metadata;
     /**
-     * spec is the Review specification.
+     * Spec is the Review specification.
      *
      * @generated from protobuf field: octelium.api.main.access.v1.Review.Spec spec = 4
      */
     spec?: Review_Spec;
     /**
-     * status is the current Review status.
+     * Status is the current status of the Review.
      *
      * @generated from protobuf field: octelium.api.main.access.v1.Review.Status status = 5
      */
     status?: Review_Status;
 }
 /**
+ * Spec is the Review specification
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Review.Spec
  */
 export interface Review_Spec {
     /**
+     * Justification is the reviewer's free-form explanation of the decision.
+     *
      * @generated from protobuf field: string justification = 1
      */
     justification: string;
     /**
+     * Decision is the reviewer's decision on the Request.
+     *
      * @generated from protobuf field: octelium.api.main.access.v1.Review.Spec.Decision decision = 2
      */
     decision: Review_Spec_Decision;
 }
 /**
+ * Decision is the reviewer's decision on the Request
+ *
  * @generated from protobuf enum octelium.api.main.access.v1.Review.Spec.Decision
  */
 export enum Review_Spec_Decision {
     /**
+     * DECISION_UNSET means that no decision is currently set. It is the
+     * state of a Review that has been cancelled via the CancelReview
+     * method.
+     *
      * @generated from protobuf enum value: DECISION_UNSET = 0;
      */
     UNSET = 0,
     /**
+     * DECISION_APPROVE approves the Request.
+     *
      * @generated from protobuf enum value: DECISION_APPROVE = 1;
      */
     APPROVE = 1,
     /**
+     * DECISION_REJECT rejects the Request.
+     *
      * @generated from protobuf enum value: DECISION_REJECT = 2;
      */
     REJECT = 2
 }
 /**
+ * Status is the current status of the Review
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Review.Status
  */
 export interface Review_Status {
     /**
+     * UserRef is the reference of the User that created the Review (i.e. the
+     * reviewer).
+     *
      * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference userRef = 1
      */
     userRef?: ObjectReference;
     /**
+     * RequestRef is the reference of the reviewed Request.
+     *
      * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference requestRef = 2
      */
     requestRef?: ObjectReference;
     /**
+     * SetAt is the time at which the current decision was set.
+     *
      * @generated from protobuf field: google.protobuf.Timestamp setAt = 3
      */
     setAt?: Timestamp;
     /**
+     * LastSetsAt is the list of the times at which the previous decisions
+     * were set, ordered from the most recent to the oldest.
+     *
      * @generated from protobuf field: repeated google.protobuf.Timestamp lastSetsAt = 4
      */
     lastSetsAt: Timestamp[];
     /**
+     * LastRevisions is the list of the previous specifications of the Review,
+     * ordered from the most recent to the oldest.
+     *
      * @generated from protobuf field: repeated octelium.api.main.access.v1.Review.Status.Revision lastRevisions = 5
      */
     lastRevisions: Review_Status_Revision[];
     /**
+     * StepIndex is the zero-based index of the Request's review Step that the
+     * Review applies to.
+     *
      * @generated from protobuf field: int32 stepIndex = 6
      */
     stepIndex: number;
 }
 /**
+ * Revision is a previous version of the Review's Spec
+ *
  * @generated from protobuf message octelium.api.main.access.v1.Review.Status.Revision
  */
 export interface Review_Status_Revision {
     /**
+     * Spec is the Review specification as it was before it was changed.
+     *
      * @generated from protobuf field: octelium.api.main.access.v1.Review.Spec spec = 1
      */
     spec?: Review_Spec;
     /**
+     * SetAt is the time at which that specification was set.
+     *
      * @generated from protobuf field: google.protobuf.Timestamp setAt = 2
      */
     setAt?: Timestamp;
 }
 /**
+ * ReviewList is the list of Reviews returned by the ListReview method.
+ *
  * @generated from protobuf message octelium.api.main.access.v1.ReviewList
  */
 export interface ReviewList {
     /**
-     * apiVersion is the API version of the ReviewList object.
+     * APIVersion is the API version (i.e. "access/v1")
      *
      * @generated from protobuf field: string apiVersion = 1
      */
     apiVersion: string;
     /**
-     * kind is the resource kind. It should be `ReviewList`.
+     * Kind is the resource name (i.e. `ReviewList`).
      *
      * @generated from protobuf field: string kind = 2
      */
     kind: string;
     /**
-     * items is the list of Reviews.
+     * Items is the list of Reviews.
      *
      * @generated from protobuf field: repeated octelium.api.main.access.v1.Review items = 3
      */
     items: Review[];
     /**
-     * listResponseMeta is common information about the list response.
+     * ListResponseMeta is common information about the list.
      *
      * @generated from protobuf field: octelium.api.main.meta.v1.ListResponseMeta listResponseMeta = 4
      */
     listResponseMeta?: ListResponseMeta;
 }
 /**
+ * SubjectUser is a limited view of a User that can be set as the subject of a
+ * Request created via the CreateRequestForSubject method.
+ *
  * @generated from protobuf message octelium.api.main.access.v1.SubjectUser
  */
 export interface SubjectUser {
     /**
-     * userRef is the object reference of the User.
+     * UserRef is the object reference of the User.
      *
      * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference userRef = 1
      */
     userRef?: ObjectReference;
     /**
-     * displayName is the display name of the User.
+     * DisplayName is the display name of the User.
      *
      * @generated from protobuf field: string displayName = 2
      */
     displayName: string;
     /**
-     * email is the email of the User.
+     * Email is the email of the User.
      *
      * @generated from protobuf field: string email = 3
      */
     email: string;
     /**
-     * picURL is the picture URL of the User.
+     * PicURL is the picture URL of the User.
      *
      * @generated from protobuf field: string picURL = 4
      */
     picURL: string;
     /**
-     * type is the User's type. It can either be HUMAN or WORKLOAD.
+     * Type is the User's type. It can either be HUMAN or WORKLOAD.
      *
      * @generated from protobuf field: octelium.api.main.core.v1.User.Spec.Type type = 5
      */
     type: User_Spec_Type;
 }
 /**
+ * SubjectUserList is the list of SubjectUsers returned by the ListSubjectUser
+ * method.
+ *
  * @generated from protobuf message octelium.api.main.access.v1.SubjectUserList
  */
 export interface SubjectUserList {
     /**
-     * apiVersion is the API version of the SubjectUserList object.
+     * APIVersion is the API version (i.e. "access/v1")
      *
      * @generated from protobuf field: string apiVersion = 1
      */
     apiVersion: string;
     /**
-     * kind is the resource kind. It should be `SubjectUserList`.
+     * Kind is the resource name (i.e. `SubjectUserList`).
      *
      * @generated from protobuf field: string kind = 2
      */
     kind: string;
     /**
-     * items is the list of SubjectUsers.
+     * Items is the list of SubjectUsers.
      *
      * @generated from protobuf field: repeated octelium.api.main.access.v1.SubjectUser items = 3
      */
     items: SubjectUser[];
     /**
-     * listResponseMeta is common information about the list response.
+     * ListResponseMeta is common information about the list.
      *
      * @generated from protobuf field: octelium.api.main.meta.v1.ListResponseMeta listResponseMeta = 4
      */
     listResponseMeta?: ListResponseMeta;
 }
 /**
+ * ListRequestOptions is the list options of the MainService's ListRequest
+ * method.
+ *
  * @generated from protobuf message octelium.api.main.access.v1.ListRequestOptions
  */
 export interface ListRequestOptions {
     /**
+     * Common is the common list options.
+     *
      * @generated from protobuf field: octelium.api.main.meta.v1.CommonListOptions common = 1
      */
     common?: CommonListOptions;
 }
 /**
+ * ListUserRequestOptions is the list options of the UserService's ListRequest
+ * method.
+ *
  * @generated from protobuf message octelium.api.main.access.v1.ListUserRequestOptions
  */
 export interface ListUserRequestOptions {
     /**
+     * Common is the common list options.
+     *
      * @generated from protobuf field: octelium.api.main.meta.v1.CommonListOptions common = 1
      */
     common?: CommonListOptions;
 }
 /**
+ * ListCatalogOptions is the list options of the MainService's ListCatalog
+ * method.
+ *
  * @generated from protobuf message octelium.api.main.access.v1.ListCatalogOptions
  */
 export interface ListCatalogOptions {
     /**
+     * Common is the common list options.
+     *
      * @generated from protobuf field: octelium.api.main.meta.v1.CommonListOptions common = 1
      */
     common?: CommonListOptions;
 }
 /**
+ * ListPolicyOptions is the list options of the ListPolicy method.
+ *
  * @generated from protobuf message octelium.api.main.access.v1.ListPolicyOptions
  */
 export interface ListPolicyOptions {
     /**
+     * Common is the common list options.
+     *
      * @generated from protobuf field: octelium.api.main.meta.v1.CommonListOptions common = 1
      */
     common?: CommonListOptions;
 }
 /**
+ * ListReviewOptions is the list options of the MainService's ListReview
+ * method.
+ *
  * @generated from protobuf message octelium.api.main.access.v1.ListReviewOptions
  */
 export interface ListReviewOptions {
     /**
+     * Common is the common list options.
+     *
      * @generated from protobuf field: octelium.api.main.meta.v1.CommonListOptions common = 1
      */
     common?: CommonListOptions;
 }
 /**
+ * ListUserCatalogOptions is the list options of the UserService's ListCatalog
+ * method.
+ *
  * @generated from protobuf message octelium.api.main.access.v1.ListUserCatalogOptions
  */
 export interface ListUserCatalogOptions {
     /**
+     * Common is the common list options.
+     *
      * @generated from protobuf field: octelium.api.main.meta.v1.CommonListOptions common = 1
      */
     common?: CommonListOptions;
 }
 /**
+ * ListReviewerRequestOptions is the list options of the ReviewerService's
+ * ListRequest method.
+ *
  * @generated from protobuf message octelium.api.main.access.v1.ListReviewerRequestOptions
  */
 export interface ListReviewerRequestOptions {
     /**
+     * Common is the common list options.
+     *
      * @generated from protobuf field: octelium.api.main.meta.v1.CommonListOptions common = 1
      */
     common?: CommonListOptions;
 }
 /**
+ * ListUserCatalogServiceOptions is the list options of the ListCatalogService
+ * method.
+ *
  * @generated from protobuf message octelium.api.main.access.v1.ListUserCatalogServiceOptions
  */
 export interface ListUserCatalogServiceOptions {
     /**
+     * Common is the common list options.
+     *
      * @generated from protobuf field: octelium.api.main.meta.v1.CommonListOptions common = 1
      */
     common?: CommonListOptions;
 }
 /**
+ * ListReviewerReviewOptions is the list options of the ReviewerService's
+ * ListReview method.
+ *
  * @generated from protobuf message octelium.api.main.access.v1.ListReviewerReviewOptions
  */
 export interface ListReviewerReviewOptions {
     /**
+     * Common is the common list options.
+     *
      * @generated from protobuf field: octelium.api.main.meta.v1.CommonListOptions common = 1
      */
     common?: CommonListOptions;
 }
 /**
+ * ListSubjectUserOptions is the list options of the ListSubjectUser method.
+ *
  * @generated from protobuf message octelium.api.main.access.v1.ListSubjectUserOptions
  */
 export interface ListSubjectUserOptions {
     /**
+     * Common is the common list options.
+     *
      * @generated from protobuf field: octelium.api.main.meta.v1.CommonListOptions common = 1
      */
     common?: CommonListOptions;
@@ -1137,37 +1588,53 @@ export interface ListSubjectUserOptions {
     query: string;
 }
 /**
+ * GetSubjectUserRequest is the request of the GetSubjectUser method.
+ *
  * @generated from protobuf message octelium.api.main.access.v1.GetSubjectUserRequest
  */
 export interface GetSubjectUserRequest {
     /**
+     * UserRef is the reference of the User.
+     *
      * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference userRef = 1
      */
     userRef?: ObjectReference;
 }
 /**
+ * CancelRequestRequest is the request of the CancelRequest method.
+ *
  * @generated from protobuf message octelium.api.main.access.v1.CancelRequestRequest
  */
 export interface CancelRequestRequest {
     /**
+     * RequestRef is the reference of the Request to be cancelled.
+     *
      * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference requestRef = 1
      */
     requestRef?: ObjectReference;
 }
 /**
+ * RevokeRequestRequest is the request of the RevokeRequest method.
+ *
  * @generated from protobuf message octelium.api.main.access.v1.RevokeRequestRequest
  */
 export interface RevokeRequestRequest {
     /**
+     * RequestRef is the reference of the Request to be revoked.
+     *
      * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference requestRef = 1
      */
     requestRef?: ObjectReference;
 }
 /**
+ * CancelReviewRequest is the request of the CancelReview method.
+ *
  * @generated from protobuf message octelium.api.main.access.v1.CancelReviewRequest
  */
 export interface CancelReviewRequest {
     /**
+     * ReviewRef is the reference of the Review whose decision is to be reset.
+     *
      * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference reviewRef = 1
      */
     reviewRef?: ObjectReference;

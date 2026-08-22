@@ -6,12 +6,14 @@
             "properties": {
                 "common": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.CommonListOptions",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Common is the common list options."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "List Reviewer Request Options"
+            "title": "List Reviewer Request Options",
+            "description": "ListReviewerRequestOptions is the list options of the ReviewerService's ListRequest method."
         },
         "octelium.api.main.meta.v1.CommonListOptions": {
             "properties": {

@@ -54,79 +54,129 @@ import type { Catalog } from "./accessv1";
 import type { UnaryCall } from "@protobuf-ts/runtime-rpc";
 import type { RpcOptions } from "@protobuf-ts/runtime-rpc";
 /**
+ * MainService is the management API of the Octelium access API which provides
+ * the just-in-time access to the Cluster's resources. It provides the CRUD
+ * operations over the Catalogs and the access Policies as well as the
+ * administrative access over the access Requests and their Reviews. Note that
+ * the Requests themselves are created by the Users via the UserService while
+ * the Reviews are created by the reviewers via the ReviewerService.
+ *
  * @generated from protobuf service octelium.api.main.access.v1.MainService
  */
 export interface IMainServiceClient {
     /**
+     * CreateCatalog creates a Catalog
+     *
      * @generated from protobuf rpc: CreateCatalog
      */
     createCatalog(input: Catalog, options?: RpcOptions): UnaryCall<Catalog, Catalog>;
     /**
+     * GetCatalog retrieves a specific Catalog
+     *
      * @generated from protobuf rpc: GetCatalog
      */
     getCatalog(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, Catalog>;
     /**
+     * UpdateCatalog updates a Catalog
+     *
      * @generated from protobuf rpc: UpdateCatalog
      */
     updateCatalog(input: Catalog, options?: RpcOptions): UnaryCall<Catalog, Catalog>;
     /**
+     * DeleteCatalog deletes a Catalog
+     *
      * @generated from protobuf rpc: DeleteCatalog
      */
     deleteCatalog(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult>;
     /**
+     * ListCatalog lists Catalogs
+     *
      * @generated from protobuf rpc: ListCatalog
      */
     listCatalog(input: ListCatalogOptions, options?: RpcOptions): UnaryCall<ListCatalogOptions, CatalogList>;
     /**
+     * CreatePolicy creates a Policy
+     *
      * @generated from protobuf rpc: CreatePolicy
      */
     createPolicy(input: Policy, options?: RpcOptions): UnaryCall<Policy, Policy>;
     /**
+     * GetPolicy retrieves a specific Policy
+     *
      * @generated from protobuf rpc: GetPolicy
      */
     getPolicy(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, Policy>;
     /**
+     * UpdatePolicy updates a Policy
+     *
      * @generated from protobuf rpc: UpdatePolicy
      */
     updatePolicy(input: Policy, options?: RpcOptions): UnaryCall<Policy, Policy>;
     /**
+     * DeletePolicy deletes a Policy
+     *
      * @generated from protobuf rpc: DeletePolicy
      */
     deletePolicy(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult>;
     /**
+     * ListPolicy lists Policies
+     *
      * @generated from protobuf rpc: ListPolicy
      */
     listPolicy(input: ListPolicyOptions, options?: RpcOptions): UnaryCall<ListPolicyOptions, PolicyList>;
     /**
+     * GetRequest retrieves a specific Request
+     *
      * @generated from protobuf rpc: GetRequest
      */
     getRequest(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, Request>;
     /**
+     * DeleteRequest deletes a Request
+     *
      * @generated from protobuf rpc: DeleteRequest
      */
     deleteRequest(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult>;
     /**
+     * ListRequest lists Requests
+     *
      * @generated from protobuf rpc: ListRequest
      */
     listRequest(input: ListRequestOptions, options?: RpcOptions): UnaryCall<ListRequestOptions, RequestList>;
     /**
+     * RevokeRequest revokes a pending or an approved Request. The Request's
+     * state is set to REVOKED and the access that has been granted by it, if
+     * any, is immediately terminated.
+     *
      * @generated from protobuf rpc: RevokeRequest
      */
     revokeRequest(input: RevokeRequestRequest, options?: RpcOptions): UnaryCall<RevokeRequestRequest, OperationResult>;
     /**
+     * ListReview lists Reviews
+     *
      * @generated from protobuf rpc: ListReview
      */
     listReview(input: ListReviewOptions, options?: RpcOptions): UnaryCall<ListReviewOptions, ReviewList>;
     /**
+     * GetReview retrieves a specific Review
+     *
      * @generated from protobuf rpc: GetReview
      */
     getReview(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, Review>;
     /**
+     * DeleteReview deletes a Review
+     *
      * @generated from protobuf rpc: DeleteReview
      */
     deleteReview(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult>;
 }
 /**
+ * MainService is the management API of the Octelium access API which provides
+ * the just-in-time access to the Cluster's resources. It provides the CRUD
+ * operations over the Catalogs and the access Policies as well as the
+ * administrative access over the access Requests and their Reviews. Note that
+ * the Requests themselves are created by the Users via the UserService while
+ * the Reviews are created by the reviewers via the ReviewerService.
+ *
  * @generated from protobuf service octelium.api.main.access.v1.MainService
  */
 export class MainServiceClient implements IMainServiceClient, ServiceInfo {
@@ -136,6 +186,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
     constructor(private readonly _transport: RpcTransport) {
     }
     /**
+     * CreateCatalog creates a Catalog
+     *
      * @generated from protobuf rpc: CreateCatalog
      */
     createCatalog(input: Catalog, options?: RpcOptions): UnaryCall<Catalog, Catalog> {
@@ -143,6 +195,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<Catalog, Catalog>("unary", this._transport, method, opt, input);
     }
     /**
+     * GetCatalog retrieves a specific Catalog
+     *
      * @generated from protobuf rpc: GetCatalog
      */
     getCatalog(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, Catalog> {
@@ -150,6 +204,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<GetOptions, Catalog>("unary", this._transport, method, opt, input);
     }
     /**
+     * UpdateCatalog updates a Catalog
+     *
      * @generated from protobuf rpc: UpdateCatalog
      */
     updateCatalog(input: Catalog, options?: RpcOptions): UnaryCall<Catalog, Catalog> {
@@ -157,6 +213,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<Catalog, Catalog>("unary", this._transport, method, opt, input);
     }
     /**
+     * DeleteCatalog deletes a Catalog
+     *
      * @generated from protobuf rpc: DeleteCatalog
      */
     deleteCatalog(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult> {
@@ -164,6 +222,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<DeleteOptions, OperationResult>("unary", this._transport, method, opt, input);
     }
     /**
+     * ListCatalog lists Catalogs
+     *
      * @generated from protobuf rpc: ListCatalog
      */
     listCatalog(input: ListCatalogOptions, options?: RpcOptions): UnaryCall<ListCatalogOptions, CatalogList> {
@@ -171,6 +231,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<ListCatalogOptions, CatalogList>("unary", this._transport, method, opt, input);
     }
     /**
+     * CreatePolicy creates a Policy
+     *
      * @generated from protobuf rpc: CreatePolicy
      */
     createPolicy(input: Policy, options?: RpcOptions): UnaryCall<Policy, Policy> {
@@ -178,6 +240,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<Policy, Policy>("unary", this._transport, method, opt, input);
     }
     /**
+     * GetPolicy retrieves a specific Policy
+     *
      * @generated from protobuf rpc: GetPolicy
      */
     getPolicy(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, Policy> {
@@ -185,6 +249,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<GetOptions, Policy>("unary", this._transport, method, opt, input);
     }
     /**
+     * UpdatePolicy updates a Policy
+     *
      * @generated from protobuf rpc: UpdatePolicy
      */
     updatePolicy(input: Policy, options?: RpcOptions): UnaryCall<Policy, Policy> {
@@ -192,6 +258,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<Policy, Policy>("unary", this._transport, method, opt, input);
     }
     /**
+     * DeletePolicy deletes a Policy
+     *
      * @generated from protobuf rpc: DeletePolicy
      */
     deletePolicy(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult> {
@@ -199,6 +267,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<DeleteOptions, OperationResult>("unary", this._transport, method, opt, input);
     }
     /**
+     * ListPolicy lists Policies
+     *
      * @generated from protobuf rpc: ListPolicy
      */
     listPolicy(input: ListPolicyOptions, options?: RpcOptions): UnaryCall<ListPolicyOptions, PolicyList> {
@@ -206,6 +276,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<ListPolicyOptions, PolicyList>("unary", this._transport, method, opt, input);
     }
     /**
+     * GetRequest retrieves a specific Request
+     *
      * @generated from protobuf rpc: GetRequest
      */
     getRequest(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, Request> {
@@ -213,6 +285,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<GetOptions, Request>("unary", this._transport, method, opt, input);
     }
     /**
+     * DeleteRequest deletes a Request
+     *
      * @generated from protobuf rpc: DeleteRequest
      */
     deleteRequest(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult> {
@@ -220,6 +294,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<DeleteOptions, OperationResult>("unary", this._transport, method, opt, input);
     }
     /**
+     * ListRequest lists Requests
+     *
      * @generated from protobuf rpc: ListRequest
      */
     listRequest(input: ListRequestOptions, options?: RpcOptions): UnaryCall<ListRequestOptions, RequestList> {
@@ -227,6 +303,10 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<ListRequestOptions, RequestList>("unary", this._transport, method, opt, input);
     }
     /**
+     * RevokeRequest revokes a pending or an approved Request. The Request's
+     * state is set to REVOKED and the access that has been granted by it, if
+     * any, is immediately terminated.
+     *
      * @generated from protobuf rpc: RevokeRequest
      */
     revokeRequest(input: RevokeRequestRequest, options?: RpcOptions): UnaryCall<RevokeRequestRequest, OperationResult> {
@@ -234,6 +314,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<RevokeRequestRequest, OperationResult>("unary", this._transport, method, opt, input);
     }
     /**
+     * ListReview lists Reviews
+     *
      * @generated from protobuf rpc: ListReview
      */
     listReview(input: ListReviewOptions, options?: RpcOptions): UnaryCall<ListReviewOptions, ReviewList> {
@@ -241,6 +323,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<ListReviewOptions, ReviewList>("unary", this._transport, method, opt, input);
     }
     /**
+     * GetReview retrieves a specific Review
+     *
      * @generated from protobuf rpc: GetReview
      */
     getReview(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, Review> {
@@ -248,6 +332,8 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
         return stackIntercept<GetOptions, Review>("unary", this._transport, method, opt, input);
     }
     /**
+     * DeleteReview deletes a Review
+     *
      * @generated from protobuf rpc: DeleteReview
      */
     deleteReview(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult> {
@@ -256,51 +342,87 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
     }
 }
 /**
+ * UserService is the User-facing API of the access API. It is used by the
+ * Users themselves (e.g. via the Cluster's access portal) in order to create
+ * and manage their own access Requests as well as to browse the Catalogs and
+ * the Services that they can request access to.
+ *
  * @generated from protobuf service octelium.api.main.access.v1.UserService
  */
 export interface IUserServiceClient {
     /**
+     * CreateRequest creates a Request whose subject is the calling User itself
+     *
      * @generated from protobuf rpc: CreateRequest
      */
     createRequest(input: Request, options?: RpcOptions): UnaryCall<Request, Request>;
     /**
+     * CreateRequestForSubject creates a Request on behalf of another User which
+     * must be explicitly set in the Request's spec.
+     *
      * @generated from protobuf rpc: CreateRequestForSubject
      */
     createRequestForSubject(input: Request, options?: RpcOptions): UnaryCall<Request, Request>;
     /**
+     * UpdateRequest updates a still pending Request that is owned by the
+     * calling User. Only the urgency, justification, deadline and duration can
+     * be changed.
+     *
      * @generated from protobuf rpc: UpdateRequest
      */
     updateRequest(input: Request, options?: RpcOptions): UnaryCall<Request, Request>;
     /**
+     * GetRequest retrieves a specific Request that is owned by the calling User
+     *
      * @generated from protobuf rpc: GetRequest
      */
     getRequest(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, Request>;
     /**
+     * CancelRequest cancels a still pending Request that is owned by the
+     * calling User
+     *
      * @generated from protobuf rpc: CancelRequest
      */
     cancelRequest(input: CancelRequestRequest, options?: RpcOptions): UnaryCall<CancelRequestRequest, OperationResult>;
     /**
+     * ListRequest lists the Requests that are created by the calling User
+     *
      * @generated from protobuf rpc: ListRequest
      */
     listRequest(input: ListUserRequestOptions, options?: RpcOptions): UnaryCall<ListUserRequestOptions, RequestList>;
     /**
+     * ListCatalog lists Catalogs
+     *
      * @generated from protobuf rpc: ListCatalog
      */
     listCatalog(input: ListUserCatalogOptions, options?: RpcOptions): UnaryCall<ListUserCatalogOptions, CatalogList>;
     /**
+     * ListCatalogService lists the Services that are included by the Catalogs
+     *
      * @generated from protobuf rpc: ListCatalogService
      */
     listCatalogService(input: ListUserCatalogServiceOptions, options?: RpcOptions): UnaryCall<ListUserCatalogServiceOptions, ServiceList>;
     /**
+     * ListSubjectUser lists the Users that can be set as the subject of a
+     * Request created via the CreateRequestForSubject method
+     *
      * @generated from protobuf rpc: ListSubjectUser
      */
     listSubjectUser(input: ListSubjectUserOptions, options?: RpcOptions): UnaryCall<ListSubjectUserOptions, SubjectUserList>;
     /**
+     * GetSubjectUser retrieves a specific User that can be set as the subject
+     * of a Request
+     *
      * @generated from protobuf rpc: GetSubjectUser
      */
     getSubjectUser(input: GetSubjectUserRequest, options?: RpcOptions): UnaryCall<GetSubjectUserRequest, SubjectUser>;
 }
 /**
+ * UserService is the User-facing API of the access API. It is used by the
+ * Users themselves (e.g. via the Cluster's access portal) in order to create
+ * and manage their own access Requests as well as to browse the Catalogs and
+ * the Services that they can request access to.
+ *
  * @generated from protobuf service octelium.api.main.access.v1.UserService
  */
 export class UserServiceClient implements IUserServiceClient, ServiceInfo {
@@ -310,6 +432,8 @@ export class UserServiceClient implements IUserServiceClient, ServiceInfo {
     constructor(private readonly _transport: RpcTransport) {
     }
     /**
+     * CreateRequest creates a Request whose subject is the calling User itself
+     *
      * @generated from protobuf rpc: CreateRequest
      */
     createRequest(input: Request, options?: RpcOptions): UnaryCall<Request, Request> {
@@ -317,6 +441,9 @@ export class UserServiceClient implements IUserServiceClient, ServiceInfo {
         return stackIntercept<Request, Request>("unary", this._transport, method, opt, input);
     }
     /**
+     * CreateRequestForSubject creates a Request on behalf of another User which
+     * must be explicitly set in the Request's spec.
+     *
      * @generated from protobuf rpc: CreateRequestForSubject
      */
     createRequestForSubject(input: Request, options?: RpcOptions): UnaryCall<Request, Request> {
@@ -324,6 +451,10 @@ export class UserServiceClient implements IUserServiceClient, ServiceInfo {
         return stackIntercept<Request, Request>("unary", this._transport, method, opt, input);
     }
     /**
+     * UpdateRequest updates a still pending Request that is owned by the
+     * calling User. Only the urgency, justification, deadline and duration can
+     * be changed.
+     *
      * @generated from protobuf rpc: UpdateRequest
      */
     updateRequest(input: Request, options?: RpcOptions): UnaryCall<Request, Request> {
@@ -331,6 +462,8 @@ export class UserServiceClient implements IUserServiceClient, ServiceInfo {
         return stackIntercept<Request, Request>("unary", this._transport, method, opt, input);
     }
     /**
+     * GetRequest retrieves a specific Request that is owned by the calling User
+     *
      * @generated from protobuf rpc: GetRequest
      */
     getRequest(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, Request> {
@@ -338,6 +471,9 @@ export class UserServiceClient implements IUserServiceClient, ServiceInfo {
         return stackIntercept<GetOptions, Request>("unary", this._transport, method, opt, input);
     }
     /**
+     * CancelRequest cancels a still pending Request that is owned by the
+     * calling User
+     *
      * @generated from protobuf rpc: CancelRequest
      */
     cancelRequest(input: CancelRequestRequest, options?: RpcOptions): UnaryCall<CancelRequestRequest, OperationResult> {
@@ -345,6 +481,8 @@ export class UserServiceClient implements IUserServiceClient, ServiceInfo {
         return stackIntercept<CancelRequestRequest, OperationResult>("unary", this._transport, method, opt, input);
     }
     /**
+     * ListRequest lists the Requests that are created by the calling User
+     *
      * @generated from protobuf rpc: ListRequest
      */
     listRequest(input: ListUserRequestOptions, options?: RpcOptions): UnaryCall<ListUserRequestOptions, RequestList> {
@@ -352,6 +490,8 @@ export class UserServiceClient implements IUserServiceClient, ServiceInfo {
         return stackIntercept<ListUserRequestOptions, RequestList>("unary", this._transport, method, opt, input);
     }
     /**
+     * ListCatalog lists Catalogs
+     *
      * @generated from protobuf rpc: ListCatalog
      */
     listCatalog(input: ListUserCatalogOptions, options?: RpcOptions): UnaryCall<ListUserCatalogOptions, CatalogList> {
@@ -359,6 +499,8 @@ export class UserServiceClient implements IUserServiceClient, ServiceInfo {
         return stackIntercept<ListUserCatalogOptions, CatalogList>("unary", this._transport, method, opt, input);
     }
     /**
+     * ListCatalogService lists the Services that are included by the Catalogs
+     *
      * @generated from protobuf rpc: ListCatalogService
      */
     listCatalogService(input: ListUserCatalogServiceOptions, options?: RpcOptions): UnaryCall<ListUserCatalogServiceOptions, ServiceList> {
@@ -366,6 +508,9 @@ export class UserServiceClient implements IUserServiceClient, ServiceInfo {
         return stackIntercept<ListUserCatalogServiceOptions, ServiceList>("unary", this._transport, method, opt, input);
     }
     /**
+     * ListSubjectUser lists the Users that can be set as the subject of a
+     * Request created via the CreateRequestForSubject method
+     *
      * @generated from protobuf rpc: ListSubjectUser
      */
     listSubjectUser(input: ListSubjectUserOptions, options?: RpcOptions): UnaryCall<ListSubjectUserOptions, SubjectUserList> {
@@ -373,6 +518,9 @@ export class UserServiceClient implements IUserServiceClient, ServiceInfo {
         return stackIntercept<ListSubjectUserOptions, SubjectUserList>("unary", this._transport, method, opt, input);
     }
     /**
+     * GetSubjectUser retrieves a specific User that can be set as the subject
+     * of a Request
+     *
      * @generated from protobuf rpc: GetSubjectUser
      */
     getSubjectUser(input: GetSubjectUserRequest, options?: RpcOptions): UnaryCall<GetSubjectUserRequest, SubjectUser> {
@@ -381,39 +529,65 @@ export class UserServiceClient implements IUserServiceClient, ServiceInfo {
     }
 }
 /**
+ * ReviewerService is the reviewer-facing API of the access API. It is used by
+ * the Users that are set as reviewers by the access Policies in order to
+ * review the pending Requests that are currently assigned to them.
+ *
  * @generated from protobuf service octelium.api.main.access.v1.ReviewerService
  */
 export interface IReviewerServiceClient {
     /**
+     * GetRequest retrieves a specific Request that the calling User can review
+     *
      * @generated from protobuf rpc: GetRequest
      */
     getRequest(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, Request>;
     /**
+     * ListRequest lists the pending Requests that the calling User can
+     * currently review
+     *
      * @generated from protobuf rpc: ListRequest
      */
     listRequest(input: ListReviewerRequestOptions, options?: RpcOptions): UnaryCall<ListReviewerRequestOptions, RequestList>;
     /**
+     * ListReview lists the Reviews that are created by the calling User
+     *
      * @generated from protobuf rpc: ListReview
      */
     listReview(input: ListReviewerReviewOptions, options?: RpcOptions): UnaryCall<ListReviewerReviewOptions, ReviewList>;
     /**
+     * GetReview retrieves a specific Review that is owned by the calling User
+     *
      * @generated from protobuf rpc: GetReview
      */
     getReview(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, Review>;
     /**
+     * CreateReview creates a Review for a pending Request. A reviewer can have
+     * at most one Review per Request.
+     *
      * @generated from protobuf rpc: CreateReview
      */
     createReview(input: Review, options?: RpcOptions): UnaryCall<Review, Review>;
     /**
+     * UpdateReview updates a Review that has not yet been applied to its
+     * Request
+     *
      * @generated from protobuf rpc: UpdateReview
      */
     updateReview(input: Review, options?: RpcOptions): UnaryCall<Review, Review>;
     /**
+     * CancelReview resets the decision of a Review that has not yet been
+     * applied to its Request
+     *
      * @generated from protobuf rpc: CancelReview
      */
     cancelReview(input: CancelReviewRequest, options?: RpcOptions): UnaryCall<CancelReviewRequest, OperationResult>;
 }
 /**
+ * ReviewerService is the reviewer-facing API of the access API. It is used by
+ * the Users that are set as reviewers by the access Policies in order to
+ * review the pending Requests that are currently assigned to them.
+ *
  * @generated from protobuf service octelium.api.main.access.v1.ReviewerService
  */
 export class ReviewerServiceClient implements IReviewerServiceClient, ServiceInfo {
@@ -423,6 +597,8 @@ export class ReviewerServiceClient implements IReviewerServiceClient, ServiceInf
     constructor(private readonly _transport: RpcTransport) {
     }
     /**
+     * GetRequest retrieves a specific Request that the calling User can review
+     *
      * @generated from protobuf rpc: GetRequest
      */
     getRequest(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, Request> {
@@ -430,6 +606,9 @@ export class ReviewerServiceClient implements IReviewerServiceClient, ServiceInf
         return stackIntercept<GetOptions, Request>("unary", this._transport, method, opt, input);
     }
     /**
+     * ListRequest lists the pending Requests that the calling User can
+     * currently review
+     *
      * @generated from protobuf rpc: ListRequest
      */
     listRequest(input: ListReviewerRequestOptions, options?: RpcOptions): UnaryCall<ListReviewerRequestOptions, RequestList> {
@@ -437,6 +616,8 @@ export class ReviewerServiceClient implements IReviewerServiceClient, ServiceInf
         return stackIntercept<ListReviewerRequestOptions, RequestList>("unary", this._transport, method, opt, input);
     }
     /**
+     * ListReview lists the Reviews that are created by the calling User
+     *
      * @generated from protobuf rpc: ListReview
      */
     listReview(input: ListReviewerReviewOptions, options?: RpcOptions): UnaryCall<ListReviewerReviewOptions, ReviewList> {
@@ -444,6 +625,8 @@ export class ReviewerServiceClient implements IReviewerServiceClient, ServiceInf
         return stackIntercept<ListReviewerReviewOptions, ReviewList>("unary", this._transport, method, opt, input);
     }
     /**
+     * GetReview retrieves a specific Review that is owned by the calling User
+     *
      * @generated from protobuf rpc: GetReview
      */
     getReview(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, Review> {
@@ -451,6 +634,9 @@ export class ReviewerServiceClient implements IReviewerServiceClient, ServiceInf
         return stackIntercept<GetOptions, Review>("unary", this._transport, method, opt, input);
     }
     /**
+     * CreateReview creates a Review for a pending Request. A reviewer can have
+     * at most one Review per Request.
+     *
      * @generated from protobuf rpc: CreateReview
      */
     createReview(input: Review, options?: RpcOptions): UnaryCall<Review, Review> {
@@ -458,6 +644,9 @@ export class ReviewerServiceClient implements IReviewerServiceClient, ServiceInf
         return stackIntercept<Review, Review>("unary", this._transport, method, opt, input);
     }
     /**
+     * UpdateReview updates a Review that has not yet been applied to its
+     * Request
+     *
      * @generated from protobuf rpc: UpdateReview
      */
     updateReview(input: Review, options?: RpcOptions): UnaryCall<Review, Review> {
@@ -465,6 +654,9 @@ export class ReviewerServiceClient implements IReviewerServiceClient, ServiceInf
         return stackIntercept<Review, Review>("unary", this._transport, method, opt, input);
     }
     /**
+     * CancelReview resets the decision of a Review that has not yet been
+     * applied to its Request
+     *
      * @generated from protobuf rpc: CancelReview
      */
     cancelReview(input: CancelReviewRequest, options?: RpcOptions): UnaryCall<CancelReviewRequest, OperationResult> {

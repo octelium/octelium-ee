@@ -6,36 +6,38 @@
             "properties": {
                 "apiVersion": {
                     "type": "string",
-                    "description": "apiVersion is the API version of the Review object."
+                    "description": "APIVersion is the API version (i.e. \"access/v1\")"
                 },
                 "kind": {
                     "type": "string",
-                    "description": "kind is the resource kind. It should be `Review`."
+                    "description": "Kind is the resource name (i.e. `Review`)."
                 },
                 "metadata": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Metadata",
                     "additionalProperties": false,
-                    "description": "metadata is the Review object's metadata."
+                    "description": "Metadata is the object's metadata."
                 },
                 "spec": {
                     "$ref": "#/definitions/octelium.api.main.access.v1.Review.Spec",
                     "additionalProperties": false,
-                    "description": "spec is the Review specification."
+                    "description": "Spec is the Review specification."
                 },
                 "status": {
                     "$ref": "#/definitions/octelium.api.main.access.v1.Review.Status",
                     "additionalProperties": false,
-                    "description": "status is the current Review status."
+                    "description": "Status is the current status of the Review."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Review"
+            "title": "Review",
+            "description": "Review is a reviewer's decision on a pending access Request. A Review is created via the ReviewerService by a User that is set as a Reviewer of the Request's current review Step. Once the Reviews of the current Step satisfy its approval requirement, the Request either moves to the next Step or, if there is no next Step, it is approved. A single rejecting Review, on the other hand, immediately rejects the Request."
         },
         "octelium.api.main.access.v1.Review.Spec": {
             "properties": {
                 "justification": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Justification is the reviewer's free-form explanation of the decision."
                 },
                 "decision": {
                     "enum": [
@@ -44,25 +46,30 @@
                         "DECISION_REJECT"
                     ],
                     "type": "string",
-                    "title": "Decision"
+                    "title": "Decision",
+                    "description": "Decision is the reviewer's decision on the Request"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Spec"
+            "title": "Spec",
+            "description": "Spec is the Review specification"
         },
         "octelium.api.main.access.v1.Review.Status": {
             "properties": {
                 "userRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "UserRef is the reference of the User that created the Review (i.e. the reviewer)."
                 },
                 "requestRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestRef is the reference of the reviewed Request."
                 },
                 "setAt": {
                     "type": "string",
+                    "description": "SetAt is the time at which the current decision was set.",
                     "format": "date-time"
                 },
                 "lastSetsAt": {
@@ -70,6 +77,7 @@
                         "type": "string"
                     },
                     "type": "array",
+                    "description": "LastSetsAt is the list of the times at which the previous decisions were set, ordered from the most recent to the oldest.",
                     "format": "date-time"
                 },
                 "lastRevisions": {
@@ -77,30 +85,36 @@
                         "$ref": "#/definitions/octelium.api.main.access.v1.Review.Status.Revision"
                     },
                     "additionalProperties": false,
-                    "type": "array"
+                    "type": "array",
+                    "description": "LastRevisions is the list of the previous specifications of the Review, ordered from the most recent to the oldest."
                 },
                 "stepIndex": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "StepIndex is the zero-based index of the Request's review Step that the Review applies to."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Status"
+            "title": "Status",
+            "description": "Status is the current status of the Review"
         },
         "octelium.api.main.access.v1.Review.Status.Revision": {
             "properties": {
                 "spec": {
                     "$ref": "#/definitions/octelium.api.main.access.v1.Review.Spec",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Spec is the Review specification as it was before it was changed."
                 },
                 "setAt": {
                     "type": "string",
+                    "description": "SetAt is the time at which that specification was set.",
                     "format": "date-time"
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Revision"
+            "title": "Revision",
+            "description": "Revision is a previous version of the Review's Spec"
         },
         "octelium.api.main.meta.v1.Metadata": {
             "properties": {

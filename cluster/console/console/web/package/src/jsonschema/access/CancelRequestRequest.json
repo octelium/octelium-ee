@@ -6,12 +6,14 @@
             "properties": {
                 "requestRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "RequestRef is the reference of the Request to be cancelled."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Cancel Request Request"
+            "title": "Cancel Request Request",
+            "description": "CancelRequestRequest is the request of the CancelRequest method."
         },
         "octelium.api.main.meta.v1.ObjectReference": {
             "properties": {

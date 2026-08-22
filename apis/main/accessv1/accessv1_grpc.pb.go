@@ -51,23 +51,49 @@ const (
 // MainServiceClient is the client API for MainService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// MainService is the management API of the Octelium access API which provides
+// the just-in-time access to the Cluster's resources. It provides the CRUD
+// operations over the Catalogs and the access Policies as well as the
+// administrative access over the access Requests and their Reviews. Note that
+// the Requests themselves are created by the Users via the UserService while
+// the Reviews are created by the reviewers via the ReviewerService.
 type MainServiceClient interface {
+	// CreateCatalog creates a Catalog
 	CreateCatalog(ctx context.Context, in *Catalog, opts ...grpc.CallOption) (*Catalog, error)
+	// GetCatalog retrieves a specific Catalog
 	GetCatalog(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*Catalog, error)
+	// UpdateCatalog updates a Catalog
 	UpdateCatalog(ctx context.Context, in *Catalog, opts ...grpc.CallOption) (*Catalog, error)
+	// DeleteCatalog deletes a Catalog
 	DeleteCatalog(ctx context.Context, in *metav1.DeleteOptions, opts ...grpc.CallOption) (*metav1.OperationResult, error)
+	// ListCatalog lists Catalogs
 	ListCatalog(ctx context.Context, in *ListCatalogOptions, opts ...grpc.CallOption) (*CatalogList, error)
+	// CreatePolicy creates a Policy
 	CreatePolicy(ctx context.Context, in *Policy, opts ...grpc.CallOption) (*Policy, error)
+	// GetPolicy retrieves a specific Policy
 	GetPolicy(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*Policy, error)
+	// UpdatePolicy updates a Policy
 	UpdatePolicy(ctx context.Context, in *Policy, opts ...grpc.CallOption) (*Policy, error)
+	// DeletePolicy deletes a Policy
 	DeletePolicy(ctx context.Context, in *metav1.DeleteOptions, opts ...grpc.CallOption) (*metav1.OperationResult, error)
+	// ListPolicy lists Policies
 	ListPolicy(ctx context.Context, in *ListPolicyOptions, opts ...grpc.CallOption) (*PolicyList, error)
+	// GetRequest retrieves a specific Request
 	GetRequest(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*Request, error)
+	// DeleteRequest deletes a Request
 	DeleteRequest(ctx context.Context, in *metav1.DeleteOptions, opts ...grpc.CallOption) (*metav1.OperationResult, error)
+	// ListRequest lists Requests
 	ListRequest(ctx context.Context, in *ListRequestOptions, opts ...grpc.CallOption) (*RequestList, error)
+	// RevokeRequest revokes a pending or an approved Request. The Request's
+	// state is set to REVOKED and the access that has been granted by it, if
+	// any, is immediately terminated.
 	RevokeRequest(ctx context.Context, in *RevokeRequestRequest, opts ...grpc.CallOption) (*metav1.OperationResult, error)
+	// ListReview lists Reviews
 	ListReview(ctx context.Context, in *ListReviewOptions, opts ...grpc.CallOption) (*ReviewList, error)
+	// GetReview retrieves a specific Review
 	GetReview(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*Review, error)
+	// DeleteReview deletes a Review
 	DeleteReview(ctx context.Context, in *metav1.DeleteOptions, opts ...grpc.CallOption) (*metav1.OperationResult, error)
 }
 
@@ -252,23 +278,49 @@ func (c *mainServiceClient) DeleteReview(ctx context.Context, in *metav1.DeleteO
 // MainServiceServer is the server API for MainService service.
 // All implementations must embed UnimplementedMainServiceServer
 // for forward compatibility.
+//
+// MainService is the management API of the Octelium access API which provides
+// the just-in-time access to the Cluster's resources. It provides the CRUD
+// operations over the Catalogs and the access Policies as well as the
+// administrative access over the access Requests and their Reviews. Note that
+// the Requests themselves are created by the Users via the UserService while
+// the Reviews are created by the reviewers via the ReviewerService.
 type MainServiceServer interface {
+	// CreateCatalog creates a Catalog
 	CreateCatalog(context.Context, *Catalog) (*Catalog, error)
+	// GetCatalog retrieves a specific Catalog
 	GetCatalog(context.Context, *metav1.GetOptions) (*Catalog, error)
+	// UpdateCatalog updates a Catalog
 	UpdateCatalog(context.Context, *Catalog) (*Catalog, error)
+	// DeleteCatalog deletes a Catalog
 	DeleteCatalog(context.Context, *metav1.DeleteOptions) (*metav1.OperationResult, error)
+	// ListCatalog lists Catalogs
 	ListCatalog(context.Context, *ListCatalogOptions) (*CatalogList, error)
+	// CreatePolicy creates a Policy
 	CreatePolicy(context.Context, *Policy) (*Policy, error)
+	// GetPolicy retrieves a specific Policy
 	GetPolicy(context.Context, *metav1.GetOptions) (*Policy, error)
+	// UpdatePolicy updates a Policy
 	UpdatePolicy(context.Context, *Policy) (*Policy, error)
+	// DeletePolicy deletes a Policy
 	DeletePolicy(context.Context, *metav1.DeleteOptions) (*metav1.OperationResult, error)
+	// ListPolicy lists Policies
 	ListPolicy(context.Context, *ListPolicyOptions) (*PolicyList, error)
+	// GetRequest retrieves a specific Request
 	GetRequest(context.Context, *metav1.GetOptions) (*Request, error)
+	// DeleteRequest deletes a Request
 	DeleteRequest(context.Context, *metav1.DeleteOptions) (*metav1.OperationResult, error)
+	// ListRequest lists Requests
 	ListRequest(context.Context, *ListRequestOptions) (*RequestList, error)
+	// RevokeRequest revokes a pending or an approved Request. The Request's
+	// state is set to REVOKED and the access that has been granted by it, if
+	// any, is immediately terminated.
 	RevokeRequest(context.Context, *RevokeRequestRequest) (*metav1.OperationResult, error)
+	// ListReview lists Reviews
 	ListReview(context.Context, *ListReviewOptions) (*ReviewList, error)
+	// GetReview retrieves a specific Review
 	GetReview(context.Context, *metav1.GetOptions) (*Review, error)
+	// DeleteReview deletes a Review
 	DeleteReview(context.Context, *metav1.DeleteOptions) (*metav1.OperationResult, error)
 	mustEmbedUnimplementedMainServiceServer()
 }
@@ -754,16 +806,37 @@ const (
 // UserServiceClient is the client API for UserService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// UserService is the User-facing API of the access API. It is used by the
+// Users themselves (e.g. via the Cluster's access portal) in order to create
+// and manage their own access Requests as well as to browse the Catalogs and
+// the Services that they can request access to.
 type UserServiceClient interface {
+	// CreateRequest creates a Request whose subject is the calling User itself
 	CreateRequest(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Request, error)
+	// CreateRequestForSubject creates a Request on behalf of another User which
+	// must be explicitly set in the Request's spec.
 	CreateRequestForSubject(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Request, error)
+	// UpdateRequest updates a still pending Request that is owned by the
+	// calling User. Only the urgency, justification, deadline and duration can
+	// be changed.
 	UpdateRequest(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Request, error)
+	// GetRequest retrieves a specific Request that is owned by the calling User
 	GetRequest(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*Request, error)
+	// CancelRequest cancels a still pending Request that is owned by the
+	// calling User
 	CancelRequest(ctx context.Context, in *CancelRequestRequest, opts ...grpc.CallOption) (*metav1.OperationResult, error)
+	// ListRequest lists the Requests that are created by the calling User
 	ListRequest(ctx context.Context, in *ListUserRequestOptions, opts ...grpc.CallOption) (*RequestList, error)
+	// ListCatalog lists Catalogs
 	ListCatalog(ctx context.Context, in *ListUserCatalogOptions, opts ...grpc.CallOption) (*CatalogList, error)
+	// ListCatalogService lists the Services that are included by the Catalogs
 	ListCatalogService(ctx context.Context, in *ListUserCatalogServiceOptions, opts ...grpc.CallOption) (*userv1.ServiceList, error)
+	// ListSubjectUser lists the Users that can be set as the subject of a
+	// Request created via the CreateRequestForSubject method
 	ListSubjectUser(ctx context.Context, in *ListSubjectUserOptions, opts ...grpc.CallOption) (*SubjectUserList, error)
+	// GetSubjectUser retrieves a specific User that can be set as the subject
+	// of a Request
 	GetSubjectUser(ctx context.Context, in *GetSubjectUserRequest, opts ...grpc.CallOption) (*SubjectUser, error)
 }
 
@@ -878,16 +951,37 @@ func (c *userServiceClient) GetSubjectUser(ctx context.Context, in *GetSubjectUs
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
+//
+// UserService is the User-facing API of the access API. It is used by the
+// Users themselves (e.g. via the Cluster's access portal) in order to create
+// and manage their own access Requests as well as to browse the Catalogs and
+// the Services that they can request access to.
 type UserServiceServer interface {
+	// CreateRequest creates a Request whose subject is the calling User itself
 	CreateRequest(context.Context, *Request) (*Request, error)
+	// CreateRequestForSubject creates a Request on behalf of another User which
+	// must be explicitly set in the Request's spec.
 	CreateRequestForSubject(context.Context, *Request) (*Request, error)
+	// UpdateRequest updates a still pending Request that is owned by the
+	// calling User. Only the urgency, justification, deadline and duration can
+	// be changed.
 	UpdateRequest(context.Context, *Request) (*Request, error)
+	// GetRequest retrieves a specific Request that is owned by the calling User
 	GetRequest(context.Context, *metav1.GetOptions) (*Request, error)
+	// CancelRequest cancels a still pending Request that is owned by the
+	// calling User
 	CancelRequest(context.Context, *CancelRequestRequest) (*metav1.OperationResult, error)
+	// ListRequest lists the Requests that are created by the calling User
 	ListRequest(context.Context, *ListUserRequestOptions) (*RequestList, error)
+	// ListCatalog lists Catalogs
 	ListCatalog(context.Context, *ListUserCatalogOptions) (*CatalogList, error)
+	// ListCatalogService lists the Services that are included by the Catalogs
 	ListCatalogService(context.Context, *ListUserCatalogServiceOptions) (*userv1.ServiceList, error)
+	// ListSubjectUser lists the Users that can be set as the subject of a
+	// Request created via the CreateRequestForSubject method
 	ListSubjectUser(context.Context, *ListSubjectUserOptions) (*SubjectUserList, error)
+	// GetSubjectUser retrieves a specific User that can be set as the subject
+	// of a Request
 	GetSubjectUser(context.Context, *GetSubjectUserRequest) (*SubjectUser, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
@@ -1195,13 +1289,28 @@ const (
 // ReviewerServiceClient is the client API for ReviewerService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// ReviewerService is the reviewer-facing API of the access API. It is used by
+// the Users that are set as reviewers by the access Policies in order to
+// review the pending Requests that are currently assigned to them.
 type ReviewerServiceClient interface {
+	// GetRequest retrieves a specific Request that the calling User can review
 	GetRequest(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*Request, error)
+	// ListRequest lists the pending Requests that the calling User can
+	// currently review
 	ListRequest(ctx context.Context, in *ListReviewerRequestOptions, opts ...grpc.CallOption) (*RequestList, error)
+	// ListReview lists the Reviews that are created by the calling User
 	ListReview(ctx context.Context, in *ListReviewerReviewOptions, opts ...grpc.CallOption) (*ReviewList, error)
+	// GetReview retrieves a specific Review that is owned by the calling User
 	GetReview(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*Review, error)
+	// CreateReview creates a Review for a pending Request. A reviewer can have
+	// at most one Review per Request.
 	CreateReview(ctx context.Context, in *Review, opts ...grpc.CallOption) (*Review, error)
+	// UpdateReview updates a Review that has not yet been applied to its
+	// Request
 	UpdateReview(ctx context.Context, in *Review, opts ...grpc.CallOption) (*Review, error)
+	// CancelReview resets the decision of a Review that has not yet been
+	// applied to its Request
 	CancelReview(ctx context.Context, in *CancelReviewRequest, opts ...grpc.CallOption) (*metav1.OperationResult, error)
 }
 
@@ -1286,13 +1395,28 @@ func (c *reviewerServiceClient) CancelReview(ctx context.Context, in *CancelRevi
 // ReviewerServiceServer is the server API for ReviewerService service.
 // All implementations must embed UnimplementedReviewerServiceServer
 // for forward compatibility.
+//
+// ReviewerService is the reviewer-facing API of the access API. It is used by
+// the Users that are set as reviewers by the access Policies in order to
+// review the pending Requests that are currently assigned to them.
 type ReviewerServiceServer interface {
+	// GetRequest retrieves a specific Request that the calling User can review
 	GetRequest(context.Context, *metav1.GetOptions) (*Request, error)
+	// ListRequest lists the pending Requests that the calling User can
+	// currently review
 	ListRequest(context.Context, *ListReviewerRequestOptions) (*RequestList, error)
+	// ListReview lists the Reviews that are created by the calling User
 	ListReview(context.Context, *ListReviewerReviewOptions) (*ReviewList, error)
+	// GetReview retrieves a specific Review that is owned by the calling User
 	GetReview(context.Context, *metav1.GetOptions) (*Review, error)
+	// CreateReview creates a Review for a pending Request. A reviewer can have
+	// at most one Review per Request.
 	CreateReview(context.Context, *Review) (*Review, error)
+	// UpdateReview updates a Review that has not yet been applied to its
+	// Request
 	UpdateReview(context.Context, *Review) (*Review, error)
+	// CancelReview resets the decision of a Review that has not yet been
+	// applied to its Request
 	CancelReview(context.Context, *CancelReviewRequest) (*metav1.OperationResult, error)
 	mustEmbedUnimplementedReviewerServiceServer()
 }

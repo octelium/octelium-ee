@@ -41,7 +41,7 @@ const Edit = (props: {
     <div className="w-full">
       <EditItem
         title="Catalog resources"
-        description="Choose individual Services and Namespaces whose Services are included"
+        description="Include specific Services and every Service belonging to selected Namespaces. At least one must be configured."
         obj={req.spec?.resourceCollection}
         onSet={() => {
           ensureCollection();
@@ -72,7 +72,7 @@ const Edit = (props: {
                 api="core"
                 kind="Service"
                 label="Services"
-                description="Search by name or display name"
+                description="Services included directly in this Catalog."
                 clearable
                 defaultValue={collection?.services ?? []}
                 onChange={(resources) => {
@@ -101,7 +101,7 @@ const Edit = (props: {
                 api="core"
                 kind="Namespace"
                 label="Namespaces"
-                description="Search by name or display name"
+                description="Include every Service belonging to these Namespaces."
                 clearable
                 defaultValue={collection?.namespaces ?? []}
                 onChange={(resources) => {

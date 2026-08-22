@@ -308,7 +308,7 @@ const ConditionEdit = (props: {
                     api="core"
                     kind="User"
                     label="User"
-                    description="Select the User"
+                    description="Select the specific User who is the request subject."
                     defaultValue={subject.subject.type.userRef.name}
                     onChange={(v) => {
                       if (subject.subject.type.oneofKind === "userRef") {
@@ -326,7 +326,7 @@ const ConditionEdit = (props: {
                     api="core"
                     kind="Group"
                     label="Group"
-                    description="Select the Group"
+                    description="Select the Group whose members are request subjects."
                     defaultValue={subject.subject.type.groupRef.name}
                     onChange={(v) => {
                       if (subject.subject.type.oneofKind === "groupRef") {
@@ -350,7 +350,7 @@ const ConditionEdit = (props: {
                     api="core"
                     kind="Service"
                     label="Service"
-                    description="Select the Service"
+                    description="Select the Service targeted by the access request."
                     defaultValue={resource.resource.type.serviceRef.name}
                     onChange={(v) => {
                       if (resource.resource.type.oneofKind === "serviceRef") {
@@ -367,7 +367,7 @@ const ConditionEdit = (props: {
                     api="access"
                     kind="Catalog"
                     label="Catalog"
-                    description="Select the Catalog"
+                    description="Select the Catalog targeted by the access request."
                     defaultValue={resource.resource.type.catalogRef.name}
                     onChange={(v) => {
                       if (resource.resource.type.oneofKind === "catalogRef") {
@@ -451,7 +451,7 @@ const ConditionEdit = (props: {
                 api="core"
                 kind="User"
                 label="Requester User"
-                description="Matches the requester against this User"
+                description="Match the User who created the request, rather than its subject."
                 defaultValue={userRef.userRef.name}
                 onChange={(v) => {
                   userRef.userRef = v
@@ -467,7 +467,7 @@ const ConditionEdit = (props: {
             (matchType) => (
               <Input.Wrapper
                 label="CEL Expression"
-                description="Write a CEL expression that must evaluate to true"
+                description="CEL expression that must evaluate to true for this condition to match."
               >
                 <CELEditor
                   exp={matchType.match}
@@ -642,7 +642,7 @@ const ReviewStepEdit = (props: {
                   api="core"
                   kind="User"
                   label="User"
-                  description="Select the reviewer User"
+                  description="Select the User allowed to approve this step."
                   defaultValue={reviewer.type.user.userRef?.name}
                   onChange={(v) => {
                     if (reviewer.type.oneofKind === "user") {
@@ -659,7 +659,7 @@ const ReviewStepEdit = (props: {
                   api="core"
                   kind="Group"
                   label="Group"
-                  description="Select the reviewer Group"
+                  description="Select the Group whose members may approve this step."
                   defaultValue={reviewer.type.group.groupRef?.name}
                   onChange={(v) => {
                     if (reviewer.type.oneofKind === "group") {
@@ -780,6 +780,7 @@ const ReviewStepEdit = (props: {
           <DurationPicker
             value={step.timeout}
             title="Timeout"
+            description="How long this step may wait for a review decision before the timeout action runs."
             onChange={(v) => {
               step.timeout = v;
               onUpdate();
@@ -803,7 +804,7 @@ const RuleEdit = (props: {
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(320px,1.25fr)]">
         <TextInput
           label="Name"
-          description="Give this rule a recognizable name"
+          description="Unique name for this rule within the Policy."
           placeholder="my-rule"
           value={rule.name}
           onChange={(v) => {
@@ -814,7 +815,7 @@ const RuleEdit = (props: {
         <Input.Wrapper
           label="Effect"
           required
-          description="Choose what happens when this rule matches"
+          description="Effect applied when this rule’s condition matches the request."
         >
           <SegmentedControl
             fullWidth
@@ -869,7 +870,7 @@ const RuleEdit = (props: {
       <div className="mt-4">
         <PriorityPicker
           label="Priority"
-          description="Control where this rule is evaluated relative to other rules"
+          description="Lower values are evaluated before higher values."
           value={rule.priority}
           onChange={(value) => {
             rule.priority = value;
@@ -880,7 +881,7 @@ const RuleEdit = (props: {
 
       <EditItem
         title="Condition"
-        description="Choose which requests this rule applies to"
+        description="Condition that must match for this rule to apply."
         onUnset={() => {
           rule.condition = undefined;
           onUpdate();
@@ -899,7 +900,7 @@ const RuleEdit = (props: {
       {rule.effect === AccessP.Policy_Spec_Rule_Effect.REVIEW && (
         <EditItem
           title="Review workflow"
-          description="Configure who reviews this request and how approval proceeds"
+          description="Review action required when this rule matches."
           onUnset={() => {
             rule.action = undefined;
             onUpdate();
@@ -962,7 +963,7 @@ const RuleEdit = (props: {
         rule.effect === AccessP.Policy_Spec_Rule_Effect.AUTO_APPROVE) && (
         <EditItem
           title="Granted access"
-          description="Set the authorization and maximum duration granted after approval"
+          description="Policies and maximum duration granted after the request is approved."
           onUnset={() => {
             rule.authorization = undefined;
             onUpdate();
@@ -996,6 +997,7 @@ const RuleEdit = (props: {
               <DurationPicker
                 value={rule.authorization.maxAccessDuration}
                 title="Maximum access duration"
+                description="Upper bound on the access duration requested by the requester. Defaults to 24 hours when unset."
                 onChange={(v) => {
                   rule.authorization!.maxAccessDuration = v;
                   onUpdate();
@@ -1037,7 +1039,7 @@ const Edit = (props: {
       <Group grow>
         <Switch
           label="Disabled"
-          description="Disable the Policy so it stops being evaluated"
+          description="Skip this Policy entirely when access requests are evaluated."
           checked={req.spec!.isDisabled}
           onChange={(v) => {
             req.spec!.isDisabled = v.target.checked;

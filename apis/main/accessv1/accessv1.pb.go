@@ -32,12 +32,20 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Effect is the effect of the Rule on the matched access Request
 type Policy_Spec_Rule_Effect int32
 
 const (
+	// EFFECT_UNSET is an invalid effect. The effect must be explicitly
+	// set.
 	Policy_Spec_Rule_EFFECT_UNSET Policy_Spec_Rule_Effect = 0
-	Policy_Spec_Rule_DENY         Policy_Spec_Rule_Effect = 1
-	Policy_Spec_Rule_REVIEW       Policy_Spec_Rule_Effect = 2
+	// DENY immediately sets the Request's state to REJECTED.
+	Policy_Spec_Rule_DENY Policy_Spec_Rule_Effect = 1
+	// REVIEW hands the Request over to the review workflow that is set by
+	// the Rule's Action.
+	Policy_Spec_Rule_REVIEW Policy_Spec_Rule_Effect = 2
+	// AUTO_APPROVE immediately sets the Request's state to APPROVED
+	// without any review.
 	Policy_Spec_Rule_AUTO_APPROVE Policy_Spec_Rule_Effect = 3
 )
 
@@ -84,12 +92,20 @@ func (Policy_Spec_Rule_Effect) EnumDescriptor() ([]byte, []int) {
 	return file_accessv1_proto_rawDescGZIP(), []int{0, 0, 0, 0}
 }
 
+// OnTimeout is what happens to the Request once the Step's
+// timeout is reached
 type Policy_Spec_Rule_Action_Review_Step_OnTimeout int32
 
 const (
-	Policy_Spec_Rule_Action_Review_Step_ON_TIMEOUT_UNSET          Policy_Spec_Rule_Action_Review_Step_OnTimeout = 0
+	// ON_TIMEOUT_UNSET sets the Request's state to EXPIRED. It is
+	// the default behavior.
+	Policy_Spec_Rule_Action_Review_Step_ON_TIMEOUT_UNSET Policy_Spec_Rule_Action_Review_Step_OnTimeout = 0
+	// ON_TIMEOUT_GOTO_NEXT_STEP moves the Request to the next Step.
+	// The Request's state is set to EXPIRED if there is no next
+	// Step.
 	Policy_Spec_Rule_Action_Review_Step_ON_TIMEOUT_GOTO_NEXT_STEP Policy_Spec_Rule_Action_Review_Step_OnTimeout = 1
-	Policy_Spec_Rule_Action_Review_Step_ON_TIMEOUT_REJECT         Policy_Spec_Rule_Action_Review_Step_OnTimeout = 2
+	// ON_TIMEOUT_REJECT sets the Request's state to REJECTED.
+	Policy_Spec_Rule_Action_Review_Step_ON_TIMEOUT_REJECT Policy_Spec_Rule_Action_Review_Step_OnTimeout = 2
 )
 
 // Enum value maps for Policy_Spec_Rule_Action_Review_Step_OnTimeout.
@@ -133,13 +149,24 @@ func (Policy_Spec_Rule_Action_Review_Step_OnTimeout) EnumDescriptor() ([]byte, [
 	return file_accessv1_proto_rawDescGZIP(), []int{0, 0, 0, 1, 0, 0, 0}
 }
 
+// ApprovalRequirement is the condition that the Step's Reviews
+// have to satisfy in order for the Step to be approved
 type Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement int32
 
 const (
+	// APPROVAL_REQUIREMENT_UNSET is an invalid requirement. The
+	// approval requirement must be explicitly set.
 	Policy_Spec_Rule_Action_Review_Step_APPROVAL_REQUIREMENT_UNSET Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement = 0
-	Policy_Spec_Rule_Action_Review_Step_ANY                        Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement = 1
-	Policy_Spec_Rule_Action_Review_Step_ALL                        Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement = 2
-	Policy_Spec_Rule_Action_Review_Step_COUNT                      Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement = 3
+	// ANY approves the Step once any one of the Reviewers approves
+	// the Request.
+	Policy_Spec_Rule_Action_Review_Step_ANY Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement = 1
+	// ALL approves the Step only once every one of the Reviewers
+	// approves the Request. Group Reviewers are expanded to all the
+	// Users belonging to them.
+	Policy_Spec_Rule_Action_Review_Step_ALL Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement = 2
+	// COUNT approves the Step once the number of the Reviewers who
+	// approved the Request reaches `approvalCount`.
+	Policy_Spec_Rule_Action_Review_Step_COUNT Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement = 3
 )
 
 // Enum value maps for Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement.
@@ -185,16 +212,24 @@ func (Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement) EnumDescriptor() 
 	return file_accessv1_proto_rawDescGZIP(), []int{0, 0, 0, 1, 0, 0, 1}
 }
 
+// Urgency is how urgent the requester considers the Request to be
 type Request_Spec_Urgency int32
 
 const (
+	// URGENCY_UNSET means that no urgency level is set.
 	Request_Spec_URGENCY_UNSET Request_Spec_Urgency = 0
-	Request_Spec_VERY_LOW      Request_Spec_Urgency = 1
-	Request_Spec_LOW           Request_Spec_Urgency = 2
-	Request_Spec_NORMAL        Request_Spec_Urgency = 3
-	Request_Spec_HIGH          Request_Spec_Urgency = 4
-	Request_Spec_VERY_HIGH     Request_Spec_Urgency = 5
-	Request_Spec_HIGHEST       Request_Spec_Urgency = 6
+	// VERY_LOW is a very low urgency level.
+	Request_Spec_VERY_LOW Request_Spec_Urgency = 1
+	// LOW is a low urgency level.
+	Request_Spec_LOW Request_Spec_Urgency = 2
+	// NORMAL is a normal urgency level.
+	Request_Spec_NORMAL Request_Spec_Urgency = 3
+	// HIGH is a high urgency level.
+	Request_Spec_HIGH Request_Spec_Urgency = 4
+	// VERY_HIGH is a very high urgency level.
+	Request_Spec_VERY_HIGH Request_Spec_Urgency = 5
+	// HIGHEST is the highest urgency level.
+	Request_Spec_HIGHEST Request_Spec_Urgency = 6
 )
 
 // Enum value maps for Request_Spec_Urgency.
@@ -246,16 +281,30 @@ func (Request_Spec_Urgency) EnumDescriptor() ([]byte, []int) {
 	return file_accessv1_proto_rawDescGZIP(), []int{4, 0, 0}
 }
 
+// Status is the state of the Request
 type Request_Status_State_Status int32
 
 const (
+	// STATUS_UNKNOWN means that the Request has not been evaluated by the
+	// Cluster yet.
 	Request_Status_State_STATUS_UNKNOWN Request_Status_State_Status = 0
-	Request_Status_State_PENDING        Request_Status_State_Status = 1
-	Request_Status_State_APPROVED       Request_Status_State_Status = 2
-	Request_Status_State_REJECTED       Request_Status_State_Status = 3
-	Request_Status_State_REVOKED        Request_Status_State_Status = 4
-	Request_Status_State_EXPIRED        Request_Status_State_Status = 5
-	Request_Status_State_CANCELLED      Request_Status_State_Status = 6
+	// PENDING means that the Request is still waiting for a decision.
+	Request_Status_State_PENDING Request_Status_State_Status = 1
+	// APPROVED means that the Request has been approved and that the
+	// access is granted until it ends.
+	Request_Status_State_APPROVED Request_Status_State_Status = 2
+	// REJECTED means that the Request has been rejected either by a
+	// matched DENY Rule or by a reviewer.
+	Request_Status_State_REJECTED Request_Status_State_Status = 3
+	// REVOKED means that the Request has been revoked via the
+	// RevokeRequest method.
+	Request_Status_State_REVOKED Request_Status_State_Status = 4
+	// EXPIRED means that the Request's deadline, review Step timeout or
+	// granted access has passed.
+	Request_Status_State_EXPIRED Request_Status_State_Status = 5
+	// CANCELLED means that the Request has been cancelled by its own
+	// requester via the CancelRequest method.
+	Request_Status_State_CANCELLED Request_Status_State_Status = 6
 )
 
 // Enum value maps for Request_Status_State_Status.
@@ -307,12 +356,18 @@ func (Request_Status_State_Status) EnumDescriptor() ([]byte, []int) {
 	return file_accessv1_proto_rawDescGZIP(), []int{4, 1, 0, 0}
 }
 
+// Decision is the reviewer's decision on the Request
 type Review_Spec_Decision int32
 
 const (
-	Review_Spec_DECISION_UNSET   Review_Spec_Decision = 0
+	// DECISION_UNSET means that no decision is currently set. It is the
+	// state of a Review that has been cancelled via the CancelReview
+	// method.
+	Review_Spec_DECISION_UNSET Review_Spec_Decision = 0
+	// DECISION_APPROVE approves the Request.
 	Review_Spec_DECISION_APPROVE Review_Spec_Decision = 1
-	Review_Spec_DECISION_REJECT  Review_Spec_Decision = 2
+	// DECISION_REJECT rejects the Request.
+	Review_Spec_DECISION_REJECT Review_Spec_Decision = 2
 )
 
 // Enum value maps for Review_Spec_Decision.
@@ -356,17 +411,23 @@ func (Review_Spec_Decision) EnumDescriptor() ([]byte, []int) {
 	return file_accessv1_proto_rawDescGZIP(), []int{6, 0, 0}
 }
 
+// Policy controls what happens to the access Requests. Once a Request is
+// created, the Cluster evaluates the Policies and the first Rule whose
+// Condition matches decides whether the Request is immediately rejected,
+// automatically approved or handed over to a review workflow. Note that this
+// is a different resource than the core Policy which controls the
+// authorization of the access itself.
 type Policy struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// apiVersion is the API version of the Policy object.
+	// APIVersion is the API version (i.e. "access/v1")
 	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
-	// kind is the resource kind. It should be `Policy`.
+	// Kind is the resource name (i.e. `Policy`).
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
-	// metadata is the Policy object's metadata.
+	// Metadata is the object's metadata.
 	Metadata *metav1.Metadata `protobuf:"bytes,3,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	// spec is the Policy specification.
+	// Spec is the Policy specification.
 	Spec *Policy_Spec `protobuf:"bytes,4,opt,name=spec,proto3" json:"spec,omitempty"`
-	// status is the current Policy status.
+	// Status is the current status of the Policy.
 	Status        *Policy_Status `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -437,17 +498,20 @@ func (x *Policy) GetStatus() *Policy_Status {
 	return nil
 }
 
+// Catalog is a named collection of the Cluster's resources that the Users can
+// request access to as a single unit instead of having to request the access
+// to each Service individually.
 type Catalog struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// apiVersion is the API version of the Catalog object.
+	// APIVersion is the API version (i.e. "access/v1")
 	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
-	// kind is the resource kind. It should be `Catalog`.
+	// Kind is the resource name (i.e. `Catalog`).
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
-	// metadata is the Catalog object's metadata.
+	// Metadata is the object's metadata.
 	Metadata *metav1.Metadata `protobuf:"bytes,3,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	// spec is the Catalog specification.
+	// Spec is the Catalog specification.
 	Spec *Catalog_Spec `protobuf:"bytes,4,opt,name=spec,proto3" json:"spec,omitempty"`
-	// status is the current Catalog status.
+	// Status is the current status of the Catalog.
 	Status        *Catalog_Status `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -518,15 +582,16 @@ func (x *Catalog) GetStatus() *Catalog_Status {
 	return nil
 }
 
+// CatalogList is the list of Catalogs returned by the ListCatalog method.
 type CatalogList struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// apiVersion is the API version of the CatalogList object.
+	// APIVersion is the API version (i.e. "access/v1")
 	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
-	// kind is the resource kind. It should be `CatalogList`.
+	// Kind is the resource name (i.e. `CatalogList`).
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
-	// items is the list of Catalogs.
+	// Items is the list of Catalogs.
 	Items []*Catalog `protobuf:"bytes,3,rep,name=items,proto3" json:"items,omitempty"`
-	// listResponseMeta is common information about the list response.
+	// ListResponseMeta is common information about the list.
 	ListResponseMeta *metav1.ListResponseMeta `protobuf:"bytes,4,opt,name=listResponseMeta,proto3" json:"listResponseMeta,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
@@ -590,15 +655,16 @@ func (x *CatalogList) GetListResponseMeta() *metav1.ListResponseMeta {
 	return nil
 }
 
+// PolicyList is the list of Policies returned by the ListPolicy method.
 type PolicyList struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// apiVersion is the API version of the PolicyList object.
+	// APIVersion is the API version (i.e. "access/v1")
 	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
-	// kind is the resource kind. It should be `PolicyList`.
+	// Kind is the resource name (i.e. `PolicyList`).
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
-	// items is the list of Policies.
+	// Items is the list of Policies.
 	Items []*Policy `protobuf:"bytes,3,rep,name=items,proto3" json:"items,omitempty"`
-	// listResponseMeta is common information about the list response.
+	// ListResponseMeta is common information about the list.
 	ListResponseMeta *metav1.ListResponseMeta `protobuf:"bytes,4,opt,name=listResponseMeta,proto3" json:"listResponseMeta,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
@@ -662,17 +728,24 @@ func (x *PolicyList) GetListResponseMeta() *metav1.ListResponseMeta {
 	return nil
 }
 
+// Request is a User's request for a just-in-time access to a Service or to a
+// Catalog. Once it is created, the Cluster matches it against the access
+// Policies and, depending on the effect of the matched Rule, the Request is
+// either immediately rejected, immediately approved or put into a review
+// workflow until the reviewers decide its fate. An approved Request grants
+// its subject the access that is set by the matched Rule's Authorization
+// until the access ends.
 type Request struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// apiVersion is the API version of the Request object.
+	// APIVersion is the API version (i.e. "access/v1")
 	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
-	// kind is the resource kind. It should be `Request`.
+	// Kind is the resource name (i.e. `Request`).
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
-	// metadata is the Request object's metadata.
+	// Metadata is the object's metadata.
 	Metadata *metav1.Metadata `protobuf:"bytes,3,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	// spec is the Request specification.
+	// Spec is the Request specification.
 	Spec *Request_Spec `protobuf:"bytes,4,opt,name=spec,proto3" json:"spec,omitempty"`
-	// status is the current Request status.
+	// Status is the current status of the Request.
 	Status        *Request_Status `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -743,15 +816,16 @@ func (x *Request) GetStatus() *Request_Status {
 	return nil
 }
 
+// RequestList is the list of Requests returned by the ListRequest method.
 type RequestList struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// apiVersion is the API version of the RequestList object.
+	// APIVersion is the API version (i.e. "access/v1")
 	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
-	// kind is the resource kind. It should be `RequestList`.
+	// Kind is the resource name (i.e. `RequestList`).
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
-	// items is the list of Requests.
+	// Items is the list of Requests.
 	Items []*Request `protobuf:"bytes,3,rep,name=items,proto3" json:"items,omitempty"`
-	// listResponseMeta is common information about the list response.
+	// ListResponseMeta is common information about the list.
 	ListResponseMeta *metav1.ListResponseMeta `protobuf:"bytes,4,opt,name=listResponseMeta,proto3" json:"listResponseMeta,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
@@ -815,17 +889,23 @@ func (x *RequestList) GetListResponseMeta() *metav1.ListResponseMeta {
 	return nil
 }
 
+// Review is a reviewer's decision on a pending access Request. A Review is
+// created via the ReviewerService by a User that is set as a Reviewer of the
+// Request's current review Step. Once the Reviews of the current Step satisfy
+// its approval requirement, the Request either moves to the next Step or, if
+// there is no next Step, it is approved. A single rejecting Review, on the
+// other hand, immediately rejects the Request.
 type Review struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// apiVersion is the API version of the Review object.
+	// APIVersion is the API version (i.e. "access/v1")
 	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
-	// kind is the resource kind. It should be `Review`.
+	// Kind is the resource name (i.e. `Review`).
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
-	// metadata is the Review object's metadata.
+	// Metadata is the object's metadata.
 	Metadata *metav1.Metadata `protobuf:"bytes,3,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	// spec is the Review specification.
+	// Spec is the Review specification.
 	Spec *Review_Spec `protobuf:"bytes,4,opt,name=spec,proto3" json:"spec,omitempty"`
-	// status is the current Review status.
+	// Status is the current status of the Review.
 	Status        *Review_Status `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -896,15 +976,16 @@ func (x *Review) GetStatus() *Review_Status {
 	return nil
 }
 
+// ReviewList is the list of Reviews returned by the ListReview method.
 type ReviewList struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// apiVersion is the API version of the ReviewList object.
+	// APIVersion is the API version (i.e. "access/v1")
 	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
-	// kind is the resource kind. It should be `ReviewList`.
+	// Kind is the resource name (i.e. `ReviewList`).
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
-	// items is the list of Reviews.
+	// Items is the list of Reviews.
 	Items []*Review `protobuf:"bytes,3,rep,name=items,proto3" json:"items,omitempty"`
-	// listResponseMeta is common information about the list response.
+	// ListResponseMeta is common information about the list.
 	ListResponseMeta *metav1.ListResponseMeta `protobuf:"bytes,4,opt,name=listResponseMeta,proto3" json:"listResponseMeta,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
@@ -968,17 +1049,19 @@ func (x *ReviewList) GetListResponseMeta() *metav1.ListResponseMeta {
 	return nil
 }
 
+// SubjectUser is a limited view of a User that can be set as the subject of a
+// Request created via the CreateRequestForSubject method.
 type SubjectUser struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// userRef is the object reference of the User.
+	// UserRef is the object reference of the User.
 	UserRef *metav1.ObjectReference `protobuf:"bytes,1,opt,name=userRef,proto3" json:"userRef,omitempty"`
-	// displayName is the display name of the User.
+	// DisplayName is the display name of the User.
 	DisplayName string `protobuf:"bytes,2,opt,name=displayName,proto3" json:"displayName,omitempty"`
-	// email is the email of the User.
+	// Email is the email of the User.
 	Email string `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
-	// picURL is the picture URL of the User.
+	// PicURL is the picture URL of the User.
 	PicURL string `protobuf:"bytes,4,opt,name=picURL,proto3" json:"picURL,omitempty"`
-	// type is the User's type. It can either be HUMAN or WORKLOAD.
+	// Type is the User's type. It can either be HUMAN or WORKLOAD.
 	Type          corev1.User_Spec_Type `protobuf:"varint,5,opt,name=type,proto3,enum=octelium.api.main.core.v1.User_Spec_Type" json:"type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1049,15 +1132,17 @@ func (x *SubjectUser) GetType() corev1.User_Spec_Type {
 	return corev1.User_Spec_Type(0)
 }
 
+// SubjectUserList is the list of SubjectUsers returned by the ListSubjectUser
+// method.
 type SubjectUserList struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// apiVersion is the API version of the SubjectUserList object.
+	// APIVersion is the API version (i.e. "access/v1")
 	ApiVersion string `protobuf:"bytes,1,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
-	// kind is the resource kind. It should be `SubjectUserList`.
+	// Kind is the resource name (i.e. `SubjectUserList`).
 	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
-	// items is the list of SubjectUsers.
+	// Items is the list of SubjectUsers.
 	Items []*SubjectUser `protobuf:"bytes,3,rep,name=items,proto3" json:"items,omitempty"`
-	// listResponseMeta is common information about the list response.
+	// ListResponseMeta is common information about the list.
 	ListResponseMeta *metav1.ListResponseMeta `protobuf:"bytes,4,opt,name=listResponseMeta,proto3" json:"listResponseMeta,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
@@ -1121,8 +1206,11 @@ func (x *SubjectUserList) GetListResponseMeta() *metav1.ListResponseMeta {
 	return nil
 }
 
+// ListRequestOptions is the list options of the MainService's ListRequest
+// method.
 type ListRequestOptions struct {
-	state         protoimpl.MessageState    `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Common is the common list options.
 	Common        *metav1.CommonListOptions `protobuf:"bytes,1,opt,name=common,proto3" json:"common,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1165,8 +1253,11 @@ func (x *ListRequestOptions) GetCommon() *metav1.CommonListOptions {
 	return nil
 }
 
+// ListUserRequestOptions is the list options of the UserService's ListRequest
+// method.
 type ListUserRequestOptions struct {
-	state         protoimpl.MessageState    `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Common is the common list options.
 	Common        *metav1.CommonListOptions `protobuf:"bytes,1,opt,name=common,proto3" json:"common,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1209,8 +1300,11 @@ func (x *ListUserRequestOptions) GetCommon() *metav1.CommonListOptions {
 	return nil
 }
 
+// ListCatalogOptions is the list options of the MainService's ListCatalog
+// method.
 type ListCatalogOptions struct {
-	state         protoimpl.MessageState    `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Common is the common list options.
 	Common        *metav1.CommonListOptions `protobuf:"bytes,1,opt,name=common,proto3" json:"common,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1253,8 +1347,10 @@ func (x *ListCatalogOptions) GetCommon() *metav1.CommonListOptions {
 	return nil
 }
 
+// ListPolicyOptions is the list options of the ListPolicy method.
 type ListPolicyOptions struct {
-	state         protoimpl.MessageState    `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Common is the common list options.
 	Common        *metav1.CommonListOptions `protobuf:"bytes,1,opt,name=common,proto3" json:"common,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1297,8 +1393,11 @@ func (x *ListPolicyOptions) GetCommon() *metav1.CommonListOptions {
 	return nil
 }
 
+// ListReviewOptions is the list options of the MainService's ListReview
+// method.
 type ListReviewOptions struct {
-	state         protoimpl.MessageState    `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Common is the common list options.
 	Common        *metav1.CommonListOptions `protobuf:"bytes,1,opt,name=common,proto3" json:"common,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1341,8 +1440,11 @@ func (x *ListReviewOptions) GetCommon() *metav1.CommonListOptions {
 	return nil
 }
 
+// ListUserCatalogOptions is the list options of the UserService's ListCatalog
+// method.
 type ListUserCatalogOptions struct {
-	state         protoimpl.MessageState    `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Common is the common list options.
 	Common        *metav1.CommonListOptions `protobuf:"bytes,1,opt,name=common,proto3" json:"common,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1385,8 +1487,11 @@ func (x *ListUserCatalogOptions) GetCommon() *metav1.CommonListOptions {
 	return nil
 }
 
+// ListReviewerRequestOptions is the list options of the ReviewerService's
+// ListRequest method.
 type ListReviewerRequestOptions struct {
-	state         protoimpl.MessageState    `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Common is the common list options.
 	Common        *metav1.CommonListOptions `protobuf:"bytes,1,opt,name=common,proto3" json:"common,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1429,8 +1534,11 @@ func (x *ListReviewerRequestOptions) GetCommon() *metav1.CommonListOptions {
 	return nil
 }
 
+// ListUserCatalogServiceOptions is the list options of the ListCatalogService
+// method.
 type ListUserCatalogServiceOptions struct {
-	state         protoimpl.MessageState    `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Common is the common list options.
 	Common        *metav1.CommonListOptions `protobuf:"bytes,1,opt,name=common,proto3" json:"common,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1473,8 +1581,11 @@ func (x *ListUserCatalogServiceOptions) GetCommon() *metav1.CommonListOptions {
 	return nil
 }
 
+// ListReviewerReviewOptions is the list options of the ReviewerService's
+// ListReview method.
 type ListReviewerReviewOptions struct {
-	state         protoimpl.MessageState    `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Common is the common list options.
 	Common        *metav1.CommonListOptions `protobuf:"bytes,1,opt,name=common,proto3" json:"common,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1517,8 +1628,10 @@ func (x *ListReviewerReviewOptions) GetCommon() *metav1.CommonListOptions {
 	return nil
 }
 
+// ListSubjectUserOptions is the list options of the ListSubjectUser method.
 type ListSubjectUserOptions struct {
-	state  protoimpl.MessageState    `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Common is the common list options.
 	Common *metav1.CommonListOptions `protobuf:"bytes,1,opt,name=common,proto3" json:"common,omitempty"`
 	// query is the search query matched against the User's name, display name
 	// and email.
@@ -1571,8 +1684,10 @@ func (x *ListSubjectUserOptions) GetQuery() string {
 	return ""
 }
 
+// GetSubjectUserRequest is the request of the GetSubjectUser method.
 type GetSubjectUserRequest struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// UserRef is the reference of the User.
 	UserRef       *metav1.ObjectReference `protobuf:"bytes,1,opt,name=userRef,proto3" json:"userRef,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1615,8 +1730,10 @@ func (x *GetSubjectUserRequest) GetUserRef() *metav1.ObjectReference {
 	return nil
 }
 
+// CancelRequestRequest is the request of the CancelRequest method.
 type CancelRequestRequest struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// RequestRef is the reference of the Request to be cancelled.
 	RequestRef    *metav1.ObjectReference `protobuf:"bytes,1,opt,name=requestRef,proto3" json:"requestRef,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1659,8 +1776,10 @@ func (x *CancelRequestRequest) GetRequestRef() *metav1.ObjectReference {
 	return nil
 }
 
+// RevokeRequestRequest is the request of the RevokeRequest method.
 type RevokeRequestRequest struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// RequestRef is the reference of the Request to be revoked.
 	RequestRef    *metav1.ObjectReference `protobuf:"bytes,1,opt,name=requestRef,proto3" json:"requestRef,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1703,8 +1822,10 @@ func (x *RevokeRequestRequest) GetRequestRef() *metav1.ObjectReference {
 	return nil
 }
 
+// CancelReviewRequest is the request of the CancelReview method.
 type CancelReviewRequest struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ReviewRef is the reference of the Review whose decision is to be reset.
 	ReviewRef     *metav1.ObjectReference `protobuf:"bytes,1,opt,name=reviewRef,proto3" json:"reviewRef,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1747,10 +1868,14 @@ func (x *CancelReviewRequest) GetReviewRef() *metav1.ObjectReference {
 	return nil
 }
 
+// Spec is the Policy specification
 type Policy_Spec struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Rules         []*Policy_Spec_Rule    `protobuf:"bytes,1,rep,name=rules,proto3" json:"rules,omitempty"`
-	IsDisabled    bool                   `protobuf:"varint,2,opt,name=isDisabled,proto3" json:"isDisabled,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Rules is the list of the Policy's Rules.
+	Rules []*Policy_Spec_Rule `protobuf:"bytes,1,rep,name=rules,proto3" json:"rules,omitempty"`
+	// IsDisabled disables the Policy. Disabled Policies are entirely skipped
+	// when the access Requests are evaluated.
+	IsDisabled    bool `protobuf:"varint,2,opt,name=isDisabled,proto3" json:"isDisabled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1799,6 +1924,7 @@ func (x *Policy_Spec) GetIsDisabled() bool {
 	return false
 }
 
+// Status is the current status of the Policy
 type Policy_Status struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -1835,14 +1961,27 @@ func (*Policy_Status) Descriptor() ([]byte, []int) {
 	return file_accessv1_proto_rawDescGZIP(), []int{0, 1}
 }
 
+// Rule decides the fate of the access Requests that match its Condition
 type Policy_Spec_Rule struct {
-	state         protoimpl.MessageState          `protogen:"open.v1"`
-	Condition     *Policy_Spec_Rule_Condition     `protobuf:"bytes,1,opt,name=condition,proto3" json:"condition,omitempty"`
-	Effect        Policy_Spec_Rule_Effect         `protobuf:"varint,2,opt,name=effect,proto3,enum=octelium.api.main.access.v1.Policy_Spec_Rule_Effect" json:"effect,omitempty"`
-	Priority      int32                           `protobuf:"varint,3,opt,name=priority,proto3" json:"priority,omitempty"`
-	Action        *Policy_Spec_Rule_Action        `protobuf:"bytes,4,opt,name=action,proto3" json:"action,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Condition is the Rule's condition that must match in order for the
+	// Rule, and subsequently the Policy as a whole, to match.
+	Condition *Policy_Spec_Rule_Condition `protobuf:"bytes,1,opt,name=condition,proto3" json:"condition,omitempty"`
+	// Effect is the effect of the Rule on the matched Request.
+	Effect Policy_Spec_Rule_Effect `protobuf:"varint,2,opt,name=effect,proto3,enum=octelium.api.main.access.v1.Policy_Spec_Rule_Effect" json:"effect,omitempty"`
+	// Priority is an integer that sets the Rule priority level. The lower
+	// the number, the higher the priority.
+	Priority int32 `protobuf:"varint,3,opt,name=priority,proto3" json:"priority,omitempty"`
+	// Action is what the Cluster does with the matched Request. It is
+	// required for the REVIEW effect and it must not be set for the other
+	// ones.
+	Action *Policy_Spec_Rule_Action `protobuf:"bytes,4,opt,name=action,proto3" json:"action,omitempty"`
+	// Authorization is the access that is granted to the subject once the
+	// Request is approved. It must not be set for the DENY effect.
 	Authorization *Policy_Spec_Rule_Authorization `protobuf:"bytes,5,opt,name=authorization,proto3" json:"authorization,omitempty"`
-	Name          string                          `protobuf:"bytes,6,opt,name=name,proto3" json:"name,omitempty"`
+	// Name is the name of the Rule. It is required and it must be unique
+	// within the Policy.
+	Name          string `protobuf:"bytes,6,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1919,6 +2058,8 @@ func (x *Policy_Spec_Rule) GetName() string {
 	return ""
 }
 
+// Condition is the Rule's condition that has to match the access
+// Request in order for the Rule to be applied to it
 type Policy_Spec_Rule_Condition struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -2040,27 +2181,33 @@ type isPolicy_Spec_Rule_Condition_Type interface {
 }
 
 type Policy_Spec_Rule_Condition_MatchAny struct {
+	// MatchAny matches every Request. It must be set to `true`.
 	MatchAny bool `protobuf:"varint,1,opt,name=matchAny,proto3,oneof"`
 }
 
 type Policy_Spec_Rule_Condition_Subject_ struct {
+	// Subject matches the subject of the Request.
 	Subject *Policy_Spec_Rule_Condition_Subject `protobuf:"bytes,2,opt,name=subject,proto3,oneof"`
 }
 
 type Policy_Spec_Rule_Condition_Resource_ struct {
+	// Resource matches the resource that the access is requested for.
 	Resource *Policy_Spec_Rule_Condition_Resource `protobuf:"bytes,3,opt,name=resource,proto3,oneof"`
 }
 
 type Policy_Spec_Rule_Condition_All_ struct {
+	// All matches only when every one of its child Conditions matches.
 	All *Policy_Spec_Rule_Condition_All `protobuf:"bytes,4,opt,name=all,proto3,oneof"`
 }
 
 type Policy_Spec_Rule_Condition_Any_ struct {
+	// Any matches when at least one of its child Conditions matches.
 	Any *Policy_Spec_Rule_Condition_Any `protobuf:"bytes,5,opt,name=any,proto3,oneof"`
 }
 
 type Policy_Spec_Rule_Condition_UserRef struct {
-	// Matches the requester.
+	// UserRef matches the requester (i.e. the User that created the
+	// Request) which is not necessarily the Request's subject.
 	UserRef *metav1.ObjectReference `protobuf:"bytes,6,opt,name=userRef,proto3,oneof"`
 }
 
@@ -2083,6 +2230,8 @@ func (*Policy_Spec_Rule_Condition_UserRef) isPolicy_Spec_Rule_Condition_Type() {
 
 func (*Policy_Spec_Rule_Condition_Match) isPolicy_Spec_Rule_Condition_Type() {}
 
+// Action is what the Cluster does with a Request matching a Rule whose
+// effect is REVIEW
 type Policy_Spec_Rule_Action struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -2144,16 +2293,28 @@ type isPolicy_Spec_Rule_Action_Type interface {
 }
 
 type Policy_Spec_Rule_Action_Review_ struct {
+	// Review is the review workflow of the Request.
 	Review *Policy_Spec_Rule_Action_Review `protobuf:"bytes,1,opt,name=review,proto3,oneof"`
 }
 
 func (*Policy_Spec_Rule_Action_Review_) isPolicy_Spec_Rule_Action_Type() {}
 
+// Authorization is the access that is granted to the subject of an
+// approved Request. The Cluster enforces it by creating a hidden
+// PolicyTrigger that applies these Policies to the subject User for the
+// requested Services and Namespaces until the access ends.
 type Policy_Spec_Rule_Authorization struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	Policies          []string               `protobuf:"bytes,1,rep,name=policies,proto3" json:"policies,omitempty"`
-	InlinePolicies    []*corev1.InlinePolicy `protobuf:"bytes,2,rep,name=inlinePolicies,proto3" json:"inlinePolicies,omitempty"`
-	MaxAccessDuration *metav1.Duration       `protobuf:"bytes,3,opt,name=maxAccessDuration,proto3" json:"maxAccessDuration,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Policies is the list of the standalone core Policies that are
+	// applied to the granted access.
+	Policies []string `protobuf:"bytes,1,rep,name=policies,proto3" json:"policies,omitempty"`
+	// InlinePolicies is the list of the inline core Policies that are
+	// applied to the granted access.
+	InlinePolicies []*corev1.InlinePolicy `protobuf:"bytes,2,rep,name=inlinePolicies,proto3" json:"inlinePolicies,omitempty"`
+	// MaxAccessDuration is the upper bound of the access duration that
+	// the requester can ask for in the Request's `spec.duration`. It
+	// defaults to 24 hours.
+	MaxAccessDuration *metav1.Duration `protobuf:"bytes,3,opt,name=maxAccessDuration,proto3" json:"maxAccessDuration,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -2209,6 +2370,7 @@ func (x *Policy_Spec_Rule_Authorization) GetMaxAccessDuration() *metav1.Duration
 	return nil
 }
 
+// Resource matches the resource that the access is requested for
 type Policy_Spec_Rule_Condition_Resource struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -2280,10 +2442,12 @@ type isPolicy_Spec_Rule_Condition_Resource_Type interface {
 }
 
 type Policy_Spec_Rule_Condition_Resource_ServiceRef struct {
+	// ServiceRef matches a specific Service
 	ServiceRef *metav1.ObjectReference `protobuf:"bytes,1,opt,name=serviceRef,proto3,oneof"`
 }
 
 type Policy_Spec_Rule_Condition_Resource_CatalogRef struct {
+	// CatalogRef matches a specific Catalog
 	CatalogRef *metav1.ObjectReference `protobuf:"bytes,2,opt,name=catalogRef,proto3,oneof"`
 }
 
@@ -2291,6 +2455,9 @@ func (*Policy_Spec_Rule_Condition_Resource_ServiceRef) isPolicy_Spec_Rule_Condit
 
 func (*Policy_Spec_Rule_Condition_Resource_CatalogRef) isPolicy_Spec_Rule_Condition_Resource_Type() {}
 
+// Subject matches the subject of the Request (i.e. the User that the
+// access is requested for) which is not necessarily the same User
+// that created the Request
 type Policy_Spec_Rule_Condition_Subject struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -2362,10 +2529,12 @@ type isPolicy_Spec_Rule_Condition_Subject_Type interface {
 }
 
 type Policy_Spec_Rule_Condition_Subject_UserRef struct {
+	// UserRef matches a specific User
 	UserRef *metav1.ObjectReference `protobuf:"bytes,1,opt,name=userRef,proto3,oneof"`
 }
 
 type Policy_Spec_Rule_Condition_Subject_GroupRef struct {
+	// GroupRef matches the Users belonging to a specific Group
 	GroupRef *metav1.ObjectReference `protobuf:"bytes,2,opt,name=groupRef,proto3,oneof"`
 }
 
@@ -2373,8 +2542,10 @@ func (*Policy_Spec_Rule_Condition_Subject_UserRef) isPolicy_Spec_Rule_Condition_
 
 func (*Policy_Spec_Rule_Condition_Subject_GroupRef) isPolicy_Spec_Rule_Condition_Subject_Type() {}
 
+// All acts as a logical AND operator on its list of Conditions
 type Policy_Spec_Rule_Condition_All struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Of is the list of the Conditions that must all match
 	Of            []*Policy_Spec_Rule_Condition `protobuf:"bytes,1,rep,name=of,proto3" json:"of,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2417,8 +2588,10 @@ func (x *Policy_Spec_Rule_Condition_All) GetOf() []*Policy_Spec_Rule_Condition {
 	return nil
 }
 
+// Any acts as a logical OR operator on its list of Conditions
 type Policy_Spec_Rule_Condition_Any struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Of is the list of the Conditions of which at least one must match
 	Of            []*Policy_Spec_Rule_Condition `protobuf:"bytes,1,rep,name=of,proto3" json:"of,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2461,8 +2634,12 @@ func (x *Policy_Spec_Rule_Condition_Any) GetOf() []*Policy_Spec_Rule_Condition {
 	return nil
 }
 
+// Review is the multi-step review workflow that the Request has to go
+// through in order to be approved
 type Policy_Spec_Rule_Action_Review struct {
-	state         protoimpl.MessageState                 `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Steps is the ordered list of the review Steps. At least one Step
+	// must be set.
 	Steps         []*Policy_Spec_Rule_Action_Review_Step `protobuf:"bytes,1,rep,name=steps,proto3" json:"steps,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2505,15 +2682,32 @@ func (x *Policy_Spec_Rule_Action_Review) GetSteps() []*Policy_Spec_Rule_Action_R
 	return nil
 }
 
+// Step is a single stage of the review workflow. The Request only
+// moves to the next Step once the current Step's approval
+// requirement is satisfied and it is approved once the last Step is
+// satisfied.
 type Policy_Spec_Rule_Action_Review_Step struct {
-	state               protoimpl.MessageState                                  `protogen:"open.v1"`
-	Reviewers           []*Policy_Spec_Rule_Action_Review_Step_Reviewer         `protobuf:"bytes,1,rep,name=reviewers,proto3" json:"reviewers,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Reviewers is the list of the Users that are allowed to review
+	// the Requests that reach the Step.
+	Reviewers []*Policy_Spec_Rule_Action_Review_Step_Reviewer `protobuf:"bytes,1,rep,name=reviewers,proto3" json:"reviewers,omitempty"`
+	// ApprovalRequirement is the condition that the Step's Reviews
+	// have to satisfy in order for the Step to be approved.
 	ApprovalRequirement Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement `protobuf:"varint,2,opt,name=approvalRequirement,proto3,enum=octelium.api.main.access.v1.Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement" json:"approvalRequirement,omitempty"`
-	ApprovalCount       uint32                                                  `protobuf:"varint,3,opt,name=approvalCount,proto3" json:"approvalCount,omitempty"`
-	Timeout             *metav1.Duration                                        `protobuf:"bytes,4,opt,name=timeout,proto3" json:"timeout,omitempty"`
-	OnTimeout           Policy_Spec_Rule_Action_Review_Step_OnTimeout           `protobuf:"varint,5,opt,name=onTimeout,proto3,enum=octelium.api.main.access.v1.Policy_Spec_Rule_Action_Review_Step_OnTimeout" json:"onTimeout,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// ApprovalCount is the number of the distinct Reviewers that have
+	// to approve the Request. It is required for the COUNT approval
+	// requirement and it must not be set for the other ones.
+	ApprovalCount uint32 `protobuf:"varint,3,opt,name=approvalCount,proto3" json:"approvalCount,omitempty"`
+	// Timeout is how long the Step can stay waiting for a decision.
+	// It is measured from the time at which the Step started (i.e.
+	// `status.review.currentStepStartedAt` of the Request). The
+	// Step does not time out at all if it is unset.
+	Timeout *metav1.Duration `protobuf:"bytes,4,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	// OnTimeout is what happens to the Request once the Step's
+	// timeout is reached.
+	OnTimeout     Policy_Spec_Rule_Action_Review_Step_OnTimeout `protobuf:"varint,5,opt,name=onTimeout,proto3,enum=octelium.api.main.access.v1.Policy_Spec_Rule_Action_Review_Step_OnTimeout" json:"onTimeout,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Policy_Spec_Rule_Action_Review_Step) Reset() {
@@ -2581,6 +2775,8 @@ func (x *Policy_Spec_Rule_Action_Review_Step) GetOnTimeout() Policy_Spec_Rule_Ac
 	return Policy_Spec_Rule_Action_Review_Step_ON_TIMEOUT_UNSET
 }
 
+// Reviewer is a User that is allowed to review the Requests that
+// reach the Step
 type Policy_Spec_Rule_Action_Review_Step_Reviewer struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -2652,10 +2848,12 @@ type isPolicy_Spec_Rule_Action_Review_Step_Reviewer_Type interface {
 }
 
 type Policy_Spec_Rule_Action_Review_Step_Reviewer_User_ struct {
+	// User is a single User reviewer.
 	User *Policy_Spec_Rule_Action_Review_Step_Reviewer_User `protobuf:"bytes,1,opt,name=user,proto3,oneof"`
 }
 
 type Policy_Spec_Rule_Action_Review_Step_Reviewer_Group_ struct {
+	// Group is a Group of User reviewers.
 	Group *Policy_Spec_Rule_Action_Review_Step_Reviewer_Group `protobuf:"bytes,2,opt,name=group,proto3,oneof"`
 }
 
@@ -2665,8 +2863,10 @@ func (*Policy_Spec_Rule_Action_Review_Step_Reviewer_User_) isPolicy_Spec_Rule_Ac
 func (*Policy_Spec_Rule_Action_Review_Step_Reviewer_Group_) isPolicy_Spec_Rule_Action_Review_Step_Reviewer_Type() {
 }
 
+// User sets a specific User as a reviewer
 type Policy_Spec_Rule_Action_Review_Step_Reviewer_User struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// UserRef is the reference of the User.
 	UserRef       *metav1.ObjectReference `protobuf:"bytes,1,opt,name=userRef,proto3" json:"userRef,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2709,8 +2909,10 @@ func (x *Policy_Spec_Rule_Action_Review_Step_Reviewer_User) GetUserRef() *metav1
 	return nil
 }
 
+// Group sets every User belonging to a Group as a reviewer
 type Policy_Spec_Rule_Action_Review_Step_Reviewer_Group struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// GroupRef is the reference of the Group.
 	GroupRef      *metav1.ObjectReference `protobuf:"bytes,1,opt,name=groupRef,proto3" json:"groupRef,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2753,8 +2955,11 @@ func (x *Policy_Spec_Rule_Action_Review_Step_Reviewer_Group) GetGroupRef() *meta
 	return nil
 }
 
+// Spec is the Catalog specification
 type Catalog_Spec struct {
-	state              protoimpl.MessageState           `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ResourceCollection is the set of the resources that belong to the
+	// Catalog.
 	ResourceCollection *Catalog_Spec_ResourceCollection `protobuf:"bytes,1,opt,name=resourceCollection,proto3" json:"resourceCollection,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
@@ -2797,6 +3002,7 @@ func (x *Catalog_Spec) GetResourceCollection() *Catalog_Spec_ResourceCollection 
 	return nil
 }
 
+// Status is the current status of the Catalog
 type Catalog_Status struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -2833,8 +3039,12 @@ func (*Catalog_Status) Descriptor() ([]byte, []int) {
 	return file_accessv1_proto_rawDescGZIP(), []int{1, 1}
 }
 
+// ResourceCollection is the set of the resources that belong to the
+// Catalog
 type Catalog_Spec_ResourceCollection struct {
-	state         protoimpl.MessageState                   `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Service is the Catalog's collection of Services. At least one Service
+	// or Namespace must be set.
 	Service       *Catalog_Spec_ResourceCollection_Service `protobuf:"bytes,1,opt,name=service,proto3" json:"service,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2877,10 +3087,14 @@ func (x *Catalog_Spec_ResourceCollection) GetService() *Catalog_Spec_ResourceCol
 	return nil
 }
 
+// Service is the collection of the Cluster's Services
 type Catalog_Spec_ResourceCollection_Service struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Services      []string               `protobuf:"bytes,1,rep,name=services,proto3" json:"services,omitempty"`
-	Namespaces    []string               `protobuf:"bytes,2,rep,name=namespaces,proto3" json:"namespaces,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Services is the list of the Service names.
+	Services []string `protobuf:"bytes,1,rep,name=services,proto3" json:"services,omitempty"`
+	// Namespaces is the list of the Namespace names. Every Service
+	// belonging to these Namespaces is included in the Catalog.
+	Namespaces    []string `protobuf:"bytes,2,rep,name=namespaces,proto3" json:"namespaces,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2929,14 +3143,27 @@ func (x *Catalog_Spec_ResourceCollection_Service) GetNamespaces() []string {
 	return nil
 }
 
+// Spec is the Request specification
 type Request_Spec struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Urgency       Request_Spec_Urgency   `protobuf:"varint,1,opt,name=urgency,proto3,enum=octelium.api.main.access.v1.Request_Spec_Urgency" json:"urgency,omitempty"`
-	Resource      *Request_Spec_Resource `protobuf:"bytes,2,opt,name=resource,proto3" json:"resource,omitempty"`
-	Subject       *Request_Spec_Subject  `protobuf:"bytes,3,opt,name=subject,proto3" json:"subject,omitempty"`
-	Justification string                 `protobuf:"bytes,4,opt,name=justification,proto3" json:"justification,omitempty"`
-	Deadline      *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=deadline,proto3" json:"deadline,omitempty"`
-	Duration      *metav1.Duration       `protobuf:"bytes,6,opt,name=duration,proto3" json:"duration,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Urgency is how urgent the requester considers the Request to be.
+	Urgency Request_Spec_Urgency `protobuf:"varint,1,opt,name=urgency,proto3,enum=octelium.api.main.access.v1.Request_Spec_Urgency" json:"urgency,omitempty"`
+	// Resource is the resource that the access is requested for.
+	Resource *Request_Spec_Resource `protobuf:"bytes,2,opt,name=resource,proto3" json:"resource,omitempty"`
+	// Subject is the User that the access is requested for. It is
+	// automatically set to the calling User by the CreateRequest method and
+	// it must be explicitly set for the CreateRequestForSubject method.
+	Subject *Request_Spec_Subject `protobuf:"bytes,3,opt,name=subject,proto3" json:"subject,omitempty"`
+	// Justification is the requester's free-form explanation of why the
+	// access is needed. It cannot be longer than 1500 characters.
+	Justification string `protobuf:"bytes,4,opt,name=justification,proto3" json:"justification,omitempty"`
+	// Deadline is the time after which a still pending Request is
+	// automatically expired.
+	Deadline *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=deadline,proto3" json:"deadline,omitempty"`
+	// Duration is how long the access should last for once the Request is
+	// approved. It is capped by the `maxAccessDuration` of the matched Rule's
+	// Authorization which defaults to 24 hours.
+	Duration      *metav1.Duration `protobuf:"bytes,6,opt,name=duration,proto3" json:"duration,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3013,20 +3240,41 @@ func (x *Request_Spec) GetDuration() *metav1.Duration {
 	return nil
 }
 
+// Status is the current status of the Request
 type Request_Status struct {
-	state            protoimpl.MessageState  `protogen:"open.v1"`
-	State            *Request_Status_State   `protobuf:"bytes,1,opt,name=state,proto3" json:"state,omitempty"`
-	UserRef          *metav1.ObjectReference `protobuf:"bytes,2,opt,name=userRef,proto3" json:"userRef,omitempty"`
-	ApprovalStartAt  *timestamppb.Timestamp  `protobuf:"bytes,3,opt,name=approvalStartAt,proto3" json:"approvalStartAt,omitempty"`
-	ApprovalEndAt    *timestamppb.Timestamp  `protobuf:"bytes,4,opt,name=approvalEndAt,proto3" json:"approvalEndAt,omitempty"`
-	LastStates       []*Request_Status_State `protobuf:"bytes,5,rep,name=lastStates,proto3" json:"lastStates,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// State is the current state of the Request.
+	State *Request_Status_State `protobuf:"bytes,1,opt,name=state,proto3" json:"state,omitempty"`
+	// UserRef is the reference of the User that created the Request which is
+	// not necessarily the same User set as the Request's subject.
+	UserRef *metav1.ObjectReference `protobuf:"bytes,2,opt,name=userRef,proto3" json:"userRef,omitempty"`
+	// ApprovalStartAt is the time at which the Request started waiting for a
+	// decision.
+	ApprovalStartAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=approvalStartAt,proto3" json:"approvalStartAt,omitempty"`
+	// ApprovalEndAt is the time at which the Request reached a final state
+	// (i.e. APPROVED, REJECTED, REVOKED, EXPIRED or CANCELLED).
+	ApprovalEndAt *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=approvalEndAt,proto3" json:"approvalEndAt,omitempty"`
+	// LastStates is the list of the previous states of the Request, ordered
+	// from the most recent to the oldest.
+	LastStates []*Request_Status_State `protobuf:"bytes,5,rep,name=lastStates,proto3" json:"lastStates,omitempty"`
+	// PolicyTriggerRef is the reference of the hidden PolicyTrigger that the
+	// Cluster creates in order to grant the access of an approved Request. It
+	// is removed once the Request is no longer approved.
 	PolicyTriggerRef *metav1.ObjectReference `protobuf:"bytes,6,opt,name=policyTriggerRef,proto3" json:"policyTriggerRef,omitempty"`
-	PolicyRef        *metav1.ObjectReference `protobuf:"bytes,7,opt,name=policyRef,proto3" json:"policyRef,omitempty"`
-	Rule             *Policy_Spec_Rule       `protobuf:"bytes,8,opt,name=rule,proto3" json:"rule,omitempty"`
-	Review           *Request_Status_Review  `protobuf:"bytes,9,opt,name=review,proto3" json:"review,omitempty"`
-	AccessEndsAt     *timestamppb.Timestamp  `protobuf:"bytes,10,opt,name=accessEndsAt,proto3" json:"accessEndsAt,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// PolicyRef is the reference of the Policy whose Rule matched the
+	// Request.
+	PolicyRef *metav1.ObjectReference `protobuf:"bytes,7,opt,name=policyRef,proto3" json:"policyRef,omitempty"`
+	// Rule is a copy of the Policy Rule that matched the Request at the time
+	// it was evaluated. It is kept here so that the subsequent changes to the
+	// Policy do not affect the Requests that are already in flight.
+	Rule *Policy_Spec_Rule `protobuf:"bytes,8,opt,name=rule,proto3" json:"rule,omitempty"`
+	// Review is the current progress of the Request in the review workflow.
+	Review *Request_Status_Review `protobuf:"bytes,9,opt,name=review,proto3" json:"review,omitempty"`
+	// AccessEndsAt is the time at which the granted access ends. The
+	// Request's state is set to EXPIRED once it passes.
+	AccessEndsAt  *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=accessEndsAt,proto3" json:"accessEndsAt,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Request_Status) Reset() {
@@ -3129,6 +3377,7 @@ func (x *Request_Status) GetAccessEndsAt() *timestamppb.Timestamp {
 	return nil
 }
 
+// Resource is the resource that the access is requested for
 type Request_Spec_Resource struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -3200,10 +3449,12 @@ type isRequest_Spec_Resource_Type interface {
 }
 
 type Request_Spec_Resource_ServiceRef struct {
+	// ServiceRef is a request for the access to a single Service.
 	ServiceRef *metav1.ObjectReference `protobuf:"bytes,1,opt,name=serviceRef,proto3,oneof"`
 }
 
 type Request_Spec_Resource_Catalog_ struct {
+	// Catalog is a request for the access to a Catalog.
 	Catalog *Request_Spec_Resource_Catalog `protobuf:"bytes,2,opt,name=catalog,proto3,oneof"`
 }
 
@@ -3211,6 +3462,8 @@ func (*Request_Spec_Resource_ServiceRef) isRequest_Spec_Resource_Type() {}
 
 func (*Request_Spec_Resource_Catalog_) isRequest_Spec_Resource_Type() {}
 
+// Subject is the User that the access is requested for which is not
+// necessarily the same User that created the Request
 type Request_Spec_Subject struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Type:
@@ -3272,13 +3525,17 @@ type isRequest_Spec_Subject_Type interface {
 }
 
 type Request_Spec_Subject_UserRef struct {
+	// UserRef is the reference of the subject User.
 	UserRef *metav1.ObjectReference `protobuf:"bytes,1,opt,name=userRef,proto3,oneof"`
 }
 
 func (*Request_Spec_Subject_UserRef) isRequest_Spec_Subject_Type() {}
 
+// Catalog is a request for the access to every Service belonging to a
+// Catalog
 type Request_Spec_Resource_Catalog struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// CatalogRef is the reference of the Catalog.
 	CatalogRef    *metav1.ObjectReference `protobuf:"bytes,1,opt,name=catalogRef,proto3" json:"catalogRef,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -3321,9 +3578,12 @@ func (x *Request_Spec_Resource_Catalog) GetCatalogRef() *metav1.ObjectReference 
 	return nil
 }
 
+// State is a state of the Request at a certain point in time
 type Request_Status_State struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
-	CreatedAt     *timestamppb.Timestamp      `protobuf:"bytes,1,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// CreatedAt is the time at which the state was set.
+	CreatedAt *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
+	// Status is the state of the Request.
 	Status        Request_Status_State_Status `protobuf:"varint,2,opt,name=status,proto3,enum=octelium.api.main.access.v1.Request_Status_State_Status" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -3373,11 +3633,19 @@ func (x *Request_Status_State) GetStatus() Request_Status_State_Status {
 	return Request_Status_State_STATUS_UNKNOWN
 }
 
+// Review is the current progress of the Request in the review workflow
+// that is set by the matched Rule's Action
 type Request_Status_Review struct {
-	state                protoimpl.MessageState        `protogen:"open.v1"`
-	CurrentStep          int32                         `protobuf:"varint,1,opt,name=currentStep,proto3" json:"currentStep,omitempty"`
-	LastSteps            []*Request_Status_Review_Step `protobuf:"bytes,2,rep,name=lastSteps,proto3" json:"lastSteps,omitempty"`
-	CurrentStepStartedAt *timestamppb.Timestamp        `protobuf:"bytes,3,opt,name=currentStepStartedAt,proto3" json:"currentStepStartedAt,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// CurrentStep is the zero-based index of the review Step that the
+	// Request is currently waiting for.
+	CurrentStep int32 `protobuf:"varint,1,opt,name=currentStep,proto3" json:"currentStep,omitempty"`
+	// LastSteps is the list of the Reviews that have already been applied
+	// to the Request.
+	LastSteps []*Request_Status_Review_Step `protobuf:"bytes,2,rep,name=lastSteps,proto3" json:"lastSteps,omitempty"`
+	// CurrentStepStartedAt is the time at which the current review Step
+	// started. It is the point from which the Step's timeout is measured.
+	CurrentStepStartedAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=currentStepStartedAt,proto3" json:"currentStepStartedAt,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -3433,11 +3701,16 @@ func (x *Request_Status_Review) GetCurrentStepStartedAt() *timestamppb.Timestamp
 	return nil
 }
 
+// Step is a Review that has already been applied to the Request
 type Request_Status_Review_Step struct {
-	state         protoimpl.MessageState  `protogen:"open.v1"`
-	ReviewRef     *metav1.ObjectReference `protobuf:"bytes,1,opt,name=reviewRef,proto3" json:"reviewRef,omitempty"`
-	SetAt         *timestamppb.Timestamp  `protobuf:"bytes,2,opt,name=setAt,proto3" json:"setAt,omitempty"`
-	StepIndex     int32                   `protobuf:"varint,3,opt,name=stepIndex,proto3" json:"stepIndex,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ReviewRef is the reference of the applied Review.
+	ReviewRef *metav1.ObjectReference `protobuf:"bytes,1,opt,name=reviewRef,proto3" json:"reviewRef,omitempty"`
+	// SetAt is the time at which the Review's decision was set.
+	SetAt *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=setAt,proto3" json:"setAt,omitempty"`
+	// StepIndex is the zero-based index of the review Step that the
+	// Review was applied to.
+	StepIndex     int32 `protobuf:"varint,3,opt,name=stepIndex,proto3" json:"stepIndex,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3493,10 +3766,13 @@ func (x *Request_Status_Review_Step) GetStepIndex() int32 {
 	return 0
 }
 
+// Spec is the Review specification
 type Review_Spec struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Justification string                 `protobuf:"bytes,1,opt,name=justification,proto3" json:"justification,omitempty"`
-	Decision      Review_Spec_Decision   `protobuf:"varint,2,opt,name=decision,proto3,enum=octelium.api.main.access.v1.Review_Spec_Decision" json:"decision,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Justification is the reviewer's free-form explanation of the decision.
+	Justification string `protobuf:"bytes,1,opt,name=justification,proto3" json:"justification,omitempty"`
+	// Decision is the reviewer's decision on the Request.
+	Decision      Review_Spec_Decision `protobuf:"varint,2,opt,name=decision,proto3,enum=octelium.api.main.access.v1.Review_Spec_Decision" json:"decision,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3545,14 +3821,25 @@ func (x *Review_Spec) GetDecision() Review_Spec_Decision {
 	return Review_Spec_DECISION_UNSET
 }
 
+// Status is the current status of the Review
 type Review_Status struct {
-	state         protoimpl.MessageState    `protogen:"open.v1"`
-	UserRef       *metav1.ObjectReference   `protobuf:"bytes,1,opt,name=userRef,proto3" json:"userRef,omitempty"`
-	RequestRef    *metav1.ObjectReference   `protobuf:"bytes,2,opt,name=requestRef,proto3" json:"requestRef,omitempty"`
-	SetAt         *timestamppb.Timestamp    `protobuf:"bytes,3,opt,name=setAt,proto3" json:"setAt,omitempty"`
-	LastSetsAt    []*timestamppb.Timestamp  `protobuf:"bytes,4,rep,name=lastSetsAt,proto3" json:"lastSetsAt,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// UserRef is the reference of the User that created the Review (i.e. the
+	// reviewer).
+	UserRef *metav1.ObjectReference `protobuf:"bytes,1,opt,name=userRef,proto3" json:"userRef,omitempty"`
+	// RequestRef is the reference of the reviewed Request.
+	RequestRef *metav1.ObjectReference `protobuf:"bytes,2,opt,name=requestRef,proto3" json:"requestRef,omitempty"`
+	// SetAt is the time at which the current decision was set.
+	SetAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=setAt,proto3" json:"setAt,omitempty"`
+	// LastSetsAt is the list of the times at which the previous decisions
+	// were set, ordered from the most recent to the oldest.
+	LastSetsAt []*timestamppb.Timestamp `protobuf:"bytes,4,rep,name=lastSetsAt,proto3" json:"lastSetsAt,omitempty"`
+	// LastRevisions is the list of the previous specifications of the Review,
+	// ordered from the most recent to the oldest.
 	LastRevisions []*Review_Status_Revision `protobuf:"bytes,5,rep,name=lastRevisions,proto3" json:"lastRevisions,omitempty"`
-	StepIndex     int32                     `protobuf:"varint,6,opt,name=stepIndex,proto3" json:"stepIndex,omitempty"`
+	// StepIndex is the zero-based index of the Request's review Step that the
+	// Review applies to.
+	StepIndex     int32 `protobuf:"varint,6,opt,name=stepIndex,proto3" json:"stepIndex,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3629,9 +3916,12 @@ func (x *Review_Status) GetStepIndex() int32 {
 	return 0
 }
 
+// Revision is a previous version of the Review's Spec
 type Review_Status_Revision struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Spec          *Review_Spec           `protobuf:"bytes,1,opt,name=spec,proto3" json:"spec,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Spec is the Review specification as it was before it was changed.
+	Spec *Review_Spec `protobuf:"bytes,1,opt,name=spec,proto3" json:"spec,omitempty"`
+	// SetAt is the time at which that specification was set.
 	SetAt         *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=setAt,proto3" json:"setAt,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

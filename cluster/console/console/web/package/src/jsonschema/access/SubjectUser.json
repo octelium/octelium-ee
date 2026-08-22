@@ -7,19 +7,19 @@
                 "userRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
                     "additionalProperties": false,
-                    "description": "userRef is the object reference of the User."
+                    "description": "UserRef is the object reference of the User."
                 },
                 "displayName": {
                     "type": "string",
-                    "description": "displayName is the display name of the User."
+                    "description": "DisplayName is the display name of the User."
                 },
                 "email": {
                     "type": "string",
-                    "description": "email is the email of the User."
+                    "description": "Email is the email of the User."
                 },
                 "picURL": {
                     "type": "string",
-                    "description": "picURL is the picture URL of the User."
+                    "description": "PicURL is the picture URL of the User."
                 },
                 "type": {
                     "enum": [
@@ -34,7 +34,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Subject User"
+            "title": "Subject User",
+            "description": "SubjectUser is a limited view of a User that can be set as the subject of a Request created via the CreateRequestForSubject method."
         },
         "octelium.api.main.meta.v1.ObjectReference": {
             "properties": {

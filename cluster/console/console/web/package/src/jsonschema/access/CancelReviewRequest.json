@@ -6,12 +6,14 @@
             "properties": {
                 "reviewRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ReviewRef is the reference of the Review whose decision is to be reset."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Cancel Review Request"
+            "title": "Cancel Review Request",
+            "description": "CancelReviewRequest is the request of the CancelReview method."
         },
         "octelium.api.main.meta.v1.ObjectReference": {
             "properties": {

@@ -6,53 +6,58 @@
             "properties": {
                 "apiVersion": {
                     "type": "string",
-                    "description": "apiVersion is the API version of the Catalog object."
+                    "description": "APIVersion is the API version (i.e. \"access/v1\")"
                 },
                 "kind": {
                     "type": "string",
-                    "description": "kind is the resource kind. It should be `Catalog`."
+                    "description": "Kind is the resource name (i.e. `Catalog`)."
                 },
                 "metadata": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.Metadata",
                     "additionalProperties": false,
-                    "description": "metadata is the Catalog object's metadata."
+                    "description": "Metadata is the object's metadata."
                 },
                 "spec": {
                     "$ref": "#/definitions/octelium.api.main.access.v1.Catalog.Spec",
                     "additionalProperties": false,
-                    "description": "spec is the Catalog specification."
+                    "description": "Spec is the Catalog specification."
                 },
                 "status": {
                     "$ref": "#/definitions/octelium.api.main.access.v1.Catalog.Status",
                     "additionalProperties": false,
-                    "description": "status is the current Catalog status."
+                    "description": "Status is the current status of the Catalog."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Catalog"
+            "title": "Catalog",
+            "description": "Catalog is a named collection of the Cluster's resources that the Users can request access to as a single unit instead of having to request the access to each Service individually."
         },
         "octelium.api.main.access.v1.Catalog.Spec": {
             "properties": {
                 "resourceCollection": {
                     "$ref": "#/definitions/octelium.api.main.access.v1.Catalog.Spec.ResourceCollection",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "ResourceCollection is the set of the resources that belong to the Catalog."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Spec"
+            "title": "Spec",
+            "description": "Spec is the Catalog specification"
         },
         "octelium.api.main.access.v1.Catalog.Spec.ResourceCollection": {
             "properties": {
                 "service": {
                     "$ref": "#/definitions/octelium.api.main.access.v1.Catalog.Spec.ResourceCollection.Service",
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "Service is the Catalog's collection of Services. At least one Service or Namespace must be set."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Resource Collection"
+            "title": "Resource Collection",
+            "description": "ResourceCollection is the set of the resources that belong to the Catalog"
         },
         "octelium.api.main.access.v1.Catalog.Spec.ResourceCollection.Service": {
             "properties": {
@@ -60,23 +65,27 @@
                     "items": {
                         "type": "string"
                     },
-                    "type": "array"
+                    "type": "array",
+                    "description": "Services is the list of the Service names."
                 },
                 "namespaces": {
                     "items": {
                         "type": "string"
                     },
-                    "type": "array"
+                    "type": "array",
+                    "description": "Namespaces is the list of the Namespace names. Every Service belonging to these Namespaces is included in the Catalog."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Service"
+            "title": "Service",
+            "description": "Service is the collection of the Cluster's Services"
         },
         "octelium.api.main.access.v1.Catalog.Status": {
             "additionalProperties": false,
             "type": "object",
-            "title": "Status"
+            "title": "Status",
+            "description": "Status is the current status of the Catalog"
         },
         "octelium.api.main.meta.v1.Metadata": {
             "properties": {

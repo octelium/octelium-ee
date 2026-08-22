@@ -6,11 +6,11 @@
             "properties": {
                 "apiVersion": {
                     "type": "string",
-                    "description": "apiVersion is the API version of the SubjectUserList object."
+                    "description": "APIVersion is the API version (i.e. \"access/v1\")"
                 },
                 "kind": {
                     "type": "string",
-                    "description": "kind is the resource kind. It should be `SubjectUserList`."
+                    "description": "Kind is the resource name (i.e. `SubjectUserList`)."
                 },
                 "items": {
                     "items": {
@@ -18,36 +18,37 @@
                     },
                     "additionalProperties": false,
                     "type": "array",
-                    "description": "items is the list of SubjectUsers."
+                    "description": "Items is the list of SubjectUsers."
                 },
                 "listResponseMeta": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ListResponseMeta",
                     "additionalProperties": false,
-                    "description": "listResponseMeta is common information about the list response."
+                    "description": "ListResponseMeta is common information about the list."
                 }
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Subject User List"
+            "title": "Subject User List",
+            "description": "SubjectUserList is the list of SubjectUsers returned by the ListSubjectUser method."
         },
         "octelium.api.main.access.v1.SubjectUser": {
             "properties": {
                 "userRef": {
                     "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
                     "additionalProperties": false,
-                    "description": "userRef is the object reference of the User."
+                    "description": "UserRef is the object reference of the User."
                 },
                 "displayName": {
                     "type": "string",
-                    "description": "displayName is the display name of the User."
+                    "description": "DisplayName is the display name of the User."
                 },
                 "email": {
                     "type": "string",
-                    "description": "email is the email of the User."
+                    "description": "Email is the email of the User."
                 },
                 "picURL": {
                     "type": "string",
-                    "description": "picURL is the picture URL of the User."
+                    "description": "PicURL is the picture URL of the User."
                 },
                 "type": {
                     "enum": [
@@ -62,7 +63,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Subject User"
+            "title": "Subject User",
+            "description": "SubjectUser is a limited view of a User that can be set as the subject of a Request created via the CreateRequestForSubject method."
         },
         "octelium.api.main.meta.v1.ListResponseMeta": {
             "properties": {
