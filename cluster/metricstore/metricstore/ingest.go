@@ -26,6 +26,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/pmetric/pmetricotlp"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -457,10 +458,14 @@ func (s *srvMetric) processPendingExports(items []*pendingMetricExport) {
 		}
 		itemBatch, err := buildMetricWriteBatch(item.metrics)
 		if err != nil {
+			zap.L().Warn("Could not build a metricstore write batch",
+				zap.Int64("dataPoints", item.dataPoints), zap.Error(err))
 			s.finishPendingExport(item, err)
 			continue
 		}
 		if err := batch.merge(itemBatch); err != nil {
+			zap.L().Warn("Could not merge a metricstore write batch",
+				zap.Int64("dataPoints", item.dataPoints), zap.Error(err))
 			s.finishPendingExport(item, status.Error(codes.InvalidArgument, err.Error()))
 			continue
 		}
@@ -480,11 +485,50 @@ func (s *srvMetric) processPendingExports(items []*pendingMetricExport) {
 	if err == nil {
 		points := len(batch.numberPoints) + len(batch.histogramPoints) + len(batch.exponentialPoints)
 		s.storedPoints.Add(uint64(points))
+		if ce := zap.L().Check(zapcore.DebugLevel, "Stored a metricstore write batch"); ce != nil {
+			ce.Write(zap.Int("points", points),
+				zap.Strings("metrics", batchMetricNames(batch)),
+				zap.Strings("components", batchComponentTypes(batch)))
+		}
+	} else {
+		zap.L().Warn("Could not store a metricstore write batch",
+			zap.Int("exports", len(valid)),
+			zap.Int("descriptors", len(batch.descriptors)),
+			zap.Int("series", len(batch.series)),
+			zap.Error(err))
 	}
 
 	for _, item := range valid {
 		s.finishPendingExport(item, err)
 	}
+}
+
+func batchMetricNames(batch *metricWriteBatch) []string {
+	seen := map[string]struct{}{}
+	ret := make([]string, 0, len(batch.descriptors))
+	for _, descriptor := range batch.descriptors {
+		if _, ok := seen[descriptor.name]; ok {
+			continue
+		}
+		seen[descriptor.name] = struct{}{}
+		ret = append(ret, descriptor.name)
+	}
+	sort.Strings(ret)
+	return ret
+}
+
+func batchComponentTypes(batch *metricWriteBatch) []string {
+	seen := map[string]struct{}{}
+	ret := make([]string, 0, 4)
+	for _, series := range batch.series {
+		if _, ok := seen[series.componentType]; ok {
+			continue
+		}
+		seen[series.componentType] = struct{}{}
+		ret = append(ret, series.componentType)
+	}
+	sort.Strings(ret)
+	return ret
 }
 
 func (s *srvMetric) finishPendingExport(item *pendingMetricExport, err error) {

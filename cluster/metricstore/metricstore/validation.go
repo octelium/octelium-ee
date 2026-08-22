@@ -121,6 +121,12 @@ func (s *srvMetric) validateQueryRequest(ctx context.Context,
 		if step < minimumQueryStep {
 			return nil, status.Error(codes.InvalidArgument, "step is too small")
 		}
+
+		from = alignMetricTimeDown(from, step)
+		if to.Sub(from) > rawMetricRetention {
+			return nil, status.Error(codes.InvalidArgument, "query time range exceeds available raw retention")
+		}
+
 		requestedPoints := int((to.Sub(from) + step - 1) / step)
 		if requestedPoints > maxPointsPerSeries {
 			return nil, status.Error(codes.InvalidArgument, "query produces too many time buckets")
@@ -189,6 +195,20 @@ func (s *srvMetric) validateQueryRequest(ctx context.Context,
 		groupBy:              groupBy,
 		filters:              filters,
 	}, nil
+}
+
+func alignMetricTimeDown(value time.Time, step time.Duration) time.Time {
+	if step <= 0 {
+		return value
+	}
+
+	nanos := value.UnixNano()
+	remainder := nanos % int64(step)
+	if remainder < 0 {
+		remainder += int64(step)
+	}
+
+	return normalizeMetricTime(time.Unix(0, nanos-remainder))
 }
 
 func normalizeComponentSelector(component *vmetricsv1.ComponentSelector) error {

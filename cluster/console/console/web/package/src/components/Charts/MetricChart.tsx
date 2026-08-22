@@ -947,10 +947,12 @@ const MetricChart = (props: MetricChartProps) => {
           className="flex w-full items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/60 px-4 text-center"
         >
           <div>
-            <p className="text-sm font-bold text-slate-600">No metric data</p>
+            <p className="text-sm font-bold text-slate-600">
+              {notRecorded ? "Metric not recorded" : "No metric data"}
+            </p>
             <p className="mt-1 text-xs font-semibold text-slate-400">
               {notRecorded
-                ? "This metric has not been recorded yet."
+                ? `No component has reported ${metric} to the metricstore yet.`
                 : "No numeric samples were returned for this time range."}
             </p>
           </div>

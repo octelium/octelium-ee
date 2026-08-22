@@ -457,3 +457,76 @@ func TestAmbiguousMetricNameIsResolvedByComponent(t *testing.T) {
 	require.Error(t, err)
 	assert.Equal(t, codes.FailedPrecondition, status.Code(err))
 }
+
+func testRefetchPoints(t *testing.T, s *srvMetric, from, to time.Time) []string {
+	t.Helper()
+
+	res, err := s.QueryMetrics(context.Background(), &vmetricsv1.QueryMetricsRequest{
+		Metric: &vmetricsv1.MetricSelector{
+			Selector: &vmetricsv1.MetricSelector_Name{Name: "req.total"},
+			Kind:     vmetricsv1.MetricDescriptor_COUNTER,
+		},
+		TimeRange: testMetricTimeRange(from, to),
+		Step:      testMetricStep(),
+		Operation: &vmetricsv1.QueryOperation{
+			Type: &vmetricsv1.QueryOperation_Counter{Counter: &vmetricsv1.CounterOperation{
+				Function: vmetricsv1.CounterOperation_RATE,
+			}},
+		},
+		SeriesAggregation: vmetricsv1.QueryMetricsRequest_SUM,
+		LimitBehavior:     vmetricsv1.QueryMetricsRequest_TRUNCATE,
+	})
+	require.NoError(t, err)
+	require.Len(t, res.Series, 1)
+
+	ret := make([]string, 0)
+	for _, point := range res.Series[0].GetNumber().Points {
+		ret = append(ret, point.Timestamp.AsTime().Format(time.RFC3339Nano)+
+			"="+formatQuantile(point.GetAsDouble()))
+	}
+	return ret
+}
+
+func TestQueryBucketsAreStableAcrossRefetches(t *testing.T) {
+	s := newTestSrvMetric(t)
+
+	base := time.Now().UTC().Truncate(time.Hour)
+	start := base.Add(-2 * time.Hour)
+
+	value := int64(0)
+	for at := base.Add(-5 * time.Minute); at.Before(base); at = at.Add(10 * time.Second) {
+		value += 5
+		metrics, sm := newVigilResourceMetrics()
+		appendTestCounter(sm, "req.total", start, at, value,
+			map[string]any{"octelium.vigil.svc.name": "svc"})
+		storeTestMetrics(t, s, metrics)
+	}
+
+	lookback := 6 * time.Hour
+	expected := testRefetchPoints(t, s, base.Add(-lookback), base)
+	assert.NotEmpty(t, expected)
+
+	for _, skew := range []time.Duration{
+		time.Second,
+		15 * time.Second,
+		30 * time.Second,
+		59 * time.Second,
+	} {
+		assert.Equal(t, expected,
+			testRefetchPoints(t, s, base.Add(-lookback).Add(skew), base.Add(skew)),
+			skew.String())
+	}
+}
+
+func TestAlignMetricTimeDown(t *testing.T) {
+	step := time.Minute
+	aligned := time.Date(2026, time.August, 22, 10, 30, 0, 0, time.UTC)
+
+	assert.Equal(t, aligned, alignMetricTimeDown(aligned, step))
+	assert.Equal(t, aligned, alignMetricTimeDown(aligned.Add(time.Second), step))
+	assert.Equal(t, aligned, alignMetricTimeDown(aligned.Add(59*time.Second), step))
+	assert.Equal(t, aligned.Add(step), alignMetricTimeDown(aligned.Add(step), step))
+
+	value := aligned.Add(time.Second)
+	assert.Equal(t, value, alignMetricTimeDown(value, 0))
+}
