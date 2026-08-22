@@ -1,6 +1,9 @@
 import {
+  API,
+  getResourcePathFromAPIKind,
   printResourceNameWithDisplay,
   Resource,
+  ResourceName,
 } from "@/utils/pb";
 import {
   ActionIcon,
@@ -11,8 +14,9 @@ import {
   Tooltip,
 } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
-import { FileText, Search } from "lucide-react";
+import { FileText, Plus, Search } from "lucide-react";
 import * as React from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import TimeAgo from "../TimeAgo";
 import ResourceYAML from "../ResourceYAML";
 import { listResourcesForSelect } from "./listResourcesForSelect";
@@ -30,6 +34,9 @@ const SelectResource = (props: {
 }) => {
   const { api, kind } = props;
   const [yamlItem, setYamlItem] = React.useState<Resource>();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const handledCreatedName = React.useRef<string | undefined>(undefined);
 
   const { isLoading, isError, error, data, refetch } = useQuery({
     queryKey: ["listSelectComponent", api, kind],
@@ -51,45 +58,119 @@ const SelectResource = (props: {
     [data],
   );
 
+  const openCreate = React.useCallback(() => {
+    const returnState =
+      location.state && typeof location.state === "object"
+        ? location.state
+        : undefined;
+    navigate(
+      `/${api}/${getResourcePathFromAPIKind({
+        api: api as API,
+        kind: kind as ResourceName,
+      })}/create`,
+      {
+        state: {
+          createInDrawer: true,
+          returnTo: location.pathname,
+          returnState,
+        },
+      },
+    );
+  }, [api, kind, location.pathname, location.state, navigate]);
+
+  const createButton = (
+    <div className="flex justify-end">
+      <Button
+        type="button"
+        size="compact-sm"
+        variant="subtle"
+        color="dark"
+        leftSection={<Plus size={14} strokeWidth={2.2} />}
+        onClick={openCreate}
+      >
+        Create a {kind}
+      </Button>
+    </div>
+  );
+
+  const createdResourceName =
+    location.state && typeof location.state === "object"
+      ? (location.state as { createdResourceName?: string })
+          .createdResourceName
+      : undefined;
+
+  React.useEffect(() => {
+    if (
+      !createdResourceName ||
+      handledCreatedName.current === createdResourceName
+    ) {
+      return;
+    }
+    const created = resourcesByName.get(createdResourceName);
+    if (!created) return;
+
+    handledCreatedName.current = createdResourceName;
+    props.onChange(created);
+    const nextState =
+      location.state && typeof location.state === "object"
+        ? { ...(location.state as Record<string, unknown>) }
+        : {};
+    delete nextState.createdResourceName;
+    navigate(location.pathname, {
+      replace: true,
+      preventScrollReset: true,
+      state: Object.keys(nextState).length > 0 ? nextState : undefined,
+    });
+  }, [createdResourceName, location.pathname, location.state, navigate, props.onChange, resourcesByName]);
+
   if (isLoading) {
     return (
-      <Select
-        label={label}
-        required={props.required}
-        description={props.description}
-        data={[]}
-        disabled
-        placeholder="Loading…"
-        rightSection={<Loader size={15} color="gray" />}
-      />
+      <div className="space-y-1.5">
+        <Select
+          label={label}
+          required={props.required}
+          description={props.description}
+          data={[]}
+          disabled
+          placeholder="Loading…"
+          rightSection={<Loader size={15} color="gray" />}
+        />
+        {createButton}
+      </div>
     );
   }
 
   if (isError) {
     return (
-      <Alert color="red" title={`Could not load ${kind}s`}>
-        <div className="flex flex-col gap-2">
-          <span className="text-xs">{error.message}</span>
-          <Button size="compact-xs" variant="outline" onClick={() => refetch()}>
-            Retry
-          </Button>
-        </div>
-      </Alert>
+      <div className="space-y-1.5">
+        <Alert color="red" title={`Could not load ${kind}s`}>
+          <div className="flex flex-col gap-2">
+            <span className="text-xs">{error.message}</span>
+            <Button size="compact-xs" variant="outline" onClick={() => refetch()}>
+              Retry
+            </Button>
+          </div>
+        </Alert>
+        {createButton}
+      </div>
     );
   }
 
   if (!data) {
     return (
-      <Alert color="red" title={`Could not load ${kind}s`}>
-        <Button size="compact-xs" variant="outline" onClick={() => refetch()}>
-          Retry
-        </Button>
-      </Alert>
+      <div className="space-y-1.5">
+        <Alert color="red" title={`Could not load ${kind}s`}>
+          <Button size="compact-xs" variant="outline" onClick={() => refetch()}>
+            Retry
+          </Button>
+        </Alert>
+        {createButton}
+      </div>
     );
   }
 
   return (
-    <>
+    <div className="space-y-1.5">
       <Select
         label={label}
         required={props.required}
@@ -191,6 +272,8 @@ const SelectResource = (props: {
         }}
       />
 
+      {createButton}
+
       {yamlItem && (
         <ResourceYAML
           item={yamlItem}
@@ -200,7 +283,7 @@ const SelectResource = (props: {
           onClose={() => setYamlItem(undefined)}
         />
       )}
-    </>
+    </div>
   );
 };
 

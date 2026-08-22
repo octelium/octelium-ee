@@ -28,7 +28,7 @@ import ResourceItemAccessLogsPage from "@/components/ResourceLayout/ResourceAcce
 import ResourceItemActionsPage from "@/components/ResourceLayout/ResourceActions";
 import ResourceItemAuditLogsPage from "@/components/ResourceLayout/ResourceAuditLogs";
 import ResourceItemAuthenticationLogsPage from "@/components/ResourceLayout/ResourceAuthenticationLogs";
-import ResourceCreatePage from "@/components/ResourceLayout/ResourceCreate";
+import ResourceCreateRoute from "@/components/ResourceLayout/ResourceCreateRoute";
 import ResourceItemMainPage from "@/components/ResourceLayout/ResourceItemMainPage";
 import ResourceItemDrawer from "@/components/ResourceLayout/ResourceItemDrawer";
 import ServiceMetricsPage from "@/components/ResourceLayout/ServiceMetricsPage";
@@ -169,7 +169,9 @@ const getResourceChildrenRouter = (arg: ResourceComponentInfo): RouteObject => {
       {
         path: "create",
         element: arg.Item.Edit ? (
-          <ResourceCreatePage
+          <ResourceCreateRoute
+            api={arg.API}
+            kind={arg.Kind}
             specComponent={arg.Item.Edit}
             createResource={arg.Item.createResource}
           />

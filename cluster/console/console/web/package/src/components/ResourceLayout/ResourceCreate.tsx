@@ -42,6 +42,8 @@ const ResourceCreatePage = (props: {
     onUpdate: (item: Resource) => void;
   }) => React.ReactNode;
   createResource?: () => Resource;
+  onCreated?: (item: Resource) => void;
+  onCancel?: () => void;
 }) => {
   const loc = useLocation();
   const [searchParams] = useSearchParams();
@@ -101,6 +103,10 @@ const ResourceCreatePage = (props: {
     onSuccess: (response) => {
       if (!response) return;
       invalidateResourceList(response);
+      if (props.onCreated) {
+        props.onCreated(response);
+        return;
+      }
       navigate(getResourcePath(response));
     },
     onError: (err: unknown) => onError(err as any),
@@ -254,13 +260,17 @@ const ResourceCreatePage = (props: {
             variant="default"
             leftSection={<X size={13} strokeWidth={2.5} />}
             disabled={mutation.isPending}
-            onClick={() =>
+            onClick={() => {
+              if (props.onCancel) {
+                props.onCancel();
+                return;
+              }
               navigate("..", {
                 relative: "path",
                 state: loc.state,
                 preventScrollReset: true,
-              })
-            }
+              });
+            }}
           >
             Cancel
           </Button>
