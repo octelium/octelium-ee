@@ -84,8 +84,9 @@ func register(id string, o opts) {
 
 		ret.Hooks.PostInstall = []scenario.Step{
 			{Name: "octeliumee/install-package", Run: stepInstallPackage},
-			{Name: "octeliumee/e2e-tuning", Run: stepE2ETuning},
 			{Name: "octeliumee/readiness", Run: stepWaitDeployments},
+			{Name: "octeliumee/e2e-tuning", Run: stepE2ETuning},
+			{Name: "octeliumee/rollout", Run: stepWaitDeployments},
 		}
 
 		ret.Budget = cmpOr(o.budget, 75*time.Minute)
@@ -188,8 +189,16 @@ func stepInstallPackage(ctx context.Context, r *scenario.Runner) error {
 		versionArg = fmt.Sprintf(" --version %s", version)
 	}
 
-	return r.Bash(ctx, fmt.Sprintf("octops install-package %s --package %s --kubeconfig %s%s",
-		r.Scenario.Domain, Package, r.State.KubeconfigPath, versionArg))
+	if err := r.Bash(ctx, fmt.Sprintf("octops install-package %s --package %s --kubeconfig %s%s",
+		r.Scenario.Domain, Package, r.State.KubeconfigPath, versionArg)); err != nil {
+		return err
+	}
+
+	zap.L().Info(
+		"The package installation has been started. It runs asynchronously in the Cluster, " +
+			"so the next step waits for its genesis Job and Deployments")
+
+	return nil
 }
 
 func stepE2ETuning(ctx context.Context, r *scenario.Runner) error {

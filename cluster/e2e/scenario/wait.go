@@ -11,6 +11,7 @@ package scenario
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -31,6 +32,8 @@ const (
 
 	pollInterval    = 3 * time.Second
 	pollReportEvery = 15 * time.Second
+
+	logTailLines = 50
 )
 
 func stepWaitDeployments(ctx context.Context, r *scenario.Runner) error {
@@ -69,6 +72,8 @@ func waitGenesis(ctx context.Context, k8sC kubernetes.Interface) error {
 				return err
 			}
 
+			selector := fmt.Sprintf("job-name=%s", job.Name)
+
 			for _, c := range job.Status.Conditions {
 				if c.Status != k8scorev1.ConditionTrue {
 					continue
@@ -77,13 +82,16 @@ func waitGenesis(ctx context.Context, k8sC kubernetes.Interface) error {
 				case batchv1.JobComplete:
 					return nil
 				case batchv1.JobFailed:
-					return fatal(errors.Errorf("The Job %s failed: %s %s",
-						job.Name, c.Reason, c.Message))
+					return fatal(errors.Errorf("The Job %s failed: %s %s. Pods: %s. Logs:\n%s",
+						job.Name, c.Reason, c.Message,
+						notReadyPods(ctx, k8sC, selector),
+						podLogsTail(ctx, k8sC, selector)))
 				}
 			}
 
-			return errors.Errorf("The Job %s is still running (%d active, %d failed)",
-				job.Name, job.Status.Active, job.Status.Failed)
+			return errors.Errorf("The Job %s is still running (%d active, %d failed). Pods: %s",
+				job.Name, job.Status.Active, job.Status.Failed,
+				notReadyPods(ctx, k8sC, selector))
 		})
 }
 
@@ -134,8 +142,108 @@ func deploymentReadiness(ctx context.Context,
 		return nil
 	}
 
-	return errors.Errorf("%d of %d replicas are ready",
-		rs.Status.ReadyReplicas, want)
+	return errors.Errorf("%d of %d replicas are ready. Pods: %s",
+		rs.Status.ReadyReplicas, want,
+		notReadyPods(ctx, k8sC, k8smetav1.FormatLabelSelector(rs.Spec.Selector)))
+}
+
+func notReadyPods(ctx context.Context, k8sC kubernetes.Interface, selector string) string {
+	podList, err := k8sC.CoreV1().Pods(vutils.K8sNS).List(ctx, k8smetav1.ListOptions{
+		LabelSelector: selector,
+	})
+	if err != nil {
+		return fmt.Sprintf("could not be listed: %s", err.Error())
+	}
+
+	var ret []string
+	for i := range podList.Items {
+		pod := &podList.Items[i]
+		if isPodReady(pod) {
+			continue
+		}
+
+		ret = append(ret, podState(pod))
+	}
+
+	if len(ret) == 0 {
+		return "none exist yet"
+	}
+
+	return strings.Join(ret, "; ")
+}
+
+func podLogsTail(ctx context.Context, k8sC kubernetes.Interface, selector string) string {
+	podList, err := k8sC.CoreV1().Pods(vutils.K8sNS).List(ctx, k8smetav1.ListOptions{
+		LabelSelector: selector,
+	})
+	if err != nil {
+		return fmt.Sprintf("could not be listed: %s", err.Error())
+	}
+
+	tail := int64(logTailLines)
+	var ret []string
+
+	for i := range podList.Items {
+		pod := &podList.Items[i]
+
+		out, err := k8sC.CoreV1().Pods(vutils.K8sNS).GetLogs(pod.Name, &k8scorev1.PodLogOptions{
+			TailLines: &tail,
+		}).DoRaw(ctx)
+		if err != nil {
+			ret = append(ret, fmt.Sprintf("%s: could not be read: %s", pod.Name, err.Error()))
+			continue
+		}
+
+		ret = append(ret, fmt.Sprintf("--- %s ---\n%s", pod.Name, string(out)))
+	}
+
+	if len(ret) == 0 {
+		return "no pods exist"
+	}
+
+	return strings.Join(ret, "\n")
+}
+
+func isPodReady(pod *k8scorev1.Pod) bool {
+	for _, cond := range pod.Status.Conditions {
+		if cond.Type == k8scorev1.PodReady {
+			return cond.Status == k8scorev1.ConditionTrue
+		}
+	}
+
+	return false
+}
+
+func podState(pod *k8scorev1.Pod) string {
+	var reasons []string
+
+	for _, cond := range pod.Status.Conditions {
+		if cond.Type == k8scorev1.PodScheduled && cond.Status != k8scorev1.ConditionTrue {
+			reasons = append(reasons,
+				strings.TrimSpace(fmt.Sprintf("unscheduled %s %s", cond.Reason, cond.Message)))
+		}
+	}
+
+	for _, cs := range slices.Concat(pod.Status.InitContainerStatuses, pod.Status.ContainerStatuses) {
+		switch {
+		case cs.State.Waiting != nil:
+			reasons = append(reasons, fmt.Sprintf("%s waiting on %s %s",
+				cs.Name, cs.State.Waiting.Reason, cs.State.Waiting.Message))
+		case cs.State.Terminated != nil:
+			reasons = append(reasons, fmt.Sprintf("%s terminated with %s (exit %d)",
+				cs.Name, cs.State.Terminated.Reason, cs.State.Terminated.ExitCode))
+		case cs.State.Running != nil && !cs.Ready:
+			reasons = append(reasons, fmt.Sprintf("%s running but not ready (%d restarts)",
+				cs.Name, cs.RestartCount))
+		}
+	}
+
+	if len(reasons) == 0 {
+		return fmt.Sprintf("%s is %s", pod.Name, pod.Status.Phase)
+	}
+
+	return fmt.Sprintf("%s is %s: %s",
+		pod.Name, pod.Status.Phase, strings.Join(reasons, ", "))
 }
 
 type fatalError struct {
