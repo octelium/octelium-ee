@@ -4,6 +4,7 @@ import {
   Condition_Expression_APIServerCordium_Service as CordiumService,
   Condition_Expression_APIServerEnterprise_Service as EnterpriseService,
   Condition_Expression_MCPToolArgument_BoolMatch_Value as MCPBoolValue,
+  Condition_Expression_TimeDayType_Type as TimeDayType,
   Condition_Expression as Expression,
 } from "@/apis/enterprisev1/enterprisev1";
 import { ObjectReference } from "@/apis/metav1/metav1";
@@ -264,6 +265,34 @@ const MCP_METHODS = [
   "notifications/subscriptions/acknowledged",
   "notifications/tasks",
 ];
+
+const COMMON_TIMEZONES = [
+  "UTC",
+  "America/Los_Angeles",
+  "America/Denver",
+  "America/Chicago",
+  "America/New_York",
+  "America/Sao_Paulo",
+  "America/Toronto",
+  "Europe/London",
+  "Europe/Paris",
+  "Europe/Berlin",
+  "Europe/Moscow",
+  "Africa/Cairo",
+  "Asia/Dubai",
+  "Asia/Kolkata",
+  "Asia/Singapore",
+  "Asia/Shanghai",
+  "Asia/Tokyo",
+  "Asia/Seoul",
+  "Australia/Sydney",
+  "Pacific/Auckland",
+];
+
+const TIMEZONES =
+  typeof Intl !== "undefined" && typeof Intl.supportedValuesOf === "function"
+    ? Array.from(new Set(["UTC", ...Intl.supportedValuesOf("timeZone")]))
+    : COMMON_TIMEZONES;
 
 const NUMERIC_MATCH_OPTIONS = [
   { value: "exact", label: "Equals" },
@@ -1490,6 +1519,67 @@ export const itemList: ItemDef[] = [
           }
         />
       ),
+    },
+  },
+
+  {
+    type: "timeDayType",
+    title: "Weekday or weekend",
+    tags: ["time", "schedule", "weekday", "weekend", "timezone"],
+    makeDefault: () =>
+      Expression.create({
+        type: {
+          oneofKind: "timeDayType",
+          timeDayType: { type: TimeDayType.WEEKDAY, timezone: "" },
+        },
+      }),
+    components: {
+      Value: ({ item }) => {
+        if (item.type.oneofKind !== "timeDayType") return null;
+        const day = formatEnumLabel(
+          TimeDayType as any,
+          item.type.timeDayType.type,
+        );
+        return <>{day} · {item.type.timeDayType.timezone || "UTC"}</>;
+      },
+      Edit: ({ item, onUpdate }) => {
+        const value =
+          item?.type.oneofKind === "timeDayType"
+            ? item.type.timeDayType
+            : { type: TimeDayType.WEEKDAY, timezone: "" };
+        const emit = (next: Partial<typeof value>) =>
+          onUpdate(
+            Expression.create({
+              type: {
+                oneofKind: "timeDayType",
+                timeDayType: { ...value, ...next },
+              },
+            }),
+          );
+        return (
+          <div className="space-y-3">
+            <SegmentedControl
+              fullWidth
+              size="sm"
+              value={String(value.type)}
+              data={[
+                { value: String(TimeDayType.WEEKDAY), label: "Weekday" },
+                { value: String(TimeDayType.WEEKEND), label: "Weekend" },
+              ]}
+              onChange={(next) => emit({ type: Number(next) })}
+            />
+            <Autocomplete
+              label="Timezone"
+              description="Use a canonical IANA timezone or enter a custom value. Empty means UTC."
+              placeholder="e.g. America/New_York"
+              data={TIMEZONES}
+              value={value.timezone}
+              clearable
+              onChange={(timezone) => emit({ timezone })}
+            />
+          </div>
+        );
+      },
     },
   },
 
