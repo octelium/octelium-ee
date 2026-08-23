@@ -14,7 +14,9 @@ import (
 	"time"
 
 	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
+	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/pkg/apiutils/ucorev1"
+	"github.com/octelium/octelium/pkg/utils/ldflags"
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
@@ -86,7 +88,10 @@ func parseLogRecord(lr plog.LogRecord) (*pendingLog, error) {
 	}
 
 	var envelope struct {
-		Kind string `json:"kind"`
+		Kind  string `json:"kind"`
+		Entry struct {
+			Level string `json:"level"`
+		} `json:"entry"`
 	}
 
 	if err := json.Unmarshal(body, &envelope); err != nil {
@@ -96,31 +101,36 @@ func parseLogRecord(lr plog.LogRecord) (*pendingLog, error) {
 		)
 	}
 
-	ret := &pendingLog{
-		data: append([]byte(nil), body...),
-	}
+	var table logTable
 
 	switch envelope.Kind {
 	case ucorev1.KindAccessLog:
 		if len(body) > maxAccessLogSize {
 			return nil, errors.Errorf("AccessLog is too large: %d", len(body))
 		}
-		ret.table = logTableAccess
+		table = logTableAccess
 
 	case ucorev1.KindComponentLog:
-		ret.table = logTableComponent
+		if ldflags.IsProduction() &&
+			envelope.Entry.Level == corev1.ComponentLog_Entry_DEBUG.String() {
+			return nil, nil
+		}
+		table = logTableComponent
 
 	case uenterprisev1.KindAuthenticationLog:
-		ret.table = logTableAuthentication
+		table = logTableAuthentication
 
 	case uenterprisev1.KindAuditLog:
-		ret.table = logTableAudit
+		table = logTableAudit
 
 	default:
 		return nil, errors.Errorf("Unsupported log kind: %s", envelope.Kind)
 	}
 
-	return ret, nil
+	return &pendingLog{
+		table: table,
+		data:  append([]byte(nil), body...),
+	}, nil
 }
 
 func (s *srvLog) Export(ctx context.Context, req plogotlp.ExportRequest) (plogotlp.ExportResponse, error) {
@@ -138,6 +148,10 @@ func (s *srvLog) Export(ctx context.Context, req plogotlp.ExportRequest) (plogot
 				item, err := parseLogRecord(logRecords.At(k))
 				if err != nil {
 					return plogotlp.NewExportResponse(), err
+				}
+
+				if item == nil {
+					continue
 				}
 
 				items = append(items, *item)

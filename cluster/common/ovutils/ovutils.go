@@ -11,7 +11,6 @@ package ovutils
 import (
 	"context"
 	"fmt"
-	"os"
 	"path"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
@@ -22,7 +21,6 @@ import (
 	"github.com/octelium/octelium/pkg/apiutils/ucorev1"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
-	"github.com/octelium/octelium/pkg/utils/ldflags"
 	"github.com/pkg/errors"
 	"google.golang.org/protobuf/proto"
 )
@@ -95,24 +93,14 @@ func IsPrivateRegistry() bool {
 	return true
 }
 
+const duckDBFileName = "store.db"
+
 func getDuckDBDir() string {
 	return "/octelium-data"
 }
 
 func GetDuckDBDSN() string {
-	if ldflags.IsTest() {
+	dir := resolveDuckDBDir()
 
-		dir, _ := os.MkdirTemp("", "duckdb-*")
-		return fmt.Sprintf(`%s?extension_directory=%s`, path.Join(dir, "store.db"), dir)
-	}
-
-	dir := func() string {
-		if val := os.Getenv("OCTELIUM_DUCKDB_PATH"); val != "" {
-			return val
-		}
-
-		return getDuckDBDir()
-	}()
-
-	return fmt.Sprintf(`%s?extension_directory=%s`, path.Join(dir, "store.db"), dir)
+	return fmt.Sprintf(`%s?extension_directory=%s`, path.Join(dir, duckDBFileName), dir)
 }

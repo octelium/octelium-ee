@@ -133,6 +133,21 @@ func (s *Server) insertAuditLog(logJSON []byte) error {
 const defaultItemsPerPage = 50
 const maxItemsPerPage = 1000
 
+func (s *Server) countLogs(ctx context.Context, table string, filters []exp.Expression) (uint32, error) {
+	sqln, sqlargs, err := goqu.From(table).Where(filters...).
+		Select(goqu.L(`count(*)`)).ToSQL()
+	if err != nil {
+		return 0, err
+	}
+
+	var ret uint32
+	if err := s.db.QueryRowContext(ctx, sqln, sqlargs...).Scan(&ret); err != nil {
+		return 0, err
+	}
+
+	return ret, nil
+}
+
 func (s *Server) listAccessLog(ctx context.Context, req *visibilityv1.ListAccessLogRequest) (*visibilityv1.ListAccessLogResponse, error) {
 	ret := &visibilityv1.ListAccessLogResponse{
 		ListResponseMeta: &metav1.ListResponseMeta{},
@@ -195,10 +210,15 @@ func (s *Server) listAccessLog(ctx context.Context, req *visibilityv1.ListAccess
 		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
 	}
 
-	ds := goqu.From("access_logs").Where(filters...).Select(
-		goqu.L(`count(*) OVER() AS full_count`), "rsc")
+	totalCount, err := s.countLogs(ctx, "access_logs", filters)
+	if err != nil {
+		return nil, grpcutils.InternalWithErr(err)
+	}
+
+	ds := goqu.From("access_logs").Where(filters...).Select("rsc")
 
 	listMeta := ret.ListResponseMeta
+	listMeta.TotalCount = totalCount
 	{
 		limit := req.Common.ItemsPerPage
 		if req.Common.Page > 100000 {
@@ -248,14 +268,10 @@ func (s *Server) listAccessLog(ctx context.Context, req *visibilityv1.ListAccess
 
 	for rows.Next() {
 		rsc := make(map[string]any)
-		var count int
 
-		err := rows.Scan(&count, &rsc)
-		if err != nil {
+		if err := rows.Scan(&rsc); err != nil {
 			return nil, grpcutils.InternalWithErr(err)
 		}
-
-		ret.ListResponseMeta.TotalCount = uint32(count)
 
 		accessLog := &corev1.AccessLog{}
 		if err := pbutils.UnmarshalFromMap(rsc, accessLog); err != nil {
@@ -490,14 +506,17 @@ func (s *Server) listSSHSessionRecording(ctx context.Context, req *visibilityv1.
 			goqu.L(`rsc->>'$.entry.info.ssh.type'`).Eq(`SESSION_RECORDING`))
 	}
 
+	totalCount, err := s.countLogs(ctx, "access_logs", filters)
+	if err != nil {
+		return nil, grpcutils.InternalWithErr(err)
+	}
+
 	ds := goqu.From("access_logs").
 		Where(filters...).
-		Select(
-			goqu.L(`rsc`),
-			goqu.L(`count(*) OVER() AS full_count`),
-		)
+		Select(goqu.L(`rsc`))
 
 	listMeta := ret.ListResponseMeta
+	listMeta.TotalCount = totalCount
 	{
 
 		if req.Page > 10000 {
@@ -521,7 +540,7 @@ func (s *Server) listSSHSessionRecording(ctx context.Context, req *visibilityv1.
 		return nil, grpcutils.InternalWithErr(err)
 	}
 
-	rows, err := s.db.Query(sqln, sqlargs...)
+	rows, err := s.db.QueryContext(ctx, sqln, sqlargs...)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return &visibilityv1.ListSSHSessionRecordingResponse{}, nil
@@ -531,12 +550,10 @@ func (s *Server) listSSHSessionRecording(ctx context.Context, req *visibilityv1.
 	}
 	defer rows.Close()
 
-	var count int
 	for rows.Next() {
 		rsc := make(map[string]any)
 
-		err := rows.Scan(&rsc, &count)
-		if err != nil {
+		if err := rows.Scan(&rsc); err != nil {
 			return nil, grpcutils.InternalWithErr(err)
 		}
 
@@ -557,8 +574,6 @@ func (s *Server) listSSHSessionRecording(ctx context.Context, req *visibilityv1.
 			Data:      accessLog.Entry.Info.GetSsh().GetSessionRecording().Data,
 		})
 	}
-
-	listMeta.TotalCount = uint32(count)
 
 	if len(ret.Items) == 0 && listMeta.Page > 0 {
 		return nil, grpcutils.NotFound("Not Items found for that page")
@@ -866,10 +881,15 @@ func (s *Server) listAuthenticationLog(ctx context.Context, req *visibilityv1.Li
 		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
 	}
 
-	ds := goqu.From("authentication_logs").Where(filters...).Select(
-		goqu.L(`count(*) OVER() AS full_count`), "rsc")
+	totalCount, err := s.countLogs(ctx, "authentication_logs", filters)
+	if err != nil {
+		return nil, grpcutils.InternalWithErr(err)
+	}
+
+	ds := goqu.From("authentication_logs").Where(filters...).Select("rsc")
 
 	listMeta := ret.ListResponseMeta
+	listMeta.TotalCount = totalCount
 	{
 		limit := req.Common.ItemsPerPage
 		if req.Common.Page > 100000 {
@@ -919,14 +939,10 @@ func (s *Server) listAuthenticationLog(ctx context.Context, req *visibilityv1.Li
 
 	for rows.Next() {
 		rsc := make(map[string]any)
-		var count int
 
-		err := rows.Scan(&count, &rsc)
-		if err != nil {
+		if err := rows.Scan(&rsc); err != nil {
 			return nil, grpcutils.InternalWithErr(err)
 		}
-
-		ret.ListResponseMeta.TotalCount = uint32(count)
 
 		accessLog := &enterprisev1.AuthenticationLog{}
 		if err := pbutils.UnmarshalFromMap(rsc, accessLog); err != nil {
@@ -1000,10 +1016,15 @@ func (s *Server) listAuditLog(ctx context.Context, req *visibilityv1.ListAuditLo
 		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
 	}
 
-	ds := goqu.From("audit_logs").Where(filters...).Select(
-		goqu.L(`count(*) OVER() AS full_count`), "rsc")
+	totalCount, err := s.countLogs(ctx, "audit_logs", filters)
+	if err != nil {
+		return nil, grpcutils.InternalWithErr(err)
+	}
+
+	ds := goqu.From("audit_logs").Where(filters...).Select("rsc")
 
 	listMeta := ret.ListResponseMeta
+	listMeta.TotalCount = totalCount
 	{
 		limit := req.Common.ItemsPerPage
 		if req.Common.Page > 100000 {
@@ -1053,14 +1074,10 @@ func (s *Server) listAuditLog(ctx context.Context, req *visibilityv1.ListAuditLo
 
 	for rows.Next() {
 		rsc := make(map[string]any)
-		var count int
 
-		err := rows.Scan(&count, &rsc)
-		if err != nil {
+		if err := rows.Scan(&rsc); err != nil {
 			return nil, grpcutils.InternalWithErr(err)
 		}
-
-		ret.ListResponseMeta.TotalCount = uint32(count)
 
 		auditLog := &enterprisev1.AuditLog{}
 		if err := pbutils.UnmarshalFromMap(rsc, auditLog); err != nil {
@@ -1134,10 +1151,15 @@ func (s *Server) listComponentLog(ctx context.Context, req *visibilityv1.ListCom
 		filters = append(filters, goqu.L(`rsc->>'$.entry.level'`).Eq(req.Level.String()))
 	}
 
-	ds := goqu.From("component_logs").Where(filters...).Select(
-		goqu.L(`count(*) OVER() AS full_count`), "rsc")
+	totalCount, err := s.countLogs(ctx, "component_logs", filters)
+	if err != nil {
+		return nil, grpcutils.InternalWithErr(err)
+	}
+
+	ds := goqu.From("component_logs").Where(filters...).Select("rsc")
 
 	listMeta := ret.ListResponseMeta
+	listMeta.TotalCount = totalCount
 	{
 		limit := req.Common.ItemsPerPage
 		if req.Common.Page > 100000 {
@@ -1187,14 +1209,10 @@ func (s *Server) listComponentLog(ctx context.Context, req *visibilityv1.ListCom
 
 	for rows.Next() {
 		rsc := make(map[string]any)
-		var count int
 
-		err := rows.Scan(&count, &rsc)
-		if err != nil {
+		if err := rows.Scan(&rsc); err != nil {
 			return nil, grpcutils.InternalWithErr(err)
 		}
-
-		ret.ListResponseMeta.TotalCount = uint32(count)
 
 		accessLog := &corev1.ComponentLog{}
 		if err := pbutils.UnmarshalFromMap(rsc, accessLog); err != nil {

@@ -448,3 +448,92 @@ func TestAuditAndComponentLogQueriesComprehensive(t *testing.T) {
 		assert.Equal(t, 6, int(resp.TotalFatal))
 	}
 }
+
+func TestCleanupDebugComponentLogsByMaximumCount(t *testing.T) {
+	ts := newTestServer(t)
+	if ts == nil {
+		return
+	}
+
+	oldComponentMax := maxDBComponentLogs
+	oldComponentDebugMax := maxDBComponentLogsDebug
+	t.Cleanup(func() {
+		maxDBComponentLogs = oldComponentMax
+		maxDBComponentLogsDebug = oldComponentDebugMax
+	})
+
+	maxDBComponentLogs = 1000
+	maxDBComponentLogsDebug = 10
+
+	now := time.Now().UTC().Truncate(time.Second)
+
+	for idx := range 40 {
+		createdAt := now.Add(time.Duration(idx) * time.Second)
+		insertLogJSON(t, ts.srv, "component_logs",
+			marshalLog(t, newComponentLog(createdAt, corev1.ComponentLog_Entry_DEBUG, "debug")))
+		insertLogJSON(t, ts.srv, "component_logs",
+			marshalLog(t, newComponentLog(createdAt, corev1.ComponentLog_Entry_INFO, "info")))
+	}
+
+	err := ts.srv.doCleanup(ts.ctx)
+	assert.Nil(t, err, "%+v", err)
+
+	assert.Equal(t, maxDBComponentLogsDebug+40, getTableCount(t, ts.srv, "component_logs"))
+
+	resp, err := ts.srv.listComponentLog(ts.ctx, &visibilityv1.ListComponentLogRequest{
+		Level:  corev1.ComponentLog_Entry_DEBUG,
+		Common: &vmetav1.CommonListOptions{ItemsPerPage: 100},
+	})
+	assert.Nil(t, err, "%+v", err)
+	assert.Len(t, resp.Items, maxDBComponentLogsDebug)
+
+	for _, item := range resp.Items {
+		assert.False(t, item.Metadata.CreatedAt.AsTime().Before(now.Add(30*time.Second)))
+	}
+}
+
+func TestCleanupByMaxCount(t *testing.T) {
+	ts := newTestServer(t)
+	if ts == nil {
+		return
+	}
+
+	now := time.Now().UTC().Truncate(time.Second)
+
+	for idx := range 10 {
+		insertLogJSON(t, ts.srv, "audit_logs", marshalLog(t,
+			newAuditLog(&auditLogOptions{CreatedAt: now.Add(time.Duration(idx) * time.Second)})))
+	}
+
+	{
+		assert.Nil(t, ts.srv.cleanupByMaxCount(ts.ctx, "audit_logs", "", 10))
+		assert.Equal(t, 10, getTableCount(t, ts.srv, "audit_logs"))
+
+		assert.Nil(t, ts.srv.cleanupByMaxCount(ts.ctx, "audit_logs", "", 25))
+		assert.Equal(t, 10, getTableCount(t, ts.srv, "audit_logs"))
+	}
+
+	{
+		assert.Nil(t, ts.srv.cleanupByMaxCount(ts.ctx, "audit_logs", "", 4))
+		assert.Equal(t, 4, getTableCount(t, ts.srv, "audit_logs"))
+
+		resp, err := ts.srv.listAuditLog(ts.ctx, &visibilityv1.ListAuditLogRequest{})
+		assert.Nil(t, err, "%+v", err)
+		assert.Len(t, resp.Items, 4)
+		assert.Equal(t, uint32(4), resp.ListResponseMeta.TotalCount)
+
+		for _, item := range resp.Items {
+			assert.False(t, item.Metadata.CreatedAt.AsTime().Before(now.Add(6*time.Second)))
+		}
+	}
+
+	{
+		for range 5 {
+			insertLogJSON(t, ts.srv, "authentication_logs", marshalLog(t,
+				newAuthenticationLog(&authenticationLogOptions{CreatedAt: now})))
+		}
+
+		assert.Nil(t, ts.srv.cleanupByMaxCount(ts.ctx, "authentication_logs", "", 2))
+		assert.Equal(t, 5, getTableCount(t, ts.srv, "authentication_logs"))
+	}
+}

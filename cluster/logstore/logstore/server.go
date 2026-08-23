@@ -13,10 +13,12 @@ import (
 	"database/sql"
 	"fmt"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
+	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1"
 	"github.com/octelium/octelium/cluster/common/healthcheck"
 	"github.com/octelium/octelium/cluster/common/spiffec"
@@ -27,10 +29,19 @@ import (
 	"go.opentelemetry.io/collector/pdata/plog/plogotlp"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	_ "google.golang.org/grpc/encoding/gzip"
+	"google.golang.org/grpc/status"
 )
 
 const tstAddr = "localhost:32123"
+
+const (
+	maxDBConns            = 8
+	maxConcurrentQueries  = 4
+	queryTimeout          = 60 * time.Second
+	otlpLogsServicePrefix = "/opentelemetry.proto.collector.logs.v1.LogsService/"
+)
 
 type Server struct {
 	octeliumC octeliumc.ClientInterface
@@ -39,6 +50,7 @@ type Server struct {
 	genCache        *cache.Cache
 	db              *sql.DB
 	cleanupDuration time.Duration
+	querySem        chan struct{}
 }
 
 func newServer(ctx context.Context, octeliumC octeliumc.ClientInterface) (*Server, error) {
@@ -48,6 +60,7 @@ func newServer(ctx context.Context, octeliumC octeliumc.ClientInterface) (*Serve
 		octeliumC:       octeliumC,
 		genCache:        cache.New(cache.NoExpiration, 1*time.Minute),
 		cleanupDuration: 30 * 24 * time.Hour,
+		querySem:        make(chan struct{}, maxConcurrentQueries),
 	}
 
 	cc, err := octeliumC.CoreV1Utils().GetClusterConfig(ctx)
@@ -57,12 +70,36 @@ func newServer(ctx context.Context, octeliumC octeliumc.ClientInterface) (*Serve
 
 	ret.clusterDomain = cc.Status.Domain
 
-	ret.db, err = sql.Open("duckdb", ovutils.GetDuckDBDSN())
+	ret.db, err = sql.Open("duckdb", ovutils.GetDuckDBDSNWithOpts(&ovutils.DuckDBOpts{}))
 	if err != nil {
 		return nil, err
 	}
 
+	ret.db.SetMaxOpenConns(maxDBConns)
+	ret.db.SetMaxIdleConns(maxDBConns)
+	ret.db.SetConnMaxLifetime(0)
+
 	return ret, nil
+}
+
+func (s *Server) limitQueries(ctx context.Context, req any,
+	info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+
+	if strings.HasPrefix(info.FullMethod, otlpLogsServicePrefix) {
+		return handler(ctx, req)
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, queryTimeout)
+	defer cancel()
+
+	select {
+	case s.querySem <- struct{}{}:
+		defer func() { <-s.querySem }()
+	case <-ctx.Done():
+		return nil, status.Error(codes.ResourceExhausted, "LogStore is busy")
+	}
+
+	return handler(ctx, req)
 }
 
 func (s *Server) Run(ctx context.Context) error {
@@ -121,6 +158,7 @@ func (s *Server) initGRPC(ctx context.Context) error {
 		cred,
 		grpc.ReadBufferSize(32*1024),
 		grpc.MaxConcurrentStreams(1000000),
+		grpc.ChainUnaryInterceptor(s.limitQueries),
 	)
 
 	srvLog := s.newSrvLog()
@@ -211,6 +249,7 @@ var maxDBAccessLogs = 2_000_000
 var maxDBAuthenticationLogs = 100_000
 var maxDBAuditLogs = 100_000
 var maxDBComponentLogs = 100_000
+var maxDBComponentLogsDebug = 10_000
 
 func (s *Server) doCleanup(ctx context.Context) error {
 	monthAgo := pbutils.Now().AsTime().Add(-1 * s.cleanupDuration).UTC().Format(time.RFC3339Nano)
@@ -239,23 +278,28 @@ func (s *Server) doCleanup(ctx context.Context) error {
 	}
 
 	{
-
-		getQry := func(table string, limit int) string {
-			return fmt.Sprintf(`DELETE FROM %s WHERE rsc->'metadata'->>'id' NOT IN (SELECT rsc->'metadata'->>'id' FROM %s ORDER BY rsc->'metadata'->>'createdAt' DESC LIMIT %d)`,
-				table, table, limit)
+		type maxCleanup struct {
+			table string
+			where string
+			limit int
 		}
 
-		if _, err := s.db.ExecContext(ctx, getQry("access_logs", maxDBAccessLogs)); err != nil {
-			zap.L().Warn("Could not cleanup access_logs by max", zap.Error(err))
-		}
-		if _, err := s.db.ExecContext(ctx, getQry("component_logs", maxDBComponentLogs)); err != nil {
-			zap.L().Warn("Could not cleanup component_logs by max", zap.Error(err))
-		}
-		if _, err := s.db.ExecContext(ctx, getQry("audit_logs", maxDBAuditLogs)); err != nil {
-			zap.L().Warn("Could not cleanup audit_logs by max", zap.Error(err))
-		}
-		if _, err := s.db.ExecContext(ctx, getQry("authentication_logs", maxDBAuthenticationLogs)); err != nil {
-			zap.L().Warn("Could not cleanup authentication_logs by max", zap.Error(err))
+		for _, c := range []maxCleanup{
+			{table: "access_logs", limit: maxDBAccessLogs},
+			{table: "component_logs", limit: maxDBComponentLogs},
+			{
+				table: "component_logs",
+				where: fmt.Sprintf(`(rsc->'entry'->>'level') = '%s'`,
+					corev1.ComponentLog_Entry_DEBUG.String()),
+				limit: maxDBComponentLogsDebug,
+			},
+			{table: "audit_logs", limit: maxDBAuditLogs},
+			{table: "authentication_logs", limit: maxDBAuthenticationLogs},
+		} {
+			if err := s.cleanupByMaxCount(ctx, c.table, c.where, c.limit); err != nil {
+				zap.L().Warn("Could not cleanup by max",
+					zap.String("table", c.table), zap.String("where", c.where), zap.Error(err))
+			}
 		}
 	}
 
@@ -264,4 +308,38 @@ func (s *Server) doCleanup(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (s *Server) cleanupByMaxCount(ctx context.Context, table, where string, limit int) error {
+	whereClause := ""
+	if where != "" {
+		whereClause = fmt.Sprintf(" WHERE %s", where)
+	}
+
+	var count int
+	if err := s.db.QueryRowContext(ctx,
+		fmt.Sprintf(`SELECT count(*) FROM %s%s`, table, whereClause)).Scan(&count); err != nil {
+		return err
+	}
+
+	if count <= limit {
+		return nil
+	}
+
+	var cutoff string
+	if err := s.db.QueryRowContext(ctx,
+		fmt.Sprintf(`SELECT rsc->'metadata'->>'createdAt' FROM %s%s ORDER BY (rsc->'metadata'->>'createdAt') DESC LIMIT 1 OFFSET %d`,
+			table, whereClause, limit-1)).Scan(&cutoff); err != nil {
+		return err
+	}
+
+	deleteWhere := `(rsc->'metadata'->>'createdAt') < $1`
+	if where != "" {
+		deleteWhere = fmt.Sprintf(`%s AND %s`, where, deleteWhere)
+	}
+
+	_, err := s.db.ExecContext(ctx,
+		fmt.Sprintf(`DELETE FROM %s WHERE %s`, table, deleteWhere), cutoff)
+
+	return err
 }

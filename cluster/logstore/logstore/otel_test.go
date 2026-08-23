@@ -17,6 +17,7 @@ import (
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
+	"github.com/octelium/octelium/pkg/utils/ldflags"
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/pdata/plog/plogotlp"
 )
@@ -196,4 +197,46 @@ func TestOTLPBatchRejectsTooManyLogs(t *testing.T) {
 	_, err := srvLog.Export(ts.ctx, newExportRequest(logs...))
 	assert.NotNil(t, err)
 	assert.Equal(t, 0, getTableCount(t, ts.srv, "component_logs"))
+}
+
+func TestOTLPDropsDebugComponentLogsInProduction(t *testing.T) {
+	ts := newTestServer(t)
+	if ts == nil {
+		return
+	}
+
+	srvLog, _ := startTestLogProcessor(t, ts.ctx, ts.srv)
+	now := time.Now().UTC()
+
+	assert.True(t, ldflags.IsProduction())
+
+	{
+		_, err := srvLog.Export(ts.ctx, newExportRequest(
+			marshalLog(t, newComponentLog(now, corev1.ComponentLog_Entry_DEBUG, "prod")),
+			marshalLog(t, newComponentLog(now, corev1.ComponentLog_Entry_INFO, "prod")),
+			marshalLog(t, newAccessLog(&accessLogOptions{CreatedAt: now})),
+		))
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, 1, getTableCount(t, ts.srv, "component_logs"))
+		assert.Equal(t, 1, getTableCount(t, ts.srv, "access_logs"))
+	}
+
+	{
+		_, err := srvLog.Export(ts.ctx, newExportRequest(
+			marshalLog(t, newComponentLog(now, corev1.ComponentLog_Entry_DEBUG, "prod")),
+		))
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, 1, getTableCount(t, ts.srv, "component_logs"))
+	}
+
+	t.Setenv("OCTELIUM_DEV", "true")
+	assert.True(t, ldflags.IsDev())
+
+	{
+		_, err := srvLog.Export(ts.ctx, newExportRequest(
+			marshalLog(t, newComponentLog(now, corev1.ComponentLog_Entry_DEBUG, "dev")),
+		))
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, 2, getTableCount(t, ts.srv, "component_logs"))
+	}
 }

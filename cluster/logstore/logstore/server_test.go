@@ -31,6 +31,9 @@ import (
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -1172,4 +1175,95 @@ func TestTop(t *testing.T) {
 		assert.True(t, len(res.items) > 0)
 	}
 
+}
+
+func TestLimitQueries(t *testing.T) {
+	ts := newTestServer(t)
+	if ts == nil {
+		return
+	}
+
+	readInfo := &grpc.UnaryServerInfo{
+		FullMethod: "/octelium.api.main.visibility.v1.AccessLogService/ListAccessLog",
+	}
+	ingestInfo := &grpc.UnaryServerInfo{
+		FullMethod: otlpLogsServicePrefix + "Export",
+	}
+
+	noop := func(ctx context.Context, req any) (any, error) {
+		return nil, nil
+	}
+
+	{
+		release := make(chan struct{})
+		entered := make(chan struct{}, maxConcurrentQueries)
+		exited := make(chan struct{}, maxConcurrentQueries)
+
+		for range maxConcurrentQueries {
+			go func() {
+				defer func() { exited <- struct{}{} }()
+				ts.srv.limitQueries(ts.ctx, nil, readInfo,
+					func(ctx context.Context, req any) (any, error) {
+						entered <- struct{}{}
+						<-release
+						return nil, nil
+					})
+			}()
+		}
+
+		for range maxConcurrentQueries {
+			select {
+			case <-entered:
+			case <-time.After(5 * time.Second):
+				assert.Fail(t, "Query did not start")
+			}
+		}
+
+		ctx, cancel := context.WithTimeout(ts.ctx, 200*time.Millisecond)
+		_, err := ts.srv.limitQueries(ctx, nil, readInfo, noop)
+		cancel()
+		assert.NotNil(t, err)
+		assert.Equal(t, codes.ResourceExhausted, status.Code(err))
+
+		ingestDone := make(chan struct{})
+		go func() {
+			defer close(ingestDone)
+			_, err := ts.srv.limitQueries(ts.ctx, nil, ingestInfo, noop)
+			assert.Nil(t, err, "%+v", err)
+		}()
+
+		select {
+		case <-ingestDone:
+		case <-time.After(5 * time.Second):
+			assert.Fail(t, "Ingest queued behind reads")
+		}
+
+		close(release)
+
+		for range maxConcurrentQueries {
+			select {
+			case <-exited:
+			case <-time.After(5 * time.Second):
+				assert.Fail(t, "Query did not exit")
+			}
+		}
+	}
+
+	{
+		for range maxConcurrentQueries * 2 {
+			_, err := ts.srv.limitQueries(ts.ctx, nil, readInfo, noop)
+			assert.Nil(t, err, "%+v", err)
+		}
+	}
+
+	{
+		_, err := ts.srv.limitQueries(ts.ctx, nil, readInfo,
+			func(ctx context.Context, req any) (any, error) {
+				deadline, ok := ctx.Deadline()
+				assert.True(t, ok)
+				assert.True(t, time.Until(deadline) <= queryTimeout)
+				return nil, nil
+			})
+		assert.Nil(t, err, "%+v", err)
+	}
 }
