@@ -195,10 +195,8 @@ func (s *Server) listAccessLog(ctx context.Context, req *visibilityv1.ListAccess
 
 	if req.Status != corev1.AccessLog_Entry_Common_STATUS_UNSET {
 		switch req.Status {
-		case corev1.AccessLog_Entry_Common_ALLOWED:
-			filters = append(filters, goqu.L(`rsc->>'$.entry.common.status' = 'ALLOWED'`))
-		case corev1.AccessLog_Entry_Common_DENIED:
-			filters = append(filters, goqu.L(`rsc->>'$.entry.common.status' = 'DENIED'`))
+		case corev1.AccessLog_Entry_Common_ALLOWED, corev1.AccessLog_Entry_Common_DENIED:
+			filters = append(filters, goqu.L(`rsc->>'$.entry.common.status'`).Eq(req.Status.String()))
 		}
 	}
 

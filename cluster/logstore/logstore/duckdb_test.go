@@ -145,6 +145,41 @@ func TestAccessLogQueriesComprehensive(t *testing.T) {
 
 	{
 		resp, err := ts.srv.listAccessLog(ts.ctx, &visibilityv1.ListAccessLogRequest{
+			Status: corev1.AccessLog_Entry_Common_DENIED,
+			ServiceRef: &metav1.ObjectReference{
+				Uid:  serviceRef1.Uid,
+				Name: serviceRef1.Name,
+			},
+			Common: &vmetav1.CommonListOptions{ItemsPerPage: 1000},
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, uint32(20), resp.ListResponseMeta.TotalCount)
+		assert.Equal(t, 20, len(resp.Items))
+		for _, item := range resp.Items {
+			assert.Equal(t, corev1.AccessLog_Entry_Common_DENIED, item.Entry.Common.Status)
+			assert.Equal(t, serviceRef1.Uid, item.Entry.Common.ServiceRef.Uid)
+		}
+	}
+
+	{
+		resp, err := ts.srv.listAccessLog(ts.ctx, &visibilityv1.ListAccessLogRequest{
+			Status:  corev1.AccessLog_Entry_Common_ALLOWED,
+			UserRef: &metav1.ObjectReference{Uid: userRef2.Uid},
+			From:    pbutils.Timestamp(base.Add(75 * time.Second)),
+			To:      pbutils.Timestamp(base.Add(119 * time.Second)),
+			Common:  &vmetav1.CommonListOptions{ItemsPerPage: 1000},
+		})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, uint32(34), resp.ListResponseMeta.TotalCount)
+		assert.Equal(t, 34, len(resp.Items))
+		for _, item := range resp.Items {
+			assert.Equal(t, corev1.AccessLog_Entry_Common_ALLOWED, item.Entry.Common.Status)
+			assert.Equal(t, userRef2.Uid, item.Entry.Common.UserRef.Uid)
+		}
+	}
+
+	{
+		resp, err := ts.srv.listAccessLog(ts.ctx, &visibilityv1.ListAccessLogRequest{
 			From:   pbutils.Timestamp(base.Add(60 * time.Second)),
 			To:     pbutils.Timestamp(base.Add(89 * time.Second)),
 			Common: &vmetav1.CommonListOptions{ItemsPerPage: 1000},
