@@ -95,6 +95,21 @@ const parseResponse = (body: string, contentType: string): unknown => {
 const formatResult = (value: unknown) =>
   typeof value === "string" ? value : JSON.stringify(value, null, 2);
 
+const encodeMCPHeaderValue = (value: string) => {
+  if (
+    /^[\x20-\x7e]*$/.test(value) &&
+    value === value.trim() &&
+    !value.startsWith("=?base64?")
+  ) {
+    return value;
+  }
+
+  const bytes = new TextEncoder().encode(value);
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return `=?base64?${btoa(binary)}?=`;
+};
+
 const ArgumentEditor = (props: {
   title: string;
   description: string;
@@ -377,17 +392,24 @@ const MCPPlayground = (props: { service: Service }) => {
     setError(undefined);
     setResponse(undefined);
     let params: Record<string, unknown> = {};
+    let capabilities: Record<string, unknown> = {};
     try {
-      if (method === "initialize") {
-        let capabilities: unknown;
+      if (method === "initialize" || supportsServerDiscover) {
         try {
-          capabilities = JSON.parse(capabilitiesJSON || "{}");
+          const parsedCapabilities = JSON.parse(capabilitiesJSON || "{}");
+          if (
+            !parsedCapabilities ||
+            typeof parsedCapabilities !== "object" ||
+            Array.isArray(parsedCapabilities)
+          ) {
+            throw new Error("Capabilities must be a JSON object.");
+          }
+          capabilities = parsedCapabilities as Record<string, unknown>;
         } catch {
           throw new Error("Capabilities must contain valid JSON.");
         }
-        if (!capabilities || typeof capabilities !== "object" || Array.isArray(capabilities)) {
-          throw new Error("Capabilities must be a JSON object.");
-        }
+      }
+      if (method === "initialize") {
         params = {
           protocolVersion: protocolVersion || DEFAULT_PROTOCOL_VERSION,
           capabilities,
@@ -416,6 +438,18 @@ const MCPPlayground = (props: { service: Service }) => {
       ) {
         params = { cursor: cursor.trim() };
       }
+
+      if (supportsServerDiscover) {
+        params._meta = {
+          "io.modelcontextprotocol/protocolVersion":
+            protocolVersion || DEFAULT_PROTOCOL_VERSION,
+          "io.modelcontextprotocol/clientInfo": {
+            name: clientName.trim() || "Octelium Console",
+            version: clientVersion.trim() || "1.0.0",
+          },
+          "io.modelcontextprotocol/clientCapabilities": capabilities,
+        };
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "The request is invalid.");
       return;
@@ -427,6 +461,14 @@ const MCPPlayground = (props: { service: Service }) => {
       method,
       params,
     };
+    const requestTarget =
+      method === "tools/call"
+        ? toolName.trim()
+        : method === "resources/read"
+          ? resourceURI.trim()
+          : method === "prompts/get"
+            ? promptName.trim()
+            : "";
     setRequest(payload);
     setPending(true);
     const controller = new AbortController();
@@ -439,6 +481,10 @@ const MCPPlayground = (props: { service: Service }) => {
           Accept: "application/json, text/event-stream",
           "Content-Type": "application/json",
           "MCP-Protocol-Version": protocolVersion || DEFAULT_PROTOCOL_VERSION,
+          "Mcp-Method": method,
+          ...(requestTarget
+            ? { "Mcp-Name": encodeMCPHeaderValue(requestTarget) }
+            : {}),
           ...(sessionID ? { "Mcp-Session-Id": sessionID } : {}),
         },
         body: JSON.stringify(payload),
