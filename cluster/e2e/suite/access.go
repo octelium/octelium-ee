@@ -356,7 +356,7 @@ func testAccessRejectCancelRevoke(t *testing.T, ch *harness.H) {
 
 		revoked := h.WaitRequestState(t, req,
 			accessv1.Request_Status_State_REVOKED, eeharness.RequestBudget)
-		assert.Nil(t, revoked.Status.PolicyTriggerRef)
+		h.WaitRequestNoPolicyTrigger(t, req, eeharness.RequestBudget)
 
 		probe.MustBeDenied(t)
 

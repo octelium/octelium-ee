@@ -229,3 +229,31 @@ func TestReviewerReview(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, accessv1.Review_Spec_DECISION_UNSET, reviewC.Spec.Decision)
 }
+
+func TestHasReviewerReviewBeenApplied(t *testing.T) {
+	review := &accessv1.Review{
+		Metadata: &metav1.Metadata{Uid: utilrand.GetRandomStringCanonical(16)},
+	}
+
+	req := &accessv1.Request{Status: &accessv1.Request_Status{}}
+	assert.False(t, hasReviewerReviewBeenApplied(req, review))
+
+	req.Status.Review = &accessv1.Request_Status_Review{CurrentStep: 0}
+	assert.False(t, hasReviewerReviewBeenApplied(req, review))
+
+	req.Status.Review.LastSteps = []*accessv1.Request_Status_Review_Step{
+		{
+			ReviewRef: &metav1.ObjectReference{Uid: review.Metadata.Uid},
+			StepIndex: 0,
+		},
+	}
+	assert.False(t, hasReviewerReviewBeenApplied(req, review))
+
+	req.Status.Review.CurrentStep = 1
+	assert.True(t, hasReviewerReviewBeenApplied(req, review))
+
+	other := &accessv1.Review{
+		Metadata: &metav1.Metadata{Uid: utilrand.GetRandomStringCanonical(16)},
+	}
+	assert.False(t, hasReviewerReviewBeenApplied(req, other))
+}

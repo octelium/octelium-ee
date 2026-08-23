@@ -234,6 +234,14 @@ func (s *ServerReviewer) CancelReview(ctx context.Context, req *accessv1.CancelR
 		return nil, err
 	}
 
+	ok, err := s.canReviewRequest(ctx, i.User, request)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, grpcutils.InvalidArg("This Review can no longer be cancelled")
+	}
+
 	if hasReviewerReviewBeenApplied(request, item) {
 		return nil, grpcutils.InvalidArg("Applied Reviews cannot be cancelled")
 	}
@@ -340,9 +348,13 @@ func hasReviewerReviewBeenApplied(req *accessv1.Request, review *accessv1.Review
 	}
 
 	for _, step := range req.Status.Review.LastSteps {
-		if step.ReviewRef != nil &&
-			step.ReviewRef.Uid != "" &&
-			step.ReviewRef.Uid == review.Metadata.Uid {
+		if step.ReviewRef == nil ||
+			step.ReviewRef.Uid == "" ||
+			step.ReviewRef.Uid != review.Metadata.Uid {
+			continue
+		}
+
+		if step.StepIndex != req.Status.Review.CurrentStep {
 			return true
 		}
 	}

@@ -318,6 +318,53 @@ func (h *H) WaitRequestState(t *testing.T, req *accessv1.Request,
 	return ret
 }
 
+func (h *H) WaitRequestPolicyTrigger(t *testing.T,
+	req *accessv1.Request, budget time.Duration) *accessv1.Request {
+	t.Helper()
+
+	return h.waitRequestPolicyTrigger(t, req, budget, true)
+}
+
+func (h *H) WaitRequestNoPolicyTrigger(t *testing.T,
+	req *accessv1.Request, budget time.Duration) *accessv1.Request {
+	t.Helper()
+
+	return h.waitRequestPolicyTrigger(t, req, budget, false)
+}
+
+func (h *H) waitRequestPolicyTrigger(t *testing.T, req *accessv1.Request,
+	budget time.Duration, want bool) *accessv1.Request {
+	t.Helper()
+
+	what := "the Request " + req.Metadata.Name + " to reference a PolicyTrigger"
+	if !want {
+		what = "the Request " + req.Metadata.Name + " to drop its PolicyTrigger"
+	}
+
+	var ret *accessv1.Request
+
+	h.Eventually(t, what, budget, func(ctx context.Context) error {
+		cur, err := h.AccessC().GetRequest(ctx,
+			&metav1.GetOptions{Uid: req.Metadata.Uid})
+		if err != nil {
+			return err
+		}
+
+		switch {
+		case want && cur.Status.PolicyTriggerRef == nil:
+			return errors.Errorf("the Request has no PolicyTrigger reference yet")
+		case !want && cur.Status.PolicyTriggerRef != nil:
+			return errors.Errorf("the Request still references the PolicyTrigger %s",
+				cur.Status.PolicyTriggerRef.Name)
+		}
+
+		ret = cur
+		return nil
+	})
+
+	return ret
+}
+
 func (h *H) WaitRequestStep(t *testing.T,
 	req *accessv1.Request, step int32, budget time.Duration) *accessv1.Request {
 	t.Helper()

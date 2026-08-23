@@ -28,6 +28,8 @@ const settleWindow = 20 * time.Second
 
 const driveEvery = 20
 
+const driveBatch = 5
+
 func testCollectorExportOTLP(t *testing.T, ch *harness.H) {
 	h := eeharness.Wrap(ch)
 	h.Require(t, eescenario.CapOTLPSink)
@@ -191,7 +193,7 @@ func testCollectorSignalRouting(t *testing.T, ch *harness.H) {
 func driveTraffic(t *testing.T, h *eeharness.H) {
 	t.Helper()
 
-	for range 5 {
+	for range driveBatch {
 		h.GetStatus(t, h.HTTPPublic("demo-nginx"), "/", http.StatusUnauthorized)
 	}
 }
@@ -217,22 +219,32 @@ func waitAccessLogGrows(t *testing.T, h *eeharness.H, by uint32) {
 	require.Nil(t, err)
 
 	var attempts int
+	var driven int
+	last := before
 
 	h.Eventually(t, "the access log count to grow", eeharness.TimeoutBudget,
 		func(ctx context.Context) error {
 			cur, err := accessLogCount(ctx, h)
 			if err != nil {
-				return err
+				return errors.Wrapf(err,
+					"the access log count was last %d, want at least %d after %d driven requests",
+					last, before+by, driven)
 			}
+
+			last = cur
+
 			if cur >= before+by {
 				return nil
 			}
 
 			if attempts%driveEvery == 0 {
 				driveTraffic(t, h)
+				driven += driveBatch
 			}
 			attempts++
 
-			return errors.Errorf("the access log count is %d, want at least %d", cur, before+by)
+			return errors.Errorf(
+				"the access log count is %d, want at least %d after %d driven requests",
+				cur, before+by, driven)
 		})
 }

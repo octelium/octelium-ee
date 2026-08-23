@@ -314,16 +314,21 @@ func testSCIMToDataPlane(t *testing.T, ch *harness.H) {
 
 	svc := h.NewPublicService(t, "default")
 
-	h.CreatePolicy(t, &corev1.Policy{
-		Spec: &corev1.Policy_Spec{
-			Rules: []*corev1.Policy_Spec_Rule{
-				harness.MatchRule("allow-group", 0, corev1.Policy_Spec_Rule_ALLOW,
-					fmt.Sprintf(`ctx.user.spec.groups.exists(g, g == %q) && `+
-						`ctx.service.metadata.uid == %q`,
-						grp.Metadata.Name, svc.Metadata.Uid)),
+	svc.Spec.Authorization = &corev1.Service_Spec_Authorization{
+		InlinePolicies: []*corev1.InlinePolicy{
+			{
+				Name: "allow-group",
+				Spec: &corev1.Policy_Spec{
+					Rules: []*corev1.Policy_Spec_Rule{
+						harness.MatchRule("allow-group", 0, corev1.Policy_Spec_Rule_ALLOW,
+							fmt.Sprintf(`ctx.user.spec.groups.exists(g, g == %q)`,
+								grp.Metadata.Name)),
+					},
+				},
 			},
 		},
-	})
+	}
+	h.UpdateService(t, svc)
 
 	t.Run("DeniedBeforeMembership", func(t *testing.T) {
 		waitAuthorization(t, h, usr, svc, false)

@@ -167,12 +167,13 @@ func testAccessOverlappingGrants(t *testing.T, ch *harness.H) {
 	second := h.CreateRequest(t, c.alice,
 		eeharness.ServiceRequest(c.alpha, eeharness.Minutes(5)))
 
-	first = h.WaitRequestState(t, first, accessv1.Request_Status_State_APPROVED,
+	h.WaitRequestState(t, first, accessv1.Request_Status_State_APPROVED,
 		eeharness.RequestBudget)
-	second = h.WaitRequestState(t, second, accessv1.Request_Status_State_APPROVED,
+	h.WaitRequestState(t, second, accessv1.Request_Status_State_APPROVED,
 		eeharness.RequestBudget)
-	require.NotNil(t, first.Status.PolicyTriggerRef)
-	require.NotNil(t, second.Status.PolicyTriggerRef)
+
+	first = h.WaitRequestPolicyTrigger(t, first, eeharness.RequestBudget)
+	second = h.WaitRequestPolicyTrigger(t, second, eeharness.RequestBudget)
 	assert.NotEqual(t, first.Status.PolicyTriggerRef.Uid, second.Status.PolicyTriggerRef.Uid)
 	probe.MustBeAllowed(t)
 
@@ -340,7 +341,7 @@ func testAccessCatalogResources(t *testing.T, ch *harness.H) {
 	h := eeharness.Wrap(ch)
 	c := newAccessCast(t, h)
 
-	ns := h.CreateNamespace(t, nil)
+	ns := h.EnsureTestNamespace(t)
 	inNamespace := h.NewPublicService(t, ns.Metadata.Name)
 	outside := h.NewPublicService(t, "default")
 	catalog := h.CreateCatalog(t, []string{c.alpha.Metadata.Name},
