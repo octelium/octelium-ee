@@ -3,6 +3,7 @@ import {
   Condition_Expression_APIServerAccess_Service as AccessService,
   Condition_Expression_APIServerCordium_Service as CordiumService,
   Condition_Expression_APIServerEnterprise_Service as EnterpriseService,
+  Condition_Expression_MCPToolArgument_BoolMatch_Value as MCPBoolValue,
   Condition_Expression as Expression,
 } from "@/apis/enterprisev1/enterprisev1";
 import { ObjectReference } from "@/apis/metav1/metav1";
@@ -13,6 +14,7 @@ import {
   printServiceMode,
 } from "@/utils/pb";
 import {
+  Autocomplete,
   Group,
   SegmentedControl,
   Select,
@@ -220,6 +222,49 @@ const STRING_MATCH_OPTIONS = [
   { value: "in", label: "One of" },
 ];
 
+const MCP_PROTOCOL_VERSIONS = [
+  "2024-11-05",
+  "2025-03-26",
+  "2025-06-18",
+  "2025-11-25",
+  "2026-07-28",
+];
+
+const MCP_METHODS = [
+  "server/discover",
+  "initialize",
+  "ping",
+  "tools/list",
+  "tools/call",
+  "prompts/list",
+  "prompts/get",
+  "resources/list",
+  "resources/read",
+  "resources/templates/list",
+  "resources/subscribe",
+  "resources/unsubscribe",
+  "completion/complete",
+  "subscriptions/listen",
+  "elicitation/create",
+  "roots/list",
+  "sampling/createMessage",
+  "logging/setLevel",
+  "tasks/get",
+  "tasks/update",
+  "tasks/cancel",
+  "notifications/initialized",
+  "notifications/cancelled",
+  "notifications/progress",
+  "notifications/message",
+  "notifications/roots/list_changed",
+  "notifications/tools/list_changed",
+  "notifications/prompts/list_changed",
+  "notifications/resources/list_changed",
+  "notifications/resources/updated",
+  "notifications/subscriptions/acknowledged",
+  "notifications/tasks",
+];
+
 const NUMERIC_MATCH_OPTIONS = [
   { value: "exact", label: "Equals" },
   { value: "lessThan", label: "<" },
@@ -256,6 +301,8 @@ const stringMatchText = (match?: any): string => {
 const StringMatchEditor = (props: {
   value?: any;
   label?: string;
+  placeholder?: string;
+  data?: string[];
   onChange: (value: any) => void;
 }) => {
   const kind = props.value?.type?.oneofKind ?? "exact";
@@ -281,14 +328,25 @@ const StringMatchEditor = (props: {
           onChange={(values) => props.onChange(makeStringMatch(kind, values))}
         />
       ) : (
-        <TextInput
-          label={props.label ?? "Value"}
-          placeholder="Enter a value"
-          value={current}
-          onChange={(event) =>
-            props.onChange(makeStringMatch(kind, event.currentTarget.value))
-          }
-        />
+        props.data?.length && kind === "exact" ? (
+          <Autocomplete
+            label={props.label ?? "Value"}
+            description="Choose a suggested value or enter a custom value"
+            placeholder={props.placeholder ?? "Enter a value"}
+            data={props.data}
+            value={current}
+            onChange={(value) => props.onChange(makeStringMatch(kind, value))}
+          />
+        ) : (
+          <TextInput
+            label={props.label ?? "Value"}
+            placeholder={props.placeholder ?? "Enter a value"}
+            value={current}
+            onChange={(event) =>
+              props.onChange(makeStringMatch(kind, event.currentTarget.value))
+            }
+          />
+        )
       )}
     </div>
   );
@@ -320,6 +378,54 @@ const makeStringMatchItem = (
       return (
         <StringMatchEditor
           label={label}
+          value={matchValue}
+          onChange={(match) =>
+            onUpdate(
+              Expression.create({
+                type: { oneofKind: type, [type]: { match } } as any,
+              }),
+            )
+          }
+        />
+      );
+    },
+  },
+});
+
+const makeMCPStringMatchItem = (
+  type: string,
+  title: string,
+  tags: string[],
+  label: string,
+  defaultValue: string,
+  suggestions: string[],
+  placeholder: string,
+): ItemDef => ({
+  type,
+  title,
+  tags,
+  makeDefault: () =>
+    Expression.create({
+      type: {
+        oneofKind: type,
+        [type]: { match: makeStringMatch("exact", defaultValue) },
+      } as any,
+    }),
+  components: {
+    Value: ({ item }) => {
+      if (item.type.oneofKind !== type) return null;
+      return <>{stringMatchText((item.type as any)[type].match)}</>;
+    },
+    Edit: ({ item, onUpdate }) => {
+      const matchValue =
+        item?.type.oneofKind === type
+          ? (item.type as any)[type].match
+          : makeStringMatch("exact", defaultValue);
+      return (
+        <StringMatchEditor
+          label={label}
+          placeholder={placeholder}
+          data={suggestions}
           value={matchValue}
           onChange={(match) =>
             onUpdate(
@@ -432,6 +538,204 @@ const makeNumericMatchItem = (
             />
           )}
         </div>
+      );
+    },
+  },
+});
+
+const MCP_ARGUMENT_MATCH_OPTIONS = [
+  { value: "stringMatch", label: "String" },
+  { value: "doubleMatch", label: "Number" },
+  { value: "boolMatch", label: "Boolean" },
+  { value: "isNull", label: "Null" },
+  { value: "exists", label: "Exists" },
+];
+
+const DOUBLE_MATCH_OPTIONS = [
+  { value: "lessThan", label: "<" },
+  { value: "lessThanOrEqual", label: "≤" },
+  { value: "greaterThan", label: ">" },
+  { value: "greaterThanOrEqual", label: "≥" },
+];
+
+const makeDoubleMatch = (kind: string, value: number) => ({
+  type: { oneofKind: kind, [kind]: value },
+});
+
+const mcpArgumentMatchText = (match?: any): string => {
+  switch (match?.oneofKind) {
+    case "stringMatch":
+      return `string ${stringMatchText(match.stringMatch)}`;
+    case "doubleMatch": {
+      const type = match.doubleMatch?.type;
+      if (!type?.oneofKind) return "number (any)";
+      return `number ${type.oneofKind.replace(/([A-Z])/g, " $1").toLowerCase()} ${type[type.oneofKind]}`;
+    }
+    case "boolMatch":
+      return match.boolMatch?.value === MCPBoolValue.TRUE
+        ? "boolean true"
+        : match.boolMatch?.value === MCPBoolValue.FALSE
+          ? "boolean false"
+          : "boolean";
+    case "isNull":
+      return "is null";
+    case "exists":
+      return "exists";
+    default:
+      return "any value";
+  }
+};
+
+const MCPToolArgumentEditor = (props: {
+  value?: any;
+  onChange: (value: any) => void;
+}) => {
+  const path = props.value?.path ?? [];
+  const match = props.value?.match;
+  const matchType = match?.oneofKind ?? "stringMatch";
+
+  const updateMatch = (next: any) =>
+    props.onChange({ path, match: next });
+
+  return (
+    <div className="space-y-4">
+      <TagsInput
+        label="Argument path"
+        description="Keys relative to params.arguments. Add one key per path segment."
+        placeholder={path.length ? "Add another nested key" : "e.g. query"}
+        value={path}
+        onChange={(next) => props.onChange({ path: next, match })}
+      />
+      <div className="space-y-2">
+        <p className="text-[0.72rem] font-bold text-slate-700">Value rule</p>
+        <SegmentedControl
+          fullWidth
+          size="sm"
+          value={matchType}
+          data={MCP_ARGUMENT_MATCH_OPTIONS}
+          onChange={(next) => {
+            if (next === "stringMatch") updateMatch({
+              oneofKind: next,
+              stringMatch: { type: { oneofKind: "exact", exact: "" } },
+            });
+            else if (next === "doubleMatch") updateMatch({
+              oneofKind: next,
+              doubleMatch: makeDoubleMatch("lessThan", 0),
+            });
+            else if (next === "boolMatch") updateMatch({
+              oneofKind: next,
+              boolMatch: { value: MCPBoolValue.TRUE },
+            });
+            else updateMatch({ oneofKind: next, [next]: {} });
+          }}
+        />
+      </div>
+
+      {matchType === "stringMatch" && (
+        <StringMatchEditor
+          label="String value"
+          placeholder="e.g. weather"
+          value={match?.stringMatch}
+          onChange={(next) => updateMatch({ oneofKind: "stringMatch", stringMatch: next })}
+        />
+      )}
+      {matchType === "doubleMatch" && (() => {
+        const current = match?.doubleMatch?.type?.oneofKind ?? "lessThan";
+        const value = match?.doubleMatch?.type?.[current] ?? 0;
+        return (
+          <div className="space-y-2">
+            <SegmentedControl
+              fullWidth
+              size="xs"
+              value={current}
+              data={DOUBLE_MATCH_OPTIONS}
+              onChange={(next) => updateMatch({
+                oneofKind: "doubleMatch",
+                doubleMatch: makeDoubleMatch(next, 0),
+              })}
+            />
+            <TextInput
+              label="Number"
+              type="number"
+              step="any"
+              value={String(value)}
+              onChange={(event) => updateMatch({
+                oneofKind: "doubleMatch",
+                doubleMatch: makeDoubleMatch(current, Number(event.currentTarget.value) || 0),
+              })}
+            />
+          </div>
+        );
+      })()}
+      {matchType === "boolMatch" && (
+        <SegmentedControl
+          fullWidth
+          size="sm"
+          value={String(match?.boolMatch?.value ?? MCPBoolValue.TRUE)}
+          data={[
+            { value: String(MCPBoolValue.TRUE), label: "True" },
+            { value: String(MCPBoolValue.FALSE), label: "False" },
+          ]}
+          onChange={(next) => updateMatch({
+            oneofKind: "boolMatch",
+            boolMatch: { value: Number(next) },
+          })}
+        />
+      )}
+      {(matchType === "isNull" || matchType === "exists") && (
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[0.7rem] font-semibold text-slate-500">
+          {matchType === "isNull"
+            ? "Matches only when the argument is explicitly null."
+            : "Matches when the argument path exists, including when its value is null."}
+        </p>
+      )}
+    </div>
+  );
+};
+
+const makeMCPToolArgumentItem = (): ItemDef => ({
+  type: "requestMCPToolArgument",
+  title: "MCP tool argument",
+  tags: ["mcp", "request", "tool", "argument", "json"],
+  makeDefault: () =>
+    Expression.create({
+      type: {
+        oneofKind: "requestMCPToolArgument",
+        requestMCPToolArgument: {
+          path: [],
+          match: {
+            oneofKind: "stringMatch",
+            stringMatch: { type: { oneofKind: "exact", exact: "" } },
+          },
+        },
+      } as any,
+    }),
+  components: {
+    Value: ({ item }) => {
+      if (item.type.oneofKind !== "requestMCPToolArgument") return null;
+      const value = (item.type as any).requestMCPToolArgument;
+      const path = value.path?.length ? value.path.join(".") : "(argument path)";
+      return <>{path} · {mcpArgumentMatchText(value.match)}</>;
+    },
+    Edit: ({ item, onUpdate }) => {
+      const value =
+        item?.type.oneofKind === "requestMCPToolArgument"
+          ? (item.type as any).requestMCPToolArgument
+          : undefined;
+      return (
+        <MCPToolArgumentEditor
+          value={value}
+          onChange={(next) =>
+            onUpdate(
+              Expression.create({
+                type: {
+                  oneofKind: "requestMCPToolArgument",
+                  requestMCPToolArgument: next,
+                } as any,
+              }),
+            )
+          }
+        />
       );
     },
   },
@@ -1555,11 +1859,52 @@ export const itemList: ItemDef[] = [
     "Address type",
   ),
 
-  makeStringMatchItem("requestMCPProtocolVersion", "MCP protocol version", ["mcp", "request", "protocol"], "Protocol version"),
-  makeStringMatchItem("requestMCPMethod", "MCP method", ["mcp", "request", "method"], "Method"),
-  makeStringMatchItem("requestMCPToolName", "MCP tool name", ["mcp", "request", "tool"], "Tool name"),
-  makeStringMatchItem("requestMCPPromptName", "MCP prompt name", ["mcp", "request", "prompt"], "Prompt name"),
-  makeStringMatchItem("requestMCPResourceURI", "MCP resource URI", ["mcp", "request", "resource"], "Resource URI"),
+  makeMCPStringMatchItem(
+    "requestMCPProtocolVersion",
+    "MCP protocol version",
+    ["mcp", "request", "protocol", "version"],
+    "Protocol version",
+    "",
+    MCP_PROTOCOL_VERSIONS,
+    "e.g. 2026-07-28",
+  ),
+  makeMCPStringMatchItem(
+    "requestMCPMethod",
+    "MCP method",
+    ["mcp", "request", "method", "json-rpc"],
+    "Method",
+    "",
+    MCP_METHODS,
+    "e.g. tools/call",
+  ),
+  makeMCPStringMatchItem(
+    "requestMCPToolName",
+    "MCP tool name",
+    ["mcp", "request", "tool"],
+    "Tool name",
+    "",
+    [],
+    "e.g. get_weather",
+  ),
+  makeMCPToolArgumentItem(),
+  makeMCPStringMatchItem(
+    "requestMCPPromptName",
+    "MCP prompt name",
+    ["mcp", "request", "prompt"],
+    "Prompt name",
+    "",
+    ["review", "summarize", "code_review"],
+    "e.g. review",
+  ),
+  makeMCPStringMatchItem(
+    "requestMCPResourceURI",
+    "MCP resource URI",
+    ["mcp", "request", "resource", "uri"],
+    "Resource URI",
+    "",
+    ["file:///example.txt", "https://example.com/resource"],
+    "e.g. file:///example.txt",
+  ),
   makeMarkerItem("requestMCPIsNotification", "MCP notification", ["mcp", "request", "notification"]),
 
   makeEnumItem(

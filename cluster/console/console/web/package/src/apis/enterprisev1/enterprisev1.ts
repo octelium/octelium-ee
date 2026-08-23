@@ -8638,6 +8638,15 @@ export interface Condition_Expression {
          */
         timeDayType: Condition_Expression_TimeDayType;
     } | {
+        oneofKind: "requestMCPToolArgument";
+        /**
+         * RequestMCPToolArgument matches a value in the arguments object of an
+         * MCP `tools/call` request.
+         *
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument requestMCPToolArgument = 101
+         */
+        requestMCPToolArgument: Condition_Expression_MCPToolArgument;
+    } | {
         oneofKind: undefined;
     };
 }
@@ -9231,6 +9240,45 @@ export interface Condition_Expression_IntMatch {
     };
 }
 /**
+ * DoubleMatch is a matcher for floating-point values. It intentionally
+ * supports only range comparisons; exact equality is not reliable for
+ * arbitrary floating-point values.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.DoubleMatch
+ */
+export interface Condition_Expression_DoubleMatch {
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "lessThan";
+        /**
+         * @generated from protobuf field: double lessThan = 1
+         */
+        lessThan: number;
+    } | {
+        oneofKind: "lessThanOrEqual";
+        /**
+         * @generated from protobuf field: double lessThanOrEqual = 2
+         */
+        lessThanOrEqual: number;
+    } | {
+        oneofKind: "greaterThan";
+        /**
+         * @generated from protobuf field: double greaterThan = 3
+         */
+        greaterThan: number;
+    } | {
+        oneofKind: "greaterThanOrEqual";
+        /**
+         * @generated from protobuf field: double greaterThanOrEqual = 4
+         */
+        greaterThanOrEqual: number;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
  * RequestHTTPHost matches the host of the HTTP request
  *
  * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPHost
@@ -9797,6 +9845,106 @@ export interface Condition_Expression_MCPResourceURI {
  * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.MCPIsNotification
  */
 export interface Condition_Expression_MCPIsNotification {
+}
+/**
+ * MCPToolArgument matches a scalar value in the arguments object of an
+ * MCP `tools/call` request.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument
+ */
+export interface Condition_Expression_MCPToolArgument {
+    /**
+     * Path is relative to `params.arguments`. Each item addresses one JSON
+     * object key, so nested arguments are represented as multiple items.
+     *
+     * @generated from protobuf field: repeated string path = 1
+     */
+    path: string[];
+    /**
+     * @generated from protobuf oneof: match
+     */
+    match: {
+        oneofKind: "stringMatch";
+        /**
+         * StringMatch applies string equality and string operations.
+         *
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringMatch stringMatch = 2
+         */
+        stringMatch: Condition_Expression_StringMatch;
+    } | {
+        oneofKind: "doubleMatch";
+        /**
+         * DoubleMatch applies range comparisons to JSON numbers.
+         *
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.DoubleMatch doubleMatch = 3
+         */
+        doubleMatch: Condition_Expression_DoubleMatch;
+    } | {
+        oneofKind: "boolMatch";
+        /**
+         * BoolMatch matches a JSON boolean value.
+         *
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.BoolMatch boolMatch = 4
+         */
+        boolMatch: Condition_Expression_MCPToolArgument_BoolMatch;
+    } | {
+        oneofKind: "isNull";
+        /**
+         * IsNull matches an explicit JSON null value.
+         *
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.IsNull isNull = 5
+         */
+        isNull: Condition_Expression_MCPToolArgument_IsNull;
+    } | {
+        oneofKind: "exists";
+        /**
+         * Exists matches when the argument path is present, including when
+         * its value is null.
+         *
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.Exists exists = 6
+         */
+        exists: Condition_Expression_MCPToolArgument_Exists;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * BoolMatch matches one of the two JSON boolean values.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.BoolMatch
+ */
+export interface Condition_Expression_MCPToolArgument_BoolMatch {
+    /**
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.BoolMatch.Value value = 1
+     */
+    value: Condition_Expression_MCPToolArgument_BoolMatch_Value;
+}
+/**
+ * @generated from protobuf enum octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.BoolMatch.Value
+ */
+export enum Condition_Expression_MCPToolArgument_BoolMatch_Value {
+    /**
+     * @generated from protobuf enum value: VALUE_UNSET = 0;
+     */
+    VALUE_UNSET = 0,
+    /**
+     * @generated from protobuf enum value: TRUE = 1;
+     */
+    TRUE = 1,
+    /**
+     * @generated from protobuf enum value: FALSE = 2;
+     */
+    FALSE = 2
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.IsNull
+ */
+export interface Condition_Expression_MCPToolArgument_IsNull {
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.Exists
+ */
+export interface Condition_Expression_MCPToolArgument_Exists {
 }
 /**
  * LLMProtocol matches the LLM API protocol of the request
@@ -25047,7 +25195,8 @@ class Condition_Expression$Type extends MessageType<Condition_Expression> {
             { no: 97, name: "requestSOCKS5Host", kind: "message", oneof: "type", T: () => Condition_Expression_RequestSOCKS5Host },
             { no: 98, name: "requestSOCKS5Port", kind: "message", oneof: "type", T: () => Condition_Expression_RequestSOCKS5Port },
             { no: 99, name: "requestSOCKS5AddressType", kind: "message", oneof: "type", T: () => Condition_Expression_RequestSOCKS5AddressType },
-            { no: 100, name: "timeDayType", kind: "message", oneof: "type", T: () => Condition_Expression_TimeDayType }
+            { no: 100, name: "timeDayType", kind: "message", oneof: "type", T: () => Condition_Expression_TimeDayType },
+            { no: 101, name: "requestMCPToolArgument", kind: "message", oneof: "type", T: () => Condition_Expression_MCPToolArgument }
         ]);
     }
     create(value?: PartialMessage<Condition_Expression>): Condition_Expression {
@@ -25656,6 +25805,12 @@ class Condition_Expression$Type extends MessageType<Condition_Expression> {
                         timeDayType: Condition_Expression_TimeDayType.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).timeDayType)
                     };
                     break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument requestMCPToolArgument */ 101:
+                    message.type = {
+                        oneofKind: "requestMCPToolArgument",
+                        requestMCPToolArgument: Condition_Expression_MCPToolArgument.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requestMCPToolArgument)
+                    };
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -25965,6 +26120,9 @@ class Condition_Expression$Type extends MessageType<Condition_Expression> {
         /* octelium.api.main.enterprise.v1.Condition.Expression.TimeDayType timeDayType = 100; */
         if (message.type.oneofKind === "timeDayType")
             Condition_Expression_TimeDayType.internalBinaryWrite(message.type.timeDayType, writer.tag(100, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument requestMCPToolArgument = 101; */
+        if (message.type.oneofKind === "requestMCPToolArgument")
+            Condition_Expression_MCPToolArgument.internalBinaryWrite(message.type.requestMCPToolArgument, writer.tag(101, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -27726,6 +27884,86 @@ class Condition_Expression_IntMatch$Type extends MessageType<Condition_Expressio
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.IntMatch
  */
 export const Condition_Expression_IntMatch = new Condition_Expression_IntMatch$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_DoubleMatch$Type extends MessageType<Condition_Expression_DoubleMatch> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.DoubleMatch", [
+            { no: 1, name: "lessThan", kind: "scalar", oneof: "type", T: 1 /*ScalarType.DOUBLE*/ },
+            { no: 2, name: "lessThanOrEqual", kind: "scalar", oneof: "type", T: 1 /*ScalarType.DOUBLE*/ },
+            { no: 3, name: "greaterThan", kind: "scalar", oneof: "type", T: 1 /*ScalarType.DOUBLE*/ },
+            { no: 4, name: "greaterThanOrEqual", kind: "scalar", oneof: "type", T: 1 /*ScalarType.DOUBLE*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_DoubleMatch>): Condition_Expression_DoubleMatch {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_DoubleMatch>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_DoubleMatch): Condition_Expression_DoubleMatch {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* double lessThan */ 1:
+                    message.type = {
+                        oneofKind: "lessThan",
+                        lessThan: reader.double()
+                    };
+                    break;
+                case /* double lessThanOrEqual */ 2:
+                    message.type = {
+                        oneofKind: "lessThanOrEqual",
+                        lessThanOrEqual: reader.double()
+                    };
+                    break;
+                case /* double greaterThan */ 3:
+                    message.type = {
+                        oneofKind: "greaterThan",
+                        greaterThan: reader.double()
+                    };
+                    break;
+                case /* double greaterThanOrEqual */ 4:
+                    message.type = {
+                        oneofKind: "greaterThanOrEqual",
+                        greaterThanOrEqual: reader.double()
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_DoubleMatch, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* double lessThan = 1; */
+        if (message.type.oneofKind === "lessThan")
+            writer.tag(1, WireType.Bit64).double(message.type.lessThan);
+        /* double lessThanOrEqual = 2; */
+        if (message.type.oneofKind === "lessThanOrEqual")
+            writer.tag(2, WireType.Bit64).double(message.type.lessThanOrEqual);
+        /* double greaterThan = 3; */
+        if (message.type.oneofKind === "greaterThan")
+            writer.tag(3, WireType.Bit64).double(message.type.greaterThan);
+        /* double greaterThanOrEqual = 4; */
+        if (message.type.oneofKind === "greaterThanOrEqual")
+            writer.tag(4, WireType.Bit64).double(message.type.greaterThanOrEqual);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.DoubleMatch
+ */
+export const Condition_Expression_DoubleMatch = new Condition_Expression_DoubleMatch$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class Condition_Expression_RequestHTTPHost$Type extends MessageType<Condition_Expression_RequestHTTPHost> {
     constructor() {
@@ -29734,6 +29972,227 @@ class Condition_Expression_MCPIsNotification$Type extends MessageType<Condition_
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.MCPIsNotification
  */
 export const Condition_Expression_MCPIsNotification = new Condition_Expression_MCPIsNotification$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_MCPToolArgument$Type extends MessageType<Condition_Expression_MCPToolArgument> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument", [
+            { no: 1, name: "path", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "stringMatch", kind: "message", oneof: "match", T: () => Condition_Expression_StringMatch },
+            { no: 3, name: "doubleMatch", kind: "message", oneof: "match", T: () => Condition_Expression_DoubleMatch },
+            { no: 4, name: "boolMatch", kind: "message", oneof: "match", T: () => Condition_Expression_MCPToolArgument_BoolMatch },
+            { no: 5, name: "isNull", kind: "message", oneof: "match", T: () => Condition_Expression_MCPToolArgument_IsNull },
+            { no: 6, name: "exists", kind: "message", oneof: "match", T: () => Condition_Expression_MCPToolArgument_Exists }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_MCPToolArgument>): Condition_Expression_MCPToolArgument {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.path = [];
+        message.match = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_MCPToolArgument>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_MCPToolArgument): Condition_Expression_MCPToolArgument {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated string path */ 1:
+                    message.path.push(reader.string());
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch stringMatch */ 2:
+                    message.match = {
+                        oneofKind: "stringMatch",
+                        stringMatch: Condition_Expression_StringMatch.internalBinaryRead(reader, reader.uint32(), options, (message.match as any).stringMatch)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.DoubleMatch doubleMatch */ 3:
+                    message.match = {
+                        oneofKind: "doubleMatch",
+                        doubleMatch: Condition_Expression_DoubleMatch.internalBinaryRead(reader, reader.uint32(), options, (message.match as any).doubleMatch)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.BoolMatch boolMatch */ 4:
+                    message.match = {
+                        oneofKind: "boolMatch",
+                        boolMatch: Condition_Expression_MCPToolArgument_BoolMatch.internalBinaryRead(reader, reader.uint32(), options, (message.match as any).boolMatch)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.IsNull isNull */ 5:
+                    message.match = {
+                        oneofKind: "isNull",
+                        isNull: Condition_Expression_MCPToolArgument_IsNull.internalBinaryRead(reader, reader.uint32(), options, (message.match as any).isNull)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.Exists exists */ 6:
+                    message.match = {
+                        oneofKind: "exists",
+                        exists: Condition_Expression_MCPToolArgument_Exists.internalBinaryRead(reader, reader.uint32(), options, (message.match as any).exists)
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_MCPToolArgument, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated string path = 1; */
+        for (let i = 0; i < message.path.length; i++)
+            writer.tag(1, WireType.LengthDelimited).string(message.path[i]);
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringMatch stringMatch = 2; */
+        if (message.match.oneofKind === "stringMatch")
+            Condition_Expression_StringMatch.internalBinaryWrite(message.match.stringMatch, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.DoubleMatch doubleMatch = 3; */
+        if (message.match.oneofKind === "doubleMatch")
+            Condition_Expression_DoubleMatch.internalBinaryWrite(message.match.doubleMatch, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.BoolMatch boolMatch = 4; */
+        if (message.match.oneofKind === "boolMatch")
+            Condition_Expression_MCPToolArgument_BoolMatch.internalBinaryWrite(message.match.boolMatch, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.IsNull isNull = 5; */
+        if (message.match.oneofKind === "isNull")
+            Condition_Expression_MCPToolArgument_IsNull.internalBinaryWrite(message.match.isNull, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.Exists exists = 6; */
+        if (message.match.oneofKind === "exists")
+            Condition_Expression_MCPToolArgument_Exists.internalBinaryWrite(message.match.exists, writer.tag(6, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument
+ */
+export const Condition_Expression_MCPToolArgument = new Condition_Expression_MCPToolArgument$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_MCPToolArgument_BoolMatch$Type extends MessageType<Condition_Expression_MCPToolArgument_BoolMatch> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.BoolMatch", [
+            { no: 1, name: "value", kind: "enum", T: () => ["octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.BoolMatch.Value", Condition_Expression_MCPToolArgument_BoolMatch_Value] }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_MCPToolArgument_BoolMatch>): Condition_Expression_MCPToolArgument_BoolMatch {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.value = 0;
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_MCPToolArgument_BoolMatch>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_MCPToolArgument_BoolMatch): Condition_Expression_MCPToolArgument_BoolMatch {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.BoolMatch.Value value */ 1:
+                    message.value = reader.int32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_MCPToolArgument_BoolMatch, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.BoolMatch.Value value = 1; */
+        if (message.value !== 0)
+            writer.tag(1, WireType.Varint).int32(message.value);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.BoolMatch
+ */
+export const Condition_Expression_MCPToolArgument_BoolMatch = new Condition_Expression_MCPToolArgument_BoolMatch$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_MCPToolArgument_IsNull$Type extends MessageType<Condition_Expression_MCPToolArgument_IsNull> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.IsNull", []);
+    }
+    create(value?: PartialMessage<Condition_Expression_MCPToolArgument_IsNull>): Condition_Expression_MCPToolArgument_IsNull {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_MCPToolArgument_IsNull>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_MCPToolArgument_IsNull): Condition_Expression_MCPToolArgument_IsNull {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_MCPToolArgument_IsNull, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.IsNull
+ */
+export const Condition_Expression_MCPToolArgument_IsNull = new Condition_Expression_MCPToolArgument_IsNull$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_MCPToolArgument_Exists$Type extends MessageType<Condition_Expression_MCPToolArgument_Exists> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.Exists", []);
+    }
+    create(value?: PartialMessage<Condition_Expression_MCPToolArgument_Exists>): Condition_Expression_MCPToolArgument_Exists {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_MCPToolArgument_Exists>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_MCPToolArgument_Exists): Condition_Expression_MCPToolArgument_Exists {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_MCPToolArgument_Exists, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.Exists
+ */
+export const Condition_Expression_MCPToolArgument_Exists = new Condition_Expression_MCPToolArgument_Exists$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class Condition_Expression_LLMProtocol$Type extends MessageType<Condition_Expression_LLMProtocol> {
     constructor() {
