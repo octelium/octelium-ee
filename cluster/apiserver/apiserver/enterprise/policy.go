@@ -11,7 +11,9 @@ package enterprise
 import (
 	"context"
 	"fmt"
+	"math"
 	"net/netip"
+	"strconv"
 	"strings"
 	"time"
 
@@ -482,6 +484,8 @@ func (s *Server) validateExpression(ctx context.Context, p *enterprisev1.Conditi
 		if p.GetRequestMCPIsNotification() == nil {
 			return grpcutils.InvalidArg("Nil MCP notification expression")
 		}
+	case *enterprisev1.Condition_Expression_RequestMCPToolArgument:
+		return validateMCPToolArgument(p.GetRequestMCPToolArgument())
 
 	case *enterprisev1.Condition_Expression_RequestLLMProtocol:
 		expr := p.GetRequestLLMProtocol()
@@ -953,6 +957,8 @@ func (s *Server) getExpression(in *enterprisev1.Condition_Expression) string {
 		return andCEL(`has(ctx.request.mcp)`, `ctx.request.mcp.method == "resources/read"`, stringMatchCEL("ctx.request.mcp.name", in.GetRequestMCPResourceURI().GetMatch(), nil))
 	case *enterprisev1.Condition_Expression_RequestMCPIsNotification:
 		return `has(ctx.request.mcp) && ctx.request.mcp.isNotification`
+	case *enterprisev1.Condition_Expression_RequestMCPToolArgument:
+		return mcpToolArgumentCEL(in.GetRequestMCPToolArgument())
 
 	case *enterprisev1.Condition_Expression_RequestLLMProtocol:
 		return requestEnumCEL("llm", "protocol", in.GetRequestLLMProtocol().GetProtocol().String())
@@ -1239,6 +1245,70 @@ func intMatchCEL(field string, match *enterprisev1.Condition_Expression_IntMatch
 	}
 }
 
+func doubleMatchCEL(field string, match *enterprisev1.Condition_Expression_DoubleMatch) string {
+	if match == nil || match.GetType() == nil {
+		return "false"
+	}
+
+	double := func(value float64) string {
+		return fmt.Sprintf("double(%s)", strconv.FormatFloat(value, 'g', -1, 64))
+	}
+
+	switch m := match.GetType().(type) {
+	case *enterprisev1.Condition_Expression_DoubleMatch_LessThan:
+		return fmt.Sprintf(`%s < %s`, field, double(m.LessThan))
+	case *enterprisev1.Condition_Expression_DoubleMatch_LessThanOrEqual:
+		return fmt.Sprintf(`%s <= %s`, field, double(m.LessThanOrEqual))
+	case *enterprisev1.Condition_Expression_DoubleMatch_GreaterThan:
+		return fmt.Sprintf(`%s > %s`, field, double(m.GreaterThan))
+	case *enterprisev1.Condition_Expression_DoubleMatch_GreaterThanOrEqual:
+		return fmt.Sprintf(`%s >= %s`, field, double(m.GreaterThanOrEqual))
+	default:
+		return "false"
+	}
+}
+
+func mcpToolArgumentCEL(expr *enterprisev1.Condition_Expression_MCPToolArgument) string {
+	if expr == nil {
+		return "false"
+	}
+
+	field := `ctx.request.mcp.http.bodyMap`
+	guards := []string{
+		`has(ctx.request.mcp)`,
+		`ctx.request.mcp.method == "tools/call"`,
+		`has(ctx.request.mcp.http)`,
+		`has(ctx.request.mcp.http.bodyMap)`,
+	}
+	path := make([]string, 0, len(expr.GetPath())+2)
+	path = append(path, "params", "arguments")
+	path = append(path, expr.GetPath()...)
+	for _, segment := range path {
+		guards = append(guards, fmt.Sprintf(`%s in %s`, celString(segment), field))
+		field = fmt.Sprintf(`%s[%s]`, field, celString(segment))
+	}
+
+	var match string
+	switch m := expr.GetMatch().(type) {
+	case *enterprisev1.Condition_Expression_MCPToolArgument_StringMatch:
+		match = stringMatchCEL(field, m.StringMatch, nil)
+	case *enterprisev1.Condition_Expression_MCPToolArgument_DoubleMatch:
+		match = doubleMatchCEL(field, m.DoubleMatch)
+	case *enterprisev1.Condition_Expression_MCPToolArgument_BoolMatch_:
+		if m.BoolMatch != nil && m.BoolMatch.GetValue() == enterprisev1.Condition_Expression_MCPToolArgument_BoolMatch_TRUE {
+			match = fmt.Sprintf(`%s == true`, field)
+		} else if m.BoolMatch != nil && m.BoolMatch.GetValue() == enterprisev1.Condition_Expression_MCPToolArgument_BoolMatch_FALSE {
+			match = fmt.Sprintf(`%s == false`, field)
+		}
+	case *enterprisev1.Condition_Expression_MCPToolArgument_IsNull_:
+		match = fmt.Sprintf(`%s == null`, field)
+	case *enterprisev1.Condition_Expression_MCPToolArgument_Exists_:
+		match = ""
+	}
+
+	return andCEL(append(guards, match)...)
+}
+
 func requestStringMatchCEL(requestType, field string, match *enterprisev1.Condition_Expression_StringMatch, normalize func(string) string) string {
 	return andCEL(
 		fmt.Sprintf(`has(ctx.request.%s)`, requestType),
@@ -1376,6 +1446,80 @@ func validateStringMatch(match *enterprisev1.Condition_Expression_StringMatch, f
 		seen[value] = struct{}{}
 	}
 
+	return nil
+}
+
+func validateMCPToolArgument(expr *enterprisev1.Condition_Expression_MCPToolArgument) error {
+	if expr == nil {
+		return grpcutils.InvalidArg("Nil MCP tool argument expression")
+	}
+	if len(expr.GetPath()) == 0 {
+		return grpcutils.InvalidArg("MCP tool argument path must contain at least one segment")
+	}
+	if len(expr.GetPath()) > maxConditionDepth {
+		return grpcutils.InvalidArg("MCP tool argument path is too deep")
+	}
+	for i, segment := range expr.GetPath() {
+		if err := validateBoundedString(segment, true, fmt.Sprintf("MCP tool argument path segment %d", i)); err != nil {
+			return err
+		}
+	}
+
+	switch m := expr.GetMatch().(type) {
+	case *enterprisev1.Condition_Expression_MCPToolArgument_StringMatch:
+		return validateStringMatch(m.StringMatch, "MCP tool argument string", nil)
+	case *enterprisev1.Condition_Expression_MCPToolArgument_DoubleMatch:
+		return validateDoubleMatch(m.DoubleMatch)
+	case *enterprisev1.Condition_Expression_MCPToolArgument_BoolMatch_:
+		if m.BoolMatch == nil || (m.BoolMatch.GetValue() != enterprisev1.Condition_Expression_MCPToolArgument_BoolMatch_TRUE &&
+			m.BoolMatch.GetValue() != enterprisev1.Condition_Expression_MCPToolArgument_BoolMatch_FALSE) {
+			return grpcutils.InvalidArg("MCP tool argument boolean value must be set")
+		}
+		return nil
+	case *enterprisev1.Condition_Expression_MCPToolArgument_IsNull_:
+		if m.IsNull == nil {
+			return grpcutils.InvalidArg("Nil MCP tool argument null matcher")
+		}
+		return nil
+	case *enterprisev1.Condition_Expression_MCPToolArgument_Exists_:
+		if m.Exists == nil {
+			return grpcutils.InvalidArg("Nil MCP tool argument existence matcher")
+		}
+		return nil
+	default:
+		return grpcutils.InvalidArg("MCP tool argument matcher must be set")
+	}
+}
+
+func validateDoubleMatch(match *enterprisev1.Condition_Expression_DoubleMatch) error {
+	if match == nil || match.GetType() == nil {
+		return grpcutils.InvalidArg("MCP tool argument double matcher must be set")
+	}
+
+	values := []float64{}
+	switch m := match.GetType().(type) {
+	case *enterprisev1.Condition_Expression_DoubleMatch_LessThan:
+		values = append(values, m.LessThan)
+	case *enterprisev1.Condition_Expression_DoubleMatch_LessThanOrEqual:
+		values = append(values, m.LessThanOrEqual)
+	case *enterprisev1.Condition_Expression_DoubleMatch_GreaterThan:
+		values = append(values, m.GreaterThan)
+	case *enterprisev1.Condition_Expression_DoubleMatch_GreaterThanOrEqual:
+		values = append(values, m.GreaterThanOrEqual)
+	default:
+		return grpcutils.InvalidArg("Unsupported double matcher")
+	}
+
+	seen := map[float64]struct{}{}
+	for _, value := range values {
+		if math.IsNaN(value) || math.IsInf(value, 0) {
+			return grpcutils.InvalidArg("MCP tool argument double must be finite")
+		}
+		if _, ok := seen[value]; ok {
+			return grpcutils.InvalidArg("Duplicate MCP tool argument double matcher value")
+		}
+		seen[value] = struct{}{}
+	}
 	return nil
 }
 

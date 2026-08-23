@@ -10,6 +10,7 @@ package enterprise
 
 import (
 	"context"
+	"math"
 	"strings"
 	"testing"
 	"time"
@@ -595,6 +596,21 @@ func TestPolicyGetRequestExpression(t *testing.T) {
 			want: `(has(ctx.request.mcp)) && (ctx.request.mcp.method == "tools/call") && (ctx.request.mcp.name in ["search", "read_db"])`,
 		},
 		{
+			name: "mcp tool argument number",
+			expr: policyMCPToolArgumentDouble([]string{"a"}, &enterprisev1.Condition_Expression_DoubleMatch_GreaterThan{GreaterThan: 1000}),
+			want: `(has(ctx.request.mcp)) && (ctx.request.mcp.method == "tools/call") && (has(ctx.request.mcp.http)) && (has(ctx.request.mcp.http.bodyMap)) && ("params" in ctx.request.mcp.http.bodyMap) && ("arguments" in ctx.request.mcp.http.bodyMap["params"]) && ("a" in ctx.request.mcp.http.bodyMap["params"]["arguments"]) && (ctx.request.mcp.http.bodyMap["params"]["arguments"]["a"] > double(1000))`,
+		},
+		{
+			name: "mcp nested tool argument string",
+			expr: policyMCPToolArgumentString([]string{"arg1", "arg2", "arg3"}, &enterprisev1.Condition_Expression_StringMatch{Type: &enterprisev1.Condition_Expression_StringMatch_Contains{Contains: "my_arg"}}),
+			want: `(has(ctx.request.mcp)) && (ctx.request.mcp.method == "tools/call") && (has(ctx.request.mcp.http)) && (has(ctx.request.mcp.http.bodyMap)) && ("params" in ctx.request.mcp.http.bodyMap) && ("arguments" in ctx.request.mcp.http.bodyMap["params"]) && ("arg1" in ctx.request.mcp.http.bodyMap["params"]["arguments"]) && ("arg2" in ctx.request.mcp.http.bodyMap["params"]["arguments"]["arg1"]) && ("arg3" in ctx.request.mcp.http.bodyMap["params"]["arguments"]["arg1"]["arg2"]) && (ctx.request.mcp.http.bodyMap["params"]["arguments"]["arg1"]["arg2"]["arg3"].contains("my_arg"))`,
+		},
+		{
+			name: "mcp tool argument exists",
+			expr: policyMCPToolArgumentExists([]string{"optional"}),
+			want: `(has(ctx.request.mcp)) && (ctx.request.mcp.method == "tools/call") && (has(ctx.request.mcp.http)) && (has(ctx.request.mcp.http.bodyMap)) && ("params" in ctx.request.mcp.http.bodyMap) && ("arguments" in ctx.request.mcp.http.bodyMap["params"]) && ("optional" in ctx.request.mcp.http.bodyMap["params"]["arguments"])`,
+		},
+		{
 			name: "llm input estimate",
 			expr: &enterprisev1.Condition_Expression{
 				Type: &enterprisev1.Condition_Expression_RequestLLMEstimatedInputTokens{
@@ -623,6 +639,50 @@ func TestPolicyGetRequestExpression(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			assertPolicyExpression(t, srv, tt.expr, tt.want)
 		})
+	}
+}
+
+func TestPolicyValidateMCPToolArgument(t *testing.T) {
+	ctx := context.Background()
+	srv := &Server{}
+
+	invalid := []*enterprisev1.Condition_Expression{
+		policyMCPToolArgumentString(nil, policyStringMatchExact("value")),
+		{
+			Type: &enterprisev1.Condition_Expression_RequestMCPToolArgument{
+				RequestMCPToolArgument: &enterprisev1.Condition_Expression_MCPToolArgument{Path: []string{"value"}},
+			},
+		},
+		policyMCPToolArgumentDouble([]string{"value"}, &enterprisev1.Condition_Expression_DoubleMatch_GreaterThan{GreaterThan: math.NaN()}),
+		{
+			Type: &enterprisev1.Condition_Expression_RequestMCPToolArgument{
+				RequestMCPToolArgument: &enterprisev1.Condition_Expression_MCPToolArgument{
+					Path: []string{"value"},
+					Match: &enterprisev1.Condition_Expression_MCPToolArgument_DoubleMatch{
+						DoubleMatch: &enterprisev1.Condition_Expression_DoubleMatch{},
+					},
+				},
+			},
+		},
+		policyMCPToolArgumentBool([]string{"value"}, enterprisev1.Condition_Expression_MCPToolArgument_BoolMatch_VALUE_UNSET),
+	}
+
+	for _, expr := range invalid {
+		err := srv.validateExpression(ctx, expr)
+		assert.NotNil(t, err)
+		assert.True(t, grpcerr.IsInvalidArg(err))
+	}
+
+	valid := []*enterprisev1.Condition_Expression{
+		policyMCPToolArgumentString([]string{"nested", "value"}, policyStringMatchExact("my_arg")),
+		policyMCPToolArgumentDouble([]string{"value"}, &enterprisev1.Condition_Expression_DoubleMatch_LessThanOrEqual{LessThanOrEqual: 1000}),
+		policyMCPToolArgumentBool([]string{"enabled"}, enterprisev1.Condition_Expression_MCPToolArgument_BoolMatch_TRUE),
+		policyMCPToolArgumentNull([]string{"nullable"}),
+		policyMCPToolArgumentExists([]string{"optional"}),
+	}
+
+	for _, expr := range valid {
+		assert.Nil(t, srv.validateExpression(ctx, expr))
 	}
 }
 
@@ -1488,6 +1548,77 @@ func policyTimeDayType(typ enterprisev1.Condition_Expression_TimeDayType_Type, t
 			TimeDayType: &enterprisev1.Condition_Expression_TimeDayType{
 				Type:     typ,
 				Timezone: timezone,
+			},
+		},
+	}
+}
+
+func policyMCPToolArgumentString(path []string, match *enterprisev1.Condition_Expression_StringMatch) *enterprisev1.Condition_Expression {
+	return &enterprisev1.Condition_Expression{
+		Type: &enterprisev1.Condition_Expression_RequestMCPToolArgument{
+			RequestMCPToolArgument: &enterprisev1.Condition_Expression_MCPToolArgument{
+				Path:  path,
+				Match: &enterprisev1.Condition_Expression_MCPToolArgument_StringMatch{StringMatch: match},
+			},
+		},
+	}
+}
+
+func policyMCPToolArgumentDouble(path []string, typ any) *enterprisev1.Condition_Expression {
+	match := &enterprisev1.Condition_Expression_DoubleMatch{}
+	switch value := typ.(type) {
+	case *enterprisev1.Condition_Expression_DoubleMatch_LessThan:
+		match.Type = value
+	case *enterprisev1.Condition_Expression_DoubleMatch_LessThanOrEqual:
+		match.Type = value
+	case *enterprisev1.Condition_Expression_DoubleMatch_GreaterThan:
+		match.Type = value
+	case *enterprisev1.Condition_Expression_DoubleMatch_GreaterThanOrEqual:
+		match.Type = value
+	default:
+		panic("unsupported MCP double matcher test type")
+	}
+
+	return &enterprisev1.Condition_Expression{
+		Type: &enterprisev1.Condition_Expression_RequestMCPToolArgument{
+			RequestMCPToolArgument: &enterprisev1.Condition_Expression_MCPToolArgument{
+				Path:  path,
+				Match: &enterprisev1.Condition_Expression_MCPToolArgument_DoubleMatch{DoubleMatch: match},
+			},
+		},
+	}
+}
+
+func policyMCPToolArgumentBool(path []string, value enterprisev1.Condition_Expression_MCPToolArgument_BoolMatch_Value) *enterprisev1.Condition_Expression {
+	return &enterprisev1.Condition_Expression{
+		Type: &enterprisev1.Condition_Expression_RequestMCPToolArgument{
+			RequestMCPToolArgument: &enterprisev1.Condition_Expression_MCPToolArgument{
+				Path: path,
+				Match: &enterprisev1.Condition_Expression_MCPToolArgument_BoolMatch_{
+					BoolMatch: &enterprisev1.Condition_Expression_MCPToolArgument_BoolMatch{Value: value},
+				},
+			},
+		},
+	}
+}
+
+func policyMCPToolArgumentNull(path []string) *enterprisev1.Condition_Expression {
+	return &enterprisev1.Condition_Expression{
+		Type: &enterprisev1.Condition_Expression_RequestMCPToolArgument{
+			RequestMCPToolArgument: &enterprisev1.Condition_Expression_MCPToolArgument{
+				Path:  path,
+				Match: &enterprisev1.Condition_Expression_MCPToolArgument_IsNull_{IsNull: &enterprisev1.Condition_Expression_MCPToolArgument_IsNull{}},
+			},
+		},
+	}
+}
+
+func policyMCPToolArgumentExists(path []string) *enterprisev1.Condition_Expression {
+	return &enterprisev1.Condition_Expression{
+		Type: &enterprisev1.Condition_Expression_RequestMCPToolArgument{
+			RequestMCPToolArgument: &enterprisev1.Condition_Expression_MCPToolArgument{
+				Path:  path,
+				Match: &enterprisev1.Condition_Expression_MCPToolArgument_Exists_{Exists: &enterprisev1.Condition_Expression_MCPToolArgument_Exists{}},
 			},
 		},
 	}
