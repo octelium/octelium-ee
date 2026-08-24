@@ -16,6 +16,8 @@ import {
   TimeRange,
 } from "@/apis/visibilityv1/metrics/vmetricsv1";
 import MetricChart, {
+  POINTS_PER_SERIES_LIMIT,
+  TOTAL_POINTS_LIMIT,
   counterOp,
   durationToMillis,
   eqBoolFilter,
@@ -52,7 +54,7 @@ import * as React from "react";
 
 type View = "overview" | "traffic" | "octovigil" | "rscserver" | "components";
 type Range = "15m" | "1h" | "6h" | "24h";
-type Resolution = "auto" | "10s" | "30s" | "1m" | "5m";
+type Resolution = "auto" | "1m" | "5m" | "15m";
 type TrafficDetail = "decisions" | "streams" | "http" | "dns";
 type ResourceOperation =
   | "all"
@@ -109,22 +111,18 @@ const ranges: Record<Range, number> = {
 const duration = (value: Resolution, range: Range): Duration => {
   let resolved =
     value === "auto"
-      ? range === "15m"
-        ? "10s"
-        : range === "1h"
-          ? "30s"
-          : range === "6h"
-            ? "1m"
-            : "5m"
+      ? range === "15m" || range === "1h"
+        ? "1m"
+        : range === "6h"
+          ? "5m"
+          : "15m"
       : value;
-  if (range === "24h" && resolved === "10s") resolved = "30s";
-  if (resolved === "10s")
-    return Duration.create({ type: { oneofKind: "seconds", seconds: 10 } });
-  if (resolved === "30s")
-    return Duration.create({ type: { oneofKind: "seconds", seconds: 30 } });
+  if (range === "15m" && resolved === "15m") resolved = "1m";
   if (resolved === "1m")
     return Duration.create({ type: { oneofKind: "minutes", minutes: 1 } });
-  return Duration.create({ type: { oneofKind: "minutes", minutes: 5 } });
+  if (resolved === "5m")
+    return Duration.create({ type: { oneofKind: "minutes", minutes: 5 } });
+  return Duration.create({ type: { oneofKind: "minutes", minutes: 15 } });
 };
 
 const aggregation = (operation: QueryOperation) => {
@@ -232,7 +230,8 @@ const MetricStat = ({
         operation,
         seriesAggregation: aggregation(operation),
         limitSeries: 1,
-        limitPointsPerSeries: 500,
+        limitPointsPerSeries: POINTS_PER_SERIES_LIMIT,
+        limitTotalPoints: TOTAL_POINTS_LIMIT,
         limitBehavior: QueryMetricsRequest_LimitBehavior.TRUNCATE,
       });
       return (await getClientVisibilityMetrics().queryMetrics(request, { abort: signal }))
@@ -330,7 +329,7 @@ const Metrics = () => {
   }, []);
 
   React.useEffect(() => {
-    if (range === "24h" && resolution === "10s") setResolution("auto");
+    if (range === "15m" && resolution === "15m") setResolution("auto");
   }, [range, resolution]);
 
   const lookbackSeconds = ranges[range];
@@ -410,7 +409,7 @@ const Metrics = () => {
     step,
     autoRefresh: refresh,
     hideResolution: true,
-    limitPointsPerSeries: 500,
+    limitPointsPerSeries: POINTS_PER_SERIES_LIMIT,
     height: 250,
   };
 
@@ -476,14 +475,13 @@ const Metrics = () => {
               }
               data={[
                 { value: "auto", label: "Auto" },
-                {
-                  value: "10s",
-                  label: "10 seconds",
-                  disabled: range === "24h",
-                },
-                { value: "30s", label: "30 seconds" },
                 { value: "1m", label: "1 minute" },
                 { value: "5m", label: "5 minutes" },
+                {
+                  value: "15m",
+                  label: "15 minutes",
+                  disabled: range === "15m",
+                },
               ]}
             />
           </div>

@@ -15,7 +15,10 @@ import {
   TimeRange,
 } from "@/apis/visibilityv1/metrics/vmetricsv1";
 import MetricChart, {
+  POINTS_PER_SERIES_LIMIT,
+  TOTAL_POINTS_LIMIT,
   counterOp,
+  durationKey,
   eqFilter,
   gaugeOp,
   histogramOp,
@@ -61,16 +64,13 @@ const RANGE_SECONDS: Record<Range, number> = {
 };
 
 const rangeStep = (range: Range): Duration => {
-  if (range === "15m") {
-    return Duration.create({ type: { oneofKind: "seconds", seconds: 10 } });
-  }
-  if (range === "1h") {
-    return Duration.create({ type: { oneofKind: "seconds", seconds: 30 } });
-  }
-  if (range === "6h") {
+  if (range === "15m" || range === "1h") {
     return Duration.create({ type: { oneofKind: "minutes", minutes: 1 } });
   }
-  return Duration.create({ type: { oneofKind: "minutes", minutes: 5 } });
+  if (range === "6h") {
+    return Duration.create({ type: { oneofKind: "minutes", minutes: 5 } });
+  }
+  return Duration.create({ type: { oneofKind: "minutes", minutes: 15 } });
 };
 
 const effectiveMode = (service: Service): Service_Spec_Mode =>
@@ -100,7 +100,7 @@ const STREAM_MODES = new Set<Service_Spec_Mode>([
   Service_Spec_Mode.SOCKS5,
 ]);
 
-const rawCounterOperation = counterOp(CounterOperation_Function.RAW);
+const increaseCounterOperation = counterOp(CounterOperation_Function.INCREASE);
 const lastGaugeOperation = gaugeOp(GaugeOperation_Function.LAST);
 
 const numberPointValue = (point: NumberPoint): number | undefined => {
@@ -133,10 +133,23 @@ const latestSeriesValue = (points: NumberPoint[]): number => {
   return latestValue;
 };
 
-const metricCounterValue = (response: any): number =>
+const totalSeriesValue = (points: NumberPoint[]): number => {
+  let total = 0;
+
+  for (const point of points) {
+    const value = numberPointValue(point);
+    if (value === undefined || !Number.isFinite(value)) continue;
+    total += value;
+  }
+
+  return total;
+};
+
+const metricCounterValue = (response: any, accumulate: boolean): number =>
   (response?.series ?? []).reduce((total: number, series: any) => {
     if (series.points?.oneofKind !== "number") return total;
-    return total + latestSeriesValue(series.points.number.points ?? []);
+    const points = series.points.number.points ?? [];
+    return total + (accumulate ? totalSeriesValue(points) : latestSeriesValue(points));
   }, 0);
 
 type ServiceMetricCounterProps = {
@@ -150,10 +163,8 @@ type ServiceMetricCounterProps = {
 };
 
 const ServiceMetricCounter = (props: ServiceMetricCounterProps) => {
-  const operation = props.operation ?? rawCounterOperation;
-  const isRawCounter =
-    operation.type.oneofKind === "counter" &&
-    operation.type.counter.function === CounterOperation_Function.RAW;
+  const operation = props.operation ?? increaseCounterOperation;
+  const isCounter = operation.type.oneofKind === "counter";
   const operationFunction =
     operation.type.oneofKind === "counter"
       ? operation.type.counter.function
@@ -171,6 +182,7 @@ const ServiceMetricCounter = (props: ServiceMetricCounterProps) => {
       operationFunction,
       filters.map((filter) => JSON.stringify(filter)),
       props.shared.lookbackSeconds,
+      durationKey(props.shared.step),
     ],
     enabled: true,
     queryFn: async ({ signal }) => {
@@ -184,15 +196,14 @@ const ServiceMetricCounter = (props: ServiceMetricCounterProps) => {
             selector: { oneofKind: "name", name: props.metric },
           }),
           timeRange: TimeRange.create({ from, to }),
-          step: isRawCounter ? undefined : props.shared.step,
+          step: props.shared.step,
           component: props.shared.component,
           filters,
           operation,
-          limitSeries: 64,
-          limitPointsPerSeries: isRawCounter ? 32 : 2,
-          seriesAggregation: isRawCounter
-            ? QueryMetricsRequest_SeriesAggregation.NONE
-            : QueryMetricsRequest_SeriesAggregation.SUM,
+          limitSeries: 1,
+          limitPointsPerSeries: isCounter ? POINTS_PER_SERIES_LIMIT : 2,
+          limitTotalPoints: TOTAL_POINTS_LIMIT,
+          seriesAggregation: QueryMetricsRequest_SeriesAggregation.SUM,
           limitBehavior: QueryMetricsRequest_LimitBehavior.TRUNCATE,
         }),
         { abort: signal },
@@ -204,7 +215,10 @@ const ServiceMetricCounter = (props: ServiceMetricCounterProps) => {
     retry: 1,
   });
 
-  const value = Math.max(0, metricCounterValue(qry.data));
+  const value = Math.max(0, metricCounterValue(qry.data, isCounter));
+  const partial =
+    qry.data?.truncation?.seriesTruncated ||
+    (isCounter && qry.data?.truncation?.pointsTruncated);
 
   return (
     <div className="min-w-0">
@@ -226,6 +240,11 @@ const ServiceMetricCounter = (props: ServiceMetricCounterProps) => {
         >
           {props.title}
           <span className="ml-1 font-semibold text-slate-400">· {props.label}</span>
+          {partial && (
+            <span className="ml-1 font-bold uppercase tracking-[0.06em] text-amber-600">
+              · partial
+            </span>
+          )}
         </SummaryItemCount>
       )}
     </div>
@@ -1301,7 +1320,7 @@ export const ResourceMetrics = (props: { resource: MetricsResource }) => {
     step: rangeStep(range),
     autoRefresh: refresh,
     hideResolution: true,
-    limitPointsPerSeries: 500,
+    limitPointsPerSeries: POINTS_PER_SERIES_LIMIT,
     height: 210,
   };
 

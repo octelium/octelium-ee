@@ -32,6 +32,7 @@ const (
 	maxFilterValues                 = 128
 	maxGroupByAttributes            = 8
 	minimumQueryStep                = time.Second
+	minimumBaselineLookback         = time.Hour
 	maximumSourceSeries             = 20000
 	maximumRawHistogramRowsPerQuery = 100000
 	maximumRawNumberRowsPerQuery    = 2000000
@@ -52,6 +53,21 @@ type querySpec struct {
 
 	groupBy []string
 	filters []*vmetricsv1.AttributeFilter
+}
+
+func (q *querySpec) baselineFrom() time.Time {
+	lookback := minimumBaselineLookback
+	if q.step > 0 && 2*q.step > lookback {
+		lookback = 2 * q.step
+	}
+	return q.from.Add(-lookback)
+}
+
+func (q *querySpec) bucketCount() int64 {
+	if q.step <= 0 {
+		return 0
+	}
+	return int64(q.to.Sub(q.from) / q.step)
 }
 
 func (s *srvMetric) validateQueryRequest(ctx context.Context,
@@ -123,11 +139,15 @@ func (s *srvMetric) validateQueryRequest(ctx context.Context,
 		}
 
 		from = alignMetricTimeDown(from, step)
+		to = alignMetricTimeDown(to, step)
+		if !to.After(from) {
+			return nil, status.Error(codes.InvalidArgument, "query time range is shorter than a single step")
+		}
 		if to.Sub(from) > rawMetricRetention {
 			return nil, status.Error(codes.InvalidArgument, "query time range exceeds available raw retention")
 		}
 
-		requestedPoints := int((to.Sub(from) + step - 1) / step)
+		requestedPoints := int(to.Sub(from) / step)
 		if requestedPoints > maxPointsPerSeries {
 			return nil, status.Error(codes.InvalidArgument, "query produces too many time buckets")
 		}

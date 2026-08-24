@@ -369,6 +369,12 @@ func (s *tstMetricsService) QueryMetrics(
 		if step < mockMinimumQueryStep {
 			return nil, status.Error(codes.InvalidArgument, "step is too small")
 		}
+
+		from = mockAlignTimeDown(from, step)
+		to = mockAlignTimeDown(to, step)
+		if !to.After(from) {
+			return nil, status.Error(codes.InvalidArgument, "query time range is shorter than a single step")
+		}
 	}
 
 	aggregation := req.SeriesAggregation
@@ -1549,6 +1555,20 @@ func mockResultDescriptor(
 	return ret
 }
 
+func mockAlignTimeDown(value time.Time, step time.Duration) time.Time {
+	if step <= 0 {
+		return value
+	}
+
+	nanos := value.UnixNano()
+	remainder := nanos % int64(step)
+	if remainder < 0 {
+		remainder += int64(step)
+	}
+
+	return time.Unix(0, nanos-remainder).UTC()
+}
+
 func mockPointCount(from, to time.Time, step time.Duration, raw bool) int {
 	if raw {
 		step = time.Minute
@@ -1557,7 +1577,7 @@ func mockPointCount(from, to time.Time, step time.Duration, raw bool) int {
 		step = time.Minute
 	}
 
-	count := int((to.Sub(from) + step - 1) / step)
+	count := int(to.Sub(from) / step)
 	if count < 1 {
 		return 1
 	}

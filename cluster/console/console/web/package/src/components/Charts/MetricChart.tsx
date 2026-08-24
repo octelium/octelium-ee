@@ -65,6 +65,12 @@ const DEFAULT_STEP = Duration.create({
   type: { oneofKind: "minutes", minutes: 1 },
 });
 
+export const MINIMUM_STEP_MILLIS = 60_000;
+
+export const TOTAL_POINTS_LIMIT = 50_000;
+
+export const POINTS_PER_SERIES_LIMIT = 2_000;
+
 export const counterOp = (fn: CounterOperation_Function): QueryOperation =>
   QueryOperation.create({
     type: { oneofKind: "counter", counter: { function: fn } },
@@ -179,7 +185,7 @@ const timestampKey = (t?: Timestamp): string | undefined => {
   return `${String(t.seconds)}.${String(t.nanos ?? 0)}`;
 };
 
-const durationKey = (d?: Duration): string | undefined => {
+export const durationKey = (d?: Duration): string | undefined => {
   if (!d) return undefined;
   return JSON.stringify(d);
 };
@@ -203,15 +209,18 @@ export const durationToMillis = (duration?: Duration): number | undefined => {
   }
 };
 
-const normalizeMetricStep = (duration: Duration, rangeMillis: number) => {
+export const normalizeMetricStep = (duration: Duration, rangeMillis: number) => {
+  const minimum = Math.max(MINIMUM_STEP_MILLIS, Math.ceil(rangeMillis / 5_000));
+  const maximum = Math.max(minimum, rangeMillis);
   const current = durationToMillis(duration);
-  const minimum = Math.max(1_000, Math.ceil(rangeMillis / 5_000));
-  if (current !== undefined && current >= minimum) return duration;
+
+  if (current !== undefined && current >= minimum && current <= maximum) {
+    return duration;
+  }
+
+  const resolved = current !== undefined && current > maximum ? maximum : minimum;
   return Duration.create({
-    type: {
-      oneofKind: "seconds",
-      seconds: Math.ceil(minimum / 1_000),
-    },
+    type: { oneofKind: "seconds", seconds: Math.ceil(resolved / 1_000) },
   });
 };
 
@@ -543,6 +552,7 @@ const MetricChart = (props: MetricChartProps) => {
         operation,
         limitSeries,
         limitPointsPerSeries,
+        limitTotalPoints: TOTAL_POINTS_LIMIT,
         seriesAggregation: seriesAggregation(operation),
         limitBehavior: QueryMetricsRequest_LimitBehavior.TRUNCATE,
       });

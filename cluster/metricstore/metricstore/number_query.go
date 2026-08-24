@@ -138,6 +138,8 @@ func (s *srvMetric) queryCounter(ctx context.Context, query *querySpec,
 		}
 	}
 
+	values := map[string]map[int64]float64{}
+
 	err := s.withSeriesMapping(ctx, mappings, func(conn *sql.Conn) error {
 		includePrevious := descriptor.Temporality == vmetricsv1.MetricDescriptor_CUMULATIVE
 		if err := ensureRawRowLimit(ctx, conn, "metric_number_points", query, includePrevious,
@@ -145,19 +147,20 @@ func (s *srvMetric) queryCounter(ctx context.Context, query *querySpec,
 			return err
 		}
 
+		isDelta := descriptor.Temporality == vmetricsv1.MetricDescriptor_DELTA
 		var querySQL string
 		args := []any{}
-		if descriptor.Temporality == vmetricsv1.MetricDescriptor_DELTA {
+		if isDelta {
 			querySQL = counterDeltaSQL(query)
 			args = append(args, metricTimeToDB(query.from), metricTimeToDB(query.to), metricTimeToDB(query.snapshot),
 				metricTimeToDB(query.from), query.step.Nanoseconds())
 		} else {
 			querySQL = counterCumulativeSQL(query)
 			args = append(args,
-				metricTimeToDB(query.from), metricTimeToDB(query.snapshot),
+				metricTimeToDB(query.baselineFrom()), metricTimeToDB(query.from), metricTimeToDB(query.snapshot),
 				metricTimeToDB(query.from), metricTimeToDB(query.to), metricTimeToDB(query.snapshot),
 				metricTimeToDB(query.from), query.step.Nanoseconds(), metricTimeToDB(query.from),
-				metricTimeToDB(query.from),
+				metricTimeToDB(query.from), metricTimeToDB(query.from),
 			)
 		}
 
@@ -174,20 +177,25 @@ func (s *srvMetric) queryCounter(ctx context.Context, query *querySpec,
 			if err := rows.Scan(&outputID, &bucketIndex, &value); err != nil {
 				return err
 			}
-			if query.req.Operation.GetCounter().Function == vmetricsv1.CounterOperation_RATE {
+			if isDelta && query.req.Operation.GetCounter().Function == vmetricsv1.CounterOperation_RATE {
 				value /= query.step.Seconds()
 			}
-			item := series[outputID]
-			if item == nil {
+			if series[outputID] == nil {
 				continue
 			}
-			item.GetNumber().Points = append(item.GetNumber().Points,
-				numberPointDouble(bucketEnd(query.from, query.step, bucketIndex), nil, value))
+			if values[outputID] == nil {
+				values[outputID] = map[int64]float64{}
+			}
+			values[outputID][bucketIndex] = value
 		}
 		return rows.Err()
 	})
 	if err != nil {
 		return nil, err
+	}
+
+	for outputID, item := range series {
+		fillCounterBuckets(query, item, values[outputID])
 	}
 
 	unit := counterResultUnit(descriptor.Unit, query.req.Operation.GetCounter().Function)
@@ -287,6 +295,20 @@ ORDER BY output_id, timestamp
 	return buildResponse(query, selection, numberSeriesMapValues(series), rawNumberResultDescriptor(descriptor)), nil
 }
 
+func fillCounterBuckets(query *querySpec, series *vmetricsv1.TimeSeries, values map[int64]float64) {
+	points := series.GetNumber()
+	if points == nil {
+		return
+	}
+
+	count := query.bucketCount()
+	points.Points = make([]*vmetricsv1.NumberPoint, 0, count)
+	for index := int64(0); index < count; index++ {
+		points.Points = append(points.Points,
+			numberPointDouble(bucketEnd(query.from, query.step, index), nil, values[index]))
+	}
+}
+
 func gaugePerSourceExpression(function vmetricsv1.GaugeOperation_Function) string {
 	switch function {
 	case vmetricsv1.GaugeOperation_LAST:
@@ -357,6 +379,10 @@ ORDER BY output_id, bucket_idx
 
 func counterCumulativeSQL(query *querySpec) string {
 	aggregation := numberSeriesAggregationExpression(query.req.SeriesAggregation)
+	sourceValue := "increment_sum"
+	if query.req.Operation.GetCounter().Function == vmetricsv1.CounterOperation_RATE {
+		sourceValue = "increment_sum / (covered_nanos / 1000000000.0)"
+	}
 	return `
 WITH previous_ranked AS (
 	SELECT
@@ -370,7 +396,7 @@ WITH previous_ranked AS (
 		) AS row_number
 	FROM metric_number_points p
 	JOIN selected_metric_series m ON m.series_id = p.series_id
-	WHERE p.timestamp < ? AND p.ingested_at <= ?
+	WHERE p.timestamp >= ? AND p.timestamp < ? AND p.ingested_at <= ?
 ), range_deduplicated AS (
 	SELECT * EXCLUDE (dedupe_row)
 	FROM (
@@ -397,6 +423,7 @@ WITH previous_ranked AS (
 	SELECT
 		*,
 		LAG(value) OVER (PARTITION BY series_id ORDER BY timestamp, start_timestamp NULLS FIRST) AS previous_value,
+		LAG(timestamp) OVER (PARTITION BY series_id ORDER BY timestamp, start_timestamp NULLS FIRST) AS previous_timestamp,
 		LAG(start_timestamp) OVER (
 			PARTITION BY series_id
 			ORDER BY timestamp, start_timestamp NULLS FIRST
@@ -414,6 +441,14 @@ WITH previous_ranked AS (
 			WHEN p.value >= p.previous_value THEN p.value - p.previous_value
 			ELSE p.value
 		END AS increment,
+		CASE
+			WHEN p.previous_value IS NULL AND p.start_timestamp IS NOT NULL AND p.start_timestamp >= ?
+				THEN p.timestamp - p.start_timestamp
+			WHEN p.previous_value IS NULL THEN NULL
+			WHEN p.start_timestamp IS DISTINCT FROM p.previous_start_timestamp
+				THEN p.timestamp - COALESCE(p.start_timestamp, p.previous_timestamp)
+			ELSE p.timestamp - p.previous_timestamp
+		END AS covered,
 		p.timestamp
 	FROM with_previous p
 	JOIN selected_metric_series m ON m.series_id = p.series_id
@@ -423,14 +458,23 @@ WITH previous_ranked AS (
 		output_id,
 		series_id,
 		bucket_idx,
-		SUM(increment) AS source_value,
+		SUM(increment) AS increment_sum,
+		SUM(covered) AS covered_nanos,
 		MAX(timestamp) AS last_timestamp
 	FROM increments
-	WHERE increment IS NOT NULL AND increment >= 0
+	WHERE increment IS NOT NULL AND increment >= 0 AND covered > 0
 	GROUP BY output_id, series_id, bucket_idx
+), source_values AS (
+	SELECT
+		output_id,
+		series_id,
+		bucket_idx,
+		last_timestamp,
+		` + sourceValue + ` AS source_value
+	FROM per_source
 )
 SELECT output_id, bucket_idx, ` + aggregation + ` AS output_value
-FROM per_source
+FROM source_values
 GROUP BY output_id, bucket_idx
 ORDER BY output_id, bucket_idx
 `

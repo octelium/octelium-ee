@@ -42,12 +42,16 @@ func putTestAttributes(attrs pcommon.Map, values map[string]any) {
 }
 
 func newVigilResourceMetrics() (pmetric.Metrics, pmetric.ScopeMetrics) {
+	return newVigilReplicaMetrics("octelium-vigil-1")
+}
+
+func newVigilReplicaMetrics(uid string) (pmetric.Metrics, pmetric.ScopeMetrics) {
 	metrics := pmetric.NewMetrics()
 	rm := metrics.ResourceMetrics().AppendEmpty()
 	putTestAttributes(rm.Resource().Attributes(), map[string]any{
 		"octelium.component.type":      "vigil",
 		"octelium.component.namespace": "octelium",
-		"octelium.component.uid":       "octelium-vigil-1",
+		"octelium.component.uid":       uid,
 		"octelium.region.name":         "default",
 	})
 
@@ -529,4 +533,210 @@ func TestAlignMetricTimeDown(t *testing.T) {
 
 	value := aligned.Add(time.Second)
 	assert.Equal(t, value, alignMetricTimeDown(value, 0))
+}
+
+func seedTestVigilCounter(t *testing.T, s *srvMetric, uid string, procStart time.Time,
+	first time.Time, period time.Duration, samples int, perSample int64) {
+	t.Helper()
+
+	metrics, sm := newVigilReplicaMetrics(uid)
+	value := int64(0)
+	for i := 0; i < samples; i++ {
+		value += perSample
+		appendTestCounter(sm, "req.total", procStart, first.Add(time.Duration(i)*period), value,
+			map[string]any{"octelium.vigil.svc.name": "svc"})
+	}
+	storeTestMetrics(t, s, metrics)
+}
+
+func testCounterPoints(t *testing.T, s *srvMetric, from, to time.Time, step *metav1.Duration,
+	function vmetricsv1.CounterOperation_Function) []*vmetricsv1.NumberPoint {
+	t.Helper()
+
+	res, err := s.QueryMetrics(context.Background(), &vmetricsv1.QueryMetricsRequest{
+		Metric:    &vmetricsv1.MetricSelector{Selector: &vmetricsv1.MetricSelector_Name{Name: "req.total"}},
+		TimeRange: testMetricTimeRange(from, to),
+		Step:      step,
+		Operation: &vmetricsv1.QueryOperation{
+			Type: &vmetricsv1.QueryOperation_Counter{Counter: &vmetricsv1.CounterOperation{Function: function}},
+		},
+		SeriesAggregation: vmetricsv1.QueryMetricsRequest_SUM,
+		LimitBehavior:     vmetricsv1.QueryMetricsRequest_TRUNCATE,
+	})
+	require.NoError(t, err)
+	require.Len(t, res.Series, 1)
+	return res.Series[0].GetNumber().Points
+}
+
+func TestQueryExcludesTheIncompleteTrailingBucket(t *testing.T) {
+	s := newTestSrvMetric(t)
+
+	base := time.Now().UTC().Truncate(time.Hour)
+	procStart := base.Add(-2 * time.Hour)
+	seedTestVigilCounter(t, s, "octelium-vigil-1", procStart,
+		base.Add(-10*time.Minute), 10*time.Second, 60, 5)
+
+	to := base.Add(-5 * time.Minute).Add(25 * time.Second)
+	points := testCounterPoints(t, s, to.Add(-3*time.Minute), to,
+		testMetricStep(), vmetricsv1.CounterOperation_RATE)
+
+	require.NotEmpty(t, points)
+	for _, point := range points {
+		assert.False(t, point.Timestamp.AsTime().After(alignMetricTimeDown(to, time.Minute)),
+			"bucket %s ends after the aligned query end", point.Timestamp.AsTime())
+	}
+
+	assert.Equal(t, alignMetricTimeDown(to, time.Minute), points[len(points)-1].Timestamp.AsTime())
+	for _, point := range points {
+		assert.InDelta(t, 0.5, point.GetAsDouble(), 0.0001)
+	}
+}
+
+func TestCounterRateUsesTheCoveredSampleInterval(t *testing.T) {
+	s := newTestSrvMetric(t)
+
+	base := time.Now().UTC().Truncate(time.Hour)
+	procStart := base.Add(-2 * time.Hour)
+	seedTestVigilCounter(t, s, "octelium-vigil-1", procStart,
+		base.Add(-10*time.Minute), 11*time.Second, 55, 11)
+
+	points := testCounterPoints(t, s, base.Add(-5*time.Minute), base.Add(-1*time.Minute),
+		testMetricStep(), vmetricsv1.CounterOperation_RATE)
+
+	require.Len(t, points, 4)
+	for _, point := range points {
+		assert.InDelta(t, 1, point.GetAsDouble(), 0.0001,
+			"bucket %s reports %v instead of the true 1 req/s",
+			point.Timestamp.AsTime(), point.GetAsDouble())
+	}
+}
+
+func TestCounterBucketsAreZeroFilled(t *testing.T) {
+	s := newTestSrvMetric(t)
+
+	base := time.Now().UTC().Truncate(time.Hour)
+	procStart := base.Add(-2 * time.Hour)
+	seedTestVigilCounter(t, s, "octelium-vigil-1", procStart,
+		base.Add(-10*time.Minute), 10*time.Second, 30, 5)
+
+	points := testCounterPoints(t, s, base.Add(-8*time.Minute), base.Add(-3*time.Minute),
+		testMetricStep(), vmetricsv1.CounterOperation_RATE)
+
+	require.Len(t, points, 5)
+	for index, point := range points {
+		assert.Equal(t, base.Add(time.Duration(index-8+1)*time.Minute), point.Timestamp.AsTime())
+	}
+
+	assert.InDelta(t, 0.5, points[0].GetAsDouble(), 0.0001)
+	assert.InDelta(t, 0.5, points[1].GetAsDouble(), 0.0001)
+	assert.Zero(t, points[3].GetAsDouble())
+	assert.Zero(t, points[4].GetAsDouble())
+}
+
+func TestGaugeSumIsNotDilutedByAPartialBucket(t *testing.T) {
+	s := newTestSrvMetric(t)
+
+	base := time.Now().UTC().Truncate(time.Hour)
+	procStart := base.Add(-2 * time.Hour)
+	replicas := []struct {
+		uid    string
+		phase  time.Duration
+		active int64
+	}{
+		{"octelium-vigil-1", 1 * time.Second, 4},
+		{"octelium-vigil-2", 24 * time.Second, 3},
+		{"octelium-vigil-3", 47 * time.Second, 5},
+	}
+
+	for _, replica := range replicas {
+		metrics, sm := newVigilReplicaMetrics(replica.uid)
+		for i := 0; i < 20; i++ {
+			at := base.Add(-10 * time.Minute).Add(time.Duration(i)*time.Minute + replica.phase)
+			appendTestUpDownCounter(sm, "req.active", procStart, at, replica.active,
+				map[string]any{"octelium.vigil.svc.name": "svc"})
+		}
+		storeTestMetrics(t, s, metrics)
+	}
+
+	to := base.Add(-5 * time.Minute).Add(30 * time.Second)
+	res, err := s.QueryMetrics(context.Background(), &vmetricsv1.QueryMetricsRequest{
+		Metric:    &vmetricsv1.MetricSelector{Selector: &vmetricsv1.MetricSelector_Name{Name: "req.active"}},
+		TimeRange: testMetricTimeRange(to.Add(-3*time.Minute), to),
+		Step:      testMetricStep(),
+		Operation: &vmetricsv1.QueryOperation{
+			Type: &vmetricsv1.QueryOperation_Gauge{Gauge: &vmetricsv1.GaugeOperation{
+				Function: vmetricsv1.GaugeOperation_LAST,
+			}},
+		},
+		SeriesAggregation: vmetricsv1.QueryMetricsRequest_SUM,
+		LimitBehavior:     vmetricsv1.QueryMetricsRequest_TRUNCATE,
+	})
+	require.NoError(t, err)
+	require.Len(t, res.Series, 1)
+
+	points := res.Series[0].GetNumber().Points
+	require.NotEmpty(t, points)
+	for _, point := range points {
+		assert.Equal(t, float64(12), point.GetAsDouble(),
+			"bucket %s only saw a subset of the replicas", point.Timestamp.AsTime())
+	}
+}
+
+func TestQueryRangeShorterThanASingleStepIsRejected(t *testing.T) {
+	s := newTestSrvMetric(t)
+
+	base := time.Now().UTC().Truncate(time.Hour)
+	procStart := base.Add(-2 * time.Hour)
+	seedTestVigilCounter(t, s, "octelium-vigil-1", procStart,
+		base.Add(-10*time.Minute), 10*time.Second, 30, 5)
+
+	to := base.Add(-5 * time.Minute).Add(40 * time.Second)
+	_, err := s.QueryMetrics(context.Background(), &vmetricsv1.QueryMetricsRequest{
+		Metric:    &vmetricsv1.MetricSelector{Selector: &vmetricsv1.MetricSelector_Name{Name: "req.total"}},
+		TimeRange: testMetricTimeRange(to.Add(-20*time.Second), to),
+		Step:      testMetricStep(),
+		Operation: &vmetricsv1.QueryOperation{
+			Type: &vmetricsv1.QueryOperation_Counter{Counter: &vmetricsv1.CounterOperation{
+				Function: vmetricsv1.CounterOperation_RATE,
+			}},
+		},
+		SeriesAggregation: vmetricsv1.QueryMetricsRequest_SUM,
+		LimitBehavior:     vmetricsv1.QueryMetricsRequest_TRUNCATE,
+	})
+	require.Error(t, err)
+	assert.Equal(t, codes.InvalidArgument, status.Code(err))
+}
+
+func TestQuerySpecBaselineLookbackIsBounded(t *testing.T) {
+	from := time.Date(2026, time.August, 22, 10, 0, 0, 0, time.UTC)
+
+	minute := &querySpec{from: from, to: from.Add(time.Hour), step: time.Minute}
+	assert.Equal(t, from.Add(-minimumBaselineLookback), minute.baselineFrom())
+	assert.Equal(t, int64(60), minute.bucketCount())
+
+	hourly := &querySpec{from: from, to: from.Add(24 * time.Hour), step: 2 * time.Hour}
+	assert.Equal(t, from.Add(-4*time.Hour), hourly.baselineFrom())
+	assert.Equal(t, int64(12), hourly.bucketCount())
+
+	raw := &querySpec{from: from, to: from.Add(time.Hour)}
+	assert.Equal(t, from.Add(-minimumBaselineLookback), raw.baselineFrom())
+	assert.Zero(t, raw.bucketCount())
+}
+
+func TestCounterBaselineIsTakenFromBeforeTheQueryWindow(t *testing.T) {
+	s := newTestSrvMetric(t)
+
+	base := time.Now().UTC().Truncate(time.Hour)
+	procStart := base.Add(-2 * time.Hour)
+	seedTestVigilCounter(t, s, "octelium-vigil-1", procStart,
+		base.Add(-10*time.Minute), 10*time.Second, 60, 5)
+
+	points := testCounterPoints(t, s, base.Add(-5*time.Minute), base.Add(-2*time.Minute),
+		testMetricStep(), vmetricsv1.CounterOperation_INCREASE)
+
+	require.Len(t, points, 3)
+	for _, point := range points {
+		assert.Equal(t, float64(30), point.GetAsDouble(),
+			"bucket %s lost its baseline sample", point.Timestamp.AsTime())
+	}
 }

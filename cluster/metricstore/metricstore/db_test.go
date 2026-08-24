@@ -178,3 +178,27 @@ func TestExponentialHistogramIngestQueryRoundTrip(t *testing.T) {
 	assert.Equal(t, map[int32]uint64{0: 4, 1: 5}, raw.positive)
 	assert.Equal(t, map[int32]uint64{0: 1}, raw.negative)
 }
+
+func TestCreateMetricStoreTablesIsIdempotent(t *testing.T) {
+	db := newTestDuckDB(t)
+
+	for i := 0; i < 2; i++ {
+		tx, err := db.BeginTx(context.Background(), nil)
+		require.NoError(t, err)
+		require.NoError(t, createMetricStoreTables(context.Background(), tx))
+		require.NoError(t, tx.Commit())
+	}
+
+	for _, name := range []string{
+		"metric_number_points_series_timestamp",
+		"metric_histogram_points_series_timestamp",
+		"metric_exponential_histogram_points_series_timestamp",
+		"metric_number_points_point_id",
+		"metric_series_descriptor_id",
+	} {
+		var count int
+		require.NoError(t, db.QueryRowContext(context.Background(),
+			`SELECT COUNT(*) FROM duckdb_indexes() WHERE index_name = ?`, name).Scan(&count))
+		assert.Equal(t, 1, count, name)
+	}
+}

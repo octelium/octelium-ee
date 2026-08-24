@@ -223,7 +223,8 @@ func (s *srvMetric) loadSourceSeries(ctx context.Context, query *querySpec,
 	}
 
 	where := []string{"s.descriptor_id = ?"}
-	args := []any{metricTimeToDB(query.from), metricTimeToDB(query.to), metricTimeToDB(query.snapshot), descriptor.Id}
+	args := []any{descriptor.Id, metricTimeToDB(query.from), metricTimeToDB(query.to),
+		metricTimeToDB(query.snapshot), descriptor.Id}
 
 	if component := query.req.Component; component != nil {
 		if component.Type != "" {
@@ -243,10 +244,13 @@ func (s *srvMetric) loadSourceSeries(ctx context.Context, query *querySpec,
 	appendSeriesFilterSQL(&where, &args, query.filters)
 
 	querySQL := `
-WITH active_series AS (
-	SELECT DISTINCT series_id
-	FROM ` + pointTable + `
-	WHERE timestamp >= ? AND timestamp < ? AND ingested_at <= ?
+WITH descriptor_series AS (
+	SELECT id FROM metric_series WHERE descriptor_id = ?
+), active_series AS (
+	SELECT DISTINCT p.series_id
+	FROM ` + pointTable + ` p
+	JOIN descriptor_series d ON d.id = p.series_id
+	WHERE p.timestamp >= ? AND p.timestamp < ? AND p.ingested_at <= ?
 )
 SELECT s.id, CAST(s.labels AS VARCHAR), s.labels_key
 FROM metric_series s

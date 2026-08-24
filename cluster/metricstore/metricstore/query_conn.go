@@ -84,11 +84,11 @@ WHERE p.timestamp >= ? AND p.timestamp < ? AND p.ingested_at <= ?`
 			SELECT p.series_id
 			FROM ` + table + ` p
 			JOIN selected_metric_series m ON m.series_id = p.series_id
-			WHERE p.timestamp < ? AND p.ingested_at <= ?
+			WHERE p.timestamp >= ? AND p.timestamp < ? AND p.ingested_at <= ?
 			GROUP BY p.series_id
 		)`
-		if err := conn.QueryRowContext(ctx, statement, metricTimeToDB(query.from),
-			metricTimeToDB(query.snapshot)).Scan(&previous); err != nil {
+		if err := conn.QueryRowContext(ctx, statement, metricTimeToDB(query.baselineFrom()),
+			metricTimeToDB(query.from), metricTimeToDB(query.snapshot)).Scan(&previous); err != nil {
 			return err
 		}
 		count += previous

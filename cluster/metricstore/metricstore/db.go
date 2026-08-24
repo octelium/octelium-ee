@@ -307,6 +307,21 @@ func createMetricStoreTables(ctx context.Context, tx *sql.Tx) error {
 			negative_offset INTEGER NOT NULL,
 			negative_counts VARCHAR NOT NULL
 		)`,
+
+		`CREATE INDEX IF NOT EXISTS metric_number_points_series_timestamp
+			ON metric_number_points (series_id, timestamp)`,
+		`CREATE INDEX IF NOT EXISTS metric_histogram_points_series_timestamp
+			ON metric_histogram_points (series_id, timestamp)`,
+		`CREATE INDEX IF NOT EXISTS metric_exponential_histogram_points_series_timestamp
+			ON metric_exponential_histogram_points (series_id, timestamp)`,
+		`CREATE INDEX IF NOT EXISTS metric_number_points_point_id
+			ON metric_number_points (point_id)`,
+		`CREATE INDEX IF NOT EXISTS metric_histogram_points_point_id
+			ON metric_histogram_points (point_id)`,
+		`CREATE INDEX IF NOT EXISTS metric_exponential_histogram_points_point_id
+			ON metric_exponential_histogram_points (point_id)`,
+		`CREATE INDEX IF NOT EXISTS metric_series_descriptor_id
+			ON metric_series (descriptor_id)`,
 	}
 
 	for _, statement := range statements {

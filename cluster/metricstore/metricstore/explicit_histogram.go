@@ -168,7 +168,7 @@ WITH previous_ranked AS (
 		) AS row_number
 	FROM metric_histogram_points p
 	JOIN selected_metric_series m ON m.series_id = p.series_id
-	WHERE p.timestamp < ? AND p.ingested_at <= ?
+	WHERE p.timestamp >= ? AND p.timestamp < ? AND p.ingested_at <= ?
 ), range_deduplicated AS (
 	SELECT * EXCLUDE (dedupe_row)
 	FROM (
@@ -223,8 +223,8 @@ SELECT
 	CAST(bucket_counts AS VARCHAR)
 FROM selected_points
 ORDER BY series_id, timestamp
-`, metricTimeToDB(query.from), metricTimeToDB(query.snapshot), metricTimeToDB(query.from),
-			metricTimeToDB(query.to), metricTimeToDB(query.snapshot))
+`, metricTimeToDB(query.baselineFrom()), metricTimeToDB(query.from), metricTimeToDB(query.snapshot),
+			metricTimeToDB(query.from), metricTimeToDB(query.to), metricTimeToDB(query.snapshot))
 	}
 
 	return conn.QueryContext(ctx, `

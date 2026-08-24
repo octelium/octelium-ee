@@ -24,6 +24,7 @@ require (
 	github.com/octelium/octelium-ee/cluster/policyportal v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium-ee/cluster/rscserver v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium-ee/cluster/rscstore v0.0.0-00010101000000-000000000000
+	github.com/stretchr/testify v1.11.1
 	k8s.io/api v0.35.3
 	k8s.io/apimachinery v0.35.3
 	k8s.io/client-go v0.35.3
@@ -116,6 +117,7 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/pquerna/otp v1.5.0 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20250401214520-65e299d6c5c9 // indirect
 	github.com/rs/cors v1.8.0 // indirect
