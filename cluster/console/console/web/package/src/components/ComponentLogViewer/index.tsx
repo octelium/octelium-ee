@@ -5,6 +5,7 @@ import {
   ListComponentLogResponse,
 } from "@/apis/visibilityv1/visibilityv1";
 import Paginator from "@/components/Paginator";
+import { ListLoading } from "@/components/Loading";
 import { isDev } from "@/utils";
 import { getClientCore, getClientVisibilityComponentLog } from "@/utils/client";
 import { getResourceRef } from "@/utils/pb";
@@ -325,6 +326,10 @@ const ComponentLogViewer = (props: { itemsPerPage?: number }) => {
     Timestamp.fromDate(dayjs().subtract(6, "hour").toDate()),
   );
 
+  React.useEffect(() => {
+    setPage(0);
+  }, [from.seconds, from.nanos]);
+
   const qry = useQuery({
     queryKey: [
       "visibility",
@@ -410,21 +415,27 @@ const ComponentLogViewer = (props: { itemsPerPage?: number }) => {
           </button>
         </div>
 
-        {qry.data?.items.map((x) => (
-          <ComponentLogC key={x.metadata!.id} log={x} />
-        ))}
+        {!qry.data || qry.isLoading ? (
+          <ListLoading label="component logs" />
+        ) : (
+          <>
+            {qry.data?.items.map((x) => (
+              <ComponentLogC key={x.metadata!.id} log={x} />
+            ))}
 
-        {qry.isSuccess && qry.data?.items.length === 0 && (
-          <div className="flex items-center justify-center py-16">
-            <span className="text-[0.78rem] font-bold uppercase tracking-[0.08em] text-slate-400">
-              No component log entries found
-            </span>
-          </div>
+            {qry.isSuccess && qry.data?.items.length === 0 && (
+              <div className="flex items-center justify-center py-16">
+                <span className="text-[0.78rem] font-bold uppercase tracking-[0.08em] text-slate-400">
+                  No component log entries found
+                </span>
+              </div>
+            )}
+          </>
         )}
       </div>
 
       {qry.data?.listResponseMeta && (
-        <Paginator meta={qry.data.listResponseMeta} />
+        <Paginator meta={qry.data.listResponseMeta} onPageChange={setPage} />
       )}
     </div>
   );

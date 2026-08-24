@@ -15,6 +15,7 @@ import {
   ListAccessLogResponse,
 } from "@/apis/visibilityv1/visibilityv1";
 import Paginator from "@/components/Paginator";
+import { ListLoading } from "@/components/Loading";
 import { isDev } from "@/utils";
 import { getClientCore, getClientVisibilityAccessLog } from "@/utils/client";
 import { getResourceRef } from "@/utils/pb";
@@ -975,29 +976,22 @@ const DoAccessLogViewer = (props: {
         </div>
       )}
 
-      {qry.isLoading && !qry.data && (
-        <div className="flex flex-col gap-2" aria-label="Loading access logs">
-          {[0, 1, 2].map((item) => (
-            <div
-              key={item}
-              className="h-20 animate-pulse rounded-lg border border-slate-200 bg-slate-50"
-            />
+      {!qry.data || qry.isLoading ? (
+        <ListLoading label="access logs" />
+      ) : (
+        <div className="w-full">
+          {qry.data?.items.map((x) => (
+            <AccessLogC key={x.metadata!.id} accessLog={x} />
           ))}
+          {qry.data?.items.length === 0 && (
+            <div className="flex items-center justify-center py-16">
+              <span className="text-[0.78rem] font-bold uppercase tracking-[0.08em] text-slate-400">
+                No log entries found
+              </span>
+            </div>
+          )}
         </div>
       )}
-
-      <div className="w-full">
-        {qry.data?.items.map((x) => (
-          <AccessLogC key={x.metadata!.id} accessLog={x} />
-        ))}
-        {qry.data?.items.length === 0 && (
-          <div className="flex items-center justify-center py-16">
-            <span className="text-[0.78rem] font-bold uppercase tracking-[0.08em] text-slate-400">
-              No log entries found
-            </span>
-          </div>
-        )}
-      </div>
 
       {qry.data?.listResponseMeta && (
         <div className="mt-4">
@@ -1063,6 +1057,7 @@ const AccessLogViewer = (props: {
   policyRef?: ObjectReference;
   itemsPerPage?: number;
   page?: number;
+  status?: AccessLogStatusFilter;
 }) => {
   const [from, setFrom] = React.useState<Timestamp>(
     Timestamp.fromDate(dayjs().subtract(6, "hour").toDate()),
@@ -1097,6 +1092,7 @@ const AccessLogViewer = (props: {
         policyRef={props.policyRef}
         deviceRef={props.deviceRef}
         from={from}
+        status={props.status}
       />
     </div>
   );

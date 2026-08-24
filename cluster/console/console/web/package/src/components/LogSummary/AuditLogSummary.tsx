@@ -10,6 +10,7 @@ import {
   refetchIntervalChart,
 } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
+import { Activity, Boxes, Laptop, ScrollText, Users } from "lucide-react";
 import { SummaryItemCount, SummaryItemCountWrap } from "../Summary";
 
 const AuditLogSummary = (props: {
@@ -47,6 +48,23 @@ const AuditLogSummary = (props: {
     refetchInterval: refetchIntervalChart,
   });
 
+  const auditLogsPath = () => {
+    const params = new URLSearchParams();
+    const refs: Array<[string, ObjectReference | undefined]> = [
+      ["userRef", props.userRef],
+      ["sessionRef", props.sessionRef],
+      ["serviceRef", props.serviceRef],
+      ["resourceRef", props.resourceRef],
+      ["deviceRef", props.deviceRef],
+    ];
+    refs.forEach(([key, ref]) => {
+      const value = ref?.name || ref?.uid;
+      if (value) params.set(`${key}.${ref?.name ? "name" : "uid"}`, value);
+    });
+    const query = params.toString();
+    return query ? `/visibility/auditlogs?${query}` : "/visibility/auditlogs";
+  };
+
   /*
   React.useEffect(() => {
     qry.refetch();
@@ -77,26 +95,30 @@ const AuditLogSummary = (props: {
         {qry.data && (
           <div className="w-full flex items-center">
             <SummaryItemCountWrap>
-              <SummaryItemCount count={qry.data.totalNumber}>
+              <SummaryItemCount
+                count={qry.data.totalNumber}
+                icon={ScrollText}
+                to={auditLogsPath()}
+              >
                 Total
               </SummaryItemCount>
 
-              <SummaryItemCount count={qry.data.totalResource}>
+              <SummaryItemCount count={qry.data.totalResource} icon={Boxes}>
                 Resources
               </SummaryItemCount>
               {!(props.userRef || props.deviceRef || props.sessionRef) && (
-                <SummaryItemCount count={qry.data.totalUser}>
+                <SummaryItemCount count={qry.data.totalUser} icon={Users}>
                   Users
                 </SummaryItemCount>
               )}
 
               {!props.deviceRef && (
-                <SummaryItemCount count={qry.data.totalDevice}>
+                <SummaryItemCount count={qry.data.totalDevice} icon={Laptop}>
                   Devices
                 </SummaryItemCount>
               )}
               {!props.sessionRef && (
-                <SummaryItemCount count={qry.data.totalSession}>
+                <SummaryItemCount count={qry.data.totalSession} icon={Activity}>
                   Sessions
                 </SummaryItemCount>
               )}

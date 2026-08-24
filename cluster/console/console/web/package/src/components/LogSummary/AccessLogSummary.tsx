@@ -10,6 +10,16 @@ import {
   refetchIntervalChart,
 } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
+import {
+  Activity,
+  Laptop,
+  Layers3,
+  Server,
+  Shield,
+  ShieldCheck,
+  ShieldX,
+  Users,
+} from "lucide-react";
 import { SummaryItemCount, SummaryItemCountWrap } from "../Summary";
 
 const AccessLogSummary = (props: {
@@ -48,6 +58,28 @@ const AccessLogSummary = (props: {
     refetchInterval: refetchIntervalChart,
   });
 
+  const accessLogsPath = (status?: "ALLOWED" | "DENIED") => {
+    const params = new URLSearchParams();
+    if (status) params.set("status", status);
+
+    const refs: Array<[string, ObjectReference | undefined]> = [
+      ["userRef", props.userRef],
+      ["sessionRef", props.sessionRef],
+      ["serviceRef", props.serviceRef],
+      ["namespaceRef", props.namespaceRef],
+      ["regionRef", props.regionRef],
+      ["deviceRef", props.deviceRef],
+      ["policyRef", props.policyRef],
+    ];
+    refs.forEach(([key, ref]) => {
+      const value = ref?.name || ref?.uid;
+      if (value) params.set(`${key}.${ref?.name ? "name" : "uid"}`, value);
+    });
+
+    const query = params.toString();
+    return query ? `/visibility/accesslogs?${query}` : "/visibility/accesslogs";
+  };
+
   /*
   React.useEffect(() => {
     qry.refetch();
@@ -60,44 +92,44 @@ const AccessLogSummary = (props: {
         {qry.data && (
           <div className="w-full flex items-center">
             <SummaryItemCountWrap>
-              <SummaryItemCount count={qry.data.totalNumber}>
+              <SummaryItemCount count={qry.data.totalNumber} icon={Activity} to={accessLogsPath()}>
                 Total
               </SummaryItemCount>
 
-              <SummaryItemCount count={qry.data.totalAllowed}>
+              <SummaryItemCount count={qry.data.totalAllowed} icon={ShieldCheck} to={accessLogsPath("ALLOWED")}>
                 Allowed
               </SummaryItemCount>
-              <SummaryItemCount count={qry.data.totalDenied}>
+              <SummaryItemCount count={qry.data.totalDenied} icon={ShieldX} to={accessLogsPath("DENIED")}>
                 Denied
               </SummaryItemCount>
               {!(props.userRef || props.deviceRef || props.sessionRef) && (
-                <SummaryItemCount count={qry.data.totalUser}>
+                <SummaryItemCount count={qry.data.totalUser} icon={Users}>
                   Users
                 </SummaryItemCount>
               )}
               {!props.sessionRef && (
-                <SummaryItemCount count={qry.data.totalSession}>
+                <SummaryItemCount count={qry.data.totalSession} icon={Activity}>
                   Sessions
                 </SummaryItemCount>
               )}
               {!(props.deviceRef || props.sessionRef) && (
-                <SummaryItemCount count={qry.data.totalDevice}>
+                <SummaryItemCount count={qry.data.totalDevice} icon={Laptop}>
                   Devices
                 </SummaryItemCount>
               )}
 
-              {!(props.policyRef || props.policyRef) && (
-                <SummaryItemCount count={qry.data.totalMatchPolicy}>
+              {!props.policyRef && (
+                <SummaryItemCount count={qry.data.totalMatchPolicy} icon={Shield}>
                   Policies
                 </SummaryItemCount>
               )}
               {!props.serviceRef && (
-                <SummaryItemCount count={qry.data.totalService}>
+                <SummaryItemCount count={qry.data.totalService} icon={Server}>
                   Services
                 </SummaryItemCount>
               )}
               {!(props.namespaceRef || props.serviceRef) && (
-                <SummaryItemCount count={qry.data.totalNamespace}>
+                <SummaryItemCount count={qry.data.totalNamespace} icon={Layers3}>
                   Namespaces
                 </SummaryItemCount>
               )}

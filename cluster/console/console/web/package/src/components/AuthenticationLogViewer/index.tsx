@@ -12,6 +12,7 @@ import {
   ListAuthenticationLogResponse,
 } from "@/apis/visibilityv1/visibilityv1";
 import Paginator from "@/components/Paginator";
+import { ListLoading } from "@/components/Loading";
 import { isDev } from "@/utils";
 import {
   getClientCore,
@@ -753,27 +754,22 @@ const DoAuthenticationLogViewer = (props: {
         </div>
       )}
 
-      {qry.isLoading && !qry.data && (
-        <div className="flex flex-col gap-2" aria-label="Loading authentication logs">
-          {[0, 1, 2].map((item) => (
-            <div
-              key={item}
-              className="h-20 animate-pulse rounded-lg border border-slate-200 bg-slate-50"
-            />
+      {!qry.data || qry.isLoading ? (
+        <ListLoading label="authentication logs" />
+      ) : (
+        <>
+          {qry.data?.items.map((x) => (
+            <AuthenticationLogC key={x.metadata!.id} authLog={x} />
           ))}
-        </div>
-      )}
 
-      {qry.data?.items.map((x) => (
-        <AuthenticationLogC key={x.metadata!.id} authLog={x} />
-      ))}
-
-      {qry.isSuccess && qry.data?.items.length === 0 && (
-        <div className="flex items-center justify-center py-16">
-          <span className="text-[0.78rem] font-bold uppercase tracking-[0.08em] text-slate-400">
-            No authentication log entries found
-          </span>
-        </div>
+          {qry.isSuccess && qry.data?.items.length === 0 && (
+            <div className="flex items-center justify-center py-16">
+              <span className="text-[0.78rem] font-bold uppercase tracking-[0.08em] text-slate-400">
+                No authentication log entries found
+              </span>
+            </div>
+          )}
+        </>
       )}
 
       {qry.data?.listResponseMeta && (

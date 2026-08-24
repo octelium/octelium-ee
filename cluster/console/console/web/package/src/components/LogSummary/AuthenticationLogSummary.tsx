@@ -10,6 +10,19 @@ import {
   refetchIntervalChart,
 } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
+import {
+  Activity,
+  Cpu,
+  Fingerprint,
+  KeyRound,
+  LogIn,
+  Network,
+  RefreshCw,
+  Shield,
+  ShieldCheck,
+  Timer,
+  Users,
+} from "lucide-react";
 import { SummaryItemCount, SummaryItemCountWrap } from "../Summary";
 
 const AuthenticationLogSummary = (props: {
@@ -51,6 +64,26 @@ const AuthenticationLogSummary = (props: {
     refetchInterval: refetchIntervalChart,
   });
 
+  const authenticationLogsPath = () => {
+    const params = new URLSearchParams();
+    const refs: Array<[string, ObjectReference | undefined]> = [
+      ["userRef", props.userRef],
+      ["sessionRef", props.sessionRef],
+      ["deviceRef", props.deviceRef],
+      ["identityProviderRef", props.identityProviderRef],
+      ["credentialRef", props.credentialRef],
+      ["authenticatorRef", props.authenticatorRef],
+    ];
+    refs.forEach(([key, ref]) => {
+      const value = ref?.name || ref?.uid;
+      if (value) params.set(`${key}.${ref?.name ? "name" : "uid"}`, value);
+    });
+    const query = params.toString();
+    return query
+      ? `/visibility/authenticationlogs?${query}`
+      : "/visibility/authenticationlogs";
+  };
+
   /*
   React.useEffect(() => {
     qry.refetch();
@@ -81,67 +114,72 @@ const AuthenticationLogSummary = (props: {
         {qry.data && (
           <div className="w-full flex items-center">
             <SummaryItemCountWrap>
-              <SummaryItemCount count={qry.data.totalNumber}>
+              <SummaryItemCount
+                count={qry.data.totalNumber}
+                icon={LogIn}
+                to={authenticationLogsPath()}
+              >
                 Total
               </SummaryItemCount>
 
               {!props.identityProviderRef && (
-                <SummaryItemCount count={qry.data.totalIdentityProvider}>
+                <SummaryItemCount count={qry.data.totalIdentityProvider} icon={Network}>
                   IdentityProviders
                 </SummaryItemCount>
               )}
-              <SummaryItemCount count={qry.data.totalAuthenticator}>
+              <SummaryItemCount count={qry.data.totalAuthenticator} icon={Fingerprint}>
                 Authenticators
               </SummaryItemCount>
-              <SummaryItemCount count={qry.data.totalCredential}>
+              <SummaryItemCount count={qry.data.totalCredential} icon={KeyRound}>
                 Credentials
               </SummaryItemCount>
 
-              <SummaryItemCount count={qry.data.totalAuthenticatorFIDO}>
+              <SummaryItemCount count={qry.data.totalAuthenticatorFIDO} icon={Fingerprint}>
                 FIDO
               </SummaryItemCount>
-              <SummaryItemCount count={qry.data.totalAuthenticatorTOTP}>
+              <SummaryItemCount count={qry.data.totalAuthenticatorTOTP} icon={Timer}>
                 TOTP
               </SummaryItemCount>
-              <SummaryItemCount count={qry.data.totalAuthenticatorTPM}>
+              <SummaryItemCount count={qry.data.totalAuthenticatorTPM} icon={Cpu}>
                 TPM
               </SummaryItemCount>
 
-              <SummaryItemCount count={qry.data.totalAAL1}>
+              <SummaryItemCount count={qry.data.totalAAL1} icon={Shield}>
                 AAL1
               </SummaryItemCount>
-              <SummaryItemCount count={qry.data.totalAAL1}>
+              <SummaryItemCount count={qry.data.totalAAL2} icon={Shield}>
                 AAL2
               </SummaryItemCount>
-              <SummaryItemCount count={qry.data.totalAAL1}>
+              <SummaryItemCount count={qry.data.totalAAL3} icon={ShieldCheck}>
                 AAL3
               </SummaryItemCount>
 
-              <SummaryItemCount count={qry.data.totalAuthenticatorPasskey}>
+              <SummaryItemCount count={qry.data.totalAuthenticatorPasskey} icon={KeyRound}>
                 Passkey
               </SummaryItemCount>
 
-              <SummaryItemCount count={qry.data.totalAuthenticatorMFA}>
+              <SummaryItemCount count={qry.data.totalAuthenticatorMFA} icon={ShieldCheck}>
                 MFA
               </SummaryItemCount>
 
               <SummaryItemCount
                 count={qry.data.totalNumber - qry.data.totalReauthentication}
+                icon={LogIn}
               >
                 Logins
               </SummaryItemCount>
 
-              <SummaryItemCount count={qry.data.totalReauthentication}>
+              <SummaryItemCount count={qry.data.totalReauthentication} icon={RefreshCw}>
                 Re-Authentications
               </SummaryItemCount>
 
               {!(props.userRef || props.deviceRef || props.sessionRef) && (
-                <SummaryItemCount count={qry.data.totalUser}>
+                <SummaryItemCount count={qry.data.totalUser} icon={Users}>
                   Users
                 </SummaryItemCount>
               )}
               {!props.sessionRef && (
-                <SummaryItemCount count={qry.data.totalSession}>
+                <SummaryItemCount count={qry.data.totalSession} icon={Activity}>
                   Sessions
                 </SummaryItemCount>
               )}

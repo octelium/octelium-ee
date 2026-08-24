@@ -10,6 +10,15 @@ import {
   refetchIntervalChart,
 } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
+import {
+  Bug,
+  CircleAlert,
+  Info,
+  OctagonAlert,
+  Skull,
+  Terminal,
+  TriangleAlert,
+} from "lucide-react";
 import { SummaryItemCount, SummaryItemCountWrap } from "../Summary";
 
 const ComponentLogSummary = (props: {
@@ -47,6 +56,7 @@ const ComponentLogSummary = (props: {
             <SummaryItemCountWrap>
               <SummaryItemCount
                 count={qry.data.totalNumber}
+                icon={Terminal}
                 to={`/visibility/componentlogs`}
               >
                 Total
@@ -54,12 +64,14 @@ const ComponentLogSummary = (props: {
 
               <SummaryItemCount
                 count={qry.data.totalDebug}
+                icon={Bug}
                 to={`/visibility/componentlogs?level=DEBUG`}
               >
                 Debug
               </SummaryItemCount>
               <SummaryItemCount
                 count={qry.data.totalInfo}
+                icon={Info}
                 to={`/visibility/componentlogs?level=INFO`}
               >
                 Info
@@ -67,6 +79,7 @@ const ComponentLogSummary = (props: {
 
               <SummaryItemCount
                 count={qry.data.totalWarn}
+                icon={TriangleAlert}
                 to={`/visibility/componentlogs?level=WARN`}
               >
                 Warn
@@ -74,6 +87,7 @@ const ComponentLogSummary = (props: {
 
               <SummaryItemCount
                 count={qry.data.totalError}
+                icon={CircleAlert}
                 to={`/visibility/componentlogs?level=ERROR`}
               >
                 Error
@@ -81,12 +95,14 @@ const ComponentLogSummary = (props: {
 
               <SummaryItemCount
                 count={qry.data.totalPanic}
+                icon={OctagonAlert}
                 to={`/visibility/componentlogs?level=PANIC`}
               >
                 Panic
               </SummaryItemCount>
               <SummaryItemCount
                 count={qry.data.totalFatal}
+                icon={Skull}
                 to={`/visibility/componentlogs?level=FATAL`}
               >
                 Fatal

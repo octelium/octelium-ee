@@ -1,6 +1,7 @@
 import { useLocation, useSearchParams } from "react-router-dom";
 import { parseQueryString } from "../ResourceLayout/queryParse";
 import { ObjectReference } from "@/apis/metav1/metav1";
+import type { AccessLogStatusFilter } from "./utils";
 
 type objectRef = {
   uid?: string;
@@ -34,10 +35,20 @@ export const useLogListReq = () => {
     regionRef?: objectRef;
     deviceRef?: objectRef;
     policyRef?: objectRef;
+    status?: string;
   }>(searchParams.toString());
 
   if (parsedQry.common && parsedQry.common.page && parsedQry.common.page > 0) {
     parsedQry.common.page = parsedQry.common.page - 1;
+  }
+
+  const normalizedStatus = parsedQry.status?.toLowerCase();
+  if (
+    normalizedStatus === "all" ||
+    normalizedStatus === "allowed" ||
+    normalizedStatus === "denied"
+  ) {
+    parsedQry.status = normalizedStatus as AccessLogStatusFilter;
   }
 
   return parsedQry;

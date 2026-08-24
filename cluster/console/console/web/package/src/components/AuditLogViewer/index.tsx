@@ -6,6 +6,7 @@ import {
   ListAuditLogResponse,
 } from "@/apis/visibilityv1/visibilityv1";
 import Paginator from "@/components/Paginator";
+import { ListLoading } from "@/components/Loading";
 import { isDev } from "@/utils";
 import { getClientCore, getClientVisibilityAuditLog } from "@/utils/client";
 import { getResourceRef } from "@/utils/pb";
@@ -388,6 +389,7 @@ const AuditLogViewer = (props: {
   periodMinutes?: number;
   onPeriodChange?: (value: number) => void;
 }) => {
+  const [page, setPage] = React.useState(props.page ?? 0);
   const [localFrom, setLocalFrom] = React.useState<Timestamp>(
     Timestamp.fromDate(dayjs().subtract(6, "hour").toDate()),
   );
@@ -402,6 +404,23 @@ const AuditLogViewer = (props: {
   );
   const from = controlledFrom ?? localFrom;
 
+  React.useEffect(() => {
+    setPage(0);
+  }, [
+    props.userRef?.uid,
+    props.userRef?.name,
+    props.sessionRef?.uid,
+    props.sessionRef?.name,
+    props.serviceRef?.uid,
+    props.serviceRef?.name,
+    props.resourceRef?.uid,
+    props.resourceRef?.name,
+    props.deviceRef?.uid,
+    props.deviceRef?.name,
+    from.seconds,
+    from.nanos,
+  ]);
+
   const qry = useQuery({
     queryKey: [
       "visibility",
@@ -411,7 +430,7 @@ const AuditLogViewer = (props: {
       props.serviceRef?.uid,
       props.resourceRef?.uid,
       props.deviceRef?.uid,
-      props.page,
+      page,
       from ? Timestamp.toDate(from).toISOString() : undefined,
     ],
     queryFn: async () => {
@@ -445,7 +464,7 @@ const AuditLogViewer = (props: {
       const { response } = await getClientVisibilityAuditLog().listAuditLog(
         ListAuditLogRequest.create({
           common: {
-            page: props.page ?? 0,
+            page,
             itemsPerPage: props.itemsPerPage ?? 100,
           },
           userRef: props.userRef,
@@ -502,32 +521,27 @@ const AuditLogViewer = (props: {
           </div>
         )}
 
-        {qry.isLoading && !qry.data && (
-          <div className="flex flex-col gap-2" aria-label="Loading audit logs">
-            {[0, 1, 2].map((item) => (
-              <div
-                key={item}
-                className="h-20 animate-pulse rounded-lg border border-slate-200 bg-slate-50"
-              />
+        {!qry.data || qry.isLoading ? (
+          <ListLoading label="audit logs" />
+        ) : (
+          <>
+            {qry.data?.items.map((x) => (
+              <AuditLogC key={x.metadata!.id} auditLog={x} />
             ))}
-          </div>
-        )}
 
-        {qry.data?.items.map((x) => (
-          <AuditLogC key={x.metadata!.id} auditLog={x} />
-        ))}
-
-        {qry.isSuccess && qry.data?.items.length === 0 && (
-          <div className="flex items-center justify-center py-16">
-            <span className="text-[0.78rem] font-bold uppercase tracking-[0.08em] text-slate-400">
-              No audit log entries found
-            </span>
-          </div>
+            {qry.isSuccess && qry.data?.items.length === 0 && (
+              <div className="flex items-center justify-center py-16">
+                <span className="text-[0.78rem] font-bold uppercase tracking-[0.08em] text-slate-400">
+                  No audit log entries found
+                </span>
+              </div>
+            )}
+          </>
         )}
       </div>
 
       {qry.data?.listResponseMeta && (
-        <Paginator meta={qry.data.listResponseMeta} />
+        <Paginator meta={qry.data.listResponseMeta} onPageChange={setPage} />
       )}
     </div>
   );
