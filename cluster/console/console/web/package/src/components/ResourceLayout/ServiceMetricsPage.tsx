@@ -1,15 +1,20 @@
-import {
-  Namespace,
-  Service,
-  Service_Spec_Mode,
-} from "@/apis/corev1/corev1";
+import { Namespace, Service, Service_Spec_Mode } from "@/apis/corev1/corev1";
+import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import { Duration } from "@/apis/metav1/metav1";
 import {
+  AttributeFilter,
   ComponentSelector,
   CounterOperation_Function,
   GaugeOperation_Function,
   HistogramOperation_Function,
+  MetricSelector,
+  NumberPoint,
+  QueryMetricsRequest,
+  QueryMetricsRequest_LimitBehavior,
+  QueryMetricsRequest_SeriesAggregation,
+  TimeRange,
 } from "@/apis/visibilityv1/metrics/vmetricsv1";
+import CounterChart from "@/components/Charts/CounterChart";
 import MetricChart, {
   counterOp,
   eqFilter,
@@ -17,9 +22,12 @@ import MetricChart, {
   histogramOp,
 } from "@/components/Charts/MetricChart";
 import PageWrap from "@/components/PageWrap";
-import { refetchIntervalChart } from "@/utils/client";
+import {
+  getClientVisibilityMetrics,
+  refetchIntervalChart,
+} from "@/utils/client";
 import { ActionIcon, SegmentedControl, Switch, Tooltip } from "@mantine/core";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
   ChartNoAxesCombined,
@@ -92,6 +100,138 @@ const STREAM_MODES = new Set<Service_Spec_Mode>([
   Service_Spec_Mode.SOCKS5,
 ]);
 
+const rawCounterOperation = counterOp(CounterOperation_Function.RAW);
+const lastGaugeOperation = gaugeOp(GaugeOperation_Function.LAST);
+
+const numberPointValue = (point: NumberPoint): number | undefined => {
+  switch (point.value.oneofKind) {
+    case "asDouble":
+      return point.value.asDouble;
+    case "asInt":
+      return Number(point.value.asInt);
+    default:
+      return undefined;
+  }
+};
+
+const latestSeriesValue = (points: NumberPoint[]): number => {
+  let latestTimestamp = Number.NEGATIVE_INFINITY;
+  let latestValue = 0;
+
+  for (const point of points) {
+    const value = numberPointValue(point);
+    if (value === undefined) continue;
+    const timestamp = point.timestamp
+      ? Number(point.timestamp.seconds) * 1000 + Number(point.timestamp.nanos ?? 0) / 1e6
+      : 0;
+    if (timestamp >= latestTimestamp) {
+      latestTimestamp = timestamp;
+      latestValue = value;
+    }
+  }
+
+  return latestValue;
+};
+
+const metricCounterValue = (response: any): number =>
+  (response?.series ?? []).reduce((total: number, series: any) => {
+    if (series.points?.oneofKind !== "number") return total;
+    return total + latestSeriesValue(series.points.number.points ?? []);
+  }, 0);
+
+type ServiceMetricCounterProps = {
+  shared: SharedChartProps;
+  title: string;
+  label: string;
+  metric: string;
+  operation?: ReturnType<typeof counterOp> | ReturnType<typeof gaugeOp>;
+  filters?: AttributeFilter[];
+  formatter?: (value: number) => string;
+};
+
+const ServiceMetricCounter = (props: ServiceMetricCounterProps) => {
+  const operation = props.operation ?? rawCounterOperation;
+  const isRawCounter =
+    operation.type.oneofKind === "counter" &&
+    operation.type.counter.function === CounterOperation_Function.RAW;
+  const operationFunction =
+    operation.type.oneofKind === "counter"
+      ? operation.type.counter.function
+      : operation.type.oneofKind === "gauge"
+        ? operation.type.gauge.function
+        : undefined;
+  const filters = [...props.shared.filters, ...(props.filters ?? [])];
+
+  const qry = useQuery({
+    queryKey: [
+      "visibility",
+      "serviceMetricCounter",
+      props.metric,
+      operation.type.oneofKind,
+      operationFunction,
+      filters.map((filter) => JSON.stringify(filter)),
+      props.shared.lookbackSeconds,
+    ],
+    enabled: true,
+    queryFn: async ({ signal }) => {
+      const to = Timestamp.fromDate(new Date());
+      const from = Timestamp.fromDate(
+        new Date(Date.now() - props.shared.lookbackSeconds * 1000),
+      );
+      const { response } = await getClientVisibilityMetrics().queryMetrics(
+        QueryMetricsRequest.create({
+          metric: MetricSelector.create({
+            selector: { oneofKind: "name", name: props.metric },
+          }),
+          timeRange: TimeRange.create({ from, to }),
+          step: isRawCounter ? undefined : props.shared.step,
+          component: props.shared.component,
+          filters,
+          operation,
+          limitSeries: 64,
+          limitPointsPerSeries: isRawCounter ? 32 : 2,
+          seriesAggregation: isRawCounter
+            ? QueryMetricsRequest_SeriesAggregation.NONE
+            : QueryMetricsRequest_SeriesAggregation.SUM,
+          limitBehavior: QueryMetricsRequest_LimitBehavior.TRUNCATE,
+        }),
+        { abort: signal },
+      );
+      return response;
+    },
+    refetchInterval: props.shared.autoRefresh ? refetchIntervalChart : false,
+    refetchIntervalInBackground: false,
+    retry: 1,
+  });
+
+  const value = Math.max(0, metricCounterValue(qry.data));
+
+  return (
+    <section className="min-w-0 overflow-hidden rounded-xl border border-slate-200/80 bg-white">
+      {qry.isLoading ? (
+        <div className="flex h-[150px] flex-col items-center justify-center gap-2 text-center">
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
+          <span className="text-[0.68rem] font-semibold text-slate-400">Loading counter…</span>
+        </div>
+      ) : qry.isError ? (
+        <div className="flex h-[150px] items-center justify-center px-4 text-center">
+          <div>
+            <p className="text-xs font-bold text-slate-600">Counter unavailable</p>
+            <p className="mt-1 text-[0.65rem] font-semibold text-slate-400">No samples returned for this Service.</p>
+          </div>
+        </div>
+      ) : (
+        <CounterChart
+          title={props.title}
+          value={value}
+          label={props.label}
+          valueFormatter={props.formatter}
+        />
+      )}
+    </section>
+  );
+};
+
 const SectionIntro = (props: {
   title: string;
   description: string;
@@ -162,22 +302,6 @@ const BaseCharts = (props: {
       />
       {!namespace && (
         <>
-          <MetricChart
-            title="Bytes received"
-            unit="bytes/s"
-            metric="req.bytes_received"
-            operation={counterOp(CounterOperation_Function.RATE)}
-            limitSeries={1}
-            {...props.shared}
-          />
-          <MetricChart
-            title="Bytes sent"
-            unit="bytes/s"
-            metric="req.bytes_sent"
-            operation={counterOp(CounterOperation_Function.RATE)}
-            limitSeries={1}
-            {...props.shared}
-          />
           {sessions && (
             <MetricChart
               title="Active sessions"
@@ -235,6 +359,230 @@ type SharedChartProps = {
   hideResolution: boolean;
   limitPointsPerSeries: number;
   height: number;
+};
+
+const formatCompactCounter = (value: number): string =>
+  new Intl.NumberFormat(undefined, {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value);
+
+const formatBytesCounter = (value: number): string => {
+  if (!Number.isFinite(value) || value === 0) return "0 B";
+  const units = ["B", "KiB", "MiB", "GiB", "TiB"];
+  let current = value;
+  let unit = 0;
+  while (current >= 1024 && unit < units.length - 1) {
+    current /= 1024;
+    unit += 1;
+  }
+  return `${current.toFixed(current < 10 && unit > 0 ? 1 : 0)} ${units[unit]}`;
+};
+
+const MainCounters = (props: {
+  shared: SharedChartProps;
+  mode?: Service_Spec_Mode;
+}) => {
+  const isService = props.mode !== undefined;
+  const httpOrStream =
+    props.mode !== undefined &&
+    (HTTP_MODES.has(props.mode) || STREAM_MODES.has(props.mode));
+  const cards: React.ReactNode[] = [
+    <ServiceMetricCounter
+      key="total-requests"
+      shared={props.shared}
+      title="Total requests"
+      label="requests"
+      metric="req.total"
+      formatter={formatCompactCounter}
+    />,
+    <ServiceMetricCounter
+      key="allowed-requests"
+      shared={props.shared}
+      title="Allowed requests"
+      label="requests"
+      metric="req.total"
+      filters={[eqFilter("state", "ALLOWED")]}
+      formatter={formatCompactCounter}
+    />,
+    <ServiceMetricCounter
+      key="denied-requests"
+      shared={props.shared}
+      title="Denied requests"
+      label="requests"
+      metric="req.total"
+      filters={[eqFilter("state", "DENIED")]}
+      formatter={formatCompactCounter}
+    />,
+    <ServiceMetricCounter
+      key="active-requests"
+      shared={props.shared}
+      title="Active requests"
+      label="requests"
+      metric="req.active"
+      operation={lastGaugeOperation}
+      formatter={formatCompactCounter}
+    />,
+  ];
+
+  if (httpOrStream) {
+    cards.push(
+      <ServiceMetricCounter
+        key="bytes-received"
+        shared={props.shared}
+        title="Bytes received"
+        label="downstream"
+        metric="req.bytes_received"
+        formatter={formatBytesCounter}
+      />,
+      <ServiceMetricCounter
+        key="bytes-sent"
+        shared={props.shared}
+        title="Bytes sent"
+        label="downstream"
+        metric="req.bytes_sent"
+        formatter={formatBytesCounter}
+      />,
+    );
+  }
+
+  if (isService && (HTTP_MODES.has(props.mode!) || STREAM_MODES.has(props.mode!))) {
+    cards.push(
+      <ServiceMetricCounter
+        key="active-sessions"
+        shared={props.shared}
+        title="Active sessions"
+        label="sessions"
+        metric="session.active"
+        operation={lastGaugeOperation}
+        formatter={formatCompactCounter}
+      />,
+    );
+  }
+
+  if (props.mode === Service_Spec_Mode.LLM) {
+    cards.push(
+      <ServiceMetricCounter
+        key="llm-total-tokens"
+        shared={props.shared}
+        title="Total LLM tokens"
+        label="tokens"
+        metric="llm.tokens.total"
+        formatter={formatCompactCounter}
+      />,
+      <ServiceMetricCounter
+        key="llm-input-tokens"
+        shared={props.shared}
+        title="Input tokens"
+        label="tokens"
+        metric="llm.tokens.input"
+        formatter={formatCompactCounter}
+      />,
+      <ServiceMetricCounter
+        key="llm-output-tokens"
+        shared={props.shared}
+        title="Output tokens"
+        label="tokens"
+        metric="llm.tokens.output"
+        formatter={formatCompactCounter}
+      />,
+      <ServiceMetricCounter
+        key="llm-stream-events"
+        shared={props.shared}
+        title="Stream events"
+        label="events"
+        metric="llm.stream.events"
+        formatter={formatCompactCounter}
+      />,
+    );
+  }
+
+  if (props.mode === Service_Spec_Mode.MCP) {
+    cards.push(
+      <ServiceMetricCounter
+        key="mcp-tool-calls"
+        shared={props.shared}
+        title="MCP tool calls"
+        label="calls"
+        metric="req.total"
+        filters={[eqFilter("req.mcp.method", "tools/call")]}
+        formatter={formatCompactCounter}
+      />,
+      <ServiceMetricCounter
+        key="mcp-tool-errors"
+        shared={props.shared}
+        title="MCP tool errors"
+        label="errors"
+        metric="req.total"
+        filters={[eqFilter("req.mcp.error", "TOOL")]}
+        formatter={formatCompactCounter}
+      />,
+    );
+  }
+
+  if (props.mode === Service_Spec_Mode.SSH) {
+    cards.push(
+      <ServiceMetricCounter
+        key="ssh-channels"
+        shared={props.shared}
+        title="SSH channels"
+        label="channels"
+        metric="ssh.channel.total"
+        formatter={formatCompactCounter}
+      />,
+      <ServiceMetricCounter
+        key="ssh-requests"
+        shared={props.shared}
+        title="SSH channel requests"
+        label="requests"
+        metric="ssh.request.total"
+        formatter={formatCompactCounter}
+      />,
+    );
+  }
+
+  if (
+    isService &&
+    (props.mode === Service_Spec_Mode.POSTGRES ||
+      props.mode === Service_Spec_Mode.MYSQL)
+  ) {
+    cards.push(
+      <ServiceMetricCounter
+        key="db-commands"
+        shared={props.shared}
+        title="Database commands"
+        label="commands"
+        metric="db.command.total"
+        formatter={formatCompactCounter}
+      />,
+    );
+  }
+
+  if (props.mode === Service_Spec_Mode.DNS) {
+    cards.push(
+      <ServiceMetricCounter
+        key="dns-malformed"
+        shared={props.shared}
+        title="Malformed DNS queries"
+        label="queries"
+        metric="dns.malformed.total"
+        formatter={formatCompactCounter}
+      />,
+    );
+  }
+
+  return (
+    <section>
+      <SectionIntro
+        title="Current counters"
+        description="Latest cumulative totals and live gauges for this scope."
+        icon={<Gauge size={16} strokeWidth={2.2} />}
+      />
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {cards}
+      </div>
+    </section>
+  );
 };
 
 const HTTPDetails = (props: { shared: SharedChartProps }) => (
@@ -1041,6 +1389,8 @@ export const ResourceMetrics = (props: { resource: MetricsResource }) => {
           </div>
         </div>
       </header>
+
+      <MainCounters shared={shared} mode={mode} />
 
       {view === "overview" ? (
         <BaseCharts

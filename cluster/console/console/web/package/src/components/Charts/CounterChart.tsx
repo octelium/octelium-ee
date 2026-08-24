@@ -11,8 +11,16 @@ const CounterChart = (props: {
   title?: string;
   suffix?: string;
   color?: string;
+  valueFormatter?: (value: number) => string;
 }) => {
-  const { value, label, title, suffix = "", color = "#1d4ed8" } = props;
+  const {
+    value,
+    label,
+    title,
+    suffix = "",
+    color = "#1d4ed8",
+    valueFormatter,
+  } = props;
 
   const option = {
     series: [
@@ -39,7 +47,8 @@ const CounterChart = (props: {
         },
         detail: {
           valueAnimation: true,
-          formatter: `{value}${suffix}`,
+          formatter: (currentValue: number) =>
+            `${valueFormatter ? valueFormatter(currentValue) : currentValue}${suffix}`,
           color,
           fontSize: 32,
           fontWeight: 700,
