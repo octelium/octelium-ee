@@ -571,6 +571,38 @@ const MetricChart = (props: MetricChartProps) => {
     [qry.data?.series, qry.data?.step, effectiveStep, title, metric],
   );
 
+  const chartRange = useMemo(() => {
+    const dataTimestamps = series
+      .flatMap((item) => item.data)
+      .map(([timestamp]) => timestamp);
+    const dataFrom = dataTimestamps.length > 0
+      ? Math.min(...dataTimestamps)
+      : undefined;
+    const dataTo = dataTimestamps.length > 0
+      ? Math.max(...dataTimestamps)
+      : undefined;
+    const requestedTo =
+      tsToMillis(props.to) ?? tsToMillis(qry.data?.snapshotTime);
+    const requestedFrom =
+      tsToMillis(props.from) ??
+      (requestedTo !== undefined ? requestedTo - rangeMillis : undefined);
+
+    return {
+      from:
+        requestedFrom === undefined
+          ? dataFrom
+          : dataFrom === undefined
+            ? requestedFrom
+            : Math.min(requestedFrom, dataFrom),
+      to:
+        requestedTo === undefined
+          ? dataTo
+          : dataTo === undefined
+            ? requestedTo
+            : Math.max(requestedTo, dataTo),
+    };
+  }, [series, props.from, props.to, qry.data?.snapshotTime, rangeMillis]);
+
   const statistics = useMemo(() => {
     const points = series
       .flatMap((item) => item.data)
@@ -713,6 +745,8 @@ const MetricChart = (props: MetricChartProps) => {
 
       xAxis: {
         type: "time",
+        min: chartRange.from,
+        max: chartRange.to,
         axisLine: { lineStyle: { color: "#e2e8f0" } },
         axisTick: { show: false },
         splitLine: { show: false },
@@ -758,10 +792,10 @@ const MetricChart = (props: MetricChartProps) => {
       series: series.map((s, i) => ({
         name: s.name,
         type: "line",
+        step: supportsStep ? "start" : false,
         showSymbol: s.data.length <= 12,
         symbol: "circle",
         symbolSize: 6,
-        smooth: 0.28,
         sampling: "lttb",
         progressive: 400,
         progressiveThreshold: 800,
@@ -798,7 +832,7 @@ const MetricChart = (props: MetricChartProps) => {
         },
       })),
     };
-  }, [series, effectiveUnit, statistics.pointCount]);
+  }, [series, chartRange, effectiveUnit, statistics.pointCount, supportsStep]);
 
   const headerStatistics =
     series.length > 1
