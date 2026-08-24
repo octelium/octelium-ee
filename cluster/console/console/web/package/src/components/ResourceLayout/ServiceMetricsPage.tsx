@@ -14,7 +14,6 @@ import {
   QueryMetricsRequest_SeriesAggregation,
   TimeRange,
 } from "@/apis/visibilityv1/metrics/vmetricsv1";
-import CounterChart from "@/components/Charts/CounterChart";
 import MetricChart, {
   counterOp,
   eqFilter,
@@ -22,6 +21,7 @@ import MetricChart, {
   histogramOp,
 } from "@/components/Charts/MetricChart";
 import PageWrap from "@/components/PageWrap";
+import { SummaryItemCount } from "@/components/Summary";
 import {
   getClientVisibilityMetrics,
   refetchIntervalChart,
@@ -207,28 +207,28 @@ const ServiceMetricCounter = (props: ServiceMetricCounterProps) => {
   const value = Math.max(0, metricCounterValue(qry.data));
 
   return (
-    <section className="min-w-0 overflow-hidden rounded-xl border border-slate-200/80 bg-white">
+    <div className="min-w-0">
       {qry.isLoading ? (
-        <div className="flex h-[150px] flex-col items-center justify-center gap-2 text-center">
-          <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
-          <span className="text-[0.68rem] font-semibold text-slate-400">Loading counter…</span>
+        <div className="flex min-h-[76px] items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.035)]">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-slate-700" />
+          <span className="text-[0.68rem] font-semibold text-slate-400">Loading…</span>
         </div>
       ) : qry.isError ? (
-        <div className="flex h-[150px] items-center justify-center px-4 text-center">
-          <div>
-            <p className="text-xs font-bold text-slate-600">Counter unavailable</p>
-            <p className="mt-1 text-[0.65rem] font-semibold text-slate-400">No samples returned for this Service.</p>
-          </div>
+        <div className="flex min-h-[76px] flex-col justify-center rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.035)]">
+          <span className="truncate text-[0.72rem] font-bold text-slate-600">{props.title}</span>
+          <span className="mt-0.5 truncate text-[0.65rem] font-semibold text-slate-400">Unavailable</span>
         </div>
       ) : (
-        <CounterChart
-          title={props.title}
-          value={value}
-          label={props.label}
-          valueFormatter={props.formatter}
-        />
+        <SummaryItemCount
+          count={value}
+          showZero
+          formatCount={props.formatter}
+        >
+          {props.title}
+          <span className="ml-1 font-semibold text-slate-400">· {props.label}</span>
+        </SummaryItemCount>
       )}
-    </section>
+    </div>
   );
 };
 

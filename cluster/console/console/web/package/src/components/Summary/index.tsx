@@ -17,12 +17,22 @@ export const SummaryItemCount = (props: {
   to?: string;
   active?: boolean;
   icon?: SummaryIcon;
+  showZero?: boolean;
+  formatCount?: (count: number) => React.ReactNode;
 }) => {
-  const { count, children, active, to, icon } = props;
+  const {
+    count,
+    children,
+    active,
+    to,
+    icon,
+    showZero = false,
+    formatCount,
+  } = props;
   const Icon = icon;
   const prevCountRef = useRef<number | undefined>(undefined);
 
-  if (!count || count < 1) return null;
+  if (count === undefined || count < 0 || (!showZero && count < 1)) return null;
 
   const prev = prevCountRef.current;
   const direction = prev === undefined || count >= prev ? 1 : -1;
@@ -44,7 +54,7 @@ export const SummaryItemCount = (props: {
                 active ? "text-slate-900" : "text-slate-700",
               )}
             >
-              {formatNumber(count)}
+              {formatCount ? formatCount(count) : formatNumber(count)}
             </motion.span>
           </AnimatePresence>
         </div>
