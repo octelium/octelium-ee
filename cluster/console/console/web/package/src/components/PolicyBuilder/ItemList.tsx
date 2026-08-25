@@ -4,6 +4,8 @@ import {
   Condition_Expression_APIServerCordium_Service as CordiumService,
   Condition_Expression_APIServerEnterprise_Service as EnterpriseService,
   Condition_Expression_MCPToolArgument_BoolMatch_Value as MCPBoolValue,
+  Condition_Expression_StringSetMatch as StringSetMatch,
+  Condition_Expression_StringSetMatch_In as StringSetMatchIn,
   Condition_Expression_TimeDayType_Type as TimeDayType,
   Condition_Expression as Expression,
 } from "@/apis/enterprisev1/enterprisev1";
@@ -27,7 +29,7 @@ import type { ReactNode } from "react";
 import { match } from "ts-pattern";
 import SelectResource from "../ResourceLayout/SelectResource";
 import { useResourceFromRef } from "../ResourceLayout/utils";
-import SelectCountry from "../SelectCountry";
+import SelectCountry, { CountryFlag } from "../SelectCountry";
 import TimeAgo from "../TimeAgo";
 import TimestampPicker from "../TimestampPicker";
 
@@ -332,9 +334,11 @@ const StringMatchEditor = (props: {
   label?: string;
   placeholder?: string;
   data?: string[];
+  options?: { value: string; label: string }[];
   onChange: (value: any) => void;
 }) => {
   const kind = props.value?.type?.oneofKind ?? "exact";
+  const options = props.options ?? STRING_MATCH_OPTIONS;
   const current = kind === "in"
     ? (props.value?.type?.in?.values ?? [])
     : (props.value?.type?.[kind] ?? "");
@@ -344,7 +348,7 @@ const StringMatchEditor = (props: {
         fullWidth
         size="xs"
         value={kind}
-        data={STRING_MATCH_OPTIONS}
+        data={options}
         onChange={(next) =>
           props.onChange(makeStringMatch(next, next === "in" ? [] : ""))
         }
@@ -1491,34 +1495,192 @@ export const itemList: ItemDef[] = [
       Expression.create({
         type: {
           oneofKind: "sessionAuthenticationGeoipCountryCode",
-          sessionAuthenticationGeoipCountryCode: { code: "" },
+          sessionAuthenticationGeoipCountryCode: {
+            match: StringSetMatch.create({
+              type: { oneofKind: "exact", exact: "" },
+            }),
+          },
         },
       }),
     components: {
       Value: ({ item }) => {
         if (item.type.oneofKind !== "sessionAuthenticationGeoipCountryCode")
           return null;
-        return <>{item.type.sessionAuthenticationGeoipCountryCode.code}</>;
+        const countryMatch =
+          item.type.sessionAuthenticationGeoipCountryCode.match;
+        if (countryMatch?.type.oneofKind === "in") {
+          return (
+            <span className="flex flex-wrap items-center gap-1.5">
+              {countryMatch.type.in.values.map((code) => (
+                <span
+                  key={code}
+                  className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[0.67rem] font-bold text-slate-600"
+                >
+                  <CountryFlag code={code} />
+                  {code}
+                </span>
+              ))}
+            </span>
+          );
+        }
+
+        const code =
+          countryMatch?.type.oneofKind === "exact"
+            ? countryMatch.type.exact
+            : "";
+        return code ? (
+          <span className="inline-flex items-center gap-1.5">
+            <CountryFlag code={code} />
+            {code}
+          </span>
+        ) : (
+          <>Any country</>
+        );
       },
-      Edit: ({ item, onUpdate }) => (
-        <SelectCountry
-          val={
-            item?.type.oneofKind === "sessionAuthenticationGeoipCountryCode"
-              ? item.type.sessionAuthenticationGeoipCountryCode.code
-              : undefined
-          }
-          onUpdate={(v) =>
-            onUpdate(
-              Expression.create({
-                type: {
-                  oneofKind: "sessionAuthenticationGeoipCountryCode",
-                  sessionAuthenticationGeoipCountryCode: { code: v ?? "" },
-                },
-              }),
-            )
-          }
-        />
-      ),
+      Edit: ({ item, onUpdate }) => {
+        const countryMatch =
+          item?.type.oneofKind === "sessionAuthenticationGeoipCountryCode"
+            ? item.type.sessionAuthenticationGeoipCountryCode.match
+            : undefined;
+        const matchType =
+          countryMatch?.type.oneofKind === "in" ? "in" : "exact";
+        const exactValue =
+          countryMatch?.type.oneofKind === "exact"
+            ? countryMatch.type.exact
+            : "";
+        const allowedValues =
+          countryMatch?.type.oneofKind === "in"
+            ? countryMatch.type.in.values
+            : [];
+
+        const updateMatch = (nextType: "exact" | "in", value: string | string[]) => {
+          const nextMatch =
+            nextType === "in"
+              ? StringSetMatch.create({
+                  type: {
+                    oneofKind: "in",
+                    in: StringSetMatchIn.create({
+                      values: Array.isArray(value) ? value : value ? [value] : [],
+                    }),
+                  },
+                })
+              : StringSetMatch.create({
+                  type: {
+                    oneofKind: "exact",
+                    exact: Array.isArray(value) ? value[0] ?? "" : value,
+                  },
+                });
+
+          onUpdate(
+            Expression.create({
+              type: {
+                oneofKind: "sessionAuthenticationGeoipCountryCode",
+                sessionAuthenticationGeoipCountryCode: { match: nextMatch },
+              },
+            }),
+          );
+        };
+
+        return (
+          <div className="space-y-2">
+            <SegmentedControl
+              fullWidth
+              size="xs"
+              value={matchType}
+              data={[
+                { value: "exact", label: "Exact country" },
+                { value: "in", label: "In list" },
+              ]}
+              onChange={(next) =>
+                updateMatch(
+                  next as "exact" | "in",
+                  next === "in"
+                    ? exactValue
+                      ? [exactValue]
+                      : allowedValues
+                    : allowedValues[0] ?? exactValue,
+                )
+              }
+            />
+            {matchType === "in" ? (
+              <SelectCountry
+                multiple
+                values={allowedValues}
+                onUpdate={(next) =>
+                  updateMatch("in", Array.isArray(next) ? next : [])
+                }
+              />
+            ) : (
+              <SelectCountry
+                val={exactValue}
+                onUpdate={(next) =>
+                  updateMatch("exact", typeof next === "string" ? next : "")
+                }
+              />
+            )}
+          </div>
+        );
+      },
+    },
+  },
+
+  {
+    type: "sessionAuthenticationGeoipContinentCode",
+    title: "Session continent",
+    tags: ["session", "geo", "continent", "location", "ip"],
+    makeDefault: () =>
+      Expression.create({
+        type: {
+          oneofKind: "sessionAuthenticationGeoipContinentCode",
+          sessionAuthenticationGeoipContinentCode: {
+            match: makeStringMatch("exact", ""),
+          },
+        },
+      }),
+    components: {
+      Value: ({ item }) => {
+        if (item.type.oneofKind !== "sessionAuthenticationGeoipContinentCode")
+          return null;
+        return (
+          <>{stringMatchText(item.type.sessionAuthenticationGeoipContinentCode.match)}</>
+        );
+      },
+      Edit: ({ item, onUpdate }) => {
+        const continentMatch =
+          item?.type.oneofKind === "sessionAuthenticationGeoipContinentCode"
+            ? item.type.sessionAuthenticationGeoipContinentCode.match
+            : undefined;
+        return (
+          <StringMatchEditor
+            label="Continent code"
+            placeholder="e.g. EU"
+            options={[
+              { value: "exact", label: "Exact" },
+              { value: "in", label: "In list" },
+            ]}
+            data={[
+              "AF",
+              "AN",
+              "AS",
+              "EU",
+              "NA",
+              "OC",
+              "SA",
+            ]}
+            value={continentMatch}
+            onChange={(next) =>
+              onUpdate(
+                Expression.create({
+                  type: {
+                    oneofKind: "sessionAuthenticationGeoipContinentCode",
+                    sessionAuthenticationGeoipContinentCode: { match: next },
+                  },
+                }),
+              )
+            }
+          />
+        );
+      },
     },
   },
 
