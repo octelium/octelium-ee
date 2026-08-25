@@ -67,5 +67,5 @@ export const useUserRelatedResources = (item: CoreC.User) => {
       path: `/core/credentials?userRef.name=${encodeURIComponent(itemName)}`,
       icon: KeyRound,
     },
-  ];
+  ].filter((resource) => (resource.count ?? 0) > 0);
 };

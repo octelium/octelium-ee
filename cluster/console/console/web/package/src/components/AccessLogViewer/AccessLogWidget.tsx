@@ -12,7 +12,7 @@ import {
   getClientVisibilityAccessLog,
   refetchIntervalChart,
 } from "@/utils/client";
-import { Button, Menu } from "@mantine/core";
+import { Button, Menu, SegmentedControl } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import {
@@ -255,39 +255,21 @@ const PeriodSelector = ({
   const extendedLabel = isExtended
     ? ALL_PERIODS.find((p) => p.minutes === value)?.label
     : undefined;
+  const primaryValue = PRIMARY_PERIODS.some((p) => p.minutes === value)
+    ? String(value)
+    : undefined;
 
   return (
-    <Button.Group className="rounded-md overflow-hidden border border-slate-200 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-      {PRIMARY_PERIODS.map((opt) => {
-        const active = opt.minutes === value;
-        return (
-          <Button
-            type="button"
-            key={opt.minutes}
-            onClick={() => onChange(opt.minutes)}
-            styles={{
-              root: {
-                height: "26px",
-                fontSize: "0.7rem",
-                fontWeight: 700,
-                fontFamily: "Ubuntu, sans-serif",
-                padding: "0 10px",
-                backgroundColor: active ? "#0f172a" : "#ffffff",
-                color: active ? "#ffffff" : "#64748b",
-                border: "none",
-                borderRadius: 0,
-                transition: "background-color 150ms, color 150ms",
-                "&:hover": {
-                  backgroundColor: active ? "#1e293b" : "#f8fafc",
-                  color: active ? "#ffffff" : "#0f172a",
-                },
-              },
-            }}
-          >
-            {opt.label}
-          </Button>
-        );
-      })}
+    <div className="flex items-center gap-1">
+      <SegmentedControl
+        size="xs"
+        value={primaryValue}
+        onChange={(nextValue) => onChange(Number(nextValue))}
+        data={PRIMARY_PERIODS.map((opt) => ({
+          value: String(opt.minutes),
+          label: opt.label,
+        }))}
+      />
 
       <Menu position="bottom-end" offset={4} withArrow={false}>
         <Menu.Target>
@@ -339,7 +321,7 @@ const PeriodSelector = ({
           </div>
         </Menu.Dropdown>
       </Menu>
-    </Button.Group>
+    </div>
   );
 };
 
@@ -350,34 +332,43 @@ const StatusSelector = ({
   value: AccessLogStatusFilter;
   onChange: (value: AccessLogStatusFilter) => void;
 }) => (
-  <div className="flex items-center rounded-md border border-slate-200 bg-white p-0.5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-    {[
-      { value: "all" as const, label: "All" },
-      { value: "allowed" as const, label: "Allowed" },
-      { value: "denied" as const, label: "Denied" },
-    ].map((option) => {
-      const active = option.value === value;
-      return (
-        <button
-          type="button"
-          key={option.value}
-          onClick={() => onChange(option.value)}
-          className={twMerge(
-            "rounded px-2 py-1 text-[0.65rem] font-bold transition-colors duration-150",
-            active
-              ? option.value === "allowed"
-                ? "bg-emerald-500 text-white"
-                : option.value === "denied"
-                  ? "bg-red-500 text-white"
-                  : "bg-slate-900 text-white"
-              : "text-slate-500 hover:bg-slate-50 hover:text-slate-800",
-          )}
-        >
-          {option.label}
-        </button>
-      );
-    })}
-  </div>
+  <SegmentedControl
+    className="shrink-0"
+    size="xs"
+    value={value}
+    onChange={(nextValue) =>
+      onChange(nextValue as AccessLogStatusFilter)
+    }
+    data={[
+      {
+        value: "all",
+        label: (
+          <span className="flex items-center justify-center gap-1.5">
+            <Activity size={12} strokeWidth={2.4} />
+            All
+          </span>
+        ),
+      },
+      {
+        value: "allowed",
+        label: (
+          <span className="flex items-center justify-center gap-1.5">
+            <ShieldCheck size={12} strokeWidth={2.4} />
+            Allowed
+          </span>
+        ),
+      },
+      {
+        value: "denied",
+        label: (
+          <span className="flex items-center justify-center gap-1.5">
+            <ShieldX size={12} strokeWidth={2.4} />
+            Denied
+          </span>
+        ),
+      },
+    ]}
+  />
 );
 
 interface AccessLogHealthWidgetProps {
