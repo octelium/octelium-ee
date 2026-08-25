@@ -5,6 +5,7 @@ import {
   Resource,
   ResourceName,
 } from "@/utils/pb";
+import { getResourceComponentInfo } from "@/pages/utils/resourceRegistry";
 import {
   ActionIcon,
   Alert,
@@ -37,6 +38,11 @@ const SelectResource = (props: {
   const location = useLocation();
   const navigate = useNavigate();
   const handledCreatedName = React.useRef<string | undefined>(undefined);
+  const resourceComponentInfo = getResourceComponentInfo(
+    api as API,
+    kind as ResourceName,
+  );
+  const canCreate = !!resourceComponentInfo && !resourceComponentInfo.unCreatable;
 
   const { isLoading, isError, error, data, refetch } = useQuery({
     queryKey: ["listSelectComponent", api, kind],
@@ -135,7 +141,7 @@ const SelectResource = (props: {
           placeholder="Loading…"
           rightSection={<Loader size={15} color="gray" />}
         />
-        {createButton}
+        {canCreate && createButton}
       </div>
     );
   }
@@ -151,7 +157,7 @@ const SelectResource = (props: {
             </Button>
           </div>
         </Alert>
-        {createButton}
+        {canCreate && createButton}
       </div>
     );
   }
@@ -164,7 +170,7 @@ const SelectResource = (props: {
             Retry
           </Button>
         </Alert>
-        {createButton}
+        {canCreate && createButton}
       </div>
     );
   }
@@ -272,7 +278,7 @@ const SelectResource = (props: {
         }}
       />
 
-      {createButton}
+      {canCreate && createButton}
 
       {yamlItem && (
         <ResourceYAML
