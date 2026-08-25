@@ -8013,6 +8013,15 @@ export interface Condition_Expression {
          */
         sessionAuthenticationGeoipCountryCode: Condition_Expression_SessionAuthenticationGeoipCountryCode;
     } | {
+        oneofKind: "sessionAuthenticationGeoipContinentCode";
+        /**
+         * SessionAuthenticationGeoipContinentCode matches the continent that
+         * the Session authenticated from.
+         *
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipContinentCode sessionAuthenticationGeoipContinentCode = 102
+         */
+        sessionAuthenticationGeoipContinentCode: Condition_Expression_SessionAuthenticationGeoipContinentCode;
+    } | {
         oneofKind: "requestHTTPPath";
         /**
          * RequestHTTPPath matches the path of the HTTP request.
@@ -8959,12 +8968,25 @@ export interface Condition_Expression_SessionAuthenticationCredentialType {
  */
 export interface Condition_Expression_SessionAuthenticationGeoipCountryCode {
     /**
-     * Code is the ISO 3166-1 alpha-2 country code that is matched (e.g.
-     * `DE`).
+     * Match is the ISO 3166-1 alpha-2 country code matcher.
      *
-     * @generated from protobuf field: string code = 1
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch match = 1
      */
-    code: string;
+    match?: Condition_Expression_StringSetMatch;
+}
+/**
+ * SessionAuthenticationGeoipContinentCode matches the continent that the
+ * Session authenticated from.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipContinentCode
+ */
+export interface Condition_Expression_SessionAuthenticationGeoipContinentCode {
+    /**
+     * Match is the two-letter continent code matcher (e.g. `EU`).
+     *
+     * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch match = 1
+     */
+    match?: Condition_Expression_StringSetMatch;
 }
 /**
  * RequestHTTPPath matches the path of the HTTP request
@@ -9121,6 +9143,41 @@ export interface Condition_Expression_StringMatch_In {
     /**
      * Values is the set of the values that are matched.
      *
+     * @generated from protobuf field: repeated string values = 1
+     */
+    values: string[];
+}
+/**
+ * StringSetMatch is a restricted matcher for normalized string codes. It
+ * intentionally supports only exact values and explicit allowlists.
+ *
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch
+ */
+export interface Condition_Expression_StringSetMatch {
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "exact";
+        /**
+         * @generated from protobuf field: string exact = 1
+         */
+        exact: string;
+    } | {
+        oneofKind: "in";
+        /**
+         * @generated from protobuf field: octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch.In in = 2
+         */
+        in: Condition_Expression_StringSetMatch_In;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * @generated from protobuf message octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch.In
+ */
+export interface Condition_Expression_StringSetMatch_In {
+    /**
      * @generated from protobuf field: repeated string values = 1
      */
     values: string[];
@@ -25123,6 +25180,7 @@ class Condition_Expression$Type extends MessageType<Condition_Expression> {
             { no: 24, name: "sessionAuthenticationCredAuthenticatorFIDOUserVerified", kind: "message", oneof: "type", T: () => Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserVerified },
             { no: 25, name: "sessionAuthenticationCredAuthenticatorFIDOUserPresent", kind: "message", oneof: "type", T: () => Condition_Expression_SessionAuthenticationCredAuthenticatorFIDOUserPresent },
             { no: 26, name: "sessionAuthenticationGeoipCountryCode", kind: "message", oneof: "type", T: () => Condition_Expression_SessionAuthenticationGeoipCountryCode },
+            { no: 102, name: "sessionAuthenticationGeoipContinentCode", kind: "message", oneof: "type", T: () => Condition_Expression_SessionAuthenticationGeoipContinentCode },
             { no: 27, name: "requestHTTPPath", kind: "message", oneof: "type", T: () => Condition_Expression_RequestHTTPPath },
             { no: 29, name: "requestHTTPMethod", kind: "message", oneof: "type", T: () => Condition_Expression_RequestHTTPMethod },
             { no: 30, name: "requestHTTPHasHeader", kind: "message", oneof: "type", T: () => Condition_Expression_RequestHTTPHasHeader },
@@ -25365,6 +25423,12 @@ class Condition_Expression$Type extends MessageType<Condition_Expression> {
                     message.type = {
                         oneofKind: "sessionAuthenticationGeoipCountryCode",
                         sessionAuthenticationGeoipCountryCode: Condition_Expression_SessionAuthenticationGeoipCountryCode.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).sessionAuthenticationGeoipCountryCode)
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipContinentCode sessionAuthenticationGeoipContinentCode */ 102:
+                    message.type = {
+                        oneofKind: "sessionAuthenticationGeoipContinentCode",
+                        sessionAuthenticationGeoipContinentCode: Condition_Expression_SessionAuthenticationGeoipContinentCode.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).sessionAuthenticationGeoipContinentCode)
                     };
                     break;
                 case /* octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPath requestHTTPPath */ 27:
@@ -26123,6 +26187,9 @@ class Condition_Expression$Type extends MessageType<Condition_Expression> {
         /* octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument requestMCPToolArgument = 101; */
         if (message.type.oneofKind === "requestMCPToolArgument")
             Condition_Expression_MCPToolArgument.internalBinaryWrite(message.type.requestMCPToolArgument, writer.tag(101, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipContinentCode sessionAuthenticationGeoipContinentCode = 102; */
+        if (message.type.oneofKind === "sessionAuthenticationGeoipContinentCode")
+            Condition_Expression_SessionAuthenticationGeoipContinentCode.internalBinaryWrite(message.type.sessionAuthenticationGeoipContinentCode, writer.tag(102, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -27239,12 +27306,11 @@ export const Condition_Expression_SessionAuthenticationCredentialType = new Cond
 class Condition_Expression_SessionAuthenticationGeoipCountryCode$Type extends MessageType<Condition_Expression_SessionAuthenticationGeoipCountryCode> {
     constructor() {
         super("octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipCountryCode", [
-            { no: 1, name: "code", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringSetMatch }
         ]);
     }
     create(value?: PartialMessage<Condition_Expression_SessionAuthenticationGeoipCountryCode>): Condition_Expression_SessionAuthenticationGeoipCountryCode {
         const message = globalThis.Object.create((this.messagePrototype!));
-        message.code = "";
         if (value !== undefined)
             reflectionMergePartial<Condition_Expression_SessionAuthenticationGeoipCountryCode>(this, message, value);
         return message;
@@ -27254,8 +27320,8 @@ class Condition_Expression_SessionAuthenticationGeoipCountryCode$Type extends Me
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* string code */ 1:
-                    message.code = reader.string();
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch match */ 1:
+                    message.match = Condition_Expression_StringSetMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -27269,9 +27335,9 @@ class Condition_Expression_SessionAuthenticationGeoipCountryCode$Type extends Me
         return message;
     }
     internalBinaryWrite(message: Condition_Expression_SessionAuthenticationGeoipCountryCode, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* string code = 1; */
-        if (message.code !== "")
-            writer.tag(1, WireType.LengthDelimited).string(message.code);
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringSetMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -27282,6 +27348,52 @@ class Condition_Expression_SessionAuthenticationGeoipCountryCode$Type extends Me
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipCountryCode
  */
 export const Condition_Expression_SessionAuthenticationGeoipCountryCode = new Condition_Expression_SessionAuthenticationGeoipCountryCode$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_SessionAuthenticationGeoipContinentCode$Type extends MessageType<Condition_Expression_SessionAuthenticationGeoipContinentCode> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipContinentCode", [
+            { no: 1, name: "match", kind: "message", T: () => Condition_Expression_StringSetMatch }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_SessionAuthenticationGeoipContinentCode>): Condition_Expression_SessionAuthenticationGeoipContinentCode {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_SessionAuthenticationGeoipContinentCode>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_SessionAuthenticationGeoipContinentCode): Condition_Expression_SessionAuthenticationGeoipContinentCode {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch match */ 1:
+                    message.match = Condition_Expression_StringSetMatch.internalBinaryRead(reader, reader.uint32(), options, message.match);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_SessionAuthenticationGeoipContinentCode, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch match = 1; */
+        if (message.match)
+            Condition_Expression_StringSetMatch.internalBinaryWrite(message.match, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipContinentCode
+ */
+export const Condition_Expression_SessionAuthenticationGeoipContinentCode = new Condition_Expression_SessionAuthenticationGeoipContinentCode$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class Condition_Expression_RequestHTTPPath$Type extends MessageType<Condition_Expression_RequestHTTPPath> {
     constructor() {
@@ -27704,6 +27816,113 @@ class Condition_Expression_StringMatch_In$Type extends MessageType<Condition_Exp
  * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.StringMatch.In
  */
 export const Condition_Expression_StringMatch_In = new Condition_Expression_StringMatch_In$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_StringSetMatch$Type extends MessageType<Condition_Expression_StringSetMatch> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch", [
+            { no: 1, name: "exact", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "in", kind: "message", oneof: "type", T: () => Condition_Expression_StringSetMatch_In }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_StringSetMatch>): Condition_Expression_StringSetMatch {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_StringSetMatch>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_StringSetMatch): Condition_Expression_StringSetMatch {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string exact */ 1:
+                    message.type = {
+                        oneofKind: "exact",
+                        exact: reader.string()
+                    };
+                    break;
+                case /* octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch.In in */ 2:
+                    message.type = {
+                        oneofKind: "in",
+                        in: Condition_Expression_StringSetMatch_In.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).in)
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_StringSetMatch, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string exact = 1; */
+        if (message.type.oneofKind === "exact")
+            writer.tag(1, WireType.LengthDelimited).string(message.type.exact);
+        /* octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch.In in = 2; */
+        if (message.type.oneofKind === "in")
+            Condition_Expression_StringSetMatch_In.internalBinaryWrite(message.type.in, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch
+ */
+export const Condition_Expression_StringSetMatch = new Condition_Expression_StringSetMatch$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Condition_Expression_StringSetMatch_In$Type extends MessageType<Condition_Expression_StringSetMatch_In> {
+    constructor() {
+        super("octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch.In", [
+            { no: 1, name: "values", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Condition_Expression_StringSetMatch_In>): Condition_Expression_StringSetMatch_In {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.values = [];
+        if (value !== undefined)
+            reflectionMergePartial<Condition_Expression_StringSetMatch_In>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Condition_Expression_StringSetMatch_In): Condition_Expression_StringSetMatch_In {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* repeated string values */ 1:
+                    message.values.push(reader.string());
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Condition_Expression_StringSetMatch_In, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* repeated string values = 1; */
+        for (let i = 0; i < message.values.length; i++)
+            writer.tag(1, WireType.LengthDelimited).string(message.values[i]);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch.In
+ */
+export const Condition_Expression_StringSetMatch_In = new Condition_Expression_StringSetMatch_In$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class Condition_Expression_UIntMatch$Type extends MessageType<Condition_Expression_UIntMatch> {
     constructor() {

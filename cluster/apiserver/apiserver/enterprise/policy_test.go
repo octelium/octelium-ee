@@ -261,10 +261,30 @@ func TestPolicyGetExpression(t *testing.T) {
 		assertPolicyExpression(t, srv, &enterprisev1.Condition_Expression{
 			Type: &enterprisev1.Condition_Expression_SessionAuthenticationGeoipCountryCode_{
 				SessionAuthenticationGeoipCountryCode: &enterprisev1.Condition_Expression_SessionAuthenticationGeoipCountryCode{
-					Code: "US",
+					Match: policyStringSetMatchExact("US"),
 				},
 			},
 		}, `ctx.session.status.authentication.info.geoip.country.code == "US"`)
+	}
+
+	{
+		assertPolicyExpression(t, srv, &enterprisev1.Condition_Expression{
+			Type: &enterprisev1.Condition_Expression_SessionAuthenticationGeoipCountryCode_{
+				SessionAuthenticationGeoipCountryCode: &enterprisev1.Condition_Expression_SessionAuthenticationGeoipCountryCode{
+					Match: policyStringSetMatchIn("DE", "FR"),
+				},
+			},
+		}, `ctx.session.status.authentication.info.geoip.country.code in ["DE", "FR"]`)
+	}
+
+	{
+		assertPolicyExpression(t, srv, &enterprisev1.Condition_Expression{
+			Type: &enterprisev1.Condition_Expression_SessionAuthenticationGeoipContinentCode_{
+				SessionAuthenticationGeoipContinentCode: &enterprisev1.Condition_Expression_SessionAuthenticationGeoipContinentCode{
+					Match: policyStringSetMatchIn("EU", "NA"),
+				},
+			},
+		}, `ctx.session.status.authentication.info.geoip.continent.code in ["EU", "NA"]`)
 	}
 
 	{
@@ -1033,7 +1053,7 @@ func TestPolicyValidateExpressionInvalid(t *testing.T) {
 	{
 		err := srv.validateExpression(ctx, &enterprisev1.Condition_Expression{
 			Type: &enterprisev1.Condition_Expression_SessionAuthenticationGeoipCountryCode_{
-				SessionAuthenticationGeoipCountryCode: &enterprisev1.Condition_Expression_SessionAuthenticationGeoipCountryCode{Code: "U"},
+				SessionAuthenticationGeoipCountryCode: &enterprisev1.Condition_Expression_SessionAuthenticationGeoipCountryCode{Match: policyStringSetMatchExact("U")},
 			},
 		})
 		assert.NotNil(t, err)
@@ -1043,7 +1063,7 @@ func TestPolicyValidateExpressionInvalid(t *testing.T) {
 	{
 		err := srv.validateExpression(ctx, &enterprisev1.Condition_Expression{
 			Type: &enterprisev1.Condition_Expression_SessionAuthenticationGeoipCountryCode_{
-				SessionAuthenticationGeoipCountryCode: &enterprisev1.Condition_Expression_SessionAuthenticationGeoipCountryCode{Code: "us"},
+				SessionAuthenticationGeoipCountryCode: &enterprisev1.Condition_Expression_SessionAuthenticationGeoipCountryCode{Match: policyStringSetMatchExact("us")},
 			},
 		})
 		assert.NotNil(t, err)
@@ -1326,7 +1346,23 @@ func TestPolicyValidateExpressionValidNoRefs(t *testing.T) {
 	{
 		assert.Nil(t, srv.validateExpression(ctx, &enterprisev1.Condition_Expression{
 			Type: &enterprisev1.Condition_Expression_SessionAuthenticationGeoipCountryCode_{
-				SessionAuthenticationGeoipCountryCode: &enterprisev1.Condition_Expression_SessionAuthenticationGeoipCountryCode{Code: "GB"},
+				SessionAuthenticationGeoipCountryCode: &enterprisev1.Condition_Expression_SessionAuthenticationGeoipCountryCode{Match: policyStringSetMatchExact("GB")},
+			},
+		}))
+	}
+
+	{
+		assert.Nil(t, srv.validateExpression(ctx, &enterprisev1.Condition_Expression{
+			Type: &enterprisev1.Condition_Expression_SessionAuthenticationGeoipCountryCode_{
+				SessionAuthenticationGeoipCountryCode: &enterprisev1.Condition_Expression_SessionAuthenticationGeoipCountryCode{Match: policyStringSetMatchIn("GB", "DE")},
+			},
+		}))
+	}
+
+	{
+		assert.Nil(t, srv.validateExpression(ctx, &enterprisev1.Condition_Expression{
+			Type: &enterprisev1.Condition_Expression_SessionAuthenticationGeoipContinentCode_{
+				SessionAuthenticationGeoipContinentCode: &enterprisev1.Condition_Expression_SessionAuthenticationGeoipContinentCode{Match: policyStringSetMatchIn("EU", "NA")},
 			},
 		}))
 	}
@@ -1640,6 +1676,20 @@ func policyStringMatchIn(values ...string) *enterprisev1.Condition_Expression_St
 	return &enterprisev1.Condition_Expression_StringMatch{
 		Type: &enterprisev1.Condition_Expression_StringMatch_In_{
 			In: &enterprisev1.Condition_Expression_StringMatch_In{Values: values},
+		},
+	}
+}
+
+func policyStringSetMatchExact(v string) *enterprisev1.Condition_Expression_StringSetMatch {
+	return &enterprisev1.Condition_Expression_StringSetMatch{
+		Type: &enterprisev1.Condition_Expression_StringSetMatch_Exact{Exact: v},
+	}
+}
+
+func policyStringSetMatchIn(values ...string) *enterprisev1.Condition_Expression_StringSetMatch {
+	return &enterprisev1.Condition_Expression_StringSetMatch{
+		Type: &enterprisev1.Condition_Expression_StringSetMatch_In_{
+			In: &enterprisev1.Condition_Expression_StringSetMatch_In{Values: values},
 		},
 	}
 }

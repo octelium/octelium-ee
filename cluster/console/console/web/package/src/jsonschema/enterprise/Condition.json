@@ -275,6 +275,11 @@
                     "additionalProperties": false,
                     "description": "SessionAuthenticationGeoipCountryCode matches the country that the Session authenticated from."
                 },
+                "sessionAuthenticationGeoipContinentCode": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipContinentCode",
+                    "additionalProperties": false,
+                    "description": "SessionAuthenticationGeoipContinentCode matches the continent that the Session authenticated from."
+                },
                 "requestHTTPPath": {
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.RequestHTTPPath",
                     "additionalProperties": false,
@@ -639,6 +644,11 @@
                     "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.TimeDayType",
                     "additionalProperties": false,
                     "description": "TimeDayType matches whether the current day is a weekday or weekend."
+                },
+                "requestMCPToolArgument": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument",
+                    "additionalProperties": false,
+                    "description": "RequestMCPToolArgument matches a value in the arguments object of an MCP `tools/call` request."
                 }
             },
             "additionalProperties": false,
@@ -777,6 +787,11 @@
                                     {
                                         "required": [
                                             "sessionAuthenticationGeoipCountryCode"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "sessionAuthenticationGeoipContinentCode"
                                         ]
                                     },
                                     {
@@ -1143,6 +1158,11 @@
                                         "required": [
                                             "timeDayType"
                                         ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requestMCPToolArgument"
+                                        ]
                                     }
                                 ]
                             }
@@ -1275,6 +1295,11 @@
                         {
                             "required": [
                                 "sessionAuthenticationGeoipCountryCode"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "sessionAuthenticationGeoipContinentCode"
                             ]
                         },
                         {
@@ -1641,6 +1666,11 @@
                             "required": [
                                 "timeDayType"
                             ]
+                        },
+                        {
+                            "required": [
+                                "requestMCPToolArgument"
+                            ]
                         }
                     ]
                 }
@@ -1800,6 +1830,78 @@
             "type": "object",
             "title": "Device OS Type",
             "description": "DeviceOSType matches the operating system type of the Device"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.DoubleMatch": {
+            "properties": {
+                "lessThan": {
+                    "type": "number"
+                },
+                "lessThanOrEqual": {
+                    "type": "number"
+                },
+                "greaterThan": {
+                    "type": "number"
+                },
+                "greaterThanOrEqual": {
+                    "type": "number"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "lessThan"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "lessThanOrEqual"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "greaterThan"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "greaterThanOrEqual"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "lessThan"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "lessThanOrEqual"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "greaterThan"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "greaterThanOrEqual"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Double Match",
+            "description": "DoubleMatch is a matcher for floating-point values. It intentionally supports only range comparisons; exact equality is not reliable for arbitrary floating-point values."
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.Group": {
             "properties": {
@@ -2129,6 +2231,135 @@
             "type": "object",
             "title": "MCP Resource URI",
             "description": "MCPResourceURI matches the URI of the resource of an MCP `resources/read` request"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument": {
+            "properties": {
+                "path": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Path is relative to `params.arguments`. Each item addresses one JSON object key, so nested arguments are represented as multiple items."
+                },
+                "stringMatch": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringMatch",
+                    "additionalProperties": false,
+                    "description": "StringMatch applies string equality and string operations."
+                },
+                "doubleMatch": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.DoubleMatch",
+                    "additionalProperties": false,
+                    "description": "DoubleMatch applies range comparisons to JSON numbers."
+                },
+                "boolMatch": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.BoolMatch",
+                    "additionalProperties": false,
+                    "description": "BoolMatch matches a JSON boolean value."
+                },
+                "isNull": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.IsNull",
+                    "additionalProperties": false,
+                    "description": "IsNull matches an explicit JSON null value."
+                },
+                "exists": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.Exists",
+                    "additionalProperties": false,
+                    "description": "Exists matches when the argument path is present, including when its value is null."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "stringMatch"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "doubleMatch"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "boolMatch"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "isNull"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "exists"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "stringMatch"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "doubleMatch"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "boolMatch"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "isNull"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "exists"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "MCP Tool Argument",
+            "description": "MCPToolArgument matches a scalar value in the arguments object of an MCP `tools/call` request."
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.BoolMatch": {
+            "properties": {
+                "value": {
+                    "enum": [
+                        "VALUE_UNSET",
+                        "TRUE",
+                        "FALSE"
+                    ],
+                    "type": "string",
+                    "title": "Value"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Bool Match",
+            "description": "BoolMatch matches one of the two JSON boolean values."
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.Exists": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Exists"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.MCPToolArgument.IsNull": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Is Null"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.MCPToolName": {
             "properties": {
@@ -2852,11 +3083,25 @@
             "title": "Session Authentication Credential Type",
             "description": "SessionAuthenticationCredentialType matches the type of the Credential that the Session authenticated with"
         },
+        "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipContinentCode": {
+            "properties": {
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch",
+                    "additionalProperties": false,
+                    "description": "Match is the two-letter continent code matcher (e.g. `EU`)."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Session Authentication Geoip Continent Code",
+            "description": "SessionAuthenticationGeoipContinentCode matches the continent that the Session authenticated from."
+        },
         "octelium.api.main.enterprise.v1.Condition.Expression.SessionAuthenticationGeoipCountryCode": {
             "properties": {
-                "code": {
-                    "type": "string",
-                    "description": "Code is the ISO 3166-1 alpha-2 country code that is matched (e.g. `DE`)."
+                "match": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch",
+                    "additionalProperties": false,
+                    "description": "Match is the ISO 3166-1 alpha-2 country code matcher."
                 }
             },
             "additionalProperties": false,
@@ -3028,6 +3273,66 @@
             "type": "object",
             "title": "In",
             "description": "In matches when the field's value is one of a set of values"
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch": {
+            "properties": {
+                "exact": {
+                    "type": "string"
+                },
+                "in": {
+                    "$ref": "#/definitions/octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch.In",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "exact"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "in"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "exact"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "in"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "String Set Match",
+            "description": "StringSetMatch is a restricted matcher for normalized string codes. It intentionally supports only exact values and explicit allowlists."
+        },
+        "octelium.api.main.enterprise.v1.Condition.Expression.StringSetMatch.In": {
+            "properties": {
+                "values": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "In"
         },
         "octelium.api.main.enterprise.v1.Condition.Expression.TimeAfter": {
             "properties": {

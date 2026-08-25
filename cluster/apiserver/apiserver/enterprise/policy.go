@@ -272,14 +272,14 @@ func (s *Server) validateExpression(ctx context.Context, p *enterprisev1.Conditi
 		if expr == nil {
 			return grpcutils.InvalidArg("Nil GeoIP country code expression")
 		}
-		if len(expr.Code) != 2 {
-			return grpcutils.InvalidArg("GeoIP country code must be two characters")
+		return validateStringSetMatch(expr.GetMatch(), "GeoIP country code", validateGeoIPCountryCode)
+
+	case *enterprisev1.Condition_Expression_SessionAuthenticationGeoipContinentCode_:
+		expr := p.GetSessionAuthenticationGeoipContinentCode()
+		if expr == nil {
+			return grpcutils.InvalidArg("Nil GeoIP continent code expression")
 		}
-		for _, r := range expr.Code {
-			if r < 'A' || r > 'Z' {
-				return grpcutils.InvalidArg("GeoIP country code must be uppercase ISO-3166 alpha-2")
-			}
-		}
+		return validateStringSetMatch(expr.GetMatch(), "GeoIP continent code", validateGeoIPContinentCode)
 
 	case *enterprisev1.Condition_Expression_TimeAfter_:
 		expr := p.GetTimeAfter()
@@ -809,8 +809,14 @@ func (s *Server) getExpression(in *enterprisev1.Condition_Expression) string {
 			celString(in.GetSessionAuthenticationCredentialType().Type.String()))
 
 	case *enterprisev1.Condition_Expression_SessionAuthenticationGeoipCountryCode_:
-		return fmt.Sprintf(`ctx.session.status.authentication.info.geoip.country.code == %s`,
-			celString(in.GetSessionAuthenticationGeoipCountryCode().Code))
+		return stringSetMatchCEL(
+			"ctx.session.status.authentication.info.geoip.country.code",
+			in.GetSessionAuthenticationGeoipCountryCode().GetMatch())
+
+	case *enterprisev1.Condition_Expression_SessionAuthenticationGeoipContinentCode_:
+		return stringSetMatchCEL(
+			"ctx.session.status.authentication.info.geoip.continent.code",
+			in.GetSessionAuthenticationGeoipContinentCode().GetMatch())
 
 	case *enterprisev1.Condition_Expression_TimeAfter_:
 		return fmt.Sprintf(`now() > timestamp(%s)`,
@@ -1192,6 +1198,24 @@ func stringMatchCEL(field string, match *enterprisev1.Condition_Expression_Strin
 	}
 }
 
+func stringSetMatchCEL(field string, match *enterprisev1.Condition_Expression_StringSetMatch) string {
+	if match == nil || match.GetType() == nil {
+		return "false"
+	}
+
+	switch m := match.GetType().(type) {
+	case *enterprisev1.Condition_Expression_StringSetMatch_Exact:
+		return fmt.Sprintf(`%s == %s`, field, celString(m.Exact))
+	case *enterprisev1.Condition_Expression_StringSetMatch_In_:
+		if m.In == nil {
+			return "false"
+		}
+		return fmt.Sprintf(`%s in %s`, field, celStringList(m.In.Values))
+	default:
+		return "false"
+	}
+}
+
 func exactStringMatchValue(match *enterprisev1.Condition_Expression_StringMatch) (string, bool) {
 	if match == nil {
 		return "", false
@@ -1447,6 +1471,76 @@ func validateStringMatch(match *enterprisev1.Condition_Expression_StringMatch, f
 	}
 
 	return nil
+}
+
+func validateStringSetMatch(match *enterprisev1.Condition_Expression_StringSetMatch, field string, validate func(string) error) error {
+	if match == nil || match.GetType() == nil {
+		return grpcutils.InvalidArg("%s matcher must be set", field)
+	}
+
+	values := []string{}
+	switch m := match.GetType().(type) {
+	case *enterprisev1.Condition_Expression_StringSetMatch_Exact:
+		values = append(values, m.Exact)
+	case *enterprisev1.Condition_Expression_StringSetMatch_In_:
+		if m.In == nil || len(m.In.Values) == 0 {
+			return grpcutils.InvalidArg("%s in matcher must contain at least one value", field)
+		}
+		if len(m.In.Values) > maxConditionChildren {
+			return grpcutils.InvalidArg("%s in matcher has too many values", field)
+		}
+		values = append(values, m.In.Values...)
+	default:
+		return grpcutils.InvalidArg("Unsupported %s matcher", field)
+	}
+
+	seen := map[string]struct{}{}
+	for _, value := range values {
+		if err := validateBoundedString(value, true, field); err != nil {
+			return err
+		}
+		if validate != nil {
+			if err := validate(value); err != nil {
+				return err
+			}
+		}
+		if _, ok := seen[value]; ok {
+			return grpcutils.InvalidArg("Duplicate %s matcher value: %s", field, value)
+		}
+		seen[value] = struct{}{}
+	}
+
+	return nil
+}
+
+func validateGeoIPCountryCode(value string) error {
+	if len(value) != 2 {
+		return grpcutils.InvalidArg("GeoIP country code must be two characters")
+	}
+	for _, r := range value {
+		if r < 'A' || r > 'Z' {
+			return grpcutils.InvalidArg("GeoIP country code must be uppercase ISO-3166 alpha-2")
+		}
+	}
+	return nil
+}
+
+func validateGeoIPContinentCode(value string) error {
+	if len(value) != 2 {
+		return grpcutils.InvalidArg("GeoIP continent code must be two characters")
+	}
+	for _, r := range value {
+		if r < 'A' || r > 'Z' {
+			return grpcutils.InvalidArg("GeoIP continent code must be uppercase two-letter code")
+		}
+	}
+
+	switch value {
+	case "AF", "AN", "AS", "EU", "NA", "OC", "SA":
+		return nil
+	default:
+		return grpcutils.InvalidArg("Invalid GeoIP continent code")
+	}
 }
 
 func validateMCPToolArgument(expr *enterprisev1.Condition_Expression_MCPToolArgument) error {
