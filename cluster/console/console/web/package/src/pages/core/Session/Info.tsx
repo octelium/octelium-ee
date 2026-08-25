@@ -4,6 +4,7 @@ import CopyText from "@/components/CopyText";
 import Label from "@/components/Label";
 import { ResourceListLabel } from "@/components/ResourceList";
 import TimeAgo from "@/components/TimeAgo";
+import { CountryFlag } from "@/components/SelectCountry";
 import {
   FaChrome,
   FaEdge,
@@ -225,11 +226,129 @@ const ReferenceField = (props: { label: string; ref: any }) =>
     </Field>
   ) : null;
 
+const GeoIPFields = (props: { geoip?: CoreP.GeoIP }) => {
+  const geoip = props.geoip;
+  if (!geoip) return null;
+
+  const country = geoip.country;
+  const continent = geoip.continent;
+  const region = geoip.region;
+  const city = geoip.city?.name?.trim();
+  const timezone = geoip.timezone;
+  const timezoneID = timezone?.id?.trim();
+  const postalCode = geoip.postalCode?.trim();
+  const network = geoip.network;
+  const networkDetails = [
+    network?.asn ? `AS${network.asn}` : undefined,
+    network?.organization?.trim(),
+    network?.isp?.trim(),
+    network?.domain?.trim(),
+  ].filter(Boolean);
+  const hasCoordinates =
+    !!geoip.coordinates &&
+    Number.isFinite(geoip.coordinates.latitude) &&
+    Number.isFinite(geoip.coordinates.longitude);
+  const hasCountry = !!(country?.code?.trim() || country?.name?.trim());
+  const hasContinent = !!(continent?.code?.trim() || continent?.name?.trim());
+  const hasRegion = !!(region?.code?.trim() || region?.name?.trim());
+  const hasTimezone = !!timezoneID || (!!timezone && timezone.offset !== 0);
+  const hasIPVersion =
+    geoip.ipVersion !== undefined &&
+    geoip.ipVersion !== CoreP.GeoIP_IPVersion.IP_VERSION_UNKNOWN;
+
+  if (
+    !hasCountry &&
+    !hasContinent &&
+    !hasRegion &&
+    !city &&
+    !hasTimezone &&
+    !postalCode &&
+    !networkDetails.length &&
+    !hasCoordinates &&
+    !hasIPVersion
+  ) {
+    return null;
+  }
+
+  const offset = timezone
+    ? `UTC${timezone.offset >= 0 ? "+" : ""}${timezone.offset}`
+    : undefined;
+
+  return (
+    <>
+      {hasCountry && (
+        <Field label="Country">
+          <span className="inline-flex items-center gap-1.5">
+            <CountryFlag code={country?.code} />
+            <span>{country?.name || country?.code}</span>
+            {country?.name && country?.code && (
+              <span className="text-[0.68rem] font-bold uppercase text-slate-400">
+                {country.code}
+              </span>
+            )}
+          </span>
+        </Field>
+      )}
+      {hasContinent && (
+        <Field label="Continent">
+          {continent?.name || continent?.code}
+          {continent?.name && continent?.code && (
+            <span className="ml-1 text-[0.68rem] font-bold uppercase text-slate-400">
+              {continent.code}
+            </span>
+          )}
+        </Field>
+      )}
+      {hasRegion && (
+        <Field label="Region">
+          {region?.name || region?.code}
+          {region?.name && region?.code && (
+            <span className="ml-1 text-[0.68rem] font-bold uppercase text-slate-400">
+              {region.code}
+            </span>
+          )}
+        </Field>
+      )}
+      {city && <Field label="City">{city}</Field>}
+      {hasTimezone && (
+        <Field label="Timezone">
+          {timezoneID || offset}
+          {timezoneID && offset && (
+            <span className="ml-1 text-[0.68rem] font-bold text-slate-400">
+              {offset}
+            </span>
+          )}
+        </Field>
+      )}
+      {postalCode && <Field label="Postal code">{postalCode}</Field>}
+      {hasIPVersion && (
+        <Field label="IP version">
+          {enumName(CoreP.GeoIP_IPVersion, geoip.ipVersion)}
+        </Field>
+      )}
+      {hasCoordinates && (
+        <Field label="Coordinates" full>
+          {geoip.coordinates!.latitude}, {geoip.coordinates!.longitude}
+          {!!geoip.coordinates?.accuracyRadius && (
+            <span className="ml-1 text-[0.68rem] font-bold text-slate-400">
+              ±{geoip.coordinates.accuracyRadius} km
+            </span>
+          )}
+        </Field>
+      )}
+      {!!networkDetails.length && (
+        <Field label="Network" full>
+          {networkDetails.join(" · ")}
+        </Field>
+      )}
+    </>
+  );
+};
+
 const AuthenticationDetails = (props: { item: CoreP.Session }) => {
   const p = getSessionPresentation(props.item);
   const auth = p.authentication;
   const info = p.info;
-  const network = info?.geoip?.network;
   const details = info?.details;
   const fido =
     details?.oneofKind === "authenticator" &&
@@ -319,12 +438,7 @@ const AuthenticationDetails = (props: { item: CoreP.Session }) => {
           <span className="font-mono">{info.downstream.ipAddress}</span>
         </Field>
       )}
-      {p.location && <Field label="Location">{p.location}</Field>}
-      {!!network?.asn && (
-        <Field label="Network">
-          AS{network.asn} {network.organization || network.isp}
-        </Field>
-      )}
+      <GeoIPFields geoip={info?.geoip} />
       {info?.downstream?.clientVersion && (
         <Field label="Client version">
           <span className="font-mono">{info.downstream.clientVersion}</span>
