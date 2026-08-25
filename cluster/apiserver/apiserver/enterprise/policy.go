@@ -949,20 +949,20 @@ func (s *Server) getExpression(in *enterprisev1.Condition_Expression) string {
 	case *enterprisev1.Condition_Expression_RequestSOCKS5Port_:
 		return requestNestedUIntMatchCEL("socks5", "connect", "port", in.GetRequestSOCKS5Port().GetMatch())
 	case *enterprisev1.Condition_Expression_RequestSOCKS5AddressType_:
-		return andCEL(`has(ctx.request.socks5.connect)`, fmt.Sprintf(`ctx.request.socks5.connect.addressType == %s`, celString(in.GetRequestSOCKS5AddressType().GetAddressType().String())))
+		return fmt.Sprintf(`ctx.request.socks5.connect.addressType == %s`, celString(in.GetRequestSOCKS5AddressType().GetAddressType().String()))
 
 	case *enterprisev1.Condition_Expression_RequestMCPProtocolVersion:
 		return requestStringMatchCEL("mcp", "protocolVersion", in.GetRequestMCPProtocolVersion().GetMatch(), nil)
 	case *enterprisev1.Condition_Expression_RequestMCPMethod:
 		return requestStringMatchCEL("mcp", "method", in.GetRequestMCPMethod().GetMatch(), nil)
 	case *enterprisev1.Condition_Expression_RequestMCPToolName:
-		return andCEL(`has(ctx.request.mcp)`, `ctx.request.mcp.method == "tools/call"`, stringMatchCEL("ctx.request.mcp.name", in.GetRequestMCPToolName().GetMatch(), nil))
+		return andCEL(`ctx.request.mcp.method == "tools/call"`, stringMatchCEL("ctx.request.mcp.name", in.GetRequestMCPToolName().GetMatch(), nil))
 	case *enterprisev1.Condition_Expression_RequestMCPPromptName:
-		return andCEL(`has(ctx.request.mcp)`, `ctx.request.mcp.method == "prompts/get"`, stringMatchCEL("ctx.request.mcp.name", in.GetRequestMCPPromptName().GetMatch(), nil))
+		return andCEL(`ctx.request.mcp.method == "prompts/get"`, stringMatchCEL("ctx.request.mcp.name", in.GetRequestMCPPromptName().GetMatch(), nil))
 	case *enterprisev1.Condition_Expression_RequestMCPResourceURI:
-		return andCEL(`has(ctx.request.mcp)`, `ctx.request.mcp.method == "resources/read"`, stringMatchCEL("ctx.request.mcp.name", in.GetRequestMCPResourceURI().GetMatch(), nil))
+		return andCEL(`ctx.request.mcp.method == "resources/read"`, stringMatchCEL("ctx.request.mcp.name", in.GetRequestMCPResourceURI().GetMatch(), nil))
 	case *enterprisev1.Condition_Expression_RequestMCPIsNotification:
-		return `has(ctx.request.mcp) && ctx.request.mcp.isNotification`
+		return `ctx.request.mcp.isNotification`
 	case *enterprisev1.Condition_Expression_RequestMCPToolArgument:
 		return mcpToolArgumentCEL(in.GetRequestMCPToolArgument())
 
@@ -973,7 +973,7 @@ func (s *Server) getExpression(in *enterprisev1.Condition_Expression) string {
 	case *enterprisev1.Condition_Expression_RequestLLMModel:
 		return requestStringMatchCEL("llm", "model", in.GetRequestLLMModel().GetMatch(), nil)
 	case *enterprisev1.Condition_Expression_RequestLLMStream:
-		return `has(ctx.request.llm) && ctx.request.llm.stream`
+		return `ctx.request.llm.stream`
 	case *enterprisev1.Condition_Expression_RequestLLMEstimatedInputTokens:
 		expr := in.GetRequestLLMEstimatedInputTokens()
 		ret := requestUIntMatchCEL("llm", "estimatedInputTokens", expr.GetMatch())
@@ -986,17 +986,17 @@ func (s *Server) getExpression(in *enterprisev1.Condition_Expression) string {
 	case *enterprisev1.Condition_Expression_RequestLLMMaxOutputTokens:
 		return requestUIntMatchCEL("llm", "maxOutputTokens", in.GetRequestLLMMaxOutputTokens().GetMatch())
 	case *enterprisev1.Condition_Expression_RequestLLMHasTools:
-		return `has(ctx.request.llm) && ctx.request.llm.hasTools`
+		return `ctx.request.llm.hasTools`
 	case *enterprisev1.Condition_Expression_RequestLLMToolCount:
 		return requestUIntMatchCEL("llm", "toolCount", in.GetRequestLLMToolCount().GetMatch())
 	case *enterprisev1.Condition_Expression_RequestLLMToolName:
-		return andCEL(`has(ctx.request.llm)`, fmt.Sprintf(`ctx.request.llm.toolNames.exists(x, %s)`, stringMatchCEL("x", in.GetRequestLLMToolName().GetMatch(), nil)))
+		return fmt.Sprintf(`ctx.request.llm.toolNames.exists(x, %s)`, stringMatchCEL("x", in.GetRequestLLMToolName().GetMatch(), nil))
 	case *enterprisev1.Condition_Expression_RequestLLMInputItemCount:
 		return requestUIntMatchCEL("llm", "inputItemCount", in.GetRequestLLMInputItemCount().GetMatch())
 	case *enterprisev1.Condition_Expression_RequestLLMHasImageInput:
-		return `has(ctx.request.llm) && ctx.request.llm.hasImageInput`
+		return `ctx.request.llm.hasImageInput`
 	case *enterprisev1.Condition_Expression_RequestLLMHasAudioInput:
-		return `has(ctx.request.llm) && ctx.request.llm.hasAudioInput`
+		return `ctx.request.llm.hasAudioInput`
 
 	case *enterprisev1.Condition_Expression_RequestIP_:
 		return fmt.Sprintf(`ctx.request.ip == %s`, celString(in.GetRequestIP().Value))
@@ -1299,10 +1299,7 @@ func mcpToolArgumentCEL(expr *enterprisev1.Condition_Expression_MCPToolArgument)
 
 	field := `ctx.request.mcp.http.bodyMap`
 	guards := []string{
-		`has(ctx.request.mcp)`,
 		`ctx.request.mcp.method == "tools/call"`,
-		`has(ctx.request.mcp.http)`,
-		`has(ctx.request.mcp.http.bodyMap)`,
 	}
 	path := make([]string, 0, len(expr.GetPath())+2)
 	path = append(path, "params", "arguments")
@@ -1334,47 +1331,27 @@ func mcpToolArgumentCEL(expr *enterprisev1.Condition_Expression_MCPToolArgument)
 }
 
 func requestStringMatchCEL(requestType, field string, match *enterprisev1.Condition_Expression_StringMatch, normalize func(string) string) string {
-	return andCEL(
-		fmt.Sprintf(`has(ctx.request.%s)`, requestType),
-		stringMatchCEL(fmt.Sprintf(`ctx.request.%s.%s`, requestType, field), match, normalize),
-	)
+	return stringMatchCEL(fmt.Sprintf(`ctx.request.%s.%s`, requestType, field), match, normalize)
 }
 
 func requestNestedStringMatchCEL(requestType, nestedType, field string, match *enterprisev1.Condition_Expression_StringMatch, normalize func(string) string) string {
-	return andCEL(
-		fmt.Sprintf(`has(ctx.request.%s)`, requestType),
-		fmt.Sprintf(`has(ctx.request.%s.%s)`, requestType, nestedType),
-		stringMatchCEL(fmt.Sprintf(`ctx.request.%s.%s.%s`, requestType, nestedType, field), match, normalize),
-	)
+	return stringMatchCEL(fmt.Sprintf(`ctx.request.%s.%s.%s`, requestType, nestedType, field), match, normalize)
 }
 
 func requestUIntMatchCEL(requestType, field string, match *enterprisev1.Condition_Expression_UIntMatch) string {
-	return andCEL(
-		fmt.Sprintf(`has(ctx.request.%s)`, requestType),
-		uintMatchCEL(fmt.Sprintf(`ctx.request.%s.%s`, requestType, field), match),
-	)
+	return uintMatchCEL(fmt.Sprintf(`ctx.request.%s.%s`, requestType, field), match)
 }
 
 func requestNestedUIntMatchCEL(requestType, nestedType, field string, match *enterprisev1.Condition_Expression_UIntMatch) string {
-	return andCEL(
-		fmt.Sprintf(`has(ctx.request.%s)`, requestType),
-		fmt.Sprintf(`has(ctx.request.%s.%s)`, requestType, nestedType),
-		uintMatchCEL(fmt.Sprintf(`ctx.request.%s.%s.%s`, requestType, nestedType, field), match),
-	)
+	return uintMatchCEL(fmt.Sprintf(`ctx.request.%s.%s.%s`, requestType, nestedType, field), match)
 }
 
 func requestIntMatchCEL(requestType, field string, match *enterprisev1.Condition_Expression_IntMatch) string {
-	return andCEL(
-		fmt.Sprintf(`has(ctx.request.%s)`, requestType),
-		intMatchCEL(fmt.Sprintf(`ctx.request.%s.%s`, requestType, field), match),
-	)
+	return intMatchCEL(fmt.Sprintf(`ctx.request.%s.%s`, requestType, field), match)
 }
 
 func requestEnumCEL(requestType, field, value string) string {
-	return andCEL(
-		fmt.Sprintf(`has(ctx.request.%s)`, requestType),
-		fmt.Sprintf(`ctx.request.%s.%s == %s`, requestType, field, celString(value)),
-	)
+	return fmt.Sprintf(`ctx.request.%s.%s == %s`, requestType, field, celString(value))
 }
 
 func andCEL(items ...string) string {

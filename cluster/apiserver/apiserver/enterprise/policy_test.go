@@ -558,7 +558,7 @@ func TestPolicyGetRequestExpression(t *testing.T) {
 					},
 				},
 			},
-			want: `(has(ctx.request.kubernetes)) && (ctx.request.kubernetes.namespace.startsWith("team-"))`,
+			want: `ctx.request.kubernetes.namespace.startsWith("team-")`,
 		},
 		{
 			name: "grpc method",
@@ -569,7 +569,7 @@ func TestPolicyGetRequestExpression(t *testing.T) {
 					},
 				},
 			},
-			want: `(has(ctx.request.grpc)) && (ctx.request.grpc.method in ["Get", "List"])`,
+			want: `ctx.request.grpc.method in ["Get", "List"]`,
 		},
 		{
 			name: "postgres query",
@@ -580,7 +580,7 @@ func TestPolicyGetRequestExpression(t *testing.T) {
 					},
 				},
 			},
-			want: `(has(ctx.request.postgres)) && (has(ctx.request.postgres.query)) && (ctx.request.postgres.query.query.contains("SELECT"))`,
+			want: `ctx.request.postgres.query.query.contains("SELECT")`,
 		},
 		{
 			name: "dns type",
@@ -591,7 +591,7 @@ func TestPolicyGetRequestExpression(t *testing.T) {
 					},
 				},
 			},
-			want: `(has(ctx.request.dns)) && (ctx.request.dns.typeID == 16)`,
+			want: `ctx.request.dns.typeID == 16`,
 		},
 		{
 			name: "socks port",
@@ -602,7 +602,7 @@ func TestPolicyGetRequestExpression(t *testing.T) {
 					},
 				},
 			},
-			want: `(has(ctx.request.socks5)) && (has(ctx.request.socks5.connect)) && (ctx.request.socks5.connect.port > uint(1024))`,
+			want: `ctx.request.socks5.connect.port > uint(1024)`,
 		},
 		{
 			name: "mcp tool allowlist",
@@ -613,22 +613,22 @@ func TestPolicyGetRequestExpression(t *testing.T) {
 					},
 				},
 			},
-			want: `(has(ctx.request.mcp)) && (ctx.request.mcp.method == "tools/call") && (ctx.request.mcp.name in ["search", "read_db"])`,
+			want: `(ctx.request.mcp.method == "tools/call") && (ctx.request.mcp.name in ["search", "read_db"])`,
 		},
 		{
 			name: "mcp tool argument number",
 			expr: policyMCPToolArgumentDouble([]string{"a"}, &enterprisev1.Condition_Expression_DoubleMatch_GreaterThan{GreaterThan: 1000}),
-			want: `(has(ctx.request.mcp)) && (ctx.request.mcp.method == "tools/call") && (has(ctx.request.mcp.http)) && (has(ctx.request.mcp.http.bodyMap)) && ("params" in ctx.request.mcp.http.bodyMap) && ("arguments" in ctx.request.mcp.http.bodyMap["params"]) && ("a" in ctx.request.mcp.http.bodyMap["params"]["arguments"]) && (ctx.request.mcp.http.bodyMap["params"]["arguments"]["a"] > double(1000))`,
+			want: `(ctx.request.mcp.method == "tools/call") && ("params" in ctx.request.mcp.http.bodyMap) && ("arguments" in ctx.request.mcp.http.bodyMap["params"]) && ("a" in ctx.request.mcp.http.bodyMap["params"]["arguments"]) && (ctx.request.mcp.http.bodyMap["params"]["arguments"]["a"] > double(1000))`,
 		},
 		{
 			name: "mcp nested tool argument string",
 			expr: policyMCPToolArgumentString([]string{"arg1", "arg2", "arg3"}, &enterprisev1.Condition_Expression_StringMatch{Type: &enterprisev1.Condition_Expression_StringMatch_Contains{Contains: "my_arg"}}),
-			want: `(has(ctx.request.mcp)) && (ctx.request.mcp.method == "tools/call") && (has(ctx.request.mcp.http)) && (has(ctx.request.mcp.http.bodyMap)) && ("params" in ctx.request.mcp.http.bodyMap) && ("arguments" in ctx.request.mcp.http.bodyMap["params"]) && ("arg1" in ctx.request.mcp.http.bodyMap["params"]["arguments"]) && ("arg2" in ctx.request.mcp.http.bodyMap["params"]["arguments"]["arg1"]) && ("arg3" in ctx.request.mcp.http.bodyMap["params"]["arguments"]["arg1"]["arg2"]) && (ctx.request.mcp.http.bodyMap["params"]["arguments"]["arg1"]["arg2"]["arg3"].contains("my_arg"))`,
+			want: `(ctx.request.mcp.method == "tools/call") && ("params" in ctx.request.mcp.http.bodyMap) && ("arguments" in ctx.request.mcp.http.bodyMap["params"]) && ("arg1" in ctx.request.mcp.http.bodyMap["params"]["arguments"]) && ("arg2" in ctx.request.mcp.http.bodyMap["params"]["arguments"]["arg1"]) && ("arg3" in ctx.request.mcp.http.bodyMap["params"]["arguments"]["arg1"]["arg2"]) && (ctx.request.mcp.http.bodyMap["params"]["arguments"]["arg1"]["arg2"]["arg3"].contains("my_arg"))`,
 		},
 		{
 			name: "mcp tool argument exists",
 			expr: policyMCPToolArgumentExists([]string{"optional"}),
-			want: `(has(ctx.request.mcp)) && (ctx.request.mcp.method == "tools/call") && (has(ctx.request.mcp.http)) && (has(ctx.request.mcp.http.bodyMap)) && ("params" in ctx.request.mcp.http.bodyMap) && ("arguments" in ctx.request.mcp.http.bodyMap["params"]) && ("optional" in ctx.request.mcp.http.bodyMap["params"]["arguments"])`,
+			want: `(ctx.request.mcp.method == "tools/call") && ("params" in ctx.request.mcp.http.bodyMap) && ("arguments" in ctx.request.mcp.http.bodyMap["params"]) && ("optional" in ctx.request.mcp.http.bodyMap["params"]["arguments"])`,
 		},
 		{
 			name: "llm input estimate",
@@ -640,7 +640,7 @@ func TestPolicyGetRequestExpression(t *testing.T) {
 					},
 				},
 			},
-			want: `((has(ctx.request.llm)) && (ctx.request.llm.estimatedInputTokens <= uint(1000))) && (ctx.request.llm.estimateQuality == "COMPLETE")`,
+			want: `(ctx.request.llm.estimatedInputTokens <= uint(1000)) && (ctx.request.llm.estimateQuality == "COMPLETE")`,
 		},
 		{
 			name: "llm tool name",
@@ -651,7 +651,7 @@ func TestPolicyGetRequestExpression(t *testing.T) {
 					},
 				},
 			},
-			want: `(has(ctx.request.llm)) && (ctx.request.llm.toolNames.exists(x, x.startsWith("mcp_")))`,
+			want: `ctx.request.llm.toolNames.exists(x, x.startsWith("mcp_"))`,
 		},
 	}
 
