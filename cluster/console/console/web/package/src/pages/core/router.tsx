@@ -1,4 +1,5 @@
 import { Outlet, RouteObject } from "react-router-dom";
+import * as React from "react";
 
 import ResourceEditPage from "@/components/ResourceLayout/ResourceEdit";
 import ResourceListPage from "@/components/ResourceLayout/ResourceList";
@@ -24,15 +25,37 @@ import userRouter from "./User/router";
 import MainPage from "../visibility/Main";
 import Summary from "./Summary";
 
-import ResourceItemAccessLogsPage from "@/components/ResourceLayout/ResourceAccessLogs";
 import ResourceItemActionsPage from "@/components/ResourceLayout/ResourceActions";
-import ResourceItemAuditLogsPage from "@/components/ResourceLayout/ResourceAuditLogs";
-import ResourceItemAuthenticationLogsPage from "@/components/ResourceLayout/ResourceAuthenticationLogs";
 import ResourceCreateRoute from "@/components/ResourceLayout/ResourceCreateRoute";
 import ResourceItemMainPage from "@/components/ResourceLayout/ResourceItemMainPage";
 import ResourceItemDrawer from "@/components/ResourceLayout/ResourceItemDrawer";
-import ServiceMetricsPage from "@/components/ResourceLayout/ServiceMetricsPage";
-import ServiceSSHPage from "@/components/ResourceLayout/ServiceSSHPage";
+const ResourceItemAccessLogsPage = React.lazy(
+  () => import("@/components/ResourceLayout/ResourceAccessLogs"),
+);
+const ResourceItemAuditLogsPage = React.lazy(
+  () => import("@/components/ResourceLayout/ResourceAuditLogs"),
+);
+const ResourceItemAuthenticationLogsPage = React.lazy(
+  () => import("@/components/ResourceLayout/ResourceAuthenticationLogs"),
+);
+const ServiceMetricsPage = React.lazy(
+  () => import("@/components/ResourceLayout/ServiceMetricsPage"),
+);
+const ServiceSSHPage = React.lazy(
+  () => import("@/components/ResourceLayout/ServiceSSHPage"),
+);
+
+const LazyPage = (props: { children: React.ReactNode }) => (
+  <React.Suspense
+    fallback={
+      <div className="flex min-h-[40vh] items-center justify-center text-sm font-semibold text-slate-500">
+        Loading…
+      </div>
+    }
+  >
+    {props.children}
+  </React.Suspense>
+);
 
 export const resourceList = [
   serviceRouter,
@@ -116,7 +139,11 @@ const getResourceChildrenRouter = (arg: ResourceComponentInfo): RouteObject => {
   ) {
     children.push({
       path: "accesslogs",
-      element: <ResourceItemAccessLogsPage />,
+      element: (
+        <LazyPage>
+          <ResourceItemAccessLogsPage />
+        </LazyPage>
+      ),
     });
   }
 
@@ -127,14 +154,22 @@ const getResourceChildrenRouter = (arg: ResourceComponentInfo): RouteObject => {
   ) {
     children.push({
       path: "metrics",
-      element: <ServiceMetricsPage />,
+      element: (
+        <LazyPage>
+          <ServiceMetricsPage />
+        </LazyPage>
+      ),
     });
   }
 
   if (arg.API === "core" && arg.Kind === "Service") {
     children.push({
       path: "ssh",
-      element: <ServiceSSHPage />,
+      element: (
+        <LazyPage>
+          <ServiceSSHPage />
+        </LazyPage>
+      ),
     });
   }
 
@@ -152,13 +187,21 @@ const getResourceChildrenRouter = (arg: ResourceComponentInfo): RouteObject => {
   ) {
     children.push({
       path: "authenticationlogs",
-      element: <ResourceItemAuthenticationLogsPage />,
+      element: (
+        <LazyPage>
+          <ResourceItemAuthenticationLogsPage />
+        </LazyPage>
+      ),
     });
   }
 
   children.push({
     path: "auditlogs",
-    element: <ResourceItemAuditLogsPage />,
+    element: (
+      <LazyPage>
+        <ResourceItemAuditLogsPage />
+      </LazyPage>
+    ),
   });
 
   return {

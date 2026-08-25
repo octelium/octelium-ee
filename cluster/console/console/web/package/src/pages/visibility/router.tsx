@@ -1,8 +1,22 @@
-import LogViewer from "@/components/LogViewer";
 import { Outlet, RouteObject } from "react-router-dom";
-import MainPage from "./Main";
-import MetricsPage from "./Metrics";
+import * as React from "react";
 import sshRouter from "./ssh/router";
+
+const MainPage = React.lazy(() => import("./Main"));
+const MetricsPage = React.lazy(() => import("./Metrics"));
+const LogViewer = React.lazy(() => import("@/components/LogViewer"));
+
+const LazyPage = (props: { children: React.ReactNode }) => (
+  <React.Suspense
+    fallback={
+      <div className="flex min-h-[40vh] items-center justify-center text-sm font-semibold text-slate-500">
+        Loading…
+      </div>
+    }
+  >
+    {props.children}
+  </React.Suspense>
+);
 
 export default (): RouteObject => {
   return {
@@ -15,27 +29,51 @@ export default (): RouteObject => {
     children: [
       {
         path: "",
-        element: <MainPage />,
+        element: (
+          <LazyPage>
+            <MainPage />
+          </LazyPage>
+        ),
       },
       {
         path: "metrics",
-        element: <MetricsPage />,
+        element: (
+          <LazyPage>
+            <MetricsPage />
+          </LazyPage>
+        ),
       },
       {
         path: "accesslogs",
-        element: <LogViewer />,
+        element: (
+          <LazyPage>
+            <LogViewer />
+          </LazyPage>
+        ),
       },
       {
         path: "auditlogs",
-        element: <LogViewer />,
+        element: (
+          <LazyPage>
+            <LogViewer />
+          </LazyPage>
+        ),
       },
       {
         path: "authenticationlogs",
-        element: <LogViewer />,
+        element: (
+          <LazyPage>
+            <LogViewer />
+          </LazyPage>
+        ),
       },
       {
         path: "componentlogs",
-        element: <LogViewer />,
+        element: (
+          <LazyPage>
+            <LogViewer />
+          </LazyPage>
+        ),
       },
       sshRouter(),
     ],

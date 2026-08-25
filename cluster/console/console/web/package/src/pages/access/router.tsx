@@ -1,4 +1,5 @@
 import { Outlet, RouteObject } from "react-router-dom";
+import * as React from "react";
 
 import ResourceEditPage from "@/components/ResourceLayout/ResourceEdit";
 import ResourceListPage from "@/components/ResourceLayout/ResourceList";
@@ -11,11 +12,26 @@ import requestRouter from "./Request/router";
 import reviewRouter from "./Review/router";
 
 import ResourceItemActionsPage from "@/components/ResourceLayout/ResourceActions";
-import ResourceItemAuditLogsPage from "@/components/ResourceLayout/ResourceAuditLogs";
 import ResourceCreateRoute from "@/components/ResourceLayout/ResourceCreateRoute";
 import ResourceItemMainPage from "@/components/ResourceLayout/ResourceItemMainPage";
 import ResourceItemDrawer from "@/components/ResourceLayout/ResourceItemDrawer";
 import MainPage from "./index";
+
+const ResourceItemAuditLogsPage = React.lazy(
+  () => import("@/components/ResourceLayout/ResourceAuditLogs"),
+);
+
+const LazyPage = (props: { children: React.ReactNode }) => (
+  <React.Suspense
+    fallback={
+      <div className="flex min-h-[40vh] items-center justify-center text-sm font-semibold text-slate-500">
+        Loading…
+      </div>
+    }
+  >
+    {props.children}
+  </React.Suspense>
+);
 
 export const resourceList = [
   policyRouter,
@@ -67,7 +83,11 @@ const getResourceChildrenRouter = (arg: ResourceComponentInfo): RouteObject => {
 
   children.push({
     path: "auditlogs",
-    element: <ResourceItemAuditLogsPage />,
+    element: (
+      <LazyPage>
+        <ResourceItemAuditLogsPage />
+      </LazyPage>
+    ),
   });
 
   return {
