@@ -5,7 +5,6 @@ import {
   Resource,
   ResourceName,
 } from "@/utils/pb";
-import { getResourceComponentInfo } from "@/pages/utils/resourceRegistry";
 import {
   ActionIcon,
   Alert,
@@ -21,6 +20,20 @@ import { useLocation, useNavigate } from "react-router-dom";
 import TimeAgo from "../TimeAgo";
 import ResourceYAML from "../ResourceYAML";
 import { listResourcesForSelect } from "./listResourcesForSelect";
+
+const nonCreatableResourceKeys = new Set([
+  "core/Region",
+  "core/Session",
+  "core/Gateway",
+  "core/Authenticator",
+  "core/Device",
+  "enterprise/Certificate",
+  "enterprise/CertificateIssuer",
+  "enterprise/DNSProvider",
+  "enterprise/SecretStore",
+  "access/Request",
+  "access/Review",
+]);
 
 const SelectResource = (props: {
   api: string;
@@ -38,11 +51,12 @@ const SelectResource = (props: {
   const location = useLocation();
   const navigate = useNavigate();
   const handledCreatedName = React.useRef<string | undefined>(undefined);
-  const resourceComponentInfo = getResourceComponentInfo(
-    api as API,
-    kind as ResourceName,
-  );
-  const canCreate = !!resourceComponentInfo && !resourceComponentInfo.unCreatable;
+  const resourcePath = getResourcePathFromAPIKind({
+    api: api as API,
+    kind: kind as ResourceName,
+  });
+  const canCreate =
+    resourcePath.length > 0 && !nonCreatableResourceKeys.has(`${api}/${kind}`);
 
   const { isLoading, isError, error, data, refetch } = useQuery({
     queryKey: ["listSelectComponent", api, kind],
