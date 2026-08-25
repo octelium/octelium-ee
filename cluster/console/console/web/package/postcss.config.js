@@ -1,7 +1,6 @@
 export default {
   plugins: {
     "@tailwindcss/postcss": {},
-    //  autoprefixer: {},
     "postcss-preset-mantine": {},
     "postcss-simple-vars": {
       variables: {
