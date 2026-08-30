@@ -2,38 +2,54 @@ import * as AccessP from "@/apis/accessv1/accessv1";
 import * as MetaP from "@/apis/metav1/metav1";
 import { Button, SegmentedControl, Textarea } from "@mantine/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Check, Trash2, X } from "lucide-react";
+import {
+  Check,
+  ExternalLink,
+  Gavel,
+  History,
+  Pencil,
+  RotateCcw,
+  Workflow,
+  X,
+} from "lucide-react";
 import * as React from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
+import JustificationCard from "@/components/Access/JustificationCard";
+import RequestFacts from "@/components/Access/RequestFacts";
+import ResourceCard from "@/components/Access/ResourceCard";
 import TimeAgo from "@/components/TimeAgo";
-import RequestContext from "@/components/Access/RequestContext";
 import {
   Badge,
-  Card,
+  BackLink,
   ConfirmDialog,
+  CopyValue,
+  DecisionBadge,
   ErrorState,
   Field,
+  InfoGrid,
   KeyValue,
   Loading,
+  Note,
+  NotFoundState,
   PageHeader,
-  SectionTitle,
-} from "../../../ui";
-import { decisionMeta, shortName } from "../../../utils";
-import { getReviewerClient } from "../../../utils/client";
+  SectionCard,
+  Timeline,
+  TimelineItem,
+} from "@/ui";
+import { decisionMeta, shortName } from "@/utils";
+import { getReviewerClient } from "@/utils/client";
 
 const ReviewDetail = () => {
   const { name } = useParams<{ name: string }>();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [cancelOpen, setCancelOpen] = React.useState(false);
-
+  const [resetOpen, setResetOpen] = React.useState(false);
+  const [editing, setEditing] = React.useState(false);
   const [decision, setDecision] = React.useState<AccessP.Review_Spec_Decision>(
     AccessP.Review_Spec_Decision.APPROVE,
   );
   const [justification, setJustification] = React.useState("");
-  const [editing, setEditing] = React.useState(false);
 
   const qry = useQuery({
     queryKey: ["reviewer", "getReview", name],
@@ -50,6 +66,7 @@ const ReviewDetail = () => {
   const requestQry = useQuery({
     queryKey: ["reviewer", "getRequestForReview", requestName],
     enabled: !!requestName,
+    retry: false,
     queryFn: async () => {
       const { response } = await getReviewerClient().getRequest(
         MetaP.GetOptions.create({ name: requestName }),
@@ -76,9 +93,7 @@ const ReviewDetail = () => {
     onSuccess: () => {
       toast.success("Review updated");
       setEditing(false);
-      queryClient.invalidateQueries({
-        queryKey: ["reviewer", "getReview", name],
-      });
+      queryClient.invalidateQueries({ queryKey: ["reviewer", "getReview", name] });
       queryClient.invalidateQueries({ queryKey: ["reviewer", "listReview"] });
     },
     onError: (e) => {
@@ -86,7 +101,7 @@ const ReviewDetail = () => {
     },
   });
 
-  const cancelMutation = useMutation({
+  const resetMutation = useMutation({
     mutationFn: async () => {
       const { response } = await getReviewerClient().cancelReview(
         AccessP.CancelReviewRequest.create({ reviewRef: { name: name! } }),
@@ -94,196 +109,255 @@ const ReviewDetail = () => {
       return response;
     },
     onSuccess: () => {
-      toast.success("Review cancelled");
-      setCancelOpen(false);
+      toast.success("Decision reset");
+      setResetOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["reviewer", "getReview", name] });
       queryClient.invalidateQueries({ queryKey: ["reviewer", "listReview"] });
-      navigate("/reviewer/reviews");
     },
     onError: (e) => {
-      toast.error(e instanceof Error ? e.message : "Failed to cancel review");
+      toast.error(e instanceof Error ? e.message : "Failed to reset the decision");
     },
   });
 
   if (qry.isLoading) return <Loading label="Loading review..." />;
   if (qry.isError) {
-    return <ErrorState title="Could not load this review" onRetry={() => qry.refetch()} />;
+    return (
+      <ErrorState
+        title="Could not load this review"
+        onRetry={() => qry.refetch()}
+      />
+    );
   }
   if (!qry.data) {
     return (
-      <Card className="p-8 text-center text-[0.82rem] font-semibold text-slate-500">
-        Review not found.
-      </Card>
+      <NotFoundState
+        title="Review not found"
+        description="This review either does not exist or is no longer available to you."
+      />
     );
   }
 
   const item = qry.data;
   const meta = decisionMeta(item.spec?.decision);
   const request = shortName(item.status?.requestRef?.name);
+  const revisions = item.status?.lastRevisions ?? [];
+  const stillPending = !!requestQry.data;
 
   return (
     <div className="w-full">
-      <Link
-        to="/reviewer/reviews"
-        className="inline-flex items-center gap-1.5 text-[0.75rem] font-bold text-slate-400 hover:text-slate-700 transition-colors duration-150 mb-4"
-      >
-        <ArrowLeft size={13} strokeWidth={2.5} />
-        My Reviews
-      </Link>
+      <BackLink to="/reviewer/reviews">My Reviews</BackLink>
 
       <PageHeader
         eyebrow="Review"
         title={request || item.metadata!.name}
-        actions={
-          <div className="flex items-center gap-2">
-            <Badge tone={meta.tone}>{meta.label}</Badge>
-            <Button
-              variant="outline"
-              color="red"
-              leftSection={<Trash2 size={13} strokeWidth={2.5} />}
-              loading={cancelMutation.isPending}
-              onClick={() => setCancelOpen(true)}
-            >
-              Cancel
-            </Button>
-          </div>
+        meta={
+          <>
+            <DecisionBadge decision={item.spec?.decision} />
+            {typeof item.status?.stepIndex === "number" && (
+              <Badge tone="slate" icon={<Workflow size={10} strokeWidth={2.8} />}>
+                Step {item.status.stepIndex + 1}
+              </Badge>
+            )}
+            <CopyValue value={item.metadata!.name} />
+          </>
         }
-      />
-
-      <div className="flex flex-col gap-4">
-        {requestQry.data && <RequestContext request={requestQry.data} heading="Request under review" />}
-        <Card className="p-5">
-          <div className="flex items-center justify-between mb-3">
-            <SectionTitle>Decision</SectionTitle>
+        actions={
+          <>
             {!editing && (
               <Button
-                size="compact-xs"
                 variant="default"
+                leftSection={<Pencil size={13} strokeWidth={2.6} />}
                 onClick={() => setEditing(true)}
               >
                 Edit
               </Button>
             )}
-          </div>
+            <Button
+              variant="light"
+              color="red"
+              leftSection={<RotateCcw size={13} strokeWidth={2.6} />}
+              loading={resetMutation.isPending}
+              onClick={() => setResetOpen(true)}
+            >
+              Reset decision
+            </Button>
+          </>
+        }
+      />
 
-          {editing ? (
-            <div className="flex flex-col gap-4">
-              <Field label="Decision">
-                <SegmentedControl
-                  value={
-                    AccessP.Review_Spec_Decision[decision] === "DECISION_REJECT"
-                      ? "reject"
-                      : "approve"
-                  }
-                  onChange={(v) =>
-                    setDecision(
-                      v === "reject"
-                        ? AccessP.Review_Spec_Decision.REJECT
-                        : AccessP.Review_Spec_Decision.APPROVE,
-                    )
-                  }
-                  data={[
-                    { label: "Approve", value: "approve" },
-                    { label: "Reject", value: "reject" },
-                  ]}
-                />
-              </Field>
-
-              <Field label="Justification">
-                <Textarea
-                  autosize
-                  minRows={3}
-                  maxRows={7}
-                  value={justification}
-                  onChange={(e) => setJustification(e.currentTarget.value)}
-                />
-              </Field>
-
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="filled"
-                  color="dark"
-                  leftSection={<Check size={14} strokeWidth={2.5} />}
-                  loading={updateMutation.isPending}
-                  onClick={() => {
-                    if (
-                      decision === AccessP.Review_Spec_Decision.REJECT &&
-                      !justification.trim()
-                    ) {
-                      toast.error("Add a reason before saving a rejection");
-                      return;
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="flex min-w-0 flex-col gap-4">
+          <SectionCard
+            title="Your decision"
+            description={
+              editing
+                ? "Changes apply until the review is applied to its request"
+                : undefined
+            }
+            icon={<Gavel size={14} strokeWidth={2.4} />}
+            tone={meta.tone}
+          >
+            {editing ? (
+              <div className="flex flex-col gap-4">
+                <Field label="Decision">
+                  <SegmentedControl
+                    fullWidth
+                    value={
+                      decision === AccessP.Review_Spec_Decision.REJECT
+                        ? "reject"
+                        : "approve"
                     }
-                    updateMutation.mutate();
-                  }}
+                    onChange={(value) =>
+                      setDecision(
+                        value === "reject"
+                          ? AccessP.Review_Spec_Decision.REJECT
+                          : AccessP.Review_Spec_Decision.APPROVE,
+                      )
+                    }
+                    data={[
+                      { label: "Approve", value: "approve" },
+                      { label: "Reject", value: "reject" },
+                    ]}
+                  />
+                </Field>
+
+                <Field
+                  label="Justification"
+                  description="Required when rejecting the request"
                 >
-                  Save
-                </Button>
-                <Button
-                  variant="default"
-                  leftSection={<X size={14} strokeWidth={2.5} />}
-                  disabled={updateMutation.isPending}
-                  onClick={() => {
-                    setEditing(false);
-                    setDecision(item.spec!.decision);
-                    setJustification(item.spec!.justification);
-                  }}
-                >
-                  Discard
-                </Button>
+                  <Textarea
+                    autosize
+                    minRows={3}
+                    maxRows={7}
+                    value={justification}
+                    onChange={(e) => setJustification(e.currentTarget.value)}
+                  />
+                </Field>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="filled"
+                    color="dark"
+                    leftSection={<Check size={14} strokeWidth={2.8} />}
+                    loading={updateMutation.isPending}
+                    onClick={() => {
+                      if (
+                        decision === AccessP.Review_Spec_Decision.REJECT &&
+                        !justification.trim()
+                      ) {
+                        toast.error("Add a reason before saving a rejection");
+                        return;
+                      }
+                      updateMutation.mutate();
+                    }}
+                  >
+                    Save
+                  </Button>
+                  <Button
+                    variant="default"
+                    leftSection={<X size={14} strokeWidth={2.8} />}
+                    disabled={updateMutation.isPending}
+                    onClick={() => {
+                      setEditing(false);
+                      setDecision(item.spec!.decision);
+                      setJustification(item.spec!.justification);
+                    }}
+                  >
+                    Discard
+                  </Button>
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-4">
-              <KeyValue label="Decision">
-                <Badge tone={meta.tone}>{meta.label}</Badge>
-              </KeyValue>
-              <KeyValue label="Request">
-                <span className="font-mono">{request || "—"}</span>
-              </KeyValue>
-              {typeof item.status?.stepIndex === "number" && (
-                <KeyValue label="Step">{item.status.stepIndex + 1}</KeyValue>
-              )}
-              {item.status?.setAt && (
-                <KeyValue label="Set at">
-                  <TimeAgo rfc3339={item.status.setAt} />
+            ) : (
+              <InfoGrid>
+                <KeyValue label="Decision">
+                  <DecisionBadge decision={item.spec?.decision} />
                 </KeyValue>
-              )}
-              {item.spec?.justification && (
-                <KeyValue label="Justification" full>
-                  <span className="font-normal text-slate-600">
-                    {item.spec.justification}
-                  </span>
+                <KeyValue label="Set">
+                  <TimeAgo rfc3339={item.status?.setAt} />
                 </KeyValue>
-              )}
-            </div>
+                <KeyValue label="Reviewed request" mono>
+                  <Link
+                    to={`/reviewer/requests/${item.status?.requestRef?.name ?? ""}`}
+                    className="inline-flex items-center gap-1 truncate text-slate-700 hover:text-slate-900"
+                  >
+                    {request || "—"}
+                    <ExternalLink size={11} strokeWidth={2.6} className="text-slate-400" />
+                  </Link>
+                </KeyValue>
+                {typeof item.status?.stepIndex === "number" && (
+                  <KeyValue label="Workflow step">
+                    Step {item.status.stepIndex + 1}
+                  </KeyValue>
+                )}
+              </InfoGrid>
+            )}
+          </SectionCard>
+
+          {!editing && (
+            <JustificationCard
+              text={item.spec?.justification}
+              title="Your justification"
+              description="The reason you recorded for this decision"
+              emptyLabel="You did not record a reason for this decision."
+            />
           )}
 
-          {!editing && item.status?.lastRevisions && item.status.lastRevisions.length > 0 && (
-            <div className="border-t border-slate-100 mt-5 pt-5">
-              <SectionTitle>Decision history</SectionTitle>
-              <div className="flex flex-col gap-2">
-                {item.status.lastRevisions.map((revision, index) => {
+          {stillPending && <ResourceCard request={requestQry.data!} />}
+
+          {revisions.length > 0 && (
+            <SectionCard
+              title="Decision history"
+              description={`${revisions.length} earlier version${revisions.length === 1 ? "" : "s"} of this review`}
+              icon={<History size={14} strokeWidth={2.4} />}
+            >
+              <Timeline>
+                {revisions.map((revision, index) => {
                   const revisionMeta = decisionMeta(revision.spec?.decision);
                   return (
-                    <div key={index} className="flex items-center gap-3 px-3 py-2 rounded-lg border border-slate-200 bg-slate-50/60">
-                      <Badge tone={revisionMeta.tone}>{revisionMeta.label}</Badge>
-                      {revision.setAt && <span className="ml-auto text-[0.7rem] font-semibold text-slate-400"><TimeAgo rfc3339={revision.setAt} /></span>}
-                    </div>
+                    <TimelineItem
+                      key={index}
+                      tone={revisionMeta.tone}
+                      title={revisionMeta.label}
+                      meta={<TimeAgo rfc3339={revision.setAt} />}
+                      last={index === revisions.length - 1}
+                    >
+                      {revision.spec?.justification}
+                    </TimelineItem>
                   );
                 })}
-              </div>
-            </div>
+              </Timeline>
+            </SectionCard>
           )}
-        </Card>
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-20">
+          {stillPending ? (
+            <SectionCard title="Request under review" bodyClassName="px-4 py-1">
+              <RequestFacts request={requestQry.data!} showPolicy />
+            </SectionCard>
+          ) : (
+            <SectionCard
+              title="Request under review"
+              icon={<Workflow size={14} strokeWidth={2.4} />}
+            >
+              <Note tone="slate">
+                {requestQry.isLoading
+                  ? "Loading the reviewed request..."
+                  : "The reviewed request already reached a decision, so its details are no longer available to you."}
+              </Note>
+            </SectionCard>
+          )}
+        </div>
       </div>
 
       <ConfirmDialog
-        opened={cancelOpen}
-        onClose={() => setCancelOpen(false)}
-        onConfirm={() => cancelMutation.mutate()}
-        title="Cancel review?"
-        description="This review will be removed and the request may no longer reflect your decision."
-        confirmLabel="Cancel review"
-        loading={cancelMutation.isPending}
+        opened={resetOpen}
+        onClose={() => setResetOpen(false)}
+        onConfirm={() => resetMutation.mutate()}
+        title="Reset this decision?"
+        description="The review keeps its history but no longer counts as an approval or a rejection. You can set a new decision afterwards."
+        confirmLabel="Reset decision"
+        loading={resetMutation.isPending}
       />
     </div>
   );

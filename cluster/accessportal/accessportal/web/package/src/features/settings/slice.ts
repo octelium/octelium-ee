@@ -17,7 +17,6 @@ export const slice = createSlice({
       type: CommonListOptions_OrderBy_Type.NAME,
       mode: CommonListOptions_OrderBy_Mode.ASC,
     },
-    // itemsPerPageNavigator: 5,
   } as Settings,
   reducers: {
     setItemsPerPage: (

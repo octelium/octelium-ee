@@ -9,7 +9,6 @@ interface Settings {
   personalSpaceUID?: string;
   autoCreateFirstTerminal?: boolean;
   orderBy: MetaPB.CommonListOptions_OrderBy;
-  // itemsPerPageNavigator?: number;
   listOptFilter?: any;
   useListSearch?: boolean;
 }

@@ -1,13 +1,14 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import * as MetaP from "@/apis/metav1/metav1";
-import { Button, SegmentedControl, Select, Textarea } from "@mantine/core";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button, SegmentedControl, Textarea, Tooltip } from "@mantine/core";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
+  CircleAlert,
   Layers,
   PanelRightOpen,
-  Search,
   Send,
+  ServerCog,
   UserRound,
 } from "lucide-react";
 import * as React from "react";
@@ -15,31 +16,57 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { twMerge } from "tailwind-merge";
 
-import DurationInput from "../../../components/DurationInput";
-import CatalogDetailsDrawer from "../../../components/Catalog/CatalogDetailsDrawer";
-import TimestampPicker from "../../../components/TimestampPicker";
-import { Avatar, Badge, Card, ConfirmDialog, EmptyState, ErrorState, Eyebrow, Field, Loading } from "../../../ui";
-import { durationToParts } from "../../../utils";
-import { getUserClient } from "../../../utils/client";
-import { useAppSelector } from "../../../utils/hooks";
+import { useCatalogs } from "@/components/Access/hooks";
+import UrgencyPicker from "@/components/Access/UrgencyPicker";
+import CatalogDetailsDrawer from "@/components/Catalog/CatalogDetailsDrawer";
+import DurationInput from "@/components/DurationInput";
+import TimestampPicker from "@/components/TimestampPicker";
+import {
+  Avatar,
+  Badge,
+  ConfirmDialog,
+  EmptyState,
+  ErrorState,
+  Eyebrow,
+  Field,
+  IconTile,
+  Loading,
+  Note,
+  PageHeader,
+  SearchInput,
+  SectionCard,
+} from "@/ui";
+import { formatDuration } from "@/utils";
+import { getUserClient } from "@/utils/client";
+import { useAppSelector } from "@/utils/hooks";
+
 import ServicePicker from "./ServicePicker";
 import SubjectPicker from "./SubjectPicker";
+
+const MAX_JUSTIFICATION = 1500;
 
 type Selection =
   | { kind: "service"; name: string; label: string }
   | { kind: "catalog"; name: string; label: string };
 
+const StepBadge = (props: { index: number }) => (
+  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-[0.62rem] font-bold text-white">
+    {props.index}
+  </span>
+);
+
 const CatalogCard = (props: {
   title: string;
   subtitle?: string;
-  badge?: string;
+  serviceCount: number;
+  namespaceCount: number;
   selected: boolean;
   onClick: () => void;
   onDetails: () => void;
 }) => (
   <div
     className={twMerge(
-      "w-full flex items-center gap-2 rounded-lg border px-3 py-2.5 transition-[border-color,box-shadow,background-color] duration-150",
+      "flex w-full items-center gap-2 rounded-lg border px-3 py-2.5 transition-[border-color,box-shadow,background-color] duration-150",
       props.selected
         ? "border-slate-900 bg-slate-50 shadow-[0_2px_8px_rgba(15,23,42,0.10)]"
         : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50",
@@ -50,8 +77,11 @@ const CatalogCard = (props: {
       onClick={props.onClick}
       className="flex min-w-0 flex-1 items-center gap-3 text-left"
     >
+      <IconTile tone={props.selected ? "slate" : "violet"}>
+        <Layers size={16} strokeWidth={2.2} />
+      </IconTile>
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[0.82rem] font-bold text-slate-800">
+        <div className="truncate text-[0.84rem] font-bold text-slate-800">
           {props.title}
         </div>
         {props.subtitle && (
@@ -59,19 +89,27 @@ const CatalogCard = (props: {
             {props.subtitle}
           </div>
         )}
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          {props.serviceCount > 0 && (
+            <Badge tone="slate">{props.serviceCount} services</Badge>
+          )}
+          {props.namespaceCount > 0 && (
+            <Badge tone="slate">{props.namespaceCount} namespaces</Badge>
+          )}
+        </div>
       </div>
-      {props.badge && <Badge tone="slate">{props.badge}</Badge>}
     </button>
-    <button
-      type="button"
-      onClick={props.onDetails}
-      aria-label={`View details for ${props.title}`}
-      title="View catalog details"
-      className="flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 text-[0.68rem] font-bold text-slate-600 shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition-[border-color,background-color,color,box-shadow] hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 hover:shadow-sm"
-    >
-      <PanelRightOpen size={14} strokeWidth={2.4} />
-      <span>View details</span>
-    </button>
+    <Tooltip label="View the contents of this Catalog">
+      <button
+        type="button"
+        onClick={props.onDetails}
+        aria-label={`View details for ${props.title}`}
+        className="flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 text-[0.68rem] font-bold text-slate-600 shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition-[border-color,background-color,color] hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+      >
+        <PanelRightOpen size={14} strokeWidth={2.4} />
+        <span className="hidden sm:inline">Contents</span>
+      </button>
+    </Tooltip>
   </div>
 );
 
@@ -89,7 +127,6 @@ const NewRequest = () => {
   const [subject, setSubject] = React.useState<AccessP.SubjectUser | undefined>();
   const [deadline, setDeadline] = React.useState<Timestamp>();
   const [submitOpen, setSubmitOpen] = React.useState(false);
-
   const [urgency, setUrgency] = React.useState<AccessP.Request_Spec_Urgency>(
     AccessP.Request_Spec_Urgency.NORMAL,
   );
@@ -98,27 +135,8 @@ const NewRequest = () => {
     MetaP.Duration.create({ type: { oneofKind: "hours", hours: 1 } as any }),
   );
 
-  const catalogsQry = useQuery({
-    queryKey: ["user", "listCatalog"],
-    queryFn: async () => {
-      const items: AccessP.Catalog[] = [];
-      let page = 0;
-      for (;;) {
-        const { response } = await getUserClient().listCatalog(
-          AccessP.ListUserCatalogOptions.create({
-            common: { page, itemsPerPage: 500 },
-          }),
-        );
-        items.push(...response.items);
-        if (!response.listResponseMeta?.hasMore) break;
-        page += 1;
-        if (page > 1000) break;
-      }
-      return { items };
-    },
-  });
-
-  const catalogs = catalogsQry.data?.items ?? [];
+  const catalogsQry = useCatalogs();
+  const catalogs = catalogsQry.data ?? [];
 
   React.useEffect(() => {
     if (deepLinkApplied.current) return;
@@ -220,30 +238,45 @@ const NewRequest = () => {
       c.metadata?.name.toLowerCase().includes(cq) ||
       c.metadata?.displayName?.toLowerCase().includes(cq),
   );
+
+  const selfName =
+    settings.status?.user?.metadata?.displayName ||
+    settings.status?.user?.metadata?.name ||
+    "My account";
+  const recipientLabel =
+    requestFor === "subject"
+      ? subject?.displayName || subject?.userRef?.name
+      : selfName;
+
+  const tooLong = justification.length > MAX_JUSTIFICATION;
+  const blocker = !selection
+    ? `Select a ${tab === "service" ? "Service" : "Catalog"} to request access to`
+    : requestFor === "subject" && !subject
+      ? "Select the user who should receive the access"
+      : tooLong
+        ? "The justification is too long"
+        : undefined;
+
   return (
     <div className="w-full min-w-0">
-      <div className="mb-6">
-        <Eyebrow>Access</Eyebrow>
-        <h1 className="text-[1.35rem] font-bold text-slate-900 leading-tight">
-          New Request
-        </h1>
-        <p className="text-[0.82rem] font-medium text-slate-500">
-          Request just-in-time access to a Service or an entire Catalog.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Access"
+        title="New Request"
+        description="Request just-in-time access to a single Service or to an entire Catalog of resources."
+      />
 
-      <div className="grid min-w-0 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-5 items-start">
+      <div className="grid min-w-0 grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex min-w-0 flex-col gap-4">
-          <Card className="min-w-0 p-4">
-            <div className="flex items-center justify-between gap-3 mb-3">
-              <div>
-                <Eyebrow>Request for</Eyebrow>
-                <p className="text-[0.75rem] font-medium text-slate-500 mt-1">
-                  Choose who will receive this access.
-                </p>
-              </div>
+          <SectionCard
+            title="Who needs the access"
+            description="The user the access is granted to"
+            icon={<UserRound size={14} strokeWidth={2.4} />}
+            tone="blue"
+            actions={<StepBadge index={1} />}
+          >
+            <div className="flex flex-col gap-3">
               <SegmentedControl
-                size="sm"
+                fullWidth
                 value={requestFor}
                 onChange={(value) => {
                   if (value === "self") {
@@ -258,219 +291,186 @@ const NewRequest = () => {
                   { value: "subject", label: "Another user" },
                 ]}
               />
-            </div>
 
-            {requestFor === "self" ? (
-              <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2.5">
-                <Avatar
-                  src={settings.status?.user?.metadata?.picURL}
-                  name={
-                    settings.status?.user?.metadata?.displayName ||
-                    settings.status?.user?.metadata?.name
-                  }
-                  size="sm"
-                />
-                <div className="min-w-0">
-                  <p className="text-[0.8rem] font-bold text-slate-700 truncate">
-                    {settings.status?.user?.metadata?.displayName ||
-                      settings.status?.user?.metadata?.name ||
-                      "My account"}
-                  </p>
-                  <p className="text-[0.68rem] font-medium text-slate-400 truncate">
-                    {settings.status?.user?.spec?.email || "Your own access"}
-                  </p>
+              {requestFor === "self" ? (
+                <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2.5">
+                  <Avatar
+                    src={settings.status?.user?.metadata?.picURL}
+                    name={selfName}
+                    size="sm"
+                  />
+                  <div className="min-w-0">
+                    <p className="truncate text-[0.8rem] font-bold text-slate-700">
+                      {selfName}
+                    </p>
+                    <p className="truncate text-[0.68rem] font-medium text-slate-400">
+                      {settings.status?.user?.spec?.email || "Your own access"}
+                    </p>
+                  </div>
+                  <Badge tone="blue" className="ml-auto">
+                    You
+                  </Badge>
                 </div>
-              </div>
-            ) : (
-              <SubjectPicker value={subject} onChange={setSubject} />
-            )}
-          </Card>
+              ) : (
+                <SubjectPicker value={subject} onChange={setSubject} />
+              )}
+            </div>
+          </SectionCard>
 
-          <Card className="min-w-0 p-4">
-          <SegmentedControl
-            fullWidth
-            className="mb-3"
-            value={tab}
-            onChange={(value) => {
-              setTab(value as "service" | "catalog");
-              setSelection(undefined);
-            }}
-            data={[
-              { value: "service", label: "Services" },
-              { value: "catalog", label: "Catalogs" },
-            ]}
-          />
-
-          {tab === "service" ? (
-            <ServicePicker
-              value={selection?.kind === "service" ? selection.name : undefined}
-              onChange={(svc) =>
-                setSelection({
-                  kind: "service",
-                  name: svc.metadata!.name,
-                  label: svc.metadata!.displayName || svc.metadata!.name,
-                })
-              }
-            />
-          ) : (
+          <SectionCard
+            title="What to request"
+            description="Pick a single Service or a whole Catalog"
+            icon={<ServerCog size={14} strokeWidth={2.4} />}
+            tone="violet"
+            actions={<StepBadge index={2} />}
+          >
             <div className="flex flex-col gap-3">
-              <div className="relative">
-                <Search
-                  size={13}
-                  strokeWidth={2.5}
-                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-                />
-                <input
-                  value={catalogQuery}
-                  onChange={(e) => setCatalogQuery(e.target.value)}
-                  placeholder="Search catalogs..."
-                  className="w-full pl-8 pr-3 h-8 text-[0.78rem] font-semibold text-slate-700 bg-white border border-slate-200 rounded-md shadow-[0_1px_3px_rgba(15,23,42,0.05)] outline-none focus:border-slate-400 focus:shadow-[0_0_0_2px_rgba(148,163,184,0.2)] transition-all duration-150 placeholder:text-slate-400 placeholder:font-semibold"
-                />
-              </div>
+              <SegmentedControl
+                fullWidth
+                value={tab}
+                onChange={(value) => {
+                  setTab(value as "service" | "catalog");
+                  setSelection(undefined);
+                }}
+                data={[
+                  { value: "service", label: "Services" },
+                  { value: "catalog", label: "Catalogs" },
+                ]}
+              />
 
-              {catalogsQry.isLoading ? (
-                <Loading />
-              ) : catalogsQry.isError ? (
-                <ErrorState
-                  title="Could not load catalogs"
-                  onRetry={() => catalogsQry.refetch()}
-                />
-              ) : filteredCatalogs.length === 0 ? (
-                <EmptyState
-                  icon={<Layers size={20} strokeWidth={2} />}
-                  title="No catalogs available"
-                  description="There are no Catalogs you can currently request access to."
+              {tab === "service" ? (
+                <ServicePicker
+                  value={selection?.kind === "service" ? selection.name : undefined}
+                  onChange={(svc) =>
+                    setSelection({
+                      kind: "service",
+                      name: svc.metadata!.name,
+                      label: svc.metadata!.displayName || svc.metadata!.name,
+                    })
+                  }
                 />
               ) : (
-                <div className="flex flex-col gap-2 max-h-[460px] overflow-y-auto pr-0.5">
-                  {filteredCatalogs.map((c) => {
-                    const svcCount =
-                      c.spec?.resourceCollection?.service?.services.length ?? 0;
-                    return (
-                      <CatalogCard
-                        key={c.metadata!.uid || c.metadata!.name}
-                        title={c.metadata!.displayName || c.metadata!.name}
-                        subtitle={c.metadata!.name}
-                        badge={
-                          svcCount > 0 ? `${svcCount} services` : undefined
-                        }
-                        selected={
-                          selection?.kind === "catalog" &&
-                          selection.name === c.metadata!.name
-                        }
-                        onClick={() =>
-                          setSelection({
-                            kind: "catalog",
-                            name: c.metadata!.name,
-                            label: c.metadata!.displayName || c.metadata!.name,
-                          })
-                        }
-                        onDetails={() => setDetailsCatalog(c)}
-                      />
-                    );
-                  })}
+                <div className="flex flex-col gap-3">
+                  <SearchInput
+                    value={catalogQuery}
+                    onChange={setCatalogQuery}
+                    placeholder="Search catalogs..."
+                    ariaLabel="Search catalogs"
+                  />
+
+                  {catalogsQry.isLoading ? (
+                    <Loading label="Loading catalogs..." />
+                  ) : catalogsQry.isError ? (
+                    <ErrorState
+                      title="Could not load catalogs"
+                      onRetry={() => catalogsQry.refetch()}
+                    />
+                  ) : filteredCatalogs.length === 0 ? (
+                    <EmptyState
+                      icon={<Layers size={20} strokeWidth={2} />}
+                      title={
+                        catalogs.length ? "No matching catalogs" : "No catalogs available"
+                      }
+                      description={
+                        catalogs.length
+                          ? "Try a different search term."
+                          : "There are no Catalogs you can currently request access to."
+                      }
+                    />
+                  ) : (
+                    <div className="flex max-h-[460px] flex-col gap-2 overflow-y-auto pr-0.5">
+                      {filteredCatalogs.map((c) => {
+                        const collection = c.spec?.resourceCollection?.service;
+                        return (
+                          <CatalogCard
+                            key={c.metadata!.uid || c.metadata!.name}
+                            title={c.metadata!.displayName || c.metadata!.name}
+                            subtitle={c.metadata!.name}
+                            serviceCount={collection?.services.length ?? 0}
+                            namespaceCount={collection?.namespaces.length ?? 0}
+                            selected={
+                              selection?.kind === "catalog" &&
+                              selection.name === c.metadata!.name
+                            }
+                            onClick={() =>
+                              setSelection({
+                                kind: "catalog",
+                                name: c.metadata!.name,
+                                label:
+                                  c.metadata!.displayName || c.metadata!.name,
+                              })
+                            }
+                            onDetails={() => setDetailsCatalog(c)}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          )}
-          </Card>
+          </SectionCard>
         </div>
 
-        <Card className="min-w-0 p-5 lg:sticky lg:top-20">
+        <SectionCard
+          title="Access details"
+          description="How long and how urgent"
+          icon={<Send size={14} strokeWidth={2.4} />}
+          tone="emerald"
+          actions={<StepBadge index={3} />}
+          className="lg:sticky lg:top-20"
+        >
           <div className="flex flex-col gap-4">
-            <div>
-              <Eyebrow>Request details</Eyebrow>
-              <div className="mt-2 flex flex-col gap-2">
-                {requestFor === "subject" && subject && (
-                  <div className="flex items-center gap-2 text-[0.75rem] font-semibold text-slate-600">
-                    <UserRound size={13} className="text-slate-400" />
-                    <span>For {subject.displayName || subject.userRef?.name}</span>
-                  </div>
-                )}
-                {selection ? (
-                  <div className="flex items-center gap-2">
-                    <span className="text-[0.85rem] font-bold text-slate-800 truncate">
-                      {selection.label}
-                    </span>
-                    <Badge tone="slate">
-                      {selection.kind === "service" ? "Service" : "Catalog"}
-                    </Badge>
-                  </div>
-                ) : (
-                  <p className="text-[0.76rem] font-semibold text-slate-400">
-                    Select a {tab} on the left to request access.
-                  </p>
-                )}
+            <div className="rounded-lg border border-slate-200 bg-slate-50/70 px-3 py-2.5">
+              <Eyebrow>Summary</Eyebrow>
+              {selection ? (
+                <div className="mt-1.5 flex items-center gap-2">
+                  <IconTile
+                    size="sm"
+                    tone={selection.kind === "catalog" ? "violet" : "blue"}
+                  >
+                    {selection.kind === "catalog" ? (
+                      <Layers size={13} strokeWidth={2.4} />
+                    ) : (
+                      <ServerCog size={13} strokeWidth={2.4} />
+                    )}
+                  </IconTile>
+                  <span className="min-w-0 flex-1 truncate text-[0.82rem] font-bold text-slate-800">
+                    {selection.label}
+                  </span>
+                </div>
+              ) : (
+                <p className="mt-1.5 text-[0.74rem] font-semibold text-slate-400">
+                  Nothing selected yet
+                </p>
+              )}
+              <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.7rem] font-semibold text-slate-500">
+                <span className="inline-flex items-center gap-1">
+                  <UserRound size={11} className="text-slate-400" />
+                  {recipientLabel || "No recipient"}
+                </span>
+                <span className="text-slate-300">•</span>
+                <span>{formatDuration(duration)}</span>
               </div>
             </div>
 
             <Field
               label="Urgency"
-              description="Higher urgency can help reviewers prioritize the request"
+              description="Higher urgency helps reviewers triage the queue"
             >
-              <Select
-                allowDeselect={false}
-                data={[
-                  {
-                    label: "Very Low",
-                    value:
-                      AccessP.Request_Spec_Urgency[
-                        AccessP.Request_Spec_Urgency.VERY_LOW
-                      ],
-                  },
-                  {
-                    label: "Low",
-                    value:
-                      AccessP.Request_Spec_Urgency[
-                        AccessP.Request_Spec_Urgency.LOW
-                      ],
-                  },
-                  {
-                    label: "Normal",
-                    value:
-                      AccessP.Request_Spec_Urgency[
-                        AccessP.Request_Spec_Urgency.NORMAL
-                      ],
-                  },
-                  {
-                    label: "High",
-                    value:
-                      AccessP.Request_Spec_Urgency[
-                        AccessP.Request_Spec_Urgency.HIGH
-                      ],
-                  },
-                  {
-                    label: "Very High",
-                    value:
-                      AccessP.Request_Spec_Urgency[
-                        AccessP.Request_Spec_Urgency.VERY_HIGH
-                      ],
-                  },
-                  {
-                    label: "Highest",
-                    value:
-                      AccessP.Request_Spec_Urgency[
-                        AccessP.Request_Spec_Urgency.HIGHEST
-                      ],
-                  },
-                ]}
-                value={AccessP.Request_Spec_Urgency[urgency]}
-                onChange={(v) =>
-                  v && setUrgency(AccessP.Request_Spec_Urgency[v as "NORMAL"])
-                }
-              />
+              <UrgencyPicker value={urgency} onChange={setUrgency} />
             </Field>
 
             <Field
               label="Duration"
-              description={`How long you need access for (about ${durationToParts(duration).amount} ${durationToParts(duration).unit})`}
+              description="How long the access lasts once it is approved"
             >
               <DurationInput value={duration} onChange={setDuration} />
             </Field>
 
             <TimestampPicker
               label="Deadline"
-              description="Optional: stop this request from being approved after a specific time"
+              description="Optional. Expire the request if it is not decided in time"
               placeholder="No deadline"
               value={deadline}
               isFuture
@@ -479,7 +479,18 @@ const NewRequest = () => {
 
             <Field
               label="Justification"
-              description="Explain why you need this access"
+              description="Reviewers decide faster with a clear reason"
+              hint={
+                <span
+                  className={
+                    tooLong
+                      ? "text-[0.66rem] font-bold text-red-500"
+                      : "text-[0.66rem] font-semibold text-slate-400"
+                  }
+                >
+                  {justification.length}/{MAX_JUSTIFICATION}
+                </span>
+              }
             >
               <Textarea
                 autosize
@@ -491,27 +502,49 @@ const NewRequest = () => {
               />
             </Field>
 
+            {blocker && (
+              <Note tone="slate" icon={<CircleAlert size={13} strokeWidth={2.4} />}>
+                {blocker}
+              </Note>
+            )}
+
             <Button
               fullWidth
               variant="filled"
               color="dark"
-              leftSection={<Send size={14} strokeWidth={2.5} />}
-              disabled={!selection || (requestFor === "subject" && !subject)}
+              leftSection={<Send size={14} strokeWidth={2.6} />}
+              disabled={!!blocker}
               loading={createMutation.isPending}
               onClick={() => setSubmitOpen(true)}
             >
               Submit Request
             </Button>
           </div>
-        </Card>
+        </SectionCard>
       </div>
 
       <ConfirmDialog
         opened={submitOpen}
         onClose={() => setSubmitOpen(false)}
         onConfirm={() => createMutation.mutate()}
-        title="Submit access request?"
-        description={`Request ${selection?.label ?? "access"}${requestFor === "subject" && subject ? ` for ${subject.displayName || subject.userRef?.name}` : " for yourself"}.`}
+        title="Submit this access request?"
+        description="The Cluster evaluates the access policies and either decides immediately or routes the request to its reviewers."
+        details={
+          <div className="flex flex-col gap-1.5 text-[0.74rem] font-semibold text-slate-600">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-slate-400">Resource</span>
+              <span className="truncate">{selection?.label ?? "—"}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-slate-400">For</span>
+              <span className="truncate">{recipientLabel ?? "—"}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-slate-400">Duration</span>
+              <span>{formatDuration(duration)}</span>
+            </div>
+          </div>
+        }
         confirmLabel="Submit request"
         danger={false}
         loading={createMutation.isPending}

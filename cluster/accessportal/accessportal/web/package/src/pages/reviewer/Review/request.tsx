@@ -2,40 +2,49 @@ import * as AccessP from "@/apis/accessv1/accessv1";
 import * as MetaP from "@/apis/metav1/metav1";
 import { Button, Textarea } from "@mantine/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Check, Clock, X } from "lucide-react";
+import { Check, Gavel, Info, X } from "lucide-react";
 import * as React from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
-import TimeAgo from "@/components/TimeAgo";
-import RequestContext from "@/components/Access/RequestContext";
+import AuthorizationCard from "@/components/Access/AuthorizationCard";
+import JustificationCard from "@/components/Access/JustificationCard";
+import PeopleCard from "@/components/Access/PeopleCard";
+import RequestFacts from "@/components/Access/RequestFacts";
+import RequestTimeline from "@/components/Access/RequestTimeline";
+import ResourceCard from "@/components/Access/ResourceCard";
+import ReviewWorkflow from "@/components/Access/ReviewWorkflow";
+import StatusHero from "@/components/Access/StatusHero";
 import {
-  Badge,
-  Card,
+  BackLink,
   ConfirmDialog,
+  CopyValue,
   ErrorState,
-  Eyebrow,
   Field,
-  KeyValue,
   Loading,
+  Note,
+  NotFoundState,
   PageHeader,
-  SectionTitle,
-} from "../../../ui";
+  SectionCard,
+  StatusBadge,
+  UrgencyBadge,
+} from "@/ui";
 import {
+  currentReviewStepIndex,
+  isPendingRequest,
+  approvalRequirementLabel,
   requestResourceLabel,
-  durationToParts,
-  shortName,
-  statusMeta,
-  urgencyMeta,
-} from "../../../utils";
-import { getReviewerClient } from "../../../utils/client";
+  reviewSteps,
+} from "@/utils";
+import { getReviewerClient } from "@/utils/client";
 
 const ReviewRequest = () => {
   const { name } = useParams<{ name: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [justification, setJustification] = React.useState("");
-  const [decisionToSubmit, setDecisionToSubmit] = React.useState<AccessP.Review_Spec_Decision>();
+  const [decisionToSubmit, setDecisionToSubmit] =
+    React.useState<AccessP.Review_Spec_Decision>();
 
   const qry = useQuery({
     queryKey: ["reviewer", "getRequest", name],
@@ -78,220 +87,134 @@ const ReviewRequest = () => {
 
   if (qry.isLoading) return <Loading label="Loading request..." />;
   if (qry.isError) {
-    return <ErrorState title="Could not load this request" onRetry={() => qry.refetch()} />;
+    return (
+      <ErrorState
+        title="Could not load this request"
+        description="It may have been decided already or it is no longer assigned to you."
+        onRetry={() => qry.refetch()}
+      />
+    );
   }
   if (!qry.data) {
     return (
-      <Card className="p-8 text-center text-[0.82rem] font-semibold text-slate-500">
-        Request not found.
-      </Card>
+      <NotFoundState
+        title="Request not found"
+        description="This request either does not exist or you can no longer review it."
+      />
     );
   }
 
   const item = qry.data;
   const resource = requestResourceLabel(item);
-  const status = statusMeta(item.status?.state?.status);
-  const urgency = urgencyMeta(item.spec?.urgency);
-  const duration = durationToParts(item.spec?.duration);
-  const requester = shortName(item.status?.userRef?.name);
-  const isPending =
-    item.status?.state?.status === AccessP.Request_Status_State_Status.PENDING;
-  const review = item.status?.review;
+  const pending = isPendingRequest(item);
+  const steps = reviewSteps(item);
+  const currentStep = steps[currentReviewStepIndex(item)];
 
   return (
     <div className="w-full">
-      <Link
-        to="/reviewer/requests"
-        className="inline-flex items-center gap-1.5 text-[0.75rem] font-bold text-slate-400 hover:text-slate-700 transition-colors duration-150 mb-4"
-      >
-        <ArrowLeft size={13} strokeWidth={2.5} />
-        Review Queue
-      </Link>
+      <BackLink to="/reviewer/requests">Review Queue</BackLink>
 
       <PageHeader
-        eyebrow={resource.kind}
+        eyebrow={`${resource.kind} access request`}
         title={resource.name || item.metadata!.name}
-        actions={
-          <div className="flex items-center gap-2">
-            <Badge tone={urgency.tone}>{urgency.label}</Badge>
-            <Badge tone={status.tone}>{status.label}</Badge>
-          </div>
+        meta={
+          <>
+            <StatusBadge status={item.status?.state?.status} withHint />
+            <UrgencyBadge urgency={item.spec?.urgency} />
+            <CopyValue value={item.metadata!.name} />
+          </>
         }
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-5 items-start">
-        <div className="flex flex-col gap-4">
-          <Card className="p-5">
-            <SectionTitle>Request</SectionTitle>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <KeyValue label="Requester">
-                <span className="font-mono">{requester || "—"}</span>
-              </KeyValue>
-              <KeyValue label="Resource">
-                <span className="font-mono">{resource.name || "—"}</span>
-              </KeyValue>
-              <KeyValue label="Type">{resource.kind}</KeyValue>
-              <KeyValue label="Urgency">{urgency.label}</KeyValue>
-              <KeyValue label="Duration">{duration.amount} {duration.unit}</KeyValue>
-              <KeyValue label="Requested">
-                {item.status?.state?.createdAt ? (
-                  <TimeAgo rfc3339={item.status.state.createdAt} />
-                ) : (
-                  "—"
-                )}
-              </KeyValue>
-              {item.spec?.justification && (
-                <KeyValue label="Justification" full>
-                  <span className="font-normal text-slate-600">
-                    {item.spec.justification}
-                  </span>
-                </KeyValue>
-              )}
-              {item.spec?.deadline && (
-                <KeyValue label="Deadline"><TimeAgo rfc3339={item.spec.deadline} /></KeyValue>
-              )}
-              {item.status?.policyRef?.name && (
-                <KeyValue label="Policy"><span className="font-mono">{item.status.policyRef.name}</span></KeyValue>
-              )}
-              {item.status?.rule?.name && (
-                <KeyValue label="Matched rule"><span className="font-mono">{item.status.rule.name}</span></KeyValue>
-              )}
-            </div>
-          </Card>
-
-          <RequestContext request={item} />
-
-          {item.status?.lastStates && item.status.lastStates.length > 1 && (
-            <Card className="p-5">
-              <SectionTitle>Status history</SectionTitle>
-              <div className="flex flex-col gap-2">
-                {item.status.lastStates.map((state, index) => {
-                  const stateMeta = statusMeta(state.status);
-                  return (
-                    <div key={`${state.status}-${index}`} className="flex items-center gap-3 px-3 py-2 rounded-lg border border-slate-200 bg-slate-50/60">
-                      <span className={`w-2 h-2 rounded-full ${stateMeta.tone === "emerald" ? "bg-emerald-500" : stateMeta.tone === "red" ? "bg-red-500" : stateMeta.tone === "amber" ? "bg-amber-500" : "bg-slate-400"}`} />
-                      <span className="text-[0.78rem] font-bold text-slate-700">{stateMeta.label}</span>
-                      {state.createdAt && <span className="ml-auto text-[0.7rem] font-semibold text-slate-400"><TimeAgo rfc3339={state.createdAt} /></span>}
-                    </div>
-                  );
-                })}
-              </div>
-            </Card>
-          )}
-
-          {review && review.lastSteps.length > 0 && (
-            <Card className="p-5">
-              <SectionTitle>Review progress</SectionTitle>
-              <div className="flex flex-col gap-2">
-                {review.lastSteps.map((step, idx) => {
-                const isCurrent = step.stepIndex === review.currentStep;
-                const isComplete = step.stepIndex < review.currentStep;
-                  return (
-                    <div
-                      key={idx}
-                      className="flex items-center gap-3 px-3 py-2 rounded-lg border border-slate-200 bg-slate-50/60"
-                    >
-                      <div
-                        className={
-                        isCurrent
-                          ? "flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-600"
-                          : isComplete
-                            ? "flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-600"
-                            : "flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-400"
-                        }
-                      >
-                      {isCurrent ? (
-                        <Clock size={12} strokeWidth={2.5} />
-                      ) : isComplete ? (
-                        <Check size={12} strokeWidth={2.5} />
-                      ) : (
-                        <span className="text-[0.65rem] font-bold">{step.stepIndex + 1}</span>
-                        )}
-                      </div>
-                      <span className="text-[0.78rem] font-bold text-slate-700">
-                        Step {step.stepIndex + 1}
-                      </span>
-                      {step.setAt && (
-                        <span className="text-[0.7rem] font-semibold text-slate-400 ml-auto">
-                          <TimeAgo rfc3339={step.setAt} />
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-              {review.currentStepStartedAt && (
-                <p className="text-[0.7rem] font-medium text-slate-400 mt-3">
-                  Current step started <TimeAgo rfc3339={review.currentStepStartedAt} />
-                </p>
-              )}
-            </Card>
-          )}
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="flex min-w-0 flex-col gap-4">
+          <StatusHero request={item} />
+          <JustificationCard
+            text={item.spec?.justification}
+            description="Why the requester says the access is needed"
+            emptyLabel="The requester did not explain why this access is needed. Consider asking before approving."
+          />
+          <PeopleCard request={item} />
+          <ResourceCard request={item} />
+          <AuthorizationCard request={item} />
+          <ReviewWorkflow request={item} />
+          <RequestTimeline request={item} />
         </div>
 
-        <Card className="p-5 lg:sticky lg:top-20">
-          <Eyebrow>Your decision</Eyebrow>
-          {isPending ? (
-            <div className="flex flex-col gap-4 mt-3">
-              <Field
-                label="Justification"
-                description="Optionally explain your decision"
-              >
-                <Textarea
-                  autosize
-                  minRows={3}
-                  maxRows={7}
-                  placeholder="Reason for approving or rejecting..."
-                  value={justification}
-                  onChange={(e) => setJustification(e.currentTarget.value)}
-                />
-              </Field>
+        <div className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-20">
+          <SectionCard
+            title="Your decision"
+            description={
+              pending
+                ? approvalRequirementLabel(currentStep)
+                : "This request is no longer awaiting review"
+            }
+            icon={<Gavel size={14} strokeWidth={2.4} />}
+            tone={pending ? "amber" : "slate"}
+          >
+            {pending ? (
+              <div className="flex flex-col gap-4">
+                <Field
+                  label="Justification"
+                  description="Required when rejecting, recommended when approving"
+                >
+                  <Textarea
+                    autosize
+                    minRows={3}
+                    maxRows={7}
+                    placeholder="Explain your decision..."
+                    value={justification}
+                    onChange={(e) => setJustification(e.currentTarget.value)}
+                  />
+                </Field>
 
-              <div className="flex flex-col gap-2">
-                <Button
-                  fullWidth
-                  variant="filled"
-                  color="dark"
-                  leftSection={<Check size={14} strokeWidth={2.5} />}
-                  loading={
-                    decideMutation.isPending &&
-                    decideMutation.variables ===
-                      AccessP.Review_Spec_Decision.APPROVE
-                  }
-                  disabled={decideMutation.isPending}
-                  onClick={() => setDecisionToSubmit(AccessP.Review_Spec_Decision.APPROVE)}
-                >
-                  Approve
-                </Button>
-                <Button
-                  fullWidth
-                  variant="outline"
-                  color="red"
-                  leftSection={<X size={14} strokeWidth={2.5} />}
-                  loading={
-                    decideMutation.isPending &&
-                    decideMutation.variables ===
-                      AccessP.Review_Spec_Decision.REJECT
-                  }
-                  disabled={decideMutation.isPending}
-                  onClick={() => {
-                    if (!justification.trim()) {
-                      toast.error("Add a reason before rejecting this request");
-                      return;
+                <div className="flex flex-col gap-2">
+                  <Button
+                    fullWidth
+                    variant="filled"
+                    color="teal"
+                    leftSection={<Check size={15} strokeWidth={3} />}
+                    disabled={decideMutation.isPending}
+                    onClick={() =>
+                      setDecisionToSubmit(AccessP.Review_Spec_Decision.APPROVE)
                     }
-                    setDecisionToSubmit(AccessP.Review_Spec_Decision.REJECT);
-                  }}
-                >
-                  Reject
-                </Button>
+                  >
+                    Approve
+                  </Button>
+                  <Button
+                    fullWidth
+                    variant="light"
+                    color="red"
+                    leftSection={<X size={15} strokeWidth={3} />}
+                    disabled={decideMutation.isPending}
+                    onClick={() => {
+                      if (!justification.trim()) {
+                        toast.error("Add a reason before rejecting this request");
+                        return;
+                      }
+                      setDecisionToSubmit(AccessP.Review_Spec_Decision.REJECT);
+                    }}
+                  >
+                    Reject
+                  </Button>
+                </div>
+
+                <Note tone="slate" icon={<Info size={13} strokeWidth={2.4} />}>
+                  A single rejection ends the request immediately. An approval
+                  advances it to the next step of the workflow.
+                </Note>
               </div>
-            </div>
-          ) : (
-            <p className="mt-3 text-[0.76rem] font-semibold text-slate-400">
-              This request is no longer awaiting review.
-            </p>
-          )}
-        </Card>
+            ) : (
+              <Note tone="slate">
+                A decision has already been reached for this request.
+              </Note>
+            )}
+          </SectionCard>
+
+          <SectionCard title="Request details" bodyClassName="px-4 py-1">
+            <RequestFacts request={item} showPolicy />
+          </SectionCard>
+        </div>
       </div>
 
       <ConfirmDialog
@@ -300,13 +223,37 @@ const ReviewRequest = () => {
         onConfirm={() => {
           if (decisionToSubmit !== undefined) decideMutation.mutate(decisionToSubmit);
         }}
-        title={decisionToSubmit === AccessP.Review_Spec_Decision.REJECT ? "Reject request?" : "Approve request?"}
+        title={
+          decisionToSubmit === AccessP.Review_Spec_Decision.REJECT
+            ? "Reject this request?"
+            : "Approve this request?"
+        }
         description={
           decisionToSubmit === AccessP.Review_Spec_Decision.REJECT
-            ? "This decision will reject the access request and notify the requester."
-            : "This decision will approve this review step and may grant access if all required steps are complete."
+            ? "The request is rejected immediately and no access is granted."
+            : "Your approval is recorded for the current step. Access is granted once every step of the workflow is satisfied."
         }
-        confirmLabel={decisionToSubmit === AccessP.Review_Spec_Decision.REJECT ? "Reject request" : "Approve request"}
+        details={
+          <div className="flex flex-col gap-1.5 text-[0.74rem] font-semibold text-slate-600">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-slate-400">Resource</span>
+              <span className="truncate font-mono">
+                {resource.name || item.metadata!.name}
+              </span>
+            </div>
+            {justification.trim() && (
+              <div className="flex items-start justify-between gap-3">
+                <span className="shrink-0 text-slate-400">Your reason</span>
+                <span className="min-w-0 text-right">{justification.trim()}</span>
+              </div>
+            )}
+          </div>
+        }
+        confirmLabel={
+          decisionToSubmit === AccessP.Review_Spec_Decision.REJECT
+            ? "Reject request"
+            : "Approve request"
+        }
         danger={decisionToSubmit === AccessP.Review_Spec_Decision.REJECT}
         loading={decideMutation.isPending}
       />

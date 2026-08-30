@@ -9,74 +9,133 @@ dayjs.extend(relativeTime);
 dayjs.extend(utc);
 
 import { Tooltip } from "@mantine/core";
+import { twMerge } from "tailwind-merge";
 
-const TimeAgo = (props: { rfc3339?: Timestamp }) => {
-  const t = props.rfc3339 ? Timestamp.toDate(props.rfc3339) : undefined;
-  const [time, setTime] = React.useState(t ? dayjs(t).fromNow() : "—");
+import { Tone, formatSeconds, toneClasses } from "@/utils";
+
+export const useNow = (intervalMs = 10000) => {
+  const [now, setNow] = React.useState(() => Date.now());
 
   React.useEffect(() => {
-    if (!t) {
-      setTime("—");
-      return;
-    }
+    const interval = window.setInterval(() => setNow(Date.now()), intervalMs);
+    return () => window.clearInterval(interval);
+  }, [intervalMs]);
 
-    setTime(dayjs(t).fromNow());
+  return now;
+};
 
-    const interval = setInterval(() => setTime(dayjs(t).fromNow()), 10000);
-    return () => {
-      clearInterval(interval);
-    };
-  }, [t?.getTime()]);
+export const absoluteLabel = (date: Date) =>
+  dayjs(date).local().format("h:mm A · ddd, MMM D, YYYY");
 
-  if (!t) return <span>—</span>;
+const TimeAgo = (props: { rfc3339?: Timestamp; className?: string }) => {
+  const t = props.rfc3339 ? Timestamp.toDate(props.rfc3339) : undefined;
+  useNow(10000);
+
+  if (!t) return <span className={props.className}>—</span>;
 
   return (
-    <Tooltip
-      label={
-        <p className="font-bold shadow-md text-xs rounded-sm">
-          {dayjs(t).local().format("hh:mm:ss A, ddd MMM D, YYYY")}
-        </p>
-      }
-      transitionProps={{
-        transition: "fade",
-        duration: 340,
-      }}
-    >
-      <span>{time}</span>
+    <Tooltip label={absoluteLabel(t)}>
+      <span className={twMerge("whitespace-nowrap", props.className)}>
+        {dayjs(t).fromNow()}
+      </span>
     </Tooltip>
   );
 };
 
-export const TimeRemaining = (props: { rfc3339?: Timestamp }) => {
+export const AbsoluteTime = (props: {
+  rfc3339?: Timestamp;
+  className?: string;
+}) => {
+  const t = props.rfc3339 ? Timestamp.toDate(props.rfc3339) : undefined;
+  if (!t) return <span className={props.className}>—</span>;
+
+  return (
+    <Tooltip label={dayjs(t).fromNow()}>
+      <span className={twMerge("whitespace-nowrap", props.className)}>
+        {absoluteLabel(t)}
+      </span>
+    </Tooltip>
+  );
+};
+
+export const remainingSeconds = (target?: Date, now = Date.now()) =>
+  target ? Math.floor((target.getTime() - now) / 1000) : undefined;
+
+export const Countdown = (props: {
+  date?: Date;
+  suffix?: string;
+  endedLabel?: string;
+  tone?: Tone;
+  className?: string;
+}) => {
+  const now = useNow(1000 * 15);
+  const seconds = remainingSeconds(props.date, now);
+
+  if (seconds === undefined) return <span className={props.className}>—</span>;
+  if (seconds <= 0) {
+    return (
+      <span className={twMerge("text-slate-400", props.className)}>
+        {props.endedLabel ?? "Ended"}
+      </span>
+    );
+  }
+
+  const label = `${formatSeconds(seconds)}${props.suffix ?? " left"}`;
+
+  return (
+    <Tooltip label={absoluteLabel(props.date!)}>
+      <span
+        className={twMerge(
+          "whitespace-nowrap",
+          props.tone ? toneClasses[props.tone].text : undefined,
+          props.className,
+        )}
+      >
+        {label}
+      </span>
+    </Tooltip>
+  );
+};
+
+export const TimeRemaining = (props: {
+  rfc3339?: Timestamp;
+  className?: string;
+}) => {
   const target = props.rfc3339 ? Timestamp.toDate(props.rfc3339) : undefined;
-  const [label, setLabel] = React.useState("—");
+  const now = useNow(1000 * 15);
+  const seconds = remainingSeconds(target, now);
 
-  React.useEffect(() => {
-    const update = () => {
-      if (!target) {
-        setLabel("—");
-        return;
-      }
-      const diff = target.getTime() - Date.now();
-      if (diff <= 0) {
-        setLabel("Ended");
-        return;
-      }
-      const minutes = Math.floor(diff / 60000);
-      const days = Math.floor(minutes / 1440);
-      const hours = Math.floor((minutes % 1440) / 60);
-      const remainingMinutes = minutes % 60;
-      if (days > 0) setLabel(`${days}d ${hours}h remaining`);
-      else if (hours > 0) setLabel(`${hours}h ${remainingMinutes}m remaining`);
-      else setLabel(`${Math.max(1, remainingMinutes)}m remaining`);
-    };
+  if (seconds === undefined) return <span className={props.className}>—</span>;
 
-    update();
-    const interval = window.setInterval(update, 10000);
-    return () => window.clearInterval(interval);
-  }, [target?.getTime()]);
+  return (
+    <Countdown
+      date={target}
+      tone={seconds <= 3600 ? "amber" : "emerald"}
+      className={props.className}
+    />
+  );
+};
 
-  return <span className={label === "Ended" ? "text-slate-400" : "text-emerald-600"}>{label}</span>;
+export const Elapsed = (props: {
+  rfc3339?: Timestamp;
+  suffix?: string;
+  className?: string;
+}) => {
+  const from = props.rfc3339 ? Timestamp.toDate(props.rfc3339) : undefined;
+  const now = useNow(1000 * 15);
+
+  if (!from) return <span className={props.className}>—</span>;
+
+  const seconds = Math.max(0, Math.floor((now - from.getTime()) / 1000));
+
+  return (
+    <Tooltip label={absoluteLabel(from)}>
+      <span className={twMerge("whitespace-nowrap", props.className)}>
+        {formatSeconds(seconds)}
+        {props.suffix ?? ""}
+      </span>
+    </Tooltip>
+  );
 };
 
 export default TimeAgo;

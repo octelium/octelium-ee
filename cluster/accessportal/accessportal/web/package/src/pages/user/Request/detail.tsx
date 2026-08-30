@@ -1,36 +1,178 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
+import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import * as MetaP from "@/apis/metav1/metav1";
-import { Button } from "@mantine/core";
+import { Button, Modal, Textarea } from "@mantine/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Check, Clock, X } from "lucide-react";
+import { Pencil, Save, X } from "lucide-react";
 import * as React from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 
-import TimeAgo, { TimeRemaining } from "@/components/TimeAgo";
-import RequestContext from "@/components/Access/RequestContext";
+import AuthorizationCard from "@/components/Access/AuthorizationCard";
+import JustificationCard from "@/components/Access/JustificationCard";
+import PeopleCard from "@/components/Access/PeopleCard";
+import RequestFacts from "@/components/Access/RequestFacts";
+import RequestTimeline from "@/components/Access/RequestTimeline";
+import ResourceCard from "@/components/Access/ResourceCard";
+import ReviewWorkflow from "@/components/Access/ReviewWorkflow";
+import StatusHero from "@/components/Access/StatusHero";
+import UrgencyPicker from "@/components/Access/UrgencyPicker";
+import DurationInput from "@/components/DurationInput";
+import TimestampPicker from "@/components/TimestampPicker";
 import {
-  Badge,
-  Card,
+  BackLink,
   ConfirmDialog,
+  CopyValue,
   ErrorState,
-  KeyValue,
+  Field,
   Loading,
+  NotFoundState,
   PageHeader,
-  SectionTitle,
-} from "../../../ui";
-import {
-  durationToParts,
-  requestResourceLabel,
-  statusMeta,
-  urgencyMeta,
-} from "../../../utils";
-import { getUserClient } from "../../../utils/client";
+  SectionCard,
+  StatusBadge,
+  UrgencyBadge,
+} from "@/ui";
+import { isPendingRequest, requestResourceLabel } from "@/utils";
+import { getUserClient } from "@/utils/client";
+
+const MAX_JUSTIFICATION = 1500;
+
+const EditRequestModal = (props: {
+  opened: boolean;
+  onClose: () => void;
+  request: AccessP.Request;
+}) => {
+  const queryClient = useQueryClient();
+  const { request } = props;
+  const [urgency, setUrgency] = React.useState(
+    request.spec?.urgency ?? AccessP.Request_Spec_Urgency.NORMAL,
+  );
+  const [duration, setDuration] = React.useState<MetaP.Duration | undefined>(
+    request.spec?.duration,
+  );
+  const [deadline, setDeadline] = React.useState<Timestamp | undefined>(
+    request.spec?.deadline,
+  );
+  const [justification, setJustification] = React.useState(
+    request.spec?.justification ?? "",
+  );
+
+  React.useEffect(() => {
+    if (!props.opened) return;
+    setUrgency(request.spec?.urgency ?? AccessP.Request_Spec_Urgency.NORMAL);
+    setDuration(request.spec?.duration);
+    setDeadline(request.spec?.deadline);
+    setJustification(request.spec?.justification ?? "");
+  }, [props.opened]);
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      const next = AccessP.Request.clone(request);
+      next.spec!.urgency = urgency;
+      next.spec!.justification = justification;
+      next.spec!.duration = duration;
+      next.spec!.deadline = deadline;
+      const { response } = await getUserClient().updateRequest(next);
+      return response;
+    },
+    onSuccess: () => {
+      toast.success("Request updated");
+      props.onClose();
+      queryClient.invalidateQueries({
+        queryKey: ["user", "getRequest", request.metadata!.name],
+      });
+      queryClient.invalidateQueries({ queryKey: ["user", "listRequest"] });
+    },
+    onError: (e) => {
+      toast.error(e instanceof Error ? e.message : "Failed to update request");
+    },
+  });
+
+  return (
+    <Modal
+      opened={props.opened}
+      onClose={props.onClose}
+      centered
+      radius="md"
+      title="Edit pending request"
+      styles={{ title: { fontWeight: 700, fontSize: "0.9rem" } }}
+    >
+      <div className="flex flex-col gap-4">
+        <p className="text-[0.76rem] font-medium leading-relaxed text-slate-500">
+          The resource and the recipient of a request cannot be changed. Create a
+          new request if you need different access.
+        </p>
+
+        <Field label="Urgency" description="Higher urgency helps reviewers triage the queue">
+          <UrgencyPicker value={urgency} onChange={setUrgency} />
+        </Field>
+
+        <Field label="Duration" description="How long the access should last once approved">
+          <DurationInput value={duration} onChange={setDuration} />
+        </Field>
+
+        <TimestampPicker
+          label="Deadline"
+          description="Expire the request if it is not decided by this time"
+          placeholder="No deadline"
+          value={deadline}
+          isFuture
+          onChange={setDeadline}
+        />
+
+        <Field
+          label="Justification"
+          hint={
+            <span
+              className={
+                justification.length > MAX_JUSTIFICATION
+                  ? "text-[0.66rem] font-bold text-red-500"
+                  : "text-[0.66rem] font-semibold text-slate-400"
+              }
+            >
+              {justification.length}/{MAX_JUSTIFICATION}
+            </span>
+          }
+        >
+          <Textarea
+            autosize
+            minRows={3}
+            maxRows={7}
+            value={justification}
+            onChange={(event) => setJustification(event.currentTarget.value)}
+          />
+        </Field>
+
+        <div className="flex items-center justify-end gap-2">
+          <Button
+            variant="default"
+            leftSection={<X size={13} strokeWidth={2.6} />}
+            onClick={props.onClose}
+            disabled={mutation.isPending}
+          >
+            Discard
+          </Button>
+          <Button
+            variant="filled"
+            color="dark"
+            leftSection={<Save size={13} strokeWidth={2.6} />}
+            loading={mutation.isPending}
+            disabled={justification.length > MAX_JUSTIFICATION}
+            onClick={() => mutation.mutate()}
+          >
+            Save changes
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+};
 
 const RequestDetail = () => {
   const { name } = useParams<{ name: string }>();
   const queryClient = useQueryClient();
   const [cancelOpen, setCancelOpen] = React.useState(false);
+  const [editOpen, setEditOpen] = React.useState(false);
 
   const qry = useQuery({
     queryKey: ["user", "getRequest", name],
@@ -41,6 +183,8 @@ const RequestDetail = () => {
       );
       return response;
     },
+    refetchInterval: (query) =>
+      isPendingRequest(query.state.data) ? 15000 : false,
   });
 
   const cancelMutation = useMutation({
@@ -63,187 +207,98 @@ const RequestDetail = () => {
 
   if (qry.isLoading) return <Loading label="Loading request..." />;
   if (qry.isError) {
-    return <ErrorState title="Could not load this request" onRetry={() => qry.refetch()} />;
+    return (
+      <ErrorState
+        title="Could not load this request"
+        onRetry={() => qry.refetch()}
+      />
+    );
   }
   if (!qry.data) {
     return (
-      <Card className="p-8 text-center text-[0.82rem] font-semibold text-slate-500">
-        Request not found.
-      </Card>
+      <NotFoundState
+        title="Request not found"
+        description="This request either does not exist or is no longer available to you."
+      />
     );
   }
 
   const item = qry.data;
   const resource = requestResourceLabel(item);
-  const status = statusMeta(item.status?.state?.status);
-  const urgency = urgencyMeta(item.spec?.urgency);
-  const duration = durationToParts(item.spec?.duration);
-  const isPending =
-    item.status?.state?.status === AccessP.Request_Status_State_Status.PENDING;
-  const review = item.status?.review;
+  const pending = isPendingRequest(item);
 
   return (
     <div className="w-full">
-      <Link
-        to="/user/requests"
-        className="inline-flex items-center gap-1.5 text-[0.75rem] font-bold text-slate-400 hover:text-slate-700 transition-colors duration-150 mb-4"
-      >
-        <ArrowLeft size={13} strokeWidth={2.5} />
-        My Requests
-      </Link>
+      <BackLink to="/user/requests">My Requests</BackLink>
 
       <PageHeader
-        eyebrow={resource.kind}
+        eyebrow={`${resource.kind} access request`}
         title={resource.name || item.metadata!.name}
+        meta={
+          <>
+            <StatusBadge status={item.status?.state?.status} withHint />
+            <UrgencyBadge urgency={item.spec?.urgency} />
+            <CopyValue value={item.metadata!.name} />
+          </>
+        }
         actions={
-          <div className="flex items-center gap-2">
-            <Badge tone={urgency.tone}>{urgency.label}</Badge>
-            <Badge tone={status.tone}>{status.label}</Badge>
-            {isPending && (
+          pending ? (
+            <>
               <Button
-                variant="outline"
+                variant="default"
+                leftSection={<Pencil size={13} strokeWidth={2.6} />}
+                onClick={() => setEditOpen(true)}
+              >
+                Edit
+              </Button>
+              <Button
+                variant="light"
                 color="red"
-                leftSection={<X size={13} strokeWidth={2.5} />}
+                leftSection={<X size={13} strokeWidth={2.8} />}
                 loading={cancelMutation.isPending}
                 onClick={() => setCancelOpen(true)}
               >
-                Cancel
+                Cancel request
               </Button>
-            )}
-          </div>
+            </>
+          ) : undefined
         }
       />
 
-      <div className="flex flex-col gap-4">
-        <Card className="p-5">
-          <SectionTitle>Overview</SectionTitle>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <KeyValue label="Resource">
-              <span className="font-mono">{resource.name || "—"}</span>
-            </KeyValue>
-            <KeyValue label="Type">{resource.kind}</KeyValue>
-            <KeyValue label="Urgency">{urgency.label}</KeyValue>
-            <KeyValue label="Duration">
-              {duration.amount} {duration.unit}
-            </KeyValue>
-            <KeyValue label="Requested">
-              {item.status?.state?.createdAt ? (
-                <TimeAgo rfc3339={item.status.state.createdAt} />
-              ) : (
-                "—"
-              )}
-            </KeyValue>
-            {item.spec?.justification && (
-              <KeyValue label="Justification" full>
-                <span className="font-normal text-slate-600">
-                  {item.spec.justification}
-                </span>
-              </KeyValue>
-            )}
-            {item.spec?.deadline && (
-              <KeyValue label="Deadline">
-                <TimeAgo rfc3339={item.spec.deadline} />
-              </KeyValue>
-            )}
-          </div>
-        </Card>
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="flex min-w-0 flex-col gap-4">
+          <StatusHero request={item} />
+          <ResourceCard request={item} />
+          <JustificationCard
+            text={item.spec?.justification}
+            description="Why you asked for this access"
+            emptyLabel="You did not add a justification. Reviewers decide faster when they know why the access is needed."
+          />
+          <ReviewWorkflow request={item} />
+          <RequestTimeline request={item} />
+        </div>
 
-        <RequestContext request={item} />
-
-        {(item.status?.approvalStartAt ||
-          item.status?.approvalEndAt ||
-          item.status?.accessEndsAt) && (
-          <Card className="p-5">
-            <SectionTitle>Access window</SectionTitle>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {item.status?.approvalStartAt && (
-                <KeyValue label="Approved at">
-                  <TimeAgo rfc3339={item.status.approvalStartAt} />
-                </KeyValue>
-              )}
-              {item.status?.approvalEndAt && (
-                <KeyValue label="Approval ends">
-                  <TimeRemaining rfc3339={item.status.approvalEndAt} />
-                </KeyValue>
-              )}
-              {item.status?.accessEndsAt && (
-                <KeyValue label="Access ends">
-                  <TimeRemaining rfc3339={item.status.accessEndsAt} />
-                </KeyValue>
-              )}
-            </div>
-          </Card>
-        )}
-
-        {item.status?.lastStates && item.status.lastStates.length > 1 && (
-          <Card className="p-5">
-            <SectionTitle>Status history</SectionTitle>
-            <div className="flex flex-col gap-2">
-              {item.status.lastStates.map((state, index) => {
-                const stateMeta = statusMeta(state.status);
-                return (
-                  <div key={`${state.status}-${index}`} className="flex items-center gap-3 px-3 py-2 rounded-lg border border-slate-200 bg-slate-50/60">
-                    <span className={`w-2 h-2 rounded-full ${stateMeta.tone === "emerald" ? "bg-emerald-500" : stateMeta.tone === "red" ? "bg-red-500" : stateMeta.tone === "amber" ? "bg-amber-500" : "bg-slate-400"}`} />
-                    <span className="text-[0.78rem] font-bold text-slate-700">{stateMeta.label}</span>
-                    {state.createdAt && <span className="ml-auto text-[0.7rem] font-semibold text-slate-400"><TimeAgo rfc3339={state.createdAt} /></span>}
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
-        )}
-
-        {review && review.lastSteps.length > 0 && (
-          <Card className="p-5">
-            <SectionTitle>Review progress</SectionTitle>
-            <div className="flex flex-col gap-2">
-              {review.lastSteps.map((step, idx) => {
-                const isCurrent = step.stepIndex === review.currentStep;
-                const isComplete = step.stepIndex < review.currentStep;
-                return (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-3 px-3 py-2 rounded-lg border border-slate-200 bg-slate-50/60"
-                  >
-                    <div
-                      className={
-                        isCurrent
-                          ? "flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-600"
-                          : isComplete
-                            ? "flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-600"
-                            : "flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-400"
-                      }
-                    >
-                      {isCurrent ? (
-                        <Clock size={12} strokeWidth={2.5} />
-                      ) : isComplete ? (
-                        <Check size={12} strokeWidth={2.5} />
-                      ) : (
-                        <span className="text-[0.65rem] font-bold">{step.stepIndex + 1}</span>
-                      )}
-                    </div>
-                    <span className="text-[0.78rem] font-bold text-slate-700">
-                      Step {step.stepIndex + 1}
-                    </span>
-                    {step.setAt && (
-                      <span className="text-[0.7rem] font-semibold text-slate-400 ml-auto">
-                        <TimeAgo rfc3339={step.setAt} />
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
-        )}
+        <div className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-20">
+          <SectionCard title="Request details" bodyClassName="px-4 py-1">
+            <RequestFacts request={item} />
+          </SectionCard>
+          <PeopleCard request={item} />
+          <AuthorizationCard request={item} />
+        </div>
       </div>
+
+      <EditRequestModal
+        opened={editOpen}
+        onClose={() => setEditOpen(false)}
+        request={item}
+      />
 
       <ConfirmDialog
         opened={cancelOpen}
         onClose={() => setCancelOpen(false)}
         onConfirm={() => cancelMutation.mutate()}
-        title="Cancel request?"
-        description="This request will stop progressing and cannot be restored."
+        title="Cancel this request?"
+        description="The request stops progressing through its review workflow and cannot be restored."
         confirmLabel="Cancel request"
         loading={cancelMutation.isPending}
       />

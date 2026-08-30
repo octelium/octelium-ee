@@ -1,15 +1,11 @@
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
-import {
-  Button,
-  Input,
-  InputBase,
-  Popover,
-  SegmentedControl,
-} from "@mantine/core";
+import { Button, InputBase, Popover, SegmentedControl } from "@mantine/core";
 import { DatePicker, TimeInput } from "@mantine/dates";
 import dayjs from "dayjs";
 import { CalendarDays, ChevronDown, Clock3, RotateCcw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+
+import { Field } from "@/ui";
 
 type RelativeUnit = "minute" | "hour" | "day" | "week" | "month";
 
@@ -119,9 +115,8 @@ const TimestampPicker = ({
     setOpened(false);
   };
 
-  return (
-    <Input.Wrapper label={label} description={description} className="w-full">
-      <Popover
+  const picker = (
+    <Popover
         opened={opened}
         onChange={setOpened}
         width={520}
@@ -350,8 +345,15 @@ const TimestampPicker = ({
             </div>
           </div>
         </Popover.Dropdown>
-      </Popover>
-    </Input.Wrapper>
+    </Popover>
+  );
+
+  return label ? (
+    <Field label={label} description={description}>
+      {picker}
+    </Field>
+  ) : (
+    <div className="w-full">{picker}</div>
   );
 };
 

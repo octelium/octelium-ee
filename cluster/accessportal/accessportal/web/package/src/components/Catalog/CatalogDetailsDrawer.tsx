@@ -1,62 +1,27 @@
 import * as AccessP from "@/apis/accessv1/accessv1";
-import * as UserP from "@/apis/userv1/userv1";
 import { Drawer, SegmentedControl } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
-import { Boxes, Globe2, Server } from "lucide-react";
+import { Globe2, Lock, Radio, Server } from "lucide-react";
 import * as React from "react";
 
+import { listAllNamespaces, listAllServices } from "@/components/Access/hooks";
+import { serviceTypeIcon } from "@/components/Access/icons";
 import {
   Badge,
-  Card,
   EmptyState,
   ErrorState,
+  Eyebrow,
+  IconTile,
   Loading,
-  SectionTitle,
-} from "../../ui";
-import { namespaceFromName, serviceModeMeta, shortName } from "../../utils";
-import { getUserMainClient } from "../../utils/client";
+  MonoValue,
+  SkeletonRows,
+} from "@/ui";
+import { namespaceFromName, serviceModeMeta, shortName } from "@/utils";
 
 type CatalogDetailsDrawerProps = {
   catalog?: AccessP.Catalog;
   opened: boolean;
   onClose: () => void;
-};
-
-const listAllServices = async (): Promise<UserP.Service[]> => {
-  const items: UserP.Service[] = [];
-  let page = 0;
-
-  for (;;) {
-    const { response } = await getUserMainClient().listService(
-      UserP.ListServiceOptions.create({
-        common: { page, itemsPerPage: 500 },
-        namespace: "",
-      }),
-    );
-    items.push(...response.items);
-    if (!response.listResponseMeta?.hasMore || page > 1000) break;
-    page += 1;
-  }
-
-  return items;
-};
-
-const listAllNamespaces = async (): Promise<UserP.Namespace[]> => {
-  const items: UserP.Namespace[] = [];
-  let page = 0;
-
-  for (;;) {
-    const { response } = await getUserMainClient().listNamespace(
-      UserP.ListNamespaceOptions.create({
-        common: { page, itemsPerPage: 500 },
-      }),
-    );
-    items.push(...response.items);
-    if (!response.listResponseMeta?.hasMore || page > 1000) break;
-    page += 1;
-  }
-
-  return items;
 };
 
 const CatalogDetailsDrawer = (props: CatalogDetailsDrawerProps) => {
@@ -68,7 +33,7 @@ const CatalogDetailsDrawer = (props: CatalogDetailsDrawerProps) => {
   const servicesQuery = useQuery({
     queryKey: ["userapi", "catalogServices", props.catalog?.metadata?.name],
     enabled: props.opened && !!props.catalog,
-    queryFn: listAllServices,
+    queryFn: () => listAllServices(),
   });
   const namespacesQuery = useQuery({
     queryKey: ["userapi", "catalogNamespaces", props.catalog?.metadata?.name],
@@ -85,6 +50,7 @@ const CatalogDetailsDrawer = (props: CatalogDetailsDrawerProps) => {
       scopeNamespaces.has(namespace)
     );
   });
+
   const catalogNamespaceNames =
     scopeNamespaces.size > 0
       ? scopeNamespaces
@@ -97,17 +63,12 @@ const CatalogDetailsDrawer = (props: CatalogDetailsDrawerProps) => {
             ),
           )
         : undefined;
+
   const namespaces = (namespacesQuery.data ?? []).filter((namespace) => {
     const name = namespace.metadata?.name ?? "";
     return !catalogNamespaceNames || catalogNamespaceNames.has(name);
   });
-  const namespaceNames = new Set(
-    services.map(
-      (service) =>
-        service.status?.namespace ||
-        namespaceFromName(service.metadata?.name),
-    ),
-  );
+
   const serviceCountByNamespace = services.reduce<Record<string, number>>(
     (counts, service) => {
       const namespace =
@@ -118,16 +79,12 @@ const CatalogDetailsDrawer = (props: CatalogDetailsDrawerProps) => {
     {},
   );
 
-  const renderError = (message: string, onRetry: () => void) => (
-    <ErrorState title={message} onRetry={onRetry} />
-  );
-
   return (
     <Drawer
       opened={props.opened}
       onClose={props.onClose}
       position="right"
-      size="min(520px, 100vw)"
+      size="min(560px, 100vw)"
       title={props.catalog?.metadata?.displayName || props.catalog?.metadata?.name}
       overlayProps={{ backgroundOpacity: 0.35, blur: 2 }}
       transitionProps={{ transition: "slide-left", duration: 220 }}
@@ -137,13 +94,13 @@ const CatalogDetailsDrawer = (props: CatalogDetailsDrawerProps) => {
       }}
     >
       <div className="flex flex-col gap-4">
-        <div>
-          <p className="font-mono text-[0.72rem] font-semibold text-slate-400">
+        <div className="rounded-lg border border-slate-200 bg-slate-50/70 px-3 py-2.5">
+          <MonoValue className="bg-transparent px-0">
             {props.catalog?.metadata?.name}
-          </p>
-          <p className="mt-2 text-[0.78rem] font-medium leading-relaxed text-slate-500">
-            Services and namespaces included in this Catalog and available for
-            access requests.
+          </MonoValue>
+          <p className="mt-1.5 text-[0.76rem] font-medium leading-relaxed text-slate-500">
+            {props.catalog?.metadata?.description ||
+              "Every Service collected by this Catalog is granted at once when the request is approved."}
           </p>
         </div>
 
@@ -165,11 +122,14 @@ const CatalogDetailsDrawer = (props: CatalogDetailsDrawerProps) => {
 
         {view === "services" ? (
           servicesQuery.isLoading ? (
-            <Loading label="Loading catalog services..." />
+            <SkeletonRows rows={4} />
           ) : servicesQuery.isError ? (
-            renderError("Could not load catalog services", () => {
-              void servicesQuery.refetch();
-            })
+            <ErrorState
+              title="Could not load catalog services"
+              onRetry={() => {
+                void servicesQuery.refetch();
+              }}
+            />
           ) : services.length === 0 ? (
             <EmptyState
               icon={<Server size={20} strokeWidth={2} />}
@@ -178,50 +138,57 @@ const CatalogDetailsDrawer = (props: CatalogDetailsDrawerProps) => {
             />
           ) : (
             <div className="flex flex-col gap-2">
-              <SectionTitle>Included services</SectionTitle>
+              <Eyebrow>Included services</Eyebrow>
               {services.map((service) => {
                 const name = service.metadata?.name ?? "";
-                const displayName = service.metadata?.displayName || shortName(name);
+                const displayName =
+                  service.metadata?.displayName || shortName(name);
                 const namespace =
                   service.status?.namespace || namespaceFromName(name);
                 const mode = serviceModeMeta(service.spec?.type);
-                const port = service.spec?.port ?? 0;
-                const isTLS = service.spec?.isTLS ?? false;
-                const isPublic = service.spec?.isPublic ?? false;
+                const Icon = serviceTypeIcon(service.spec?.type);
+
                 return (
-                  <Card key={service.metadata?.uid || name} className="p-3">
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
-                        <Boxes size={15} strokeWidth={2.2} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="truncate text-[0.8rem] font-bold text-slate-800">
-                            {displayName}
-                          </p>
-                          <Badge tone={mode.tone}>{mode.label}</Badge>
-                        </div>
-                        <p className="mt-0.5 truncate font-mono text-[0.68rem] font-semibold text-slate-400">
-                          {name}
-                        </p>
-                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                          {namespace && <Badge tone="slate">{namespace}</Badge>}
-                          {port > 0 && (
-                            <Badge tone="slate">Port {port}</Badge>
-                          )}
-                          {isTLS && <Badge tone="emerald">TLS</Badge>}
-                          {isPublic && <Badge tone="amber">Public</Badge>}
-                        </div>
-                        {(service.status?.primaryHostname ||
-                          service.status?.addresses.length) && (
-                          <p className="mt-2 break-all font-mono text-[0.68rem] font-semibold text-slate-400">
-                            {service.status.primaryHostname ||
-                              service.status.addresses.join(", ")}
-                          </p>
+                  <div
+                    key={service.metadata?.uid || name}
+                    className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5"
+                  >
+                    <IconTile tone={mode.tone}>
+                      <Icon size={15} strokeWidth={2.2} />
+                    </IconTile>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[0.8rem] font-bold text-slate-800">
+                        {displayName}
+                      </p>
+                      <p className="mt-0.5 truncate font-mono text-[0.68rem] font-semibold text-slate-400">
+                        {name}
+                      </p>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                        <Badge tone={mode.tone}>{mode.label}</Badge>
+                        {namespace && <Badge tone="slate">{namespace}</Badge>}
+                        {(service.spec?.port ?? 0) > 0 && (
+                          <Badge tone="slate">Port {service.spec!.port}</Badge>
+                        )}
+                        {service.spec?.isTLS && (
+                          <Badge tone="emerald" icon={<Lock size={9} strokeWidth={3} />}>
+                            TLS
+                          </Badge>
+                        )}
+                        {service.spec?.isPublic && (
+                          <Badge tone="amber" icon={<Radio size={9} strokeWidth={3} />}>
+                            Public
+                          </Badge>
                         )}
                       </div>
+                      {(service.status?.primaryHostname ||
+                        service.status?.addresses.length) && (
+                        <p className="mt-1.5 break-all font-mono text-[0.66rem] font-semibold text-slate-400">
+                          {service.status.primaryHostname ||
+                            service.status.addresses.join(", ")}
+                        </p>
+                      )}
                     </div>
-                  </Card>
+                  </div>
                 );
               })}
             </div>
@@ -229,9 +196,12 @@ const CatalogDetailsDrawer = (props: CatalogDetailsDrawerProps) => {
         ) : namespacesQuery.isLoading ? (
           <Loading label="Loading catalog namespaces..." />
         ) : namespacesQuery.isError ? (
-          renderError("Could not load catalog namespaces", () => {
-            void namespacesQuery.refetch();
-          })
+          <ErrorState
+            title="Could not load catalog namespaces"
+            onRetry={() => {
+              void namespacesQuery.refetch();
+            }}
+          />
         ) : namespaces.length === 0 ? (
           <EmptyState
             icon={<Globe2 size={20} strokeWidth={2} />}
@@ -240,28 +210,27 @@ const CatalogDetailsDrawer = (props: CatalogDetailsDrawerProps) => {
           />
         ) : (
           <div className="flex flex-col gap-2">
-            <SectionTitle>Included namespaces</SectionTitle>
+            <Eyebrow>Included namespaces</Eyebrow>
             {namespaces.map((namespace) => {
               const name = namespace.metadata?.name ?? "";
+              const count = serviceCountByNamespace[name] ?? 0;
               return (
-                <Card key={namespace.metadata?.uid || name} className="p-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
-                      <Globe2 size={15} strokeWidth={2.2} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-mono text-[0.8rem] font-bold text-slate-800">
-                        {name}
-                      </p>
-                      <p className="mt-0.5 text-[0.7rem] font-semibold text-slate-400">
-                        {serviceCountByNamespace[name] ?? 0} services in this namespace
-                      </p>
-                    </div>
-                    <Badge tone={namespaceNames.has(name) ? "blue" : "slate"}>
-                      {namespaceNames.has(name) ? "Included" : "Namespace"}
-                    </Badge>
+                <div
+                  key={namespace.metadata?.uid || name}
+                  className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5"
+                >
+                  <IconTile tone="blue">
+                    <Globe2 size={15} strokeWidth={2.2} />
+                  </IconTile>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-mono text-[0.8rem] font-bold text-slate-800">
+                      {name}
+                    </p>
+                    <p className="mt-0.5 text-[0.7rem] font-semibold text-slate-400">
+                      {count} service{count === 1 ? "" : "s"} available to you
+                    </p>
                   </div>
-                </Card>
+                </div>
               );
             })}
           </div>
