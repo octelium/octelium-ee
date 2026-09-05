@@ -506,6 +506,11 @@
                     "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.FIDO",
                     "additionalProperties": false,
                     "description": "FIDO sets the options of the FIDO/WebAuthn Authenticators"
+                },
+                "tpm": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.TPM",
+                    "additionalProperties": false,
+                    "description": "TPM sets the options of the TPM 2.0 Authenticators"
                 }
             },
             "additionalProperties": false,
@@ -550,6 +555,17 @@
                     "type": "string",
                     "title": "Attestation Conveyance Preference",
                     "description": "AttestationConveyancePreference is the WebAuthn attestation conveyance preference used during the registration"
+                },
+                "userVerification": {
+                    "enum": [
+                        "USER_VERIFICATION_UNSET",
+                        "REQUIRED",
+                        "PREFERRED",
+                        "DISCOURAGED"
+                    ],
+                    "type": "string",
+                    "title": "User Verification",
+                    "description": "UserVerification is the WebAuthn User verification requirement that is used during the registration as well as the authentication of the FIDO Authenticators that are used as second factors. It does not apply to the Passkey login which always requires the User verification."
                 }
             },
             "additionalProperties": false,
@@ -583,6 +599,52 @@
             "type": "object",
             "title": "Rule",
             "description": "Rule decides whether an otherwise successful Authenticator authentication is eventually accepted or rejected"
+        },
+        "octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.TPM": {
+            "properties": {
+                "endorsementTrust": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.TPM.EndorsementTrust",
+                    "additionalProperties": false,
+                    "description": "EndorsementTrust controls the verification of the endorsement key certificates"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "TPM",
+            "description": "TPM sets the options of the TPM 2.0 Authenticators"
+        },
+        "octelium.api.main.core.v1.ClusterConfig.Spec.Authenticator.TPM.EndorsementTrust": {
+            "properties": {
+                "mode": {
+                    "enum": [
+                        "MODE_UNKNOWN",
+                        "DISABLED",
+                        "VERIFY_IF_PRESENT",
+                        "REQUIRE_VERIFIED"
+                    ],
+                    "type": "string",
+                    "title": "Mode",
+                    "description": "Mode is the endorsement key certificate verification mode"
+                },
+                "trustedCAs": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "TrustedCAs is the list of the PEM-encoded root certificate authorities of the TPM manufacturers that are trusted to issue endorsement key certificates. Each entry must contain exactly one certificate."
+                },
+                "intermediateCAs": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "IntermediateCAs is the list of the PEM-encoded intermediate certificate authorities that are used to build the certification path from an endorsement key certificate to a trustedCA. They are never trusted on their own. Each entry must contain exactly one certificate."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Endorsement Trust",
+            "description": "EndorsementTrust controls how the endorsement key certificate presented by a TPM is verified upon registering an Authenticator"
         },
         "octelium.api.main.core.v1.ClusterConfig.Spec.Authorization": {
             "properties": {

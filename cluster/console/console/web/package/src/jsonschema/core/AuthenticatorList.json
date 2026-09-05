@@ -418,6 +418,11 @@
                     "description": "EKPublicKey is the public key of the TPM's endorsement key",
                     "format": "binary",
                     "binaryEncoding": "base64"
+                },
+                "endorsement": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Authenticator.Status.Info.TPM.Endorsement",
+                    "additionalProperties": false,
+                    "description": "Endorsement is the provenance of the TPM's endorsement key"
                 }
             },
             "additionalProperties": false,
@@ -456,6 +461,59 @@
             "type": "object",
             "title": "Attestation Parameters",
             "description": "AttestationParameters is the attestation of the TPM's attestation key"
+        },
+        "octelium.api.main.core.v1.Authenticator.Status.Info.TPM.Endorsement": {
+            "properties": {
+                "verification": {
+                    "enum": [
+                        "VERIFICATION_UNKNOWN",
+                        "VERIFIED",
+                        "FAILED",
+                        "NOT_ATTEMPTED",
+                        "NO_CERTIFICATE"
+                    ],
+                    "type": "string",
+                    "title": "Verification",
+                    "description": "Verification is the outcome of the verification of the endorsement key certificate"
+                },
+                "certificateSHA256": {
+                    "type": "string",
+                    "description": "CertificateSHA256 is the SHA256 digest of the DER-encoded endorsement key certificate",
+                    "format": "binary",
+                    "binaryEncoding": "base64"
+                },
+                "trustedCASHA256": {
+                    "type": "string",
+                    "description": "TrustedCASHA256 is the SHA256 digest of the DER-encoded trusted CA that the endorsement key certificate chained to",
+                    "format": "binary",
+                    "binaryEncoding": "base64"
+                },
+                "manufacturerID": {
+                    "type": "integer",
+                    "description": "ManufacturerID is the TCG vendor identifier of the TPM manufacturer"
+                },
+                "manufacturer": {
+                    "type": "string",
+                    "description": "Manufacturer is the human-readable name of the TPM manufacturer"
+                },
+                "model": {
+                    "type": "string",
+                    "description": "Model is the model of the TPM"
+                },
+                "version": {
+                    "type": "string",
+                    "description": "Version is the version of the TPM as stated by the endorsement key certificate. It is not the current firmware version of the TPM."
+                },
+                "verifiedAt": {
+                    "type": "string",
+                    "description": "VerifiedAt is the timestamp at which the verification was performed",
+                    "format": "date-time"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Endorsement",
+            "description": "Endorsement is the provenance of the TPM's endorsement key as it was established upon registering the Authenticator"
         },
         "octelium.api.main.meta.v1.ListResponseMeta": {
             "properties": {

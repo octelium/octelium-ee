@@ -493,16 +493,16 @@ func (s *Server) validateExpression(ctx context.Context, p *enterprisev1.Conditi
 			return grpcutils.InvalidArg("LLM protocol must be set")
 		}
 		if expr.GetProtocol() < corev1.Service_Spec_Config_LLM_PROTOCOL_UNSET ||
-			expr.GetProtocol() > corev1.Service_Spec_Config_LLM_ANTHROPIC {
+			expr.GetProtocol() > corev1.Service_Spec_Config_LLM_BEDROCK {
 			return grpcutils.InvalidArg("Invalid LLM protocol")
 		}
 	case *enterprisev1.Condition_Expression_RequestLLMOperation:
 		expr := p.GetRequestLLMOperation()
-		if expr == nil || expr.GetOperation() == corev1.RequestContext_Request_LLM_OPERATION_UNSET {
+		if expr == nil || expr.GetOperation() == corev1.Service_Spec_Config_LLM_OPERATION_UNSET {
 			return grpcutils.InvalidArg("LLM operation must be set")
 		}
-		if expr.GetOperation() < corev1.RequestContext_Request_LLM_OPERATION_UNSET ||
-			expr.GetOperation() > corev1.RequestContext_Request_LLM_COUNT_TOKENS {
+		if expr.GetOperation() < corev1.Service_Spec_Config_LLM_OPERATION_UNSET ||
+			expr.GetOperation() > corev1.Service_Spec_Config_LLM_RAW_INFERENCE {
 			return grpcutils.InvalidArg("Invalid LLM operation")
 		}
 	case *enterprisev1.Condition_Expression_RequestLLMModel:

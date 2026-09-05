@@ -746,7 +746,9 @@
                     "enum": [
                         "PROTOCOL_UNSET",
                         "OPENAI",
-                        "ANTHROPIC"
+                        "ANTHROPIC",
+                        "GEMINI",
+                        "BEDROCK"
                     ],
                     "type": "string",
                     "title": "Protocol",
@@ -755,19 +757,17 @@
                 "operation": {
                     "enum": [
                         "OPERATION_UNSET",
-                        "CHAT_COMPLETIONS",
-                        "RESPONSES",
-                        "COMPLETIONS",
-                        "EMBEDDINGS",
-                        "MODERATIONS",
-                        "MODELS_LIST",
-                        "MODELS_GET",
-                        "MESSAGES",
-                        "COUNT_TOKENS"
+                        "GENERATE",
+                        "EMBED",
+                        "MODERATE",
+                        "COUNT_TOKENS",
+                        "LIST_MODELS",
+                        "GET_MODEL",
+                        "RAW_INFERENCE"
                     ],
                     "type": "string",
                     "title": "Operation",
-                    "description": "Operation is the normalized inference operation of the request"
+                    "description": "Operation is the inference operation of a request, normalized across the protocols. It names what a request does rather than which route it arrived on, so a rule that matches the generation traffic of a Cluster is one term rather than a disjunction over every protocol that spells generation differently, and a rule written for one protocol keeps working for a Service that later serves another. The Protocol enum alongside it, and the request path, identify the exact route wherever that matters."
                 },
                 "model": {
                     "type": "string",
@@ -822,6 +822,27 @@
                 "hasAudioInput": {
                     "type": "boolean",
                     "description": "HasAudioInput is set for the requests that carry audio input."
+                },
+                "route": {
+                    "enum": [
+                        "ROUTE_UNSET",
+                        "CHAT_COMPLETIONS",
+                        "RESPONSES",
+                        "COMPLETIONS",
+                        "EMBEDDINGS",
+                        "MODERATIONS",
+                        "MODELS_LIST",
+                        "MODELS_GET",
+                        "MESSAGES",
+                        "COUNT_TOKENS",
+                        "GENERATE_CONTENT",
+                        "EMBED_CONTENT",
+                        "CONVERSE",
+                        "INVOKE_MODEL"
+                    ],
+                    "type": "string",
+                    "title": "Route",
+                    "description": "Route is the canonical inference API route of the request. It names the exact surface that the request arrived on, which the Operation field deliberately does not, so it is what a rule that has to distinguish two routes of the same protocol reads."
                 }
             },
             "additionalProperties": false,

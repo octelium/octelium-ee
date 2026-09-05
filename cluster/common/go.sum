@@ -716,6 +716,8 @@ github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
 github.com/octelium/octelium/cluster/common v0.0.0-20260905083030-b4abdcbb9283 h1:YukLmLSq4T1cnmqAB7FDNSijtiwZKoaapgRwAyN+Xl4=
 github.com/octelium/octelium/cluster/common v0.0.0-20260905083030-b4abdcbb9283/go.mod h1:comkaFvhMp1Vh1t+sloLGcfw5rak8olS/MdfS2R1+fU=
+github.com/octelium/octelium/cluster/common v0.0.0-20260905185330-f4019b7c7426 h1:BguTa+sILUEgC7cX+dH3Wm60CF5XbHyHRbrBrZmuAEI=
+github.com/octelium/octelium/cluster/common v0.0.0-20260905185330-f4019b7c7426/go.mod h1:comkaFvhMp1Vh1t+sloLGcfw5rak8olS/MdfS2R1+fU=
 github.com/octelium/octelium/cluster/rscserver v0.0.0-20260905083030-b4abdcbb9283 h1:4KY/hVGErYSw69gtWNfvwjeFDKa68chFgqfUhDejR6s=
 github.com/octelium/octelium/cluster/rscserver v0.0.0-20260905083030-b4abdcbb9283/go.mod h1:yTaRfvoovmCKh8U0JznUKj01KLUj6ulBDkm7rkduhbU=
 github.com/octelium/octelium/pkg v0.0.0-20260905083030-b4abdcbb9283 h1:Otezhly68rCELA4sp+CxOgSImF+NrF6yoxGckqfY5Kk=

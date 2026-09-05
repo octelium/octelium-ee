@@ -25,7 +25,7 @@ import { reflectionMergePartial } from "@protobuf-ts/runtime";
 import { MessageType } from "@protobuf-ts/runtime";
 import { Session_Status_Authentication } from "../corev1/corev1";
 import { RequestContext_Request_LLM_EstimateQuality } from "../corev1/corev1";
-import { RequestContext_Request_LLM_Operation } from "../corev1/corev1";
+import { Service_Spec_Config_LLM_Operation } from "../corev1/corev1";
 import { Service_Spec_Config_LLM_Protocol } from "../corev1/corev1";
 import { RequestContext_Request_SOCKS5_Connect_AddressType } from "../corev1/corev1";
 import { Credential_Spec_Type } from "../corev1/corev1";
@@ -10026,9 +10026,9 @@ export interface Condition_Expression_LLMOperation {
     /**
      * Operation is the LLM operation that is matched.
      *
-     * @generated from protobuf field: octelium.api.main.core.v1.RequestContext.Request.LLM.Operation operation = 1
+     * @generated from protobuf field: octelium.api.main.core.v1.Service.Spec.Config.LLM.Operation operation = 1
      */
-    operation: RequestContext_Request_LLM_Operation;
+    operation: Service_Spec_Config_LLM_Operation;
 }
 /**
  * LLMModel matches the model that is requested from the LLM
@@ -30463,7 +30463,7 @@ export const Condition_Expression_LLMProtocol = new Condition_Expression_LLMProt
 class Condition_Expression_LLMOperation$Type extends MessageType<Condition_Expression_LLMOperation> {
     constructor() {
         super("octelium.api.main.enterprise.v1.Condition.Expression.LLMOperation", [
-            { no: 1, name: "operation", kind: "enum", T: () => ["octelium.api.main.core.v1.RequestContext.Request.LLM.Operation", RequestContext_Request_LLM_Operation] }
+            { no: 1, name: "operation", kind: "enum", T: () => ["octelium.api.main.core.v1.Service.Spec.Config.LLM.Operation", Service_Spec_Config_LLM_Operation] }
         ]);
     }
     create(value?: PartialMessage<Condition_Expression_LLMOperation>): Condition_Expression_LLMOperation {
@@ -30478,7 +30478,7 @@ class Condition_Expression_LLMOperation$Type extends MessageType<Condition_Expre
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* octelium.api.main.core.v1.RequestContext.Request.LLM.Operation operation */ 1:
+                case /* octelium.api.main.core.v1.Service.Spec.Config.LLM.Operation operation */ 1:
                     message.operation = reader.int32();
                     break;
                 default:
@@ -30493,7 +30493,7 @@ class Condition_Expression_LLMOperation$Type extends MessageType<Condition_Expre
         return message;
     }
     internalBinaryWrite(message: Condition_Expression_LLMOperation, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* octelium.api.main.core.v1.RequestContext.Request.LLM.Operation operation = 1; */
+        /* octelium.api.main.core.v1.Service.Spec.Config.LLM.Operation operation = 1; */
         if (message.operation !== 0)
             writer.tag(1, WireType.Varint).int32(message.operation);
         let u = options.writeUnknownFields;

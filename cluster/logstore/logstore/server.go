@@ -20,6 +20,7 @@ import (
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vllmv1"
 	"github.com/octelium/octelium/cluster/common/healthcheck"
 	"github.com/octelium/octelium/cluster/common/spiffec"
 	"github.com/octelium/octelium/cluster/common/vutils"
@@ -180,6 +181,10 @@ func (s *Server) initGRPC(ctx context.Context) error {
 	})
 
 	visibilityv1.RegisterComponentLogServiceServer(grpcSrv, &srvComponentLog{
+		s: s,
+	})
+
+	vllmv1.RegisterLLMServiceServer(grpcSrv, &srvLLM{
 		s: s,
 	})
 

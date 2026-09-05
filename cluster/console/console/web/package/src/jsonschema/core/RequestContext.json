@@ -1563,7 +1563,9 @@
                     "enum": [
                         "PROTOCOL_UNSET",
                         "OPENAI",
-                        "ANTHROPIC"
+                        "ANTHROPIC",
+                        "GEMINI",
+                        "BEDROCK"
                     ],
                     "type": "string",
                     "title": "Protocol",
@@ -1572,19 +1574,17 @@
                 "operation": {
                     "enum": [
                         "OPERATION_UNSET",
-                        "CHAT_COMPLETIONS",
-                        "RESPONSES",
-                        "COMPLETIONS",
-                        "EMBEDDINGS",
-                        "MODERATIONS",
-                        "MODELS_LIST",
-                        "MODELS_GET",
-                        "MESSAGES",
-                        "COUNT_TOKENS"
+                        "GENERATE",
+                        "EMBED",
+                        "MODERATE",
+                        "COUNT_TOKENS",
+                        "LIST_MODELS",
+                        "GET_MODEL",
+                        "RAW_INFERENCE"
                     ],
                     "type": "string",
                     "title": "Operation",
-                    "description": "Operation is the normalized inference operation of the request"
+                    "description": "Operation is the inference operation of a request, normalized across the protocols. It names what a request does rather than which route it arrived on, so a rule that matches the generation traffic of a Cluster is one term rather than a disjunction over every protocol that spells generation differently, and a rule written for one protocol keeps working for a Service that later serves another. The Protocol enum alongside it, and the request path, identify the exact route wherever that matters."
                 },
                 "model": {
                     "type": "string",
@@ -1639,6 +1639,27 @@
                 "hasAudioInput": {
                     "type": "boolean",
                     "description": "HasAudioInput is set for the requests that carry audio input."
+                },
+                "route": {
+                    "enum": [
+                        "ROUTE_UNSET",
+                        "CHAT_COMPLETIONS",
+                        "RESPONSES",
+                        "COMPLETIONS",
+                        "EMBEDDINGS",
+                        "MODERATIONS",
+                        "MODELS_LIST",
+                        "MODELS_GET",
+                        "MESSAGES",
+                        "COUNT_TOKENS",
+                        "GENERATE_CONTENT",
+                        "EMBED_CONTENT",
+                        "CONVERSE",
+                        "INVOKE_MODEL"
+                    ],
+                    "type": "string",
+                    "title": "Route",
+                    "description": "Route is the canonical inference API route of the request. It names the exact surface that the request arrived on, which the Operation field deliberately does not, so it is what a rule that has to distinguish two routes of the same protocol reads."
                 }
             },
             "additionalProperties": false,
@@ -2201,7 +2222,8 @@
                         "SOCKS5",
                         "RDP_WEB",
                         "MCP",
-                        "LLM"
+                        "LLM",
+                        "RDP"
                     ],
                     "type": "string",
                     "title": "Mode",
@@ -4361,7 +4383,9 @@
                     "enum": [
                         "PROTOCOL_UNSET",
                         "OPENAI",
-                        "ANTHROPIC"
+                        "ANTHROPIC",
+                        "GEMINI",
+                        "BEDROCK"
                     ],
                     "type": "string",
                     "title": "Protocol",
@@ -4370,7 +4394,7 @@
                 "model": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Model",
                     "additionalProperties": false,
-                    "description": "Model overwrites the model name requested by the downstream before the request is proxied to the upstream. If not set, which is the default, the requested model name is preserved as is. Note that the model access control itself is done by the Policies via the `ctx.request.llm.model` field which always carries the model name as requested by the downstream."
+                    "description": "Model overwrites the model name requested by the downstream before the request is proxied to the upstream. It is the default of the Service: a Model Plugin whose Condition matches overwrites it for that request. If neither is set, which is the default, the requested model name is preserved as is. Note that the model access control itself is done by the Policies via the `ctx.request.llm.model` field which always carries the model name as requested by the downstream."
                 },
                 "limits": {
                     "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Limits",
@@ -4394,11 +4418,11 @@
                 },
                 "plugins": {
                     "items": {
-                        "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin"
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin"
                     },
                     "additionalProperties": false,
                     "type": "array",
-                    "description": "Plugins is the list of plugins. The Cache plugin is unsupported for LLM Services since generic HTTP caching understands neither the authorization scope nor the model, tool and sampling parameters that make up a correct inference cache key."
+                    "description": "Plugins is the list of the Plugins of the Service. Unlike the fields of this Configuration, which apply to every request that the Configuration serves, every Plugin carries its own Condition which decides whether that Plugin is invoked for a specific request. Note that this list used to be a list of the HTTP mode's own Plugins. The LLM Plugin keeps the same field names and the same field numbers for every Plugin type that the two modes share, so the Plugins that were already valid for an LLM Service are unaffected. The Cache Plugin, which was already rejected for the LLM Services, is the only removed type."
                 },
                 "isUpstreamHTTP2": {
                     "type": "boolean",
@@ -4417,12 +4441,121 @@
                     "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.CORS",
                     "additionalProperties": false,
                     "description": "CORS sets the Cross-Origin Resource Sharing options which are needed to access the Service from a browser-based application served at a different origin (e.g. the Cluster's own web dashboard). This field has to be set in the \"default\" or global Configuration (as opposed to named dynamic Configs) in order to actually work since the CORS preflight requests carry no identity."
+                },
+                "reasoning": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Reasoning",
+                    "additionalProperties": false,
+                    "description": "Reasoning sets the reasoning, or thinking, configuration of the requests before they are proxied to the upstream. It is the default of the Service: a Reasoning Plugin whose Condition matches overwrites it for that request. If neither is set, which is the default, the reasoning configuration that the downstream requested is preserved as is."
+                },
+                "embedding": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Embedding",
+                    "additionalProperties": false,
+                    "description": "Embedding sets how the semantic representations of the requests are generated. It is the default of the Service: a SemanticCache or a SemanticRouter Plugin that sets an `embedding` of its own uses that one instead. A Plugin which needs an embedding while neither is set is rejected rather than silently disabled."
                 }
             },
             "additionalProperties": false,
             "type": "object",
             "title": "LLM",
             "description": "LLM sets the LLM-gateway-specific configuration. LLM Services are HTTP-based: they reuse the entire HTTP dataplane and additionally understand the inference API semantics."
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.LLM.Embedding": {
+            "properties": {
+                "source": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Embedding.Source",
+                    "additionalProperties": false,
+                    "description": "Source sets where the embedding requests are sent"
+                },
+                "model": {
+                    "type": "string",
+                    "description": "Model is the name of the embedding model (e.g. \"text-embedding-3-small\")"
+                },
+                "dimensions": {
+                    "type": "integer",
+                    "description": "Dimensions requests this vector size from the embedding backends that accept one. Zero, which is the default, uses the model's own default size. Note that a smaller vector is materially cheaper to store and to search, so it is worth setting wherever the model supports it, and that changing it makes whatever was already stored under the previous size unreachable rather than incorrect."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Embedding",
+            "description": "Embedding sets how the semantic representation, or embedding, of a text is generated. It is used by the Plugins that decide from the meaning of a request rather than from its literal content (i.e. SemanticCache and SemanticRouter) and it is written once here so that a Service does not have to repeat it for each of them. Note that an embedding is generated from content that the downstream itself supplied, so whichever API this field names does see the prompts of the Service. That is why every Guardrail Plugin is always applied before any embedding is generated, so that a redacted prompt is embedded rather than the original one, and why a Service whose prompts must not leave its own upstream has to name an embedding backend that satisfies that requirement."
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.LLM.Embedding.Source": {
+            "properties": {
+                "currentUpstream": {
+                    "type": "boolean",
+                    "description": "CurrentUpstream sends the embedding requests to the Service's own upstream, with the Service's own credentials and in the Service's own protocol. It is only usable where that upstream serves an embedding operation that the protocol itself defines, which is the case for the OPENAI and the GEMINI protocols. The ANTHROPIC protocol serves no embedding operation at all and the BEDROCK one serves its embedding models through the InvokeModel operations whose bodies are model-native rather than defined by the protocol, so the Services of either protocol name an `upstream` instead."
+                },
+                "upstream": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Embedding.Source.Upstream",
+                    "additionalProperties": false,
+                    "description": "Upstream sends the embedding requests to a separate embedding API. It is how a Service whose own upstream serves no embedding operation, or whose embedding model is served elsewhere, generates embeddings."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "currentUpstream"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "upstream"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "currentUpstream"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "upstream"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Source",
+            "description": "Source sets where the embedding requests are sent"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.LLM.Embedding.Source.Upstream": {
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "URL is the base URL of the embedding API, in the same sense that the Service's own upstream URL is a base URL"
+                },
+                "protocol": {
+                    "enum": [
+                        "PROTOCOL_UNSET",
+                        "OPENAI",
+                        "ANTHROPIC",
+                        "GEMINI",
+                        "BEDROCK"
+                    ],
+                    "type": "string",
+                    "title": "Protocol",
+                    "description": "Protocol is the inference API protocol served by the Service."
+                },
+                "auth": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Auth",
+                    "additionalProperties": false,
+                    "description": "Auth sets the credentials that are used with the URL. Octelium never forwards the downstream credentials to it."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Upstream",
+            "description": "Upstream is an embedding API that is not the Service's own upstream"
         },
         "octelium.api.main.core.v1.Service.Spec.Config.LLM.Limits": {
             "properties": {
@@ -4445,6 +4578,10 @@
                 "maxTools": {
                     "type": "integer",
                     "description": "MaxTools rejects the requests that declare more tools than this value."
+                },
+                "maxToolSchemaBytes": {
+                    "type": "integer",
+                    "description": "MaxToolSchemaBytes rejects the requests that declare a tool whose serialized JSON Schema is above this value. Note that the MaxTools field bounds the number of the declared tools while this field bounds the size of a single one. Zero uses the default value."
                 }
             },
             "additionalProperties": false,
@@ -4461,6 +4598,10 @@
                 "eval": {
                     "type": "string",
                     "description": "Eval overwrites the model name requested by the downstream with the result of a CEL expression that is evaluated against the request context. An empty result preserves the requested model name."
+                },
+                "opa": {
+                    "type": "string",
+                    "description": "OPA overwrites the model name requested by the downstream with the string result of a Rego script. An empty result preserves the requested model name."
                 }
             },
             "additionalProperties": false,
@@ -4480,6 +4621,11 @@
                                         "required": [
                                             "eval"
                                         ]
+                                    },
+                                    {
+                                        "required": [
+                                            "opa"
+                                        ]
                                     }
                                 ]
                             }
@@ -4493,12 +4639,1224 @@
                             "required": [
                                 "eval"
                             ]
+                        },
+                        {
+                            "required": [
+                                "opa"
+                            ]
                         }
                     ]
                 }
             ],
             "title": "Model",
             "description": "Model overwrites the model name requested by the downstream"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name is the unique name of the Plugin"
+                },
+                "isDisabled": {
+                    "type": "boolean",
+                    "description": "IsDisabled disables the Plugin without having to change its Condition or to delete it."
+                },
+                "phase": {
+                    "enum": [
+                        "PHASE_UNSET",
+                        "PRE_AUTH",
+                        "POST_AUTH"
+                    ],
+                    "type": "string",
+                    "title": "Phase",
+                    "description": "Phase sets whether the Plugin is invoked before or after the authentication and authorization processes"
+                },
+                "condition": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition",
+                    "additionalProperties": false,
+                    "description": "Condition decides whether the Plugin is invoked on a per-request basis. It is always required: a Plugin that carries no Condition is rejected rather than silently never invoked. Use `matchAny` in order to invoke a Plugin unconditionally. Note that a Condition is always evaluated against the request context, including for the Plugins that act on the response, so the response status, the token usage, the finish reason and the model that the upstream itself reported are unavailable to it. Note also that a Condition of an inference-specific Plugin (i.e. Prompt, Tools, Guardrail, Model, Reasoning, TokenRateLimit, SemanticCache and SemanticRouter) which cannot be evaluated at all (e.g. it errors at runtime or it exceeds its cost limit) rejects the request rather than skipping the Plugin, since skipping it would turn an evaluation error into a silent bypass of the control that it carries. The Plugins that reuse the HTTP mode's own types behave in either mode as they do in the HTTP one, where such a Plugin is skipped instead."
+                },
+                "extProc": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.ExtProc",
+                    "additionalProperties": false,
+                    "description": "ExtProc processes the requests via an Envoy ext_proc compliant gRPC server"
+                },
+                "lua": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.Lua",
+                    "additionalProperties": false,
+                    "description": "Lua processes the requests via a Lua script"
+                },
+                "direct": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.Direct",
+                    "additionalProperties": false,
+                    "description": "Direct returns a response directly without proxying the request to the upstream. Note that the body is served to an inference API client, so it has to be a valid response or error object of the Service's own protocol."
+                },
+                "rateLimit": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.RateLimit",
+                    "additionalProperties": false,
+                    "description": "RateLimit rate limits the requests"
+                },
+                "jsonSchema": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.JSONSchema",
+                    "additionalProperties": false,
+                    "description": "JSONSchema validates the JSON request body against a JSON schema"
+                },
+                "path": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.Path",
+                    "additionalProperties": false,
+                    "description": "Path removes and/or adds prefixes of the request path"
+                },
+                "prompt": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Prompt",
+                    "additionalProperties": false,
+                    "description": "Prompt manipulates the instruction content of the request"
+                },
+                "tools": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Tools",
+                    "additionalProperties": false,
+                    "description": "Tools controls the tools that the request declares to the model"
+                },
+                "guardrail": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Guardrail",
+                    "additionalProperties": false,
+                    "description": "Guardrail inspects the content of the request, and optionally of the response, and decides what to do about it"
+                },
+                "model": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Model",
+                    "additionalProperties": false,
+                    "description": "Model overwrites the model name requested by the downstream. It overwrites the Configuration's own `model` field for the requests whose Condition matches."
+                },
+                "reasoning": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Reasoning",
+                    "additionalProperties": false,
+                    "description": "Reasoning sets the reasoning configuration of the request. It overwrites the Configuration's own `reasoning` field for the requests whose Condition matches."
+                },
+                "tokenRateLimit": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.TokenRateLimit",
+                    "additionalProperties": false,
+                    "description": "TokenRateLimit rate limits the inference token consumption of the requests"
+                },
+                "semanticCache": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.SemanticCache",
+                    "additionalProperties": false,
+                    "description": "SemanticCache serves the requests from the responses that the Service already produced for the earlier requests of the same meaning"
+                },
+                "semanticRouter": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.SemanticRouter",
+                    "additionalProperties": false,
+                    "description": "SemanticRouter selects the model of a request from what the request means. It overwrites the Configuration's own `model` field for the requests whose Condition matches."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "extProc"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "lua"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "direct"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "rateLimit"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "jsonSchema"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "path"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "prompt"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "tools"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "guardrail"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "model"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "reasoning"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "tokenRateLimit"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "semanticCache"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "semanticRouter"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "extProc"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "lua"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "direct"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "rateLimit"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "jsonSchema"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "path"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "prompt"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "tools"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "guardrail"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "model"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "reasoning"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "tokenRateLimit"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "semanticCache"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "semanticRouter"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Plugin",
+            "description": "Plugin provides a dynamic, per-request way to manipulate the inference requests and responses. A Service can have one or more Plugins, including multiple Plugins of the same type. Unlike the Configuration fields, which apply to every request that the Configuration serves, every Plugin carries its own Condition which decides whether that Plugin is invoked for a specific request. The Plugins that are not specific to the inference semantics (e.g. Lua, ExtProc, RateLimit) reuse the HTTP mode's own Plugin types as is, and they deliberately keep the same field names and the same field numbers that they have in the HTTP mode's Plugin. The Cache Plugin is the only HTTP Plugin that has no counterpart here since generic HTTP caching understands neither the authorization scope nor the model, tool and sampling parameters that make up a correct inference cache key. The SemanticCache Plugin is the inference-aware replacement of it. The inference-specific Plugins (i.e. Prompt, Tools, Guardrail, Model, Reasoning, TokenRateLimit, SemanticCache and SemanticRouter) are invoked in a fixed order that does not depend on the order of the Plugin list: every Guardrail first, then every Tools, then the SemanticRouter, then every Prompt, then every Model, then every Reasoning, then the SemanticCache and finally every TokenRateLimit. A Guardrail therefore always inspects the request before the Service has added anything of its own to it, a SemanticRouter always decides from what the downstream asked rather than from what the Service then added, a SemanticCache always keys on the request that the upstream would actually receive, a TokenRateLimit always counts the request that the upstream actually receives and never counts a request that the cache served instead, and a later Plugin always observes the mutations of the earlier ones, including through its own Condition and through the request context that its own expressions read. The Model Plugin is the exception: it rewrites the model of the request that is proxied to the upstream rather than the model that the request context carries, so the `ctx.request.llm.model` field that a Condition and an expression read is always the model that the downstream itself requested. That is deliberate, since the record of a request is the record of what was asked for rather than of what the Service turned it into, and a Reasoning Plugin therefore decides from the requested model. The SemanticRouter Plugin behaves in the same way for the same reason. Two Plugins of the same type are invoked in the order in which they are listed, so the last Model or Reasoning Plugin that is invoked is the one whose value is served. The TokenRateLimit Plugin is the exception to that as well, since a quota that a later Plugin could overwrite would be no quota at all: every TokenRateLimit Plugin whose Condition matches is enforced and the request is served only if all of them admit it. The SemanticCache and the SemanticRouter Plugins are the opposite exception: the first one of either type whose Condition matches is the one that is applied and the rest are skipped, since a second cache lookup or a second routing decision would either repeat work that was already done or silently discard its result. The Model and the Reasoning Plugins are the per-request form of the Configuration's own `model` and `reasoning` fields: the Configuration field is the default of every request that the Configuration serves and a Plugin whose Condition matches overwrites it. The two exist side by side because they answer different questions: a Configuration field states what the Service is, while a Plugin states what a particular request gets. The SemanticRouter sits between the two where the model is concerned: it overwrites the Configuration's own `model` field and a Model Plugin overwrites it in turn, so the model of a request is decided by what the Service is by default, then by what the request means, and finally by whatever a Model Plugin states explicitly. The TokenRateLimit, the SemanticCache and the SemanticRouter Plugins deliberately have no Configuration counterpart of their own, since each of them is only meaningful for the requests that a Condition selects: use a Plugin whose Condition is `matchAny` in order to apply one to every request. The Configuration's own `embedding` field is not such a counterpart: it is the default embedding configuration that the SemanticCache and the SemanticRouter Plugins read whenever they set none of their own, so that a Service which uses both of them describes its embedding backend once. Note that the Plugins which reuse the HTTP mode's own types sit outside that order and outside the Guardrail boundary: they run before every inference-specific Plugin on the request and after every one of them on the response. A Lua or an ExtProc Plugin can therefore rewrite a response that a Guardrail has already inspected, and a Direct Plugin answers a request that no Guardrail has seen. That boundary is deliberate, since those Plugins carry the logic of the Service itself rather than the content of the downstream or of the upstream, but a Service that uses them to carry inference content has to inspect that content itself."
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Guardrail": {
+            "properties": {
+                "leg": {
+                    "enum": [
+                        "LEG_UNSET",
+                        "REQUEST",
+                        "RESPONSE",
+                        "BOTH"
+                    ],
+                    "type": "string",
+                    "title": "Leg",
+                    "description": "Leg is the part of the exchange that is inspected"
+                },
+                "scopes": {
+                    "items": {
+                        "enum": [
+                            "SCOPE_UNSET",
+                            "CONTENT",
+                            "INSTRUCTIONS",
+                            "TOOL_DEFINITIONS",
+                            "TOOL_RESULTS",
+                            "ALL"
+                        ]
+                    },
+                    "type": "array",
+                    "title": "Scope",
+                    "description": "Scope is the part of the content that is inspected"
+                },
+                "patterns": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Guardrail.Pattern"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Patterns is the list of the Patterns that are matched against the inspected content"
+                },
+                "denyMessage": {
+                    "type": "string",
+                    "description": "DenyMessage is the message of the protocol-correct error that is returned for the DENY Action. Note that it is served to the downstream, so it should not disclose the detection logic itself."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Guardrail",
+            "description": "Guardrail inspects the content of the request, and optionally of the response, and decides what to do about it. Note that a Guardrail is a content control: the identity, the model and the operation of a request are governed by the Policies, and its shape is governed by the `limits` field, and both of them are always evaluated regardless of the Guardrails. Note also that a Guardrail verdict is never an input to the Policies: a Guardrail runs after the authorization decision has already been reached, it acts on the request itself rather than informing a Policy about it. A Guardrail is always invoked in the POST_AUTH phase. A Guardrail that cannot reach a verdict at all (e.g. a `replace` evaluation that errors) rejects the request rather than proceeding: a Guardrail that silently allows the content that it could not inspect provides a compliance claim that is not true."
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Guardrail.Pattern": {
+            "properties": {
+                "regex": {
+                    "type": "string",
+                    "description": "Regex is an RE2 regular expression. Note that RE2 has neither backreferences nor lookarounds, which is what makes its matching time linear in the size of the input."
+                },
+                "type": {
+                    "enum": [
+                        "TYPE_UNSET",
+                        "EMAIL",
+                        "CREDIT_CARD",
+                        "IBAN",
+                        "US_SSN"
+                    ],
+                    "type": "string",
+                    "title": "Type",
+                    "description": "Type is a built-in deterministic detector of personal information. Note that the credentials are matched by the `secrets` detector instead."
+                },
+                "secrets": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Guardrail.Pattern.Secrets",
+                    "additionalProperties": false,
+                    "description": "Secrets is the built-in secret detector"
+                },
+                "action": {
+                    "enum": [
+                        "ACTION_UNSET",
+                        "DENY",
+                        "REDACT",
+                        "STRIP",
+                        "REPLACE"
+                    ],
+                    "type": "string",
+                    "title": "Action",
+                    "description": "Action is what happens to the matched content. Note that the rewriting Actions, which are REDACT, STRIP and REPLACE, apply to the request leg only: a Guardrail whose leg is RESPONSE or BOTH, as well as one whose scopes carry the tool definitions, can only use the DENY Action, since rewriting a response that the downstream is already reading, or a structured document that is not free text, sanitizes nothing while it reports that it did."
+                },
+                "replace": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Guardrail.Pattern.Replace",
+                    "additionalProperties": false,
+                    "description": "Replace is the content that replaces the matched content. It is only used for the REPLACE Action."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "regex"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "type"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "secrets"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "regex"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "type"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "secrets"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Pattern",
+            "description": "Pattern matches the inspected content and decides what happens to a match. Every Pattern is evaluated against the content and its own Action applies to its own matches, so that a Guardrail can redact one kind of content while it strips another. A single match whose Action is DENY rejects the request, or withholds the response, regardless of what the remaining Patterns decided, and the rewriting Actions are applied to the matched spans in the order in which they appear in the content so that the result never depends on the order of this list. Two rewriting Patterns whose matches overlap are applied once, to the union of the two spans, with the most destructive Action among them: STRIP removes more than REPLACE, which in turn does not preserve what REDACT names. Two overlapping matches of the same Action are decided by the order of this list, and two matches that are merely adjacent are applied separately. Note that a Pattern which matches more than an internal hard limit of times in a single run of text rejects the request rather than rewriting it, since neither the work nor the size of such a rewrite is bounded by anything that the Service configured."
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Guardrail.Pattern.Replace": {
+            "properties": {
+                "value": {
+                    "type": "string",
+                    "description": "Value is a static string"
+                },
+                "eval": {
+                    "type": "string",
+                    "description": "Eval is a CEL expression that is evaluated against the request context and whose string result is used as the content"
+                },
+                "opa": {
+                    "type": "string",
+                    "description": "OPA is a Rego script whose string result is used as the content"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "value"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "eval"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "opa"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "value"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "eval"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "opa"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Replace",
+            "description": "Replace is the content that replaces the matched content"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Guardrail.Pattern.Secrets": {
+            "properties": {
+                "excludeRules": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "ExcludeRules is the list of the rules that are skipped, which is how a rule that matches content that the Service legitimately carries is turned off without giving up the detector as a whole. A rule is named by its identifier, which is the name that the REDACT placeholder carries and which is matched without regard to its case, and an identifier that no rule has is ignored."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Secrets",
+            "description": "Secrets is the built-in secret detector. It matches the credentials that its rules recognize, which are the API keys, the tokens, the private keys and the connection strings of hundreds of providers, so that a Service does not have to name each of them in a Pattern of its own. Note that it detects credentials rather than personal information, which the `type` detectors match instead. A matched span covers the credential together with whatever its rule needs in order to recognize it, which is sometimes the assignment that carries it rather than the secret alone, so a rewriting Action can remove slightly more than the credential. Note also that a credential which appears more than once in the same run of text is reported once, which is why every occurrence of a matched span, rather than only the reported one, is rewritten."
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Prompt": {
+            "properties": {
+                "system": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Prompt.System",
+                    "additionalProperties": false,
+                    "description": "System manipulates the system instructions of the request"
+                },
+                "message": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Prompt.Message",
+                    "additionalProperties": false,
+                    "description": "Message inserts or edits the conversation messages of the request"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "system"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "message"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "system"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "message"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Prompt",
+            "description": "Prompt manipulates the instruction content of the request before it is proxied to the upstream. It is the mechanism by which the Service, rather than the downstream, controls the instructions that are actually sent to the upstream. It applies to the operations that carry a conversation, which are the `CHAT_COMPLETIONS` and the `RESPONSES` operations of the OPENAI protocol and the `MESSAGES` and `COUNT_TOKENS` operations of the ANTHROPIC one, and it is a no-op for the operations that carry neither instructions nor messages at all (e.g. `COMPLETIONS`, `EMBEDDINGS`, `MODERATIONS`, `MODELS_LIST`). Note that `COUNT_TOKENS` is included deliberately, so that the count that the downstream receives is the count of the request that this Service would actually send. Use the Condition whenever a Plugin has to be scoped to a specific operation. Note that a Prompt Plugin is always invoked in the POST_AUTH phase since the inserted content routinely depends on the identity of the requesting User, and since mutating the request before the authorization process would invalidate the pre-flight limits that were already applied to it. The consequence of that phase is that the `limits` field is evaluated against the request exactly as the downstream sent it, before any content is inserted here, so a Service that inserts large instructions has to size `maxEstimatedInputTokens` with that added content in mind. The size of the rendered content itself is bounded by an internal hard limit."
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Prompt.Content": {
+            "properties": {
+                "value": {
+                    "type": "string",
+                    "description": "Value is a static string"
+                },
+                "eval": {
+                    "type": "string",
+                    "description": "Eval is a CEL expression that is evaluated against the request context and whose string result is used as the content. An empty result is a no-op which leaves the request exactly as it is. A result that is not a string at all is an error rather than an empty result."
+                },
+                "opa": {
+                    "type": "string",
+                    "description": "OPA is a Rego script whose string result is used as the content. An empty result is a no-op while a result that is not a string at all is an error."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "value"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "eval"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "opa"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "value"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "eval"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "opa"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Content",
+            "description": "Content is the instruction content that is inserted by the Plugin. Note that an evaluation which fails outright (e.g. the expression returns a non-string result, exceeds its cost limit or errors at runtime) rejects the request rather than inserting nothing: a Prompt Plugin that silently disappears whenever its own evaluation breaks provides a control that is not there."
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Prompt.Message": {
+            "properties": {
+                "role": {
+                    "enum": [
+                        "ROLE_UNSET",
+                        "USER",
+                        "ASSISTANT"
+                    ],
+                    "type": "string",
+                    "title": "Role",
+                    "description": "Role is the role of the messages that are inserted or edited"
+                },
+                "position": {
+                    "enum": [
+                        "POSITION_UNSET",
+                        "PREPEND",
+                        "APPEND",
+                        "NEW_BEFORE",
+                        "NEW_AFTER"
+                    ],
+                    "type": "string",
+                    "title": "Position",
+                    "description": "Position sets where the content goes"
+                },
+                "selector": {
+                    "enum": [
+                        "SELECTOR_UNSET",
+                        "LAST",
+                        "FIRST",
+                        "ALL"
+                    ],
+                    "type": "string",
+                    "title": "Selector",
+                    "description": "Selector chooses which of the messages of the Role are selected"
+                },
+                "content": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Prompt.Content",
+                    "additionalProperties": false,
+                    "description": "Content is the message content"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Message",
+            "description": "Message inserts or edits the conversation messages of the request. Note that the inserted content is recorded only wherever the request body is recorded at all, which the `visibility` field governs, and that a recorded body records the request as the upstream receives it rather than as the downstream sent it."
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Prompt.System": {
+            "properties": {
+                "mode": {
+                    "enum": [
+                        "MODE_UNSET",
+                        "PREPEND",
+                        "APPEND",
+                        "REPLACE",
+                        "STRIP",
+                        "REJECT"
+                    ],
+                    "type": "string",
+                    "title": "Mode",
+                    "description": "Mode sets how the content is applied to the instructions that the downstream itself supplied"
+                },
+                "content": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Prompt.Content",
+                    "additionalProperties": false,
+                    "description": "Content is the instruction content"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "System",
+            "description": "System manipulates the system instructions of the request. Note that the system instructions are not simply a message that has a `system` role: they are the top-level `system` field for the ANTHROPIC protocol, the top-level `instructions` field for the `RESPONSES` operation, and the `system` or `developer` role messages for the `CHAT_COMPLETIONS` operation. Octelium always reads and writes every instruction carrier that the request's own protocol and operation allow, which for the `RESPONSES` operation includes the instruction-role input items as well as the top-level field, so that a downstream cannot keep its own instructions by moving them from one carrier to another."
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.SemanticCache": {
+            "properties": {
+                "embedding": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Embedding",
+                    "additionalProperties": false,
+                    "description": "Embedding sets how the semantic subject of the request is embedded. It overwrites the Configuration's own `embedding` field for the requests whose Condition matches."
+                },
+                "scope": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.SemanticCache.Scope",
+                    "additionalProperties": false,
+                    "description": "Scope sets the caller partition of the cache. If not set, which is the default, the cache is partitioned per User."
+                },
+                "minSimilarity": {
+                    "type": "number",
+                    "description": "MinSimilarity is the smallest cosine similarity, between 0 and 1, at which two semantic subjects are treated as the same question. Zero uses the default value which is deliberately conservative. Note that the value that is correct for one embedding model is not the value that is correct for another, so it has to be tuned against the model that the `embedding` field names rather than carried over from another Service."
+                },
+                "ttl": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false,
+                    "description": "TTL is the duration after which a cache entry expires. Zero uses the default value. Note that it is also the window during which a response that a model would generate differently today is still served, so it is the Service's own statement of how stale an answer is allowed to be."
+                },
+                "maxSize": {
+                    "type": "integer",
+                    "description": "MaxSize is the maximum size in bytes of a response that can be stored. Zero uses the default value. A larger response is served to the downstream as it is, it is simply not stored. This value is always bounded by an internal hard limit. Note that a response is only stored once it is known to be complete: a stream that ended before its own final event, a response that carries a tool call and a response that a Guardrail rejected are all served to the downstream that asked for them and none of them is stored."
+                },
+                "useXCacheHeader": {
+                    "type": "boolean",
+                    "description": "UseXCacheHeader sets the `X-Cache` response header to indicate whether the response was served from the cache"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Semantic Cache",
+            "description": "SemanticCache serves a request from a response that the Service already produced for an earlier request of the same meaning, without invoking the model at all. It is the inference-aware replacement of the HTTP mode's own Cache Plugin, which has no counterpart here because a generic HTTP cache keys on a URI and therefore understands neither who is allowed to read a response nor which of the request's own fields change what the model would have generated. A lookup has two stages. An exactly repeated request is served from the cache without generating an embedding at all, since the embedding is routinely the most expensive part of the lookup and an identical request needs no similarity to be recognized. Only a request that no exact entry matches is embedded and searched by similarity. It applies to the operations that generate a completion from a conversation, which are the `CHAT_COMPLETIONS` and `RESPONSES` operations of the OPENAI protocol, the `MESSAGES` operation of the ANTHROPIC one, the `GENERATE_CONTENT` operation of the GEMINI one and the `CONVERSE` operation of the BEDROCK one, and it is a no-op for the rest of them rather than an error. Only a successful response is ever stored, and a response that asks the downstream to call a tool is deliberately never stored at all: replaying such a response would make an application carry out an action again even though no model decided that it should be carried out now. The identity of a cache entry is deliberately split in two. The semantic subject, which is the content that the downstream is actually asking about, is the only part that is matched by meaning. Everything else that decides what the model would generate (i.e. the effective model, the operation, the system instructions, the preceding messages, the tools, the tool choice, the response schema, the reasoning configuration, the sampling parameters and every other field of the request that Octelium does not recognize) is matched exactly, so two requests only ever compete with one another when their entire execution context is identical. Embedding a whole request instead would let two requests that merely read similarly be served the same answer even though they asked different models, carried different instructions or declared different tools. The cache always acts on the request as the upstream would have received it, which is why it is invoked after every Plugin that rewrites that request: a secret that a Guardrail redacted is never embedded, instructions that a Prompt inserted are a part of the exact context, and the model that a Model Plugin or a SemanticRouter selected is the model whose responses the entry belongs to rather than the one that the downstream named. Note that a hit consumes no inference tokens at all, which is why the cache is invoked before every TokenRateLimit Plugin: a request that the model never saw does not spend the quota of the identity that sent it. Note also that a hit is not a bypass of the Service's own controls: the response Guardrails are applied to a cached response exactly as they are applied to an upstream one, since an administrator can have changed a Guardrail after the entry was stored, and a response that a Guardrail rejected is never stored in the first place. Note that the exact execution context is derived from the request body, from the request path and from the Configuration that served the request, and that it deliberately does not include the request headers, since the headers that the Service itself adds are not applied until after this Plugin has already decided. A Service whose answers vary with a header that the downstream sends, or with one that the Service derives from an expression, therefore has to name that value in an `eval` scope rather than to assume that the cache separates it. Note that this Plugin fails open. A request whose embedding backend or whose vector store is unavailable, times out or errors is proxied to the upstream as a miss rather than rejected, since a cache that can refuse to serve a Service is a new availability dependency rather than an optimization. Note finally that enabling this Plugin stores prompt-derived vectors and generated responses for the lifetime of an entry, and that it does so independently of the `visibility` field: a Service that records neither request nor response bodies in its AccessLogs still stores both of them here while its entries live. Octelium never stores the prompts themselves, it stores their vectors and opaque digests of their execution context, but the generated responses are stored as they are since serving them again is the entire point."
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.SemanticCache.Scope": {
+            "properties": {
+                "perUser": {
+                    "type": "boolean",
+                    "description": "PerUser partitions the cache by User, which is the default. A response is therefore only ever served again to the User that it was generated for."
+                },
+                "perSession": {
+                    "type": "boolean",
+                    "description": "PerSession partitions the cache by Session, which is the narrowest partition. It is the default for the Services that serve anonymous requests, where there is no User to partition by."
+                },
+                "shared": {
+                    "type": "boolean",
+                    "description": "Shared lets every authorized caller of the Service be served any cached response of the Service. It is a deliberate cross-identity boundary: a response that was generated from one caller's prompt is served to another caller whose own prompt merely means the same thing, so it is only ever correct where every caller of the Service is already entitled to every answer that the Service can produce."
+                },
+                "eval": {
+                    "type": "string",
+                    "description": "Eval partitions the cache by the string result of a CEL expression that is evaluated against the request context (e.g. a tenant identifier). An empty result is rejected rather than read as a shared partition, since a partition that silently collapses into a shared one is a silent cross-identity exposure."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "perUser"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "perSession"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "shared"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "eval"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "perUser"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "perSession"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "shared"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "eval"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Scope",
+            "description": "Scope partitions the cached responses between the callers. It is the boundary that decides who is allowed to be served a response that was generated for somebody else, so it is a security control rather than a tuning parameter."
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.SemanticRouter": {
+            "properties": {
+                "embedding": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Embedding",
+                    "additionalProperties": false,
+                    "description": "Embedding sets how the semantic subjects of the requests and of the Routes are embedded. It overwrites the Configuration's own `embedding` field for the requests whose Condition matches. Note that the Routes are embedded with it as well, so changing it re-embeds every Route."
+                },
+                "routes": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.SemanticRouter.Route"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Routes is the list of the Routes"
+                },
+                "minSimilarity": {
+                    "type": "number",
+                    "description": "MinSimilarity is the smallest cosine similarity at which a Route matches, for the Routes that set none of their own. Zero uses the default value. Note that a routing threshold is far lower than a caching one, since two requests of the same kind are not nearly as similar to one another as two ways of asking the same question, and that it has to be tuned against the embedding model that is actually used."
+                },
+                "fallbackModel": {
+                    "type": "string",
+                    "description": "FallbackModel is the model that serves the requests that no Route matched. If not set, which is the default, such a request keeps the model that the downstream itself requested."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Semantic Router",
+            "description": "SemanticRouter selects the model of a request from what the request means rather than from what the downstream named. It is how a Service serves one logical endpoint (e.g. a `model` of \"auto\") while sending the difficult requests to an expensive model and the trivial ones to a cheap one, without every downstream application having to know which model exists or which one it ought to ask for. Each Route describes a class of requests, both in prose and by example, and both of those are embedded independently at configuration time. A request is routed by embedding its own semantic subject and taking the Route of the single highest-scoring description or example, which is why several short, concrete examples define a Route far more sharply than one long description: an example is a point of the space that the Route is claiming while a description is a summary of it. A Route whose best score is below its minimum similarity does not match at all, and a request that no Route matched is served the `fallbackModel`. The routed model is a default rather than an override: it overwrites the Configuration's own `model` field, since a Service that routes semantically is stating that the meaning of a request decides its model, but a Model Plugin whose Condition matches overwrites it in turn, since naming a model explicitly for a request is a more specific statement than routing it. Use the Plugin's own Condition in order to decide when routing applies at all, which is how a Service routes only the requests that asked for it (e.g. `ctx.request.llm.model == \"auto\"`) while serving every explicitly named model as it was asked for. Note that the semantic subject of a routing decision is what the downstream is asking for rather than the entire request: the Service's own inserted instructions are deliberately not embedded, since instructions that every request carries are a large component that every request shares and that therefore makes the Routes harder rather than easier to tell apart. That is the opposite of the SemanticCache, where those same instructions must participate in the exact context, and it is why this Plugin is invoked before the Prompt Plugins while the cache is invoked after them. Note that `ctx.request.llm.model` continues to carry the model that the downstream itself requested, exactly as it does for the Model Plugin, so the Policies keep deciding on what was asked for rather than on what the Service turned it into. The AccessLogs record the Route that matched, its similarity and the model that was selected. Note finally that this Plugin fails open as well: a request whose embedding could not be generated at all is served the `fallbackModel` rather than rejected."
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.SemanticRouter.Route": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name is the identity of the Route. It is unique within the Plugin and it is what the AccessLogs record."
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Description describes the class of requests that this Route serves, in prose. It participates in the semantic matching."
+                },
+                "examples": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Examples are representative requests of this Route (e.g. \"Why is this Go program deadlocking?\"). Each one is embedded and matched independently of the others and of the Description."
+                },
+                "model": {
+                    "type": "string",
+                    "description": "Model is the model that serves the requests that this Route matched"
+                },
+                "minSimilarity": {
+                    "type": "number",
+                    "description": "MinSimilarity is the smallest cosine similarity at which this Route matches. Zero uses the Plugin's own `minSimilarity`. It is how a Route that must not be entered by mistake (e.g. the one that selects the most expensive model) is held to a stricter standard than the rest."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Route",
+            "description": "Route is a class of requests and the model that serves it"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.TokenRateLimit": {
+            "properties": {
+                "scope": {
+                    "enum": [
+                        "SCOPE_UNSET",
+                        "TOTAL",
+                        "INPUT",
+                        "OUTPUT"
+                    ],
+                    "type": "string",
+                    "title": "Scope",
+                    "description": "Scope sets which of the token counts of a request are counted against the limit"
+                },
+                "key": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.RateLimit.Key",
+                    "additionalProperties": false,
+                    "description": "Key sets the identity against which the tokens are counted. It is the HTTP mode's own Key so that a rate limit is written identically in either mode. Note that a token quota is usually written per User rather than per Session, since recreating a Session is not supposed to reset a quota. Note also that every Plugin counts against a window of its own even where two of them resolve to the same key."
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Limit is the maximum number of the tokens of the Scope that can be consumed within the window"
+                },
+                "window": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false,
+                    "description": "Window is the duration of the sliding window"
+                },
+                "defaultOutputTokens": {
+                    "type": "integer",
+                    "description": "DefaultOutputTokens is the number of the output tokens that are reserved for a request which declares no maximum output token count of its own. Zero, which is the default, reserves nothing for such a request. It is unused for the INPUT Scope."
+                },
+                "denyMessage": {
+                    "type": "string",
+                    "description": "DenyMessage is the message of the protocol-correct 429 error that is returned once the limit is exceeded"
+                },
+                "headers": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.RateLimit.KeyValue"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Headers is the list of the headers that are set in the response that is returned once the limit is exceeded (e.g. `Retry-After`)"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Token Rate Limit",
+            "description": "TokenRateLimit rate limits the inference token consumption of the requests rather than their number. It answers a question that a request rate limit cannot: a downstream that is bounded to one request per second is not thereby bounded at all, since a single request can carry an entire repository as its input and can generate for minutes. Note that it is therefore not a replacement for the `rateLimit` Plugin, which bounds the request rate itself and which is the cheaper control against a downstream that simply loops. Note that this is a consumption quota rather than a per-request ceiling, which is what distinguishes it from the Configuration's own `limits` field: `limits` decides whether a single request may be as large as it is, while this Plugin decides whether an identity may still consume anything at all. ## Reservation and reconciliation The token consumption of a request is not known at the moment at which the request has to be admitted or refused: the input token count that the upstream will report is not exactly the pre-flight estimate that Octelium calculates, and the output token count is not known at all until the response has been generated. A limiter that simply charged the consumption after the fact would admit every one of the requests that are already in flight against the same window, which is precisely the case that a quota exists to bound. Octelium therefore reserves before the request is proxied and reconciles after the response has been observed. The reservation occupies the window from the moment the request is admitted, so that the concurrent requests of the same identity see one another rather than each of them seeing the same stale capacity. The reconciliation then replaces that reservation by what the request actually consumed, which returns the unused part of an over-reservation to the window and charges the excess of an under-reservation to it, and it charges that final count at the moment the request completed rather than at the moment it was admitted, so that a request is accounted the same way whether it took an instant or outlived its own window. Note that a request which is still in flight once the window has moved past its own admission stops occupying that window until it completes. That follows from counting the requests that fall within a window rather than the ones that are open, and it means that a Service whose requests routinely run for longer than the window is bounded by the requests that completed rather than by the ones that are still running. The reservation is calculated from the request as the upstream receives it, which is after every other Plugin has already mutated it, since the instructions and the tool definitions that a Service inserts are consumed by the model exactly as the ones that the downstream sent are. Its input part is the pre-flight estimate, which is a byte-based heuristic rather than a provider-accurate count, and its output part is the maximum output token count that the request itself declares, or the `defaultOutputTokens` field for a request that declares none. The reconciliation uses the token usage that the upstream itself reported, which is the only authoritative count and which Octelium already observes for the AccessLogs, including across a streamed response. Whenever that usage is only partially observed (e.g. a stream ended before its usage event) the larger of the reservation and the observed count is charged. Whenever a response carried no usage at all the reservation is kept as it is rather than returned, since a consumption that could not be measured is not a consumption that did not happen. The exception is an upstream that answered with an error and reported no usage, which releases the reservation in full, since a provider does not bill a request that it refused and a Service whose upstream is failing has no reason to spend its quota on those failures. A request that never reached the upstream at all releases its reservation in the same way. Note that a request which declares no output maximum of its own and whose Plugin sets no `defaultOutputTokens` reserves nothing for its output, so it is admitted against its input alone and is charged for what it generated only once it has already generated it. That is a stated limitation rather than a guarantee that is quietly approximated: Octelium cannot bound in advance an output whose ceiling neither the downstream nor the Service has declared."
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Tools": {
+            "properties": {
+                "filters": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Tools.Filter"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Filters decides what happens to the tools that the request declares. If not set, every declared tool is preserved as is."
+                },
+                "tools": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Tools.Tool"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Tools is the list of the tool definitions that the Service itself adds to the request"
+                },
+                "choice": {
+                    "enum": [
+                        "CHOICE_UNSET",
+                        "PRESERVE",
+                        "NONE",
+                        "AUTO"
+                    ],
+                    "type": "string",
+                    "title": "Choice",
+                    "description": "Choice sets how the tool choice that is requested by the downstream itself is handled"
+                },
+                "denyMessage": {
+                    "type": "string",
+                    "description": "DenyMessage is the message of the protocol-correct error that is returned for the DENY Decision. Note that it is served to the downstream, so it should not disclose the policy itself."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Tools",
+            "description": "Tools controls the tools that the request declares to the model. Tools are where a model stops generating text and starts acting, which makes them the main lever against excessive agency. Note that this Plugin governs the tools that an inference request offers to the model, and that where those tools are eventually executed decides what else governs them. A tool call that the downstream executes against an MCP Service is additionally governed by the Policies of that Service. A provider-hosted tool (e.g. web search, file search, code execution or computer use) and a remote MCP server that the inference provider itself invokes are both executed inside the provider, so they never reach an Octelium Service at all and this Plugin is the only place where they are governed. A Tools Plugin is always invoked in the POST_AUTH phase."
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Tools.Filter": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name is a glob pattern (e.g. \"read_*\") that is matched against the name of the tool. The name is read from `tools[].name` for the ANTHROPIC protocol as well as for the `RESPONSES` operation of the OPENAI one, and from `tools[].function.name` for its `CHAT_COMPLETIONS` operation. Note that the provider-hosted tools usually carry no name at all, which means that a name pattern cannot express them and that the `type` field is what matches them."
+                },
+                "type": {
+                    "type": "string",
+                    "description": "Type is a glob pattern (e.g. \"web_search*\") that is matched against the `tools[].type` field, which is how the provider-hosted tools and the provider-invoked remote MCP servers are declared and which is the only identity that most of them carry. A tool that declares no type at all is matched as \"function\". Note that a type is a coarse identity: every remote MCP server declaration shares the same \"mcp\" type regardless of the endpoint that it points to, so allowing that type allows every such server. Use the REPLACE Decision in order to pin a specific declaration."
+                },
+                "decision": {
+                    "enum": [
+                        "DECISION_UNSET",
+                        "ALLOW",
+                        "REMOVE",
+                        "DENY",
+                        "REPLACE"
+                    ],
+                    "type": "string",
+                    "title": "Decision",
+                    "description": "Decision is what happens to a tool that the Filter matches"
+                },
+                "replace": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Tools.Filter.Replace",
+                    "additionalProperties": false,
+                    "description": "Replace is the tool definition that replaces the matched one. It is only used for the REPLACE Decision."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "name"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "type"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "name"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "type"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Filter",
+            "description": "Filter decides what happens to a declared tool. The Filters are evaluated in the order in which they are listed and the first one that matches a tool decides what happens to it. A tool that matches no Filter at all is allowed, with one deliberate exception: whenever at least one Filter is set, a provider-hosted tool (i.e. a tool whose `type` is set to anything other than \"function\") that matches no Filter is removed rather than allowed, since such a tool executes inside the inference provider and therefore crosses the execution boundary before any Octelium Service sees it. Use a `type` Filter in order to allow one explicitly."
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Tools.Filter.Replace": {
+            "properties": {
+                "value": {
+                    "type": "string",
+                    "description": "Value is a static serialized JSON object"
+                },
+                "eval": {
+                    "type": "string",
+                    "description": "Eval is a CEL expression that is evaluated against the request context and whose string result is the serialized JSON object"
+                },
+                "opa": {
+                    "type": "string",
+                    "description": "OPA is a Rego script whose result is the tool definition"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "value"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "eval"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "opa"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "value"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "eval"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "opa"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Replace",
+            "description": "Replace is the tool definition that replaces the matched one. It is a serialized JSON object of the request's own protocol (i.e. a single entry of the request's `tools` array) and it is inserted as is, which means that the Service rather than the downstream defines the tool. An evaluation that fails outright, or that returns anything that is not a JSON object, rejects the request."
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Tools.Tool": {
+            "properties": {
+                "value": {
+                    "type": "string",
+                    "description": "Value is a static serialized JSON object"
+                },
+                "eval": {
+                    "type": "string",
+                    "description": "Eval is a CEL expression that is evaluated against the request context and whose string result is the serialized JSON object"
+                },
+                "opa": {
+                    "type": "string",
+                    "description": "OPA is a Rego script whose result is the tool definition"
+                },
+                "position": {
+                    "enum": [
+                        "POSITION_UNSET",
+                        "PREPEND",
+                        "APPEND"
+                    ],
+                    "type": "string",
+                    "title": "Position",
+                    "description": "Position sets where the tool is added"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "value"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "eval"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "opa"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "value"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "eval"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "opa"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Tool",
+            "description": "Tool is a tool definition that the Service itself adds to the request. It is a serialized JSON object of the request's own protocol (i.e. a single entry of the request's `tools` array). Note that the added tools are not subject to the Filters, since the Service rather than the downstream declared them, and that an evaluation that fails outright, or that returns anything that is not a JSON object, rejects the request."
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.LLM.Reasoning": {
+            "properties": {
+                "level": {
+                    "enum": [
+                        "LEVEL_UNSET",
+                        "NONE",
+                        "MINIMAL",
+                        "LOW",
+                        "MEDIUM",
+                        "HIGH",
+                        "XHIGH",
+                        "MAX"
+                    ],
+                    "type": "string",
+                    "title": "Level",
+                    "description": "Level is a model-independent reasoning effort. The Levels are ordered, from NONE up to MAX, and they name the positions on that scale rather than the values of any particular provider: a model that offers fewer steps than are named here is served the strongest step of its own that does not exceed the configured Level, while a model that names a step which no Level names is reached through the `effort` field instead."
+                },
+                "tokenBudget": {
+                    "type": "integer",
+                    "description": "TokenBudget sets the number of the tokens that the model is allowed to spend on reasoning. Unlike a Level it is exact rather than portable: it is served only to the models that accept a numeric reasoning budget and the requests of a model that accepts an ordinal effort instead are rejected, since translating a budget into an effort would mean inventing a correspondence that no provider defines. Note that the models which do accept a budget commonly read it as guidance rather than as a ceiling, so it bounds what the Service asks for rather than what the model eventually spends. Note also that zero is rejected rather than read as disabling reasoning, since the two are too easy to confuse in a generated configuration: use the NONE Level in order to disable it."
+                },
+                "eval": {
+                    "type": "string",
+                    "description": "Eval is a CEL expression that is evaluated against the request context and whose string result is the name of a Level (e.g. `HIGH`), a number of tokens (e.g. `4096`) or a model-native effort, which are read in the same way as the `level`, the `tokenBudget` and the `effort` fields respectively. An empty result preserves the reasoning configuration that the downstream requested."
+                },
+                "opa": {
+                    "type": "string",
+                    "description": "OPA is a Rego script whose string result is used in the same way as the one of the `eval` field"
+                },
+                "effort": {
+                    "type": "string",
+                    "description": "Effort sets a model-native ordinal reasoning effort that is served to the upstream exactly as it is written here. It is the escape hatch of the `level` field: a provider that names an effort which no Level names yet is usable through it without waiting for Octelium to name it. Since Octelium knows neither where such a value sits on its own scale nor whether the model accepts it at all, an Effort is neither ordered nor translated: it is served only to the models that accept an ordinal effort, the requests of a model that accepts a numeric budget instead are rejected, and a value that the model does not accept is rejected by the upstream itself rather than by Octelium. Prefer a Level wherever one names the wanted effort."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "level"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "tokenBudget"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "eval"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "opa"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "effort"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "level"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "tokenBudget"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "eval"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "opa"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "effort"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Reasoning",
+            "description": "Reasoning sets the reasoning, or thinking, configuration of the request before it is proxied to the upstream. It is the mechanism by which the Service, rather than the downstream, decides how much a model is allowed to think, which is the largest controllable component of both the latency and the cost of a reasoning model. Every model expresses reasoning in its own way: some accept an ordinal effort, others accept a numeric token budget, and the same provider routinely changes which of the two a model family accepts from one generation to the next. The protocol does not decide it either, since a protocol that is a transport over the models of several vendors carries whatever each of those models defines rather than a reasoning configuration of its own. A Reasoning is therefore written once, as an intent that belongs to no model in particular, and Octelium encodes that intent in whatever the model that actually serves the request accepts. The intent is resolved by a single rule: Octelium serves the closest configuration that the model accepts and that does not exceed the configured one, and it rejects the request whenever the model accepts nothing at or below it. A `level` that the model does not offer is therefore served as the strongest level below it that the model does offer rather than dropped, a `tokenBudget` larger than the largest budget of the model is lowered to that budget, and a `tokenBudget` smaller than the smallest one is served as disabled reasoning wherever the model can stop reasoning at all. Nothing is ever resolved upwards, since a Service that configured little reasoning is not asking for whatever larger amount the model happens to offer, and nothing is silently dropped, since a dropped configuration lets the model think as much as it likes. Note that a Reasoning overwrites whatever the downstream requested rather than merging with it, and that it applies to the operations that carry a reasoning configuration at all: it is a no-op for the other operations rather than an error, since a Service usually serves a mixture of them."
         },
         "octelium.api.main.core.v1.Service.Spec.Config.LLM.Visibility": {
             "properties": {
@@ -4593,11 +5951,11 @@
                 },
                 "plugins": {
                     "items": {
-                        "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin"
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.MCP.Plugin"
                     },
                     "additionalProperties": false,
                     "type": "array",
-                    "description": "Plugins is the list of plugins. The Cache plugin is unsupported for MCP Services since generic HTTP caching understands neither the authorization scope nor the MCP cache invalidation semantics. Note that a Plugin that rewrites the JSON-RPC request body (e.g. Lua, ExtProc) should also rewrite the corresponding MCP reserved headers whenever the downstream sets them, otherwise the upstream MCP server rejects the request since the headers no longer match the body."
+                    "description": "Plugins is the list of the Plugins of the Service. Unlike the fields of this Configuration, which apply to every request that the Configuration serves, every Plugin carries its own Condition which decides whether that Plugin is invoked for a specific request. Note that a Plugin that rewrites the JSON-RPC request body (e.g. Lua, ExtProc) should also rewrite the corresponding MCP reserved headers whenever the downstream sets them, otherwise the upstream MCP server rejects the request since the headers no longer match the body. Note that this list used to be a list of the HTTP mode's own Plugins. The MCP Plugin keeps the same field names and the same field numbers for every Plugin type that the two modes share, so the Plugins that were already valid for an MCP Service are unaffected. The Cache Plugin, which was already rejected for the MCP Services, is the only removed type."
                 },
                 "isUpstreamHTTP2": {
                     "type": "boolean",
@@ -4642,6 +6000,201 @@
             "type": "object",
             "title": "Limits",
             "description": "Limits sets the MCP request parsing limits"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.MCP.Plugin": {
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Name is the unique name of the Plugin"
+                },
+                "isDisabled": {
+                    "type": "boolean",
+                    "description": "IsDisabled disables the Plugin without having to change its Condition or to delete it."
+                },
+                "phase": {
+                    "enum": [
+                        "PHASE_UNSET",
+                        "PRE_AUTH",
+                        "POST_AUTH"
+                    ],
+                    "type": "string",
+                    "title": "Phase",
+                    "description": "Phase sets whether the Plugin is invoked before or after the authentication and authorization processes"
+                },
+                "condition": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Condition",
+                    "additionalProperties": false,
+                    "description": "Condition decides whether the Plugin is invoked on a per-request basis. It is always required: a Plugin that carries no Condition is rejected rather than silently never invoked. Use `matchAny` in order to invoke a Plugin unconditionally. Note that a Condition is always evaluated against the request context, including for the Plugins that act on the response, so the response itself is unavailable to it. Note also that a Condition of an MCP-specific Plugin which cannot be evaluated at all (e.g. it errors at runtime or it exceeds its cost limit) rejects the request rather than skipping the Plugin, since skipping it would turn an evaluation error into a silent bypass of the control that it carries. The Plugins that reuse the HTTP mode's own types behave in either mode as they do in the HTTP one, where such a Plugin is skipped instead."
+                },
+                "extProc": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.ExtProc",
+                    "additionalProperties": false,
+                    "description": "ExtProc processes the requests via an Envoy ext_proc compliant gRPC server"
+                },
+                "lua": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.Lua",
+                    "additionalProperties": false,
+                    "description": "Lua processes the requests via a Lua script"
+                },
+                "direct": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.Direct",
+                    "additionalProperties": false,
+                    "description": "Direct returns a response directly without proxying the request to the upstream. Note that the body is served to an MCP client, so it has to be a valid JSON-RPC response or error object."
+                },
+                "rateLimit": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.RateLimit",
+                    "additionalProperties": false,
+                    "description": "RateLimit rate limits the requests"
+                },
+                "jsonSchema": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.JSONSchema",
+                    "additionalProperties": false,
+                    "description": "JSONSchema validates the JSON request body against a JSON schema"
+                },
+                "path": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.HTTP.Plugin.Path",
+                    "additionalProperties": false,
+                    "description": "Path removes and/or adds prefixes of the request path"
+                },
+                "guardrail": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.MCP.Plugin.Guardrail",
+                    "additionalProperties": false,
+                    "description": "Guardrail inspects the content that the request carries, and optionally the content that the response carries, and decides what to do about it"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "extProc"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "lua"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "direct"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "rateLimit"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "jsonSchema"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "path"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "guardrail"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "extProc"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "lua"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "direct"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "rateLimit"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "jsonSchema"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "path"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "guardrail"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Plugin",
+            "description": "Plugin provides a dynamic, per-request way to manipulate the JSON-RPC requests and responses. A Service can have one or more Plugins, including multiple Plugins of the same type. Unlike the Configuration fields, which apply to every request that the Configuration serves, every Plugin carries its own Condition which decides whether that Plugin is invoked for a specific request. The Plugins that are not specific to the MCP semantics (e.g. Lua, ExtProc, RateLimit) reuse the HTTP mode's own Plugin types as is, and they deliberately keep the same field names and the same field numbers that they have in the HTTP mode's Plugin. The Cache Plugin is the only HTTP Plugin that has no counterpart here since generic HTTP caching understands neither the authorization scope nor the MCP cache invalidation semantics. The MCP-specific Plugins are invoked in a fixed order that does not depend on the order of the Plugin list, and two Plugins of the same type are invoked in the order in which they are listed. Note that the Plugins which reuse the HTTP mode's own types sit outside that order and outside the Guardrail boundary: they run before every MCP-specific Plugin on the request and after every one of them on the response. A Lua or an ExtProc Plugin can therefore rewrite a response that a Guardrail has already inspected, and a Direct Plugin answers a request that no Guardrail has seen. That boundary is deliberate, since those Plugins carry the logic of the Service itself rather than the content of the downstream or of the upstream, but a Service that uses them to carry MCP content has to inspect that content itself."
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.MCP.Plugin.Guardrail": {
+            "properties": {
+                "leg": {
+                    "enum": [
+                        "LEG_UNSET",
+                        "REQUEST",
+                        "RESPONSE",
+                        "BOTH"
+                    ],
+                    "type": "string",
+                    "title": "Leg",
+                    "description": "Leg is the part of the exchange that is inspected"
+                },
+                "scopes": {
+                    "items": {
+                        "enum": [
+                            "SCOPE_UNSET",
+                            "TOOL_ARGUMENTS",
+                            "TOOL_RESULTS",
+                            "RESOURCE_CONTENTS",
+                            "PROMPT_MESSAGES",
+                            "TOOL_DEFINITIONS",
+                            "ALL"
+                        ]
+                    },
+                    "type": "array",
+                    "title": "Scope",
+                    "description": "Scope is the part of the content that is inspected. Note that every Scope belongs to one leg of the exchange: a Scope that does not belong to the inspected leg is a no-op rather than an error, since a Guardrail whose leg is BOTH is expected to carry the Scopes of both legs."
+                },
+                "patterns": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Guardrail.Pattern"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Patterns is the list of the Patterns that are matched against the inspected content. It is deliberately the LLM mode's own Pattern: matching content is the same problem in either mode, and a Pattern carries nothing that is specific to the inference semantics, so the two modes share one detector set, one Action set and one set of guarantees rather than growing two that drift apart."
+                },
+                "denyMessage": {
+                    "type": "string",
+                    "description": "DenyMessage is the message of the JSON-RPC error that is returned for the DENY Action. Note that it is served to the downstream, so it should not disclose the detection logic itself."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Guardrail",
+            "description": "Guardrail inspects the content that the JSON-RPC request carries, and optionally the content that the response carries, and decides what to do about it. Note that a Guardrail is a content control: the identity, the method and the named target of a request are governed by the Policies, and its shape is governed by the `limits` and the `protocol` fields, and all of them are always evaluated regardless of the Guardrails. Note also that a Guardrail verdict is never an input to the Policies: a Guardrail runs after the authorization decision has already been reached, it acts on the request itself rather than informing a Policy about it. A Guardrail is always invoked in the POST_AUTH phase. A Guardrail that cannot reach a verdict at all (e.g. a `replace` evaluation that errors) rejects the request rather than proceeding: a Guardrail that silently allows the content that it could not inspect provides a compliance claim that is not true. The MCP exchange is the usual carrier of two risks that a Guardrail addresses directly. On the request leg, the arguments of a tool call are content that the downstream sends to a server which is frequently operated by somebody else, which makes them the usual carrier of credential and of PII leakage. On the response leg, the content that a tool call, a resource read or a prompt fetch returns is content that the server chose rather than content that anybody asked for, which makes it the usual carrier of indirect prompt injection and of tool poisoning."
         },
         "octelium.api.main.core.v1.Service.Spec.Config.MCP.Protocol": {
             "properties": {

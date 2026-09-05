@@ -12,6 +12,7 @@ import (
 	"context"
 
 	"github.com/octelium/octelium/apis/main/visibilityv1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vllmv1"
 )
 
 type srvAccessLog struct {
@@ -57,6 +58,51 @@ func (s *srvAccessLog) ListAccessLogTopPolicy(ctx context.Context, req *visibili
 
 func (s *srvAccessLog) ListAccessLogTopSession(ctx context.Context, req *visibilityv1.ListAccessLogTopSessionRequest) (*visibilityv1.ListAccessLogTopSessionResponse, error) {
 	return s.s.listAccessLogTopSession(ctx, req)
+}
+
+type srvLLM struct {
+	s *Server
+	vllmv1.UnimplementedLLMServiceServer
+}
+
+func (s *srvLLM) GetSummary(ctx context.Context, req *vllmv1.GetSummaryRequest) (*vllmv1.GetSummaryResponse, error) {
+	return s.s.getLLMSummary(ctx, req)
+}
+
+func (s *srvLLM) GetDataPoint(ctx context.Context, req *vllmv1.GetDataPointRequest) (*vllmv1.GetDataPointResponse, error) {
+	return s.s.getLLMDataPoint(ctx, req)
+}
+
+func (s *srvLLM) ListTopDimension(ctx context.Context, req *vllmv1.ListTopDimensionRequest) (*vllmv1.ListTopDimensionResponse, error) {
+	return s.s.listLLMTopDimension(ctx, req)
+}
+
+func (s *srvLLM) ListTopModel(ctx context.Context, req *vllmv1.ListTopModelRequest) (*vllmv1.ListTopModelResponse, error) {
+	return s.s.listLLMTopModel(ctx, req)
+}
+
+func (s *srvLLM) ListTopTool(ctx context.Context, req *vllmv1.ListTopToolRequest) (*vllmv1.ListTopToolResponse, error) {
+	return s.s.listLLMTopTool(ctx, req)
+}
+
+func (s *srvLLM) ListTopUser(ctx context.Context, req *vllmv1.ListTopUserRequest) (*vllmv1.ListTopUserResponse, error) {
+	return s.s.listLLMTopUser(ctx, req)
+}
+
+func (s *srvLLM) ListTopSession(ctx context.Context, req *vllmv1.ListTopSessionRequest) (*vllmv1.ListTopSessionResponse, error) {
+	return s.s.listLLMTopSession(ctx, req)
+}
+
+func (s *srvLLM) ListTopService(ctx context.Context, req *vllmv1.ListTopServiceRequest) (*vllmv1.ListTopServiceResponse, error) {
+	return s.s.listLLMTopService(ctx, req)
+}
+
+func (s *srvLLM) ListTopPolicy(ctx context.Context, req *vllmv1.ListTopPolicyRequest) (*vllmv1.ListTopPolicyResponse, error) {
+	return s.s.listLLMTopPolicy(ctx, req)
+}
+
+func (s *srvLLM) ListAccessLog(ctx context.Context, req *vllmv1.ListAccessLogRequest) (*vllmv1.ListAccessLogResponse, error) {
+	return s.s.listLLMAccessLog(ctx, req)
 }
 
 type srvAuthenticationLog struct {

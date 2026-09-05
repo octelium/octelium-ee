@@ -84,7 +84,8 @@
                         "SOCKS5",
                         "RDP_WEB",
                         "MCP",
-                        "LLM"
+                        "LLM",
+                        "RDP"
                     ],
                     "type": "string",
                     "title": "Mode",
@@ -815,7 +816,9 @@
                     "enum": [
                         "PROTOCOL_UNSET",
                         "OPENAI",
-                        "ANTHROPIC"
+                        "ANTHROPIC",
+                        "GEMINI",
+                        "BEDROCK"
                     ],
                     "type": "string",
                     "title": "Protocol",
@@ -824,27 +827,33 @@
                 "operation": {
                     "enum": [
                         "OPERATION_UNSET",
-                        "CHAT_COMPLETIONS",
-                        "RESPONSES",
-                        "COMPLETIONS",
-                        "EMBEDDINGS",
-                        "MODERATIONS",
-                        "MODELS_LIST",
-                        "MODELS_GET",
-                        "MESSAGES",
-                        "COUNT_TOKENS"
+                        "GENERATE",
+                        "EMBED",
+                        "MODERATE",
+                        "COUNT_TOKENS",
+                        "LIST_MODELS",
+                        "GET_MODEL",
+                        "RAW_INFERENCE"
                     ],
                     "type": "string",
                     "title": "Operation",
-                    "description": "Operation is the normalized inference operation of the request"
+                    "description": "Operation is the inference operation of a request, normalized across the protocols. It names what a request does rather than which route it arrived on, so a rule that matches the generation traffic of a Cluster is one term rather than a disjunction over every protocol that spells generation differently, and a rule written for one protocol keeps working for a Service that later serves another. The Protocol enum alongside it, and the request path, identify the exact route wherever that matters."
                 },
-                "requestedModel": {
+                "source": {
+                    "enum": [
+                        "SOURCE_UNSET",
+                        "UPSTREAM",
+                        "SEMANTIC_CACHE",
+                        "OCTELIUM"
+                    ],
                     "type": "string",
-                    "description": "RequestedModel is the model name requested by the downstream. Note that it is read from the request itself and it is therefore also set for the requests that are eventually rejected by Octelium."
+                    "title": "Source",
+                    "description": "Source is what produced the response"
                 },
                 "model": {
-                    "type": "string",
-                    "description": "Model is the model name reported by the upstream provider itself. It can differ from the RequestedModel whenever the request used an alias or an unpinned model name."
+                    "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Model",
+                    "additionalProperties": false,
+                    "description": "Model shows which model the request named and which one served it"
                 },
                 "stream": {
                     "type": "boolean",
@@ -857,7 +866,18 @@
                 },
                 "estimatedInputTokens": {
                     "type": "integer",
-                    "description": "EstimatedInputTokens is Octelium's own pre-flight input token estimate. It is always set for the parsed inference requests regardless of the Usage field."
+                    "description": "EstimatedInputTokens is Octelium's own pre-flight input token estimate. It is always set for the parsed inference requests regardless of the Usage field, and it must never be treated as a billing truth. Read the EstimateQuality field alongside it."
+                },
+                "estimateQuality": {
+                    "enum": [
+                        "ESTIMATE_QUALITY_UNSET",
+                        "COMPLETE",
+                        "PARTIAL",
+                        "UNAVAILABLE"
+                    ],
+                    "type": "string",
+                    "title": "Estimate Quality",
+                    "description": "EstimateQuality is whether the EstimatedInputTokens field accounted for the entire input of the request"
                 },
                 "responseID": {
                     "type": "string",
@@ -875,12 +895,146 @@
                 "eventCount": {
                     "type": "integer",
                     "description": "EventCount is the number of the `text/event-stream` events of the response"
+                },
+                "reasoning": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Reasoning",
+                    "additionalProperties": false,
+                    "description": "Reasoning is the reasoning configuration that the upstream was served"
+                },
+                "tools": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Tools",
+                    "additionalProperties": false,
+                    "description": "Tools is the tool surface that the request carried"
+                },
+                "guardrail": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Guardrail",
+                    "additionalProperties": false,
+                    "description": "Guardrail is the outcome of the Guardrail Plugins"
                 }
             },
             "additionalProperties": false,
             "type": "object",
             "title": "LLM",
             "description": "LLM is the LLM-gateway-specific information"
+        },
+        "octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Guardrail": {
+            "properties": {
+                "result": {
+                    "enum": [
+                        "RESULT_UNSET",
+                        "PASS",
+                        "MODIFIED",
+                        "DENIED"
+                    ],
+                    "type": "string",
+                    "title": "Result",
+                    "description": "Result is the strongest outcome that any Guardrail Plugin reached"
+                },
+                "leg": {
+                    "enum": [
+                        "LEG_UNSET",
+                        "REQUEST",
+                        "RESPONSE",
+                        "BOTH"
+                    ],
+                    "type": "string",
+                    "title": "Leg",
+                    "description": "Leg is the part of the exchange that is inspected"
+                },
+                "plugin": {
+                    "type": "string",
+                    "description": "Plugin is the name of the Guardrail Plugin that produced the Result"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Guardrail",
+            "description": "Guardrail is the outcome of the Guardrail Plugins"
+        },
+        "octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Model": {
+            "properties": {
+                "requested": {
+                    "type": "string",
+                    "description": "Requested is the model name requested by the downstream, verbatim. It is set even for the requests that Octelium rejected, since it is read from the request itself."
+                },
+                "effective": {
+                    "type": "string",
+                    "description": "Effective is the model name that Octelium proxied to the upstream. It differs from the Requested one exactly when the Source field is set, which is the record of the Service overriding what the downstream asked for."
+                },
+                "reported": {
+                    "type": "string",
+                    "description": "Reported is the model name that the upstream provider itself named in its response. It resolves the aliases and the unpinned names that the Effective one can carry, and for a request that the SemanticCache served it is the model that generated the cached response rather than one that was invoked now."
+                },
+                "source": {
+                    "enum": [
+                        "SOURCE_UNSET",
+                        "CONFIG",
+                        "PLUGIN",
+                        "SEMANTIC_ROUTER"
+                    ],
+                    "type": "string",
+                    "title": "Source",
+                    "description": "Source is what decided the Effective model"
+                },
+                "plugin": {
+                    "type": "string",
+                    "description": "Plugin is the name of the Plugin that decided the Effective model. It is empty whenever the Source is not a Plugin."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Model",
+            "description": "Model shows which model the request named and which one served it"
+        },
+        "octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Reasoning": {
+            "properties": {
+                "isDisabled": {
+                    "type": "boolean",
+                    "description": "IsDisabled is set for the requests that were proxied with reasoning explicitly turned off"
+                },
+                "effort": {
+                    "type": "string",
+                    "description": "Effort is the ordinal reasoning effort that was served to the upstream, verbatim. It is empty for the models that accept a numeric budget instead."
+                },
+                "tokenBudget": {
+                    "type": "integer",
+                    "description": "TokenBudget is the reasoning token budget that was served to the upstream. It is zero for the models that accept an ordinal effort instead."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Reasoning",
+            "description": "Reasoning is the reasoning configuration that the upstream was actually served. It is only set for the requests whose reasoning configuration the Service itself decided, since Octelium does not read the one that a downstream sets for itself."
+        },
+        "octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Tools": {
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "description": "Count is the number of the tools that the upstream was offered, after every Tools Plugin was applied"
+                },
+                "names": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Names is the sorted list of the names of those tools. It is bounded, so it is a sample rather than a complete list for a request that declares an unusually large number of them."
+                },
+                "removedCount": {
+                    "type": "integer",
+                    "description": "RemovedCount is the number of the tools that the downstream declared and that a Tools Plugin removed before the request was proxied"
+                },
+                "calledNames": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "CalledNames is the bounded list of the names of the tools that the model asked to invoke in its response. It is the record of what the model tried to do rather than of what it was allowed to do, which is why it is kept separately from the Names field."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Tools",
+            "description": "Tools is the tool surface that the request carried"
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Usage": {
             "properties": {
@@ -889,7 +1043,8 @@
                         "SOURCE_UNSET",
                         "PROVIDER",
                         "ESTIMATED",
-                        "PARTIAL"
+                        "PARTIAL",
+                        "CACHED"
                     ],
                     "type": "string",
                     "title": "Source",

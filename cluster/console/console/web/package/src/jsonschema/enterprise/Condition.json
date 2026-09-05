@@ -2104,19 +2104,17 @@
                 "operation": {
                     "enum": [
                         "OPERATION_UNSET",
-                        "CHAT_COMPLETIONS",
-                        "RESPONSES",
-                        "COMPLETIONS",
-                        "EMBEDDINGS",
-                        "MODERATIONS",
-                        "MODELS_LIST",
-                        "MODELS_GET",
-                        "MESSAGES",
-                        "COUNT_TOKENS"
+                        "GENERATE",
+                        "EMBED",
+                        "MODERATE",
+                        "COUNT_TOKENS",
+                        "LIST_MODELS",
+                        "GET_MODEL",
+                        "RAW_INFERENCE"
                     ],
                     "type": "string",
                     "title": "Operation",
-                    "description": "Operation is the normalized inference operation of the request"
+                    "description": "Operation is the inference operation of a request, normalized across the protocols. It names what a request does rather than which route it arrived on, so a rule that matches the generation traffic of a Cluster is one term rather than a disjunction over every protocol that spells generation differently, and a rule written for one protocol keeps working for a Service that later serves another. The Protocol enum alongside it, and the request path, identify the exact route wherever that matters."
                 }
             },
             "additionalProperties": false,
@@ -2130,7 +2128,9 @@
                     "enum": [
                         "PROTOCOL_UNSET",
                         "OPENAI",
-                        "ANTHROPIC"
+                        "ANTHROPIC",
+                        "GEMINI",
+                        "BEDROCK"
                     ],
                     "type": "string",
                     "title": "Protocol",
@@ -2959,7 +2959,8 @@
                         "SOCKS5",
                         "RDP_WEB",
                         "MCP",
-                        "LLM"
+                        "LLM",
+                        "RDP"
                     ],
                     "type": "string",
                     "title": "Mode",
