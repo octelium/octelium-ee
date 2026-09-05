@@ -23,6 +23,7 @@ import (
 	"github.com/octelium/octelium/apis/rsc/rlockv1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/apis/rsc/rratelimitv1"
+	"github.com/octelium/octelium/apis/rsc/rvectorv1"
 	"github.com/octelium/octelium/cluster/common/octeliumc"
 	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/utils/ldflags"
@@ -34,6 +35,7 @@ type Client struct {
 	cacheC      rcachev1.MainServiceClient
 	rateLimitC  rratelimitv1.MainServiceClient
 	lockC       rlockv1.MainServiceClient
+	vectorC     rvectorv1.MainServiceClient
 	enterpriseC renterprisev1.ResourceServiceClient
 
 	coreV1UtilsC       *coreV1UtilsC
@@ -91,6 +93,7 @@ func NewClient(ctx context.Context, opts *Opts) (*Client, error) {
 	ret := &Client{
 		coreC:       rcorev1.NewResourceServiceClient(grpcConn),
 		cacheC:      rcachev1.NewMainServiceClient(grpcConn),
+		vectorC:     rvectorv1.NewMainServiceClient(grpcConn),
 		enterpriseC: renterprisev1.NewResourceServiceClient(grpcConn),
 		accessC:     raccessv1.NewResourceServiceClient(grpcConn),
 
@@ -119,6 +122,10 @@ func (c *Client) RateLimitC() rratelimitv1.MainServiceClient {
 
 func (c *Client) LockC() rlockv1.MainServiceClient {
 	return c.lockC
+}
+
+func (c *Client) VectorC() rvectorv1.MainServiceClient {
+	return c.vectorC
 }
 
 func (c *Client) EnterpriseC() renterprisev1.ResourceServiceClient {
