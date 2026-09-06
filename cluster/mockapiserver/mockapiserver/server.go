@@ -37,6 +37,7 @@ import (
 	"github.com/octelium/octelium/apis/main/visibilityv1/vaccessv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcorev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/venterprisev1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vllmv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetricsv1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/cluster/apiserver/apiserver/admin"
@@ -255,6 +256,10 @@ func Run(ctx context.Context) error {
 	visibilityv1.RegisterAuthenticationLogServiceServer(s, vSrv)
 
 	vmetricsv1.RegisterMetricsServiceServer(s, &tstMetricsService{})
+
+	vllmv1.RegisterLLMServiceServer(s, &tstLLMService{
+		octeliumC: octeliumC,
+	})
 
 	vcorev1.RegisterResourceServiceServer(s, visibilityRscSrv)
 	venterprisev1.RegisterResourceServiceServer(s, visibilityEnterpriseRscSrv)

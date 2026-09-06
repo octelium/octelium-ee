@@ -575,6 +575,18 @@ export const hasAuditLog = (resource: Resource): boolean =>
     .with("User", "Session", "Device", () => true)
     .otherwise(() => false);
 
+export const hasLLMVisibility = (resource: Resource): boolean => {
+  if (resource.apiVersion !== "core/v1") return false;
+  return match(resource.kind)
+    .with("User", "Session", "Device", "Namespace", "Region", () => true)
+    .with(
+      "Service",
+      () =>
+        (resource as CoreP.Service).spec?.mode === CoreP.Service_Spec_Mode.LLM,
+    )
+    .otherwise(() => false);
+};
+
 export const hasSSHSessionLog = (resource: Resource): boolean => {
   if (resource.apiVersion !== "core/v1") return false;
   return match(resource.kind)

@@ -19,6 +19,7 @@ import (
 	"github.com/octelium/octelium/apis/main/visibilityv1/vaccessv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vcorev1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/venterprisev1"
+	"github.com/octelium/octelium/apis/main/visibilityv1/vllmv1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetricsv1"
 	oc "github.com/octelium/octelium/cluster/common/octeliumc"
 	"github.com/octelium/octelium/pkg/utils/ldflags"
@@ -164,6 +165,40 @@ func NewServerResourceAccess(ctx context.Context, octeliumC octeliumc.ClientInte
 	return &ServerResourceAccess{
 		octeliumC: octeliumC,
 		accessC:   vaccessv1.NewResourceServiceClient(grpcConn),
+	}, nil
+}
+
+type ServerLLM struct {
+	octeliumC octeliumc.ClientInterface
+	vllmv1.UnimplementedLLMServiceServer
+
+	c vllmv1.LLMServiceClient
+}
+
+func NewServerLLM(ctx context.Context, octeliumC octeliumc.ClientInterface) (*ServerLLM, error) {
+
+	var host string
+
+	if ldflags.IsTest() {
+		host = fmt.Sprintf("localhost:%s", os.Getenv("OCTELIUM_TEST_RSCSTORE_PORT"))
+	} else {
+		host = "octeliumee-logstore.octelium.svc:8080"
+	}
+
+	grpcOpts, err := oc.DefaultDialOpts(ctx)
+	if err != nil {
+		return nil, err
+	}
+	grpcConn, err := grpc.NewClient(
+		host, grpcOpts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ServerLLM{
+		octeliumC: octeliumC,
+		c:         vllmv1.NewLLMServiceClient(grpcConn),
 	}, nil
 }
 

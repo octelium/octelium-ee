@@ -2,6 +2,7 @@ import {
   BadgeCheck,
   BookKey,
   Boxes,
+  BrainCircuit,
   Building2,
   Check,
   ChartNoAxesCombined,
@@ -95,6 +96,7 @@ const itemsAccess = [
 ];
 
 const itemsVisibility = [
+  { title: "LLM", url: "/visibility/llm", icon: BrainCircuit },
   { title: "Access Logs", url: "/visibility/accesslogs", icon: ShieldEllipsis },
   {
     title: "Authentication Logs",

@@ -140,7 +140,8 @@ export const createRequestContext = (
           oneofKind: "llm",
           llm: Core.RequestContext_Request_LLM.create({
             protocol: Core.Service_Spec_Config_LLM_Protocol.OPENAI,
-            operation: Core.RequestContext_Request_LLM_Operation.CHAT_COMPLETIONS,
+            route: Core.RequestContext_Request_LLM_Route.CHAT_COMPLETIONS,
+            operation: Core.Service_Spec_Config_LLM_Operation.GENERATE,
             estimateQuality:
               Core.RequestContext_Request_LLM_EstimateQuality.COMPLETE,
           }),
@@ -828,61 +829,133 @@ const MCPBodyEditor = (props: {
 
 type LLMMessage = { role: string; content: string };
 
-const llmMessageOperations = new Set([
-  Core.RequestContext_Request_LLM_Operation.CHAT_COMPLETIONS,
-  Core.RequestContext_Request_LLM_Operation.MESSAGES,
-  Core.RequestContext_Request_LLM_Operation.COUNT_TOKENS,
+const llmMessageRoutes = new Set([
+  Core.RequestContext_Request_LLM_Route.CHAT_COMPLETIONS,
+  Core.RequestContext_Request_LLM_Route.MESSAGES,
+  Core.RequestContext_Request_LLM_Route.COUNT_TOKENS,
+  Core.RequestContext_Request_LLM_Route.CONVERSE,
 ]);
 
-const llmStreamableOperations = new Set([
-  Core.RequestContext_Request_LLM_Operation.CHAT_COMPLETIONS,
-  Core.RequestContext_Request_LLM_Operation.RESPONSES,
-  Core.RequestContext_Request_LLM_Operation.COMPLETIONS,
-  Core.RequestContext_Request_LLM_Operation.MESSAGES,
+const llmStreamableRoutes = new Set([
+  Core.RequestContext_Request_LLM_Route.CHAT_COMPLETIONS,
+  Core.RequestContext_Request_LLM_Route.RESPONSES,
+  Core.RequestContext_Request_LLM_Route.COMPLETIONS,
+  Core.RequestContext_Request_LLM_Route.MESSAGES,
+  Core.RequestContext_Request_LLM_Route.GENERATE_CONTENT,
+  Core.RequestContext_Request_LLM_Route.CONVERSE,
 ]);
 
-const llmBodyOperations = new Set([
-  Core.RequestContext_Request_LLM_Operation.CHAT_COMPLETIONS,
-  Core.RequestContext_Request_LLM_Operation.RESPONSES,
-  Core.RequestContext_Request_LLM_Operation.COMPLETIONS,
-  Core.RequestContext_Request_LLM_Operation.EMBEDDINGS,
-  Core.RequestContext_Request_LLM_Operation.MODERATIONS,
-  Core.RequestContext_Request_LLM_Operation.MESSAGES,
-  Core.RequestContext_Request_LLM_Operation.COUNT_TOKENS,
+const llmBodyRoutes = new Set([
+  Core.RequestContext_Request_LLM_Route.CHAT_COMPLETIONS,
+  Core.RequestContext_Request_LLM_Route.RESPONSES,
+  Core.RequestContext_Request_LLM_Route.COMPLETIONS,
+  Core.RequestContext_Request_LLM_Route.EMBEDDINGS,
+  Core.RequestContext_Request_LLM_Route.MODERATIONS,
+  Core.RequestContext_Request_LLM_Route.MESSAGES,
+  Core.RequestContext_Request_LLM_Route.COUNT_TOKENS,
+  Core.RequestContext_Request_LLM_Route.GENERATE_CONTENT,
+  Core.RequestContext_Request_LLM_Route.EMBED_CONTENT,
+  Core.RequestContext_Request_LLM_Route.CONVERSE,
 ]);
 
-const llmInputOperations = new Set([
-  Core.RequestContext_Request_LLM_Operation.RESPONSES,
-  Core.RequestContext_Request_LLM_Operation.EMBEDDINGS,
-  Core.RequestContext_Request_LLM_Operation.MODERATIONS,
+const llmInputRoutes = new Set([
+  Core.RequestContext_Request_LLM_Route.RESPONSES,
+  Core.RequestContext_Request_LLM_Route.EMBEDDINGS,
+  Core.RequestContext_Request_LLM_Route.MODERATIONS,
 ]);
 
-const llmMaxOutputOperations = new Set([
-  Core.RequestContext_Request_LLM_Operation.CHAT_COMPLETIONS,
-  Core.RequestContext_Request_LLM_Operation.RESPONSES,
-  Core.RequestContext_Request_LLM_Operation.COMPLETIONS,
-  Core.RequestContext_Request_LLM_Operation.MESSAGES,
+const llmMaxOutputRoutes = new Set([
+  Core.RequestContext_Request_LLM_Route.CHAT_COMPLETIONS,
+  Core.RequestContext_Request_LLM_Route.RESPONSES,
+  Core.RequestContext_Request_LLM_Route.COMPLETIONS,
+  Core.RequestContext_Request_LLM_Route.MESSAGES,
+  Core.RequestContext_Request_LLM_Route.GENERATE_CONTENT,
+  Core.RequestContext_Request_LLM_Route.CONVERSE,
 ]);
 
-const llmToolOperations = new Set([
-  Core.RequestContext_Request_LLM_Operation.CHAT_COMPLETIONS,
-  Core.RequestContext_Request_LLM_Operation.RESPONSES,
-  Core.RequestContext_Request_LLM_Operation.MESSAGES,
+const llmToolRoutes = new Set([
+  Core.RequestContext_Request_LLM_Route.CHAT_COMPLETIONS,
+  Core.RequestContext_Request_LLM_Route.RESPONSES,
+  Core.RequestContext_Request_LLM_Route.MESSAGES,
+  Core.RequestContext_Request_LLM_Route.GENERATE_CONTENT,
+  Core.RequestContext_Request_LLM_Route.CONVERSE,
 ]);
 
-const llmOperationLabel = (operation: number) => {
-  const labels: Record<number, string> = {
-    [Core.RequestContext_Request_LLM_Operation.CHAT_COMPLETIONS]: "OpenAI chat completions",
-    [Core.RequestContext_Request_LLM_Operation.RESPONSES]: "OpenAI responses",
-    [Core.RequestContext_Request_LLM_Operation.COMPLETIONS]: "OpenAI completions",
-    [Core.RequestContext_Request_LLM_Operation.EMBEDDINGS]: "OpenAI embeddings",
-    [Core.RequestContext_Request_LLM_Operation.MODERATIONS]: "OpenAI moderations",
-    [Core.RequestContext_Request_LLM_Operation.MODELS_LIST]: "Model listing",
-    [Core.RequestContext_Request_LLM_Operation.MODELS_GET]: "Model details",
-    [Core.RequestContext_Request_LLM_Operation.MESSAGES]: "Anthropic messages",
-    [Core.RequestContext_Request_LLM_Operation.COUNT_TOKENS]: "Anthropic count tokens",
-  };
-  return labels[operation] ?? "Custom LLM operation";
+const llmRouteLabels: Record<number, string> = {
+  [Core.RequestContext_Request_LLM_Route.CHAT_COMPLETIONS]: "Chat completions",
+  [Core.RequestContext_Request_LLM_Route.RESPONSES]: "Responses",
+  [Core.RequestContext_Request_LLM_Route.COMPLETIONS]: "Completions",
+  [Core.RequestContext_Request_LLM_Route.EMBEDDINGS]: "Embeddings",
+  [Core.RequestContext_Request_LLM_Route.MODERATIONS]: "Moderations",
+  [Core.RequestContext_Request_LLM_Route.MODELS_LIST]: "Models list",
+  [Core.RequestContext_Request_LLM_Route.MODELS_GET]: "Model details",
+  [Core.RequestContext_Request_LLM_Route.MESSAGES]: "Messages",
+  [Core.RequestContext_Request_LLM_Route.COUNT_TOKENS]: "Count tokens",
+  [Core.RequestContext_Request_LLM_Route.GENERATE_CONTENT]: "Generate content",
+  [Core.RequestContext_Request_LLM_Route.EMBED_CONTENT]: "Embed content",
+  [Core.RequestContext_Request_LLM_Route.CONVERSE]: "Converse",
+  [Core.RequestContext_Request_LLM_Route.INVOKE_MODEL]: "Invoke model",
+};
+
+const llmRouteLabel = (route: number) =>
+  llmRouteLabels[route] ?? "Custom LLM route";
+
+const llmProtocolRoutes: Record<number, number[]> = {
+  [Core.Service_Spec_Config_LLM_Protocol.OPENAI]: [
+    Core.RequestContext_Request_LLM_Route.CHAT_COMPLETIONS,
+    Core.RequestContext_Request_LLM_Route.RESPONSES,
+    Core.RequestContext_Request_LLM_Route.COMPLETIONS,
+    Core.RequestContext_Request_LLM_Route.EMBEDDINGS,
+    Core.RequestContext_Request_LLM_Route.MODERATIONS,
+    Core.RequestContext_Request_LLM_Route.MODELS_LIST,
+    Core.RequestContext_Request_LLM_Route.MODELS_GET,
+  ],
+  [Core.Service_Spec_Config_LLM_Protocol.ANTHROPIC]: [
+    Core.RequestContext_Request_LLM_Route.MESSAGES,
+    Core.RequestContext_Request_LLM_Route.COUNT_TOKENS,
+    Core.RequestContext_Request_LLM_Route.MODELS_LIST,
+    Core.RequestContext_Request_LLM_Route.MODELS_GET,
+  ],
+  [Core.Service_Spec_Config_LLM_Protocol.GEMINI]: [
+    Core.RequestContext_Request_LLM_Route.GENERATE_CONTENT,
+    Core.RequestContext_Request_LLM_Route.EMBED_CONTENT,
+    Core.RequestContext_Request_LLM_Route.COUNT_TOKENS,
+    Core.RequestContext_Request_LLM_Route.MODELS_LIST,
+    Core.RequestContext_Request_LLM_Route.MODELS_GET,
+  ],
+  [Core.Service_Spec_Config_LLM_Protocol.BEDROCK]: [
+    Core.RequestContext_Request_LLM_Route.CONVERSE,
+    Core.RequestContext_Request_LLM_Route.INVOKE_MODEL,
+  ],
+};
+
+const llmRouteOperation: Record<number, number> = {
+  [Core.RequestContext_Request_LLM_Route.CHAT_COMPLETIONS]:
+    Core.Service_Spec_Config_LLM_Operation.GENERATE,
+  [Core.RequestContext_Request_LLM_Route.RESPONSES]:
+    Core.Service_Spec_Config_LLM_Operation.GENERATE,
+  [Core.RequestContext_Request_LLM_Route.COMPLETIONS]:
+    Core.Service_Spec_Config_LLM_Operation.GENERATE,
+  [Core.RequestContext_Request_LLM_Route.MESSAGES]:
+    Core.Service_Spec_Config_LLM_Operation.GENERATE,
+  [Core.RequestContext_Request_LLM_Route.GENERATE_CONTENT]:
+    Core.Service_Spec_Config_LLM_Operation.GENERATE,
+  [Core.RequestContext_Request_LLM_Route.CONVERSE]:
+    Core.Service_Spec_Config_LLM_Operation.GENERATE,
+  [Core.RequestContext_Request_LLM_Route.EMBEDDINGS]:
+    Core.Service_Spec_Config_LLM_Operation.EMBED,
+  [Core.RequestContext_Request_LLM_Route.EMBED_CONTENT]:
+    Core.Service_Spec_Config_LLM_Operation.EMBED,
+  [Core.RequestContext_Request_LLM_Route.MODERATIONS]:
+    Core.Service_Spec_Config_LLM_Operation.MODERATE,
+  [Core.RequestContext_Request_LLM_Route.COUNT_TOKENS]:
+    Core.Service_Spec_Config_LLM_Operation.COUNT_TOKENS,
+  [Core.RequestContext_Request_LLM_Route.MODELS_LIST]:
+    Core.Service_Spec_Config_LLM_Operation.LIST_MODELS,
+  [Core.RequestContext_Request_LLM_Route.MODELS_GET]:
+    Core.Service_Spec_Config_LLM_Operation.GET_MODEL,
+  [Core.RequestContext_Request_LLM_Route.INVOKE_MODEL]:
+    Core.Service_Spec_Config_LLM_Operation.RAW_INFERENCE,
 };
 
 const LLMBodyEditor = (props: {
@@ -899,11 +972,11 @@ const LLMBodyEditor = (props: {
   const [instructions, setInstructions] = React.useState("");
   const [system, setSystem] = React.useState("");
 
-  const operation = props.value.operation;
-  const isMessagesOperation = llmMessageOperations.has(operation);
-  const isInputOperation = llmInputOperations.has(operation);
-  const supportsMaxOutput = llmMaxOutputOperations.has(operation);
-  const isStreamable = llmStreamableOperations.has(operation);
+  const route = props.value.route;
+  const isMessagesOperation = llmMessageRoutes.has(route);
+  const isInputOperation = llmInputRoutes.has(route);
+  const supportsMaxOutput = llmMaxOutputRoutes.has(route);
+  const isStreamable = llmStreamableRoutes.has(route);
   const isOpenAI = props.value.protocol === Core.Service_Spec_Config_LLM_Protocol.OPENAI;
 
   const openEditor = () => {
@@ -960,19 +1033,19 @@ const LLMBodyEditor = (props: {
     if (isStreamable) result.stream = props.value.stream;
     if (supportsMaxOutput && props.value.maxOutputTokens > 0) {
       result[
-        operation === Core.RequestContext_Request_LLM_Operation.MESSAGES
+        route === Core.RequestContext_Request_LLM_Route.MESSAGES
           ? "max_tokens"
-          : operation === Core.RequestContext_Request_LLM_Operation.COMPLETIONS
+          : route === Core.RequestContext_Request_LLM_Route.COMPLETIONS
             ? "max_tokens"
-            : operation === Core.RequestContext_Request_LLM_Operation.CHAT_COMPLETIONS
+            : route === Core.RequestContext_Request_LLM_Route.CHAT_COMPLETIONS
             ? "max_completion_tokens"
             : "max_output_tokens"
       ] = props.value.maxOutputTokens;
     }
 
-    if (operation === Core.RequestContext_Request_LLM_Operation.CHAT_COMPLETIONS ||
-        operation === Core.RequestContext_Request_LLM_Operation.MESSAGES ||
-        operation === Core.RequestContext_Request_LLM_Operation.COUNT_TOKENS) {
+    if (route === Core.RequestContext_Request_LLM_Route.CHAT_COMPLETIONS ||
+        route === Core.RequestContext_Request_LLM_Route.MESSAGES ||
+        route === Core.RequestContext_Request_LLM_Route.COUNT_TOKENS) {
       result.messages = messages.map((message) => ({
         role: message.role,
         content: parseJsonValue(message.content),
@@ -981,16 +1054,16 @@ const LLMBodyEditor = (props: {
     if (isInputOperation && inputText.trim()) {
       result.input = parseJsonValue(inputText);
     }
-    if (operation === Core.RequestContext_Request_LLM_Operation.COMPLETIONS && promptText.trim()) {
+    if (route === Core.RequestContext_Request_LLM_Route.COMPLETIONS && promptText.trim()) {
       result.prompt = parseJsonValue(promptText);
     }
-    if (operation === Core.RequestContext_Request_LLM_Operation.RESPONSES && instructions.trim()) {
+    if (route === Core.RequestContext_Request_LLM_Route.RESPONSES && instructions.trim()) {
       result.instructions = instructions;
     }
-    if (operation === Core.RequestContext_Request_LLM_Operation.MESSAGES && system.trim()) {
+    if (route === Core.RequestContext_Request_LLM_Route.MESSAGES && system.trim()) {
       result.system = system;
     }
-    if (llmToolOperations.has(operation) && props.value.toolNames.length > 0 && result.tools === undefined) {
+    if (llmToolRoutes.has(route) && props.value.toolNames.length > 0 && result.tools === undefined) {
       result.tools = isOpenAI
         ? props.value.toolNames.map((name) => ({
             type: "function",
@@ -1010,7 +1083,7 @@ const LLMBodyEditor = (props: {
     isOpenAI,
     isStreamable,
     messages,
-    operation,
+    route,
     promptText,
     props.value.maxOutputTokens,
     props.value.model,
@@ -1030,7 +1103,7 @@ const LLMBodyEditor = (props: {
           <div>
             <p className="text-[0.68rem] font-bold text-slate-700">LLM JSON request body</p>
             <p className="mt-0.5 text-[0.63rem] font-semibold text-slate-400">
-              Build the {llmOperationLabel(operation)} payload from the selected context
+              Build the {llmRouteLabel(route)} payload from the selected context
             </p>
           </div>
         </div>
@@ -1071,7 +1144,7 @@ const LLMBodyEditor = (props: {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-[0.68rem] font-bold text-slate-700">
-                    {operation === Core.RequestContext_Request_LLM_Operation.MESSAGES ? "Anthropic messages" : "Conversation messages"}
+                    {route === Core.RequestContext_Request_LLM_Route.MESSAGES ? "Anthropic messages" : "Conversation messages"}
                   </p>
                   <p className="mt-0.5 text-[0.63rem] font-semibold text-slate-400">
                     Add the ordered messages sent to the model
@@ -1143,12 +1216,12 @@ const LLMBodyEditor = (props: {
             <Textarea
               label="Input"
               description={
-                operation === Core.RequestContext_Request_LLM_Operation.RESPONSES
+                route === Core.RequestContext_Request_LLM_Route.RESPONSES
                   ? "Text or a JSON input array for the Responses API"
                   : "Text or a JSON array of input values"
               }
               placeholder={
-                operation === Core.RequestContext_Request_LLM_Operation.RESPONSES
+                route === Core.RequestContext_Request_LLM_Route.RESPONSES
                   ? "Ask the model to summarize this document"
                   : "Enter text or a JSON array of inputs"
               }
@@ -1161,7 +1234,7 @@ const LLMBodyEditor = (props: {
             />
           )}
 
-          {operation === Core.RequestContext_Request_LLM_Operation.COMPLETIONS && (
+          {route === Core.RequestContext_Request_LLM_Route.COMPLETIONS && (
             <Textarea
               label="Prompt"
               description="Prompt text or a JSON prompt array"
@@ -1175,7 +1248,7 @@ const LLMBodyEditor = (props: {
             />
           )}
 
-          {operation === Core.RequestContext_Request_LLM_Operation.RESPONSES && (
+          {route === Core.RequestContext_Request_LLM_Route.RESPONSES && (
             <Textarea
               label="Instructions"
               placeholder="You are a concise assistant."
@@ -1188,7 +1261,7 @@ const LLMBodyEditor = (props: {
             />
           )}
 
-          {operation === Core.RequestContext_Request_LLM_Operation.MESSAGES && (
+          {route === Core.RequestContext_Request_LLM_Route.MESSAGES && (
             <Textarea
               label="System prompt"
               placeholder="You are a helpful assistant."
@@ -1652,39 +1725,28 @@ const LLMFields = ({
   const protocolData = [
     { label: "OpenAI", value: String(Core.Service_Spec_Config_LLM_Protocol.OPENAI) },
     { label: "Anthropic", value: String(Core.Service_Spec_Config_LLM_Protocol.ANTHROPIC) },
+    { label: "Gemini", value: String(Core.Service_Spec_Config_LLM_Protocol.GEMINI) },
+    { label: "Bedrock", value: String(Core.Service_Spec_Config_LLM_Protocol.BEDROCK) },
   ];
-  const operationOptions = [
-    ["Chat completions", Core.RequestContext_Request_LLM_Operation.CHAT_COMPLETIONS],
-    ["Responses", Core.RequestContext_Request_LLM_Operation.RESPONSES],
-    ["Completions", Core.RequestContext_Request_LLM_Operation.COMPLETIONS],
-    ["Embeddings", Core.RequestContext_Request_LLM_Operation.EMBEDDINGS],
-    ["Moderations", Core.RequestContext_Request_LLM_Operation.MODERATIONS],
-    ["Models list", Core.RequestContext_Request_LLM_Operation.MODELS_LIST],
-    ["Models get", Core.RequestContext_Request_LLM_Operation.MODELS_GET],
-    ["Messages", Core.RequestContext_Request_LLM_Operation.MESSAGES],
-    ["Count tokens", Core.RequestContext_Request_LLM_Operation.COUNT_TOKENS],
-  ];
-  const anthropicOperations = new Set([
-    Core.RequestContext_Request_LLM_Operation.MESSAGES,
-    Core.RequestContext_Request_LLM_Operation.COUNT_TOKENS,
-    Core.RequestContext_Request_LLM_Operation.MODELS_LIST,
-    Core.RequestContext_Request_LLM_Operation.MODELS_GET,
-  ]);
-  const operationData = operationOptions
-    .filter(([, operation]) =>
-      value.protocol === Core.Service_Spec_Config_LLM_Protocol.ANTHROPIC
-        ? anthropicOperations.has(operation as number)
-        : !anthropicOperations.has(operation as number) ||
-            operation === Core.RequestContext_Request_LLM_Operation.MODELS_LIST ||
-            operation === Core.RequestContext_Request_LLM_Operation.MODELS_GET,
-    )
-    .map(([label, operation]) => ({ label: String(label), value: String(operation) }));
+  const routeData = (
+    llmProtocolRoutes[value.protocol] ??
+    llmProtocolRoutes[Core.Service_Spec_Config_LLM_Protocol.OPENAI]
+  ).map((route) => ({ label: llmRouteLabel(route), value: String(route) }));
+  const operationData = [
+    ["Generate", Core.Service_Spec_Config_LLM_Operation.GENERATE],
+    ["Embed", Core.Service_Spec_Config_LLM_Operation.EMBED],
+    ["Moderate", Core.Service_Spec_Config_LLM_Operation.MODERATE],
+    ["Count tokens", Core.Service_Spec_Config_LLM_Operation.COUNT_TOKENS],
+    ["List models", Core.Service_Spec_Config_LLM_Operation.LIST_MODELS],
+    ["Get model", Core.Service_Spec_Config_LLM_Operation.GET_MODEL],
+    ["Raw inference", Core.Service_Spec_Config_LLM_Operation.RAW_INFERENCE],
+  ].map(([label, operation]) => ({ label: String(label), value: String(operation) }));
   const qualityData = [
     ["Complete", Core.RequestContext_Request_LLM_EstimateQuality.COMPLETE],
     ["Partial", Core.RequestContext_Request_LLM_EstimateQuality.PARTIAL],
     ["Unavailable", Core.RequestContext_Request_LLM_EstimateQuality.UNAVAILABLE],
   ].map(([label, quality]) => ({ label: String(label), value: String(quality) }));
-  const supportsBody = llmBodyOperations.has(value.operation);
+  const supportsBody = llmBodyRoutes.has(value.route);
 
   return (
     <div className="space-y-4">
@@ -1700,26 +1762,40 @@ const LLMFields = ({
             const nextProtocol = Number(protocol);
             onChange((llm) => {
               llm.protocol = nextProtocol;
-              const nextIsAnthropic =
-                nextProtocol === Core.Service_Spec_Config_LLM_Protocol.ANTHROPIC;
-              if (
-                nextIsAnthropic !== anthropicOperations.has(llm.operation) &&
-                llm.operation !== Core.RequestContext_Request_LLM_Operation.MODELS_LIST &&
-                llm.operation !== Core.RequestContext_Request_LLM_Operation.MODELS_GET
-              ) {
-                llm.operation = nextIsAnthropic
-                  ? Core.RequestContext_Request_LLM_Operation.MESSAGES
-                  : Core.RequestContext_Request_LLM_Operation.CHAT_COMPLETIONS;
+              const routes = llmProtocolRoutes[nextProtocol] ?? [];
+              if (!routes.includes(llm.route)) {
+                llm.route =
+                  routes[0] ?? Core.RequestContext_Request_LLM_Route.ROUTE_UNSET;
+                llm.operation =
+                  llmRouteOperation[llm.route] ??
+                  Core.Service_Spec_Config_LLM_Operation.GENERATE;
               }
             });
           }}
         />
         <Select
+          label="Route"
+          description="The inference API route that the request arrives on"
+          value={String(value.route)}
+          data={routeData}
+          allowDeselect={false}
+          searchable
+          styles={fieldStyles}
+          onChange={(route) =>
+            onChange((llm) => {
+              llm.route = Number(route);
+              llm.operation =
+                llmRouteOperation[llm.route] ??
+                Core.Service_Spec_Config_LLM_Operation.GENERATE;
+            })
+          }
+        />
+        <Select
           label="Operation"
+          description="What the request does, normalized across the protocols"
           value={String(value.operation)}
           data={operationData}
           allowDeselect={false}
-          searchable
           styles={fieldStyles}
           onChange={(operation) =>
             onChange((llm) => {

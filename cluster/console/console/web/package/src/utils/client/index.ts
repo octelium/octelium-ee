@@ -10,6 +10,7 @@ import * as VisibilityCoreC from "../../apis/visibilityv1/core/vcorev1.client";
 import * as VisibilityAccessC from "../../apis/visibilityv1/access/vaccessv1.client";
 import * as VisibilityEnterpriseC from "../../apis/visibilityv1/enterprise/venterprisev1.client";
 import * as VisibilityMetricsC from "../../apis/visibilityv1/metrics/vmetricsv1.client";
+import * as VisibilityLLMC from "../../apis/visibilityv1/llm/vllmv1.client";
 import * as VisibilityC from "../../apis/visibilityv1/visibilityv1.client";
 
 export const getTransport = () => {
@@ -104,5 +105,12 @@ export const getClientVisibilityMetrics =
     );
     return visibilityMetricsClient;
   };
+
+let visibilityLLMClient: VisibilityLLMC.LLMServiceClient | undefined;
+
+export const getClientVisibilityLLM = (): VisibilityLLMC.LLMServiceClient => {
+  visibilityLLMClient ??= new VisibilityLLMC.LLMServiceClient(getTransport());
+  return visibilityLLMClient;
+};
 
 export const refetchIntervalChart = 15000;

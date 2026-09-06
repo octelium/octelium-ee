@@ -38,6 +38,9 @@ const ResourceItemAuditLogsPage = React.lazy(
 const ResourceItemAuthenticationLogsPage = React.lazy(
   () => import("@/components/ResourceLayout/ResourceAuthenticationLogs"),
 );
+const ResourceItemLLMPage = React.lazy(
+  () => import("@/components/ResourceLayout/ResourceLLM"),
+);
 const ServiceMetricsPage = React.lazy(
   () => import("@/components/ResourceLayout/ServiceMetricsPage"),
 );
@@ -142,6 +145,29 @@ const getResourceChildrenRouter = (arg: ResourceComponentInfo): RouteObject => {
       element: (
         <LazyPage>
           <ResourceItemAccessLogsPage />
+        </LazyPage>
+      ),
+    });
+  }
+
+  if (
+    match(arg.Kind)
+      .with(
+        "User",
+        "Session",
+        "Device",
+        "Service",
+        "Namespace",
+        "Region",
+        () => true,
+      )
+      .otherwise(() => false)
+  ) {
+    children.push({
+      path: "llm",
+      element: (
+        <LazyPage>
+          <ResourceItemLLMPage />
         </LazyPage>
       ),
     });

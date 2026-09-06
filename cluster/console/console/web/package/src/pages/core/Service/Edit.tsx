@@ -23,6 +23,7 @@ import SelectPolicies from "@/components/ResourceLayout/SelectPolicies";
 import SelectResource from "@/components/ResourceLayout/SelectResource";
 import TextAreaCustom from "@/components/TextAreaCustom";
 import { strToNum } from "@/utils/convert";
+import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
 
 type SegmentedTabsContextValue = {
@@ -465,6 +466,8 @@ const configTypeTitle = (
 type GatewayConfig =
   | CoreP.Service_Spec_Config_MCP
   | CoreP.Service_Spec_Config_LLM;
+
+type GatewayPluginKind = "mcp" | "llm";
 
 const StringListEditor = (props: {
   title: string;
@@ -1000,7 +1003,7 @@ const GatewayHeaderEditor = (props: {
   </EditItem>
 );
 
-const createGatewayPlugin = () =>
+const createGatewayPlugin = (): any =>
   CoreP.Service_Spec_Config_HTTP_Plugin.create({
     type: {
       oneofKind: "direct",
@@ -1039,295 +1042,1904 @@ const LuaScriptEditor = (props: {
   </div>
 );
 
-const GatewayPluginsEditor = (props: {
-  config: GatewayConfig;
+const createValueEval = (kind: string): any =>
+  kind === "eval"
+    ? { oneofKind: "eval", eval: "" }
+    : kind === "opa"
+      ? { oneofKind: "opa", opa: "" }
+      : { oneofKind: "value", value: "" };
+
+const valueEvalText = (value: any): string =>
+  match(value?.oneofKind)
+    .with("value", () => value.value as string)
+    .with("eval", () => value.eval as string)
+    .with("opa", () => value.opa as string)
+    .otherwise(() => "");
+
+const ValueEvalEditor = (props: {
+  label: string;
+  description?: string;
+  placeholder?: string;
+  value: any;
+  multiline?: boolean;
+  onChange: (value: any) => void;
+}) => {
+  const kind = props.value?.oneofKind ?? "value";
+  const setText = (text: string) =>
+    props.onChange({ oneofKind: kind, [kind]: text });
+
+  return (
+    <div className="w-full space-y-2">
+      <Select
+        label="Source"
+        description="Use a literal value, a CEL expression or a Rego policy."
+        data={[
+          { value: "value", label: "Literal value" },
+          { value: "eval", label: "CEL expression" },
+          { value: "opa", label: "Rego policy" },
+        ]}
+        value={kind}
+        onChange={(next) => next && props.onChange(createValueEval(next))}
+      />
+      {props.multiline || kind === "opa" ? (
+        <TextAreaCustom
+          label={props.label}
+          description={props.description}
+          placeholder={props.placeholder}
+          value={valueEvalText(props.value)}
+          onChange={(text) => setText(text ?? "")}
+        />
+      ) : (
+        <TextInput
+          label={props.label}
+          description={props.description}
+          placeholder={props.placeholder}
+          value={valueEvalText(props.value)}
+          onChange={(event) => setText(event.target.value)}
+        />
+      )}
+    </div>
+  );
+};
+
+const EnumSelect = (props: {
+  label: string;
+  description?: string;
+  values: string[];
+  enumObj: any;
+  value: number;
+  onChange: (value: number) => void;
+}) => (
+  <Select
+    label={props.label}
+    description={props.description}
+    data={props.values}
+    value={props.enumObj[props.value] ?? props.values[0]}
+    onChange={(value) => {
+      if (!value) return;
+      props.onChange(props.enumObj[value]);
+    }}
+  />
+);
+
+const EnumMultiSelect = (props: {
+  label: string;
+  description?: string;
+  values: string[];
+  enumObj: any;
+  selected: number[];
+  onChange: (values: number[]) => void;
+}) => (
+  <div className="w-full">
+    <p className="text-sm font-semibold text-slate-700">{props.label}</p>
+    {props.description && (
+      <p className="mb-2 text-xs font-medium text-slate-500">
+        {props.description}
+      </p>
+    )}
+    <div className="flex flex-wrap gap-2">
+      {props.values.map((value) => {
+        const numeric = props.enumObj[value] as number;
+        const checked = props.selected.includes(numeric);
+        return (
+          <button
+            key={value}
+            type="button"
+            onClick={() =>
+              props.onChange(
+                checked
+                  ? props.selected.filter((item) => item !== numeric)
+                  : [...props.selected, numeric],
+              )
+            }
+            className={twMerge(
+              "rounded-lg border px-2.5 py-1.5 text-[0.7rem] font-bold transition-colors duration-300",
+              checked
+                ? "border-slate-800 bg-slate-800 text-white"
+                : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700",
+            )}
+          >
+            {value}
+          </button>
+        );
+      })}
+    </div>
+  </div>
+);
+
+const guardrailPatternMatchKinds = ["regex", "type", "secrets"];
+
+const createGuardrailPatternMatch = (kind: string): any =>
+  kind === "type"
+    ? {
+        oneofKind: "type",
+        type: CoreP.Service_Spec_Config_LLM_Plugin_Guardrail_Pattern_Type.EMAIL,
+      }
+    : kind === "secrets"
+      ? {
+          oneofKind: "secrets",
+          secrets:
+            CoreP.Service_Spec_Config_LLM_Plugin_Guardrail_Pattern_Secrets.create(),
+        }
+      : { oneofKind: "regex", regex: "" };
+
+const GuardrailPatternsEditor = (props: {
+  patterns: CoreP.Service_Spec_Config_LLM_Plugin_Guardrail_Pattern[];
   onChange: () => void;
+  onSet: (
+    patterns: CoreP.Service_Spec_Config_LLM_Plugin_Guardrail_Pattern[],
+  ) => void;
 }) => (
   <ItemMessage
-    title="Plugins"
-    obj={props.config.plugins}
+    title="Patterns"
+    obj={props.patterns}
     isList
-    onSet={() => {
-      props.config.plugins = [createGatewayPlugin()];
-      props.onChange();
-    }}
-    onAddListItem={() => {
-      props.config.plugins.push(createGatewayPlugin());
-      props.onChange();
-    }}
+    onSet={() =>
+      props.onSet([
+        CoreP.Service_Spec_Config_LLM_Plugin_Guardrail_Pattern.create({
+          match: { oneofKind: "regex", regex: "" },
+          action:
+            CoreP.Service_Spec_Config_LLM_Plugin_Guardrail_Pattern_Action.REDACT,
+        }),
+      ])
+    }
+    onAddListItem={() =>
+      props.onSet([
+        ...props.patterns,
+        CoreP.Service_Spec_Config_LLM_Plugin_Guardrail_Pattern.create({
+          match: { oneofKind: "regex", regex: "" },
+          action:
+            CoreP.Service_Spec_Config_LLM_Plugin_Guardrail_Pattern_Action.REDACT,
+        }),
+      ])
+    }
   >
-    {props.config.plugins.map((plugin, index) => (
+    {props.patterns.map((pattern, index) => (
       <EditItem
-        key={`${plugin.name || "plugin"}-${index}`}
-        obj={plugin}
-        onUnset={() => {
-          props.config.plugins.splice(index, 1);
-          props.onChange();
-        }}
+        key={`guardrail-pattern-${index}`}
+        title={`Pattern ${index + 1}`}
+        obj={pattern}
+        onUnset={() =>
+          props.onSet(props.patterns.filter((_, item) => item !== index))
+        }
       >
         <Group grow align="flex-start">
-          <TextInput
-            label="Name"
-            required
-            description="Unique name used to identify this HTTP plugin."
-            placeholder="my-plugin"
-            value={plugin.name}
-            onChange={(event) => {
-              plugin.name = event.target.value;
-              props.onChange();
-            }}
-          />
           <Select
-            label="Phase"
-            description="Run the plugin before or after authentication and authorization."
-            data={["PRE_AUTH", "POST_AUTH"]}
-            value={
-              CoreP.Service_Spec_Config_HTTP_Plugin_Phase[plugin.phase] ??
-              "PRE_AUTH"
-            }
+            label="Match"
+            description="Match a regular expression, a built-in type or the Cluster's secret rules."
+            data={guardrailPatternMatchKinds}
+            value={pattern.match.oneofKind ?? "regex"}
             onChange={(value) => {
               if (!value) return;
-              plugin.phase =
-                CoreP.Service_Spec_Config_HTTP_Plugin_Phase[
-                  value as keyof typeof CoreP.Service_Spec_Config_HTTP_Plugin_Phase
-                ];
+              pattern.match = createGuardrailPatternMatch(value);
               props.onChange();
             }}
           />
-          <Switch
-            label="Disabled"
-            description="Disable this plugin without removing its configuration."
-            checked={plugin.isDisabled}
-            onChange={(event) => {
-              plugin.isDisabled = event.currentTarget.checked;
+          <EnumSelect
+            label="Action"
+            description="What happens to the content that the pattern matches."
+            values={["DENY", "REDACT", "STRIP", "REPLACE"]}
+            enumObj={
+              CoreP.Service_Spec_Config_LLM_Plugin_Guardrail_Pattern_Action
+            }
+            value={pattern.action}
+            onChange={(value) => {
+              pattern.action = value;
               props.onChange();
             }}
           />
         </Group>
-        <Cond
-          item={
-            plugin.condition ??
-            CoreP.Condition.create({
-              type: { oneofKind: "matchAny", matchAny: true },
-            })
-          }
-          onChange={(condition) => {
-            plugin.condition = condition;
-            props.onChange();
-          }}
-        />
-        <Tabs
-          className="mb-4"
-          value={plugin.type.oneofKind ?? "direct"}
-          onChange={(value) => {
-            if (!value) return;
-            plugin.type =
-              value === "rateLimit"
-                ? {
-                    oneofKind: "rateLimit",
-                    rateLimit:
-                      CoreP.Service_Spec_Config_HTTP_Plugin_RateLimit.create(),
-                  }
-                  : value === "lua"
-                    ? {
-                        oneofKind: "lua",
-                        lua: CoreP.Service_Spec_Config_HTTP_Plugin_Lua.create({
-                          type: { oneofKind: "inline", inline: "" },
-                        }),
-                      }
-                    : value === "path"
-                      ? {
-                          oneofKind: "path",
-                          path: CoreP.Service_Spec_Config_HTTP_Plugin_Path.create(),
-                        }
-                      : value === "jsonSchema"
-                        ? {
-                            oneofKind: "jsonSchema",
-                            jsonSchema:
-                              CoreP.Service_Spec_Config_HTTP_Plugin_JSONSchema.create(
-                                { type: { oneofKind: "inline", inline: "" } },
-                              ),
-                          }
-                        : value === "extProc"
-                          ? {
-                              oneofKind: "extProc",
-                              extProc:
-                                CoreP.Service_Spec_Config_HTTP_Plugin_ExtProc.create(
-                                  {
-                                    type: {
-                                      oneofKind: "address",
-                                      address: "",
-                                    },
-                                  },
-                                ),
-                            }
-                          : {
-                              oneofKind: "direct",
-                              direct:
-                                CoreP.Service_Spec_Config_HTTP_Plugin_Direct.create(),
-                            };
-            props.onChange();
-          }}
-        >
-          <Tabs.List className="w-full">
-            <Tabs.Tab value="direct">Direct response</Tabs.Tab>
-            <Tabs.Tab value="rateLimit">Rate limit</Tabs.Tab>
-            <Tabs.Tab value="lua">Lua</Tabs.Tab>
-            <Tabs.Tab value="path">Path</Tabs.Tab>
-            <Tabs.Tab value="jsonSchema">JSON Schema</Tabs.Tab>
-            <Tabs.Tab value="extProc">Ext Proc</Tabs.Tab>
-          </Tabs.List>
-        </Tabs>
-        {match(plugin.type)
-          .with({ oneofKind: "direct" }, (type) => (
-            <NumberInput
-              label="Status code"
-              description="HTTP status returned by the direct response."
-              min={100}
-              max={599}
-              value={type.direct.statusCode}
-              onChange={(value) => {
-                type.direct.statusCode = strToNum(value);
-                props.onChange();
-              }}
-            />
-          ))
-          .with({ oneofKind: "rateLimit" }, (type) => (
-            <NumberInput
-              label="Request limit"
-              description="Maximum requests allowed during the configured rate-limit window."
-              min={0}
-              value={type.rateLimit.limit}
-              onChange={(value) => {
-                type.rateLimit.limit = strToNum(value);
-                props.onChange();
-              }}
-            />
-          ))
-          .with({ oneofKind: "lua" }, (type) => (
-            <LuaScriptEditor
-              value={
-                type.lua.type.oneofKind === "inline"
-                  ? type.lua.type.inline
-                  : ""
+        {pattern.match.oneofKind === "regex" && (
+          <TextInput
+            label="Regular expression"
+            description="RE2 regular expression matched against the inspected content."
+            placeholder="[0-9]{16}"
+            value={pattern.match.regex}
+            onChange={(event) => {
+              if (pattern.match.oneofKind === "regex") {
+                pattern.match.regex = event.target.value;
               }
-              onChange={(value) => {
-                type.lua.type = { oneofKind: "inline", inline: value ?? "" };
-                props.onChange();
-              }}
-            />
-          ))
-          .with({ oneofKind: "path" }, (type) => (
-            <Group grow>
-              <TextInput
-                label="Add prefix"
-                description="Prefix added to the request path before forwarding."
-                value={type.path.addPrefix}
-                onChange={(event) => {
-                  type.path.addPrefix = event.target.value;
-                  props.onChange();
-                }}
-              />
-              <TextInput
-                label="Remove prefix"
-                description="Prefix removed from the request path before forwarding."
-                value={type.path.removePrefix}
-                onChange={(event) => {
-                  type.path.removePrefix = event.target.value;
-                  props.onChange();
-                }}
-              />
-            </Group>
-          ))
-          .with({ oneofKind: "jsonSchema" }, (type) => (
-            <div>
-              <NumberInput
-                label="Status code"
-                description="HTTP status returned when JSON validation fails."
-                min={100}
-                max={599}
-                value={type.jsonSchema.statusCode}
+              props.onChange();
+            }}
+          />
+        )}
+        {pattern.match.oneofKind === "type" && (
+          <EnumSelect
+            label="Built-in type"
+            description="Built-in detector applied to the inspected content."
+            values={["EMAIL", "CREDIT_CARD", "IBAN", "US_SSN"]}
+            enumObj={
+              CoreP.Service_Spec_Config_LLM_Plugin_Guardrail_Pattern_Type
+            }
+            value={pattern.match.type}
+            onChange={(value) => {
+              if (pattern.match.oneofKind === "type") {
+                pattern.match.type = value;
+              }
+              props.onChange();
+            }}
+          />
+        )}
+        {pattern.match.oneofKind === "secrets" && (
+          <StringListEditor
+            title="Excluded secret rules"
+            description="Secret detection rules that this pattern does not apply."
+            values={pattern.match.secrets.excludeRules}
+            onChange={(values) => {
+              if (pattern.match.oneofKind === "secrets") {
+                pattern.match.secrets.excludeRules = values;
+              }
+              props.onChange();
+            }}
+          />
+        )}
+        {pattern.action ===
+          CoreP.Service_Spec_Config_LLM_Plugin_Guardrail_Pattern_Action
+            .REPLACE && (
+          <EditItem
+            title="Replacement"
+            description="Value written in place of the matched content"
+            obj={pattern.replace}
+            onUnset={() => {
+              pattern.replace = undefined;
+              props.onChange();
+            }}
+            onSet={() => {
+              pattern.replace =
+                CoreP.Service_Spec_Config_LLM_Plugin_Guardrail_Pattern_Replace.create(
+                  { type: { oneofKind: "value", value: "" } },
+                );
+              props.onChange();
+            }}
+          >
+            {pattern.replace && (
+              <ValueEvalEditor
+                label="Replacement value"
+                placeholder="[REDACTED]"
+                value={pattern.replace.type}
                 onChange={(value) => {
-                  type.jsonSchema.statusCode = strToNum(value);
+                  pattern.replace!.type = value;
                   props.onChange();
                 }}
               />
-              <TextAreaCustom
-                description="Inline JSON Schema used to validate the request body."
-                value={
-                  type.jsonSchema.type.oneofKind === "inline"
-                    ? type.jsonSchema.type.inline
-                    : ""
-                }
-                onChange={(value) => {
-                  type.jsonSchema.type = {
-                    oneofKind: "inline",
-                    inline: value ?? "",
-                  };
-                  props.onChange();
-                }}
-              />
-            </div>
-          ))
-          .with({ oneofKind: "extProc" }, (type) => (
-            <Group grow>
-              <Select
-                label="Endpoint type"
-                description="Use a fixed address or a managed container for ext_proc."
-                data={["address", "container"]}
-                value={type.extProc.type.oneofKind ?? "address"}
-                onChange={(value) => {
-                  if (!value) return;
-                  type.extProc.type =
-                    value === "container"
-                      ? {
-                          oneofKind: "container",
-                          container:
-                            CoreP.Service_Spec_Config_HTTP_Plugin_ExtProc_Container.create(),
-                        }
-                      : { oneofKind: "address", address: "" };
-                  props.onChange();
-                }}
-              />
-              {type.extProc.type.oneofKind === "address" ? (
-                <TextInput
-                  label="Address"
-                  description="Address of the Envoy ext_proc gRPC server."
-                  value={type.extProc.type.address}
-                  onChange={(event) => {
-                    if (type.extProc.type.oneofKind === "address") {
-                      type.extProc.type.address = event.target.value;
-                    }
-                    props.onChange();
-                  }}
-                />
-              ) : (
-                <TextInput
-                  label="Container image"
-                  description="Container image that serves the ext_proc gRPC endpoint."
-                  value={
-                    type.extProc.type.oneofKind === "container"
-                      ? type.extProc.type.container.image
-                      : ""
-                  }
-                  onChange={(event) => {
-                    if (type.extProc.type.oneofKind === "container") {
-                      type.extProc.type.container.image = event.target.value;
-                    }
-                    props.onChange();
-                  }}
-                />
-              )}
-            </Group>
-          ))
-          .otherwise(() => null)}
+            )}
+          </EditItem>
+        )}
       </EditItem>
     ))}
   </ItemMessage>
 );
 
+const RateLimitKeyEditor = (props: {
+  keyValue?: CoreP.Service_Spec_Config_HTTP_Plugin_RateLimit_Key;
+  onChange: (
+    keyValue?: CoreP.Service_Spec_Config_HTTP_Plugin_RateLimit_Key,
+  ) => void;
+}) => (
+  <EditItem
+    title="Bucket key"
+    description="How the requests are grouped into rate-limit buckets"
+    obj={props.keyValue}
+    onUnset={() => props.onChange(undefined)}
+    onSet={() =>
+      props.onChange(
+        CoreP.Service_Spec_Config_HTTP_Plugin_RateLimit_Key.create({
+          type: { oneofKind: "perUser", perUser: true },
+        }),
+      )
+    }
+  >
+    {props.keyValue && (
+      <Group grow align="flex-start">
+        <Select
+          label="Key type"
+          description="Bucket per User, per Session, or by a CEL expression."
+          data={["perUser", "perSession", "eval"]}
+          value={props.keyValue.type.oneofKind ?? "perUser"}
+          onChange={(value) => {
+            if (!value) return;
+            props.keyValue!.type =
+              value === "eval"
+                ? { oneofKind: "eval", eval: "" }
+                : value === "perSession"
+                  ? { oneofKind: "perSession", perSession: true }
+                  : { oneofKind: "perUser", perUser: true };
+            props.onChange(props.keyValue);
+          }}
+        />
+        {props.keyValue.type.oneofKind === "eval" && (
+          <TextInput
+            label="CEL expression"
+            description="CEL expression that resolves to the bucket key."
+            placeholder="ctx.user.metadata.name"
+            value={props.keyValue.type.eval}
+            onChange={(event) => {
+              if (props.keyValue?.type.oneofKind === "eval") {
+                props.keyValue.type.eval = event.target.value;
+              }
+              props.onChange(props.keyValue);
+            }}
+          />
+        )}
+      </Group>
+    )}
+  </EditItem>
+);
+
+const EmbeddingEditor = (props: {
+  embedding?: CoreP.Service_Spec_Config_LLM_Embedding;
+  onChange: (embedding?: CoreP.Service_Spec_Config_LLM_Embedding) => void;
+}) => (
+  <EditItem
+    title="Embedding"
+    description="Model used to embed the request in order to compare it semantically"
+    obj={props.embedding}
+    onUnset={() => props.onChange(undefined)}
+    onSet={() =>
+      props.onChange(
+        CoreP.Service_Spec_Config_LLM_Embedding.create({
+          source: CoreP.Service_Spec_Config_LLM_Embedding_Source.create({
+            type: { oneofKind: "currentUpstream", currentUpstream: true },
+          }),
+        }),
+      )
+    }
+  >
+    {props.embedding && (
+      <>
+        <Group grow align="flex-start">
+          <TextInput
+            label="Embedding model"
+            description="Model name requested from the embedding upstream."
+            placeholder="text-embedding-3-small"
+            value={props.embedding.model}
+            onChange={(event) => {
+              props.embedding!.model = event.target.value;
+              props.onChange(props.embedding);
+            }}
+          />
+          <NumberInput
+            label="Dimensions"
+            description="Vector dimensions requested from the embedding model."
+            min={0}
+            value={props.embedding.dimensions}
+            onChange={(value) => {
+              props.embedding!.dimensions = strToNum(value);
+              props.onChange(props.embedding);
+            }}
+          />
+        </Group>
+        <EditItem
+          title="Embedding source"
+          description="Where the embeddings are generated"
+          obj={props.embedding.source}
+          onUnset={() => {
+            props.embedding!.source = undefined;
+            props.onChange(props.embedding);
+          }}
+          onSet={() => {
+            props.embedding!.source =
+              CoreP.Service_Spec_Config_LLM_Embedding_Source.create({
+                type: { oneofKind: "currentUpstream", currentUpstream: true },
+              });
+            props.onChange(props.embedding);
+          }}
+        >
+          {props.embedding.source && (
+            <>
+              <Select
+                label="Source"
+                description="Embed on the Service's own upstream or on a dedicated one."
+                data={["currentUpstream", "upstream"]}
+                value={props.embedding.source.type.oneofKind ?? "currentUpstream"}
+                onChange={(value) => {
+                  if (!value) return;
+                  props.embedding!.source!.type =
+                    value === "upstream"
+                      ? {
+                          oneofKind: "upstream",
+                          upstream:
+                            CoreP.Service_Spec_Config_LLM_Embedding_Source_Upstream.create(),
+                        }
+                      : { oneofKind: "currentUpstream", currentUpstream: true };
+                  props.onChange(props.embedding);
+                }}
+              />
+              {props.embedding.source.type.oneofKind === "upstream" && (
+                <Group grow align="flex-start">
+                  <TextInput
+                    label="Upstream URL"
+                    description="Base URL of the dedicated embedding upstream."
+                    placeholder="https://api.openai.com"
+                    value={props.embedding.source.type.upstream.url}
+                    onChange={(event) => {
+                      if (
+                        props.embedding?.source?.type.oneofKind === "upstream"
+                      ) {
+                        props.embedding.source.type.upstream.url =
+                          event.target.value;
+                      }
+                      props.onChange(props.embedding);
+                    }}
+                  />
+                  <EnumSelect
+                    label="Upstream protocol"
+                    description="Inference protocol spoken by the embedding upstream."
+                    values={llmProtocolNames}
+                    enumObj={CoreP.Service_Spec_Config_LLM_Protocol}
+                    value={props.embedding.source.type.upstream.protocol}
+                    onChange={(value) => {
+                      if (
+                        props.embedding?.source?.type.oneofKind === "upstream"
+                      ) {
+                        props.embedding.source.type.upstream.protocol = value;
+                      }
+                      props.onChange(props.embedding);
+                    }}
+                  />
+                </Group>
+              )}
+            </>
+          )}
+        </EditItem>
+      </>
+    )}
+  </EditItem>
+);
+
+const llmProtocolNames = ["OPENAI", "ANTHROPIC", "GEMINI", "BEDROCK"];
+
+const sharedPluginTypes = [
+  { value: "direct", label: "Direct response" },
+  { value: "rateLimit", label: "Rate limit" },
+  { value: "lua", label: "Lua" },
+  { value: "path", label: "Path" },
+  { value: "jsonSchema", label: "JSON Schema" },
+  { value: "extProc", label: "Ext Proc" },
+];
+
+const mcpPluginTypes = [
+  ...sharedPluginTypes,
+  { value: "guardrail", label: "Guardrail" },
+];
+
+const llmPluginTypes = [
+  ...sharedPluginTypes,
+  { value: "prompt", label: "Prompt" },
+  { value: "tools", label: "Tools" },
+  { value: "guardrail", label: "Guardrail" },
+  { value: "model", label: "Model" },
+  { value: "reasoning", label: "Reasoning" },
+  { value: "tokenRateLimit", label: "Token rate limit" },
+  { value: "semanticCache", label: "Semantic cache" },
+  { value: "semanticRouter", label: "Semantic router" },
+];
+
+const createGatewayPluginType = (
+  value: string,
+  kind: GatewayPluginKind,
+): any => {
+  switch (value) {
+    case "rateLimit":
+      return {
+        oneofKind: "rateLimit",
+        rateLimit: CoreP.Service_Spec_Config_HTTP_Plugin_RateLimit.create(),
+      };
+    case "lua":
+      return {
+        oneofKind: "lua",
+        lua: CoreP.Service_Spec_Config_HTTP_Plugin_Lua.create({
+          type: { oneofKind: "inline", inline: "" },
+        }),
+      };
+    case "path":
+      return {
+        oneofKind: "path",
+        path: CoreP.Service_Spec_Config_HTTP_Plugin_Path.create(),
+      };
+    case "jsonSchema":
+      return {
+        oneofKind: "jsonSchema",
+        jsonSchema: CoreP.Service_Spec_Config_HTTP_Plugin_JSONSchema.create({
+          type: { oneofKind: "inline", inline: "" },
+        }),
+      };
+    case "extProc":
+      return {
+        oneofKind: "extProc",
+        extProc: CoreP.Service_Spec_Config_HTTP_Plugin_ExtProc.create({
+          type: { oneofKind: "address", address: "" },
+        }),
+      };
+    case "guardrail":
+      return kind === "mcp"
+        ? {
+            oneofKind: "guardrail",
+            guardrail: CoreP.Service_Spec_Config_MCP_Plugin_Guardrail.create({
+              leg: CoreP.Service_Spec_Config_MCP_Plugin_Guardrail_Leg.BOTH,
+            }),
+          }
+        : {
+            oneofKind: "guardrail",
+            guardrail: CoreP.Service_Spec_Config_LLM_Plugin_Guardrail.create({
+              leg: CoreP.Service_Spec_Config_LLM_Plugin_Guardrail_Leg.BOTH,
+            }),
+          };
+    case "prompt":
+      return {
+        oneofKind: "prompt",
+        prompt: CoreP.Service_Spec_Config_LLM_Plugin_Prompt.create({
+          type: {
+            oneofKind: "system",
+            system: CoreP.Service_Spec_Config_LLM_Plugin_Prompt_System.create({
+              mode: CoreP.Service_Spec_Config_LLM_Plugin_Prompt_System_Mode
+                .PREPEND,
+              content:
+                CoreP.Service_Spec_Config_LLM_Plugin_Prompt_Content.create({
+                  type: { oneofKind: "value", value: "" },
+                }),
+            }),
+          },
+        }),
+      };
+    case "tools":
+      return {
+        oneofKind: "tools",
+        tools: CoreP.Service_Spec_Config_LLM_Plugin_Tools.create(),
+      };
+    case "model":
+      return {
+        oneofKind: "model",
+        model: CoreP.Service_Spec_Config_LLM_Model.create({
+          type: { oneofKind: "value", value: "" },
+        }),
+      };
+    case "reasoning":
+      return {
+        oneofKind: "reasoning",
+        reasoning: CoreP.Service_Spec_Config_LLM_Reasoning.create({
+          type: {
+            oneofKind: "level",
+            level: CoreP.Service_Spec_Config_LLM_Reasoning_Level.MEDIUM,
+          },
+        }),
+      };
+    case "tokenRateLimit":
+      return {
+        oneofKind: "tokenRateLimit",
+        tokenRateLimit:
+          CoreP.Service_Spec_Config_LLM_Plugin_TokenRateLimit.create({
+            scope:
+              CoreP.Service_Spec_Config_LLM_Plugin_TokenRateLimit_Scope.TOTAL,
+          }),
+      };
+    case "semanticCache":
+      return {
+        oneofKind: "semanticCache",
+        semanticCache:
+          CoreP.Service_Spec_Config_LLM_Plugin_SemanticCache.create(),
+      };
+    case "semanticRouter":
+      return {
+        oneofKind: "semanticRouter",
+        semanticRouter:
+          CoreP.Service_Spec_Config_LLM_Plugin_SemanticRouter.create(),
+      };
+    default:
+      return {
+        oneofKind: "direct",
+        direct: CoreP.Service_Spec_Config_HTTP_Plugin_Direct.create(),
+      };
+  }
+};
+
+const SharedPluginTypeEditor = (props: {
+  type: any;
+  onChange: () => void;
+}) => {
+  const type = props.type;
+
+  return (
+    <>
+      {type.oneofKind === "direct" && (
+        <NumberInput
+          label="Status code"
+          description="HTTP status returned by the direct response."
+          min={100}
+          max={599}
+          value={type.direct.statusCode}
+          onChange={(value) => {
+            type.direct.statusCode = strToNum(value);
+            props.onChange();
+          }}
+        />
+      )}
+      {type.oneofKind === "rateLimit" && (
+        <>
+          <Group grow align="flex-start">
+            <NumberInput
+              label="Request limit"
+              description="Maximum requests allowed during the configured rate-limit window."
+              min={0}
+              value={Number(type.rateLimit.limit)}
+              onChange={(value) => {
+                type.rateLimit.limit = strToNum(value);
+                props.onChange();
+              }}
+            />
+            <DurationPicker
+              title="Window"
+              description="Duration of the rate-limit window."
+              value={type.rateLimit.window}
+              onChange={(value) => {
+                type.rateLimit.window = value;
+                props.onChange();
+              }}
+            />
+          </Group>
+          <RateLimitKeyEditor
+            keyValue={type.rateLimit.key}
+            onChange={(value) => {
+              type.rateLimit.key = value;
+              props.onChange();
+            }}
+          />
+        </>
+      )}
+      {type.oneofKind === "lua" && (
+        <LuaScriptEditor
+          value={
+            type.lua.type.oneofKind === "inline" ? type.lua.type.inline : ""
+          }
+          onChange={(value) => {
+            type.lua.type = { oneofKind: "inline", inline: value ?? "" };
+            props.onChange();
+          }}
+        />
+      )}
+      {type.oneofKind === "path" && (
+        <Group grow>
+          <TextInput
+            label="Add prefix"
+            description="Prefix added to the request path before forwarding."
+            value={type.path.addPrefix}
+            onChange={(event) => {
+              type.path.addPrefix = event.target.value;
+              props.onChange();
+            }}
+          />
+          <TextInput
+            label="Remove prefix"
+            description="Prefix removed from the request path before forwarding."
+            value={type.path.removePrefix}
+            onChange={(event) => {
+              type.path.removePrefix = event.target.value;
+              props.onChange();
+            }}
+          />
+        </Group>
+      )}
+      {type.oneofKind === "jsonSchema" && (
+        <div>
+          <NumberInput
+            label="Status code"
+            description="HTTP status returned when JSON validation fails."
+            min={100}
+            max={599}
+            value={type.jsonSchema.statusCode}
+            onChange={(value) => {
+              type.jsonSchema.statusCode = strToNum(value);
+              props.onChange();
+            }}
+          />
+          <TextAreaCustom
+            description="Inline JSON Schema used to validate the request body."
+            value={
+              type.jsonSchema.type.oneofKind === "inline"
+                ? type.jsonSchema.type.inline
+                : ""
+            }
+            onChange={(value) => {
+              type.jsonSchema.type = {
+                oneofKind: "inline",
+                inline: value ?? "",
+              };
+              props.onChange();
+            }}
+          />
+        </div>
+      )}
+      {type.oneofKind === "extProc" && (
+        <Group grow>
+          <Select
+            label="Endpoint type"
+            description="Use a fixed address or a managed container for ext_proc."
+            data={["address", "container"]}
+            value={type.extProc.type.oneofKind ?? "address"}
+            onChange={(value) => {
+              if (!value) return;
+              type.extProc.type =
+                value === "container"
+                  ? {
+                      oneofKind: "container",
+                      container:
+                        CoreP.Service_Spec_Config_HTTP_Plugin_ExtProc_Container.create(),
+                    }
+                  : { oneofKind: "address", address: "" };
+              props.onChange();
+            }}
+          />
+          {type.extProc.type.oneofKind === "address" ? (
+            <TextInput
+              label="Address"
+              description="Address of the Envoy ext_proc gRPC server."
+              value={type.extProc.type.address}
+              onChange={(event) => {
+                if (type.extProc.type.oneofKind === "address") {
+                  type.extProc.type.address = event.target.value;
+                }
+                props.onChange();
+              }}
+            />
+          ) : (
+            <TextInput
+              label="Container image"
+              description="Container image that serves the ext_proc gRPC endpoint."
+              value={
+                type.extProc.type.oneofKind === "container"
+                  ? type.extProc.type.container.image
+                  : ""
+              }
+              onChange={(event) => {
+                if (type.extProc.type.oneofKind === "container") {
+                  type.extProc.type.container.image = event.target.value;
+                }
+                props.onChange();
+              }}
+            />
+          )}
+        </Group>
+      )}
+    </>
+  );
+};
+
+const MCPGuardrailEditor = (props: {
+  guardrail: CoreP.Service_Spec_Config_MCP_Plugin_Guardrail;
+  onChange: () => void;
+}) => (
+  <>
+    <Group grow align="flex-start">
+      <EnumSelect
+        label="Leg"
+        description="Which side of the exchange is inspected."
+        values={["REQUEST", "RESPONSE", "BOTH"]}
+        enumObj={CoreP.Service_Spec_Config_MCP_Plugin_Guardrail_Leg}
+        value={props.guardrail.leg}
+        onChange={(value) => {
+          props.guardrail.leg = value;
+          props.onChange();
+        }}
+      />
+      <TextInput
+        label="Deny message"
+        description="Message returned to the downstream when the guardrail denies the request."
+        placeholder="This request was blocked by policy."
+        value={props.guardrail.denyMessage}
+        onChange={(event) => {
+          props.guardrail.denyMessage = event.target.value;
+          props.onChange();
+        }}
+      />
+    </Group>
+    <EnumMultiSelect
+      label="Scopes"
+      description="Parts of the MCP exchange that the patterns are applied to."
+      values={[
+        "TOOL_ARGUMENTS",
+        "TOOL_RESULTS",
+        "RESOURCE_CONTENTS",
+        "PROMPT_MESSAGES",
+        "TOOL_DEFINITIONS",
+        "ALL",
+      ]}
+      enumObj={CoreP.Service_Spec_Config_MCP_Plugin_Guardrail_Scope}
+      selected={props.guardrail.scopes}
+      onChange={(values) => {
+        props.guardrail.scopes = values;
+        props.onChange();
+      }}
+    />
+    <GuardrailPatternsEditor
+      patterns={props.guardrail.patterns}
+      onChange={props.onChange}
+      onSet={(patterns) => {
+        props.guardrail.patterns = patterns;
+        props.onChange();
+      }}
+    />
+  </>
+);
+
+const LLMGuardrailEditor = (props: {
+  guardrail: CoreP.Service_Spec_Config_LLM_Plugin_Guardrail;
+  onChange: () => void;
+}) => (
+  <>
+    <Group grow align="flex-start">
+      <EnumSelect
+        label="Leg"
+        description="Which side of the exchange is inspected."
+        values={["REQUEST", "RESPONSE", "BOTH"]}
+        enumObj={CoreP.Service_Spec_Config_LLM_Plugin_Guardrail_Leg}
+        value={props.guardrail.leg}
+        onChange={(value) => {
+          props.guardrail.leg = value;
+          props.onChange();
+        }}
+      />
+      <TextInput
+        label="Deny message"
+        description="Message returned to the downstream when the guardrail denies the request."
+        placeholder="This request was blocked by policy."
+        value={props.guardrail.denyMessage}
+        onChange={(event) => {
+          props.guardrail.denyMessage = event.target.value;
+          props.onChange();
+        }}
+      />
+    </Group>
+    <EnumMultiSelect
+      label="Scopes"
+      description="Parts of the inference exchange that the patterns are applied to."
+      values={[
+        "CONTENT",
+        "INSTRUCTIONS",
+        "TOOL_DEFINITIONS",
+        "TOOL_RESULTS",
+        "ALL",
+      ]}
+      enumObj={CoreP.Service_Spec_Config_LLM_Plugin_Guardrail_Scope}
+      selected={props.guardrail.scopes}
+      onChange={(values) => {
+        props.guardrail.scopes = values;
+        props.onChange();
+      }}
+    />
+    <GuardrailPatternsEditor
+      patterns={props.guardrail.patterns}
+      onChange={props.onChange}
+      onSet={(patterns) => {
+        props.guardrail.patterns = patterns;
+        props.onChange();
+      }}
+    />
+  </>
+);
+
+const LLMPromptEditor = (props: {
+  prompt: CoreP.Service_Spec_Config_LLM_Plugin_Prompt;
+  onChange: () => void;
+}) => (
+  <>
+    <Select
+      label="Target"
+      description="Rewrite the system instructions or inject a conversation message."
+      data={[
+        { value: "system", label: "System instructions" },
+        { value: "message", label: "Conversation message" },
+      ]}
+      value={props.prompt.type.oneofKind ?? "system"}
+      onChange={(value) => {
+        if (!value) return;
+        props.prompt.type =
+          value === "message"
+            ? {
+                oneofKind: "message",
+                message:
+                  CoreP.Service_Spec_Config_LLM_Plugin_Prompt_Message.create({
+                    role: CoreP.Service_Spec_Config_LLM_Plugin_Prompt_Message_Role
+                      .USER,
+                    position:
+                      CoreP
+                        .Service_Spec_Config_LLM_Plugin_Prompt_Message_Position
+                        .PREPEND,
+                    selector:
+                      CoreP
+                        .Service_Spec_Config_LLM_Plugin_Prompt_Message_Selector
+                        .LAST,
+                    content:
+                      CoreP.Service_Spec_Config_LLM_Plugin_Prompt_Content.create(
+                        { type: { oneofKind: "value", value: "" } },
+                      ),
+                  }),
+              }
+            : {
+                oneofKind: "system",
+                system:
+                  CoreP.Service_Spec_Config_LLM_Plugin_Prompt_System.create({
+                    mode: CoreP
+                      .Service_Spec_Config_LLM_Plugin_Prompt_System_Mode.PREPEND,
+                    content:
+                      CoreP.Service_Spec_Config_LLM_Plugin_Prompt_Content.create(
+                        { type: { oneofKind: "value", value: "" } },
+                      ),
+                  }),
+              };
+        props.onChange();
+      }}
+    />
+    {props.prompt.type.oneofKind === "system" && (
+      <>
+        <EnumSelect
+          label="Mode"
+          description="How the configured content is combined with the request's own system instructions."
+          values={["PREPEND", "APPEND", "REPLACE", "STRIP", "REJECT"]}
+          enumObj={CoreP.Service_Spec_Config_LLM_Plugin_Prompt_System_Mode}
+          value={props.prompt.type.system.mode}
+          onChange={(value) => {
+            if (props.prompt.type.oneofKind === "system") {
+              props.prompt.type.system.mode = value;
+            }
+            props.onChange();
+          }}
+        />
+        {props.prompt.type.system.mode !==
+          CoreP.Service_Spec_Config_LLM_Plugin_Prompt_System_Mode.STRIP &&
+          props.prompt.type.system.mode !==
+            CoreP.Service_Spec_Config_LLM_Plugin_Prompt_System_Mode.REJECT && (
+            <ValueEvalEditor
+              label="System content"
+              description="Instructions written into the request."
+              placeholder="You are a helpful assistant."
+              multiline
+              value={props.prompt.type.system.content?.type}
+              onChange={(value) => {
+                if (props.prompt.type.oneofKind === "system") {
+                  props.prompt.type.system.content =
+                    CoreP.Service_Spec_Config_LLM_Plugin_Prompt_Content.create({
+                      type: value,
+                    });
+                }
+                props.onChange();
+              }}
+            />
+          )}
+      </>
+    )}
+    {props.prompt.type.oneofKind === "message" && (
+      <>
+        <Group grow align="flex-start">
+          <EnumSelect
+            label="Role"
+            description="Role of the message that the plugin writes."
+            values={["USER", "ASSISTANT"]}
+            enumObj={CoreP.Service_Spec_Config_LLM_Plugin_Prompt_Message_Role}
+            value={props.prompt.type.message.role}
+            onChange={(value) => {
+              if (props.prompt.type.oneofKind === "message") {
+                props.prompt.type.message.role = value;
+              }
+              props.onChange();
+            }}
+          />
+          <EnumSelect
+            label="Position"
+            description="Where the content is written relative to the selected message."
+            values={["PREPEND", "APPEND", "NEW_BEFORE", "NEW_AFTER"]}
+            enumObj={
+              CoreP.Service_Spec_Config_LLM_Plugin_Prompt_Message_Position
+            }
+            value={props.prompt.type.message.position}
+            onChange={(value) => {
+              if (props.prompt.type.oneofKind === "message") {
+                props.prompt.type.message.position = value;
+              }
+              props.onChange();
+            }}
+          />
+          <EnumSelect
+            label="Selector"
+            description="Which of the matching messages the plugin acts on."
+            values={["LAST", "FIRST", "ALL"]}
+            enumObj={
+              CoreP.Service_Spec_Config_LLM_Plugin_Prompt_Message_Selector
+            }
+            value={props.prompt.type.message.selector}
+            onChange={(value) => {
+              if (props.prompt.type.oneofKind === "message") {
+                props.prompt.type.message.selector = value;
+              }
+              props.onChange();
+            }}
+          />
+        </Group>
+        <ValueEvalEditor
+          label="Message content"
+          description="Content written into the conversation."
+          placeholder="Answer only from the provided context."
+          multiline
+          value={props.prompt.type.message.content?.type}
+          onChange={(value) => {
+            if (props.prompt.type.oneofKind === "message") {
+              props.prompt.type.message.content =
+                CoreP.Service_Spec_Config_LLM_Plugin_Prompt_Content.create({
+                  type: value,
+                });
+            }
+            props.onChange();
+          }}
+        />
+      </>
+    )}
+  </>
+);
+
+const LLMToolsEditor = (props: {
+  tools: CoreP.Service_Spec_Config_LLM_Plugin_Tools;
+  onChange: () => void;
+}) => (
+  <>
+    <Group grow align="flex-start">
+      <EnumSelect
+        label="Tool choice"
+        description="Whether the request's own tool choice is preserved or overwritten."
+        values={["PRESERVE", "NONE", "AUTO"]}
+        enumObj={CoreP.Service_Spec_Config_LLM_Plugin_Tools_Choice}
+        value={props.tools.choice}
+        onChange={(value) => {
+          props.tools.choice = value;
+          props.onChange();
+        }}
+      />
+      <TextInput
+        label="Deny message"
+        description="Message returned when a filter denies the request."
+        placeholder="This tool is not allowed."
+        value={props.tools.denyMessage}
+        onChange={(event) => {
+          props.tools.denyMessage = event.target.value;
+          props.onChange();
+        }}
+      />
+    </Group>
+    <ItemMessage
+      title="Filters"
+      obj={props.tools.filters}
+      isList
+      onSet={() => {
+        props.tools.filters = [
+          CoreP.Service_Spec_Config_LLM_Plugin_Tools_Filter.create({
+            match: { oneofKind: "name", name: "" },
+            decision:
+              CoreP.Service_Spec_Config_LLM_Plugin_Tools_Filter_Decision.REMOVE,
+          }),
+        ];
+        props.onChange();
+      }}
+      onAddListItem={() => {
+        props.tools.filters.push(
+          CoreP.Service_Spec_Config_LLM_Plugin_Tools_Filter.create({
+            match: { oneofKind: "name", name: "" },
+            decision:
+              CoreP.Service_Spec_Config_LLM_Plugin_Tools_Filter_Decision.REMOVE,
+          }),
+        );
+        props.onChange();
+      }}
+    >
+      {props.tools.filters.map((filter, index) => (
+        <EditItem
+          key={`tool-filter-${index}`}
+          title={`Filter ${index + 1}`}
+          obj={filter}
+          onUnset={() => {
+            props.tools.filters.splice(index, 1);
+            props.onChange();
+          }}
+        >
+          <Group grow align="flex-start">
+            <Select
+              label="Match"
+              description="Match the tool by its name or by its declared type."
+              data={["name", "type"]}
+              value={filter.match.oneofKind ?? "name"}
+              onChange={(value) => {
+                if (!value) return;
+                filter.match =
+                  value === "type"
+                    ? { oneofKind: "type", type: "" }
+                    : { oneofKind: "name", name: "" };
+                props.onChange();
+              }}
+            />
+            <TextInput
+              label={filter.match.oneofKind === "type" ? "Tool type" : "Tool name"}
+              description="Matched verbatim, or as a `*` suffixed prefix."
+              placeholder={filter.match.oneofKind === "type" ? "function" : "exec_*"}
+              value={
+                filter.match.oneofKind === "type"
+                  ? filter.match.type
+                  : filter.match.oneofKind === "name"
+                    ? filter.match.name
+                    : ""
+              }
+              onChange={(event) => {
+                if (filter.match.oneofKind === "type") {
+                  filter.match.type = event.target.value;
+                } else if (filter.match.oneofKind === "name") {
+                  filter.match.name = event.target.value;
+                }
+                props.onChange();
+              }}
+            />
+            <EnumSelect
+              label="Decision"
+              description="What happens to the tools that the filter matches."
+              values={["ALLOW", "REMOVE", "DENY", "REPLACE"]}
+              enumObj={
+                CoreP.Service_Spec_Config_LLM_Plugin_Tools_Filter_Decision
+              }
+              value={filter.decision}
+              onChange={(value) => {
+                filter.decision = value;
+                props.onChange();
+              }}
+            />
+          </Group>
+          {filter.decision ===
+            CoreP.Service_Spec_Config_LLM_Plugin_Tools_Filter_Decision
+              .REPLACE && (
+            <EditItem
+              title="Replacement"
+              description="Tool definition written in place of the matched one"
+              obj={filter.replace}
+              onUnset={() => {
+                filter.replace = undefined;
+                props.onChange();
+              }}
+              onSet={() => {
+                filter.replace =
+                  CoreP.Service_Spec_Config_LLM_Plugin_Tools_Filter_Replace.create(
+                    { type: { oneofKind: "value", value: "" } },
+                  );
+                props.onChange();
+              }}
+            >
+              {filter.replace && (
+                <ValueEvalEditor
+                  label="Replacement tool"
+                  description="JSON tool definition sent to the upstream."
+                  multiline
+                  value={filter.replace.type}
+                  onChange={(value) => {
+                    filter.replace!.type = value;
+                    props.onChange();
+                  }}
+                />
+              )}
+            </EditItem>
+          )}
+        </EditItem>
+      ))}
+    </ItemMessage>
+    <ItemMessage
+      title="Injected tools"
+      obj={props.tools.tools}
+      isList
+      onSet={() => {
+        props.tools.tools = [
+          CoreP.Service_Spec_Config_LLM_Plugin_Tools_Tool.create({
+            type: { oneofKind: "value", value: "" },
+            position:
+              CoreP.Service_Spec_Config_LLM_Plugin_Tools_Tool_Position.APPEND,
+          }),
+        ];
+        props.onChange();
+      }}
+      onAddListItem={() => {
+        props.tools.tools.push(
+          CoreP.Service_Spec_Config_LLM_Plugin_Tools_Tool.create({
+            type: { oneofKind: "value", value: "" },
+            position:
+              CoreP.Service_Spec_Config_LLM_Plugin_Tools_Tool_Position.APPEND,
+          }),
+        );
+        props.onChange();
+      }}
+    >
+      {props.tools.tools.map((tool, index) => (
+        <EditItem
+          key={`tool-${index}`}
+          title={`Tool ${index + 1}`}
+          obj={tool}
+          onUnset={() => {
+            props.tools.tools.splice(index, 1);
+            props.onChange();
+          }}
+        >
+          <EnumSelect
+            label="Position"
+            description="Where the tool is written into the request's tool list."
+            values={["PREPEND", "APPEND"]}
+            enumObj={CoreP.Service_Spec_Config_LLM_Plugin_Tools_Tool_Position}
+            value={tool.position}
+            onChange={(value) => {
+              tool.position = value;
+              props.onChange();
+            }}
+          />
+          <ValueEvalEditor
+            label="Tool definition"
+            description="JSON tool definition added to the request."
+            multiline
+            value={tool.type}
+            onChange={(value) => {
+              tool.type = value;
+              props.onChange();
+            }}
+          />
+        </EditItem>
+      ))}
+    </ItemMessage>
+  </>
+);
+
+const LLMReasoningEditor = (props: {
+  reasoning: CoreP.Service_Spec_Config_LLM_Reasoning;
+  onChange: () => void;
+}) => (
+  <>
+    <Select
+      label="Reasoning control"
+      description="How the reasoning budget of the request is decided."
+      data={[
+        { value: "level", label: "Level" },
+        { value: "tokenBudget", label: "Token budget" },
+        { value: "effort", label: "Provider effort" },
+        { value: "eval", label: "CEL expression" },
+        { value: "opa", label: "Rego policy" },
+      ]}
+      value={props.reasoning.type.oneofKind ?? "level"}
+      onChange={(value) => {
+        if (!value) return;
+        props.reasoning.type = match(value)
+          .with("tokenBudget", () => ({
+            oneofKind: "tokenBudget" as const,
+            tokenBudget: 0,
+          }))
+          .with("effort", () => ({ oneofKind: "effort" as const, effort: "" }))
+          .with("eval", () => ({ oneofKind: "eval" as const, eval: "" }))
+          .with("opa", () => ({ oneofKind: "opa" as const, opa: "" }))
+          .otherwise(() => ({
+            oneofKind: "level" as const,
+            level: CoreP.Service_Spec_Config_LLM_Reasoning_Level.MEDIUM,
+          }));
+        props.onChange();
+      }}
+    />
+    {props.reasoning.type.oneofKind === "level" && (
+      <EnumSelect
+        label="Level"
+        description="Portable reasoning level mapped onto each provider's own control."
+        values={["NONE", "MINIMAL", "LOW", "MEDIUM", "HIGH", "XHIGH", "MAX"]}
+        enumObj={CoreP.Service_Spec_Config_LLM_Reasoning_Level}
+        value={props.reasoning.type.level}
+        onChange={(value) => {
+          if (props.reasoning.type.oneofKind === "level") {
+            props.reasoning.type.level = value;
+          }
+          props.onChange();
+        }}
+      />
+    )}
+    {props.reasoning.type.oneofKind === "tokenBudget" && (
+      <NumberInput
+        label="Token budget"
+        description="Reasoning token budget requested from the upstream."
+        min={0}
+        value={Number(props.reasoning.type.tokenBudget)}
+        onChange={(value) => {
+          if (props.reasoning.type.oneofKind === "tokenBudget") {
+            props.reasoning.type.tokenBudget = strToNum(value);
+          }
+          props.onChange();
+        }}
+      />
+    )}
+    {props.reasoning.type.oneofKind === "effort" && (
+      <TextInput
+        label="Provider effort"
+        description="Provider-native effort value passed through verbatim."
+        placeholder="high"
+        value={props.reasoning.type.effort}
+        onChange={(event) => {
+          if (props.reasoning.type.oneofKind === "effort") {
+            props.reasoning.type.effort = event.target.value;
+          }
+          props.onChange();
+        }}
+      />
+    )}
+    {props.reasoning.type.oneofKind === "eval" && (
+      <TextInput
+        label="CEL expression"
+        description="CEL expression that resolves to a reasoning level or token budget."
+        placeholder='ctx.user.spec.type == "HUMAN" ? "high" : "low"'
+        value={props.reasoning.type.eval}
+        onChange={(event) => {
+          if (props.reasoning.type.oneofKind === "eval") {
+            props.reasoning.type.eval = event.target.value;
+          }
+          props.onChange();
+        }}
+      />
+    )}
+    {props.reasoning.type.oneofKind === "opa" && (
+      <TextAreaCustom
+        label="Rego policy"
+        description="Rego policy that resolves to a reasoning level or token budget."
+        value={props.reasoning.type.opa}
+        onChange={(value) => {
+          if (props.reasoning.type.oneofKind === "opa") {
+            props.reasoning.type.opa = value ?? "";
+          }
+          props.onChange();
+        }}
+      />
+    )}
+  </>
+);
+
+const LLMTokenRateLimitEditor = (props: {
+  tokenRateLimit: CoreP.Service_Spec_Config_LLM_Plugin_TokenRateLimit;
+  onChange: () => void;
+}) => (
+  <>
+    <Group grow align="flex-start">
+      <EnumSelect
+        label="Scope"
+        description="Which tokens are counted against the limit."
+        values={["TOTAL", "INPUT", "OUTPUT"]}
+        enumObj={CoreP.Service_Spec_Config_LLM_Plugin_TokenRateLimit_Scope}
+        value={props.tokenRateLimit.scope}
+        onChange={(value) => {
+          props.tokenRateLimit.scope = value;
+          props.onChange();
+        }}
+      />
+      <NumberInput
+        label="Token limit"
+        description="Maximum tokens allowed during the configured window."
+        min={0}
+        value={Number(props.tokenRateLimit.limit)}
+        onChange={(value) => {
+          props.tokenRateLimit.limit = strToNum(value);
+          props.onChange();
+        }}
+      />
+      <DurationPicker
+        title="Window"
+        description="Duration of the token rate-limit window."
+        value={props.tokenRateLimit.window}
+        onChange={(value) => {
+          props.tokenRateLimit.window = value;
+          props.onChange();
+        }}
+      />
+    </Group>
+    <Group grow align="flex-start">
+      <NumberInput
+        label="Default output tokens"
+        description="Output tokens reserved before the response's own usage is known."
+        min={0}
+        value={Number(props.tokenRateLimit.defaultOutputTokens)}
+        onChange={(value) => {
+          props.tokenRateLimit.defaultOutputTokens = strToNum(value);
+          props.onChange();
+        }}
+      />
+      <TextInput
+        label="Deny message"
+        description="Message returned to the downstream when the quota is exhausted."
+        placeholder="Token quota exceeded."
+        value={props.tokenRateLimit.denyMessage}
+        onChange={(event) => {
+          props.tokenRateLimit.denyMessage = event.target.value;
+          props.onChange();
+        }}
+      />
+    </Group>
+    <RateLimitKeyEditor
+      keyValue={props.tokenRateLimit.key}
+      onChange={(value) => {
+        props.tokenRateLimit.key = value;
+        props.onChange();
+      }}
+    />
+    <ItemMessage
+      title="Response headers"
+      obj={props.tokenRateLimit.headers}
+      isList
+      onSet={() => {
+        props.tokenRateLimit.headers = [
+          CoreP.Service_Spec_Config_HTTP_Plugin_RateLimit_KeyValue.create(),
+        ];
+        props.onChange();
+      }}
+      onAddListItem={() => {
+        props.tokenRateLimit.headers.push(
+          CoreP.Service_Spec_Config_HTTP_Plugin_RateLimit_KeyValue.create(),
+        );
+        props.onChange();
+      }}
+    >
+      {props.tokenRateLimit.headers.map((header, index) => (
+        <div
+          className="mb-3 flex w-full items-center"
+          key={`token-rate-limit-header-${index}`}
+        >
+          <CloseButton
+            size="sm"
+            variant="subtle"
+            className="mr-2"
+            aria-label={`Remove header ${index + 1}`}
+            onClick={() => {
+              props.tokenRateLimit.headers.splice(index, 1);
+              props.onChange();
+            }}
+          />
+          <Group grow className="flex-1">
+            <TextInput
+              label="Header"
+              placeholder="x-ratelimit-remaining-tokens"
+              value={header.key}
+              onChange={(event) => {
+                header.key = event.target.value;
+                props.onChange();
+              }}
+            />
+            <TextInput
+              label="Value"
+              placeholder="{remaining}"
+              value={header.value}
+              onChange={(event) => {
+                header.value = event.target.value;
+                props.onChange();
+              }}
+            />
+          </Group>
+        </div>
+      ))}
+    </ItemMessage>
+  </>
+);
+
+const LLMSemanticCacheEditor = (props: {
+  semanticCache: CoreP.Service_Spec_Config_LLM_Plugin_SemanticCache;
+  onChange: () => void;
+}) => (
+  <>
+    <Group grow align="flex-start">
+      <NumberInput
+        label="Minimum similarity"
+        description="Cosine similarity above which a cached response is served."
+        min={0}
+        max={1}
+        step={0.01}
+        decimalScale={3}
+        value={props.semanticCache.minSimilarity}
+        onChange={(value) => {
+          props.semanticCache.minSimilarity = Number(value) || 0;
+          props.onChange();
+        }}
+      />
+      <NumberInput
+        label="Maximum entries"
+        description="Maximum number of cached responses kept for this Service."
+        min={0}
+        value={Number(props.semanticCache.maxSize)}
+        onChange={(value) => {
+          props.semanticCache.maxSize = strToNum(value);
+          props.onChange();
+        }}
+      />
+      <DurationPicker
+        title="TTL"
+        description="How long a cached response stays valid."
+        value={props.semanticCache.ttl}
+        onChange={(value) => {
+          props.semanticCache.ttl = value;
+          props.onChange();
+        }}
+      />
+    </Group>
+    <Switch
+      label="Set the X-Cache header"
+      description="Tell the downstream whether the response came from the cache."
+      checked={props.semanticCache.useXCacheHeader}
+      onChange={(event) => {
+        props.semanticCache.useXCacheHeader = event.currentTarget.checked;
+        props.onChange();
+      }}
+    />
+    <EditItem
+      title="Cache scope"
+      description="Who shares the cached responses"
+      obj={props.semanticCache.scope}
+      onUnset={() => {
+        props.semanticCache.scope = undefined;
+        props.onChange();
+      }}
+      onSet={() => {
+        props.semanticCache.scope =
+          CoreP.Service_Spec_Config_LLM_Plugin_SemanticCache_Scope.create({
+            type: { oneofKind: "perUser", perUser: true },
+          });
+        props.onChange();
+      }}
+    >
+      {props.semanticCache.scope && (
+        <Group grow align="flex-start">
+          <Select
+            label="Scope"
+            description="Cache per User, per Session, Cluster-wide, or by a CEL expression."
+            data={["perUser", "perSession", "shared", "eval"]}
+            value={props.semanticCache.scope.type.oneofKind ?? "perUser"}
+            onChange={(value) => {
+              if (!value) return;
+              props.semanticCache.scope!.type = match(value)
+                .with("perSession", () => ({
+                  oneofKind: "perSession" as const,
+                  perSession: true,
+                }))
+                .with("shared", () => ({
+                  oneofKind: "shared" as const,
+                  shared: true,
+                }))
+                .with("eval", () => ({ oneofKind: "eval" as const, eval: "" }))
+                .otherwise(() => ({
+                  oneofKind: "perUser" as const,
+                  perUser: true,
+                }));
+              props.onChange();
+            }}
+          />
+          {props.semanticCache.scope.type.oneofKind === "eval" && (
+            <TextInput
+              label="CEL expression"
+              description="CEL expression that resolves to the cache partition key."
+              placeholder="ctx.user.metadata.name"
+              value={props.semanticCache.scope.type.eval}
+              onChange={(event) => {
+                if (props.semanticCache.scope?.type.oneofKind === "eval") {
+                  props.semanticCache.scope.type.eval = event.target.value;
+                }
+                props.onChange();
+              }}
+            />
+          )}
+        </Group>
+      )}
+    </EditItem>
+    <EmbeddingEditor
+      embedding={props.semanticCache.embedding}
+      onChange={(value) => {
+        props.semanticCache.embedding = value;
+        props.onChange();
+      }}
+    />
+  </>
+);
+
+const LLMSemanticRouterEditor = (props: {
+  semanticRouter: CoreP.Service_Spec_Config_LLM_Plugin_SemanticRouter;
+  onChange: () => void;
+}) => (
+  <>
+    <Group grow align="flex-start">
+      <NumberInput
+        label="Minimum similarity"
+        description="Default similarity above which a route matches."
+        min={0}
+        max={1}
+        step={0.01}
+        decimalScale={3}
+        value={props.semanticRouter.minSimilarity}
+        onChange={(value) => {
+          props.semanticRouter.minSimilarity = Number(value) || 0;
+          props.onChange();
+        }}
+      />
+      <TextInput
+        label="Fallback model"
+        description="Model used when no route matches the request."
+        placeholder="gpt-5-mini"
+        value={props.semanticRouter.fallbackModel}
+        onChange={(event) => {
+          props.semanticRouter.fallbackModel = event.target.value;
+          props.onChange();
+        }}
+      />
+    </Group>
+    <ItemMessage
+      title="Routes"
+      obj={props.semanticRouter.routes}
+      isList
+      onSet={() => {
+        props.semanticRouter.routes = [
+          CoreP.Service_Spec_Config_LLM_Plugin_SemanticRouter_Route.create(),
+        ];
+        props.onChange();
+      }}
+      onAddListItem={() => {
+        props.semanticRouter.routes.push(
+          CoreP.Service_Spec_Config_LLM_Plugin_SemanticRouter_Route.create(),
+        );
+        props.onChange();
+      }}
+    >
+      {props.semanticRouter.routes.map((route, index) => (
+        <EditItem
+          key={`semantic-route-${index}`}
+          title={route.name || `Route ${index + 1}`}
+          obj={route}
+          onUnset={() => {
+            props.semanticRouter.routes.splice(index, 1);
+            props.onChange();
+          }}
+        >
+          <Group grow align="flex-start">
+            <TextInput
+              label="Name"
+              required
+              description="Name recorded in the AccessLogs when this route matches."
+              placeholder="coding"
+              value={route.name}
+              onChange={(event) => {
+                route.name = event.target.value;
+                props.onChange();
+              }}
+            />
+            <TextInput
+              label="Model"
+              required
+              description="Model that the matched requests are routed to."
+              placeholder="claude-sonnet-5"
+              value={route.model}
+              onChange={(event) => {
+                route.model = event.target.value;
+                props.onChange();
+              }}
+            />
+            <NumberInput
+              label="Minimum similarity"
+              description="Overrides the plugin's own similarity threshold."
+              min={0}
+              max={1}
+              step={0.01}
+              decimalScale={3}
+              value={route.minSimilarity}
+              onChange={(value) => {
+                route.minSimilarity = Number(value) || 0;
+                props.onChange();
+              }}
+            />
+          </Group>
+          <TextInput
+            label="Description"
+            description="Describes the requests that belong to this route."
+            placeholder="Software engineering and code review questions"
+            value={route.description}
+            onChange={(event) => {
+              route.description = event.target.value;
+              props.onChange();
+            }}
+          />
+          <StringListEditor
+            title="Examples"
+            description="Example prompts embedded and compared against the request."
+            placeholder="Refactor this function"
+            values={route.examples}
+            onChange={(values) => {
+              route.examples = values;
+              props.onChange();
+            }}
+          />
+        </EditItem>
+      ))}
+    </ItemMessage>
+    <EmbeddingEditor
+      embedding={props.semanticRouter.embedding}
+      onChange={(value) => {
+        props.semanticRouter.embedding = value;
+        props.onChange();
+      }}
+    />
+  </>
+);
+
+const GatewayPluginsEditor = (props: {
+  config: GatewayConfig;
+  kind: GatewayPluginKind;
+  onChange: () => void;
+}) => {
+  const plugins = props.config.plugins as any[];
+  const types = props.kind === "mcp" ? mcpPluginTypes : llmPluginTypes;
+
+  return (
+    <ItemMessage
+      title="Plugins"
+      obj={plugins}
+      isList
+      onSet={() => {
+        props.config.plugins = [createGatewayPlugin()];
+        props.onChange();
+      }}
+      onAddListItem={() => {
+        plugins.push(createGatewayPlugin());
+        props.onChange();
+      }}
+    >
+      {plugins.map((plugin, index) => (
+        <EditItem
+          key={`${plugin.name || "plugin"}-${index}`}
+          title={plugin.name || `Plugin ${index + 1}`}
+          obj={plugin}
+          onUnset={() => {
+            plugins.splice(index, 1);
+            props.onChange();
+          }}
+        >
+          <Group grow align="flex-start">
+            <TextInput
+              label="Name"
+              required
+              description="Unique name used to identify this plugin."
+              placeholder="my-plugin"
+              value={plugin.name}
+              onChange={(event) => {
+                plugin.name = event.target.value;
+                props.onChange();
+              }}
+            />
+            <EnumSelect
+              label="Phase"
+              description="Run the plugin before or after authentication and authorization."
+              values={["PRE_AUTH", "POST_AUTH"]}
+              enumObj={CoreP.Service_Spec_Config_HTTP_Plugin_Phase}
+              value={plugin.phase}
+              onChange={(value) => {
+                plugin.phase = value;
+                props.onChange();
+              }}
+            />
+            <Switch
+              label="Disabled"
+              description="Disable this plugin without removing its configuration."
+              checked={plugin.isDisabled}
+              onChange={(event) => {
+                plugin.isDisabled = event.currentTarget.checked;
+                props.onChange();
+              }}
+            />
+          </Group>
+          <Cond
+            item={
+              plugin.condition ??
+              CoreP.Condition.create({
+                type: { oneofKind: "matchAny", matchAny: true },
+              })
+            }
+            onChange={(condition) => {
+              plugin.condition = condition;
+              props.onChange();
+            }}
+          />
+          <Tabs
+            className="mb-4"
+            value={plugin.type.oneofKind ?? "direct"}
+            onChange={(value) => {
+              if (!value) return;
+              plugin.type = createGatewayPluginType(value, props.kind);
+              props.onChange();
+            }}
+          >
+            <Tabs.List className="w-full">
+              {types.map((type) => (
+                <Tabs.Tab key={type.value} value={type.value}>
+                  {type.label}
+                </Tabs.Tab>
+              ))}
+            </Tabs.List>
+          </Tabs>
+          <SharedPluginTypeEditor type={plugin.type} onChange={props.onChange} />
+          {plugin.type.oneofKind === "guardrail" &&
+            (props.kind === "mcp" ? (
+              <MCPGuardrailEditor
+                guardrail={plugin.type.guardrail}
+                onChange={props.onChange}
+              />
+            ) : (
+              <LLMGuardrailEditor
+                guardrail={plugin.type.guardrail}
+                onChange={props.onChange}
+              />
+            ))}
+          {plugin.type.oneofKind === "prompt" && (
+            <LLMPromptEditor
+              prompt={plugin.type.prompt}
+              onChange={props.onChange}
+            />
+          )}
+          {plugin.type.oneofKind === "tools" && (
+            <LLMToolsEditor tools={plugin.type.tools} onChange={props.onChange} />
+          )}
+          {plugin.type.oneofKind === "model" && (
+            <ValueEvalEditor
+              label="Model name"
+              description="Model name sent to the upstream provider."
+              placeholder="gpt-5-mini"
+              value={plugin.type.model.type}
+              onChange={(value) => {
+                plugin.type.model.type = value;
+                props.onChange();
+              }}
+            />
+          )}
+          {plugin.type.oneofKind === "reasoning" && (
+            <LLMReasoningEditor
+              reasoning={plugin.type.reasoning}
+              onChange={props.onChange}
+            />
+          )}
+          {plugin.type.oneofKind === "tokenRateLimit" && (
+            <LLMTokenRateLimitEditor
+              tokenRateLimit={plugin.type.tokenRateLimit}
+              onChange={props.onChange}
+            />
+          )}
+          {plugin.type.oneofKind === "semanticCache" && (
+            <LLMSemanticCacheEditor
+              semanticCache={plugin.type.semanticCache}
+              onChange={props.onChange}
+            />
+          )}
+          {plugin.type.oneofKind === "semanticRouter" && (
+            <LLMSemanticRouterEditor
+              semanticRouter={plugin.type.semanticRouter}
+              onChange={props.onChange}
+            />
+          )}
+        </EditItem>
+      ))}
+    </ItemMessage>
+  );
+};
+
 const GatewayCommonEditor = (props: {
   config: GatewayConfig;
+  kind: GatewayPluginKind;
   onChange: () => void;
 }) => (
   <>
@@ -1354,7 +2966,7 @@ const GatewayCommonEditor = (props: {
     <GatewayAuthEditor {...props} />
     <GatewayHeaderEditor {...props} />
     <GatewayPathEditor {...props} />
-  <GatewayPluginsEditor {...props} />
+    <GatewayPluginsEditor {...props} />
   </>
 );
 
@@ -1585,7 +3197,7 @@ const MCPConfigEditor = (props: {
         </>
       )}
     </EditItem>
-    <GatewayCommonEditor config={props.config} onChange={props.onChange} />
+    <GatewayCommonEditor config={props.config} kind="mcp" onChange={props.onChange} />
   </div>
 );
 
@@ -1594,17 +3206,14 @@ const LLMConfigEditor = (props: {
   onChange: () => void;
 }) => (
   <div className="w-full space-y-4">
-    <Select
+    <EnumSelect
       label="Inference protocol"
-      description="Select the API protocol spoken by downstreams and the upstream"
-      data={["OPENAI", "ANTHROPIC"]}
-      value={CoreP.Service_Spec_Config_LLM_Protocol[props.config.protocol] ?? "OPENAI"}
+      description="The API protocol spoken by the downstreams and the upstream"
+      values={llmProtocolNames}
+      enumObj={CoreP.Service_Spec_Config_LLM_Protocol}
+      value={props.config.protocol}
       onChange={(value) => {
-        if (!value) return;
-        props.config.protocol =
-          CoreP.Service_Spec_Config_LLM_Protocol[
-            value as keyof typeof CoreP.Service_Spec_Config_LLM_Protocol
-          ];
+        props.config.protocol = value;
         props.onChange();
       }}
     />
@@ -1738,9 +3347,51 @@ const LLMConfigEditor = (props: {
               props.onChange();
             }}
           />
+          <NumberInput
+            label="Max tool schema bytes"
+            description="Maximum size of an individual tool's JSON schema."
+            min={0}
+            value={props.config.limits.maxToolSchemaBytes}
+            onChange={(value) => {
+              props.config.limits!.maxToolSchemaBytes = strToNum(value);
+              props.onChange();
+            }}
+          />
         </Group>
       )}
     </EditItem>
+    <EditItem
+      title="Reasoning"
+      description="Set the reasoning budget of every request that the Service serves"
+      obj={props.config.reasoning}
+      onUnset={() => {
+        props.config.reasoning = undefined;
+        props.onChange();
+      }}
+      onSet={() => {
+        props.config.reasoning = CoreP.Service_Spec_Config_LLM_Reasoning.create({
+          type: {
+            oneofKind: "level",
+            level: CoreP.Service_Spec_Config_LLM_Reasoning_Level.MEDIUM,
+          },
+        });
+        props.onChange();
+      }}
+    >
+      {props.config.reasoning && (
+        <LLMReasoningEditor
+          reasoning={props.config.reasoning}
+          onChange={props.onChange}
+        />
+      )}
+    </EditItem>
+    <EmbeddingEditor
+      embedding={props.config.embedding}
+      onChange={(value) => {
+        props.config.embedding = value;
+        props.onChange();
+      }}
+    />
     <EditItem
       title="LLM visibility"
       description="Control recording of sensitive prompts, completions, and headers"
@@ -1867,7 +3518,7 @@ const LLMConfigEditor = (props: {
         props.onChange();
       }}
     />
-    <GatewayCommonEditor config={props.config} onChange={props.onChange} />
+    <GatewayCommonEditor config={props.config} kind="llm" onChange={props.onChange} />
   </div>
 );
 

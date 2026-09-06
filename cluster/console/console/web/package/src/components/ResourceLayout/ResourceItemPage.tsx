@@ -2,11 +2,13 @@ import { getResourceComponentInfoFromResource } from "@/pages/utils/resourceRegi
 import {
   hasAccessLog,
   hasAuthenticationLog,
+  hasLLMVisibility,
   hasSSHSessionLog,
   Resource,
 } from "@/utils/pb";
 import { SegmentedControl } from "@mantine/core";
 import {
+  BrainCircuit,
   ChartNoAxesCombined,
   Library,
   LayoutDashboard,
@@ -52,6 +54,13 @@ const METRICS_TAB: Tab = {
   path: "metrics",
 };
 
+const LLM_TAB: Tab = {
+  value: "llm",
+  label: "LLM",
+  icon: BrainCircuit,
+  path: "llm",
+};
+
 const SSH_TAB: Tab = {
   value: "ssh",
   label: "SSH Recordings",
@@ -74,6 +83,7 @@ const getActiveTab = (pathname: string): string => {
     .with("accesslogs", () => "accesslogs")
     .with("authenticationlogs", () => "authenticationlogs")
     .with("metrics", () => "metrics")
+    .with("llm", () => "llm")
     .with("ssh", () => "ssh")
     .with("auditlogs", () => "auditlogs")
     .otherwise(() => "main");
@@ -102,6 +112,7 @@ const buildTabs = (resource: Resource): Tab[] => {
   ) {
     tabs.push(SSH_TAB);
   }
+  if (hasLLMVisibility(resource)) tabs.push(LLM_TAB);
   if (hasAccessLog(resource)) tabs.push(ACCESS_LOG_TAB);
   if (hasAuthenticationLog(resource)) tabs.push(AUTH_LOG_TAB);
   tabs.push(AUDIT_LOG_TAB);

@@ -4,6 +4,7 @@ import sshRouter from "./ssh/router";
 
 const MainPage = React.lazy(() => import("./Main"));
 const MetricsPage = React.lazy(() => import("./Metrics"));
+const LLMPage = React.lazy(() => import("./LLM"));
 const LogViewer = React.lazy(() => import("@/components/LogViewer"));
 
 const LazyPage = (props: { children: React.ReactNode }) => (
@@ -32,6 +33,14 @@ export default (): RouteObject => {
         element: (
           <LazyPage>
             <MainPage />
+          </LazyPage>
+        ),
+      },
+      {
+        path: "llm",
+        element: (
+          <LazyPage>
+            <LLMPage />
           </LazyPage>
         ),
       },
