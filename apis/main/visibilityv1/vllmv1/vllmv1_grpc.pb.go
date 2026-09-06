@@ -84,9 +84,10 @@ type LLMServiceClient interface {
 	// Cluster served something other than what was asked for.
 	ListTopModel(ctx context.Context, in *ListTopModelRequest, opts ...grpc.CallOption) (*ListTopModelResponse, error)
 	// ListTopTool ranks the tools. It is a dedicated method rather than a
-	// Dimension since a tool row carries both the number of the requests that
-	// offered the tool and the number of the requests whose model asked to
-	// invoke it, which are two different groupings of two different fields.
+	// Dimension since a tool row carries the number of the requests that offered
+	// the tool, the number of the requests whose model asked to invoke it and
+	// the number of the requests from which a Tools Plugin removed it, which are
+	// three different groupings of three different fields.
 	ListTopTool(ctx context.Context, in *ListTopToolRequest, opts ...grpc.CallOption) (*ListTopToolResponse, error)
 	// ListTopUser ranks the Users, which is what shows who consumes the
 	// inference budget of the Cluster.
@@ -262,9 +263,10 @@ type LLMServiceServer interface {
 	// Cluster served something other than what was asked for.
 	ListTopModel(context.Context, *ListTopModelRequest) (*ListTopModelResponse, error)
 	// ListTopTool ranks the tools. It is a dedicated method rather than a
-	// Dimension since a tool row carries both the number of the requests that
-	// offered the tool and the number of the requests whose model asked to
-	// invoke it, which are two different groupings of two different fields.
+	// Dimension since a tool row carries the number of the requests that offered
+	// the tool, the number of the requests whose model asked to invoke it and
+	// the number of the requests from which a Tools Plugin removed it, which are
+	// three different groupings of three different fields.
 	ListTopTool(context.Context, *ListTopToolRequest) (*ListTopToolResponse, error)
 	// ListTopUser ranks the Users, which is what shows who consumes the
 	// inference budget of the Cluster.

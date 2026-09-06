@@ -13,6 +13,7 @@ import (
 	"database/sql"
 
 	"github.com/doug-martin/goqu/v9"
+	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/main/visibilityv1/vllmv1"
@@ -23,7 +24,7 @@ import (
 
 func (s *Server) getLLMSummary(ctx context.Context, req *vllmv1.GetSummaryRequest) (*vllmv1.GetSummaryResponse, error) {
 
-	filters, err := getLLMFilters(req.Filter)
+	filters, err := getLLMAggregateFilters(req.Filter)
 	if err != nil {
 		return nil, err
 	}
@@ -37,36 +38,40 @@ func (s *Server) getLLMSummary(ctx context.Context, req *vllmv1.GetSummaryReques
 		return nil, grpcutils.InternalWithErr(err)
 	}
 
-	cardinality, err := s.getLLMCardinality(ctx, filters)
+	cardinalities, err := s.getLLMCardinalities(ctx, filters, req.Cardinalities)
 	if err != nil {
-		return nil, grpcutils.InternalWithErr(err)
+		return nil, err
 	}
 
 	ret := &vllmv1.GetSummaryResponse{
-		Stats:       stats.toPB(),
-		Cardinality: cardinality,
+		Stats:         stats.toPB(),
+		Cardinalities: cardinalities,
 	}
 
-	if len(req.Breakdowns) < 1 {
-		return ret, nil
-	}
+	seen := make(map[vllmv1.Dimension]struct{})
 
-	limit := req.BreakdownLimit
-	if limit == 0 {
-		limit = llmDefaultBreakdownLimit
-	} else if limit > llmMaxTopLimit {
-		return nil, grpcutils.InvalidArg("Breakdown limit is too high")
-	}
+	for _, breakdown := range req.Breakdowns {
+		if _, ok := seen[breakdown.GetDimension()]; ok {
+			return nil, grpcutils.InvalidArg("Duplicate breakdown Dimension: %s", breakdown.GetDimension().String())
+		}
+		seen[breakdown.GetDimension()] = struct{}{}
 
-	for _, dim := range req.Breakdowns {
-		items, other, totalCount, err := s.listLLMDimensionItems(ctx, dim, filters,
-			limit, req.BreakdownOrderBy, req.IncludeQuantiles)
+		limit := breakdown.GetLimit()
+		switch {
+		case limit == 0:
+			limit = llmDefaultBreakdownLimit
+		case limit > llmMaxTopLimit:
+			return nil, grpcutils.InvalidArg("Breakdown limit is too high")
+		}
+
+		items, other, totalCount, err := s.listLLMDimensionItems(ctx, breakdown.GetDimension(), filters,
+			limit, breakdown.GetOrderBy(), req.IncludeQuantiles)
 		if err != nil {
 			return nil, err
 		}
 
 		ret.Breakdowns = append(ret.Breakdowns, &vllmv1.Breakdown{
-			Dimension:  dim,
+			Dimension:  breakdown.GetDimension(),
 			Items:      items,
 			Other:      other,
 			TotalCount: totalCount,
@@ -90,6 +95,10 @@ func llmListOrderExpr(orderBy *vllmv1.ListAccessLogRequest_OrderBy) (string, err
 		return llmExprLatencyMs, nil
 	case vllmv1.ListAccessLogRequest_OrderBy_TIME_TO_FIRST_TOKEN:
 		return llmExprTimeToFirstToken, nil
+	case vllmv1.ListAccessLogRequest_OrderBy_ESTIMATED_INPUT_TOKENS:
+		return llmExprTokensEstimated, nil
+	case vllmv1.ListAccessLogRequest_OrderBy_TOOL_CALLS:
+		return llmExprToolCallCount, nil
 	default:
 		return "", grpcutils.InvalidArg("Invalid OrderBy type")
 	}
@@ -142,12 +151,24 @@ func (s *Server) listLLMAccessLog(ctx context.Context, req *vllmv1.ListAccessLog
 	}
 
 	{
-		switch req.OrderBy.GetMode() {
-		case vllmv1.ListAccessLogRequest_OrderBy_ASC:
-			ds = ds.Order(goqu.L(orderExpr).Asc())
-		default:
-			ds = ds.Order(goqu.L(orderExpr).Desc())
+		isAsc := req.OrderBy.GetMode() == vllmv1.ListAccessLogRequest_OrderBy_ASC
+
+		order := []exp.OrderedExpression{}
+		if isAsc {
+			order = append(order, goqu.L(orderExpr).Asc())
+		} else {
+			order = append(order, goqu.L(orderExpr).Desc())
 		}
+
+		if orderExpr != llmExprCreatedAt {
+			if isAsc {
+				order = append(order, goqu.L(llmExprCreatedAt).Asc())
+			} else {
+				order = append(order, goqu.L(llmExprCreatedAt).Desc())
+			}
+		}
+
+		ds = ds.Order(order...)
 	}
 
 	sqln, sqlargs, err := ds.ToSQL()

@@ -20,7 +20,7 @@ import (
 func (s *Server) listLLMTopResource(ctx context.Context, dim vllmv1.Dimension, f *vllmv1.Filter,
 	limit uint32, orderBy vllmv1.Metric, quantiles bool) ([]*vllmv1.DimensionItem, *vllmv1.Stats, uint64, error) {
 
-	filters, err := getLLMFilters(f)
+	filters, err := getLLMAggregateFilters(f)
 	if err != nil {
 		return nil, nil, 0, err
 	}
@@ -36,7 +36,7 @@ func (s *Server) listLLMTopResource(ctx context.Context, dim vllmv1.Dimension, f
 func (s *Server) listLLMTopDimension(ctx context.Context,
 	req *vllmv1.ListTopDimensionRequest) (*vllmv1.ListTopDimensionResponse, error) {
 
-	filters, err := getLLMFilters(req.Filter)
+	filters, err := getLLMAggregateFilters(req.Filter)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func (s *Server) listLLMTopDimension(ctx context.Context,
 func (s *Server) listLLMTopModel(ctx context.Context,
 	req *vllmv1.ListTopModelRequest) (*vllmv1.ListTopModelResponse, error) {
 
-	filters, err := getLLMFilters(req.Filter)
+	filters, err := getLLMAggregateFilters(req.Filter)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +133,7 @@ func (s *Server) listLLMTopModel(ctx context.Context,
 func (s *Server) listLLMTopTool(ctx context.Context,
 	req *vllmv1.ListTopToolRequest) (*vllmv1.ListTopToolResponse, error) {
 
-	filters, err := getLLMFilters(req.Filter)
+	filters, err := getLLMAggregateFilters(req.Filter)
 	if err != nil {
 		return nil, err
 	}
@@ -145,10 +145,12 @@ func (s *Server) listLLMTopTool(ctx context.Context,
 
 	dim, err := func() (vllmv1.Dimension, error) {
 		switch req.Scope {
-		case vllmv1.ToolScope_TOOL_SCOPE_UNSET, vllmv1.ToolScope_DECLARED:
+		case vllmv1.ToolScope_TOOL_SCOPE_UNSET, vllmv1.ToolScope_OFFERED:
 			return vllmv1.Dimension_TOOL, nil
 		case vllmv1.ToolScope_CALLED:
 			return vllmv1.Dimension_CALLED_TOOL, nil
+		case vllmv1.ToolScope_REMOVED:
+			return vllmv1.Dimension_REMOVED_TOOL, nil
 		default:
 			return vllmv1.Dimension_DIMENSION_UNSET, grpcutils.InvalidArg("Invalid ToolScope")
 		}
@@ -168,13 +170,18 @@ func (s *Server) listLLMTopTool(ctx context.Context,
 		keys = append(keys, item.Key)
 	}
 
-	declaredCounts, err := s.getLLMKeyCounts(ctx, filters,
+	offeredCounts, err := s.getLLMKeyCounts(ctx, filters,
 		fmt.Sprintf(`unnest(%s)`, llmExprToolNames), keys)
 	if err != nil {
 		return nil, grpcutils.InternalWithErr(err)
 	}
 	calledCounts, err := s.getLLMKeyCounts(ctx, filters,
-		fmt.Sprintf(`unnest(%s)`, llmExprCalledToolsL), keys)
+		fmt.Sprintf(`unnest(%s)`, llmExprCalledToolNames), keys)
+	if err != nil {
+		return nil, grpcutils.InternalWithErr(err)
+	}
+	removedCounts, err := s.getLLMKeyCounts(ctx, filters,
+		fmt.Sprintf(`unnest(%s)`, llmExprRemovedToolNames), keys)
 	if err != nil {
 		return nil, grpcutils.InternalWithErr(err)
 	}
@@ -186,10 +193,11 @@ func (s *Server) listLLMTopTool(ctx context.Context,
 
 	for _, item := range items {
 		ret.Items = append(ret.Items, &vllmv1.ListTopToolResponse_Item{
-			Tool:          item.Key,
-			Stats:         item.Stats,
-			DeclaredCount: declaredCounts[item.Key],
-			CalledCount:   calledCounts[item.Key],
+			Tool:         item.Key,
+			Stats:        item.Stats,
+			OfferedCount: offeredCounts[item.Key],
+			CalledCount:  calledCounts[item.Key],
+			RemovedCount: removedCounts[item.Key],
 		})
 	}
 

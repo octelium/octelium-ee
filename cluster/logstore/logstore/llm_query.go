@@ -188,11 +188,11 @@ func (s *Server) getLLMKeyCounts(ctx context.Context, filters []exp.Expression,
 	return ret, rows.Err()
 }
 
-func (s *Server) getLLMDistinctListCount(ctx context.Context,
-	filters []exp.Expression, listExpr string) (uint64, error) {
+func (s *Server) getLLMDistinctKeyCount(ctx context.Context,
+	filters []exp.Expression, keyExpr string) (uint64, error) {
 
 	inner := llmDialect().From(llmTable).Where(filters...).
-		Select(goqu.L(fmt.Sprintf(`unnest(%s)`, listExpr)).As("dim_key")).As("llm_list")
+		Select(goqu.L(keyExpr).As("dim_key")).As("llm_keys")
 
 	ds := llmDialect().From(inner).
 		Select(goqu.L(`COUNT(DISTINCT dim_key)`)).
@@ -214,59 +214,77 @@ func (s *Server) getLLMDistinctListCount(ctx context.Context,
 	return uint64(ret), nil
 }
 
-func (s *Server) getLLMCardinality(ctx context.Context, filters []exp.Expression) (*vllmv1.Cardinality, error) {
+func (s *Server) getLLMCardinalities(ctx context.Context, filters []exp.Expression,
+	dims []vllmv1.Dimension) ([]*vllmv1.CardinalityItem, error) {
 
-	distinct := func(expr string) exp.LiteralExpression {
-		return goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s)`, expr))
+	if len(dims) < 1 {
+		return nil, nil
+	}
+	if len(dims) > llmMaxCardinalities {
+		return nil, grpcutils.InvalidArg("Too many cardinality Dimensions")
 	}
 
-	ds := llmDialect().From(llmTable).Where(filters...).Select(
-		distinct(llmExprModelEffective),
-		distinct(llmExprModelRequested),
-		distinct(llmJSONStr("entry.common.userRef.uid")),
-		distinct(llmJSONStr("entry.common.sessionRef.uid")),
-		distinct(llmJSONStr("entry.common.deviceRef.uid")),
-		distinct(llmJSONStr("entry.common.serviceRef.uid")),
-		distinct(llmJSONStr("entry.common.namespaceRef.uid")),
-		distinct(llmExprProtocol),
-		distinct(llmJSONStr("entry.common.reason.details.policyMatch.policy.policyRef.uid")),
-	)
+	counts := make(map[vllmv1.Dimension]uint64)
+	seen := make(map[vllmv1.Dimension]struct{})
 
-	sqln, sqlargs, err := ds.ToSQL()
-	if err != nil {
-		return nil, err
-	}
+	var singleDims []vllmv1.Dimension
+	var selects []any
 
-	var models, requestedModels, users, sessions, devices, services, namespaces, protocols, policies int64
+	for _, dim := range dims {
+		if _, ok := seen[dim]; ok {
+			return nil, grpcutils.InvalidArg("Duplicate cardinality Dimension: %s", dim.String())
+		}
+		seen[dim] = struct{}{}
 
-	if err := s.db.QueryRowContext(ctx, sqln, sqlargs...).Scan(
-		&models, &requestedModels, &users, &sessions, &devices,
-		&services, &namespaces, &protocols, &policies); err != nil {
-		if !errors.Is(err, sql.ErrNoRows) {
+		dimension, err := getLLMDimension(dim)
+		if err != nil {
 			return nil, err
+		}
+
+		if !dimension.multi {
+			singleDims = append(singleDims, dim)
+			selects = append(selects, goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s)`, dimension.key)))
+			continue
+		}
+
+		count, err := s.getLLMDistinctKeyCount(ctx, filters, dimension.key)
+		if err != nil {
+			return nil, grpcutils.InternalWithErr(err)
+		}
+		counts[dim] = count
+	}
+
+	if len(singleDims) > 0 {
+		ds := llmDialect().From(llmTable).Where(filters...).Select(selects...)
+
+		sqln, sqlargs, err := ds.ToSQL()
+		if err != nil {
+			return nil, grpcutils.InternalWithErr(err)
+		}
+
+		vals := make([]int64, len(singleDims))
+		dest := make([]any, len(singleDims))
+		for i := range vals {
+			dest[i] = &vals[i]
+		}
+
+		if err := s.db.QueryRowContext(ctx, sqln, sqlargs...).Scan(dest...); err != nil {
+			if !errors.Is(err, sql.ErrNoRows) {
+				return nil, grpcutils.InternalWithErr(err)
+			}
+		}
+
+		for i, dim := range singleDims {
+			counts[dim] = uint64(vals[i])
 		}
 	}
 
-	ret := &vllmv1.Cardinality{
-		Models:          uint64(models),
-		RequestedModels: uint64(requestedModels),
-		Users:           uint64(users),
-		Sessions:        uint64(sessions),
-		Devices:         uint64(devices),
-		Services:        uint64(services),
-		Namespaces:      uint64(namespaces),
-		Protocols:       uint64(protocols),
-		Policies:        uint64(policies),
-	}
-
-	ret.Tools, err = s.getLLMDistinctListCount(ctx, filters, llmExprToolNames)
-	if err != nil {
-		return nil, err
-	}
-
-	ret.CalledTools, err = s.getLLMDistinctListCount(ctx, filters, llmExprCalledToolsL)
-	if err != nil {
-		return nil, err
+	ret := make([]*vllmv1.CardinalityItem, 0, len(dims))
+	for _, dim := range dims {
+		ret = append(ret, &vllmv1.CardinalityItem{
+			Dimension: dim,
+			Count:     counts[dim],
+		})
 	}
 
 	return ret, nil
@@ -317,7 +335,7 @@ func (s *Server) listLLMDimensionItems(ctx context.Context, dim vllmv1.Dimension
 	}
 
 	var other *vllmv1.Stats
-	if totalCount > uint64(len(items)) {
+	if !dimension.multi && totalCount > uint64(len(items)) {
 		otherStats, err := s.getLLMDimensionOtherStats(ctx, dimension, filters, keys, quantiles)
 		if err != nil {
 			return nil, nil, 0, grpcutils.InternalWithErr(err)

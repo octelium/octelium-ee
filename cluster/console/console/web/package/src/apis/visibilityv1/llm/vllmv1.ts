@@ -27,12 +27,18 @@ import { Service } from "../../corev1/corev1";
 import { Session } from "../../corev1/corev1";
 import { User } from "../../corev1/corev1";
 import { Duration } from "../../metav1/metav1";
+import { AccessLog_Entry_Info_LLM_FinishReason } from "../../corev1/corev1";
+import { AccessLog_Entry_Info_LLM_SemanticRouter_Result } from "../../corev1/corev1";
+import { AccessLog_Entry_Info_LLM_SemanticCache_Result } from "../../corev1/corev1";
+import { Service_Spec_Config_LLM_Plugin_TokenRateLimit_Scope } from "../../corev1/corev1";
+import { AccessLog_Entry_Info_LLM_TokenRateLimit_Result } from "../../corev1/corev1";
 import { Service_Spec_Config_LLM_Plugin_Guardrail_Leg } from "../../corev1/corev1";
 import { AccessLog_Entry_Info_LLM_Guardrail_Result } from "../../corev1/corev1";
 import { RequestContext_Request_LLM_EstimateQuality } from "../../corev1/corev1";
-import { AccessLog_Entry_Info_LLM_Usage_Source } from "../../corev1/corev1";
+import { AccessLog_Entry_Info_LLM_Usage_State } from "../../corev1/corev1";
 import { AccessLog_Entry_Info_LLM_Source } from "../../corev1/corev1";
 import { AccessLog_Entry_Info_LLM_Model_Source } from "../../corev1/corev1";
+import { RequestContext_Request_LLM_Route } from "../../corev1/corev1";
 import { Service_Spec_Config_LLM_Operation } from "../../corev1/corev1";
 import { Service_Spec_Config_LLM_Protocol } from "../../corev1/corev1";
 import { AccessLog_Entry_Common_Status } from "../../corev1/corev1";
@@ -54,14 +60,14 @@ import { Timestamp } from "../../google/protobuf/timestamp";
  */
 export interface Filter {
     /**
-     * From is the beginning of the time range. It is read against the entries'
-     * own creation timestamps.
+     * From is the beginning of the time range, inclusive. It is read against the
+     * entries' own creation timestamps.
      *
      * @generated from protobuf field: google.protobuf.Timestamp from = 1
      */
     from?: Timestamp;
     /**
-     * To is the end of the time range.
+     * To is the end of the time range, exclusive.
      *
      * @generated from protobuf field: google.protobuf.Timestamp to = 2
      */
@@ -136,191 +142,318 @@ export interface Filter {
      */
     operations: Service_Spec_Config_LLM_Operation[];
     /**
+     * Routes filters by the canonical inference API routes of the requests.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.core.v1.RequestContext.Request.LLM.Route routes = 14
+     */
+    routes: RequestContext_Request_LLM_Route[];
+    /**
      * Models filters by the model names. The ModelField field decides which of
      * the three model names of an entry the values are matched against.
      *
-     * @generated from protobuf field: repeated string models = 14
+     * @generated from protobuf field: repeated string models = 15
      */
     models: string[];
     /**
      * ModelField is which model name the Models field is matched against. It
      * defaults to the effective one.
      *
-     * @generated from protobuf field: octelium.api.main.visibility.llm.v1.ModelField modelField = 15
+     * @generated from protobuf field: octelium.api.main.visibility.llm.v1.ModelField modelField = 16
      */
     modelField: ModelField;
     /**
      * ModelSources filters by what decided the effective model, which is what
      * selects the requests whose model the Cluster itself overrode.
      *
-     * @generated from protobuf field: repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Model.Source modelSources = 16
+     * @generated from protobuf field: repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Model.Source modelSources = 17
      */
     modelSources: AccessLog_Entry_Info_LLM_Model_Source[];
     /**
      * ModelPlugins filters by the names of the Plugins that decided the
      * effective model.
      *
-     * @generated from protobuf field: repeated string modelPlugins = 17
+     * @generated from protobuf field: repeated string modelPlugins = 18
      */
     modelPlugins: string[];
     /**
      * Sources filters by what produced the responses (i.e. the upstream, the
      * SemanticCache or Octelium itself).
      *
-     * @generated from protobuf field: repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Source sources = 18
+     * @generated from protobuf field: repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Source sources = 19
      */
     sources: AccessLog_Entry_Info_LLM_Source[];
     /**
-     * UsageSources filters by where the token counts came from, which is what
-     * selects the entries whose usage is provider-reported rather than
-     * estimated.
+     * UsageStates filters by whether the provider-reported token usage of the
+     * entries is the final one, which is what selects the streams that ended
+     * before their usage was received.
      *
-     * @generated from protobuf field: repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Usage.Source usageSources = 19
+     * @generated from protobuf field: repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Usage.State usageStates = 20
      */
-    usageSources: AccessLog_Entry_Info_LLM_Usage_Source[];
+    usageStates: AccessLog_Entry_Info_LLM_Usage_State[];
     /**
      * EstimateQualities filters by whether Octelium's own input token estimate
      * accounted for the entire input of the requests.
      *
-     * @generated from protobuf field: repeated octelium.api.main.core.v1.RequestContext.Request.LLM.EstimateQuality estimateQualities = 20
+     * @generated from protobuf field: repeated octelium.api.main.core.v1.RequestContext.Request.LLM.EstimateQuality estimateQualities = 21
      */
     estimateQualities: RequestContext_Request_LLM_EstimateQuality[];
     /**
-     * GuardrailResults filters by the strongest outcome that any Guardrail
-     * Plugin reached.
+     * GuardrailResults filters by the outcomes that the Guardrail Plugins
+     * reached. An entry matches whenever any of its Guardrail outcomes is one of
+     * the values.
      *
-     * @generated from protobuf field: repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Guardrail.Result guardrailResults = 21
+     * @generated from protobuf field: repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Guardrail.Result guardrailResults = 22
      */
     guardrailResults: AccessLog_Entry_Info_LLM_Guardrail_Result[];
     /**
-     * GuardrailLegs filters by the part of the exchange whose inspection
-     * produced the outcome.
+     * GuardrailLegs filters by the parts of the exchange that the Guardrail
+     * Plugins inspected.
      *
-     * @generated from protobuf field: repeated octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Guardrail.Leg guardrailLegs = 22
+     * @generated from protobuf field: repeated octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Guardrail.Leg guardrailLegs = 23
      */
     guardrailLegs: Service_Spec_Config_LLM_Plugin_Guardrail_Leg[];
     /**
      * GuardrailPlugins filters by the names of the Guardrail Plugins that
-     * produced the outcome.
+     * inspected the requests.
      *
-     * @generated from protobuf field: repeated string guardrailPlugins = 23
+     * @generated from protobuf field: repeated string guardrailPlugins = 24
      */
     guardrailPlugins: string[];
     /**
-     * Tools filters by the names of the tools that the upstream was offered.
+     * TokenRateLimitResults filters by the outcome of the token quota
+     * enforcement.
      *
-     * @generated from protobuf field: repeated string tools = 24
+     * @generated from protobuf field: repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.TokenRateLimit.Result tokenRateLimitResults = 25
+     */
+    tokenRateLimitResults: AccessLog_Entry_Info_LLM_TokenRateLimit_Result[];
+    /**
+     * TokenRateLimitPlugins filters by the names of the TokenRateLimit Plugins
+     * that denied the requests.
+     *
+     * @generated from protobuf field: repeated string tokenRateLimitPlugins = 26
+     */
+    tokenRateLimitPlugins: string[];
+    /**
+     * TokenRateLimitScopes filters by the token counts that the denying
+     * TokenRateLimit Plugins meter.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.TokenRateLimit.Scope tokenRateLimitScopes = 27
+     */
+    tokenRateLimitScopes: Service_Spec_Config_LLM_Plugin_TokenRateLimit_Scope[];
+    /**
+     * SemanticCacheResults filters by the outcome of the cache lookup, which is
+     * what tells a cache backend outage apart from an ordinary miss.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.SemanticCache.Result semanticCacheResults = 28
+     */
+    semanticCacheResults: AccessLog_Entry_Info_LLM_SemanticCache_Result[];
+    /**
+     * SemanticCachePlugins filters by the names of the SemanticCache Plugins
+     * that were applied.
+     *
+     * @generated from protobuf field: repeated string semanticCachePlugins = 29
+     */
+    semanticCachePlugins: string[];
+    /**
+     * SemanticRouterResults filters by the outcome of the routing decision.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.SemanticRouter.Result semanticRouterResults = 30
+     */
+    semanticRouterResults: AccessLog_Entry_Info_LLM_SemanticRouter_Result[];
+    /**
+     * SemanticRouterRoutes filters by the names of the Routes that matched.
+     *
+     * @generated from protobuf field: repeated string semanticRouterRoutes = 31
+     */
+    semanticRouterRoutes: string[];
+    /**
+     * SemanticRouterPlugins filters by the names of the SemanticRouter Plugins
+     * that reached the decisions.
+     *
+     * @generated from protobuf field: repeated string semanticRouterPlugins = 32
+     */
+    semanticRouterPlugins: string[];
+    /**
+     * Tools filters by the names of the tools that the upstreams were offered.
+     *
+     * @generated from protobuf field: repeated string tools = 33
      */
     tools: string[];
     /**
      * CalledTools filters by the names of the tools that the models asked to
      * invoke.
      *
-     * @generated from protobuf field: repeated string calledTools = 25
+     * @generated from protobuf field: repeated string calledTools = 34
      */
     calledTools: string[];
     /**
-     * FinishReasons filters by the completion statuses reported by the upstream
-     * providers themselves (e.g. "stop", "length", "tool_calls").
+     * RemovedTools filters by the names of the tools that a Tools Plugin removed
+     * before the requests were proxied.
      *
-     * @generated from protobuf field: repeated string finishReasons = 26
+     * @generated from protobuf field: repeated string removedTools = 35
      */
-    finishReasons: string[];
+    removedTools: string[];
+    /**
+     * FinishReasons filters by the completion statuses of the responses,
+     * normalized across the providers.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.FinishReason finishReasons = 36
+     */
+    finishReasons: AccessLog_Entry_Info_LLM_FinishReason[];
+    /**
+     * RawFinishReasons filters by the completion statuses exactly as the
+     * upstream providers spelled them (e.g. "stop", "end_turn").
+     *
+     * @generated from protobuf field: repeated string rawFinishReasons = 37
+     */
+    rawFinishReasons: string[];
     /**
      * HTTPStatusCodes filters by the exact HTTP response status codes.
      *
-     * @generated from protobuf field: repeated uint32 httpStatusCodes = 27
+     * @generated from protobuf field: repeated uint32 httpStatusCodes = 38
      */
     httpStatusCodes: number[];
     /**
      * HTTPStatusClasses filters by the classes of the HTTP response status
      * codes.
      *
-     * @generated from protobuf field: repeated octelium.api.main.visibility.llm.v1.HTTPStatusClass httpStatusClasses = 28
+     * @generated from protobuf field: repeated octelium.api.main.visibility.llm.v1.HTTPStatusClass httpStatusClasses = 39
      */
     httpStatusClasses: HTTPStatusClass[];
     /**
+     * HTTPPaths filters by the paths of the requests without their query params
+     * (e.g. `/v1/chat/completions`).
+     *
+     * @generated from protobuf field: repeated string httpPaths = 40
+     */
+    httpPaths: string[];
+    /**
+     * UserAgents filters by the values of the `User-Agent` request header.
+     *
+     * @generated from protobuf field: repeated string userAgents = 41
+     */
+    userAgents: string[];
+    /**
      * Stream filters by whether the requests asked for a streamed response.
      *
-     * @generated from protobuf field: optional bool stream = 29
+     * @generated from protobuf field: optional bool stream = 42
      */
     stream?: boolean;
     /**
-     * HasTools filters by whether the requests declared any tool.
+     * IsUpstreamInvoked filters by whether the inference upstream actually
+     * responded, which is what isolates the requests that were rejected after an
+     * inference had already run.
      *
-     * @generated from protobuf field: optional bool hasTools = 30
+     * @generated from protobuf field: optional bool isUpstreamInvoked = 43
+     */
+    isUpstreamInvoked?: boolean;
+    /**
+     * HasUsage filters by whether the upstream providers reported a token usage
+     * at all, which is what separates the entries whose tokens are a measurement
+     * from the ones that only carry an Octelium estimate.
+     *
+     * @generated from protobuf field: optional bool hasUsage = 44
+     */
+    hasUsage?: boolean;
+    /**
+     * HasTools filters by whether the requests offered any tool to the
+     * upstreams.
+     *
+     * @generated from protobuf field: optional bool hasTools = 45
      */
     hasTools?: boolean;
     /**
      * HasToolCalls filters by whether the models asked to invoke any tool.
      *
-     * @generated from protobuf field: optional bool hasToolCalls = 31
+     * @generated from protobuf field: optional bool hasToolCalls = 46
      */
     hasToolCalls?: boolean;
     /**
-     * HasReasoning filters by whether the requests were served a reasoning
-     * configuration that the Service itself decided. Note that a request whose
-     * reasoning the downstream set for itself is not one of them, since Octelium
-     * does not read that one.
+     * HasToolsRemoved filters by whether a Tools Plugin removed any of the tools
+     * that the downstreams declared.
      *
-     * @generated from protobuf field: optional bool hasReasoning = 32
+     * @generated from protobuf field: optional bool hasToolsRemoved = 47
      */
-    hasReasoning?: boolean;
+    hasToolsRemoved?: boolean;
+    /**
+     * HasManagedReasoning filters by whether the requests were served a
+     * reasoning configuration that the Service itself decided. Note that a
+     * request whose reasoning the downstream set for itself is not one of them,
+     * since Octelium does not read that one.
+     *
+     * @generated from protobuf field: optional bool hasManagedReasoning = 48
+     */
+    hasManagedReasoning?: boolean;
+    /**
+     * IsReasoningDisabled filters by whether the requests were proxied with
+     * reasoning explicitly turned off.
+     *
+     * @generated from protobuf field: optional bool isReasoningDisabled = 49
+     */
+    isReasoningDisabled?: boolean;
+    /**
+     * HasImageInput filters by whether the requests carried image input.
+     *
+     * @generated from protobuf field: optional bool hasImageInput = 50
+     */
+    hasImageInput?: boolean;
+    /**
+     * HasAudioInput filters by whether the requests carried audio input.
+     *
+     * @generated from protobuf field: optional bool hasAudioInput = 51
+     */
+    hasAudioInput?: boolean;
+    /**
+     * IsCacheStored filters by whether the responses were stored in the
+     * SemanticCache.
+     *
+     * @generated from protobuf field: optional bool isCacheStored = 52
+     */
+    isCacheStored?: boolean;
     /**
      * IsPublic filters by whether the requests were served over the public
      * clientless/BeyondCorp mode.
      *
-     * @generated from protobuf field: optional bool isPublic = 33
+     * @generated from protobuf field: optional bool isPublic = 53
      */
     isPublic?: boolean;
     /**
      * IsAnonymous filters by whether the requests were served anonymously.
      *
-     * @generated from protobuf field: optional bool isAnonymous = 34
+     * @generated from protobuf field: optional bool isAnonymous = 54
      */
     isAnonymous?: boolean;
     /**
-     * MinTotalTokens selects the entries whose total token count is at least
-     * this value, which is what isolates the unusually expensive requests.
+     * MinTotalTokens selects the entries whose provider-reported total token
+     * count is at least this value, which is what isolates the unusually
+     * expensive requests.
      *
-     * @generated from protobuf field: uint64 minTotalTokens = 35
+     * @generated from protobuf field: optional uint64 minTotalTokens = 55
      */
-    minTotalTokens: number;
+    minTotalTokens?: number;
     /**
-     * MaxTotalTokens selects the entries whose total token count is at most this
-     * value.
+     * MaxTotalTokens selects the entries whose provider-reported total token
+     * count is at most this value. Note that it is a presence-aware field, so
+     * setting it to zero selects the entries that consumed no tokens at all
+     * rather than filtering nothing.
      *
-     * @generated from protobuf field: uint64 maxTotalTokens = 36
+     * @generated from protobuf field: optional uint64 maxTotalTokens = 56
      */
-    maxTotalTokens: number;
+    maxTotalTokens?: number;
     /**
-     * MinLatencyMs selects the entries whose end-to-end duration in
-     * milliseconds is at least this value, which is what isolates the slow
-     * requests.
+     * MinLatencyMs selects the entries whose end-to-end duration in milliseconds
+     * is at least this value, which is what isolates the slow requests.
      *
-     * @generated from protobuf field: uint64 minLatencyMs = 37
+     * @generated from protobuf field: optional uint64 minLatencyMs = 57
      */
-    minLatencyMs: number;
+    minLatencyMs?: number;
     /**
-     * UserAgents filters by the values of the `User-Agent` request header.
+     * MaxLatencyMs selects the entries whose end-to-end duration in milliseconds
+     * is at most this value.
      *
-     * @generated from protobuf field: repeated string userAgents = 38
+     * @generated from protobuf field: optional uint64 maxLatencyMs = 58
      */
-    userAgents: string[];
-    /**
-     * HTTPPaths filters by the paths of the requests without their query params
-     * (e.g. `/v1/chat/completions`).
-     *
-     * @generated from protobuf field: repeated string httpPaths = 39
-     */
-    httpPaths: string[];
-    /**
-     * MaxLatencyMs selects the entries whose end-to-end duration in
-     * milliseconds is at most this value.
-     *
-     * @generated from protobuf field: uint64 maxLatencyMs = 40
-     */
-    maxLatencyMs: number;
+    maxLatencyMs?: number;
 }
 /**
  * Stats is the measurement bundle of a set of LLM AccessLog entries. It is the
@@ -365,19 +498,20 @@ export interface Stats {
      */
     timeToFirstToken?: Stats_DurationStats;
     /**
-     * StreamEvents is the sum of the numbers of the `text/event-stream` events
-     * of the responses
+     * StreamEvents is the sum of the numbers of the events of the streamed
+     * responses, whether they are the events of a `text/event-stream` or the
+     * messages of the AWS event stream that the BEDROCK protocol serves
      *
      * @generated from protobuf field: uint64 streamEvents = 5
      */
     streamEvents: number;
     /**
-     * ToolsDeclared is the sum of the numbers of the tools that the upstreams
+     * ToolsOffered is the sum of the numbers of the tools that the upstreams
      * were offered
      *
-     * @generated from protobuf field: uint64 toolsDeclared = 6
+     * @generated from protobuf field: uint64 toolsOffered = 6
      */
-    toolsDeclared: number;
+    toolsOffered: number;
     /**
      * ToolsRemoved is the sum of the numbers of the tools that the downstreams
      * declared and that a Tools Plugin removed before the requests were proxied
@@ -386,24 +520,40 @@ export interface Stats {
      */
     toolsRemoved: number;
     /**
-     * ToolCalls is the sum of the numbers of the tools that the models asked to
-     * invoke. Note that the called tool names of an entry are a bounded list, so
-     * it is a floor rather than an exact count for the responses that call an
-     * unusually large number of them.
+     * ToolCalls is the sum of the numbers of the tool calls that the responses
+     * carried. Note that it counts the calls rather than the distinct tools, so
+     * a response that invoked one tool twenty times contributes twenty to it.
      *
      * @generated from protobuf field: uint64 toolCalls = 8
      */
     toolCalls: number;
     /**
+     * DistinctToolsCalled is the sum of the numbers of the distinct tools that
+     * the responses asked to invoke. Reading it against the ToolCalls field is
+     * what shows the responses that call the same tool repeatedly, and note that
+     * it is a floor for the entries that the WithCalledToolsTruncated count
+     * covers.
+     *
+     * @generated from protobuf field: uint64 distinctToolsCalled = 9
+     */
+    distinctToolsCalled: number;
+    /**
+     * InputItems is the sum of the numbers of the input items (i.e. the messages
+     * or the embedding inputs) of the requests
+     *
+     * @generated from protobuf field: uint64 inputItems = 10
+     */
+    inputItems: number;
+    /**
      * RequestBodyBytes is the sum of the sizes of the request bodies
      *
-     * @generated from protobuf field: uint64 requestBodyBytes = 9
+     * @generated from protobuf field: uint64 requestBodyBytes = 11
      */
     requestBodyBytes: number;
     /**
      * ResponseBodyBytes is the sum of the sizes of the response bodies
      *
-     * @generated from protobuf field: uint64 responseBodyBytes = 10
+     * @generated from protobuf field: uint64 responseBodyBytes = 12
      */
     responseBodyBytes: number;
 }
@@ -429,8 +579,8 @@ export interface Stats_Requests {
     /**
      * Denied is the number of the entries that an authorization decision
      * rejected. Note that it is the Octelium authorization outcome rather than
-     * the Guardrail one: read the GuardrailDenied field for the content-based
-     * rejections.
+     * the Guardrail or the TokenRateLimit one: read the GuardrailDenied and
+     * the TokenRateLimitDenied fields for those.
      *
      * @generated from protobuf field: uint64 denied = 3
      */
@@ -470,11 +620,28 @@ export interface Stats_Requests {
      */
     streamed: number;
     /**
-     * SourceUpstream is the number of the entries whose response the upstream
-     * provider generated, which is the only source that consumed inference
-     * tokens
+     * UpstreamInvoked is the number of the entries whose inference upstream
+     * actually responded, which is the number of the requests that really
+     * reached an inference rather than the number that were served by one
      *
-     * @generated from protobuf field: uint64 sourceUpstream = 9
+     * @generated from protobuf field: uint64 upstreamInvoked = 9
+     */
+    upstreamInvoked: number;
+    /**
+     * DiscardedInference is the number of the entries whose upstream response
+     * was generated and then never served to the downstream, which is the case
+     * for every response that a Guardrail Plugin rejected. Their tokens were
+     * consumed and their answers were thrown away, so it is the count that the
+     * Tokens message's own Discarded field is read against.
+     *
+     * @generated from protobuf field: uint64 discardedInference = 10
+     */
+    discardedInference: number;
+    /**
+     * SourceUpstream is the number of the entries whose response the upstream
+     * provider generated and that were served as such
+     *
+     * @generated from protobuf field: uint64 sourceUpstream = 11
      */
     sourceUpstream: number;
     /**
@@ -482,139 +649,295 @@ export interface Stats_Requests {
      * Plugin served, which is the number of the requests that the upstream
      * never saw
      *
-     * @generated from protobuf field: uint64 sourceSemanticCache = 10
+     * @generated from protobuf field: uint64 sourceSemanticCache = 12
      */
     sourceSemanticCache: number;
     /**
      * SourceOctelium is the number of the entries whose response Octelium
-     * itself produced, which is the case for every rejected request
+     * itself produced, which is the case for every rejected request including
+     * the ones that were rejected only after their upstream response had been
+     * generated
      *
-     * @generated from protobuf field: uint64 sourceOctelium = 11
+     * @generated from protobuf field: uint64 sourceOctelium = 13
      */
     sourceOctelium: number;
     /**
-     * UsageProvider is the number of the entries whose token counts the
-     * upstream provider itself reported
+     * WithUsage is the number of the entries whose upstream provider reported
+     * a token usage at all, which is the denominator of every token sum of the
+     * Tokens message
      *
-     * @generated from protobuf field: uint64 usageProvider = 12
+     * @generated from protobuf field: uint64 withUsage = 14
      */
-    usageProvider: number;
+    withUsage: number;
     /**
-     * UsageEstimated is the number of the entries whose token counts are
-     * Octelium's own pre-flight estimate. Their tokens must never be treated
-     * as a billing truth.
+     * WithoutUsage is the number of the entries whose upstream provider
+     * reported no token usage at all, which is the case for a request that
+     * never reached an upstream as well as for one whose provider reports
+     * none. Only their estimated input tokens are known.
      *
-     * @generated from protobuf field: uint64 usageEstimated = 13
+     * @generated from protobuf field: uint64 withoutUsage = 15
      */
-    usageEstimated: number;
+    withoutUsage: number;
     /**
-     * UsagePartial is the number of the entries whose provider-reported token
-     * counts belong to a stream that ended before its final usage was received
+     * UsageComplete is the number of the entries whose provider reported its
+     * final token counts
      *
-     * @generated from protobuf field: uint64 usagePartial = 14
+     * @generated from protobuf field: uint64 usageComplete = 16
+     */
+    usageComplete: number;
+    /**
+     * UsagePartial is the number of the entries whose token counts belong to a
+     * stream that ended before its final usage was received, so their sums are
+     * a floor rather than a total
+     *
+     * @generated from protobuf field: uint64 usagePartial = 17
      */
     usagePartial: number;
     /**
-     * UsageCached is the number of the entries that consumed no inference
-     * tokens at all since the SemanticCache Plugin served them
+     * GuardrailInspected is the number of the entries that at least one
+     * Guardrail Plugin inspected
      *
-     * @generated from protobuf field: uint64 usageCached = 15
+     * @generated from protobuf field: uint64 guardrailInspected = 18
      */
-    usageCached: number;
+    guardrailInspected: number;
     /**
-     * UsageUnset is the number of the entries for which no token usage could
-     * be determined at all
+     * GuardrailPassed is the number of the entries that at least one Guardrail
+     * Plugin inspected and that no Guardrail Plugin modified, denied or failed
+     * on
      *
-     * @generated from protobuf field: uint64 usageUnset = 16
+     * @generated from protobuf field: uint64 guardrailPassed = 19
      */
-    usageUnset: number;
-    /**
-     * GuardrailPass is the number of the entries that every Guardrail Plugin
-     * inspected and left unchanged
-     *
-     * @generated from protobuf field: uint64 guardrailPass = 17
-     */
-    guardrailPass: number;
+    guardrailPassed: number;
     /**
      * GuardrailModified is the number of the entries whose content a Guardrail
      * Plugin rewrote, which is the case for a redaction as well as for a
-     * replacement
+     * replacement. Note that an entry whose content one Plugin redacted and
+     * another Plugin then rejected is counted here as well as in the
+     * GuardrailDenied field, since both are security events of their own.
      *
-     * @generated from protobuf field: uint64 guardrailModified = 18
+     * @generated from protobuf field: uint64 guardrailModified = 20
      */
     guardrailModified: number;
     /**
      * GuardrailDenied is the number of the entries that a Guardrail Plugin
-     * rejected
+     * rejected because their content matched a pattern
      *
-     * @generated from protobuf field: uint64 guardrailDenied = 19
+     * @generated from protobuf field: uint64 guardrailDenied = 21
      */
     guardrailDenied: number;
+    /**
+     * GuardrailError is the number of the entries that a Guardrail Plugin
+     * rejected because it could not reach a verdict at all. It is deliberately
+     * separate from the GuardrailDenied field, since a detector outage and a
+     * policy violation are different security events.
+     *
+     * @generated from protobuf field: uint64 guardrailError = 22
+     */
+    guardrailError: number;
+    /**
+     * TokenRateLimitAllowed is the number of the entries that every applied
+     * TokenRateLimit Plugin admitted
+     *
+     * @generated from protobuf field: uint64 tokenRateLimitAllowed = 23
+     */
+    tokenRateLimitAllowed: number;
+    /**
+     * TokenRateLimitDenied is the number of the entries that a TokenRateLimit
+     * Plugin rejected because its quota was already exhausted
+     *
+     * @generated from protobuf field: uint64 tokenRateLimitDenied = 24
+     */
+    tokenRateLimitDenied: number;
+    /**
+     * CacheExactHit is the number of the entries that the SemanticCache served
+     * because the Service had already served an identical request
+     *
+     * @generated from protobuf field: uint64 cacheExactHit = 25
+     */
+    cacheExactHit: number;
+    /**
+     * CacheSemanticHit is the number of the entries that the SemanticCache
+     * served because the Service had already served one of the same meaning
+     *
+     * @generated from protobuf field: uint64 cacheSemanticHit = 26
+     */
+    cacheSemanticHit: number;
+    /**
+     * CacheMiss is the number of the entries that the SemanticCache could not
+     * serve and that were therefore proxied to the upstream
+     *
+     * @generated from protobuf field: uint64 cacheMiss = 27
+     */
+    cacheMiss: number;
+    /**
+     * CacheBypass is the number of the entries that the SemanticCache never
+     * looked up since they are not cacheable at all
+     *
+     * @generated from protobuf field: uint64 cacheBypass = 28
+     */
+    cacheBypass: number;
+    /**
+     * CacheError is the number of the entries that the SemanticCache could not
+     * look up because its embedding backend or its vector store failed. A
+     * dashboard reads it against the misses, since an outage that read as an
+     * ordinary miss would show as a hit rate that fell for no reason.
+     *
+     * @generated from protobuf field: uint64 cacheError = 29
+     */
+    cacheError: number;
+    /**
+     * CacheStored is the number of the entries whose response was stored in
+     * the SemanticCache
+     *
+     * @generated from protobuf field: uint64 cacheStored = 30
+     */
+    cacheStored: number;
+    /**
+     * RouterMatch is the number of the entries whose meaning reached the
+     * minimum similarity of a Route of a SemanticRouter Plugin
+     *
+     * @generated from protobuf field: uint64 routerMatch = 31
+     */
+    routerMatch: number;
+    /**
+     * RouterNoMatch is the number of the entries that reached the minimum
+     * similarity of no Route at all and that were therefore served the
+     * fallback model
+     *
+     * @generated from protobuf field: uint64 routerNoMatch = 32
+     */
+    routerNoMatch: number;
+    /**
+     * RouterBypass is the number of the entries that a SemanticRouter Plugin
+     * never classified since they are not routable at all
+     *
+     * @generated from protobuf field: uint64 routerBypass = 33
+     */
+    routerBypass: number;
+    /**
+     * RouterError is the number of the entries that a SemanticRouter Plugin
+     * could not classify because its embedding backend failed, which a
+     * dashboard reads against the non-matches for the same reason that it
+     * reads the cache errors against the misses
+     *
+     * @generated from protobuf field: uint64 routerError = 34
+     */
+    routerError: number;
     /**
      * ModelOverridden is the number of the entries whose effective model
      * differs from the requested one, which is the record of the Cluster
      * serving something other than what the downstream asked for
      *
-     * @generated from protobuf field: uint64 modelOverridden = 20
+     * @generated from protobuf field: uint64 modelOverridden = 35
      */
     modelOverridden: number;
     /**
      * ModelRouted is the number of the entries whose effective model a
      * SemanticRouter Plugin decided
      *
-     * @generated from protobuf field: uint64 modelRouted = 21
+     * @generated from protobuf field: uint64 modelRouted = 36
      */
     modelRouted: number;
     /**
      * WithTools is the number of the entries that offered at least one tool to
      * the upstream
      *
-     * @generated from protobuf field: uint64 withTools = 22
+     * @generated from protobuf field: uint64 withTools = 37
      */
     withTools: number;
     /**
      * WithToolCalls is the number of the entries whose model asked to invoke
      * at least one tool
      *
-     * @generated from protobuf field: uint64 withToolCalls = 23
+     * @generated from protobuf field: uint64 withToolCalls = 38
      */
     withToolCalls: number;
     /**
      * WithToolsRemoved is the number of the entries from which a Tools Plugin
      * removed at least one of the tools that the downstream declared
      *
-     * @generated from protobuf field: uint64 withToolsRemoved = 24
+     * @generated from protobuf field: uint64 withToolsRemoved = 39
      */
     withToolsRemoved: number;
     /**
-     * WithReasoning is the number of the entries that were proxied with a
-     * reasoning configuration that the Service itself decided
+     * WithCalledToolsTruncated is the number of the entries whose response
+     * carried more distinct tool identities than their called tool list can
+     * hold. A tool that is missing from such an entry was not necessarily not
+     * called, so a security view that ranks the called tools reads this count
+     * in order to know whether its own answer is complete.
      *
-     * @generated from protobuf field: uint64 withReasoning = 25
+     * @generated from protobuf field: uint64 withCalledToolsTruncated = 40
      */
-    withReasoning: number;
+    withCalledToolsTruncated: number;
+    /**
+     * WithManagedReasoning is the number of the entries that were proxied with
+     * a reasoning configuration that the Service itself decided
+     *
+     * @generated from protobuf field: uint64 withManagedReasoning = 41
+     */
+    withManagedReasoning: number;
     /**
      * ReasoningDisabled is the number of the entries that were proxied with
      * reasoning explicitly turned off
      *
-     * @generated from protobuf field: uint64 reasoningDisabled = 26
+     * @generated from protobuf field: uint64 reasoningDisabled = 42
      */
     reasoningDisabled: number;
     /**
-     * FinishedByLength is the number of the entries whose generation stopped
-     * because it reached its output limit rather than because it completed
-     * (i.e. the entries whose finish reason is the protocol's own spelling of
-     * "length"). It is what shows the truncated answers.
+     * WithImageInput is the number of the entries that carried image input
      *
-     * @generated from protobuf field: uint64 finishedByLength = 27
+     * @generated from protobuf field: uint64 withImageInput = 43
      */
-    finishedByLength: number;
+    withImageInput: number;
+    /**
+     * WithAudioInput is the number of the entries that carried audio input
+     *
+     * @generated from protobuf field: uint64 withAudioInput = 44
+     */
+    withAudioInput: number;
+    /**
+     * FinishStop is the number of the entries whose model finished on its own
+     *
+     * @generated from protobuf field: uint64 finishStop = 45
+     */
+    finishStop: number;
+    /**
+     * FinishLength is the number of the entries whose generation was cut short
+     * by an output token limit rather than completing, which is what shows the
+     * truncated answers
+     *
+     * @generated from protobuf field: uint64 finishLength = 46
+     */
+    finishLength: number;
+    /**
+     * FinishToolCall is the number of the entries whose model stopped in order
+     * to invoke a tool
+     *
+     * @generated from protobuf field: uint64 finishToolCall = 47
+     */
+    finishToolCall: number;
+    /**
+     * FinishContentFilter is the number of the entries that the provider's own
+     * safety system stopped. Note that it is the provider's filter rather than
+     * an Octelium Guardrail.
+     *
+     * @generated from protobuf field: uint64 finishContentFilter = 48
+     */
+    finishContentFilter: number;
+    /**
+     * FinishError is the number of the entries that the provider reported as
+     * failed
+     *
+     * @generated from protobuf field: uint64 finishError = 49
+     */
+    finishError: number;
 }
 /**
- * Tokens is the token usage, summed over the entries. Note that only the
- * entries whose usage source is a provider-reported one are a billing
- * truth: read the Requests message's own usage counts alongside these sums
- * in order to know how much of them was estimated rather than reported.
+ * Tokens is the token usage, summed over the entries. Every sum of it is a
+ * sum of the counts that the upstream providers themselves reported, so it
+ * never mixes a measurement with an estimate: an entry whose provider
+ * reported no usage contributes nothing to it and is counted in the
+ * Requests message's own WithoutUsage field instead.
  *
  * @generated from protobuf message octelium.api.main.visibility.llm.v1.Stats.Tokens
  */
@@ -647,20 +970,21 @@ export interface Stats_Tokens {
      */
     cacheReadInput: number;
     /**
-     * CacheCreationInput is the sum of the input tokens that were written to
-     * the providers' own prompt caches. It is only reported by the ANTHROPIC
+     * CacheWriteInput is the sum of the input tokens that were written to the
+     * providers' own prompt caches. It is only reported by the ANTHROPIC
      * protocol.
      *
-     * @generated from protobuf field: uint64 cacheCreationInput = 5
+     * @generated from protobuf field: uint64 cacheWriteInput = 5
      */
-    cacheCreationInput: number;
+    cacheWriteInput: number;
     /**
-     * Reasoning is the sum of the reasoning tokens. It is only reported by the
-     * OPENAI protocol where it is already included in the output tokens.
+     * ReasoningOutput is the sum of the reasoning tokens. It is only reported
+     * by the OPENAI protocol where it is already included in the output
+     * tokens.
      *
-     * @generated from protobuf field: uint64 reasoning = 6
+     * @generated from protobuf field: uint64 reasoningOutput = 6
      */
-    reasoning: number;
+    reasoningOutput: number;
     /**
      * EstimatedInput is the sum of Octelium's own pre-flight input token
      * estimates. It is set for every parsed inference request regardless of
@@ -671,6 +995,15 @@ export interface Stats_Tokens {
      * @generated from protobuf field: uint64 estimatedInput = 7
      */
     estimatedInput: number;
+    /**
+     * Discarded is the sum of the total token counts of the entries whose
+     * upstream response was generated and then never served, which is the
+     * inference that the Cluster paid for and threw away. It is a subset of
+     * the Total field.
+     *
+     * @generated from protobuf field: uint64 discarded = 8
+     */
+    discarded: number;
 }
 /**
  * DurationStats is the distribution of a measured duration in milliseconds.
@@ -731,82 +1064,24 @@ export interface Stats_DurationStats {
     p99Ms: number;
 }
 /**
- * Cardinality is the number of the distinct values that the selected entries
- * carry for each of the dimensions whose count a dashboard shows as a headline
- * number of its own.
+ * CardinalityItem is the number of the distinct values that the selected
+ * entries carry for one Dimension.
  *
- * @generated from protobuf message octelium.api.main.visibility.llm.v1.Cardinality
+ * @generated from protobuf message octelium.api.main.visibility.llm.v1.CardinalityItem
  */
-export interface Cardinality {
+export interface CardinalityItem {
     /**
-     * Models is the number of the distinct effective model names
+     * Dimension is the dimension whose distinct values are counted
      *
-     * @generated from protobuf field: uint64 models = 1
+     * @generated from protobuf field: octelium.api.main.visibility.llm.v1.Dimension dimension = 1
      */
-    models: number;
+    dimension: Dimension;
     /**
-     * RequestedModels is the number of the distinct model names that the
-     * downstreams asked for
+     * Count is the number of the distinct values
      *
-     * @generated from protobuf field: uint64 requestedModels = 2
+     * @generated from protobuf field: uint64 count = 2
      */
-    requestedModels: number;
-    /**
-     * Users is the number of the distinct Users
-     *
-     * @generated from protobuf field: uint64 users = 3
-     */
-    users: number;
-    /**
-     * Sessions is the number of the distinct Sessions
-     *
-     * @generated from protobuf field: uint64 sessions = 4
-     */
-    sessions: number;
-    /**
-     * Devices is the number of the distinct Devices
-     *
-     * @generated from protobuf field: uint64 devices = 5
-     */
-    devices: number;
-    /**
-     * Services is the number of the distinct LLM Services
-     *
-     * @generated from protobuf field: uint64 services = 6
-     */
-    services: number;
-    /**
-     * Namespaces is the number of the distinct Namespaces
-     *
-     * @generated from protobuf field: uint64 namespaces = 7
-     */
-    namespaces: number;
-    /**
-     * Tools is the number of the distinct tools that the upstreams were offered
-     *
-     * @generated from protobuf field: uint64 tools = 8
-     */
-    tools: number;
-    /**
-     * CalledTools is the number of the distinct tools that the models asked to
-     * invoke
-     *
-     * @generated from protobuf field: uint64 calledTools = 9
-     */
-    calledTools: number;
-    /**
-     * Protocols is the number of the distinct inference API protocols
-     *
-     * @generated from protobuf field: uint64 protocols = 10
-     */
-    protocols: number;
-    /**
-     * Policies is the number of the distinct Policies whose rules decided the
-     * authorization of the entries
-     *
-     * @generated from protobuf field: uint64 policies = 11
-     */
-    policies: number;
+    count: number;
 }
 /**
  * DimensionItem is one distinct value of a Dimension together with the
@@ -817,10 +1092,11 @@ export interface Cardinality {
 export interface DimensionItem {
     /**
      * Key is the value of the Dimension. It is the enum value's own name for an
-     * enum dimension (e.g. "ANTHROPIC"), the string itself for a string
-     * dimension (e.g. a model or a tool name), the decimal representation for a
-     * numeric one (e.g. an HTTP status code), "true" or "false" for a boolean
-     * one, and the resource UID for a resource one.
+     * enum dimension (e.g. "ANTHROPIC", or "RESULT_UNSET" for an entry whose
+     * field is unset), the string itself for a string dimension (e.g. a model or
+     * a tool name), the decimal representation for a numeric one (e.g. an HTTP
+     * status code), "true" or "false" for a boolean one, and the resource UID
+     * for a resource one.
      *
      * @generated from protobuf field: string key = 1
      */
@@ -865,7 +1141,8 @@ export interface Breakdown {
     /**
      * Other is the aggregate measurement of every value outside the returned
      * ones. It is unset whenever the returned items are every value that the
-     * dimension has, and it is what a chart renders as its "other" slice.
+     * dimension has, and it is unset for a multi-valued dimension since the
+     * entries of such a dimension's values overlap.
      *
      * @generated from protobuf field: octelium.api.main.visibility.llm.v1.Stats other = 3
      */
@@ -876,6 +1153,33 @@ export interface Breakdown {
      * @generated from protobuf field: uint64 totalCount = 4
      */
     totalCount: number;
+}
+/**
+ * BreakdownRequest asks for the ranking of the distinct values of one
+ * Dimension alongside a summary.
+ *
+ * @generated from protobuf message octelium.api.main.visibility.llm.v1.BreakdownRequest
+ */
+export interface BreakdownRequest {
+    /**
+     * Dimension is the dimension whose values are ranked
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.llm.v1.Dimension dimension = 1
+     */
+    dimension: Dimension;
+    /**
+     * Limit is the number of the returned values. Zero uses the default value.
+     *
+     * @generated from protobuf field: uint32 limit = 2
+     */
+    limit: number;
+    /**
+     * OrderBy is the Metric by which the values are ranked. It defaults to the
+     * entry count.
+     *
+     * @generated from protobuf field: octelium.api.main.visibility.llm.v1.Metric orderBy = 3
+     */
+    orderBy: Metric;
 }
 /**
  * GetSummaryRequest is the request of the GetSummary method.
@@ -898,27 +1202,23 @@ export interface GetSummaryRequest {
      */
     includeQuantiles: boolean;
     /**
-     * Breakdowns is the list of the dimensions whose rankings are returned
-     * alongside the summary. It is bounded, and an empty list returns no
-     * breakdown at all.
+     * Breakdowns is the rankings that are returned alongside the summary, each
+     * with a limit and an ordering of its own. It is bounded, an empty list
+     * returns no breakdown at all, and naming the same dimension twice is an
+     * error.
      *
-     * @generated from protobuf field: repeated octelium.api.main.visibility.llm.v1.Dimension breakdowns = 3
+     * @generated from protobuf field: repeated octelium.api.main.visibility.llm.v1.BreakdownRequest breakdowns = 3
      */
-    breakdowns: Dimension[];
+    breakdowns: BreakdownRequest[];
     /**
-     * BreakdownLimit is the number of the values returned for each of the
-     * Breakdowns. Zero uses the default value.
+     * Cardinalities is the dimensions whose distinct value counts are returned
+     * alongside the summary. Each of them is a `COUNT(DISTINCT ...)` of its own,
+     * so a page asks only for the counts that it renders. An empty list returns
+     * none at all.
      *
-     * @generated from protobuf field: uint32 breakdownLimit = 4
+     * @generated from protobuf field: repeated octelium.api.main.visibility.llm.v1.Dimension cardinalities = 4
      */
-    breakdownLimit: number;
-    /**
-     * BreakdownOrderBy is the Metric by which the Breakdowns are ranked. It
-     * defaults to the entry count.
-     *
-     * @generated from protobuf field: octelium.api.main.visibility.llm.v1.Metric breakdownOrderBy = 5
-     */
-    breakdownOrderBy: Metric;
+    cardinalities: Dimension[];
 }
 /**
  * GetSummaryResponse is the response of the GetSummary method.
@@ -933,12 +1233,12 @@ export interface GetSummaryResponse {
      */
     stats?: Stats;
     /**
-     * Cardinality is the number of the distinct values of the dimensions whose
-     * count is a headline number of its own
+     * Cardinalities is the number of the distinct values of each of the
+     * dimensions that the request named, in the order in which it named them
      *
-     * @generated from protobuf field: octelium.api.main.visibility.llm.v1.Cardinality cardinality = 2
+     * @generated from protobuf field: repeated octelium.api.main.visibility.llm.v1.CardinalityItem cardinalities = 2
      */
-    cardinality?: Cardinality;
+    cardinalities: CardinalityItem[];
     /**
      * Breakdowns is the ranking of each of the dimensions that the request
      * named, in the order in which it named them
@@ -961,7 +1261,11 @@ export interface GetDataPointRequest {
     filter?: Filter;
     /**
      * Interval is the width of a bucket of the time series (e.g. `minutes: 5`).
-     * It defaults to one minute.
+     * It defaults to one minute. The buckets are aligned to the Unix epoch in
+     * UTC rather than to the Filter's own beginning, so the same bucket of two
+     * requests that asked for two different ranges is always the same bucket,
+     * and the returned range is `[from, to)`. A range and an interval that would
+     * produce more than 10000 buckets is rejected rather than truncated.
      *
      * @generated from protobuf field: octelium.api.main.meta.v1.Duration interval = 2
      */
@@ -993,7 +1297,8 @@ export interface GetDataPointRequest {
     /**
      * IncludeQuantiles computes the percentiles of the duration measurements of
      * every bucket. Note that it is materially more expensive for a grouped
-     * request than it is for the summary.
+     * request than it is for the summary, and that ordering by a percentile
+     * Metric computes the percentiles regardless of it.
      *
      * @generated from protobuf field: bool includeQuantiles = 6
      */
@@ -1015,7 +1320,8 @@ export interface GetDataPointResponse {
     /**
      * Other is the aggregate time series of every value outside the returned
      * series. It is only set for a grouped request whose dimension has more
-     * values than the Limit allowed.
+     * values than the Limit allowed, and it is never set for a multi-valued
+     * dimension.
      *
      * @generated from protobuf field: octelium.api.main.visibility.llm.v1.GetDataPointResponse.Series other = 2
      */
@@ -1137,7 +1443,7 @@ export interface ListTopDimensionResponse {
     items: DimensionItem[];
     /**
      * Other is the aggregate measurement of every value outside the returned
-     * ones
+     * ones. It is never set for a multi-valued dimension.
      *
      * @generated from protobuf field: octelium.api.main.visibility.llm.v1.Stats other = 2
      */
@@ -1163,8 +1469,8 @@ export interface ListTopModelRequest {
     filter?: Filter;
     /**
      * Field is which of the three model names of an entry the models are grouped
-     * by. It defaults to the effective one, which is the model that the Cluster
-     * actually invoked.
+     * by. It defaults to the effective one, which is the model that the requests
+     * resolved to.
      *
      * @generated from protobuf field: octelium.api.main.visibility.llm.v1.ModelField field = 2
      */
@@ -1245,18 +1551,20 @@ export interface ListTopModelResponse_Item {
      */
     requestedCount: number;
     /**
-     * EffectiveCount is the number of the entries that Octelium proxied to an
-     * upstream under this model. A model whose EffectiveCount exceeds its
-     * RequestedCount is one that the Cluster routes traffic to, and one whose
-     * RequestedCount exceeds its EffectiveCount is one that the Cluster
-     * overrides.
+     * EffectiveCount is the number of the entries that resolved to this model
+     * once every Octelium model decision was applied. A model whose
+     * EffectiveCount exceeds its RequestedCount is one that the Cluster routes
+     * traffic to, and one whose RequestedCount exceeds its EffectiveCount is
+     * one that the Cluster overrides. Note that it counts the entries that
+     * resolved to the model rather than the ones that invoked it: read the
+     * Stats message's own UpstreamInvoked count for the latter.
      *
      * @generated from protobuf field: uint64 effectiveCount = 4
      */
     effectiveCount: number;
     /**
-     * ReportedCount is the number of the entries whose upstream provider named
-     * this model in its response
+     * ReportedCount is the number of the entries whose response named this
+     * model
      *
      * @generated from protobuf field: uint64 reportedCount = 5
      */
@@ -1275,10 +1583,9 @@ export interface ListTopToolRequest {
      */
     filter?: Filter;
     /**
-     * Scope is whether the tools are the ones that the upstreams were offered or
-     * the ones that the models asked to invoke. It defaults to the declared
-     * ones, and it decides both which entries a tool is ranked by and which
-     * entries its Stats measure.
+     * Scope is which of the three tool surfaces the tools are ranked by. It
+     * defaults to the offered ones, and it decides both which entries a tool is
+     * ranked by and which entries its Stats measure.
      *
      * @generated from protobuf field: octelium.api.main.visibility.llm.v1.ToolScope scope = 2
      */
@@ -1317,13 +1624,15 @@ export interface ListTopToolResponse {
      */
     items: ListTopToolResponse_Item[];
     /**
-     * Other is the aggregate measurement of every tool outside the returned ones
+     * Other is unset, since an entry carries several tools and the entries of
+     * two tool rows therefore overlap
      *
      * @generated from protobuf field: octelium.api.main.visibility.llm.v1.Stats other = 2
      */
     other?: Stats;
     /**
-     * TotalCount is the number of the distinct tool names
+     * TotalCount is the number of the distinct tool names of the request's own
+     * ToolScope
      *
      * @generated from protobuf field: uint64 totalCount = 3
      */
@@ -1349,20 +1658,29 @@ export interface ListTopToolResponse_Item {
      */
     stats?: Stats;
     /**
-     * DeclaredCount is the number of the entries that offered this tool to an
+     * OfferedCount is the number of the entries that offered this tool to an
      * upstream
      *
-     * @generated from protobuf field: uint64 declaredCount = 3
+     * @generated from protobuf field: uint64 offeredCount = 3
      */
-    declaredCount: number;
+    offeredCount: number;
     /**
      * CalledCount is the number of the entries whose model asked to invoke
-     * this tool. Reading it against the DeclaredCount one is what shows which
-     * of the offered tools the models actually use.
+     * this tool. Reading it against the OfferedCount one is what shows which
+     * of the offered tools the models actually use. Note that it is a floor
+     * whenever the answer's own WithCalledToolsTruncated count is non-zero.
      *
      * @generated from protobuf field: uint64 calledCount = 4
      */
     calledCount: number;
+    /**
+     * RemovedCount is the number of the entries from which a Tools Plugin
+     * removed this tool, which is what shows the tools that the callers keep
+     * trying to expose and are not allowed to
+     *
+     * @generated from protobuf field: uint64 removedCount = 5
+     */
+    removedCount: number;
 }
 /**
  * ListTopUserRequest is the request of the ListTopUser method.
@@ -1716,7 +2034,10 @@ export interface ListAccessLogRequest {
  */
 export interface ListAccessLogRequest_OrderBy {
     /**
-     * Type is the field by which the entries are ordered
+     * Type is the field by which the entries are ordered. Note that every
+     * ordering other than CREATED_AT is broken by the creation timestamp of
+     * the entries, so the entries that share a token count or a duration keep
+     * a stable order across the pages.
      *
      * @generated from protobuf field: octelium.api.main.visibility.llm.v1.ListAccessLogRequest.OrderBy.Type type = 1
      */
@@ -1777,7 +2098,22 @@ export enum ListAccessLogRequest_OrderBy_Type {
      *
      * @generated from protobuf enum value: TIME_TO_FIRST_TOKEN = 6;
      */
-    TIME_TO_FIRST_TOKEN = 6
+    TIME_TO_FIRST_TOKEN = 6,
+    /**
+     * ESTIMATED_INPUT_TOKENS orders the entries by Octelium's own pre-flight
+     * input token estimates, which is the only token ordering that is
+     * available for the requests that never reached an upstream
+     *
+     * @generated from protobuf enum value: ESTIMATED_INPUT_TOKENS = 7;
+     */
+    ESTIMATED_INPUT_TOKENS = 7,
+    /**
+     * TOOL_CALLS orders the entries by the numbers of the tool calls that
+     * their responses carried
+     *
+     * @generated from protobuf enum value: TOOL_CALLS = 8;
+     */
+    TOOL_CALLS = 8
 }
 /**
  * Mode is the direction in which the entries are ordered
@@ -1851,8 +2187,12 @@ export enum EntryScope {
      */
     TERMINAL = 1,
     /**
-     * STREAM_START reads only the STREAM_START entries, which is what a view of
-     * the time-to-first-byte of the streamed requests reads
+     * STREAM_START reads only the STREAM_START entries. Note that it is not the
+     * scope that a time-to-first-token view reads, since the terminal entry of a
+     * streamed request carries that measurement itself: it is the scope that
+     * measures the time to the first byte, which is the latency of the
+     * STREAM_START entry itself, and it is what the count of the streams that
+     * were opened is read against the count of the ones that ended.
      *
      * @generated from protobuf enum value: STREAM_START = 2;
      */
@@ -1860,7 +2200,8 @@ export enum EntryScope {
     /**
      * ALL reads every LLM entry regardless of its type. It is the raw entry
      * scope: it is meaningful for a log explorer that shows the entries as they
-     * were emitted and it is misleading for every count and every sum.
+     * were emitted and it is meaningless for every count and every sum, so only
+     * the ListAccessLog method accepts it while every other method rejects it.
      *
      * @generated from protobuf enum value: ALL = 3;
      */
@@ -1887,48 +2228,64 @@ export enum ModelField {
      */
     REQUESTED = 1,
     /**
-     * EFFECTIVE is the model name that Octelium proxied to the upstream. It is
-     * what shows which model the Cluster actually paid for.
+     * EFFECTIVE is the model name that the request resolved to once every
+     * Octelium model decision was applied. Note that it is set for every parsed
+     * request that names a model at all, including the ones that were rejected
+     * before an upstream was reached and the ones that the SemanticCache served,
+     * so it is what the request resolved to rather than proof that an inference
+     * was invoked under it. Read the IsUpstreamInvoked filter alongside it in
+     * order to count the invocations.
      *
      * @generated from protobuf enum value: EFFECTIVE = 2;
      */
     EFFECTIVE = 2,
     /**
-     * REPORTED is the model name that the upstream provider itself named in its
-     * response. It resolves the aliases and the unpinned names that the
-     * effective one can carry, so it is the most precise of the three and it is
-     * unset for every request that never reached an upstream.
+     * REPORTED is the model name that the response itself named. It resolves the
+     * aliases and the unpinned names that the effective one can carry, so it is
+     * the most precise of the three. Note that a request that the SemanticCache
+     * served carries the model that generated the cached response rather than
+     * one that was invoked now, and that it is unset whenever no response body
+     * named a model at all.
      *
      * @generated from protobuf enum value: REPORTED = 3;
      */
     REPORTED = 3
 }
 /**
- * ToolScope is which of the two tool surfaces of an entry is read.
+ * ToolScope is which of the three tool surfaces of an entry is read.
  *
  * @generated from protobuf enum octelium.api.main.visibility.llm.v1.ToolScope
  */
 export enum ToolScope {
     /**
-     * TOOL_SCOPE_UNSET falls back to the default behavior which is DECLARED
+     * TOOL_SCOPE_UNSET falls back to the default behavior which is OFFERED
      *
      * @generated from protobuf enum value: TOOL_SCOPE_UNSET = 0;
      */
     TOOL_SCOPE_UNSET = 0,
     /**
-     * DECLARED reads the tools that the upstream was offered, which is the
-     * record of what the callers exposed to the models
+     * OFFERED reads the tools that the upstream was offered once every Tools
+     * Plugin was applied, which is the record of what the callers were allowed
+     * to expose to the models
      *
-     * @generated from protobuf enum value: DECLARED = 1;
+     * @generated from protobuf enum value: OFFERED = 1;
      */
-    DECLARED = 1,
+    OFFERED = 1,
     /**
      * CALLED reads the tools that the models asked to invoke, which is the
      * record of what the models tried to do
      *
      * @generated from protobuf enum value: CALLED = 2;
      */
-    CALLED = 2
+    CALLED = 2,
+    /**
+     * REMOVED reads the tools that the downstreams declared and that a Tools
+     * Plugin removed before the requests were proxied, which is the record of
+     * what the callers tried to expose and were not allowed to
+     *
+     * @generated from protobuf enum value: REMOVED = 3;
+     */
+    REMOVED = 3
 }
 /**
  * HTTPStatusClass is a class of the HTTP response status codes.
@@ -1975,6 +2332,20 @@ export enum HTTPStatusClass {
  * entries is grouped. It is what a breakdown chart groups by and what a time
  * series is split by.
  *
+ * A dimension whose values are an enum always returns a value: an entry whose
+ * field is unset is returned under that enum's own unset value (e.g.
+ * "RESULT_UNSET" for the requests that no Guardrail Plugin inspected) rather
+ * than being dropped, so the returned values partition every selected entry
+ * and a donut chart of them adds up to the total request count. A dimension
+ * whose values are a free string (e.g. a model or a plugin name) instead
+ * returns only the entries that carry one.
+ *
+ * Some dimensions are marked multi-valued below. An entry that carries several
+ * of their values is counted once for each of them, so their counts sum above
+ * the request count, their percentages are not shares of the total and their
+ * answers carry no `other` aggregate. Every other dimension partitions the
+ * entries.
+ *
  * @generated from protobuf enum octelium.api.main.visibility.llm.v1.Dimension
  */
 export enum Dimension {
@@ -1985,8 +2356,8 @@ export enum Dimension {
      */
     DIMENSION_UNSET = 0,
     /**
-     * MODEL is the effective model name (i.e. the model that Octelium proxied to
-     * the upstream)
+     * MODEL is the effective model name (i.e. the model that the request
+     * resolved to once every Octelium model decision was applied)
      *
      * @generated from protobuf enum value: MODEL = 1;
      */
@@ -1998,8 +2369,7 @@ export enum Dimension {
      */
     MODEL_REQUESTED = 2,
     /**
-     * MODEL_REPORTED is the model name that the upstream provider named in its
-     * response
+     * MODEL_REPORTED is the model name that the response itself named
      *
      * @generated from protobuf enum value: MODEL_REPORTED = 3;
      */
@@ -2039,11 +2409,12 @@ export enum Dimension {
      */
     SOURCE = 8,
     /**
-     * USAGE_SOURCE is where the token counts of the entry came from
+     * USAGE_STATE is whether the provider-reported token usage of the entry is
+     * its final one
      *
-     * @generated from protobuf enum value: USAGE_SOURCE = 9;
+     * @generated from protobuf enum value: USAGE_STATE = 9;
      */
-    USAGE_SOURCE = 9,
+    USAGE_STATE = 9,
     /**
      * ESTIMATE_QUALITY is whether Octelium's own input token estimate accounted
      * for the entire input of the request
@@ -2052,29 +2423,30 @@ export enum Dimension {
      */
     ESTIMATE_QUALITY = 10,
     /**
-     * GUARDRAIL_RESULT is the strongest outcome that any Guardrail Plugin
-     * reached
+     * GUARDRAIL_RESULT is the outcome that a Guardrail Plugin reached. It is
+     * multi-valued: an entry that several Guardrail Plugins inspected is counted
+     * once for each distinct outcome that they reached.
      *
      * @generated from protobuf enum value: GUARDRAIL_RESULT = 11;
      */
     GUARDRAIL_RESULT = 11,
     /**
-     * GUARDRAIL_PLUGIN is the name of the Guardrail Plugin that produced the
-     * outcome
+     * GUARDRAIL_PLUGIN is the name of a Guardrail Plugin that inspected the
+     * entry. It is multi-valued.
      *
      * @generated from protobuf enum value: GUARDRAIL_PLUGIN = 12;
      */
     GUARDRAIL_PLUGIN = 12,
     /**
-     * GUARDRAIL_LEG is the part of the exchange whose inspection produced the
-     * outcome
+     * GUARDRAIL_LEG is a part of the exchange that a Guardrail Plugin inspected.
+     * It is multi-valued.
      *
      * @generated from protobuf enum value: GUARDRAIL_LEG = 13;
      */
     GUARDRAIL_LEG = 13,
     /**
-     * FINISH_REASON is the completion status reported by the upstream provider
-     * itself (e.g. "stop", "length", "tool_calls")
+     * FINISH_REASON is the completion status of the response, normalized across
+     * the providers (e.g. STOP, LENGTH, TOOL_CALL)
      *
      * @generated from protobuf enum value: FINISH_REASON = 14;
      */
@@ -2087,17 +2459,15 @@ export enum Dimension {
      */
     REASONING_EFFORT = 15,
     /**
-     * TOOL is the name of a tool that the upstream was offered. It is a
-     * multi-valued dimension: an entry that offered several tools is counted
-     * once for each of them, so the sum of the returned counts exceeds the
-     * number of the entries.
+     * TOOL is the name of a tool that the upstream was offered. It is
+     * multi-valued.
      *
      * @generated from protobuf enum value: TOOL = 16;
      */
     TOOL = 16,
     /**
-     * CALLED_TOOL is the name of a tool that the model asked to invoke. It is a
-     * multi-valued dimension in the same way that TOOL is.
+     * CALLED_TOOL is the name of a tool that the model asked to invoke. It is
+     * multi-valued.
      *
      * @generated from protobuf enum value: CALLED_TOOL = 17;
      */
@@ -2185,18 +2555,125 @@ export enum Dimension {
     /**
      * HTTP_PATH is the path of the request without its query params, which is
      * the inference API route exactly as it arrived (e.g.
-     * `/v1/chat/completions`). Note that the Operation dimension names what a
-     * request does rather than which route it arrived on, so this one is what
-     * tells two routes of the same protocol apart.
+     * `/v1/chat/completions`)
      *
      * @generated from protobuf enum value: HTTP_PATH = 31;
      */
-    HTTP_PATH = 31
+    HTTP_PATH = 31,
+    /**
+     * ROUTE is the canonical inference API route of the request (e.g.
+     * CHAT_COMPLETIONS, MESSAGES). Note that the Operation dimension names what
+     * a request does rather than which route it arrived on, so this one is what
+     * tells two routes of the same protocol apart without depending on the
+     * spelling of a path.
+     *
+     * @generated from protobuf enum value: ROUTE = 32;
+     */
+    ROUTE = 32,
+    /**
+     * IS_UPSTREAM_INVOKED is whether the inference upstream actually responded,
+     * which is what separates the requests that were rejected before an
+     * inference ran from the ones that were rejected after it did
+     *
+     * @generated from protobuf enum value: IS_UPSTREAM_INVOKED = 33;
+     */
+    IS_UPSTREAM_INVOKED = 33,
+    /**
+     * FINISH_REASON_RAW is the completion status exactly as the upstream
+     * provider spelled it (e.g. "stop", "end_turn"). Read the FINISH_REASON one
+     * instead wherever the entries can span more than one protocol.
+     *
+     * @generated from protobuf enum value: FINISH_REASON_RAW = 34;
+     */
+    FINISH_REASON_RAW = 34,
+    /**
+     * REMOVED_TOOL is the name of a tool that the downstream declared and that a
+     * Tools Plugin removed. It is multi-valued, and it is what shows which tools
+     * the callers keep trying to expose.
+     *
+     * @generated from protobuf enum value: REMOVED_TOOL = 35;
+     */
+    REMOVED_TOOL = 35,
+    /**
+     * SEMANTIC_CACHE_RESULT is the outcome of the cache lookup (e.g. EXACT_HIT,
+     * MISS, ERROR)
+     *
+     * @generated from protobuf enum value: SEMANTIC_CACHE_RESULT = 36;
+     */
+    SEMANTIC_CACHE_RESULT = 36,
+    /**
+     * SEMANTIC_CACHE_PLUGIN is the name of the SemanticCache Plugin that was
+     * applied
+     *
+     * @generated from protobuf enum value: SEMANTIC_CACHE_PLUGIN = 37;
+     */
+    SEMANTIC_CACHE_PLUGIN = 37,
+    /**
+     * SEMANTIC_ROUTER_RESULT is the outcome of the routing decision (e.g. MATCH,
+     * NO_MATCH, ERROR)
+     *
+     * @generated from protobuf enum value: SEMANTIC_ROUTER_RESULT = 38;
+     */
+    SEMANTIC_ROUTER_RESULT = 38,
+    /**
+     * SEMANTIC_ROUTER_ROUTE is the name of the Route that matched
+     *
+     * @generated from protobuf enum value: SEMANTIC_ROUTER_ROUTE = 39;
+     */
+    SEMANTIC_ROUTER_ROUTE = 39,
+    /**
+     * SEMANTIC_ROUTER_PLUGIN is the name of the SemanticRouter Plugin that
+     * reached the decision
+     *
+     * @generated from protobuf enum value: SEMANTIC_ROUTER_PLUGIN = 40;
+     */
+    SEMANTIC_ROUTER_PLUGIN = 40,
+    /**
+     * SEMANTIC_ROUTER_MODEL is the model that the SemanticRouter selected, which
+     * is not necessarily the effective model since a Model Plugin overwrites it
+     *
+     * @generated from protobuf enum value: SEMANTIC_ROUTER_MODEL = 41;
+     */
+    SEMANTIC_ROUTER_MODEL = 41,
+    /**
+     * TOKEN_RATE_LIMIT_RESULT is the outcome of the token quota enforcement
+     * (i.e. ALLOWED or DENIED)
+     *
+     * @generated from protobuf enum value: TOKEN_RATE_LIMIT_RESULT = 42;
+     */
+    TOKEN_RATE_LIMIT_RESULT = 42,
+    /**
+     * TOKEN_RATE_LIMIT_PLUGIN is the name of the TokenRateLimit Plugin that
+     * denied the request
+     *
+     * @generated from protobuf enum value: TOKEN_RATE_LIMIT_PLUGIN = 43;
+     */
+    TOKEN_RATE_LIMIT_PLUGIN = 43,
+    /**
+     * TOKEN_RATE_LIMIT_SCOPE is the token count that the denying TokenRateLimit
+     * Plugin meters (i.e. TOTAL, INPUT or OUTPUT)
+     *
+     * @generated from protobuf enum value: TOKEN_RATE_LIMIT_SCOPE = 44;
+     */
+    TOKEN_RATE_LIMIT_SCOPE = 44,
+    /**
+     * HAS_IMAGE_INPUT is whether the request carried image input
+     *
+     * @generated from protobuf enum value: HAS_IMAGE_INPUT = 45;
+     */
+    HAS_IMAGE_INPUT = 45,
+    /**
+     * HAS_AUDIO_INPUT is whether the request carried audio input
+     *
+     * @generated from protobuf enum value: HAS_AUDIO_INPUT = 46;
+     */
+    HAS_AUDIO_INPUT = 46
 }
 /**
- * Metric names a single measurement of the Stats bundle. It is what a method
- * that ranks or orders reads, while the answer of every method always carries
- * the entire Stats bundle rather than the single ranked Metric.
+ * Metric names a measurement of the Stats bundle that a method can rank or
+ * order by. It is deliberately the subset of Stats that is meaningful as an
+ * ordering rather than every field of it, and the answer of every method
+ * always carries the entire Stats bundle rather than the single ranked Metric.
  *
  * @generated from protobuf enum octelium.api.main.visibility.llm.v1.Metric
  */
@@ -2262,19 +2739,20 @@ export enum Metric {
      */
     TOOL_CALL_REQUESTS = 8,
     /**
-     * INPUT_TOKENS is the sum of the input tokens
+     * INPUT_TOKENS is the sum of the provider-reported input tokens
      *
      * @generated from protobuf enum value: INPUT_TOKENS = 9;
      */
     INPUT_TOKENS = 9,
     /**
-     * OUTPUT_TOKENS is the sum of the generated tokens
+     * OUTPUT_TOKENS is the sum of the provider-reported generated tokens
      *
      * @generated from protobuf enum value: OUTPUT_TOKENS = 10;
      */
     OUTPUT_TOKENS = 10,
     /**
-     * TOTAL_TOKENS is the sum of the total token counts
+     * TOTAL_TOKENS is the sum of the provider-reported total token counts, which
+     * is the measurement that an inference budget is read against
      *
      * @generated from protobuf enum value: TOTAL_TOKENS = 11;
      */
@@ -2287,18 +2765,18 @@ export enum Metric {
      */
     CACHE_READ_INPUT_TOKENS = 12,
     /**
-     * CACHE_CREATION_INPUT_TOKENS is the sum of the input tokens that were
-     * written to the providers' prompt caches
+     * CACHE_WRITE_INPUT_TOKENS is the sum of the input tokens that were written
+     * to the providers' prompt caches
      *
-     * @generated from protobuf enum value: CACHE_CREATION_INPUT_TOKENS = 13;
+     * @generated from protobuf enum value: CACHE_WRITE_INPUT_TOKENS = 13;
      */
-    CACHE_CREATION_INPUT_TOKENS = 13,
+    CACHE_WRITE_INPUT_TOKENS = 13,
     /**
-     * REASONING_TOKENS is the sum of the reasoning tokens
+     * REASONING_OUTPUT_TOKENS is the sum of the reasoning tokens
      *
-     * @generated from protobuf enum value: REASONING_TOKENS = 14;
+     * @generated from protobuf enum value: REASONING_OUTPUT_TOKENS = 14;
      */
-    REASONING_TOKENS = 14,
+    REASONING_OUTPUT_TOKENS = 14,
     /**
      * ESTIMATED_INPUT_TOKENS is the sum of Octelium's own pre-flight input token
      * estimates
@@ -2332,19 +2810,66 @@ export enum Metric {
      */
     TIME_TO_FIRST_TOKEN_P95 = 19,
     /**
-     * TOOL_CALLS is the sum of the numbers of the tools that the models asked to
-     * invoke
+     * TOOL_CALLS is the sum of the numbers of the tool calls that the responses
+     * carried
      *
      * @generated from protobuf enum value: TOOL_CALLS = 20;
      */
     TOOL_CALLS = 20,
     /**
-     * STREAM_EVENTS is the sum of the numbers of the `text/event-stream` events
-     * of the responses
+     * STREAM_EVENTS is the sum of the numbers of the events of the streamed
+     * responses
      *
      * @generated from protobuf enum value: STREAM_EVENTS = 21;
      */
-    STREAM_EVENTS = 21
+    STREAM_EVENTS = 21,
+    /**
+     * LATENCY_MAX is the largest end-to-end duration of the entries
+     *
+     * @generated from protobuf enum value: LATENCY_MAX = 22;
+     */
+    LATENCY_MAX = 22,
+    /**
+     * UPSTREAM_INVOKED_REQUESTS is the number of the entries whose inference
+     * upstream actually responded
+     *
+     * @generated from protobuf enum value: UPSTREAM_INVOKED_REQUESTS = 23;
+     */
+    UPSTREAM_INVOKED_REQUESTS = 23,
+    /**
+     * DISCARDED_TOKENS is the sum of the total token counts of the entries whose
+     * upstream response was never served to the downstream, which is what shows
+     * the inference that the Cluster paid for and threw away
+     *
+     * @generated from protobuf enum value: DISCARDED_TOKENS = 24;
+     */
+    DISCARDED_TOKENS = 24,
+    /**
+     * TOKEN_RATE_LIMIT_DENIED_REQUESTS is the number of the entries that a
+     * TokenRateLimit Plugin throttled
+     *
+     * @generated from protobuf enum value: TOKEN_RATE_LIMIT_DENIED_REQUESTS = 25;
+     */
+    TOKEN_RATE_LIMIT_DENIED_REQUESTS = 25,
+    /**
+     * TOOLS_OFFERED is the sum of the numbers of the tools that the upstreams
+     * were offered
+     *
+     * @generated from protobuf enum value: TOOLS_OFFERED = 26;
+     */
+    TOOLS_OFFERED = 26,
+    /**
+     * REQUEST_BODY_BYTES is the sum of the sizes of the request bodies
+     *
+     * @generated from protobuf enum value: REQUEST_BODY_BYTES = 27;
+     */
+    REQUEST_BODY_BYTES = 27,
+    /**
+     * RESPONSE_BODY_BYTES is the sum of the sizes of the response bodies
+     *
+     * @generated from protobuf enum value: RESPONSE_BODY_BYTES = 28;
+     */
+    RESPONSE_BODY_BYTES = 28
 }
 // @generated message type with reflection information, may provide speed optimized methods
 class Filter$Type extends MessageType<Filter> {
@@ -2363,33 +2888,51 @@ class Filter$Type extends MessageType<Filter> {
             { no: 11, name: "entryScope", kind: "enum", T: () => ["octelium.api.main.visibility.llm.v1.EntryScope", EntryScope] },
             { no: 12, name: "protocols", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.core.v1.Service.Spec.Config.LLM.Protocol", Service_Spec_Config_LLM_Protocol] },
             { no: 13, name: "operations", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.core.v1.Service.Spec.Config.LLM.Operation", Service_Spec_Config_LLM_Operation] },
-            { no: 14, name: "models", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
-            { no: 15, name: "modelField", kind: "enum", T: () => ["octelium.api.main.visibility.llm.v1.ModelField", ModelField] },
-            { no: 16, name: "modelSources", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Model.Source", AccessLog_Entry_Info_LLM_Model_Source] },
-            { no: 17, name: "modelPlugins", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
-            { no: 18, name: "sources", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Source", AccessLog_Entry_Info_LLM_Source] },
-            { no: 19, name: "usageSources", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Usage.Source", AccessLog_Entry_Info_LLM_Usage_Source] },
-            { no: 20, name: "estimateQualities", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.core.v1.RequestContext.Request.LLM.EstimateQuality", RequestContext_Request_LLM_EstimateQuality] },
-            { no: 21, name: "guardrailResults", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Guardrail.Result", AccessLog_Entry_Info_LLM_Guardrail_Result] },
-            { no: 22, name: "guardrailLegs", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Guardrail.Leg", Service_Spec_Config_LLM_Plugin_Guardrail_Leg] },
-            { no: 23, name: "guardrailPlugins", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
-            { no: 24, name: "tools", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
-            { no: 25, name: "calledTools", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
-            { no: 26, name: "finishReasons", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
-            { no: 27, name: "httpStatusCodes", kind: "scalar", repeat: 1 /*RepeatType.PACKED*/, T: 13 /*ScalarType.UINT32*/ },
-            { no: 28, name: "httpStatusClasses", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.visibility.llm.v1.HTTPStatusClass", HTTPStatusClass] },
-            { no: 29, name: "stream", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ },
-            { no: 30, name: "hasTools", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ },
-            { no: 31, name: "hasToolCalls", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ },
-            { no: 32, name: "hasReasoning", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ },
-            { no: 33, name: "isPublic", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ },
-            { no: 34, name: "isAnonymous", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ },
-            { no: 35, name: "minTotalTokens", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 36, name: "maxTotalTokens", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 37, name: "minLatencyMs", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 38, name: "userAgents", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
-            { no: 39, name: "httpPaths", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
-            { no: 40, name: "maxLatencyMs", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
+            { no: 14, name: "routes", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.core.v1.RequestContext.Request.LLM.Route", RequestContext_Request_LLM_Route] },
+            { no: 15, name: "models", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 16, name: "modelField", kind: "enum", T: () => ["octelium.api.main.visibility.llm.v1.ModelField", ModelField] },
+            { no: 17, name: "modelSources", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Model.Source", AccessLog_Entry_Info_LLM_Model_Source] },
+            { no: 18, name: "modelPlugins", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 19, name: "sources", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Source", AccessLog_Entry_Info_LLM_Source] },
+            { no: 20, name: "usageStates", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Usage.State", AccessLog_Entry_Info_LLM_Usage_State] },
+            { no: 21, name: "estimateQualities", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.core.v1.RequestContext.Request.LLM.EstimateQuality", RequestContext_Request_LLM_EstimateQuality] },
+            { no: 22, name: "guardrailResults", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Guardrail.Result", AccessLog_Entry_Info_LLM_Guardrail_Result] },
+            { no: 23, name: "guardrailLegs", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Guardrail.Leg", Service_Spec_Config_LLM_Plugin_Guardrail_Leg] },
+            { no: 24, name: "guardrailPlugins", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 25, name: "tokenRateLimitResults", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.TokenRateLimit.Result", AccessLog_Entry_Info_LLM_TokenRateLimit_Result] },
+            { no: 26, name: "tokenRateLimitPlugins", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 27, name: "tokenRateLimitScopes", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.TokenRateLimit.Scope", Service_Spec_Config_LLM_Plugin_TokenRateLimit_Scope] },
+            { no: 28, name: "semanticCacheResults", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.SemanticCache.Result", AccessLog_Entry_Info_LLM_SemanticCache_Result] },
+            { no: 29, name: "semanticCachePlugins", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 30, name: "semanticRouterResults", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.SemanticRouter.Result", AccessLog_Entry_Info_LLM_SemanticRouter_Result] },
+            { no: 31, name: "semanticRouterRoutes", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 32, name: "semanticRouterPlugins", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 33, name: "tools", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 34, name: "calledTools", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 35, name: "removedTools", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 36, name: "finishReasons", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.FinishReason", AccessLog_Entry_Info_LLM_FinishReason] },
+            { no: 37, name: "rawFinishReasons", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 38, name: "httpStatusCodes", kind: "scalar", repeat: 1 /*RepeatType.PACKED*/, T: 13 /*ScalarType.UINT32*/ },
+            { no: 39, name: "httpStatusClasses", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.visibility.llm.v1.HTTPStatusClass", HTTPStatusClass] },
+            { no: 40, name: "httpPaths", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 41, name: "userAgents", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ },
+            { no: 42, name: "stream", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ },
+            { no: 43, name: "isUpstreamInvoked", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ },
+            { no: 44, name: "hasUsage", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ },
+            { no: 45, name: "hasTools", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ },
+            { no: 46, name: "hasToolCalls", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ },
+            { no: 47, name: "hasToolsRemoved", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ },
+            { no: 48, name: "hasManagedReasoning", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ },
+            { no: 49, name: "isReasoningDisabled", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ },
+            { no: 50, name: "hasImageInput", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ },
+            { no: 51, name: "hasAudioInput", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ },
+            { no: 52, name: "isCacheStored", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ },
+            { no: 53, name: "isPublic", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ },
+            { no: 54, name: "isAnonymous", kind: "scalar", opt: true, T: 8 /*ScalarType.BOOL*/ },
+            { no: 55, name: "minTotalTokens", kind: "scalar", opt: true, T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 56, name: "maxTotalTokens", kind: "scalar", opt: true, T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 57, name: "minLatencyMs", kind: "scalar", opt: true, T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 58, name: "maxLatencyMs", kind: "scalar", opt: true, T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
         ]);
     }
     create(value?: PartialMessage<Filter>): Filter {
@@ -2398,27 +2941,34 @@ class Filter$Type extends MessageType<Filter> {
         message.entryScope = 0;
         message.protocols = [];
         message.operations = [];
+        message.routes = [];
         message.models = [];
         message.modelField = 0;
         message.modelSources = [];
         message.modelPlugins = [];
         message.sources = [];
-        message.usageSources = [];
+        message.usageStates = [];
         message.estimateQualities = [];
         message.guardrailResults = [];
         message.guardrailLegs = [];
         message.guardrailPlugins = [];
+        message.tokenRateLimitResults = [];
+        message.tokenRateLimitPlugins = [];
+        message.tokenRateLimitScopes = [];
+        message.semanticCacheResults = [];
+        message.semanticCachePlugins = [];
+        message.semanticRouterResults = [];
+        message.semanticRouterRoutes = [];
+        message.semanticRouterPlugins = [];
         message.tools = [];
         message.calledTools = [];
+        message.removedTools = [];
         message.finishReasons = [];
+        message.rawFinishReasons = [];
         message.httpStatusCodes = [];
         message.httpStatusClasses = [];
-        message.minTotalTokens = 0;
-        message.maxTotalTokens = 0;
-        message.minLatencyMs = 0;
-        message.userAgents = [];
         message.httpPaths = [];
-        message.maxLatencyMs = 0;
+        message.userAgents = [];
         if (value !== undefined)
             reflectionMergePartial<Filter>(this, message, value);
         return message;
@@ -2475,117 +3025,195 @@ class Filter$Type extends MessageType<Filter> {
                     else
                         message.operations.push(reader.int32());
                     break;
-                case /* repeated string models */ 14:
+                case /* repeated octelium.api.main.core.v1.RequestContext.Request.LLM.Route routes */ 14:
+                    if (wireType === WireType.LengthDelimited)
+                        for (let e = reader.int32() + reader.pos; reader.pos < e;)
+                            message.routes.push(reader.int32());
+                    else
+                        message.routes.push(reader.int32());
+                    break;
+                case /* repeated string models */ 15:
                     message.models.push(reader.string());
                     break;
-                case /* octelium.api.main.visibility.llm.v1.ModelField modelField */ 15:
+                case /* octelium.api.main.visibility.llm.v1.ModelField modelField */ 16:
                     message.modelField = reader.int32();
                     break;
-                case /* repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Model.Source modelSources */ 16:
+                case /* repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Model.Source modelSources */ 17:
                     if (wireType === WireType.LengthDelimited)
                         for (let e = reader.int32() + reader.pos; reader.pos < e;)
                             message.modelSources.push(reader.int32());
                     else
                         message.modelSources.push(reader.int32());
                     break;
-                case /* repeated string modelPlugins */ 17:
+                case /* repeated string modelPlugins */ 18:
                     message.modelPlugins.push(reader.string());
                     break;
-                case /* repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Source sources */ 18:
+                case /* repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Source sources */ 19:
                     if (wireType === WireType.LengthDelimited)
                         for (let e = reader.int32() + reader.pos; reader.pos < e;)
                             message.sources.push(reader.int32());
                     else
                         message.sources.push(reader.int32());
                     break;
-                case /* repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Usage.Source usageSources */ 19:
+                case /* repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Usage.State usageStates */ 20:
                     if (wireType === WireType.LengthDelimited)
                         for (let e = reader.int32() + reader.pos; reader.pos < e;)
-                            message.usageSources.push(reader.int32());
+                            message.usageStates.push(reader.int32());
                     else
-                        message.usageSources.push(reader.int32());
+                        message.usageStates.push(reader.int32());
                     break;
-                case /* repeated octelium.api.main.core.v1.RequestContext.Request.LLM.EstimateQuality estimateQualities */ 20:
+                case /* repeated octelium.api.main.core.v1.RequestContext.Request.LLM.EstimateQuality estimateQualities */ 21:
                     if (wireType === WireType.LengthDelimited)
                         for (let e = reader.int32() + reader.pos; reader.pos < e;)
                             message.estimateQualities.push(reader.int32());
                     else
                         message.estimateQualities.push(reader.int32());
                     break;
-                case /* repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Guardrail.Result guardrailResults */ 21:
+                case /* repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Guardrail.Result guardrailResults */ 22:
                     if (wireType === WireType.LengthDelimited)
                         for (let e = reader.int32() + reader.pos; reader.pos < e;)
                             message.guardrailResults.push(reader.int32());
                     else
                         message.guardrailResults.push(reader.int32());
                     break;
-                case /* repeated octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Guardrail.Leg guardrailLegs */ 22:
+                case /* repeated octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Guardrail.Leg guardrailLegs */ 23:
                     if (wireType === WireType.LengthDelimited)
                         for (let e = reader.int32() + reader.pos; reader.pos < e;)
                             message.guardrailLegs.push(reader.int32());
                     else
                         message.guardrailLegs.push(reader.int32());
                     break;
-                case /* repeated string guardrailPlugins */ 23:
+                case /* repeated string guardrailPlugins */ 24:
                     message.guardrailPlugins.push(reader.string());
                     break;
-                case /* repeated string tools */ 24:
+                case /* repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.TokenRateLimit.Result tokenRateLimitResults */ 25:
+                    if (wireType === WireType.LengthDelimited)
+                        for (let e = reader.int32() + reader.pos; reader.pos < e;)
+                            message.tokenRateLimitResults.push(reader.int32());
+                    else
+                        message.tokenRateLimitResults.push(reader.int32());
+                    break;
+                case /* repeated string tokenRateLimitPlugins */ 26:
+                    message.tokenRateLimitPlugins.push(reader.string());
+                    break;
+                case /* repeated octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.TokenRateLimit.Scope tokenRateLimitScopes */ 27:
+                    if (wireType === WireType.LengthDelimited)
+                        for (let e = reader.int32() + reader.pos; reader.pos < e;)
+                            message.tokenRateLimitScopes.push(reader.int32());
+                    else
+                        message.tokenRateLimitScopes.push(reader.int32());
+                    break;
+                case /* repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.SemanticCache.Result semanticCacheResults */ 28:
+                    if (wireType === WireType.LengthDelimited)
+                        for (let e = reader.int32() + reader.pos; reader.pos < e;)
+                            message.semanticCacheResults.push(reader.int32());
+                    else
+                        message.semanticCacheResults.push(reader.int32());
+                    break;
+                case /* repeated string semanticCachePlugins */ 29:
+                    message.semanticCachePlugins.push(reader.string());
+                    break;
+                case /* repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.SemanticRouter.Result semanticRouterResults */ 30:
+                    if (wireType === WireType.LengthDelimited)
+                        for (let e = reader.int32() + reader.pos; reader.pos < e;)
+                            message.semanticRouterResults.push(reader.int32());
+                    else
+                        message.semanticRouterResults.push(reader.int32());
+                    break;
+                case /* repeated string semanticRouterRoutes */ 31:
+                    message.semanticRouterRoutes.push(reader.string());
+                    break;
+                case /* repeated string semanticRouterPlugins */ 32:
+                    message.semanticRouterPlugins.push(reader.string());
+                    break;
+                case /* repeated string tools */ 33:
                     message.tools.push(reader.string());
                     break;
-                case /* repeated string calledTools */ 25:
+                case /* repeated string calledTools */ 34:
                     message.calledTools.push(reader.string());
                     break;
-                case /* repeated string finishReasons */ 26:
-                    message.finishReasons.push(reader.string());
+                case /* repeated string removedTools */ 35:
+                    message.removedTools.push(reader.string());
                     break;
-                case /* repeated uint32 httpStatusCodes */ 27:
+                case /* repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.FinishReason finishReasons */ 36:
+                    if (wireType === WireType.LengthDelimited)
+                        for (let e = reader.int32() + reader.pos; reader.pos < e;)
+                            message.finishReasons.push(reader.int32());
+                    else
+                        message.finishReasons.push(reader.int32());
+                    break;
+                case /* repeated string rawFinishReasons */ 37:
+                    message.rawFinishReasons.push(reader.string());
+                    break;
+                case /* repeated uint32 httpStatusCodes */ 38:
                     if (wireType === WireType.LengthDelimited)
                         for (let e = reader.int32() + reader.pos; reader.pos < e;)
                             message.httpStatusCodes.push(reader.uint32());
                     else
                         message.httpStatusCodes.push(reader.uint32());
                     break;
-                case /* repeated octelium.api.main.visibility.llm.v1.HTTPStatusClass httpStatusClasses */ 28:
+                case /* repeated octelium.api.main.visibility.llm.v1.HTTPStatusClass httpStatusClasses */ 39:
                     if (wireType === WireType.LengthDelimited)
                         for (let e = reader.int32() + reader.pos; reader.pos < e;)
                             message.httpStatusClasses.push(reader.int32());
                     else
                         message.httpStatusClasses.push(reader.int32());
                     break;
-                case /* optional bool stream */ 29:
-                    message.stream = reader.bool();
-                    break;
-                case /* optional bool hasTools */ 30:
-                    message.hasTools = reader.bool();
-                    break;
-                case /* optional bool hasToolCalls */ 31:
-                    message.hasToolCalls = reader.bool();
-                    break;
-                case /* optional bool hasReasoning */ 32:
-                    message.hasReasoning = reader.bool();
-                    break;
-                case /* optional bool isPublic */ 33:
-                    message.isPublic = reader.bool();
-                    break;
-                case /* optional bool isAnonymous */ 34:
-                    message.isAnonymous = reader.bool();
-                    break;
-                case /* uint64 minTotalTokens */ 35:
-                    message.minTotalTokens = reader.uint64().toNumber();
-                    break;
-                case /* uint64 maxTotalTokens */ 36:
-                    message.maxTotalTokens = reader.uint64().toNumber();
-                    break;
-                case /* uint64 minLatencyMs */ 37:
-                    message.minLatencyMs = reader.uint64().toNumber();
-                    break;
-                case /* repeated string userAgents */ 38:
-                    message.userAgents.push(reader.string());
-                    break;
-                case /* repeated string httpPaths */ 39:
+                case /* repeated string httpPaths */ 40:
                     message.httpPaths.push(reader.string());
                     break;
-                case /* uint64 maxLatencyMs */ 40:
+                case /* repeated string userAgents */ 41:
+                    message.userAgents.push(reader.string());
+                    break;
+                case /* optional bool stream */ 42:
+                    message.stream = reader.bool();
+                    break;
+                case /* optional bool isUpstreamInvoked */ 43:
+                    message.isUpstreamInvoked = reader.bool();
+                    break;
+                case /* optional bool hasUsage */ 44:
+                    message.hasUsage = reader.bool();
+                    break;
+                case /* optional bool hasTools */ 45:
+                    message.hasTools = reader.bool();
+                    break;
+                case /* optional bool hasToolCalls */ 46:
+                    message.hasToolCalls = reader.bool();
+                    break;
+                case /* optional bool hasToolsRemoved */ 47:
+                    message.hasToolsRemoved = reader.bool();
+                    break;
+                case /* optional bool hasManagedReasoning */ 48:
+                    message.hasManagedReasoning = reader.bool();
+                    break;
+                case /* optional bool isReasoningDisabled */ 49:
+                    message.isReasoningDisabled = reader.bool();
+                    break;
+                case /* optional bool hasImageInput */ 50:
+                    message.hasImageInput = reader.bool();
+                    break;
+                case /* optional bool hasAudioInput */ 51:
+                    message.hasAudioInput = reader.bool();
+                    break;
+                case /* optional bool isCacheStored */ 52:
+                    message.isCacheStored = reader.bool();
+                    break;
+                case /* optional bool isPublic */ 53:
+                    message.isPublic = reader.bool();
+                    break;
+                case /* optional bool isAnonymous */ 54:
+                    message.isAnonymous = reader.bool();
+                    break;
+                case /* optional uint64 minTotalTokens */ 55:
+                    message.minTotalTokens = reader.uint64().toNumber();
+                    break;
+                case /* optional uint64 maxTotalTokens */ 56:
+                    message.maxTotalTokens = reader.uint64().toNumber();
+                    break;
+                case /* optional uint64 minLatencyMs */ 57:
+                    message.minLatencyMs = reader.uint64().toNumber();
+                    break;
+                case /* optional uint64 maxLatencyMs */ 58:
                     message.maxLatencyMs = reader.uint64().toNumber();
                     break;
                 default:
@@ -2647,119 +3275,197 @@ class Filter$Type extends MessageType<Filter> {
                 writer.int32(message.operations[i]);
             writer.join();
         }
-        /* repeated string models = 14; */
+        /* repeated octelium.api.main.core.v1.RequestContext.Request.LLM.Route routes = 14; */
+        if (message.routes.length) {
+            writer.tag(14, WireType.LengthDelimited).fork();
+            for (let i = 0; i < message.routes.length; i++)
+                writer.int32(message.routes[i]);
+            writer.join();
+        }
+        /* repeated string models = 15; */
         for (let i = 0; i < message.models.length; i++)
-            writer.tag(14, WireType.LengthDelimited).string(message.models[i]);
-        /* octelium.api.main.visibility.llm.v1.ModelField modelField = 15; */
+            writer.tag(15, WireType.LengthDelimited).string(message.models[i]);
+        /* octelium.api.main.visibility.llm.v1.ModelField modelField = 16; */
         if (message.modelField !== 0)
-            writer.tag(15, WireType.Varint).int32(message.modelField);
-        /* repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Model.Source modelSources = 16; */
+            writer.tag(16, WireType.Varint).int32(message.modelField);
+        /* repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Model.Source modelSources = 17; */
         if (message.modelSources.length) {
-            writer.tag(16, WireType.LengthDelimited).fork();
+            writer.tag(17, WireType.LengthDelimited).fork();
             for (let i = 0; i < message.modelSources.length; i++)
                 writer.int32(message.modelSources[i]);
             writer.join();
         }
-        /* repeated string modelPlugins = 17; */
+        /* repeated string modelPlugins = 18; */
         for (let i = 0; i < message.modelPlugins.length; i++)
-            writer.tag(17, WireType.LengthDelimited).string(message.modelPlugins[i]);
-        /* repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Source sources = 18; */
+            writer.tag(18, WireType.LengthDelimited).string(message.modelPlugins[i]);
+        /* repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Source sources = 19; */
         if (message.sources.length) {
-            writer.tag(18, WireType.LengthDelimited).fork();
+            writer.tag(19, WireType.LengthDelimited).fork();
             for (let i = 0; i < message.sources.length; i++)
                 writer.int32(message.sources[i]);
             writer.join();
         }
-        /* repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Usage.Source usageSources = 19; */
-        if (message.usageSources.length) {
-            writer.tag(19, WireType.LengthDelimited).fork();
-            for (let i = 0; i < message.usageSources.length; i++)
-                writer.int32(message.usageSources[i]);
+        /* repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Usage.State usageStates = 20; */
+        if (message.usageStates.length) {
+            writer.tag(20, WireType.LengthDelimited).fork();
+            for (let i = 0; i < message.usageStates.length; i++)
+                writer.int32(message.usageStates[i]);
             writer.join();
         }
-        /* repeated octelium.api.main.core.v1.RequestContext.Request.LLM.EstimateQuality estimateQualities = 20; */
+        /* repeated octelium.api.main.core.v1.RequestContext.Request.LLM.EstimateQuality estimateQualities = 21; */
         if (message.estimateQualities.length) {
-            writer.tag(20, WireType.LengthDelimited).fork();
+            writer.tag(21, WireType.LengthDelimited).fork();
             for (let i = 0; i < message.estimateQualities.length; i++)
                 writer.int32(message.estimateQualities[i]);
             writer.join();
         }
-        /* repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Guardrail.Result guardrailResults = 21; */
+        /* repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Guardrail.Result guardrailResults = 22; */
         if (message.guardrailResults.length) {
-            writer.tag(21, WireType.LengthDelimited).fork();
+            writer.tag(22, WireType.LengthDelimited).fork();
             for (let i = 0; i < message.guardrailResults.length; i++)
                 writer.int32(message.guardrailResults[i]);
             writer.join();
         }
-        /* repeated octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Guardrail.Leg guardrailLegs = 22; */
+        /* repeated octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Guardrail.Leg guardrailLegs = 23; */
         if (message.guardrailLegs.length) {
-            writer.tag(22, WireType.LengthDelimited).fork();
+            writer.tag(23, WireType.LengthDelimited).fork();
             for (let i = 0; i < message.guardrailLegs.length; i++)
                 writer.int32(message.guardrailLegs[i]);
             writer.join();
         }
-        /* repeated string guardrailPlugins = 23; */
+        /* repeated string guardrailPlugins = 24; */
         for (let i = 0; i < message.guardrailPlugins.length; i++)
-            writer.tag(23, WireType.LengthDelimited).string(message.guardrailPlugins[i]);
-        /* repeated string tools = 24; */
-        for (let i = 0; i < message.tools.length; i++)
-            writer.tag(24, WireType.LengthDelimited).string(message.tools[i]);
-        /* repeated string calledTools = 25; */
-        for (let i = 0; i < message.calledTools.length; i++)
-            writer.tag(25, WireType.LengthDelimited).string(message.calledTools[i]);
-        /* repeated string finishReasons = 26; */
-        for (let i = 0; i < message.finishReasons.length; i++)
-            writer.tag(26, WireType.LengthDelimited).string(message.finishReasons[i]);
-        /* repeated uint32 httpStatusCodes = 27; */
-        if (message.httpStatusCodes.length) {
+            writer.tag(24, WireType.LengthDelimited).string(message.guardrailPlugins[i]);
+        /* repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.TokenRateLimit.Result tokenRateLimitResults = 25; */
+        if (message.tokenRateLimitResults.length) {
+            writer.tag(25, WireType.LengthDelimited).fork();
+            for (let i = 0; i < message.tokenRateLimitResults.length; i++)
+                writer.int32(message.tokenRateLimitResults[i]);
+            writer.join();
+        }
+        /* repeated string tokenRateLimitPlugins = 26; */
+        for (let i = 0; i < message.tokenRateLimitPlugins.length; i++)
+            writer.tag(26, WireType.LengthDelimited).string(message.tokenRateLimitPlugins[i]);
+        /* repeated octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.TokenRateLimit.Scope tokenRateLimitScopes = 27; */
+        if (message.tokenRateLimitScopes.length) {
             writer.tag(27, WireType.LengthDelimited).fork();
+            for (let i = 0; i < message.tokenRateLimitScopes.length; i++)
+                writer.int32(message.tokenRateLimitScopes[i]);
+            writer.join();
+        }
+        /* repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.SemanticCache.Result semanticCacheResults = 28; */
+        if (message.semanticCacheResults.length) {
+            writer.tag(28, WireType.LengthDelimited).fork();
+            for (let i = 0; i < message.semanticCacheResults.length; i++)
+                writer.int32(message.semanticCacheResults[i]);
+            writer.join();
+        }
+        /* repeated string semanticCachePlugins = 29; */
+        for (let i = 0; i < message.semanticCachePlugins.length; i++)
+            writer.tag(29, WireType.LengthDelimited).string(message.semanticCachePlugins[i]);
+        /* repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.SemanticRouter.Result semanticRouterResults = 30; */
+        if (message.semanticRouterResults.length) {
+            writer.tag(30, WireType.LengthDelimited).fork();
+            for (let i = 0; i < message.semanticRouterResults.length; i++)
+                writer.int32(message.semanticRouterResults[i]);
+            writer.join();
+        }
+        /* repeated string semanticRouterRoutes = 31; */
+        for (let i = 0; i < message.semanticRouterRoutes.length; i++)
+            writer.tag(31, WireType.LengthDelimited).string(message.semanticRouterRoutes[i]);
+        /* repeated string semanticRouterPlugins = 32; */
+        for (let i = 0; i < message.semanticRouterPlugins.length; i++)
+            writer.tag(32, WireType.LengthDelimited).string(message.semanticRouterPlugins[i]);
+        /* repeated string tools = 33; */
+        for (let i = 0; i < message.tools.length; i++)
+            writer.tag(33, WireType.LengthDelimited).string(message.tools[i]);
+        /* repeated string calledTools = 34; */
+        for (let i = 0; i < message.calledTools.length; i++)
+            writer.tag(34, WireType.LengthDelimited).string(message.calledTools[i]);
+        /* repeated string removedTools = 35; */
+        for (let i = 0; i < message.removedTools.length; i++)
+            writer.tag(35, WireType.LengthDelimited).string(message.removedTools[i]);
+        /* repeated octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.FinishReason finishReasons = 36; */
+        if (message.finishReasons.length) {
+            writer.tag(36, WireType.LengthDelimited).fork();
+            for (let i = 0; i < message.finishReasons.length; i++)
+                writer.int32(message.finishReasons[i]);
+            writer.join();
+        }
+        /* repeated string rawFinishReasons = 37; */
+        for (let i = 0; i < message.rawFinishReasons.length; i++)
+            writer.tag(37, WireType.LengthDelimited).string(message.rawFinishReasons[i]);
+        /* repeated uint32 httpStatusCodes = 38; */
+        if (message.httpStatusCodes.length) {
+            writer.tag(38, WireType.LengthDelimited).fork();
             for (let i = 0; i < message.httpStatusCodes.length; i++)
                 writer.uint32(message.httpStatusCodes[i]);
             writer.join();
         }
-        /* repeated octelium.api.main.visibility.llm.v1.HTTPStatusClass httpStatusClasses = 28; */
+        /* repeated octelium.api.main.visibility.llm.v1.HTTPStatusClass httpStatusClasses = 39; */
         if (message.httpStatusClasses.length) {
-            writer.tag(28, WireType.LengthDelimited).fork();
+            writer.tag(39, WireType.LengthDelimited).fork();
             for (let i = 0; i < message.httpStatusClasses.length; i++)
                 writer.int32(message.httpStatusClasses[i]);
             writer.join();
         }
-        /* optional bool stream = 29; */
-        if (message.stream !== undefined)
-            writer.tag(29, WireType.Varint).bool(message.stream);
-        /* optional bool hasTools = 30; */
-        if (message.hasTools !== undefined)
-            writer.tag(30, WireType.Varint).bool(message.hasTools);
-        /* optional bool hasToolCalls = 31; */
-        if (message.hasToolCalls !== undefined)
-            writer.tag(31, WireType.Varint).bool(message.hasToolCalls);
-        /* optional bool hasReasoning = 32; */
-        if (message.hasReasoning !== undefined)
-            writer.tag(32, WireType.Varint).bool(message.hasReasoning);
-        /* optional bool isPublic = 33; */
-        if (message.isPublic !== undefined)
-            writer.tag(33, WireType.Varint).bool(message.isPublic);
-        /* optional bool isAnonymous = 34; */
-        if (message.isAnonymous !== undefined)
-            writer.tag(34, WireType.Varint).bool(message.isAnonymous);
-        /* uint64 minTotalTokens = 35; */
-        if (message.minTotalTokens !== 0)
-            writer.tag(35, WireType.Varint).uint64(message.minTotalTokens);
-        /* uint64 maxTotalTokens = 36; */
-        if (message.maxTotalTokens !== 0)
-            writer.tag(36, WireType.Varint).uint64(message.maxTotalTokens);
-        /* uint64 minLatencyMs = 37; */
-        if (message.minLatencyMs !== 0)
-            writer.tag(37, WireType.Varint).uint64(message.minLatencyMs);
-        /* repeated string userAgents = 38; */
-        for (let i = 0; i < message.userAgents.length; i++)
-            writer.tag(38, WireType.LengthDelimited).string(message.userAgents[i]);
-        /* repeated string httpPaths = 39; */
+        /* repeated string httpPaths = 40; */
         for (let i = 0; i < message.httpPaths.length; i++)
-            writer.tag(39, WireType.LengthDelimited).string(message.httpPaths[i]);
-        /* uint64 maxLatencyMs = 40; */
-        if (message.maxLatencyMs !== 0)
-            writer.tag(40, WireType.Varint).uint64(message.maxLatencyMs);
+            writer.tag(40, WireType.LengthDelimited).string(message.httpPaths[i]);
+        /* repeated string userAgents = 41; */
+        for (let i = 0; i < message.userAgents.length; i++)
+            writer.tag(41, WireType.LengthDelimited).string(message.userAgents[i]);
+        /* optional bool stream = 42; */
+        if (message.stream !== undefined)
+            writer.tag(42, WireType.Varint).bool(message.stream);
+        /* optional bool isUpstreamInvoked = 43; */
+        if (message.isUpstreamInvoked !== undefined)
+            writer.tag(43, WireType.Varint).bool(message.isUpstreamInvoked);
+        /* optional bool hasUsage = 44; */
+        if (message.hasUsage !== undefined)
+            writer.tag(44, WireType.Varint).bool(message.hasUsage);
+        /* optional bool hasTools = 45; */
+        if (message.hasTools !== undefined)
+            writer.tag(45, WireType.Varint).bool(message.hasTools);
+        /* optional bool hasToolCalls = 46; */
+        if (message.hasToolCalls !== undefined)
+            writer.tag(46, WireType.Varint).bool(message.hasToolCalls);
+        /* optional bool hasToolsRemoved = 47; */
+        if (message.hasToolsRemoved !== undefined)
+            writer.tag(47, WireType.Varint).bool(message.hasToolsRemoved);
+        /* optional bool hasManagedReasoning = 48; */
+        if (message.hasManagedReasoning !== undefined)
+            writer.tag(48, WireType.Varint).bool(message.hasManagedReasoning);
+        /* optional bool isReasoningDisabled = 49; */
+        if (message.isReasoningDisabled !== undefined)
+            writer.tag(49, WireType.Varint).bool(message.isReasoningDisabled);
+        /* optional bool hasImageInput = 50; */
+        if (message.hasImageInput !== undefined)
+            writer.tag(50, WireType.Varint).bool(message.hasImageInput);
+        /* optional bool hasAudioInput = 51; */
+        if (message.hasAudioInput !== undefined)
+            writer.tag(51, WireType.Varint).bool(message.hasAudioInput);
+        /* optional bool isCacheStored = 52; */
+        if (message.isCacheStored !== undefined)
+            writer.tag(52, WireType.Varint).bool(message.isCacheStored);
+        /* optional bool isPublic = 53; */
+        if (message.isPublic !== undefined)
+            writer.tag(53, WireType.Varint).bool(message.isPublic);
+        /* optional bool isAnonymous = 54; */
+        if (message.isAnonymous !== undefined)
+            writer.tag(54, WireType.Varint).bool(message.isAnonymous);
+        /* optional uint64 minTotalTokens = 55; */
+        if (message.minTotalTokens !== undefined)
+            writer.tag(55, WireType.Varint).uint64(message.minTotalTokens);
+        /* optional uint64 maxTotalTokens = 56; */
+        if (message.maxTotalTokens !== undefined)
+            writer.tag(56, WireType.Varint).uint64(message.maxTotalTokens);
+        /* optional uint64 minLatencyMs = 57; */
+        if (message.minLatencyMs !== undefined)
+            writer.tag(57, WireType.Varint).uint64(message.minLatencyMs);
+        /* optional uint64 maxLatencyMs = 58; */
+        if (message.maxLatencyMs !== undefined)
+            writer.tag(58, WireType.Varint).uint64(message.maxLatencyMs);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -2779,19 +3485,23 @@ class Stats$Type extends MessageType<Stats> {
             { no: 3, name: "latency", kind: "message", T: () => Stats_DurationStats },
             { no: 4, name: "timeToFirstToken", kind: "message", T: () => Stats_DurationStats },
             { no: 5, name: "streamEvents", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 6, name: "toolsDeclared", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 6, name: "toolsOffered", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 7, name: "toolsRemoved", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 8, name: "toolCalls", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 9, name: "requestBodyBytes", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 10, name: "responseBodyBytes", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
+            { no: 9, name: "distinctToolsCalled", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 10, name: "inputItems", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 11, name: "requestBodyBytes", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 12, name: "responseBodyBytes", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
         ]);
     }
     create(value?: PartialMessage<Stats>): Stats {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.streamEvents = 0;
-        message.toolsDeclared = 0;
+        message.toolsOffered = 0;
         message.toolsRemoved = 0;
         message.toolCalls = 0;
+        message.distinctToolsCalled = 0;
+        message.inputItems = 0;
         message.requestBodyBytes = 0;
         message.responseBodyBytes = 0;
         if (value !== undefined)
@@ -2818,8 +3528,8 @@ class Stats$Type extends MessageType<Stats> {
                 case /* uint64 streamEvents */ 5:
                     message.streamEvents = reader.uint64().toNumber();
                     break;
-                case /* uint64 toolsDeclared */ 6:
-                    message.toolsDeclared = reader.uint64().toNumber();
+                case /* uint64 toolsOffered */ 6:
+                    message.toolsOffered = reader.uint64().toNumber();
                     break;
                 case /* uint64 toolsRemoved */ 7:
                     message.toolsRemoved = reader.uint64().toNumber();
@@ -2827,10 +3537,16 @@ class Stats$Type extends MessageType<Stats> {
                 case /* uint64 toolCalls */ 8:
                     message.toolCalls = reader.uint64().toNumber();
                     break;
-                case /* uint64 requestBodyBytes */ 9:
+                case /* uint64 distinctToolsCalled */ 9:
+                    message.distinctToolsCalled = reader.uint64().toNumber();
+                    break;
+                case /* uint64 inputItems */ 10:
+                    message.inputItems = reader.uint64().toNumber();
+                    break;
+                case /* uint64 requestBodyBytes */ 11:
                     message.requestBodyBytes = reader.uint64().toNumber();
                     break;
-                case /* uint64 responseBodyBytes */ 10:
+                case /* uint64 responseBodyBytes */ 12:
                     message.responseBodyBytes = reader.uint64().toNumber();
                     break;
                 default:
@@ -2860,21 +3576,27 @@ class Stats$Type extends MessageType<Stats> {
         /* uint64 streamEvents = 5; */
         if (message.streamEvents !== 0)
             writer.tag(5, WireType.Varint).uint64(message.streamEvents);
-        /* uint64 toolsDeclared = 6; */
-        if (message.toolsDeclared !== 0)
-            writer.tag(6, WireType.Varint).uint64(message.toolsDeclared);
+        /* uint64 toolsOffered = 6; */
+        if (message.toolsOffered !== 0)
+            writer.tag(6, WireType.Varint).uint64(message.toolsOffered);
         /* uint64 toolsRemoved = 7; */
         if (message.toolsRemoved !== 0)
             writer.tag(7, WireType.Varint).uint64(message.toolsRemoved);
         /* uint64 toolCalls = 8; */
         if (message.toolCalls !== 0)
             writer.tag(8, WireType.Varint).uint64(message.toolCalls);
-        /* uint64 requestBodyBytes = 9; */
+        /* uint64 distinctToolsCalled = 9; */
+        if (message.distinctToolsCalled !== 0)
+            writer.tag(9, WireType.Varint).uint64(message.distinctToolsCalled);
+        /* uint64 inputItems = 10; */
+        if (message.inputItems !== 0)
+            writer.tag(10, WireType.Varint).uint64(message.inputItems);
+        /* uint64 requestBodyBytes = 11; */
         if (message.requestBodyBytes !== 0)
-            writer.tag(9, WireType.Varint).uint64(message.requestBodyBytes);
-        /* uint64 responseBodyBytes = 10; */
+            writer.tag(11, WireType.Varint).uint64(message.requestBodyBytes);
+        /* uint64 responseBodyBytes = 12; */
         if (message.responseBodyBytes !== 0)
-            writer.tag(10, WireType.Varint).uint64(message.responseBodyBytes);
+            writer.tag(12, WireType.Varint).uint64(message.responseBodyBytes);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -2897,25 +3619,47 @@ class Stats_Requests$Type extends MessageType<Stats_Requests> {
             { no: 6, name: "clientError", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 7, name: "serverError", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 8, name: "streamed", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 9, name: "sourceUpstream", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 10, name: "sourceSemanticCache", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 11, name: "sourceOctelium", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 12, name: "usageProvider", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 13, name: "usageEstimated", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 14, name: "usagePartial", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 15, name: "usageCached", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 16, name: "usageUnset", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 17, name: "guardrailPass", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 18, name: "guardrailModified", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 19, name: "guardrailDenied", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 20, name: "modelOverridden", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 21, name: "modelRouted", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 22, name: "withTools", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 23, name: "withToolCalls", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 24, name: "withToolsRemoved", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 25, name: "withReasoning", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 26, name: "reasoningDisabled", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 27, name: "finishedByLength", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
+            { no: 9, name: "upstreamInvoked", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 10, name: "discardedInference", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 11, name: "sourceUpstream", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 12, name: "sourceSemanticCache", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 13, name: "sourceOctelium", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 14, name: "withUsage", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 15, name: "withoutUsage", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 16, name: "usageComplete", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 17, name: "usagePartial", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 18, name: "guardrailInspected", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 19, name: "guardrailPassed", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 20, name: "guardrailModified", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 21, name: "guardrailDenied", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 22, name: "guardrailError", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 23, name: "tokenRateLimitAllowed", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 24, name: "tokenRateLimitDenied", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 25, name: "cacheExactHit", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 26, name: "cacheSemanticHit", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 27, name: "cacheMiss", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 28, name: "cacheBypass", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 29, name: "cacheError", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 30, name: "cacheStored", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 31, name: "routerMatch", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 32, name: "routerNoMatch", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 33, name: "routerBypass", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 34, name: "routerError", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 35, name: "modelOverridden", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 36, name: "modelRouted", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 37, name: "withTools", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 38, name: "withToolCalls", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 39, name: "withToolsRemoved", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 40, name: "withCalledToolsTruncated", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 41, name: "withManagedReasoning", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 42, name: "reasoningDisabled", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 43, name: "withImageInput", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 44, name: "withAudioInput", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 45, name: "finishStop", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 46, name: "finishLength", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 47, name: "finishToolCall", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 48, name: "finishContentFilter", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 49, name: "finishError", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
         ]);
     }
     create(value?: PartialMessage<Stats_Requests>): Stats_Requests {
@@ -2928,25 +3672,47 @@ class Stats_Requests$Type extends MessageType<Stats_Requests> {
         message.clientError = 0;
         message.serverError = 0;
         message.streamed = 0;
+        message.upstreamInvoked = 0;
+        message.discardedInference = 0;
         message.sourceUpstream = 0;
         message.sourceSemanticCache = 0;
         message.sourceOctelium = 0;
-        message.usageProvider = 0;
-        message.usageEstimated = 0;
+        message.withUsage = 0;
+        message.withoutUsage = 0;
+        message.usageComplete = 0;
         message.usagePartial = 0;
-        message.usageCached = 0;
-        message.usageUnset = 0;
-        message.guardrailPass = 0;
+        message.guardrailInspected = 0;
+        message.guardrailPassed = 0;
         message.guardrailModified = 0;
         message.guardrailDenied = 0;
+        message.guardrailError = 0;
+        message.tokenRateLimitAllowed = 0;
+        message.tokenRateLimitDenied = 0;
+        message.cacheExactHit = 0;
+        message.cacheSemanticHit = 0;
+        message.cacheMiss = 0;
+        message.cacheBypass = 0;
+        message.cacheError = 0;
+        message.cacheStored = 0;
+        message.routerMatch = 0;
+        message.routerNoMatch = 0;
+        message.routerBypass = 0;
+        message.routerError = 0;
         message.modelOverridden = 0;
         message.modelRouted = 0;
         message.withTools = 0;
         message.withToolCalls = 0;
         message.withToolsRemoved = 0;
-        message.withReasoning = 0;
+        message.withCalledToolsTruncated = 0;
+        message.withManagedReasoning = 0;
         message.reasoningDisabled = 0;
-        message.finishedByLength = 0;
+        message.withImageInput = 0;
+        message.withAudioInput = 0;
+        message.finishStop = 0;
+        message.finishLength = 0;
+        message.finishToolCall = 0;
+        message.finishContentFilter = 0;
+        message.finishError = 0;
         if (value !== undefined)
             reflectionMergePartial<Stats_Requests>(this, message, value);
         return message;
@@ -2980,62 +3746,128 @@ class Stats_Requests$Type extends MessageType<Stats_Requests> {
                 case /* uint64 streamed */ 8:
                     message.streamed = reader.uint64().toNumber();
                     break;
-                case /* uint64 sourceUpstream */ 9:
+                case /* uint64 upstreamInvoked */ 9:
+                    message.upstreamInvoked = reader.uint64().toNumber();
+                    break;
+                case /* uint64 discardedInference */ 10:
+                    message.discardedInference = reader.uint64().toNumber();
+                    break;
+                case /* uint64 sourceUpstream */ 11:
                     message.sourceUpstream = reader.uint64().toNumber();
                     break;
-                case /* uint64 sourceSemanticCache */ 10:
+                case /* uint64 sourceSemanticCache */ 12:
                     message.sourceSemanticCache = reader.uint64().toNumber();
                     break;
-                case /* uint64 sourceOctelium */ 11:
+                case /* uint64 sourceOctelium */ 13:
                     message.sourceOctelium = reader.uint64().toNumber();
                     break;
-                case /* uint64 usageProvider */ 12:
-                    message.usageProvider = reader.uint64().toNumber();
+                case /* uint64 withUsage */ 14:
+                    message.withUsage = reader.uint64().toNumber();
                     break;
-                case /* uint64 usageEstimated */ 13:
-                    message.usageEstimated = reader.uint64().toNumber();
+                case /* uint64 withoutUsage */ 15:
+                    message.withoutUsage = reader.uint64().toNumber();
                     break;
-                case /* uint64 usagePartial */ 14:
+                case /* uint64 usageComplete */ 16:
+                    message.usageComplete = reader.uint64().toNumber();
+                    break;
+                case /* uint64 usagePartial */ 17:
                     message.usagePartial = reader.uint64().toNumber();
                     break;
-                case /* uint64 usageCached */ 15:
-                    message.usageCached = reader.uint64().toNumber();
+                case /* uint64 guardrailInspected */ 18:
+                    message.guardrailInspected = reader.uint64().toNumber();
                     break;
-                case /* uint64 usageUnset */ 16:
-                    message.usageUnset = reader.uint64().toNumber();
+                case /* uint64 guardrailPassed */ 19:
+                    message.guardrailPassed = reader.uint64().toNumber();
                     break;
-                case /* uint64 guardrailPass */ 17:
-                    message.guardrailPass = reader.uint64().toNumber();
-                    break;
-                case /* uint64 guardrailModified */ 18:
+                case /* uint64 guardrailModified */ 20:
                     message.guardrailModified = reader.uint64().toNumber();
                     break;
-                case /* uint64 guardrailDenied */ 19:
+                case /* uint64 guardrailDenied */ 21:
                     message.guardrailDenied = reader.uint64().toNumber();
                     break;
-                case /* uint64 modelOverridden */ 20:
+                case /* uint64 guardrailError */ 22:
+                    message.guardrailError = reader.uint64().toNumber();
+                    break;
+                case /* uint64 tokenRateLimitAllowed */ 23:
+                    message.tokenRateLimitAllowed = reader.uint64().toNumber();
+                    break;
+                case /* uint64 tokenRateLimitDenied */ 24:
+                    message.tokenRateLimitDenied = reader.uint64().toNumber();
+                    break;
+                case /* uint64 cacheExactHit */ 25:
+                    message.cacheExactHit = reader.uint64().toNumber();
+                    break;
+                case /* uint64 cacheSemanticHit */ 26:
+                    message.cacheSemanticHit = reader.uint64().toNumber();
+                    break;
+                case /* uint64 cacheMiss */ 27:
+                    message.cacheMiss = reader.uint64().toNumber();
+                    break;
+                case /* uint64 cacheBypass */ 28:
+                    message.cacheBypass = reader.uint64().toNumber();
+                    break;
+                case /* uint64 cacheError */ 29:
+                    message.cacheError = reader.uint64().toNumber();
+                    break;
+                case /* uint64 cacheStored */ 30:
+                    message.cacheStored = reader.uint64().toNumber();
+                    break;
+                case /* uint64 routerMatch */ 31:
+                    message.routerMatch = reader.uint64().toNumber();
+                    break;
+                case /* uint64 routerNoMatch */ 32:
+                    message.routerNoMatch = reader.uint64().toNumber();
+                    break;
+                case /* uint64 routerBypass */ 33:
+                    message.routerBypass = reader.uint64().toNumber();
+                    break;
+                case /* uint64 routerError */ 34:
+                    message.routerError = reader.uint64().toNumber();
+                    break;
+                case /* uint64 modelOverridden */ 35:
                     message.modelOverridden = reader.uint64().toNumber();
                     break;
-                case /* uint64 modelRouted */ 21:
+                case /* uint64 modelRouted */ 36:
                     message.modelRouted = reader.uint64().toNumber();
                     break;
-                case /* uint64 withTools */ 22:
+                case /* uint64 withTools */ 37:
                     message.withTools = reader.uint64().toNumber();
                     break;
-                case /* uint64 withToolCalls */ 23:
+                case /* uint64 withToolCalls */ 38:
                     message.withToolCalls = reader.uint64().toNumber();
                     break;
-                case /* uint64 withToolsRemoved */ 24:
+                case /* uint64 withToolsRemoved */ 39:
                     message.withToolsRemoved = reader.uint64().toNumber();
                     break;
-                case /* uint64 withReasoning */ 25:
-                    message.withReasoning = reader.uint64().toNumber();
+                case /* uint64 withCalledToolsTruncated */ 40:
+                    message.withCalledToolsTruncated = reader.uint64().toNumber();
                     break;
-                case /* uint64 reasoningDisabled */ 26:
+                case /* uint64 withManagedReasoning */ 41:
+                    message.withManagedReasoning = reader.uint64().toNumber();
+                    break;
+                case /* uint64 reasoningDisabled */ 42:
                     message.reasoningDisabled = reader.uint64().toNumber();
                     break;
-                case /* uint64 finishedByLength */ 27:
-                    message.finishedByLength = reader.uint64().toNumber();
+                case /* uint64 withImageInput */ 43:
+                    message.withImageInput = reader.uint64().toNumber();
+                    break;
+                case /* uint64 withAudioInput */ 44:
+                    message.withAudioInput = reader.uint64().toNumber();
+                    break;
+                case /* uint64 finishStop */ 45:
+                    message.finishStop = reader.uint64().toNumber();
+                    break;
+                case /* uint64 finishLength */ 46:
+                    message.finishLength = reader.uint64().toNumber();
+                    break;
+                case /* uint64 finishToolCall */ 47:
+                    message.finishToolCall = reader.uint64().toNumber();
+                    break;
+                case /* uint64 finishContentFilter */ 48:
+                    message.finishContentFilter = reader.uint64().toNumber();
+                    break;
+                case /* uint64 finishError */ 49:
+                    message.finishError = reader.uint64().toNumber();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -3073,63 +3905,129 @@ class Stats_Requests$Type extends MessageType<Stats_Requests> {
         /* uint64 streamed = 8; */
         if (message.streamed !== 0)
             writer.tag(8, WireType.Varint).uint64(message.streamed);
-        /* uint64 sourceUpstream = 9; */
+        /* uint64 upstreamInvoked = 9; */
+        if (message.upstreamInvoked !== 0)
+            writer.tag(9, WireType.Varint).uint64(message.upstreamInvoked);
+        /* uint64 discardedInference = 10; */
+        if (message.discardedInference !== 0)
+            writer.tag(10, WireType.Varint).uint64(message.discardedInference);
+        /* uint64 sourceUpstream = 11; */
         if (message.sourceUpstream !== 0)
-            writer.tag(9, WireType.Varint).uint64(message.sourceUpstream);
-        /* uint64 sourceSemanticCache = 10; */
+            writer.tag(11, WireType.Varint).uint64(message.sourceUpstream);
+        /* uint64 sourceSemanticCache = 12; */
         if (message.sourceSemanticCache !== 0)
-            writer.tag(10, WireType.Varint).uint64(message.sourceSemanticCache);
-        /* uint64 sourceOctelium = 11; */
+            writer.tag(12, WireType.Varint).uint64(message.sourceSemanticCache);
+        /* uint64 sourceOctelium = 13; */
         if (message.sourceOctelium !== 0)
-            writer.tag(11, WireType.Varint).uint64(message.sourceOctelium);
-        /* uint64 usageProvider = 12; */
-        if (message.usageProvider !== 0)
-            writer.tag(12, WireType.Varint).uint64(message.usageProvider);
-        /* uint64 usageEstimated = 13; */
-        if (message.usageEstimated !== 0)
-            writer.tag(13, WireType.Varint).uint64(message.usageEstimated);
-        /* uint64 usagePartial = 14; */
+            writer.tag(13, WireType.Varint).uint64(message.sourceOctelium);
+        /* uint64 withUsage = 14; */
+        if (message.withUsage !== 0)
+            writer.tag(14, WireType.Varint).uint64(message.withUsage);
+        /* uint64 withoutUsage = 15; */
+        if (message.withoutUsage !== 0)
+            writer.tag(15, WireType.Varint).uint64(message.withoutUsage);
+        /* uint64 usageComplete = 16; */
+        if (message.usageComplete !== 0)
+            writer.tag(16, WireType.Varint).uint64(message.usageComplete);
+        /* uint64 usagePartial = 17; */
         if (message.usagePartial !== 0)
-            writer.tag(14, WireType.Varint).uint64(message.usagePartial);
-        /* uint64 usageCached = 15; */
-        if (message.usageCached !== 0)
-            writer.tag(15, WireType.Varint).uint64(message.usageCached);
-        /* uint64 usageUnset = 16; */
-        if (message.usageUnset !== 0)
-            writer.tag(16, WireType.Varint).uint64(message.usageUnset);
-        /* uint64 guardrailPass = 17; */
-        if (message.guardrailPass !== 0)
-            writer.tag(17, WireType.Varint).uint64(message.guardrailPass);
-        /* uint64 guardrailModified = 18; */
+            writer.tag(17, WireType.Varint).uint64(message.usagePartial);
+        /* uint64 guardrailInspected = 18; */
+        if (message.guardrailInspected !== 0)
+            writer.tag(18, WireType.Varint).uint64(message.guardrailInspected);
+        /* uint64 guardrailPassed = 19; */
+        if (message.guardrailPassed !== 0)
+            writer.tag(19, WireType.Varint).uint64(message.guardrailPassed);
+        /* uint64 guardrailModified = 20; */
         if (message.guardrailModified !== 0)
-            writer.tag(18, WireType.Varint).uint64(message.guardrailModified);
-        /* uint64 guardrailDenied = 19; */
+            writer.tag(20, WireType.Varint).uint64(message.guardrailModified);
+        /* uint64 guardrailDenied = 21; */
         if (message.guardrailDenied !== 0)
-            writer.tag(19, WireType.Varint).uint64(message.guardrailDenied);
-        /* uint64 modelOverridden = 20; */
+            writer.tag(21, WireType.Varint).uint64(message.guardrailDenied);
+        /* uint64 guardrailError = 22; */
+        if (message.guardrailError !== 0)
+            writer.tag(22, WireType.Varint).uint64(message.guardrailError);
+        /* uint64 tokenRateLimitAllowed = 23; */
+        if (message.tokenRateLimitAllowed !== 0)
+            writer.tag(23, WireType.Varint).uint64(message.tokenRateLimitAllowed);
+        /* uint64 tokenRateLimitDenied = 24; */
+        if (message.tokenRateLimitDenied !== 0)
+            writer.tag(24, WireType.Varint).uint64(message.tokenRateLimitDenied);
+        /* uint64 cacheExactHit = 25; */
+        if (message.cacheExactHit !== 0)
+            writer.tag(25, WireType.Varint).uint64(message.cacheExactHit);
+        /* uint64 cacheSemanticHit = 26; */
+        if (message.cacheSemanticHit !== 0)
+            writer.tag(26, WireType.Varint).uint64(message.cacheSemanticHit);
+        /* uint64 cacheMiss = 27; */
+        if (message.cacheMiss !== 0)
+            writer.tag(27, WireType.Varint).uint64(message.cacheMiss);
+        /* uint64 cacheBypass = 28; */
+        if (message.cacheBypass !== 0)
+            writer.tag(28, WireType.Varint).uint64(message.cacheBypass);
+        /* uint64 cacheError = 29; */
+        if (message.cacheError !== 0)
+            writer.tag(29, WireType.Varint).uint64(message.cacheError);
+        /* uint64 cacheStored = 30; */
+        if (message.cacheStored !== 0)
+            writer.tag(30, WireType.Varint).uint64(message.cacheStored);
+        /* uint64 routerMatch = 31; */
+        if (message.routerMatch !== 0)
+            writer.tag(31, WireType.Varint).uint64(message.routerMatch);
+        /* uint64 routerNoMatch = 32; */
+        if (message.routerNoMatch !== 0)
+            writer.tag(32, WireType.Varint).uint64(message.routerNoMatch);
+        /* uint64 routerBypass = 33; */
+        if (message.routerBypass !== 0)
+            writer.tag(33, WireType.Varint).uint64(message.routerBypass);
+        /* uint64 routerError = 34; */
+        if (message.routerError !== 0)
+            writer.tag(34, WireType.Varint).uint64(message.routerError);
+        /* uint64 modelOverridden = 35; */
         if (message.modelOverridden !== 0)
-            writer.tag(20, WireType.Varint).uint64(message.modelOverridden);
-        /* uint64 modelRouted = 21; */
+            writer.tag(35, WireType.Varint).uint64(message.modelOverridden);
+        /* uint64 modelRouted = 36; */
         if (message.modelRouted !== 0)
-            writer.tag(21, WireType.Varint).uint64(message.modelRouted);
-        /* uint64 withTools = 22; */
+            writer.tag(36, WireType.Varint).uint64(message.modelRouted);
+        /* uint64 withTools = 37; */
         if (message.withTools !== 0)
-            writer.tag(22, WireType.Varint).uint64(message.withTools);
-        /* uint64 withToolCalls = 23; */
+            writer.tag(37, WireType.Varint).uint64(message.withTools);
+        /* uint64 withToolCalls = 38; */
         if (message.withToolCalls !== 0)
-            writer.tag(23, WireType.Varint).uint64(message.withToolCalls);
-        /* uint64 withToolsRemoved = 24; */
+            writer.tag(38, WireType.Varint).uint64(message.withToolCalls);
+        /* uint64 withToolsRemoved = 39; */
         if (message.withToolsRemoved !== 0)
-            writer.tag(24, WireType.Varint).uint64(message.withToolsRemoved);
-        /* uint64 withReasoning = 25; */
-        if (message.withReasoning !== 0)
-            writer.tag(25, WireType.Varint).uint64(message.withReasoning);
-        /* uint64 reasoningDisabled = 26; */
+            writer.tag(39, WireType.Varint).uint64(message.withToolsRemoved);
+        /* uint64 withCalledToolsTruncated = 40; */
+        if (message.withCalledToolsTruncated !== 0)
+            writer.tag(40, WireType.Varint).uint64(message.withCalledToolsTruncated);
+        /* uint64 withManagedReasoning = 41; */
+        if (message.withManagedReasoning !== 0)
+            writer.tag(41, WireType.Varint).uint64(message.withManagedReasoning);
+        /* uint64 reasoningDisabled = 42; */
         if (message.reasoningDisabled !== 0)
-            writer.tag(26, WireType.Varint).uint64(message.reasoningDisabled);
-        /* uint64 finishedByLength = 27; */
-        if (message.finishedByLength !== 0)
-            writer.tag(27, WireType.Varint).uint64(message.finishedByLength);
+            writer.tag(42, WireType.Varint).uint64(message.reasoningDisabled);
+        /* uint64 withImageInput = 43; */
+        if (message.withImageInput !== 0)
+            writer.tag(43, WireType.Varint).uint64(message.withImageInput);
+        /* uint64 withAudioInput = 44; */
+        if (message.withAudioInput !== 0)
+            writer.tag(44, WireType.Varint).uint64(message.withAudioInput);
+        /* uint64 finishStop = 45; */
+        if (message.finishStop !== 0)
+            writer.tag(45, WireType.Varint).uint64(message.finishStop);
+        /* uint64 finishLength = 46; */
+        if (message.finishLength !== 0)
+            writer.tag(46, WireType.Varint).uint64(message.finishLength);
+        /* uint64 finishToolCall = 47; */
+        if (message.finishToolCall !== 0)
+            writer.tag(47, WireType.Varint).uint64(message.finishToolCall);
+        /* uint64 finishContentFilter = 48; */
+        if (message.finishContentFilter !== 0)
+            writer.tag(48, WireType.Varint).uint64(message.finishContentFilter);
+        /* uint64 finishError = 49; */
+        if (message.finishError !== 0)
+            writer.tag(49, WireType.Varint).uint64(message.finishError);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -3148,9 +4046,10 @@ class Stats_Tokens$Type extends MessageType<Stats_Tokens> {
             { no: 2, name: "output", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 3, name: "total", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
             { no: 4, name: "cacheReadInput", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 5, name: "cacheCreationInput", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 6, name: "reasoning", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 7, name: "estimatedInput", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
+            { no: 5, name: "cacheWriteInput", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 6, name: "reasoningOutput", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 7, name: "estimatedInput", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 8, name: "discarded", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
         ]);
     }
     create(value?: PartialMessage<Stats_Tokens>): Stats_Tokens {
@@ -3159,9 +4058,10 @@ class Stats_Tokens$Type extends MessageType<Stats_Tokens> {
         message.output = 0;
         message.total = 0;
         message.cacheReadInput = 0;
-        message.cacheCreationInput = 0;
-        message.reasoning = 0;
+        message.cacheWriteInput = 0;
+        message.reasoningOutput = 0;
         message.estimatedInput = 0;
+        message.discarded = 0;
         if (value !== undefined)
             reflectionMergePartial<Stats_Tokens>(this, message, value);
         return message;
@@ -3183,14 +4083,17 @@ class Stats_Tokens$Type extends MessageType<Stats_Tokens> {
                 case /* uint64 cacheReadInput */ 4:
                     message.cacheReadInput = reader.uint64().toNumber();
                     break;
-                case /* uint64 cacheCreationInput */ 5:
-                    message.cacheCreationInput = reader.uint64().toNumber();
+                case /* uint64 cacheWriteInput */ 5:
+                    message.cacheWriteInput = reader.uint64().toNumber();
                     break;
-                case /* uint64 reasoning */ 6:
-                    message.reasoning = reader.uint64().toNumber();
+                case /* uint64 reasoningOutput */ 6:
+                    message.reasoningOutput = reader.uint64().toNumber();
                     break;
                 case /* uint64 estimatedInput */ 7:
                     message.estimatedInput = reader.uint64().toNumber();
+                    break;
+                case /* uint64 discarded */ 8:
+                    message.discarded = reader.uint64().toNumber();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -3216,15 +4119,18 @@ class Stats_Tokens$Type extends MessageType<Stats_Tokens> {
         /* uint64 cacheReadInput = 4; */
         if (message.cacheReadInput !== 0)
             writer.tag(4, WireType.Varint).uint64(message.cacheReadInput);
-        /* uint64 cacheCreationInput = 5; */
-        if (message.cacheCreationInput !== 0)
-            writer.tag(5, WireType.Varint).uint64(message.cacheCreationInput);
-        /* uint64 reasoning = 6; */
-        if (message.reasoning !== 0)
-            writer.tag(6, WireType.Varint).uint64(message.reasoning);
+        /* uint64 cacheWriteInput = 5; */
+        if (message.cacheWriteInput !== 0)
+            writer.tag(5, WireType.Varint).uint64(message.cacheWriteInput);
+        /* uint64 reasoningOutput = 6; */
+        if (message.reasoningOutput !== 0)
+            writer.tag(6, WireType.Varint).uint64(message.reasoningOutput);
         /* uint64 estimatedInput = 7; */
         if (message.estimatedInput !== 0)
             writer.tag(7, WireType.Varint).uint64(message.estimatedInput);
+        /* uint64 discarded = 8; */
+        if (message.discarded !== 0)
+            writer.tag(8, WireType.Varint).uint64(message.discarded);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -3339,76 +4245,31 @@ class Stats_DurationStats$Type extends MessageType<Stats_DurationStats> {
  */
 export const Stats_DurationStats = new Stats_DurationStats$Type();
 // @generated message type with reflection information, may provide speed optimized methods
-class Cardinality$Type extends MessageType<Cardinality> {
+class CardinalityItem$Type extends MessageType<CardinalityItem> {
     constructor() {
-        super("octelium.api.main.visibility.llm.v1.Cardinality", [
-            { no: 1, name: "models", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 2, name: "requestedModels", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 3, name: "users", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 4, name: "sessions", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 5, name: "devices", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 6, name: "services", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 7, name: "namespaces", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 8, name: "tools", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 9, name: "calledTools", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 10, name: "protocols", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 11, name: "policies", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
+        super("octelium.api.main.visibility.llm.v1.CardinalityItem", [
+            { no: 1, name: "dimension", kind: "enum", T: () => ["octelium.api.main.visibility.llm.v1.Dimension", Dimension] },
+            { no: 2, name: "count", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
         ]);
     }
-    create(value?: PartialMessage<Cardinality>): Cardinality {
+    create(value?: PartialMessage<CardinalityItem>): CardinalityItem {
         const message = globalThis.Object.create((this.messagePrototype!));
-        message.models = 0;
-        message.requestedModels = 0;
-        message.users = 0;
-        message.sessions = 0;
-        message.devices = 0;
-        message.services = 0;
-        message.namespaces = 0;
-        message.tools = 0;
-        message.calledTools = 0;
-        message.protocols = 0;
-        message.policies = 0;
+        message.dimension = 0;
+        message.count = 0;
         if (value !== undefined)
-            reflectionMergePartial<Cardinality>(this, message, value);
+            reflectionMergePartial<CardinalityItem>(this, message, value);
         return message;
     }
-    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Cardinality): Cardinality {
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: CardinalityItem): CardinalityItem {
         let message = target ?? this.create(), end = reader.pos + length;
         while (reader.pos < end) {
             let [fieldNo, wireType] = reader.tag();
             switch (fieldNo) {
-                case /* uint64 models */ 1:
-                    message.models = reader.uint64().toNumber();
+                case /* octelium.api.main.visibility.llm.v1.Dimension dimension */ 1:
+                    message.dimension = reader.int32();
                     break;
-                case /* uint64 requestedModels */ 2:
-                    message.requestedModels = reader.uint64().toNumber();
-                    break;
-                case /* uint64 users */ 3:
-                    message.users = reader.uint64().toNumber();
-                    break;
-                case /* uint64 sessions */ 4:
-                    message.sessions = reader.uint64().toNumber();
-                    break;
-                case /* uint64 devices */ 5:
-                    message.devices = reader.uint64().toNumber();
-                    break;
-                case /* uint64 services */ 6:
-                    message.services = reader.uint64().toNumber();
-                    break;
-                case /* uint64 namespaces */ 7:
-                    message.namespaces = reader.uint64().toNumber();
-                    break;
-                case /* uint64 tools */ 8:
-                    message.tools = reader.uint64().toNumber();
-                    break;
-                case /* uint64 calledTools */ 9:
-                    message.calledTools = reader.uint64().toNumber();
-                    break;
-                case /* uint64 protocols */ 10:
-                    message.protocols = reader.uint64().toNumber();
-                    break;
-                case /* uint64 policies */ 11:
-                    message.policies = reader.uint64().toNumber();
+                case /* uint64 count */ 2:
+                    message.count = reader.uint64().toNumber();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -3421,40 +4282,13 @@ class Cardinality$Type extends MessageType<Cardinality> {
         }
         return message;
     }
-    internalBinaryWrite(message: Cardinality, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
-        /* uint64 models = 1; */
-        if (message.models !== 0)
-            writer.tag(1, WireType.Varint).uint64(message.models);
-        /* uint64 requestedModels = 2; */
-        if (message.requestedModels !== 0)
-            writer.tag(2, WireType.Varint).uint64(message.requestedModels);
-        /* uint64 users = 3; */
-        if (message.users !== 0)
-            writer.tag(3, WireType.Varint).uint64(message.users);
-        /* uint64 sessions = 4; */
-        if (message.sessions !== 0)
-            writer.tag(4, WireType.Varint).uint64(message.sessions);
-        /* uint64 devices = 5; */
-        if (message.devices !== 0)
-            writer.tag(5, WireType.Varint).uint64(message.devices);
-        /* uint64 services = 6; */
-        if (message.services !== 0)
-            writer.tag(6, WireType.Varint).uint64(message.services);
-        /* uint64 namespaces = 7; */
-        if (message.namespaces !== 0)
-            writer.tag(7, WireType.Varint).uint64(message.namespaces);
-        /* uint64 tools = 8; */
-        if (message.tools !== 0)
-            writer.tag(8, WireType.Varint).uint64(message.tools);
-        /* uint64 calledTools = 9; */
-        if (message.calledTools !== 0)
-            writer.tag(9, WireType.Varint).uint64(message.calledTools);
-        /* uint64 protocols = 10; */
-        if (message.protocols !== 0)
-            writer.tag(10, WireType.Varint).uint64(message.protocols);
-        /* uint64 policies = 11; */
-        if (message.policies !== 0)
-            writer.tag(11, WireType.Varint).uint64(message.policies);
+    internalBinaryWrite(message: CardinalityItem, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.llm.v1.Dimension dimension = 1; */
+        if (message.dimension !== 0)
+            writer.tag(1, WireType.Varint).int32(message.dimension);
+        /* uint64 count = 2; */
+        if (message.count !== 0)
+            writer.tag(2, WireType.Varint).uint64(message.count);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -3462,9 +4296,9 @@ class Cardinality$Type extends MessageType<Cardinality> {
     }
 }
 /**
- * @generated MessageType for protobuf message octelium.api.main.visibility.llm.v1.Cardinality
+ * @generated MessageType for protobuf message octelium.api.main.visibility.llm.v1.CardinalityItem
  */
-export const Cardinality = new Cardinality$Type();
+export const CardinalityItem = new CardinalityItem$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class DimensionItem$Type extends MessageType<DimensionItem> {
     constructor() {
@@ -3597,22 +4431,83 @@ class Breakdown$Type extends MessageType<Breakdown> {
  */
 export const Breakdown = new Breakdown$Type();
 // @generated message type with reflection information, may provide speed optimized methods
+class BreakdownRequest$Type extends MessageType<BreakdownRequest> {
+    constructor() {
+        super("octelium.api.main.visibility.llm.v1.BreakdownRequest", [
+            { no: 1, name: "dimension", kind: "enum", T: () => ["octelium.api.main.visibility.llm.v1.Dimension", Dimension] },
+            { no: 2, name: "limit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 3, name: "orderBy", kind: "enum", T: () => ["octelium.api.main.visibility.llm.v1.Metric", Metric] }
+        ]);
+    }
+    create(value?: PartialMessage<BreakdownRequest>): BreakdownRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.dimension = 0;
+        message.limit = 0;
+        message.orderBy = 0;
+        if (value !== undefined)
+            reflectionMergePartial<BreakdownRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: BreakdownRequest): BreakdownRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.visibility.llm.v1.Dimension dimension */ 1:
+                    message.dimension = reader.int32();
+                    break;
+                case /* uint32 limit */ 2:
+                    message.limit = reader.uint32();
+                    break;
+                case /* octelium.api.main.visibility.llm.v1.Metric orderBy */ 3:
+                    message.orderBy = reader.int32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: BreakdownRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.visibility.llm.v1.Dimension dimension = 1; */
+        if (message.dimension !== 0)
+            writer.tag(1, WireType.Varint).int32(message.dimension);
+        /* uint32 limit = 2; */
+        if (message.limit !== 0)
+            writer.tag(2, WireType.Varint).uint32(message.limit);
+        /* octelium.api.main.visibility.llm.v1.Metric orderBy = 3; */
+        if (message.orderBy !== 0)
+            writer.tag(3, WireType.Varint).int32(message.orderBy);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.visibility.llm.v1.BreakdownRequest
+ */
+export const BreakdownRequest = new BreakdownRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
 class GetSummaryRequest$Type extends MessageType<GetSummaryRequest> {
     constructor() {
         super("octelium.api.main.visibility.llm.v1.GetSummaryRequest", [
             { no: 1, name: "filter", kind: "message", T: () => Filter },
             { no: 2, name: "includeQuantiles", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
-            { no: 3, name: "breakdowns", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.visibility.llm.v1.Dimension", Dimension] },
-            { no: 4, name: "breakdownLimit", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
-            { no: 5, name: "breakdownOrderBy", kind: "enum", T: () => ["octelium.api.main.visibility.llm.v1.Metric", Metric] }
+            { no: 3, name: "breakdowns", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => BreakdownRequest },
+            { no: 4, name: "cardinalities", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.visibility.llm.v1.Dimension", Dimension] }
         ]);
     }
     create(value?: PartialMessage<GetSummaryRequest>): GetSummaryRequest {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.includeQuantiles = false;
         message.breakdowns = [];
-        message.breakdownLimit = 0;
-        message.breakdownOrderBy = 0;
+        message.cardinalities = [];
         if (value !== undefined)
             reflectionMergePartial<GetSummaryRequest>(this, message, value);
         return message;
@@ -3628,18 +4523,15 @@ class GetSummaryRequest$Type extends MessageType<GetSummaryRequest> {
                 case /* bool includeQuantiles */ 2:
                     message.includeQuantiles = reader.bool();
                     break;
-                case /* repeated octelium.api.main.visibility.llm.v1.Dimension breakdowns */ 3:
+                case /* repeated octelium.api.main.visibility.llm.v1.BreakdownRequest breakdowns */ 3:
+                    message.breakdowns.push(BreakdownRequest.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* repeated octelium.api.main.visibility.llm.v1.Dimension cardinalities */ 4:
                     if (wireType === WireType.LengthDelimited)
                         for (let e = reader.int32() + reader.pos; reader.pos < e;)
-                            message.breakdowns.push(reader.int32());
+                            message.cardinalities.push(reader.int32());
                     else
-                        message.breakdowns.push(reader.int32());
-                    break;
-                case /* uint32 breakdownLimit */ 4:
-                    message.breakdownLimit = reader.uint32();
-                    break;
-                case /* octelium.api.main.visibility.llm.v1.Metric breakdownOrderBy */ 5:
-                    message.breakdownOrderBy = reader.int32();
+                        message.cardinalities.push(reader.int32());
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -3659,19 +4551,16 @@ class GetSummaryRequest$Type extends MessageType<GetSummaryRequest> {
         /* bool includeQuantiles = 2; */
         if (message.includeQuantiles !== false)
             writer.tag(2, WireType.Varint).bool(message.includeQuantiles);
-        /* repeated octelium.api.main.visibility.llm.v1.Dimension breakdowns = 3; */
-        if (message.breakdowns.length) {
-            writer.tag(3, WireType.LengthDelimited).fork();
-            for (let i = 0; i < message.breakdowns.length; i++)
-                writer.int32(message.breakdowns[i]);
+        /* repeated octelium.api.main.visibility.llm.v1.BreakdownRequest breakdowns = 3; */
+        for (let i = 0; i < message.breakdowns.length; i++)
+            BreakdownRequest.internalBinaryWrite(message.breakdowns[i], writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.visibility.llm.v1.Dimension cardinalities = 4; */
+        if (message.cardinalities.length) {
+            writer.tag(4, WireType.LengthDelimited).fork();
+            for (let i = 0; i < message.cardinalities.length; i++)
+                writer.int32(message.cardinalities[i]);
             writer.join();
         }
-        /* uint32 breakdownLimit = 4; */
-        if (message.breakdownLimit !== 0)
-            writer.tag(4, WireType.Varint).uint32(message.breakdownLimit);
-        /* octelium.api.main.visibility.llm.v1.Metric breakdownOrderBy = 5; */
-        if (message.breakdownOrderBy !== 0)
-            writer.tag(5, WireType.Varint).int32(message.breakdownOrderBy);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -3687,12 +4576,13 @@ class GetSummaryResponse$Type extends MessageType<GetSummaryResponse> {
     constructor() {
         super("octelium.api.main.visibility.llm.v1.GetSummaryResponse", [
             { no: 1, name: "stats", kind: "message", T: () => Stats },
-            { no: 2, name: "cardinality", kind: "message", T: () => Cardinality },
+            { no: 2, name: "cardinalities", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => CardinalityItem },
             { no: 3, name: "breakdowns", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Breakdown }
         ]);
     }
     create(value?: PartialMessage<GetSummaryResponse>): GetSummaryResponse {
         const message = globalThis.Object.create((this.messagePrototype!));
+        message.cardinalities = [];
         message.breakdowns = [];
         if (value !== undefined)
             reflectionMergePartial<GetSummaryResponse>(this, message, value);
@@ -3706,8 +4596,8 @@ class GetSummaryResponse$Type extends MessageType<GetSummaryResponse> {
                 case /* octelium.api.main.visibility.llm.v1.Stats stats */ 1:
                     message.stats = Stats.internalBinaryRead(reader, reader.uint32(), options, message.stats);
                     break;
-                case /* octelium.api.main.visibility.llm.v1.Cardinality cardinality */ 2:
-                    message.cardinality = Cardinality.internalBinaryRead(reader, reader.uint32(), options, message.cardinality);
+                case /* repeated octelium.api.main.visibility.llm.v1.CardinalityItem cardinalities */ 2:
+                    message.cardinalities.push(CardinalityItem.internalBinaryRead(reader, reader.uint32(), options));
                     break;
                 case /* repeated octelium.api.main.visibility.llm.v1.Breakdown breakdowns */ 3:
                     message.breakdowns.push(Breakdown.internalBinaryRead(reader, reader.uint32(), options));
@@ -3727,9 +4617,9 @@ class GetSummaryResponse$Type extends MessageType<GetSummaryResponse> {
         /* octelium.api.main.visibility.llm.v1.Stats stats = 1; */
         if (message.stats)
             Stats.internalBinaryWrite(message.stats, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
-        /* octelium.api.main.visibility.llm.v1.Cardinality cardinality = 2; */
-        if (message.cardinality)
-            Cardinality.internalBinaryWrite(message.cardinality, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.visibility.llm.v1.CardinalityItem cardinalities = 2; */
+        for (let i = 0; i < message.cardinalities.length; i++)
+            CardinalityItem.internalBinaryWrite(message.cardinalities[i], writer.tag(2, WireType.LengthDelimited).fork(), options).join();
         /* repeated octelium.api.main.visibility.llm.v1.Breakdown breakdowns = 3; */
         for (let i = 0; i < message.breakdowns.length; i++)
             Breakdown.internalBinaryWrite(message.breakdowns[i], writer.tag(3, WireType.LengthDelimited).fork(), options).join();
@@ -4516,15 +5406,17 @@ class ListTopToolResponse_Item$Type extends MessageType<ListTopToolResponse_Item
         super("octelium.api.main.visibility.llm.v1.ListTopToolResponse.Item", [
             { no: 1, name: "tool", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 2, name: "stats", kind: "message", T: () => Stats },
-            { no: 3, name: "declaredCount", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
-            { no: 4, name: "calledCount", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
+            { no: 3, name: "offeredCount", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 4, name: "calledCount", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ },
+            { no: 5, name: "removedCount", kind: "scalar", T: 4 /*ScalarType.UINT64*/, L: 2 /*LongType.NUMBER*/ }
         ]);
     }
     create(value?: PartialMessage<ListTopToolResponse_Item>): ListTopToolResponse_Item {
         const message = globalThis.Object.create((this.messagePrototype!));
         message.tool = "";
-        message.declaredCount = 0;
+        message.offeredCount = 0;
         message.calledCount = 0;
+        message.removedCount = 0;
         if (value !== undefined)
             reflectionMergePartial<ListTopToolResponse_Item>(this, message, value);
         return message;
@@ -4540,11 +5432,14 @@ class ListTopToolResponse_Item$Type extends MessageType<ListTopToolResponse_Item
                 case /* octelium.api.main.visibility.llm.v1.Stats stats */ 2:
                     message.stats = Stats.internalBinaryRead(reader, reader.uint32(), options, message.stats);
                     break;
-                case /* uint64 declaredCount */ 3:
-                    message.declaredCount = reader.uint64().toNumber();
+                case /* uint64 offeredCount */ 3:
+                    message.offeredCount = reader.uint64().toNumber();
                     break;
                 case /* uint64 calledCount */ 4:
                     message.calledCount = reader.uint64().toNumber();
+                    break;
+                case /* uint64 removedCount */ 5:
+                    message.removedCount = reader.uint64().toNumber();
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -4564,12 +5459,15 @@ class ListTopToolResponse_Item$Type extends MessageType<ListTopToolResponse_Item
         /* octelium.api.main.visibility.llm.v1.Stats stats = 2; */
         if (message.stats)
             Stats.internalBinaryWrite(message.stats, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
-        /* uint64 declaredCount = 3; */
-        if (message.declaredCount !== 0)
-            writer.tag(3, WireType.Varint).uint64(message.declaredCount);
+        /* uint64 offeredCount = 3; */
+        if (message.offeredCount !== 0)
+            writer.tag(3, WireType.Varint).uint64(message.offeredCount);
         /* uint64 calledCount = 4; */
         if (message.calledCount !== 0)
             writer.tag(4, WireType.Varint).uint64(message.calledCount);
+        /* uint64 removedCount = 5; */
+        if (message.removedCount !== 0)
+            writer.tag(5, WireType.Varint).uint64(message.removedCount);
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);

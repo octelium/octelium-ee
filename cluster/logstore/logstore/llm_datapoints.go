@@ -50,25 +50,23 @@ func getLLMDataPointRange(f *vllmv1.Filter) (time.Time, time.Time) {
 	return from.UTC(), to.UTC()
 }
 
-func llmDataPointBuckets(from, to time.Time, interval *intervalDataPoint) []time.Time {
-	var ret []time.Time
-
+func llmDataPointBuckets(from, to time.Time, interval *intervalDataPoint) ([]time.Time, error) {
 	d := llmIntervalDuration(interval)
 	if d <= 0 {
-		return ret
+		return nil, grpcutils.InvalidArg("Invalid interval")
 	}
 
-	current := from.Truncate(d)
-	for current.Before(to) {
+	if to.Sub(from)/d > llmMaxDataPointBuckets {
+		return nil, grpcutils.InvalidArg(
+			"The time range and the interval produce more than %d buckets", llmMaxDataPointBuckets)
+	}
+
+	var ret []time.Time
+	for current := from.Truncate(d); current.Before(to); current = current.Add(d) {
 		ret = append(ret, current)
-		current = current.Add(d)
-
-		if len(ret) > 10000 {
-			break
-		}
 	}
 
-	return ret
+	return ret, nil
 }
 
 func llmIntervalDuration(interval *intervalDataPoint) time.Duration {
@@ -218,7 +216,7 @@ func llmDataPoints(buckets []time.Time, rows []*llmDataPointRow, key string) []*
 func (s *Server) getLLMDataPoint(ctx context.Context,
 	req *vllmv1.GetDataPointRequest) (*vllmv1.GetDataPointResponse, error) {
 
-	filters, err := getLLMFilters(req.Filter)
+	filters, err := getLLMAggregateFilters(req.Filter)
 	if err != nil {
 		return nil, err
 	}
@@ -233,7 +231,11 @@ func (s *Server) getLLMDataPoint(ctx context.Context,
 		goqu.L(fmt.Sprintf(`%s < ?`, llmExprCreatedAtTimestamp), to))
 
 	interval := s.getDataPointInterval(req.Interval)
-	buckets := llmDataPointBuckets(from, to, interval)
+
+	buckets, err := llmDataPointBuckets(from, to, interval)
+	if err != nil {
+		return nil, err
+	}
 
 	quantiles := req.IncludeQuantiles || llmMetricNeedsQuantiles(req.OrderBy)
 
@@ -316,7 +318,7 @@ func (s *Server) getLLMDataPoint(ctx context.Context,
 		})
 	}
 
-	if totalCount <= uint64(len(keys)) {
+	if dim.multi || totalCount <= uint64(len(keys)) {
 		return ret, nil
 	}
 

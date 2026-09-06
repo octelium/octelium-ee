@@ -98,9 +98,10 @@ export interface ILLMServiceClient {
     listTopModel(input: ListTopModelRequest, options?: RpcOptions): UnaryCall<ListTopModelRequest, ListTopModelResponse>;
     /**
      * ListTopTool ranks the tools. It is a dedicated method rather than a
-     * Dimension since a tool row carries both the number of the requests that
-     * offered the tool and the number of the requests whose model asked to
-     * invoke it, which are two different groupings of two different fields.
+     * Dimension since a tool row carries the number of the requests that offered
+     * the tool, the number of the requests whose model asked to invoke it and
+     * the number of the requests from which a Tools Plugin removed it, which are
+     * three different groupings of three different fields.
      *
      * @generated from protobuf rpc: ListTopTool
      */
@@ -224,9 +225,10 @@ export class LLMServiceClient implements ILLMServiceClient, ServiceInfo {
     }
     /**
      * ListTopTool ranks the tools. It is a dedicated method rather than a
-     * Dimension since a tool row carries both the number of the requests that
-     * offered the tool and the number of the requests whose model asked to
-     * invoke it, which are two different groupings of two different fields.
+     * Dimension since a tool row carries the number of the requests that offered
+     * the tool, the number of the requests whose model asked to invoke it and
+     * the number of the requests from which a Tools Plugin removed it, which are
+     * three different groupings of three different fields.
      *
      * @generated from protobuf rpc: ListTopTool
      */
