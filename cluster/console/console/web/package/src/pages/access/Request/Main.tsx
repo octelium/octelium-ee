@@ -84,7 +84,7 @@ export const MainInfo = (props: {
               {meta.label}
             </span>
             {status?.state?.createdAt && (
-              <span className="text-[0.68rem] font-semibold text-slate-400">
+              <span className="text-xs font-normal text-slate-500">
                 <TimeAgo rfc3339={status.state.createdAt} />
               </span>
             )}
@@ -161,7 +161,7 @@ export const MainInfo = (props: {
               label: "Justification",
               span: "full" as const,
               value: (
-                <span className="text-[0.78rem] font-semibold text-slate-700">
+                <span className="text-body font-semibold text-slate-700">
                   {item.spec.justification}
                 </span>
               ),

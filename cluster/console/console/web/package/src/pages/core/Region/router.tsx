@@ -1,31 +1,22 @@
 import { ResourceComponentInfo } from "@/pages/utils/types";
-
-import Edit from "./Edit";
-import { ExtraComponent, LabelComponent } from "./List";
-import Main, { MainInfo } from "./Main";
+import { lazyNamed, lazyResourceInfo, lazySpec } from "@/pages/utils/lazy";
 
 const resourceComponentInfo: ResourceComponentInfo = {
   API: "core",
   Kind: "Region",
   List: {
-    // @ts-ignore
-    labelComponent: LabelComponent,
-    // @ts-ignore
-    extraComponent: ExtraComponent,
+    labelComponent: lazyNamed(() => import("./List"), "LabelComponent"),
   },
   Item: {
-    // @ts-ignore
-    Edit: Edit,
-    // @ts-ignore
-    Main: Main,
+    Edit: lazySpec(() => import("./Edit")),
+    hasMain: true,
   },
 
   unCreatable: true,
   unDeletable: true,
   unEditable: true,
 
-  // @ts-ignore
-  infoItemsGetter: MainInfo,
+  infoItemsGetter: lazyResourceInfo(() => import("./Main")),
 };
 
 export default resourceComponentInfo;

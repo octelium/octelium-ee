@@ -1,6 +1,7 @@
 import { API, Resource, ResourceName } from "@/utils/pb";
 import { Drawer } from "@mantine/core";
 import * as React from "react";
+import { useHasDirtyForm } from "@/utils/forms";
 import { useLocation, useNavigate } from "react-router-dom";
 import ResourceCreatePage from "./ResourceCreate";
 
@@ -13,10 +14,10 @@ type CreateRouteState = {
 type Props = {
   api: API;
   kind: ResourceName;
-  specComponent: (props: {
+  specComponent: React.ComponentType<{
     item: Resource;
     onUpdate: (item: Resource) => void;
-  }) => React.ReactNode;
+  }>;
   createResource?: () => Resource;
 };
 
@@ -26,6 +27,7 @@ const ResourceCreateRoute = (props: Props) => {
   const state = (location.state as CreateRouteState | null) ?? undefined;
   const inDrawer = state?.createInDrawer === true;
   const [opened, setOpened] = React.useState(false);
+  const hasDirtyForm = useHasDirtyForm();
   const createdName = React.useRef<string | undefined>(undefined);
 
   React.useEffect(() => {
@@ -73,26 +75,37 @@ const ResourceCreateRoute = (props: Props) => {
       onClose={close}
       position="right"
       size="min(960px, 100vw)"
+      closeOnClickOutside={!hasDirtyForm}
+      closeOnEscape={!hasDirtyForm}
       transitionProps={{
         transition: "slide-left",
-        duration: 500,
-        exitDuration: 500,
+        duration: 250,
+        exitDuration: 250,
         onExited: handleExited,
       }}
       title={
-        <span className="text-sm font-bold text-slate-800">
+        <span className="text-sm font-semibold text-slate-900">
           Create {props.kind}
         </span>
       }
       overlayProps={{ backgroundOpacity: 0.2, blur: 1 }}
       styles={{
-        header: { borderBottom: "1px solid #e2e8f0", minHeight: "56px" },
+        header: {
+          borderBottomWidth: "1px",
+          borderBottomStyle: "solid",
+          borderBottomColor: "#e2e8f0",
+          minHeight: "56px",
+        },
         body: {
           minHeight: "calc(100dvh - 56px)",
           padding: "16px",
           backgroundColor: "#f8fafc",
         },
-        content: { borderLeft: "1px solid #e2e8f0" },
+        content: {
+          borderLeftWidth: "1px",
+          borderLeftStyle: "solid",
+          borderLeftColor: "#e2e8f0",
+        },
       }}
     >
       <ResourceCreatePage

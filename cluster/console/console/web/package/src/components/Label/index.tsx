@@ -12,8 +12,8 @@ const tones: Record<LabelTone, string> = {
 };
 
 const sizes: Record<LabelSize, string> = {
-  sm: "min-h-5 px-1.5 py-0.5 text-[0.65rem]",
-  md: "min-h-[22px] px-2 py-1 text-[0.7rem]",
+  sm: "min-h-5 px-1.5 py-0.5 text-micro",
+  md: "min-h-[22px] px-2 py-1 text-xs",
 };
 
 const Label = (props: {
@@ -27,14 +27,14 @@ const Label = (props: {
   <span
     className={twMerge(
       "inline-flex max-w-full items-center gap-1 rounded-md border font-bold leading-none",
-      "whitespace-nowrap shadow-[0_1px_2px_rgba(15,23,42,0.035)]",
-      "cursor-default transition-[color,background-color,border-color,box-shadow,filter] duration-500",
+      "whitespace-nowrap shadow-card",
+      "cursor-default transition-[color,background-color,border-color,box-shadow,filter] duration-200",
       sizes[props.size ?? "md"],
       props.outlined
         ? "border-slate-200 bg-white text-slate-700"
         : tones[props.tone ?? "neutral"],
       props.isLink &&
-        "cursor-pointer hover:border-slate-300 hover:brightness-[0.98] hover:shadow-[0_2px_5px_rgba(15,23,42,0.07)] focus-within:ring-2 focus-within:ring-blue-500/20",
+        "cursor-pointer hover:border-slate-300 hover:brightness-[0.98] hover:shadow-card focus-within:ring-2 focus-within:ring-blue-500/20",
       props.className,
     )}
   >

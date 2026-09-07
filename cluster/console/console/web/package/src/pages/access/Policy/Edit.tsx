@@ -37,6 +37,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { match } from "ts-pattern";
 import { twMerge } from "tailwind-merge";
+import { useListKeys } from "@/utils/forms";
 
 const newCondition = (): AccessP.Policy_Spec_Rule_Condition =>
   AccessP.Policy_Spec_Rule_Condition.create({
@@ -221,10 +222,10 @@ const ConditionTypePicker = (props: {
   return (
     <div>
       <div className="mb-2">
-        <p className="text-[0.72rem] font-bold text-slate-700">
+        <p className="text-xs font-semibold text-slate-700">
           What should this rule match?
         </p>
-        <p className="mt-0.5 text-[0.66rem] font-semibold text-slate-400">
+        <p className="mt-0.5 text-micro font-normal text-slate-500">
           Choose a condition and configure its value directly below.
         </p>
       </div>
@@ -240,7 +241,7 @@ const ConditionTypePicker = (props: {
                 if (!active) props.onChange(value);
               }}
               className={twMerge(
-                "flex min-w-0 items-start gap-2.5 rounded-xl border px-3 py-2.5 text-left outline-none transition-[border-color,background-color,box-shadow] duration-500 focus-visible:ring-2 focus-visible:ring-blue-500/30",
+                "flex min-w-0 items-start gap-2.5 rounded-xl border px-3 py-2.5 text-left outline-none transition-[border-color,background-color,box-shadow] duration-200 focus-visible:ring-2 focus-visible:ring-blue-500/30",
                 active
                   ? "border-slate-700 bg-slate-800 text-white shadow-sm"
                   : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50/70",
@@ -251,15 +252,15 @@ const ConditionTypePicker = (props: {
                 strokeWidth={2.2}
                 className={twMerge(
                   "mt-0.5 shrink-0",
-                  active ? "text-slate-200" : "text-slate-400",
+                  active ? "text-slate-200" : "text-slate-500",
                 )}
               />
               <span className="min-w-0">
-                <span className="block text-[0.72rem] font-bold">{label}</span>
+                <span className="block text-xs font-semibold">{label}</span>
                 <span
                   className={twMerge(
-                    "mt-0.5 block text-[0.63rem] font-semibold leading-4",
-                    active ? "text-slate-300" : "text-slate-400",
+                    "mt-0.5 block text-micro font-normal leading-4",
+                    active ? "text-slate-300" : "text-slate-500",
                   )}
                 >
                   {description}
@@ -277,6 +278,7 @@ const ConditionEdit = (props: {
   condition: AccessP.Policy_Spec_Rule_Condition;
   onUpdate: () => void;
 }) => {
+  const rows = useListKeys();
   const { condition, onUpdate } = props;
 
   return (
@@ -294,7 +296,7 @@ const ConditionEdit = (props: {
           .when(
             (x) => x.oneofKind === "matchAny",
             () => (
-              <div className="rounded-xl border border-blue-100 bg-blue-50/60 px-3 py-2.5 text-[0.69rem] font-semibold text-blue-700">
+              <div className="rounded-xl border border-blue-100 bg-blue-50/60 px-3 py-2.5 text-xs font-semibold text-blue-700">
                 This rule applies to every access request that reaches it.
               </div>
             ),
@@ -400,9 +402,10 @@ const ConditionEdit = (props: {
               >
                 {all.all.of.map((sub, idx) => (
                   <EditItem
-                    key={idx}
+                    key={rows.keyAt("all", idx)}
                     obj={sub}
                     onUnset={() => {
+                      rows.removeAt("all", idx);
                       all.all.of.splice(idx, 1);
                       onUpdate();
                     }}
@@ -431,9 +434,10 @@ const ConditionEdit = (props: {
               >
                 {any.any.of.map((sub, idx) => (
                   <EditItem
-                    key={idx}
+                    key={rows.keyAt("any", idx)}
                     obj={sub}
                     onUnset={() => {
+                      rows.removeAt("any", idx);
                       any.any.of.splice(idx, 1);
                       onUpdate();
                     }}
@@ -502,8 +506,8 @@ const ChoiceButtonGrid = <T extends string,>(props: {
 }) => (
   <div>
     <div className="mb-2">
-      <p className="text-[0.72rem] font-bold text-slate-700">{props.label}</p>
-      <p className="mt-0.5 text-[0.66rem] font-semibold text-slate-400">
+      <p className="text-xs font-semibold text-slate-700">{props.label}</p>
+      <p className="mt-0.5 text-micro font-normal text-slate-500">
         {props.description}
       </p>
     </div>
@@ -527,7 +531,7 @@ const ChoiceButtonGrid = <T extends string,>(props: {
               if (!active) props.onChange(value);
             }}
             className={twMerge(
-              "flex min-w-0 items-start gap-2.5 rounded-xl border px-3 py-2.5 text-left outline-none transition-[border-color,background-color,box-shadow] duration-500 focus-visible:ring-2 focus-visible:ring-blue-500/30",
+              "flex min-w-0 items-start gap-2.5 rounded-xl border px-3 py-2.5 text-left outline-none transition-[border-color,background-color,box-shadow] duration-200 focus-visible:ring-2 focus-visible:ring-blue-500/30",
               active
                 ? "border-slate-700 bg-slate-800 text-white shadow-sm"
                 : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50/70",
@@ -538,15 +542,15 @@ const ChoiceButtonGrid = <T extends string,>(props: {
               strokeWidth={2.2}
               className={twMerge(
                 "mt-0.5 shrink-0",
-                active ? "text-slate-200" : "text-slate-400",
+                active ? "text-slate-200" : "text-slate-500",
               )}
             />
             <span className="min-w-0">
-              <span className="block text-[0.72rem] font-bold">{label}</span>
+              <span className="block text-xs font-semibold">{label}</span>
               <span
                 className={twMerge(
-                  "mt-0.5 block text-[0.63rem] font-semibold leading-4",
-                  active ? "text-slate-300" : "text-slate-400",
+                  "mt-0.5 block text-micro font-normal leading-4",
+                  active ? "text-slate-300" : "text-slate-500",
                 )}
               >
                 {description}
@@ -563,6 +567,7 @@ const ReviewStepEdit = (props: {
   step: AccessP.Policy_Spec_Rule_Action_Review_Step;
   onUpdate: () => void;
 }) => {
+  const rows = useListKeys();
   const { step, onUpdate } = props;
 
   return (
@@ -596,9 +601,10 @@ const ReviewStepEdit = (props: {
       >
         {step.reviewers.map((reviewer, idx) => (
           <EditItem
-            key={idx}
+            key={rows.keyAt("reviewers", idx)}
             obj={reviewer}
             onUnset={() => {
+              rows.removeAt("reviewers", idx);
               step.reviewers.splice(idx, 1);
               onUpdate();
             }}
@@ -797,6 +803,7 @@ const RuleEdit = (props: {
   rule: AccessP.Policy_Spec_Rule;
   onUpdate: () => void;
 }) => {
+  const rows = useListKeys();
   const { rule, onUpdate } = props;
 
   return (
@@ -942,9 +949,10 @@ const RuleEdit = (props: {
                   >
                     {review.review.steps.map((step, idx) => (
                       <EditItem
-                        key={idx}
+                        key={rows.keyAt("reviewSteps", idx)}
                         obj={step}
                         onUnset={() => {
+                          rows.removeAt("reviewSteps", idx);
                           review.review.steps.splice(idx, 1);
                           onUpdate();
                         }}

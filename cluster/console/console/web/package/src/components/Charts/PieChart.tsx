@@ -4,21 +4,9 @@ import { AriaComponent, TooltipComponent } from "echarts/components";
 import * as echarts from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 import { useMemo } from "react";
+import { CHART_INK, seriesColor } from "@/utils/charts/palette";
 
 echarts.use([PieChartC, CanvasRenderer, AriaComponent, TooltipComponent]);
-
-const SLICE_COLORS = [
-  "#2563eb",
-  "#0891b2",
-  "#4f46e5",
-  "#0d9488",
-  "#7c3aed",
-  "#16a34a",
-  "#d97706",
-  "#db2777",
-  "#475569",
-  "#dc2626",
-];
 
 type PieChartItem = {
   name: string;
@@ -58,7 +46,7 @@ const PieChart = ({ data, title }: PieChartProps) => {
         .map((item, index) => ({
           ...item,
           itemStyle: {
-            color: SLICE_COLORS[index % SLICE_COLORS.length],
+            color: seriesColor(index),
           },
         })),
     [data],
@@ -85,7 +73,7 @@ const PieChart = ({ data, title }: PieChartProps) => {
         borderWidth: 1,
         padding: [10, 12],
         textStyle: {
-          color: "#f8fafc",
+          color: CHART_INK.onDark,
           fontFamily: "Ubuntu, sans-serif",
           fontSize: 12,
         },
@@ -115,14 +103,14 @@ const PieChart = ({ data, title }: PieChartProps) => {
             formatter: `{value|${formatNumber(total)}}\n{label|TOTAL}`,
             rich: {
               value: {
-                color: "#0f172a",
+                color: CHART_INK.primary,
                 fontFamily: "Ubuntu, sans-serif",
                 fontSize: 21,
                 fontWeight: 700,
                 lineHeight: 28,
               },
               label: {
-                color: "#94a3b8",
+                color: CHART_INK.muted,
                 fontFamily: "Ubuntu, sans-serif",
                 fontSize: 9,
                 fontWeight: 700,
@@ -152,9 +140,9 @@ const PieChart = ({ data, title }: PieChartProps) => {
       <div className="flex min-h-40 w-full items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/60 px-4 text-center">
         <div>
           {title && (
-            <p className="mb-1 text-xs font-bold text-slate-700">{title}</p>
+            <p className="mb-1 text-xs font-semibold text-slate-700">{title}</p>
           )}
-          <p className="text-xs font-semibold text-slate-400">
+          <p className="text-xs font-normal text-slate-500">
             No data available
           </p>
         </div>
@@ -168,7 +156,7 @@ const PieChart = ({ data, title }: PieChartProps) => {
       aria-label={title ?? "Distribution chart"}
     >
       {title && (
-        <p className="mb-2 text-xs font-bold tracking-tight text-slate-800">
+        <p className="mb-2 text-xs font-semibold tracking-tight text-slate-800">
           {title}
         </p>
       )}
@@ -191,23 +179,23 @@ const PieChart = ({ data, title }: PieChartProps) => {
             return (
               <div
                 key={item.name}
-                className="group flex min-w-0 items-center gap-2.5 rounded-lg px-2.5 py-2 transition-colors duration-500 hover:bg-white"
+                className="group flex min-w-0 items-center gap-2.5 rounded-lg px-2.5 py-2 transition-colors duration-200 hover:bg-white"
               >
                 <span
                   className="h-2.5 w-2.5 shrink-0 rounded-full ring-2 ring-white"
                   style={{
                     backgroundColor:
-                      SLICE_COLORS[index % SLICE_COLORS.length],
+                      seriesColor(index),
                   }}
                 />
-                <dt className="min-w-0 flex-1 truncate text-xs font-semibold text-slate-600">
+                <dt className="min-w-0 flex-1 truncate text-xs font-normal text-slate-600">
                   {item.name}
                 </dt>
                 <dd className="flex shrink-0 items-baseline gap-2">
-                  <span className="text-xs font-bold tabular-nums text-slate-800">
+                  <span className="text-xs font-semibold tabular-nums text-slate-800">
                     {formatNumber(item.value)}
                   </span>
-                  <span className="w-10 text-right text-[0.65rem] font-bold tabular-nums text-slate-400">
+                  <span className="w-10 text-right text-micro font-normal tabular-nums text-slate-500">
                     {percentage.toFixed(1)}%
                   </span>
                 </dd>

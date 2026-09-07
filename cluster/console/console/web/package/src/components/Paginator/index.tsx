@@ -1,8 +1,7 @@
 import { ListResponseMeta } from "@/apis/metav1/metav1";
-import { Pagination, SegmentedControl } from "@mantine/core";
-import { ArrowDownWideNarrow, ArrowUpWideNarrow, X } from "lucide-react";
+import { Pagination } from "@mantine/core";
+import { X } from "lucide-react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { twMerge } from "tailwind-merge";
 
 const REF_PARAM_LABELS: Record<string, string> = {
   "userRef.name": "User",
@@ -45,13 +44,15 @@ const BOOLEAN_PARAM_LABELS: Record<string, string> = {
   isUserHidden: "Hidden",
 };
 
-interface FilterChip {
+export interface FilterChip {
   key: string;
   label: string;
   value: string;
 }
 
-const buildFilterChips = (searchParams: URLSearchParams): FilterChip[] => {
+export const buildFilterChips = (
+  searchParams: URLSearchParams,
+): FilterChip[] => {
   const chips: FilterChip[] = [];
 
   for (const [key, value] of searchParams.entries()) {
@@ -84,7 +85,7 @@ const buildFilterChips = (searchParams: URLSearchParams): FilterChip[] => {
   return chips;
 };
 
-const FilterChips = ({
+export const FilterChips = ({
   chips,
   onRemove,
 }: {
@@ -95,21 +96,21 @@ const FilterChips = ({
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      <span className="text-[0.65rem] font-bold uppercase tracking-[0.07em] text-slate-400 shrink-0">
+      <span className="shrink-0 text-xs font-normal text-slate-500">
         Filters
       </span>
       {chips.map((chip) => (
         <span
           key={chip.key}
-          className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-md border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05)] text-[0.7rem] font-semibold text-slate-600"
+          className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white py-0.5 pl-2 pr-1 text-xs font-normal text-slate-700"
         >
-          <span className="text-slate-400 font-bold">{chip.label}:</span>
+          <span className="font-semibold text-slate-500">{chip.label}:</span>
           <span>{chip.value}</span>
           <button
             type="button"
             onClick={() => onRemove(chip.key)}
             aria-label={`Remove ${chip.label} filter`}
-            className="flex items-center justify-center w-4 h-4 rounded ml-0.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors duration-150 cursor-pointer"
+            className="ml-0.5 flex h-4 w-4 cursor-pointer items-center justify-center rounded text-slate-500 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-900"
             title={`Remove ${chip.label} filter`}
           >
             <X size={10} strokeWidth={2.5} />
@@ -123,6 +124,7 @@ const FilterChips = ({
 const Paginator = (props: {
   meta?: ListResponseMeta;
   onPageChange?: (page: number) => void;
+  showFilters?: boolean;
 }) => {
   const { meta } = props;
   const navigate = useNavigate();
@@ -134,13 +136,8 @@ const Paginator = (props: {
   const itemsPerPage = Math.max(meta.itemsPerPage, 1);
   const totalPages = Math.max(1, Math.ceil(meta.totalCount / itemsPerPage));
   const hasMultiplePages = totalPages > 1;
-  const hasItems = meta.totalCount > 0;
 
-  if (!hasItems) return null;
-
-  const currentOrderBy =
-    searchParams.get("common.orderBy.type") ?? "CREATED_AT";
-  const currentOrderMode = searchParams.get("common.orderBy.mode") ?? "DESC";
+  if (meta.totalCount <= 0) return null;
 
   const navigateWithParams = (next: URLSearchParams) => {
     const search = next.toString();
@@ -150,17 +147,8 @@ const Paginator = (props: {
         search: search ? `?${search}` : "",
         hash: loc.hash,
       },
-      {
-        state: loc.state,
-        preventScrollReset: true,
-      },
+      { state: loc.state, preventScrollReset: true },
     );
-  };
-
-  const setParam = (key: string, value: string) => {
-    const next = new URLSearchParams(searchParams.toString());
-    next.set(key, value);
-    navigateWithParams(next);
   };
 
   const removeParam = (key: string) => {
@@ -170,96 +158,43 @@ const Paginator = (props: {
     navigateWithParams(next);
   };
 
-  const itemCountLabel =
-    meta.totalCount === 1
-      ? "1 item"
-      : `${meta.totalCount.toLocaleString()} items`;
+  const filterChips =
+    props.showFilters === false ? [] : buildFilterChips(searchParams);
 
-  const filterChips = buildFilterChips(searchParams);
+  const first = meta.page * itemsPerPage + 1;
+  const last = Math.min(meta.totalCount, (meta.page + 1) * itemsPerPage);
 
   return (
-    <div className="w-full flex flex-col gap-3 my-5">
+    <div className="my-5 flex w-full flex-col gap-3">
       {filterChips.length > 0 && (
         <FilterChips chips={filterChips} onRemove={removeParam} />
       )}
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-        {hasMultiplePages ? (
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <span className="text-xs font-normal tabular-nums text-slate-600">
+          {hasMultiplePages
+            ? `${first.toLocaleString()}–${last.toLocaleString()} of ${meta.totalCount.toLocaleString()}`
+            : `${meta.totalCount.toLocaleString()} ${meta.totalCount === 1 ? "item" : "items"}`}
+        </span>
+
+        {hasMultiplePages && (
           <Pagination
             total={totalPages}
             value={Math.min(Math.max(meta.page + 1, 1), totalPages)}
             withEdges
             radius="md"
             color="dark"
-            classNames={{
-              control: twMerge(
-                "!font-bold !text-[0.78rem]",
-                "!border-slate-200 !bg-white !text-slate-700",
-                "!shadow-[0_1px_3px_rgba(15,23,42,0.07)]",
-                "hover:!bg-slate-50 hover:!border-slate-300",
-                "!transition-colors !duration-500",
-                "data-[active]:!bg-slate-900 data-[active]:!border-slate-900 data-[active]:!text-white",
-              ),
-            }}
             onChange={(v) => {
               if (props.onPageChange) {
                 props.onPageChange(v - 1);
-              } else {
-                setParam("common.page", `${v}`);
+                return;
               }
+              const next = new URLSearchParams(searchParams.toString());
+              next.set("common.page", `${v}`);
+              navigateWithParams(next);
             }}
           />
-        ) : (
-          <span
-            className="text-[0.75rem] font-bold text-slate-500 tracking-wide"
-            style={{ textShadow: "0 1px 2px rgba(15,23,42,0.08)" }}
-          >
-            {itemCountLabel}
-          </span>
         )}
-
-        <div className="flex flex-wrap items-center gap-2">
-          <SegmentedControl
-            value={currentOrderBy}
-            onChange={(v) => setParam("common.orderBy.type", v)}
-            data={[
-              { label: "Name", value: "NAME" },
-              { label: "Created", value: "CREATED_AT" },
-            ]}
-          />
-
-          <SegmentedControl
-            value={currentOrderMode}
-            onChange={(v) => setParam("common.orderBy.mode", v)}
-            data={[
-              {
-                label: (
-                  <span className="flex items-center">
-                    <ArrowUpWideNarrow size={13} strokeWidth={2.5} />
-                  </span>
-                ),
-                value: "ASC",
-              },
-              {
-                label: (
-                  <span className="flex items-center">
-                    <ArrowDownWideNarrow size={13} strokeWidth={2.5} />
-                  </span>
-                ),
-                value: "DESC",
-              },
-            ]}
-          />
-
-          {hasMultiplePages && (
-            <span
-              className="text-[0.75rem] font-bold text-slate-500 tracking-wide whitespace-nowrap ml-1"
-              style={{ textShadow: "0 1px 2px rgba(15,23,42,0.08)" }}
-            >
-              {itemCountLabel}
-            </span>
-          )}
-        </div>
       </div>
     </div>
   );

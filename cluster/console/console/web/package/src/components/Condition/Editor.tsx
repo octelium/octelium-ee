@@ -250,7 +250,7 @@ export const CELEditor = (props: {
         onChange={(val) => props.onChange(val)}
       />
       {completionError && (
-        <p className="mt-1 text-[0.65rem] font-semibold text-amber-700" role="status">
+        <p className="mt-1 text-micro font-semibold text-amber-700" role="status">
           Context completion is unavailable, but the expression editor remains usable.
         </p>
       )}

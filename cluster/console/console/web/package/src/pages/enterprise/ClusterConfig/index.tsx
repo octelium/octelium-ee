@@ -104,7 +104,7 @@ const Edit = ({
               {req.spec.collector.pipelines.map((pipeline, index) => (
                 <div key={pipelineID(index)} className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 sm:p-4">
                   <div className="mb-3 flex items-center justify-between gap-3">
-                    <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Pipeline {index + 1}</div>
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Pipeline {index + 1}</div>
                     <Button type="button" size="compact-xs" variant="subtle" color="red" leftSection={<Trash2 size={13} />} onClick={() => { pipelineIDs.current.splice(index, 1); update((next) => { next.spec!.collector!.pipelines.splice(index, 1); }); }}>Remove</Button>
                   </div>
                   <div className="grid items-start gap-4 lg:grid-cols-3">

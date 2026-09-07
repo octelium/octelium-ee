@@ -1,4 +1,3 @@
-import "@mantine/charts/styles.css";
 import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
 import "@xterm/xterm/css/xterm.css";

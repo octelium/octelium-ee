@@ -97,7 +97,7 @@ const RevokeRequest = (props: { item: AccessPB.Request }) => {
               <h2 className="truncate text-sm font-bold text-slate-900">
                 Revoke request
               </h2>
-              <p className="mt-0.5 truncate text-[0.65rem] font-semibold text-slate-400">
+              <p className="mt-0.5 truncate text-micro font-normal text-slate-500">
                 {props.item.metadata?.name}
               </p>
             </div>
@@ -123,10 +123,10 @@ const RevokeRequest = (props: { item: AccessPB.Request }) => {
               strokeWidth={2.25}
             />
             <div>
-              <p className="text-[0.76rem] font-bold text-red-800">
+              <p className="text-body font-semibold text-red-800">
                 Access granted by this request will end
               </p>
-              <p className="mt-1 text-[0.69rem] font-semibold leading-relaxed text-red-700/80">
+              <p className="mt-1 text-xs font-semibold leading-relaxed text-red-700/80">
                 A pending request will be withdrawn. An approved request will
                 lose its active approval.
               </p>
@@ -156,7 +156,7 @@ const RevokeRequest = (props: { item: AccessPB.Request }) => {
           </div>
 
           {mutation.isError && (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-3.5 py-3 text-[0.7rem] font-semibold text-red-700">
+            <div className="rounded-xl border border-red-200 bg-red-50 px-3.5 py-3 text-xs font-semibold text-red-700">
               {mutation.error instanceof Error
                 ? mutation.error.message
                 : "The request could not be revoked."}

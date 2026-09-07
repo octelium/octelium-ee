@@ -1,25 +1,22 @@
 import { ResourceComponentInfo } from "@/pages/utils/types";
+import { lazyNamed, lazyResourceInfo, lazySpec } from "@/pages/utils/lazy";
 
 import {
   CollectorExporter,
   CollectorExporter_Spec,
   CollectorExporter_Spec_OTLP,
 } from "@/apis/enterprisev1/enterprisev1";
-import { Resource } from "@/utils/pb";
-import Edit from "./Edit";
-import { LabelComponent, Summary } from "./List";
-import Main, { MainInfo } from "./Main";
 
 const resourceComponentInfo: ResourceComponentInfo = {
   API: "enterprise",
   Kind: "CollectorExporter",
   List: {
-    labelComponent: ({ item }: { item: Resource }) => <LabelComponent item={item as CollectorExporter} />,
-    SummaryComponent: Summary,
+    labelComponent: lazyNamed(() => import("./List"), "LabelComponent"),
+    SummaryComponent: lazyNamed(() => import("./List"), "Summary"),
   },
   Item: {
-    Edit: ({ item, onUpdate }) => <Edit item={item as CollectorExporter} onUpdate={(next) => onUpdate(next)} />,
-    Main: ({ item }) => <Main item={item as CollectorExporter} />,
+    Edit: lazySpec(() => import("./Edit")),
+    hasMain: true,
 
     createResource: () => {
       return CollectorExporter.create({
@@ -49,7 +46,7 @@ const resourceComponentInfo: ResourceComponentInfo = {
     },
   },
 
-  infoItemsGetter: ({ item }) => MainInfo({ item: item as CollectorExporter }),
+  infoItemsGetter: lazyResourceInfo(() => import("./Main")),
 
   cloneable: true,
 };

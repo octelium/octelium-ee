@@ -117,7 +117,7 @@ const Signal = (props: {
   };
   return (
     <span
-      className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[0.68rem] font-bold ${colors[props.tone ?? "neutral"]}`}
+      className={`inline-flex items-center rounded border px-1.5 py-0.5 text-xs font-semibold ${colors[props.tone ?? "neutral"]}`}
     >
       {props.children}
     </span>
@@ -193,7 +193,7 @@ export const SessionCompactSecurityInfo = (props: { item: CoreP.Session }) => {
 
 const Section = (props: { title: string; children: React.ReactNode }) => (
   <section className="rounded-lg border border-slate-200 bg-white overflow-hidden">
-    <div className="border-b border-slate-100 bg-slate-50/70 px-3 py-2 text-[0.65rem] font-bold uppercase tracking-[0.07em] text-slate-500">
+    <div className="border-b border-slate-100 bg-slate-50/70 px-3 py-2 text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
       {props.title}
     </div>
     <div className="grid grid-cols-1 gap-px bg-slate-100 sm:grid-cols-2">
@@ -210,10 +210,10 @@ const Field = (props: {
   <div
     className={`${props.full ? "sm:col-span-2" : ""} min-w-0 bg-white px-3 py-2`}
   >
-    <div className="text-[0.58rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+    <div className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
       {props.label}
     </div>
-    <div className="mt-0.5 break-words text-[0.75rem] font-semibold text-slate-700">
+    <div className="mt-0.5 break-words text-body font-semibold text-slate-700">
       {props.children}
     </div>
   </div>
@@ -282,7 +282,7 @@ const GeoIPFields = (props: { geoip?: CoreP.GeoIP }) => {
             <CountryFlag code={country?.code} />
             <span>{country?.name || country?.code}</span>
             {country?.name && country?.code && (
-              <span className="text-[0.68rem] font-bold uppercase text-slate-400">
+              <span className="text-xs font-semibold uppercase text-slate-500">
                 {country.code}
               </span>
             )}
@@ -293,7 +293,7 @@ const GeoIPFields = (props: { geoip?: CoreP.GeoIP }) => {
         <Field label="Continent">
           {continent?.name || continent?.code}
           {continent?.name && continent?.code && (
-            <span className="ml-1 text-[0.68rem] font-bold uppercase text-slate-400">
+            <span className="ml-1 text-xs font-semibold uppercase text-slate-500">
               {continent.code}
             </span>
           )}
@@ -303,7 +303,7 @@ const GeoIPFields = (props: { geoip?: CoreP.GeoIP }) => {
         <Field label="Region">
           {region?.name || region?.code}
           {region?.name && region?.code && (
-            <span className="ml-1 text-[0.68rem] font-bold uppercase text-slate-400">
+            <span className="ml-1 text-xs font-semibold uppercase text-slate-500">
               {region.code}
             </span>
           )}
@@ -314,7 +314,7 @@ const GeoIPFields = (props: { geoip?: CoreP.GeoIP }) => {
         <Field label="Timezone">
           {timezoneID || offset}
           {timezoneID && offset && (
-            <span className="ml-1 text-[0.68rem] font-bold text-slate-400">
+            <span className="ml-1 text-xs font-normal text-slate-500">
               {offset}
             </span>
           )}
@@ -330,7 +330,7 @@ const GeoIPFields = (props: { geoip?: CoreP.GeoIP }) => {
         <Field label="Coordinates" full>
           {geoip.coordinates!.latitude}, {geoip.coordinates!.longitude}
           {!!geoip.coordinates?.accuracyRadius && (
-            <span className="ml-1 text-[0.68rem] font-bold text-slate-400">
+            <span className="ml-1 text-xs font-normal text-slate-500">
               ±{geoip.coordinates.accuracyRadius} km
             </span>
           )}

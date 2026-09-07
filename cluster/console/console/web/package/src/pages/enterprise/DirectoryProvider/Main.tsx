@@ -5,7 +5,6 @@ import Label from "@/components/Label";
 import { ResourceListLabel } from "@/components/ResourceList";
 import EditItemWrap from "@/components/ResourceLayout/EditItemWrap";
 import TimeAgo from "@/components/TimeAgo";
-import { useUpdateResource } from "@/pages/utils/resource";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { getDomain, onError } from "@/utils";
 import { getClientEnterprise } from "@/utils/client";
@@ -152,10 +151,10 @@ const ScimCredential = (props: { item: EnterpriseC.DirectoryProvider }) => {
                 <KeyRound size={15} />
               </span>
               <div>
-                <h2 className="text-[0.84rem] font-bold text-slate-900">
+                <h2 className="text-sm font-bold text-slate-900">
                   SCIM bearer token
                 </h2>
-                <p className="text-[0.67rem] font-semibold text-slate-400">
+                <p className="text-xs font-normal text-slate-500">
                   {props.item.metadata?.displayName || props.item.metadata?.name}
                 </p>
               </div>
@@ -237,36 +236,16 @@ export const MainInfo = (props: {
 }): ResourceMainInfo => {
   const { item } = props;
   const p = getDirectoryProviderPresentation(item);
-  const mutationUpdate = useUpdateResource();
   const type = item.spec?.type;
 
   return {
+    actions: p.isScim ? (
+      <ScimCredential item={item} />
+    ) : p.isSyncable ? (
+      <SynchronizeButton item={item} />
+    ) : undefined,
     items: [
       { label: "Type", value: <Label>{p.type}</Label> },
-      {
-        label: "Active",
-        value: (
-          <EditItemWrap
-            mutation={mutationUpdate}
-            label="active"
-            showComponent={
-              <span className={twMerge("text-sm font-semibold", item.spec?.isDisabled ? "text-red-500" : "text-emerald-600")}>
-                {item.spec?.isDisabled ? "Disabled" : "Active"}
-              </span>
-            }
-            editComponent={
-              <Switch
-                size="sm"
-                checked={!item.spec?.isDisabled}
-                onChange={(event) => {
-                  item.spec!.isDisabled = !event.currentTarget.checked;
-                  mutationUpdate.mutate(item);
-                }}
-              />
-            }
-          />
-        ),
-      },
       ...(item.status?.id
         ? [{ label: "Provider ID", value: <CopyText value={item.status.id} /> }]
         : []),
@@ -298,8 +277,8 @@ export const MainInfo = (props: {
                   <span className={twMerge("font-semibold", p.syncMeta.tone === "success" ? "text-emerald-600" : p.syncMeta.tone === "danger" ? "text-red-600" : "text-blue-600")}>
                     {p.syncMeta.label}
                   </span>
-                  {p.currentSync.createdAt && <span className="text-[0.68rem] font-semibold text-slate-400">Started <TimeAgo rfc3339={p.currentSync.createdAt} /></span>}
-                  {p.currentSync.completedAt && <span className="text-[0.68rem] font-semibold text-slate-400">Completed <TimeAgo rfc3339={p.currentSync.completedAt} /></span>}
+                  {p.currentSync.createdAt && <span className="text-xs font-normal text-slate-500">Started <TimeAgo rfc3339={p.currentSync.createdAt} /></span>}
+                  {p.currentSync.completedAt && <span className="text-xs font-normal text-slate-500">Completed <TimeAgo rfc3339={p.currentSync.completedAt} /></span>}
                 </div>
               ),
               span: "full" as const,
@@ -346,10 +325,10 @@ export const MainInfo = (props: {
                     const meta = getSyncStateMeta(entry.state);
                     return (
                       <div key={`${entry.createdAt?.seconds ?? 0}-${index}`} className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-white px-3 py-2 last:border-0">
-                        <span className={twMerge("text-[0.7rem] font-bold", meta.tone === "success" ? "text-emerald-600" : meta.tone === "danger" ? "text-red-600" : "text-blue-600")}>
+                        <span className={twMerge("text-xs font-semibold", meta.tone === "success" ? "text-emerald-600" : meta.tone === "danger" ? "text-red-600" : "text-blue-600")}>
                           {index === 0 && p.currentSync === entry ? "Current · " : ""}{meta.label}
                         </span>
-                        <div className="flex gap-3 text-[0.67rem] font-semibold text-slate-400">
+                        <div className="flex gap-3 text-xs font-normal text-slate-500">
                           {entry.createdAt && <span>Started <TimeAgo rfc3339={entry.createdAt} /></span>}
                           {entry.completedAt && <span>Completed <TimeAgo rfc3339={entry.completedAt} /></span>}
                         </div>
@@ -362,13 +341,9 @@ export const MainInfo = (props: {
           ]
         : []),
       ...(p.currentSync?.state === EnterpriseC.DirectoryProvider_Status_Synchronization_State.FAILED
-        ? [{ label: "Synchronization failure", value: <div className="flex items-start gap-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-[0.7rem] font-semibold text-red-700"><AlertTriangle size={13} className="mt-0.5 shrink-0" />The API does not expose a failure reason. Inspect component logs for details.</div>, span: "full" as const }]
+        ? [{ label: "Synchronization failure", value: <div className="flex items-start gap-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700"><AlertTriangle size={13} className="mt-0.5 shrink-0" />The API does not expose a failure reason. Inspect component logs for details.</div>, span: "full" as const }]
         : []),
-      {
-        label: "Actions",
-        value: p.isScim ? <ScimCredential item={item} /> : p.isSyncable ? <SynchronizeButton item={item} /> : <span className="text-slate-400">No actions available</span>,
-        span: "full" as const,
-      },
+
     ],
   };
 };

@@ -93,7 +93,7 @@ export const MainInfo = (props: {
               size={14}
               className="mt-0.5 shrink-0 text-blue-600"
             />
-            <p className="text-[0.7rem] font-semibold leading-relaxed text-blue-800/80">
+            <p className="text-xs font-semibold leading-relaxed text-blue-800/80">
               Managed Certificates use this issuer to request and renew
               certificates through the configured ACME provider.
               {p.state === E.CertificateIssuer_Status_State.NOT_READY &&

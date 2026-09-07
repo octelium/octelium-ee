@@ -4,10 +4,8 @@ import CopyText from "@/components/CopyText";
 import Label from "@/components/Label";
 import { ResourceListLabel } from "@/components/ResourceList";
 import EditItemWrap from "@/components/ResourceLayout/EditItemWrap";
-import { useUpdateResource } from "@/pages/utils/resource";
 import { ResourceMainInfo } from "@/pages/utils/types";
 import { cloneResource } from "@/utils/pb";
-import { Switch } from "@mantine/core";
 import { twMerge } from "tailwind-merge";
 import { getDestination, getType } from "./List";
 
@@ -43,13 +41,11 @@ export default (_props: { item: CollectorExporter }) => <></>;
 
 export const MainInfo = (props: { item: CollectorExporter }): ResourceMainInfo => {
   const { item } = props;
-  const mutationUpdate = useUpdateResource();
   const destination = getDestination(item);
   const type = item.spec?.type;
   const auth = getAuthInfo(item);
   const items: NonNullable<ResourceMainInfo["items"]> = [
     { label: "Type", value: <Label>{getType(item)}</Label> },
-    { label: "Active", value: <EditItemWrap mutation={mutationUpdate} label="active" showComponent={<span className={twMerge("text-sm font-semibold", item.spec?.isDisabled ? "text-red-500" : "text-emerald-600")}>{item.spec?.isDisabled ? "Disabled" : "Active"}</span>} editComponent={<Switch size="sm" checked={!item.spec?.isDisabled} onChange={(event) => { const next = cloneResource(item) as CollectorExporter; next.spec!.isDisabled = !event.currentTarget.checked; mutationUpdate.mutate(next); }} />} /> },
     ...(destination ? [{ label: "Destination", value: <CopyText value={destination} />, span: "full" as const }] : []),
     ...(auth ? [{ label: "Authentication", value: auth.method }, ...(auth.secret ? [{ label: "Credential Secret", value: secretLabel(auth.secret) }] : [])] : []),
   ];

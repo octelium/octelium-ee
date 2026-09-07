@@ -203,7 +203,7 @@ export const NoLogFound = () => {
     <div
       className={twMerge(
         "flex text-center items-center justify-center",
-        "font-bold text-4xl text-gray-600",
+        "font-bold text-4xl text-slate-600",
         "my-16",
       )}
     >

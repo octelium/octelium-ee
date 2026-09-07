@@ -14,12 +14,7 @@ import { getResourcePath, getResourceRef } from "@/utils/pb";
 import { Button, Drawer, Switch } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useMutation } from "@tanstack/react-query";
-import {
-  KeyRound,
-  Plus,
-  Shield,
-  X,
-} from "lucide-react";
+import { KeyRound, Plus, Shield, X } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -109,38 +104,6 @@ export default (props: { item: CoreC.User }) => {
   );
 };
 
-const UserActiveControl = (props: { item: CoreC.User }) => {
-  const { item } = props;
-  const mutationUpdate = useUpdateResource();
-
-  return (
-    <EditItemWrap
-      mutation={mutationUpdate}
-      label="active"
-      showComponent={
-        <span
-          className={twMerge(
-            "text-[0.75rem] font-semibold",
-            item.spec!.isDisabled ? "text-red-500" : "text-emerald-600",
-          )}
-        >
-          {item.spec!.isDisabled ? "Disabled" : "Active"}
-        </span>
-      }
-      editComponent={
-        <Switch
-          size="sm"
-          checked={!item.spec!.isDisabled}
-          onChange={(v) => {
-            item.spec!.isDisabled = !v.currentTarget.checked;
-            mutationUpdate.mutate(item);
-          }}
-        />
-      }
-    />
-  );
-};
-
 const CreateUserCredential = (props: { item: CoreC.User }) => {
   const { item } = props;
   const [opened, { open, close }] = useDisclosure(false);
@@ -148,9 +111,12 @@ const CreateUserCredential = (props: { item: CoreC.User }) => {
   const getCredentialNamePrefix = (
     userName: string,
     type: CoreC.Credential_Spec_Type,
-  ) => `${userName}-${slugify(CoreC.Credential_Spec_Type[type]).toLowerCase()}-`;
-  const getCredentialName = (userName: string, type: CoreC.Credential_Spec_Type) =>
-    `${getCredentialNamePrefix(userName, type)}${randomStringLowerCase(6)}`;
+  ) =>
+    `${userName}-${slugify(CoreC.Credential_Spec_Type[type]).toLowerCase()}-`;
+  const getCredentialName = (
+    userName: string,
+    type: CoreC.Credential_Spec_Type,
+  ) => `${getCredentialNamePrefix(userName, type)}${randomStringLowerCase(6)}`;
   const [credential, setCredential] = useState(() => {
     const next = CoreC.Credential.create({
       kind: "Credential",
@@ -210,7 +176,7 @@ const CreateUserCredential = (props: { item: CoreC.User }) => {
               <span className="text-sm font-bold text-slate-800">
                 Create credential
               </span>
-              <span className="text-[0.7rem] font-semibold text-slate-500">
+              <span className="text-xs font-normal text-slate-500">
                 Issue a new credential for {item.metadata?.name}
               </span>
             </div>
@@ -223,13 +189,22 @@ const CreateUserCredential = (props: { item: CoreC.User }) => {
           exitDuration: 500,
         }}
         styles={{
-          header: { borderBottom: "1px solid #e2e8f0", minHeight: "56px" },
+          header: {
+            borderBottomWidth: "1px",
+            borderBottomStyle: "solid",
+            borderBottomColor: "#e2e8f0",
+            minHeight: "56px",
+          },
           body: {
             minHeight: "calc(100dvh - 56px)",
             padding: "16px",
             backgroundColor: "#f8fafc",
           },
-          content: { borderLeft: "1px solid #e2e8f0" },
+          content: {
+            borderLeftWidth: "1px",
+            borderLeftStyle: "solid",
+            borderLeftColor: "#e2e8f0",
+          },
         }}
       >
         <div className="flex min-h-[calc(100dvh-96px)] flex-col gap-3">
@@ -237,9 +212,15 @@ const CreateUserCredential = (props: { item: CoreC.User }) => {
             <Edit
               hideUser
               onUpdate={(v) => {
-                const prefix = getCredentialNamePrefix(v.spec!.user, v.spec!.type);
+                const prefix = getCredentialNamePrefix(
+                  v.spec!.user,
+                  v.spec!.type,
+                );
                 if (!v.metadata!.name.startsWith(prefix)) {
-                  v.metadata!.name = getCredentialName(v.spec!.user, v.spec!.type);
+                  v.metadata!.name = getCredentialName(
+                    v.spec!.user,
+                    v.spec!.type,
+                  );
                 }
                 setCredential(CoreC.Credential.clone(v));
               }}
@@ -269,9 +250,7 @@ const CreateUserCredential = (props: { item: CoreC.User }) => {
               }
               onClick={() => mutationCredential.mutate()}
             >
-              {mutationCredential.isPending
-                ? "Creating…"
-                : "Create credential"}
+              {mutationCredential.isPending ? "Creating…" : "Create credential"}
             </Button>
           </div>
         </div>
@@ -285,9 +264,13 @@ export const MainInfo = (props: { item: CoreC.User }): ResourceMainInfo => {
   const related = useUserRelatedResources(item);
 
   return {
+    actions: <CreateUserCredential item={item} />,
+    groupOrder: ["Identity", "Authorization", "Related resources"],
     items: [
       {
         label: "Type",
+        group: "Identity",
+        primary: true,
         value: (
           <Label>
             {match(item.spec!.type)
@@ -302,11 +285,9 @@ export const MainInfo = (props: { item: CoreC.User }): ResourceMainInfo => {
         ? [
             {
               label: "Email",
-              value: (
-                <span className="text-[0.75rem]">
-                  <CopyText value={item.spec.email} />
-                </span>
-              ),
+              group: "Identity",
+              primary: true,
+              value: <CopyText value={item.spec.email} />,
             },
           ]
         : []),
@@ -315,6 +296,7 @@ export const MainInfo = (props: { item: CoreC.User }): ResourceMainInfo => {
         ? [
             {
               label: "Groups",
+              group: "Authorization",
               value: (
                 <div className="flex flex-wrap gap-1">
                   {item.spec!.groups.map((x) => (
@@ -339,6 +321,7 @@ export const MainInfo = (props: { item: CoreC.User }): ResourceMainInfo => {
         ? [
             {
               label: "Policies",
+              group: "Authorization",
               value: (
                 <div className="flex flex-wrap gap-1">
                   {item.spec!.authorization!.policies.map((x) => (
@@ -362,6 +345,7 @@ export const MainInfo = (props: { item: CoreC.User }): ResourceMainInfo => {
         ? [
             {
               label: "Inline policies",
+              group: "Authorization",
               value: (
                 <div className="flex flex-wrap gap-1">
                   {item.spec.authorization.inlinePolicies.map((policy) => (
@@ -377,29 +361,25 @@ export const MainInfo = (props: { item: CoreC.User }): ResourceMainInfo => {
           ]
         : []),
 
-      {
-        label: "Related resources",
-        value: (
-          <div className="flex flex-wrap gap-1">
-            {related.map(({ label, count, path, icon: Icon }) => (
-              <ResourceListLabel key={label} label={label} to={path}>
-                <Icon size={12} strokeWidth={2.5} />
-                {count === undefined ? "…" : count.toLocaleString()}
-              </ResourceListLabel>
-            ))}
-          </div>
-        ),
-        span: "full" as const,
-      },
-
-      {
-        label: "Active",
-        value: <UserActiveControl item={item} />,
-      },
-      {
-        label: "Credential",
-        value: <CreateUserCredential item={item} />,
-      },
+      ...(related.length > 0
+        ? [
+            {
+              label: "Linked resources",
+              group: "Related resources",
+              value: (
+                <div className="flex flex-wrap gap-1">
+                  {related.map(({ label, count, path, icon: Icon }) => (
+                    <ResourceListLabel key={label} label={label} to={path}>
+                      <Icon size={12} strokeWidth={2.5} />
+                      {count === undefined ? "…" : count.toLocaleString()}
+                    </ResourceListLabel>
+                  ))}
+                </div>
+              ),
+              span: "full" as const,
+            },
+          ]
+        : []),
     ],
   };
 };

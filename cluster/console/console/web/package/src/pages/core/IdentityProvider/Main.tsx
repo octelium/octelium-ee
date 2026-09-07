@@ -162,12 +162,12 @@ export const MainInfo = (props: {
   item: CoreC.IdentityProvider;
 }): ResourceMainInfo => {
   const { item } = props;
-  const mutationUpdate = useUpdateResource();
 
   return {
     items: [
       {
         label: "Type",
+        primary: true,
         value: <Label>{getType(item)}</Label>,
       },
       ...(item.spec?.displayName
@@ -178,36 +178,6 @@ export const MainInfo = (props: {
             },
           ]
         : []),
-      {
-        label: "Active",
-        value: (
-          <EditItemWrap
-            mutation={mutationUpdate}
-            label="active"
-            showComponent={
-              <span
-                className={twMerge(
-                  "text-[0.75rem] font-semibold",
-                  item.spec!.isDisabled ? "text-red-500" : "text-emerald-600",
-                )}
-              >
-                {item.spec!.isDisabled ? "Disabled" : "Active"}
-              </span>
-            }
-            editComponent={
-              <Switch
-                size="sm"
-                checked={!item.spec!.isDisabled}
-                onChange={(v) => {
-                  const next = CoreC.IdentityProvider.clone(item);
-                  next.spec!.isDisabled = !v.currentTarget.checked;
-                  mutationUpdate.mutate(next);
-                }}
-              />
-            }
-          />
-        ),
-      },
       ...(item.status?.isLocked
         ? [
             {

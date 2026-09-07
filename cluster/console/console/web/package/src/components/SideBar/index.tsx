@@ -253,29 +253,29 @@ export default function Sidebar() {
           aria-controls={dropdownOpen ? dropdownID : undefined}
           className={twMerge(
             "group flex h-14 w-full cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-white px-2.5 text-left",
-            "shadow-[0_1px_3px_rgba(15,23,42,0.06)]",
-            "transition-[border-color,box-shadow,background-color] duration-500",
-            "hover:border-slate-300 hover:bg-slate-50/70 hover:shadow-[0_4px_12px_rgba(15,23,42,0.08)]",
+            "shadow-card",
+            "transition-[border-color,box-shadow,background-color] duration-200",
+            "hover:border-slate-300 hover:bg-slate-50/70 hover:shadow-raised",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2",
             dropdownOpen &&
-              "border-slate-300 bg-slate-50/80 shadow-[0_6px_18px_rgba(15,23,42,0.10)]",
+              "border-slate-300 bg-slate-50/80 shadow-raised",
           )}
         >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-white shadow-sm transition-transform duration-500 group-hover:scale-[1.03]">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-white shadow-sm transition-transform duration-200 group-hover:scale-[1.03]">
             <ActiveIcon size={15} strokeWidth={2.25} />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[0.58rem] font-bold uppercase tracking-[0.09em] text-slate-400">
+            <span className="block text-micro font-semibold uppercase tracking-[0.09em] text-slate-500">
               API workspace
             </span>
-            <span className="mt-0.5 block truncate text-[0.8rem] font-bold text-slate-800">
+            <span className="mt-0.5 block truncate text-body font-semibold text-slate-800">
               {activeSection.label}
             </span>
           </span>
           <motion.span
             animate={{ rotate: dropdownOpen ? 180 : 0 }}
             transition={{ duration: 0.25, ease: "easeInOut" }}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-400 transition-colors duration-500 group-hover:bg-white group-hover:text-slate-600"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-500 transition-colors duration-200 group-hover:bg-white group-hover:text-slate-600"
           >
             <ChevronDown size={14} strokeWidth={2.5} />
           </motion.span>
@@ -294,13 +294,13 @@ export default function Sidebar() {
               exit={{ opacity: 0, y: -5, scale: 0.98 }}
               transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
               style={{ transformOrigin: "top" }}
-              className="absolute left-0 right-0 top-[calc(100%+7px)] z-50 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_18px_42px_rgba(15,23,42,0.16)]"
+              className="absolute left-0 right-0 top-[calc(100%+7px)] z-50 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-overlay"
             >
               <div className="border-b border-slate-100 bg-slate-50/70 px-3.5 py-3">
-                <p className="text-[0.68rem] font-bold text-slate-700">
+                <p className="text-xs font-semibold text-slate-700">
                   Choose workspace
                 </p>
-                <p className="mt-0.5 text-[0.62rem] font-semibold text-slate-400">
+                <p className="mt-0.5 text-micro font-normal text-slate-500">
                   Switch management API context
                 </p>
               </div>
@@ -325,7 +325,7 @@ export default function Sidebar() {
                       }}
                       className={twMerge(
                         "group/item flex min-h-12 w-full cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2 text-left",
-                        "transition-[background-color,color] duration-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-inset",
+                        "transition-[background-color,color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-inset",
                         isActive
                           ? "bg-slate-900 text-white"
                           : "text-slate-700 hover:bg-slate-100 hover:text-slate-900",
@@ -333,7 +333,7 @@ export default function Sidebar() {
                     >
                       <span
                         className={twMerge(
-                          "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-500",
+                          "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-200",
                           isActive
                             ? "bg-white/10 text-white"
                             : "border border-slate-200 bg-white text-slate-500 group-hover/item:border-slate-300 group-hover/item:text-slate-700",
@@ -342,13 +342,13 @@ export default function Sidebar() {
                         <Icon size={14} strokeWidth={2.25} />
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[0.76rem] font-bold">
+                        <span className="block truncate text-body font-semibold">
                           {s.label}
                         </span>
                         <span
                           className={twMerge(
-                            "mt-0.5 block truncate text-[0.6rem] font-semibold",
-                            isActive ? "text-slate-300" : "text-slate-400",
+                            "mt-0.5 block truncate text-micro font-normal",
+                            isActive ? "text-slate-300" : "text-slate-500",
                           )}
                         >
                           {s.description}
@@ -383,7 +383,7 @@ export default function Sidebar() {
               className={twMerge(
                 "flex w-full items-center gap-2",
                 "py-1.5 px-2.5 rounded-md",
-                "text-[0.82rem] font-bold",
+                "text-body font-normal",
                 "transition-colors duration-150",
                 isActive
                   ? "bg-slate-900 text-white shadow-sm"

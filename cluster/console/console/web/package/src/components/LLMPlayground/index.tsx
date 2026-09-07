@@ -333,8 +333,8 @@ const LLMPlayground = (props: { service: Service }) => {
         size="min(880px, 100vw)"
         title={
           <div className="flex min-w-0 items-center gap-2">
-            <Bot size={15} className="shrink-0 text-slate-400" />
-            <span className="text-xs font-bold uppercase tracking-[0.06em] text-slate-500">
+            <Bot size={15} className="shrink-0 text-slate-500" />
+            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
               LLM playground
             </span>
             <span className="truncate text-sm font-semibold text-slate-800">
@@ -359,16 +359,16 @@ const LLMPlayground = (props: { service: Service }) => {
         }}
       >
         <div className="flex h-full flex-col gap-3">
-          <div className="shrink-0 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-[0_1px_4px_rgba(15,23,42,0.04)]">
+          <div className="shrink-0 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-card">
             <div className="flex flex-wrap items-center gap-3">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-white">
                 <Sparkles size={16} />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="text-[0.82rem] font-bold text-slate-800">
+                <p className="text-body font-semibold text-slate-800">
                   Talk to this LLM Service
                 </p>
-                <p className="mt-0.5 text-[0.7rem] font-semibold leading-5 text-slate-500">
+                <p className="mt-0.5 text-xs font-normal leading-5 text-slate-500">
                   Requests go through Octelium, so the Policies, Plugins and
                   guardrails of this Service apply. Provider credentials stay on
                   the Cluster.
@@ -432,10 +432,10 @@ const LLMPlayground = (props: { service: Service }) => {
             </div>
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_1px_4px_rgba(15,23,42,0.04)]">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card">
             <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-100 px-4 py-2.5">
               <div className="flex items-center gap-2">
-                <span className="text-[0.68rem] font-bold uppercase tracking-[0.06em] text-slate-500">
+                <span className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
                   Conversation
                 </span>
                 {messages.length > 0 && (
@@ -482,7 +482,7 @@ const LLMPlayground = (props: { service: Service }) => {
                   <p className="mt-3 text-sm font-bold text-slate-700">
                     Start a conversation
                   </p>
-                  <p className="mt-1 max-w-sm text-xs font-semibold leading-5 text-slate-500">
+                  <p className="mt-1 max-w-sm text-xs font-normal leading-5 text-slate-500">
                     Ask a question or attach an image. Use the request options to
                     set the sampling behavior and the reasoning budget.
                   </p>
@@ -518,7 +518,7 @@ const LLMPlayground = (props: { service: Service }) => {
                   {attachments.map((attachment) => (
                     <span
                       key={attachment.id}
-                      className="group relative inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 py-1 pl-1.5 pr-1 text-[0.65rem] font-semibold text-slate-600"
+                      className="group relative inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 py-1 pl-1.5 pr-1 text-micro font-normal text-slate-600"
                     >
                       {attachment.mime.startsWith("image/") ? (
                         <img
@@ -540,7 +540,7 @@ const LLMPlayground = (props: { service: Service }) => {
                             current.filter((item) => item.id !== attachment.id),
                           )
                         }
-                        className="flex h-4 w-4 cursor-pointer items-center justify-center rounded text-slate-400 transition-colors duration-300 hover:bg-slate-200 hover:text-slate-700"
+                        className="flex h-4 w-4 cursor-pointer items-center justify-center rounded text-slate-500 transition-colors duration-200 hover:bg-slate-200 hover:text-slate-700"
                       >
                         <X size={10} strokeWidth={3} />
                       </button>
@@ -605,7 +605,7 @@ const LLMPlayground = (props: { service: Service }) => {
                       <ChevronDown
                         size={12}
                         className={twMerge(
-                          "transition-transform duration-400",
+                          "transition-transform duration-200",
                           advanced && "rotate-180",
                         )}
                       />
@@ -616,7 +616,7 @@ const LLMPlayground = (props: { service: Service }) => {
                   </Button>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[0.65rem] font-semibold text-slate-400">
+                  <span className="text-micro font-normal text-slate-500">
                     Enter to send · Shift + Enter for a new line
                   </span>
                   <Button
@@ -644,10 +644,10 @@ const LLMPlayground = (props: { service: Service }) => {
                 transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
                 className="shrink-0 overflow-hidden"
               >
-                <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-[0_1px_4px_rgba(15,23,42,0.04)]">
+                <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-card">
                   <div className="mb-2.5 flex items-center gap-2">
                     <Settings2 size={14} className="text-slate-500" />
-                    <p className="text-[0.68rem] font-bold uppercase tracking-[0.06em] text-slate-600">
+                    <p className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-600">
                       Request options
                     </p>
                   </div>
@@ -714,7 +714,7 @@ const LLMPlayground = (props: { service: Service }) => {
                       onChange={(value) => setOption("reasoning", value ?? "")}
                     />
                   </div>
-                  <p className="mt-2.5 text-[0.66rem] font-semibold text-slate-400">
+                  <p className="mt-2.5 text-micro font-normal text-slate-500">
                     The Service's limits, Policies and guardrails still apply. Do
                     not paste secrets into prompts.
                   </p>

@@ -269,10 +269,10 @@ const MetricStat = ({
   }, [query.data, operation, step]);
 
   return (
-    <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+    <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-card">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-[0.64rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+          <div className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
             {title}
           </div>
           <div className="mt-1.5 text-xl font-bold tabular-nums tracking-tight text-slate-800">
@@ -289,7 +289,7 @@ const MetricStat = ({
       </div>
       {query.isError && (
         <div
-          className="mt-2 line-clamp-2 text-[0.65rem] font-semibold text-red-500"
+          className="mt-2 line-clamp-2 text-micro font-semibold text-red-500"
           title={query.error instanceof Error ? query.error.message : undefined}
         >
           {query.data ? "Refresh failed · showing previous value" : "Metric unavailable"}
@@ -454,7 +454,7 @@ const Metrics = () => {
         </div>
         <div className="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2 xl:grid-cols-[auto_auto_minmax(180px,1fr)_minmax(180px,1fr)]">
           <div>
-            <div className="mb-1 text-[0.6rem] font-bold uppercase tracking-wide text-slate-400">
+            <div className="mb-1 text-micro font-semibold uppercase tracking-wide text-slate-500">
               Time range
             </div>
             <SegmentedControl
@@ -465,7 +465,7 @@ const Metrics = () => {
             />
           </div>
           <div>
-            <div className="mb-1 text-[0.6rem] font-bold uppercase tracking-wide text-slate-400">
+            <div className="mb-1 text-micro font-semibold uppercase tracking-wide text-slate-500">
               Resolution
             </div>
             <Select
@@ -1290,7 +1290,7 @@ const Metrics = () => {
               Runtime details
               <ChevronDown
                 size={16}
-                className={`transition-transform duration-500 ${runtimeExpanded ? "rotate-180" : ""}`}
+                className={`transition-transform duration-200 ${runtimeExpanded ? "rotate-180" : ""}`}
               />
             </button>
             {runtimeExpanded && (

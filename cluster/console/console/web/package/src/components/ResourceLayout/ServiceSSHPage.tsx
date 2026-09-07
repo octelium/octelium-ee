@@ -17,13 +17,13 @@ const ServiceSSHPage = () => {
 
   return (
     <div className="w-full space-y-4">
-      <header className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-[0_1px_4px_rgba(15,23,42,0.05)]">
+      <header className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-card">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-white">
           <Terminal size={16} strokeWidth={2.2} />
         </span>
         <div className="min-w-0">
           <h2 className="text-sm font-bold text-slate-800">SSH recordings</h2>
-          <p className="mt-0.5 text-[0.7rem] font-medium leading-5 text-slate-500">
+          <p className="mt-0.5 text-xs font-medium leading-5 text-slate-500">
             Review recorded SSH sessions connected through this Service.
           </p>
         </div>

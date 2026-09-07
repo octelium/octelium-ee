@@ -25,6 +25,7 @@ import TextAreaCustom from "@/components/TextAreaCustom";
 import { strToNum } from "@/utils/convert";
 import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
+import { useListKeys } from "@/utils/forms";
 
 type SegmentedTabsContextValue = {
   value: string | null;
@@ -1153,7 +1154,7 @@ const EnumMultiSelect = (props: {
               )
             }
             className={twMerge(
-              "rounded-lg border px-2.5 py-1.5 text-[0.7rem] font-bold transition-colors duration-300",
+              "rounded-lg border px-2.5 py-1.5 text-xs font-normal transition-colors duration-200",
               checked
                 ? "border-slate-800 bg-slate-800 text-white"
                 : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700",
@@ -3530,6 +3531,7 @@ const Config = (props: {
   mode?: CoreP.Service_Spec_Mode;
 }) => {
   const { item, onUpdate } = props;
+  const rows = useListKeys();
   const [req, setReq] = React.useState(cloneConfigForMode(item, props.mode));
   const [init] = React.useState(cloneConfigForMode(item, props.mode));
 
@@ -3762,12 +3764,13 @@ const Config = (props: {
                             }}
                           >
                             {container.container.env.map((envVar, idx) => (
-                              <div className="w-full flex mb-3" key={idx}>
+                              <div className="w-full flex mb-3" key={rows.keyAt("env", idx)}>
                                 <CloseButton
                                   size={"sm"}
                                   variant="subtle"
                                   className="mr-2"
                                   onClick={() => {
+                                    rows.removeAt("env", idx);
                                     container.container.env.splice(idx, 1);
                                     updateReq();
                                   }}
@@ -4210,11 +4213,12 @@ const Config = (props: {
                             }}
                           >
                             {container.container.command.map((x, idx) => (
-                              <div className="w-full flex mb-3" key={idx}>
+                              <div className="w-full flex mb-3" key={rows.keyAt("command", idx)}>
                                 <CloseButton
                                   size="sm"
                                   variant="subtle"
                                   onClick={() => {
+                                    rows.removeAt("command", idx);
                                     container.container.command.splice(idx, 1);
                                     updateReq();
                                   }}
@@ -4250,11 +4254,12 @@ const Config = (props: {
                             }}
                           >
                             {container.container.args.map((x, idx) => (
-                              <div className="w-full flex mb-3" key={idx}>
+                              <div className="w-full flex mb-3" key={rows.keyAt("args", idx)}>
                                 <CloseButton
                                   size="sm"
                                   variant="subtle"
                                   onClick={() => {
+                                    rows.removeAt("args", idx);
                                     container.container.args.splice(idx, 1);
                                     updateReq();
                                   }}
@@ -4366,12 +4371,13 @@ const Config = (props: {
                                           (x, idx) => (
                                             <div
                                               className="w-full flex mb-3"
-                                              key={idx}
+                                              key={rows.keyAt("capAdd", idx)}
                                             >
                                               <CloseButton
                                                 size="sm"
                                                 variant="subtle"
                                                 onClick={() => {
+                                                  rows.removeAt("capAdd", idx);
                                                   container.container.securityContext!.capabilities!.add.splice(
                                                     idx,
                                                     1,
@@ -4425,12 +4431,13 @@ const Config = (props: {
                                           (x, idx) => (
                                             <div
                                               className="w-full flex mb-3"
-                                              key={idx}
+                                              key={rows.keyAt("capDrop", idx)}
                                             >
                                               <CloseButton
                                                 size="sm"
                                                 variant="subtle"
                                                 onClick={() => {
+                                                  rows.removeAt("capDrop", idx);
                                                   container.container.securityContext!.capabilities!.drop.splice(
                                                     idx,
                                                     1,
@@ -4502,9 +4509,10 @@ const Config = (props: {
                           >
                             {container.container.volumes.map((volume, idx) => (
                               <EditItem
-                                key={idx}
+                                key={rows.keyAt("volumes", idx)}
                                 obj={volume}
                                 onUnset={() => {
+                                  rows.removeAt("volumes", idx);
                                   container.container.volumes.splice(idx, 1);
                                   updateReq();
                                 }}
@@ -4633,9 +4641,10 @@ const Config = (props: {
                             {container.container.volumeMounts.map(
                               (volumeMount, idx) => (
                                 <EditItem
-                                  key={idx}
+                                  key={rows.keyAt("volumeMounts", idx)}
                                   obj={volumeMount}
                                   onUnset={() => {
+                                    rows.removeAt("volumeMounts", idx);
                                     container.container.volumeMounts.splice(
                                       idx,
                                       1,
@@ -4770,9 +4779,10 @@ const Config = (props: {
                         {loadbalance.loadbalance.endpoints.map(
                           (endpoint, idx) => (
                             <EditItem
-                              key={idx}
+                              key={rows.keyAt("endpoints", idx)}
                               obj={endpoint}
                               onUnset={() => {
+                                rows.removeAt("endpoints", idx);
                                 loadbalance.loadbalance.endpoints.splice(
                                   idx,
                                   1,
@@ -5236,12 +5246,13 @@ const Config = (props: {
                           >
                             {http.http.header!.addRequestHeaders.map(
                               (x, idx) => (
-                                <div className="w-full flex mb-3" key={idx}>
+                                <div className="w-full flex mb-3" key={rows.keyAt("addRequestHeaders", idx)}>
                                   <CloseButton
                                     size={"sm"}
                                     variant="subtle"
                                     className="mr-2"
                                     onClick={() => {
+                                      rows.removeAt("addRequestHeaders", idx);
                                       http.http.header!.addRequestHeaders.splice(
                                         idx,
                                         1,
@@ -5376,12 +5387,13 @@ const Config = (props: {
                           >
                             {http.http.header!.addResponseHeaders.map(
                               (x, idx) => (
-                                <div className="w-full flex mb-3" key={idx}>
+                                <div className="w-full flex mb-3" key={rows.keyAt("addResponseHeaders", idx)}>
                                   <CloseButton
                                     size={"sm"}
                                     variant="subtle"
                                     className="mr-2"
                                     onClick={() => {
+                                      rows.removeAt("addResponseHeaders", idx);
                                       http.http.header!.addResponseHeaders.splice(
                                         idx,
                                         1,
@@ -5503,12 +5515,13 @@ const Config = (props: {
                           >
                             {http.http.header!.removeRequestHeaders.map(
                               (x, idx) => (
-                                <div className="w-full flex mb-3" key={idx}>
+                                <div className="w-full flex mb-3" key={rows.keyAt("removeRequestHeaders", idx)}>
                                   <CloseButton
                                     size={"sm"}
                                     variant="subtle"
                                     className="mr-2"
                                     onClick={() => {
+                                      rows.removeAt("removeRequestHeaders", idx);
                                       http.http.header!.removeRequestHeaders.splice(
                                         idx,
                                         1,
@@ -5557,12 +5570,13 @@ const Config = (props: {
                           >
                             {http.http.header!.removeResponseHeaders.map(
                               (x, idx) => (
-                                <div className="w-full flex mb-3" key={idx}>
+                                <div className="w-full flex mb-3" key={rows.keyAt("removeResponseHeaders", idx)}>
                                   <CloseButton
                                     size={"sm"}
                                     variant="subtle"
                                     className="mr-2"
                                     onClick={() => {
+                                      rows.removeAt("removeResponseHeaders", idx);
                                       http.http.header!.removeResponseHeaders.splice(
                                         idx,
                                         1,
@@ -6672,11 +6686,12 @@ const Config = (props: {
                             }}
                           >
                             {http.http.retry.statusCodes.map((x, idx) => (
-                              <div className="w-full flex mb-3" key={idx}>
+                              <div className="w-full flex mb-3" key={rows.keyAt("statusCodes", idx)}>
                                 <CloseButton
                                   size="sm"
                                   variant="subtle"
                                   onClick={() => {
+                                    rows.removeAt("statusCodes", idx);
                                     http.http.retry!.statusCodes.splice(idx, 1);
                                     updateReq();
                                   }}
@@ -6806,11 +6821,12 @@ const Config = (props: {
                           >
                             {http.http.cors.allowOriginStringMatch.map(
                               (x, idx) => (
-                                <div className="w-full flex mb-3" key={idx}>
+                                <div className="w-full flex mb-3" key={rows.keyAt("allowOrigin", idx)}>
                                   <CloseButton
                                     size="sm"
                                     variant="subtle"
                                     onClick={() => {
+                                      rows.removeAt("allowOrigin", idx);
                                       http.http.cors!.allowOriginStringMatch.splice(
                                         idx,
                                         1,
@@ -6927,11 +6943,12 @@ const Config = (props: {
                             >
                               {http.http.visibility!.includeRequestHeaders.map(
                                 (x, idx) => (
-                                  <div className="w-full flex mb-3" key={idx}>
+                                  <div className="w-full flex mb-3" key={rows.keyAt("visIncludeRequest", idx)}>
                                     <CloseButton
                                       size="sm"
                                       variant="subtle"
                                       onClick={() => {
+                                        rows.removeAt("visIncludeRequest", idx);
                                         http.http.visibility!.includeRequestHeaders.splice(
                                           idx,
                                           1,
@@ -6980,11 +6997,12 @@ const Config = (props: {
                             >
                               {http.http.visibility!.includeResponseHeaders.map(
                                 (x, idx) => (
-                                  <div className="w-full flex mb-3" key={idx}>
+                                  <div className="w-full flex mb-3" key={rows.keyAt("visIncludeResponse", idx)}>
                                     <CloseButton
                                       size="sm"
                                       variant="subtle"
                                       onClick={() => {
+                                        rows.removeAt("visIncludeResponse", idx);
                                         http.http.visibility!.includeResponseHeaders.splice(
                                           idx,
                                           1,
@@ -7038,11 +7056,12 @@ const Config = (props: {
                             >
                               {http.http.visibility!.excludeRequestHeaders.map(
                                 (x, idx) => (
-                                  <div className="w-full flex mb-3" key={idx}>
+                                  <div className="w-full flex mb-3" key={rows.keyAt("visExcludeRequest", idx)}>
                                     <CloseButton
                                       size="sm"
                                       variant="subtle"
                                       onClick={() => {
+                                        rows.removeAt("visExcludeRequest", idx);
                                         http.http.visibility!.excludeRequestHeaders.splice(
                                           idx,
                                           1,
@@ -7096,11 +7115,12 @@ const Config = (props: {
                             >
                               {http.http.visibility!.excludeResponseHeaders.map(
                                 (x, idx) => (
-                                  <div className="w-full flex mb-3" key={idx}>
+                                  <div className="w-full flex mb-3" key={rows.keyAt("visExcludeResponse", idx)}>
                                     <CloseButton
                                       size="sm"
                                       variant="subtle"
                                       onClick={() => {
+                                        rows.removeAt("visExcludeResponse", idx);
                                         http.http.visibility!.excludeResponseHeaders.splice(
                                           idx,
                                           1,
@@ -8896,7 +8916,7 @@ const Config = (props: {
                         </Tabs.List>
 
                         <Tabs.Panel value="noAuth">
-                          <p className="text-[0.8rem] text-slate-500 mt-2">
+                          <p className="text-body text-slate-500 mt-2">
                             The upstream does not require authentication.
                           </p>
                         </Tabs.Panel>
@@ -9070,11 +9090,12 @@ const Config = (props: {
                         >
                           {rdp.rdp.upstreamTLS.pinnedCertSHA256.map(
                             (x, idx) => (
-                              <div className="w-full flex mb-3" key={idx}>
+                              <div className="w-full flex mb-3" key={rows.keyAt("pinnedCerts", idx)}>
                                 <CloseButton
                                   size="sm"
                                   variant="subtle"
                                   onClick={() => {
+                                    rows.removeAt("pinnedCerts", idx);
                                     rdp.rdp.upstreamTLS!.pinnedCertSHA256.splice(
                                       idx,
                                       1,

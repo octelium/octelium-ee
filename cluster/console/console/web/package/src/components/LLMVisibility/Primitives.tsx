@@ -19,7 +19,7 @@ export const Panel = (props: {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.24, ease: "easeOut" }}
       className={twMerge(
-        "w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_1px_4px_rgba(15,23,42,0.04)]",
+        "w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card",
         props.className,
       )}
     >
@@ -31,11 +31,11 @@ export const Panel = (props: {
             </span>
           )}
           <div className="min-w-0">
-            <h3 className="truncate text-[0.78rem] font-bold uppercase tracking-[0.05em] text-slate-800">
+            <h3 className="truncate text-body font-semibold uppercase tracking-[0.05em] text-slate-800">
               {props.title}
             </h3>
             {props.description && (
-              <p className="mt-0.5 truncate text-[0.68rem] font-semibold text-slate-400">
+              <p className="mt-0.5 truncate text-xs font-normal text-slate-500">
                 {props.description}
               </p>
             )}
@@ -72,18 +72,18 @@ export const LazySection = (props: {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.24, ease: "easeOut" }}
-      className="w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_1px_4px_rgba(15,23,42,0.04)]"
+      className="w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card"
     >
       <button
         type="button"
         onClick={toggle}
         aria-expanded={opened}
-        className="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left outline-none transition-colors duration-300 hover:bg-slate-50/70 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500/25"
+        className="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left outline-none transition-colors duration-200 hover:bg-slate-50/70 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500/25"
       >
         {Icon && (
           <span
             className={twMerge(
-              "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors duration-300",
+              "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors duration-200",
               opened ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-500",
             )}
           >
@@ -92,13 +92,13 @@ export const LazySection = (props: {
         )}
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2">
-            <span className="truncate text-[0.78rem] font-bold uppercase tracking-[0.05em] text-slate-800">
+            <span className="truncate text-body font-semibold uppercase tracking-[0.05em] text-slate-800">
               {props.title}
             </span>
             {props.badge}
           </span>
           {props.description && (
-            <span className="mt-0.5 block truncate text-[0.68rem] font-semibold text-slate-400">
+            <span className="mt-0.5 block truncate text-xs font-normal text-slate-500">
               {props.description}
             </span>
           )}
@@ -107,7 +107,7 @@ export const LazySection = (props: {
           size={15}
           strokeWidth={2.4}
           className={twMerge(
-            "shrink-0 text-slate-400 transition-transform duration-400",
+            "shrink-0 text-slate-500 transition-transform duration-200",
             opened && "rotate-180",
           )}
         />
@@ -150,12 +150,12 @@ export const StatCard = (props: {
           <Icon size={54} strokeWidth={1.4} />
         </span>
       )}
-      <span className="relative z-10 truncate text-[0.66rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+      <span className="relative z-10 truncate text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
         {props.label}
       </span>
       <span
         className={twMerge(
-          "relative z-10 mt-1 truncate text-[1.4rem] font-bold leading-7 tracking-[-0.03em] tabular-nums",
+          "relative z-10 mt-1 truncate text-2xl font-bold leading-7 tracking-[-0.03em] tabular-nums",
           tone === "positive" && "text-emerald-600",
           tone === "warning" && "text-amber-600",
           tone === "danger" && "text-red-600",
@@ -165,7 +165,7 @@ export const StatCard = (props: {
         {props.value}
       </span>
       {props.hint && (
-        <span className="relative z-10 mt-0.5 truncate text-[0.66rem] font-semibold text-slate-400">
+        <span className="relative z-10 mt-0.5 truncate text-micro font-normal text-slate-500">
           {props.hint}
         </span>
       )}
@@ -174,12 +174,12 @@ export const StatCard = (props: {
 
   const className = twMerge(
     "group relative flex min-h-[86px] min-w-0 flex-col justify-center overflow-hidden rounded-xl border bg-white px-3.5 py-3",
-    "shadow-[0_1px_2px_rgba(15,23,42,0.035)] transition-[border-color,box-shadow,background-color] duration-400",
+    "shadow-card transition-[border-color,box-shadow,background-color] duration-200",
     props.active
       ? "border-slate-800 ring-1 ring-slate-900/10"
       : "border-slate-200",
     props.onClick &&
-      "cursor-pointer text-left hover:border-slate-300 hover:shadow-[0_4px_12px_rgba(15,23,42,0.07)]",
+      "cursor-pointer text-left hover:border-slate-300 hover:shadow-raised",
   );
 
   if (props.onClick) {
@@ -223,7 +223,7 @@ export const QueryState = (props: {
         className="flex w-full items-center justify-center rounded-xl border border-dashed border-red-200 bg-red-50/50 px-4 text-center"
         style={{ minHeight: props.minHeight ?? 160 }}
       >
-        <p className="text-xs font-bold text-red-600">
+        <p className="text-xs font-semibold text-red-600">
           The visibility query failed
         </p>
       </div>
@@ -236,10 +236,10 @@ export const QueryState = (props: {
         className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 px-4 text-center"
         style={{ minHeight: props.minHeight ?? 160 }}
       >
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500">
           <Inbox size={16} strokeWidth={2} />
         </span>
-        <p className="text-xs font-semibold text-slate-400">
+        <p className="text-xs font-normal text-slate-500">
           {props.emptyLabel ?? "No inference activity in this range"}
         </p>
       </div>

@@ -113,4 +113,7 @@ export const getClientVisibilityLLM = (): VisibilityLLMC.LLMServiceClient => {
   return visibilityLLMClient;
 };
 
-export const refetchIntervalChart = 15000;
+export const chartRefreshMillis = 15000;
+
+export const refetchIntervalChart = () =>
+  document.hidden ? (false as const) : chartRefreshMillis;

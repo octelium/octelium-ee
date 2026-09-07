@@ -46,23 +46,23 @@ const PriorityPicker = (props: {
   const meta = priorityMeta(value);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50 shadow-[0_1px_3px_rgba(15,23,42,0.035)]">
+    <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50 shadow-card">
       <div className="flex items-start justify-between gap-3 border-b border-slate-100 bg-white px-3 py-2.5">
         <div className="min-w-0">
           {props.label && (
-            <div className="text-[0.72rem] font-bold text-slate-700">
+            <div className="text-xs font-semibold text-slate-700">
               {props.label}
             </div>
           )}
           {props.description && (
-            <div className="mt-0.5 text-[0.66rem] font-semibold text-slate-400">
+            <div className="mt-0.5 text-micro font-normal text-slate-500">
               {props.description}
             </div>
           )}
         </div>
         <span
           className={twMerge(
-            "inline-flex shrink-0 items-center gap-1 rounded-md border px-2 py-1 text-[0.65rem] font-bold",
+            "inline-flex shrink-0 items-center gap-1 rounded-md border px-2 py-1 text-micro font-semibold",
             meta.color,
           )}
         >

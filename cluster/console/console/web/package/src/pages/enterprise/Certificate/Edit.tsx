@@ -33,10 +33,10 @@ const Edit = (props: {
   return (
     <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3">
       <div className="mb-2.5">
-        <div className="text-[0.72rem] font-bold text-slate-700">
+        <div className="text-xs font-semibold text-slate-700">
           Certificate management mode
         </div>
-        <div className="mt-0.5 text-[0.67rem] font-semibold text-slate-400">
+        <div className="mt-0.5 text-xs font-normal text-slate-500">
           Managed certificates are issued and renewed through the configured
           CertificateIssuer. Manual certificates are supplied and rotated by
           an administrator.

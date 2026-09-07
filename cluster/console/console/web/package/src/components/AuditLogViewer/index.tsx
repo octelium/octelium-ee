@@ -37,13 +37,13 @@ const DetailField = ({
   children: React.ReactNode;
   mono?: boolean;
 }) => (
-  <div className="flex min-h-14 min-w-0 flex-col gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.025)]">
-    <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-500">
+  <div className="flex min-h-14 min-w-0 flex-col gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-card">
+    <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
       {label}
     </span>
     <span
       className={twMerge(
-        "min-w-0 break-words text-[0.74rem] font-semibold leading-5 text-slate-700",
+        "min-w-0 break-words text-xs font-semibold leading-5 text-slate-700",
         mono && "font-mono",
       )}
     >
@@ -59,11 +59,11 @@ const OperationBadge = ({ operation }: { operation: string }) => {
   return (
     <span className="flex items-center gap-1 min-w-0 overflow-hidden">
       {pkg && (
-        <span className="text-[0.65rem] font-semibold text-slate-400 truncate hidden sm:block font-mono">
+        <span className="text-micro font-normal text-slate-500 truncate hidden sm:block font-mono">
           {pkg}.
         </span>
       )}
-      <span className="text-[0.72rem] font-bold text-slate-700 font-mono shrink-0">
+      <span className="text-xs font-semibold text-slate-700 font-mono shrink-0">
         {method}
       </span>
     </span>
@@ -78,7 +78,7 @@ const AuditLogDetails = ({ auditLog }: { auditLog: AuditLog }) => {
   return (
     <div className="border-t border-slate-200 bg-slate-50/70 px-4 py-4 sm:px-5">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h4 className="text-[0.75rem] font-bold text-slate-700">
+        <h4 className="text-body font-semibold text-slate-700">
           Log details
         </h4>
         <Editor item={x} />
@@ -87,7 +87,7 @@ const AuditLogDetails = ({ auditLog }: { auditLog: AuditLog }) => {
       <div className="grid grid-cols-1 gap-2">
         {entry.sessionRef && (
           <div className="flex min-h-14 min-w-0 flex-col gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
-            <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-500">
+            <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
               Session
             </span>
             <CardSession itemRef={entry.sessionRef} />
@@ -96,7 +96,7 @@ const AuditLogDetails = ({ auditLog }: { auditLog: AuditLog }) => {
 
         {(entry.userRef || entry.deviceRef) && (
           <div className="flex min-h-14 min-w-0 flex-col gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
-            <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-500">
+            <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
               Actor context
             </span>
             <div className="flex flex-wrap items-center gap-1.5">
@@ -112,7 +112,7 @@ const AuditLogDetails = ({ auditLog }: { auditLog: AuditLog }) => {
 
         {entry.resourceRef && (
           <div className="flex min-h-14 min-w-0 flex-col gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
-            <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-500">
+            <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
               Target resource
             </span>
             <div className="flex flex-wrap items-center gap-1.5">
@@ -126,7 +126,7 @@ const AuditLogDetails = ({ auditLog }: { auditLog: AuditLog }) => {
 
         {(entry.operation || entry.package || entry.service || entry.method) && (
           <div className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-100/60 p-3">
-            <span className="text-[0.62rem] font-bold uppercase tracking-[0.07em] text-slate-600">
+            <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-600">
               Operation details
             </span>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -169,17 +169,17 @@ export const AuditLogC = ({ auditLog }: { auditLog: AuditLog }) => {
     <div
       className={twMerge(
         "mb-2 overflow-hidden rounded-xl border border-slate-200 bg-white",
-        "shadow-[0_1px_3px_rgba(15,23,42,0.04)] transition-[border-color,box-shadow] duration-500 ease-out",
-        "hover:border-slate-300 hover:shadow-[0_4px_14px_rgba(15,23,42,0.065)]",
+        "shadow-card transition-[border-color,box-shadow] duration-200 ease-out",
+        "hover:border-slate-300 hover:shadow-raised",
         expanded &&
-          "border-slate-300 shadow-[0_4px_16px_rgba(15,23,42,0.07)]",
+          "border-slate-300 shadow-raised",
       )}
     >
       <button
         type="button"
         aria-expanded={expanded}
         aria-controls={detailsID}
-        className="group flex w-full cursor-pointer items-start gap-3 px-3.5 py-3 text-left outline-none transition-colors duration-500 hover:bg-slate-50/50 focus-visible:bg-violet-50/40 sm:px-4"
+        className="group flex w-full cursor-pointer items-start gap-3 px-3.5 py-3 text-left outline-none transition-colors duration-200 hover:bg-slate-50/50 focus-visible:bg-violet-50/40 sm:px-4"
         onClick={() => setExpanded((v) => !v)}
       >
         <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-violet-200 bg-violet-50 text-violet-600">
@@ -188,33 +188,33 @@ export const AuditLogC = ({ auditLog }: { auditLog: AuditLog }) => {
 
         <span className="flex min-w-0 flex-1 flex-col gap-2">
           <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5">
-            <span className="rounded-md border border-violet-200 bg-violet-50 px-2 py-1 text-[0.65rem] font-bold text-violet-700">
+            <span className="rounded-md border border-violet-200 bg-violet-50 px-2 py-1 text-micro font-semibold text-violet-700">
               Audit event
             </span>
 
             <span className="flex min-w-0 items-center gap-1.5">
               {actorName ? (
                 <>
-                  <span className="shrink-0 text-[0.62rem] font-bold uppercase tracking-[0.05em] text-slate-400">
+                  <span className="shrink-0 text-micro font-semibold uppercase tracking-[0.05em] text-slate-500">
                     {actorLabel}
                   </span>
-                  <span className="max-w-44 truncate font-mono text-[0.7rem] font-semibold text-slate-700">
+                  <span className="max-w-44 truncate font-mono text-xs font-semibold text-slate-700">
                     {actorName}
                   </span>
                 </>
               ) : (
-                <span className="text-[0.7rem] font-semibold text-slate-400">
+                <span className="text-xs font-normal text-slate-500">
                   Unknown actor
                 </span>
               )}
               <ArrowRight size={12} className="shrink-0 text-slate-300" />
-              <span className="max-w-44 truncate font-mono text-[0.7rem] font-semibold text-violet-700">
+              <span className="max-w-44 truncate font-mono text-xs font-semibold text-violet-700">
                 {resourceName ?? "Unknown resource"}
               </span>
             </span>
 
             {entry.resourceRef?.kind && (
-              <span className="hidden text-[0.64rem] font-semibold text-slate-400 sm:inline">
+              <span className="hidden text-micro font-normal text-slate-500 sm:inline">
                 {entry.resourceRef.kind}
               </span>
             )}
@@ -223,7 +223,7 @@ export const AuditLogC = ({ auditLog }: { auditLog: AuditLog }) => {
           <span className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1.5">
             {entry.operation && <OperationBadge operation={entry.operation} />}
             {(entry.service || entry.method) && (
-              <span className="max-w-64 truncate rounded-md border border-slate-200 bg-slate-100 px-1.5 py-0.5 font-mono text-[0.62rem] font-bold text-slate-600">
+              <span className="max-w-64 truncate rounded-md border border-slate-200 bg-slate-100 px-1.5 py-0.5 font-mono text-micro font-normal text-slate-600">
                 {entry.service
                   ? `${entry.service}${entry.method ? `/${entry.method}` : ""}`
                   : entry.method}
@@ -235,13 +235,13 @@ export const AuditLogC = ({ auditLog }: { auditLog: AuditLog }) => {
         <motion.span
           animate={{ rotate: expanded ? 180 : 0 }}
           transition={{ duration: 0.35, ease: "easeOut" }}
-          className="mt-2 flex shrink-0 text-slate-400 transition-colors duration-500 group-hover:text-slate-600"
+          className="mt-2 flex shrink-0 text-slate-500 transition-colors duration-200 group-hover:text-slate-600"
         >
           <ChevronDown size={15} strokeWidth={2.25} />
         </motion.span>
       </button>
 
-      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 border-t border-slate-100 bg-slate-50/40 px-4 py-1.5 pl-[60px] text-[0.6rem] font-semibold text-slate-400">
+      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 border-t border-slate-100 bg-slate-50/40 px-4 py-1.5 pl-[60px] text-micro font-normal text-slate-500">
         <TimeAgo rfc3339={x.metadata!.createdAt} />
         <span aria-hidden="true" className="text-slate-300">
           ·
@@ -486,7 +486,7 @@ const AuditLogViewer = (props: {
     <div className="w-full flex flex-col gap-6">
       {props.periodMinutes === undefined && (
         <div className="flex items-center gap-3">
-          <span className="text-[0.72rem] font-bold uppercase tracking-[0.05em] text-slate-500 shrink-0">
+          <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 shrink-0">
             Since
           </span>
           <SelectFromTimestamp onUpdate={setLocalFrom} />
@@ -495,13 +495,13 @@ const AuditLogViewer = (props: {
 
       <div className="w-full">
         <div className="flex items-center justify-between mb-4">
-          <span className="text-[0.68rem] font-semibold text-slate-400 tabular-nums">
+          <span className="text-xs font-normal text-slate-500 tabular-nums">
             {totalCount ? `${totalCount.toLocaleString()} entries` : "No entries"}
           </span>
           <button
             onClick={() => qry.refetch()}
             disabled={qry.isLoading}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[0.7rem] font-bold text-slate-500 border border-slate-200 bg-white hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 transition-colors duration-150 cursor-pointer shadow-[0_1px_2px_rgba(15,23,42,0.05)] disabled:opacity-50"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-normal text-slate-500 border border-slate-200 bg-white hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 transition-colors duration-150 cursor-pointer shadow-card disabled:opacity-50"
           >
             <RefreshCw
               size={11}
@@ -515,7 +515,7 @@ const AuditLogViewer = (props: {
         {qry.isError && (
           <div
             role="alert"
-            className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[0.72rem] font-semibold text-red-700"
+            className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700"
           >
             Audit logs could not be loaded. Refresh to try again.
           </div>
@@ -531,7 +531,7 @@ const AuditLogViewer = (props: {
 
             {qry.isSuccess && qry.data?.items.length === 0 && (
               <div className="flex items-center justify-center py-16">
-                <span className="text-[0.78rem] font-bold uppercase tracking-[0.08em] text-slate-400">
+                <span className="text-body font-semibold uppercase tracking-[0.08em] text-slate-500">
                   No audit log entries found
                 </span>
               </div>

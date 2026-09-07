@@ -54,7 +54,7 @@ export const MainInfo = (props: { item: CoreC.Region }): ResourceMainInfo => {
             {
               label: "Version",
               value: (
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-[0.72rem] font-bold bg-slate-100 border border-slate-200 text-slate-700">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 border border-slate-200 text-slate-700">
                   {status.version}
                 </span>
               ),
@@ -124,33 +124,33 @@ export const MainInfo = (props: { item: CoreC.Region }): ResourceMainInfo => {
                       key={key}
                       className="flex flex-col gap-1 p-3 rounded-lg border border-slate-100 bg-slate-50/60"
                     >
-                      <span className="text-[0.68rem] font-bold uppercase tracking-[0.06em] text-slate-500 mb-0.5">
+                      <span className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500 mb-0.5">
                         {key}
                       </span>
                       <div className="flex flex-col gap-1">
                         {info.version && (
                           <div className="flex items-center gap-2">
-                            <span className="text-[0.68rem] font-bold uppercase tracking-[0.05em] text-slate-400 w-20 shrink-0">
+                            <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 w-20 shrink-0">
                               Version
                             </span>
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[0.68rem] font-bold bg-white border border-slate-200 text-slate-700">
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold bg-white border border-slate-200 text-slate-700">
                               {info.version}
                             </span>
                           </div>
                         )}
                         {info.package && (
                           <div className="flex items-center gap-2">
-                            <span className="text-[0.68rem] font-bold uppercase tracking-[0.05em] text-slate-400 w-20 shrink-0">
+                            <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 w-20 shrink-0">
                               Package
                             </span>
-                            <span className="text-[0.75rem] font-semibold text-slate-600">
+                            <span className="text-body font-normal text-slate-600">
                               {info.package}
                             </span>
                           </div>
                         )}
                         {info.id && (
                           <div className="flex items-center gap-2">
-                            <span className="text-[0.68rem] font-bold uppercase tracking-[0.05em] text-slate-400 w-20 shrink-0">
+                            <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 w-20 shrink-0">
                               ID
                             </span>
                             <CopyText value={info.id} />
@@ -158,10 +158,10 @@ export const MainInfo = (props: { item: CoreC.Region }): ResourceMainInfo => {
                         )}
                         {info.setAt && (
                           <div className="flex items-center gap-2">
-                            <span className="text-[0.68rem] font-bold uppercase tracking-[0.05em] text-slate-400 w-20 shrink-0">
+                            <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 w-20 shrink-0">
                               Set At
                             </span>
-                            <span className="text-[0.75rem] font-semibold text-slate-600">
+                            <span className="text-body font-normal text-slate-600">
                               <TimeAgo rfc3339={info.setAt} />
                             </span>
                           </div>

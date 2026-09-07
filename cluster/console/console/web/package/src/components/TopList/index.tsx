@@ -46,19 +46,19 @@ const TopList = (props: {
         }
         className={twMerge(
           "group relative flex min-h-12 w-full cursor-pointer items-center gap-3 overflow-hidden rounded-lg border border-slate-200/80 bg-white px-3 py-2 text-left",
-          "shadow-[0_1px_2px_rgba(15,23,42,0.035)] outline-none",
-          "transition-[border-color,box-shadow,background-color] duration-500 ease-out",
-          "hover:border-slate-300 hover:bg-slate-50/40 hover:shadow-[0_3px_10px_rgba(15,23,42,0.065)]",
+          "shadow-card outline-none",
+          "transition-[border-color,box-shadow,background-color] duration-200 ease-out",
+          "hover:border-slate-300 hover:bg-slate-50/40 hover:shadow-raised",
           "focus-visible:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-500/20",
         )}
       >
         <span
           aria-hidden="true"
-          className="absolute inset-y-0 left-0 bg-blue-50/70 transition-[width,background-color] duration-700 ease-out group-hover:bg-blue-100/60"
+          className="absolute inset-y-0 left-0 bg-blue-50/70 transition-[width,background-color] duration-200 ease-out group-hover:bg-blue-100/60"
           style={{ width: `${percentage}%` }}
         />
 
-        <span className="relative flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-[0.68rem] font-bold tabular-nums text-slate-500 shadow-sm">
+        <span className="relative flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-xs font-normal tabular-nums text-slate-500 shadow-sm">
           {index + 1}
         </span>
 
@@ -72,23 +72,23 @@ const TopList = (props: {
             />
           )}
           <span className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
-            <span className="truncate text-[0.76rem] font-bold text-slate-700 transition-colors duration-500 group-hover:text-slate-900">
+            <span className="truncate text-body font-semibold text-slate-700 transition-colors duration-200 group-hover:text-slate-900">
               {printResourceNameWithDisplay(resource)}
             </span>
-            <span className="truncate text-[0.62rem] font-semibold uppercase tracking-[0.05em] text-slate-400">
+            <span className="truncate text-micro font-semibold uppercase tracking-[0.05em] text-slate-500">
               {resource.kind}
             </span>
           </span>
         </span>
 
         <span className="relative flex shrink-0 items-center gap-2">
-          <span className="text-[0.74rem] font-bold tabular-nums text-slate-700">
+          <span className="text-xs font-semibold tabular-nums text-slate-700">
             {formatNumber(item.count)}
           </span>
           <ArrowUpRight
             size={13}
             aria-hidden="true"
-            className="text-slate-300 transition-[color,transform] duration-500 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-blue-500"
+            className="text-slate-300 transition-[color,transform] duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-blue-500"
           />
         </span>
       </motion.button>
@@ -100,14 +100,14 @@ const TopList = (props: {
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
-      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-3 shadow-[0_1px_4px_rgba(15,23,42,0.04)]"
+      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-3 shadow-card"
     >
       <div className="mb-3 flex items-center justify-between gap-3 px-1">
         <div className="flex min-w-0 items-center gap-2">
-          <h3 className="truncate text-[0.75rem] font-bold uppercase tracking-[0.06em] text-slate-700">
+          <h3 className="truncate text-body font-semibold uppercase tracking-[0.06em] text-slate-700">
             {props.title}
           </h3>
-          <span className="rounded bg-slate-200/70 px-1.5 py-0.5 text-[0.62rem] font-bold tabular-nums text-slate-500">
+          <span className="rounded bg-slate-200/70 px-1.5 py-0.5 text-micro font-normal tabular-nums text-slate-500">
             {items.length}
           </span>
         </div>
@@ -116,7 +116,7 @@ const TopList = (props: {
           <Link
             to={props.to}
             preventScrollReset
-            className="shrink-0 rounded-md px-1.5 py-1 text-[0.68rem] font-bold text-slate-500 outline-none transition-colors duration-500 hover:bg-white hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500/30"
+            className="shrink-0 rounded-md px-1.5 py-1 text-xs font-normal text-slate-500 outline-none transition-colors duration-200 hover:bg-white hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500/30"
           >
             View all
           </Link>
@@ -148,7 +148,7 @@ const TopList = (props: {
           type="button"
           onClick={() => setExpanded((value) => !value)}
           aria-expanded={expanded}
-          className="mt-2 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-[0.7rem] font-bold text-slate-500 outline-none transition-[background-color,color] duration-500 hover:bg-white hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-blue-500/25"
+          className="mt-2 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-normal text-slate-500 outline-none transition-[background-color,color] duration-200 hover:bg-white hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-blue-500/25"
         >
           {expanded
             ? "Show less"
@@ -157,7 +157,7 @@ const TopList = (props: {
             size={13}
             aria-hidden="true"
             className={twMerge(
-              "transition-transform duration-500",
+              "transition-transform duration-200",
               expanded && "rotate-180",
             )}
           />

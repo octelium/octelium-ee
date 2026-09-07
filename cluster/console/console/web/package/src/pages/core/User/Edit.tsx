@@ -190,7 +190,7 @@ const Edit = (props: {
               }}
             />
 
-            <p className="text-[0.7rem] font-medium leading-5 text-slate-500">
+            <p className="text-xs font-medium leading-5 text-slate-500">
               Explicit identities match the account returned by a configured
               IdentityProvider, such as an email or username.
             </p>
@@ -216,26 +216,30 @@ const Edit = (props: {
               <div className="space-y-3">
                 {req.spec!.authentication.identities.map((identity, idx) => (
                   <div
-                    className="relative rounded-xl border border-slate-200 bg-slate-50/40 p-3.5 pr-12"
+                    className="rounded-xl border border-slate-200 bg-slate-50/40 p-3.5"
                     key={identityKeys.current[idx]}
                   >
-                    <Tooltip label="Remove identity" withArrow>
-                      <ActionIcon
-                        type="button"
-                        variant="subtle"
-                        color="red"
-                        size="sm"
-                        className="absolute right-3 top-3"
-                        aria-label={`Remove external identity ${idx + 1}`}
-                        onClick={() => {
-                          req.spec!.authentication!.identities.splice(idx, 1);
-                          identityKeys.current.splice(idx, 1);
-                          updateReq();
-                        }}
-                      >
-                        <Trash2 size={13} strokeWidth={2.1} />
-                      </ActionIcon>
-                    </Tooltip>
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <span className="text-xs font-semibold text-slate-700">
+                        Identity {idx + 1}
+                      </span>
+                      <Tooltip label="Remove identity" withArrow>
+                        <ActionIcon
+                          type="button"
+                          variant="subtle"
+                          color="red"
+                          size="sm"
+                          aria-label={`Remove external identity ${idx + 1}`}
+                          onClick={() => {
+                            req.spec!.authentication!.identities.splice(idx, 1);
+                            identityKeys.current.splice(idx, 1);
+                            updateReq();
+                          }}
+                        >
+                          <Trash2 size={13} strokeWidth={2.1} />
+                        </ActionIcon>
+                      </Tooltip>
+                    </div>
 
                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                       <TextInput

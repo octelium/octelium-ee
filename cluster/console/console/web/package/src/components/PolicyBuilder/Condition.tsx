@@ -165,7 +165,7 @@ const Cond = (props: {
   return (
     <section
       className={twMerge(
-        "w-full overflow-hidden rounded-xl border border-l-[3px] border-slate-200 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.04)] transition-[border-color,box-shadow] duration-500 hover:border-slate-300 hover:shadow-[0_4px_14px_rgba(15,23,42,0.06)]",
+        "w-full overflow-hidden rounded-xl border border-l-[3px] border-slate-200 bg-white shadow-card transition-[border-color,box-shadow] duration-200 hover:border-slate-300 hover:shadow-raised",
         accent,
       )}
     >
@@ -189,7 +189,7 @@ const Cond = (props: {
             styles={{ input: { minHeight: "32px", height: "32px" } }}
           />
           {depth > 0 && (
-            <span className="hidden rounded-md bg-slate-100 px-1.5 py-0.5 text-[0.58rem] font-bold uppercase tracking-[0.06em] text-slate-400 sm:inline">
+            <span className="hidden rounded-md bg-slate-100 px-1.5 py-0.5 text-micro font-semibold uppercase tracking-[0.06em] text-slate-500 sm:inline">
               Level {depth + 1}
             </span>
           )}
@@ -252,10 +252,10 @@ const Cond = (props: {
           .with({ oneofKind: "not" }, (type) => (
             <div className="rounded-xl border border-red-100 bg-red-50/40 p-3">
               <div className="mb-2.5 flex items-center gap-2">
-                <span className="rounded-md border border-red-200 bg-white px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.07em] text-red-600">
+                <span className="rounded-md border border-red-200 bg-white px-2 py-0.5 text-micro font-semibold uppercase tracking-[0.07em] text-red-600">
                   NOT
                 </span>
-                <span className="text-[0.68rem] font-semibold text-red-700/70">
+                <span className="text-xs font-semibold text-red-700/70">
                   The expression result is inverted
                 </span>
               </div>
@@ -289,10 +289,10 @@ const Cond = (props: {
                 <Check size={13} strokeWidth={2.5} />
               </span>
               <div>
-                <p className="text-[0.75rem] font-bold text-slate-700">
+                <p className="text-body font-semibold text-slate-700">
                   No restrictions
                 </p>
-                <p className="mt-0.5 text-[0.68rem] font-semibold text-slate-400">
+                <p className="mt-0.5 text-xs font-normal text-slate-500">
                   This condition matches every request automatically.
                 </p>
               </div>
@@ -334,17 +334,17 @@ const LogicalGroup = (props: {
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <span
           className={twMerge(
-            "rounded-md border px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.07em]",
+            "rounded-md border px-2 py-0.5 text-micro font-semibold uppercase tracking-[0.07em]",
             meta.badge,
           )}
         >
           {props.kind === "all" ? "AND" : props.kind === "any" ? "OR" : "NOR"}
         </span>
         <div>
-          <span className="text-[0.72rem] font-bold text-slate-700">
+          <span className="text-xs font-semibold text-slate-700">
             {meta.label}
           </span>
-          <span className="ml-2 text-[0.65rem] font-semibold text-slate-400">
+          <span className="ml-2 text-micro font-normal text-slate-500">
             {meta.description}
           </span>
         </div>
@@ -423,8 +423,8 @@ const ExpressionC = (props: {
         padding="md"
         title={
           <div className="flex min-w-0 items-center gap-2">
-            <Braces size={15} className="text-slate-400" strokeWidth={2.25} />
-            <span className="text-xs font-bold uppercase tracking-[0.06em] text-slate-500">
+            <Braces size={15} className="text-slate-500" strokeWidth={2.25} />
+            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
               Expression
             </span>
             <span className="truncate text-sm font-semibold text-slate-800">
@@ -468,7 +468,7 @@ const ExpressionC = (props: {
               />
             </div>
             <div className="flex shrink-0 items-center justify-between gap-3 border-t border-slate-200 bg-white px-4 py-3">
-              <span className="text-[0.68rem] font-semibold text-slate-400">
+              <span className="text-xs font-normal text-slate-500">
                 {changed ? "Unsaved expression changes" : "No changes yet"}
               </span>
               <div className="flex items-center gap-2">
@@ -552,10 +552,10 @@ const ExpressionEditC = (props: {
         <div className="min-h-0 flex-1 overflow-y-auto p-2">
           {filtered.length === 0 ? (
             <div className="px-3 py-10 text-center">
-              <p className="text-[0.75rem] font-bold text-slate-600">
+              <p className="text-body font-normal text-slate-600">
                 No expressions found
               </p>
-              <p className="mt-1 text-[0.68rem] font-semibold text-slate-400">
+              <p className="mt-1 text-xs font-normal text-slate-500">
                 Try another search or category.
               </p>
             </div>
@@ -569,7 +569,7 @@ const ExpressionEditC = (props: {
                     type="button"
                     onClick={() => selectType(definition)}
                     className={twMerge(
-                      "flex w-full items-start gap-2.5 rounded-lg px-3 py-2.5 text-left transition-colors duration-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-inset",
+                      "flex w-full items-start gap-2.5 rounded-lg px-3 py-2.5 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-inset",
                       selected
                         ? "bg-slate-900 text-white"
                         : "text-slate-700 hover:bg-slate-100",
@@ -582,13 +582,13 @@ const ExpressionEditC = (props: {
                       )}
                     />
                     <span className="min-w-0 flex-1">
-                      <span className="block text-[0.74rem] font-bold">
+                      <span className="block text-xs font-semibold">
                         {definition.title}
                       </span>
                       <span
                         className={twMerge(
-                          "mt-1 block truncate text-[0.6rem] font-semibold",
-                          selected ? "text-slate-300" : "text-slate-400",
+                          "mt-1 block truncate text-micro font-normal",
+                          selected ? "text-slate-300" : "text-slate-500",
                         )}
                       >
                         {definition.tags.join(" · ")}
@@ -611,10 +611,10 @@ const ExpressionEditC = (props: {
                 <Braces size={14} strokeWidth={2.25} />
               </span>
               <div>
-                <p className="text-[0.78rem] font-bold text-slate-800">
+                <p className="text-body font-semibold text-slate-800">
                   {selectedDef.title}
                 </p>
-                <p className="mt-0.5 text-[0.63rem] font-semibold text-slate-400">
+                <p className="mt-0.5 text-micro font-normal text-slate-500">
                   Configure the values used during policy evaluation
                 </p>
               </div>
@@ -630,10 +630,10 @@ const ExpressionEditC = (props: {
           <div className="flex h-full min-h-64 items-center justify-center px-6 text-center">
             <div>
               <Braces size={22} className="mx-auto text-slate-300" />
-              <p className="mt-3 text-[0.78rem] font-bold text-slate-600">
+              <p className="mt-3 text-body font-normal text-slate-600">
                 Choose an expression
               </p>
-              <p className="mt-1 text-[0.68rem] font-semibold text-slate-400">
+              <p className="mt-1 text-xs font-normal text-slate-500">
                 Select an expression type from the catalog to configure it.
               </p>
             </div>

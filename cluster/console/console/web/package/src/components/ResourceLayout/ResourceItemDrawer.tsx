@@ -1,3 +1,5 @@
+import { useHasDirtyForm } from "@/utils/forms";
+import { getAPIKindFromPath } from "@/utils/pb";
 import { Drawer } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
@@ -13,6 +15,8 @@ const ResourceItemDrawer = () => {
   const parentPath = `/${segments.slice(0, 2).join("/")}`;
   const resourcePath = `/${segments.slice(0, 3).join("/")}`;
   const returnTo = state?.returnTo ?? parentPath;
+  const kind = getAPIKindFromPath(location.pathname)?.kind;
+  const hasDirtyForm = useHasDirtyForm();
 
   useEffect(() => {
     let openFrame = 0;
@@ -31,32 +35,43 @@ const ResourceItemDrawer = () => {
       onClose={() => setOpened(false)}
       position="right"
       size="min(900px, 100vw)"
+      closeOnClickOutside={!hasDirtyForm}
+      closeOnEscape={!hasDirtyForm}
       transitionProps={{
         transition: "slide-left",
-        duration: 500,
-        exitDuration: 500,
+        duration: 250,
+        exitDuration: 250,
         onExited: () =>
           navigate(returnTo, { replace: true, preventScrollReset: true }),
       }}
       title={
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="text-xs font-bold uppercase tracking-[0.06em] text-slate-500">
-            Resource
+        <div className="flex min-w-0 flex-col">
+          <span className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
+            {kind ?? "Resource"}
           </span>
-          <span className="truncate font-mono text-sm font-semibold text-slate-800">
+          <span className="truncate text-sm font-bold text-slate-900">
             {name}
           </span>
         </div>
       }
       overlayProps={{ backgroundOpacity: 0.2, blur: 1 }}
       styles={{
-        header: { borderBottom: "1px solid #e2e8f0", minHeight: "56px" },
+        header: {
+          borderBottomWidth: "1px",
+          borderBottomStyle: "solid",
+          borderBottomColor: "#e2e8f0",
+          minHeight: "56px",
+        },
         body: {
           minHeight: "calc(100dvh - 56px)",
           padding: "16px",
           backgroundColor: "#f8fafc",
         },
-        content: { borderLeft: "1px solid #e2e8f0" },
+        content: {
+          borderLeftWidth: "1px",
+          borderLeftStyle: "solid",
+          borderLeftColor: "#e2e8f0",
+        },
       }}
     >
       <ResourceItemPage />

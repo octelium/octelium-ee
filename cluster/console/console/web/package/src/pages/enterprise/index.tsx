@@ -1,4 +1,4 @@
-import { Item } from "@/pages/visibility/Main";
+import Item from "@/components/SummaryCard";
 import { SummaryItemCount, SummaryItemCountWrap, SummaryNoItems } from "@/components/Summary";
 import { getClientVisibilityEnterprise } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";

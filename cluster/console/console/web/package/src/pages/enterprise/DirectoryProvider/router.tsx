@@ -1,25 +1,18 @@
 import { ResourceComponentInfo } from "@/pages/utils/types";
+import { lazyNamed, lazyResourceInfo, lazySpec } from "@/pages/utils/lazy";
 
 import { DirectoryProvider } from "@/apis/enterprisev1/enterprisev1";
-import Edit from "./Edit";
-import { ExtraComponent, LabelComponent, Summary } from "./List";
-import Main, { MainInfo } from "./Main";
 
 const resourceComponentInfo: ResourceComponentInfo = {
   API: "enterprise",
   Kind: "DirectoryProvider",
   List: {
-    // @ts-ignore
-    labelComponent: LabelComponent,
-    // @ts-ignore
-    extraComponent: ExtraComponent,
-    SummaryComponent: Summary,
+    labelComponent: lazyNamed(() => import("./List"), "LabelComponent"),
+    SummaryComponent: lazyNamed(() => import("./List"), "Summary"),
   },
   Item: {
-    // @ts-ignore
-    Edit: Edit,
-    // @ts-ignore
-    Main: Main,
+    Edit: lazySpec(() => import("./Edit")),
+    hasMain: true,
 
     createResource: () => {
       return DirectoryProvider.create({
@@ -37,8 +30,7 @@ const resourceComponentInfo: ResourceComponentInfo = {
     },
   },
 
-  // @ts-ignore
-  infoItemsGetter: MainInfo,
+  infoItemsGetter: lazyResourceInfo(() => import("./Main")),
 
   cloneable: true,
 };

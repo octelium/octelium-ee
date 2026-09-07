@@ -1,12 +1,59 @@
 import { ActionIcon, Tooltip } from "@mantine/core";
-import { LucideIcon, RefreshCw } from "lucide-react";
+import { AlertTriangle, LucideIcon, RefreshCw } from "lucide-react";
 import * as React from "react";
+
+const relativeLabel = (updatedAt: number, now: number) => {
+  const seconds = Math.max(0, Math.round((now - updatedAt) / 1000));
+  if (seconds < 10) return "just now";
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  return `${Math.round(minutes / 60)}h ago`;
+};
+
+const Freshness = (props: { updatedAt: number; isError?: boolean }) => {
+  const [now, setNow] = React.useState(() => Date.now());
+
+  React.useEffect(() => {
+    const tick = () => {
+      if (!document.hidden) setNow(Date.now());
+    };
+    const id = window.setInterval(tick, 10000);
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", tick);
+    };
+  }, []);
+
+  if (props.isError) {
+    return (
+      <span className="inline-flex items-center gap-1 text-micro font-semibold text-amber-700">
+        <AlertTriangle size={11} strokeWidth={2.4} />
+        Stale
+      </span>
+    );
+  }
+
+  if (!props.updatedAt) return null;
+
+  return (
+    <span
+      className="text-micro font-normal tabular-nums text-slate-500"
+      title={new Date(props.updatedAt).toLocaleString()}
+    >
+      Updated {relativeLabel(props.updatedAt, now)}
+    </span>
+  );
+};
 
 export const LogWidgetHeader = (props: {
   icon: LucideIcon;
   title: string;
   description: string;
   isLoading?: boolean;
+  isError?: boolean;
+  updatedAt?: number;
   onRefresh: () => void;
   children?: React.ReactNode;
 }) => {
@@ -19,16 +66,19 @@ export const LogWidgetHeader = (props: {
           <Icon size={14} strokeWidth={2.2} />
         </span>
         <div className="min-w-0">
-          <h2 className="text-[0.78rem] font-bold text-slate-800">
+          <h2 className="text-body font-semibold text-slate-800">
             {props.title}
           </h2>
-          <p className="truncate text-[0.65rem] font-semibold text-slate-400">
+          <p className="truncate text-micro font-normal text-slate-500">
             {props.description}
           </p>
         </div>
       </div>
 
       <div className="flex items-center justify-between gap-2 sm:justify-end">
+        {(props.updatedAt || props.isError) && (
+          <Freshness updatedAt={props.updatedAt ?? 0} isError={props.isError} />
+        )}
         {props.children}
         <Tooltip label="Refresh data" withArrow>
           <ActionIcon

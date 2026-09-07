@@ -221,18 +221,20 @@ export const MainInfo = (props: {
   item: CoreP.Authenticator;
 }): ResourceMainInfo => {
   const { item } = props;
-  const mutationUpdate = useUpdateResource();
 
   return {
+    groupOrder: ["Identity", "Activity"],
     items: [
       {
         label: "User",
+        primary: true,
         value: <ResourceListLabel itemRef={item.status!.userRef} />,
       },
       ...(item.status?.deviceRef?.name || item.status?.deviceRef?.uid
         ? [
             {
               label: "Device",
+              primary: true,
               value: <ResourceListLabel itemRef={item.status.deviceRef} />,
             },
           ]
@@ -247,83 +249,8 @@ export const MainInfo = (props: {
       },
 
       {
-        label: "State",
-        value: (
-          <EditItemWrap
-            mutation={mutationUpdate}
-            label="state"
-            showComponent={
-              <span
-                className={twMerge(
-                  "text-sm font-semibold",
-                  match(item.spec!.state)
-                    .with(
-                      CoreP.Authenticator_Spec_State.ACTIVE,
-                      () => "text-emerald-600",
-                    )
-                    .with(
-                      CoreP.Authenticator_Spec_State.REJECTED,
-                      () => "text-red-500",
-                    )
-                    .with(
-                      CoreP.Authenticator_Spec_State.PENDING,
-                      () => "text-amber-500",
-                    )
-                    .otherwise(() => "text-slate-600"),
-                )}
-              >
-                {match(item.spec!.state)
-                  .with(CoreP.Authenticator_Spec_State.ACTIVE, () => "Active")
-                  .with(
-                    CoreP.Authenticator_Spec_State.REJECTED,
-                    () => "Rejected",
-                  )
-                  .with(CoreP.Authenticator_Spec_State.PENDING, () => "Pending")
-                  .otherwise(() => "")}
-              </span>
-            }
-            editComponent={
-              <Select
-                size="sm"
-                data={[
-                  {
-                    label: "Active",
-                    value:
-                      CoreP.Authenticator_Spec_State[
-                        CoreP.Authenticator_Spec_State.ACTIVE
-                      ],
-                  },
-                  {
-                    label: "Pending",
-                    value:
-                      CoreP.Authenticator_Spec_State[
-                        CoreP.Authenticator_Spec_State.PENDING
-                      ],
-                  },
-                  {
-                    label: "Rejected",
-                    value:
-                      CoreP.Authenticator_Spec_State[
-                        CoreP.Authenticator_Spec_State.REJECTED
-                      ],
-                  },
-                ]}
-                value={CoreP.Authenticator_Spec_State[item.spec!.state]}
-                onChange={(v) => {
-                  if (!v) return;
-                  const next = CoreP.Authenticator.clone(item);
-                  next.spec!.state =
-                    CoreP.Authenticator_Spec_State[v as "ACTIVE"];
-                  mutationUpdate.mutate(next);
-                }}
-              />
-            }
-          />
-        ),
-      },
-
-      {
         label: "Registered",
+        primary: true,
         value: (
           <span
             className={twMerge(
@@ -340,6 +267,7 @@ export const MainInfo = (props: {
         ? [
             {
               label: "Display name",
+              group: "Identity",
               value: item.spec.displayName,
             },
           ]
@@ -349,6 +277,7 @@ export const MainInfo = (props: {
         ? [
             {
               label: "Description",
+              group: "Identity",
               value: item.status.description,
               span: "full" as const,
             },
@@ -359,6 +288,7 @@ export const MainInfo = (props: {
         ? [
             {
               label: "Auth attempts",
+              group: "Activity",
               value: (
                 <span className="text-sm font-semibold text-slate-700 tabular-nums">
                   {item.status!.totalAuthenticationAttempts}
@@ -376,6 +306,7 @@ export const MainInfo = (props: {
 
       {
         label: "Authenticator details",
+        group: "Activity",
         value: <AuthenticatorDetails item={item} />,
         span: "full",
       },
@@ -384,6 +315,7 @@ export const MainInfo = (props: {
         ? [
             {
               label: "Current attempt",
+              group: "Activity",
               value: (
                 <div className="flex flex-wrap gap-1">
                   {(item.status.authenticationAttempt.sessionRef?.name ||

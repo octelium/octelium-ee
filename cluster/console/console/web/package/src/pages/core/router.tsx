@@ -105,9 +105,9 @@ const getResourceChildrenRouter = (arg: ResourceComponentInfo): RouteObject => {
   let children = [
     {
       path: "",
-      element: arg.Item.Main ? (
+      element: arg.Item.hasMain ? (
         <ResourceItemMainPage
-          mainItemsGetter={arg.infoItemsGetter}
+          infoComponent={arg.infoItemsGetter}
           mainAction={arg.Item.MainAction}
           unDeletable={arg.unDeletable}
           cloneable={arg.cloneable}
@@ -117,7 +117,10 @@ const getResourceChildrenRouter = (arg: ResourceComponentInfo): RouteObject => {
     {
       path: "edit",
       element: arg.Item.Edit ? (
-        <ResourceEditPage specComponent={arg.Item.Edit} />
+        <ResourceEditPage
+          specComponent={arg.Item.Edit}
+          readOnly={arg.readOnlyEdit}
+        />
       ) : null,
     },
     {

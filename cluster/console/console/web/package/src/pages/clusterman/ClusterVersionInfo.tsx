@@ -37,29 +37,29 @@ type PackageVersion = {
 const PackageCard = (props: { label: string; info: PackageVersion }) => {
   const { info } = props;
   return (
-    <div className="flex min-w-0 flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.035)]">
+    <div className="flex min-w-0 flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-card">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2.5">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-500">
             <PackageCheck size={15} strokeWidth={2.2} />
           </span>
           <div className="min-w-0">
-            <div className="truncate text-[0.78rem] font-bold text-slate-800">
+            <div className="truncate text-body font-semibold text-slate-800">
               {props.label}
             </div>
             {info.setAt && (
-              <div className="text-[0.65rem] font-semibold text-slate-400">
+              <div className="text-micro font-normal text-slate-500">
                 Installed <TimeAgo rfc3339={info.setAt} />
               </div>
             )}
           </div>
         </div>
         {info.canUpgrade ? (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[0.64rem] font-bold text-blue-700">
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-micro font-semibold text-blue-700">
             <Sparkles size={10} /> Update available
           </span>
         ) : (
-          <span className="inline-flex shrink-0 items-center gap-1 text-[0.65rem] font-bold text-emerald-600">
+          <span className="inline-flex shrink-0 items-center gap-1 text-micro font-semibold text-emerald-600">
             <CheckCircle2 size={11} strokeWidth={2.5} /> Current
           </span>
         )}
@@ -67,10 +67,10 @@ const PackageCard = (props: { label: string; info: PackageVersion }) => {
 
       <div className="flex min-w-0 items-center gap-2 rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2">
         <div className="min-w-0 flex-1">
-          <div className="text-[0.58rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+          <div className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
             Installed
           </div>
-          <div className="truncate text-[0.76rem] font-bold text-slate-700">
+          <div className="truncate text-body font-semibold text-slate-700">
             {info.currentVersion || "Unknown"}
           </div>
         </div>
@@ -78,10 +78,10 @@ const PackageCard = (props: { label: string; info: PackageVersion }) => {
           <>
             <ArrowRight size={13} className="shrink-0 text-slate-300" />
             <div className="min-w-0 flex-1 text-right">
-              <div className="text-[0.58rem] font-bold uppercase tracking-[0.07em] text-blue-400">
+              <div className="text-micro font-semibold uppercase tracking-[0.07em] text-blue-400">
                 Available
               </div>
-              <div className="truncate text-[0.76rem] font-bold text-blue-700">
+              <div className="truncate text-body font-semibold text-blue-700">
                 {info.latestVersion || "Latest"}
               </div>
             </div>
@@ -108,19 +108,19 @@ const ClusterVersionInfo = () => {
   const updates = items.filter((item) => item.info.canUpgrade).length;
 
   return (
-    <section className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50 shadow-[0_1px_4px_rgba(15,23,42,0.04)]">
+    <section className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50 shadow-card">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3.5 sm:px-5">
         <div>
-          <div className="text-[0.76rem] font-bold text-slate-800">
+          <div className="text-body font-semibold text-slate-800">
             Package readiness
           </div>
-          <div className="mt-0.5 text-[0.67rem] font-semibold text-slate-400">
+          <div className="mt-0.5 text-xs font-normal text-slate-500">
             Installed and available versions reported by the cluster
           </div>
         </div>
         <div className="flex items-center gap-2">
           {qry.data && (
-            <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[0.64rem] font-bold text-slate-500">
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-micro font-normal text-slate-500">
               {updates > 0
                 ? `${updates} ${updates === 1 ? "update" : "updates"}`
                 : "All current"}

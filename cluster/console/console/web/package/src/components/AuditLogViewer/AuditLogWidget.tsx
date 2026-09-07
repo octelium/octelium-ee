@@ -28,85 +28,30 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
-import LineChart from "../Charts/LineChart";
+import ChartPanel from "../Charts/ChartPanel";
 import { LogWidgetHeader } from "../LogWidget";
 import TopList from "../TopList";
-
-interface PeriodOption {
-  label: string;
-  minutes: number;
-}
-
-const PRIMARY_PERIODS: PeriodOption[] = [
-  { label: "30m", minutes: 30 },
-  { label: "1h", minutes: 60 },
-  { label: "3h", minutes: 180 },
-  { label: "6h", minutes: 360 },
-  { label: "12h", minutes: 720 },
-  { label: "24h", minutes: 1440 },
-];
-
-const EXTENDED_PERIODS: PeriodOption[] = [
-  { label: "5m", minutes: 5 },
-  { label: "10m", minutes: 10 },
-  { label: "15m", minutes: 15 },
-  { label: "2d", minutes: 2880 },
-  { label: "3d", minutes: 4320 },
-  { label: "7d", minutes: 10080 },
-  { label: "14d", minutes: 20160 },
-];
-
-const ALL_PERIODS = [...PRIMARY_PERIODS, ...EXTENDED_PERIODS];
-
-const createDuration = (val: number, unit: string): Duration => {
-  const typePayload = match(unit)
-    .with("millisecond", () => ({
-      oneofKind: "milliseconds" as const,
-      milliseconds: val,
-    }))
-    .with("second", () => ({ oneofKind: "seconds" as const, seconds: val }))
-    .with("minute", () => ({ oneofKind: "minutes" as const, minutes: val }))
-    .with("hour", () => ({ oneofKind: "hours" as const, hours: val }))
-    .with("day", () => ({ oneofKind: "days" as const, days: val }))
-    .with("week", () => ({ oneofKind: "weeks" as const, weeks: val }))
-    .with("month", () => ({ oneofKind: "months" as const, months: val }))
-    .otherwise(() => ({ oneofKind: "seconds" as const, seconds: val }));
-  return Duration.create({ type: typePayload as any });
-};
-
-const getAutoInterval = (periodMinutes: number): Duration => {
-  if (periodMinutes <= 15) return createDuration(30, "second");
-  if (periodMinutes <= 60) return createDuration(1, "minute");
-  if (periodMinutes <= 180) return createDuration(5, "minute");
-  if (periodMinutes <= 360) return createDuration(10, "minute");
-  if (periodMinutes <= 720) return createDuration(15, "minute");
-  if (periodMinutes <= 1440) return createDuration(30, "minute");
-  if (periodMinutes <= 4320) return createDuration(1, "hour");
-  if (periodMinutes <= 10080) return createDuration(3, "hour");
-  return createDuration(6, "hour");
-};
-
-const buildTimestamps = (periodMinutes: number) => {
-  const now = dayjs();
-  const curFrom = now.subtract(periodMinutes, "minute").valueOf();
-  const curTo = now.valueOf();
-  const prevFrom = now.subtract(periodMinutes * 2, "minute").valueOf();
-  const prevTo = curFrom;
-  return { curFrom, curTo, prevFrom, prevTo };
-};
-
-const toTs = (ms: number) => Timestamp.fromDate(new Date(ms));
-const n = (v: unknown) => Number(v ?? 0);
-const refKey = (ref?: ObjectReference) => ref?.uid ?? ref?.name ?? null;
-
-const deltaPct = (cur: number, prev: number) =>
-  prev === 0 ? 0 : Math.round(((cur - prev) / prev) * 100);
+import {
+  ALL_PERIODS,
+  buildTimestamps,
+  deltaPct,
+  EXTENDED_PERIODS,
+  getAutoInterval,
+  n,
+  pct,
+  periodLabel,
+  PRIMARY_PERIODS,
+  refKey,
+  toTs,
+  visibilityKeys,
+} from "@/utils/visibility";
+import PeriodSelector from "../LogWidget/PeriodSelector";
 
 const TrendBadge = ({ cur, prev }: { cur: number; prev: number }) => {
   const d = deltaPct(cur, prev);
   if (d === 0 || prev === 0)
     return (
-      <span className="inline-flex items-center gap-0.5 text-[0.65rem] font-bold text-slate-400">
+      <span className="inline-flex items-center gap-0.5 text-micro font-normal text-slate-500">
         <Minus size={10} strokeWidth={3} /> —
       </span>
     );
@@ -114,7 +59,7 @@ const TrendBadge = ({ cur, prev }: { cur: number; prev: number }) => {
   return (
     <span
       className={twMerge(
-        "inline-flex items-center gap-0.5 text-[0.65rem] font-bold",
+        "inline-flex items-center gap-0.5 text-micro font-semibold",
         up ? "text-emerald-600" : "text-red-500",
       )}
     >
@@ -147,7 +92,7 @@ const StatCard = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <Icon size={13} className="text-slate-500" strokeWidth={2.5} />
-          <span className="text-[0.68rem] font-bold uppercase tracking-[0.06em] text-slate-500">
+          <span className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
             {label}
           </span>
         </div>
@@ -156,7 +101,7 @@ const StatCard = ({
           {to && (
             <ArrowUpRight
               size={11}
-              className="text-slate-300 transition-colors duration-500 group-hover:text-slate-500"
+              className="text-slate-300 transition-colors duration-200 group-hover:text-slate-500"
             />
           )}
         </div>
@@ -164,7 +109,7 @@ const StatCard = ({
       <span className="text-2xl font-bold tabular-nums text-slate-700">
         {value.toLocaleString()}
       </span>
-      <span className="text-[0.64rem] font-semibold text-slate-400">
+      <span className="text-micro font-normal text-slate-500">
         Previous period: {prevValue.toLocaleString()}
       </span>
     </>
@@ -172,7 +117,7 @@ const StatCard = ({
   const className = twMerge(
     "group flex min-h-[112px] flex-col gap-2.5 rounded-xl border border-slate-200 bg-slate-50 p-3",
     to &&
-      "outline-none transition-[border-color,box-shadow] duration-500 hover:shadow-[0_5px_18px_rgba(15,23,42,0.07)] focus-visible:ring-2 focus-visible:ring-blue-500/30",
+      "outline-none transition-[border-color,box-shadow] duration-200 hover:shadow-raised focus-visible:ring-2 focus-visible:ring-blue-500/30",
   );
 
   return to ? (
@@ -186,113 +131,14 @@ const StatCard = ({
 
 const MiniStat = ({ label, value }: { label: string; value: number }) => (
   <div className="flex flex-col gap-0.5 px-3 py-2.5 rounded-lg border border-slate-200 bg-white">
-    <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+    <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
       {label}
     </span>
-    <span className="text-[0.9rem] font-bold text-slate-700 tabular-nums">
+    <span className="text-sm font-bold text-slate-700 tabular-nums">
       {value.toLocaleString()}
     </span>
   </div>
 );
-
-const PeriodSelector = ({
-  value,
-  onChange,
-}: {
-  value: number;
-  onChange: (v: number) => void;
-}) => {
-  const isExtended = EXTENDED_PERIODS.some((p) => p.minutes === value);
-  const extendedLabel = isExtended
-    ? ALL_PERIODS.find((p) => p.minutes === value)?.label
-    : undefined;
-
-  return (
-    <Button.Group className="rounded-md overflow-hidden border border-slate-200 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-      {PRIMARY_PERIODS.map((opt) => {
-        const active = opt.minutes === value;
-        return (
-          <Button
-            type="button"
-            key={opt.minutes}
-            onClick={() => onChange(opt.minutes)}
-            styles={{
-              root: {
-                height: "26px",
-                fontSize: "0.7rem",
-                fontWeight: 700,
-                fontFamily: "Ubuntu, sans-serif",
-                padding: "0 10px",
-                backgroundColor: active ? "#0f172a" : "#ffffff",
-                color: active ? "#ffffff" : "#64748b",
-                border: "none",
-                borderRadius: 0,
-                transition: "background-color 150ms, color 150ms",
-                "&:hover": {
-                  backgroundColor: active ? "#1e293b" : "#f8fafc",
-                  color: active ? "#ffffff" : "#0f172a",
-                },
-              },
-            }}
-          >
-            {opt.label}
-          </Button>
-        );
-      })}
-
-      <Menu position="bottom-end" offset={4} withArrow={false}>
-        <Menu.Target>
-          <Button
-            type="button"
-            styles={{
-              root: {
-                height: "26px",
-                fontSize: "0.7rem",
-                fontWeight: 700,
-                fontFamily: "Ubuntu, sans-serif",
-                padding: "0 8px",
-                backgroundColor: isExtended ? "#0f172a" : "#ffffff",
-                color: isExtended ? "#ffffff" : "#64748b",
-                border: "none",
-                borderLeft: "1px solid #e2e8f0",
-                borderRadius: 0,
-                transition: "background-color 150ms, color 150ms",
-                "&:hover": {
-                  backgroundColor: isExtended ? "#1e293b" : "#f8fafc",
-                  color: isExtended ? "#ffffff" : "#0f172a",
-                },
-              },
-            }}
-          >
-            <span className="flex items-center gap-1">
-              {extendedLabel ?? "More"}
-              <ChevronDown size={10} strokeWidth={2.5} />
-            </span>
-          </Button>
-        </Menu.Target>
-        <Menu.Dropdown>
-          <div className="flex flex-col py-1 min-w-[100px]">
-            {EXTENDED_PERIODS.map((opt) => (
-              <button
-                type="button"
-                key={opt.minutes}
-                onClick={() => onChange(opt.minutes)}
-                className={twMerge(
-                  "flex items-center px-3 h-8 text-[0.75rem] font-bold cursor-pointer transition-colors duration-100 text-left",
-                  opt.minutes === value
-                    ? "bg-slate-900 text-white"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
-                )}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </Menu.Dropdown>
-      </Menu>
-    </Button.Group>
-  );
-};
 
 interface AuditLogHealthWidgetProps {
   userRef?: ObjectReference;
@@ -301,6 +147,7 @@ interface AuditLogHealthWidgetProps {
   resourceRef?: ObjectReference;
   periodMinutes?: number;
   onPeriodChange?: (value: number) => void;
+  hideRangeControl?: boolean;
 }
 
 const getAuditLogPath = (props: AuditLogHealthWidgetProps) => {
@@ -327,8 +174,7 @@ const AuditLogHealthWidget = (props: AuditLogHealthWidgetProps) => {
   const setPeriodMinutes = props.onPeriodChange ?? setLocalPeriodMinutes;
   const { curFrom, curTo, prevFrom, prevTo } = buildTimestamps(periodMinutes);
   const autoInterval = getAutoInterval(periodMinutes);
-  const periodLabel =
-    ALL_PERIODS.find((o) => o.minutes === periodMinutes)?.label ?? "";
+  const rangeLabel = periodLabel(periodMinutes);
 
   const refKeys = {
     userRef: refKey(props.userRef),
@@ -341,7 +187,7 @@ const AuditLogHealthWidget = (props: AuditLogHealthWidgetProps) => {
   const showTopSessions = !props.sessionRef;
 
   const curSummary = useQuery({
-    queryKey: ["auditLogSummary", "current", periodMinutes, refKeys],
+    queryKey: visibilityKeys.auditSummary("current", periodMinutes, refKeys),
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAuditLog().getAuditLogSummary(
@@ -360,7 +206,7 @@ const AuditLogHealthWidget = (props: AuditLogHealthWidgetProps) => {
   });
 
   const prevSummary = useQuery({
-    queryKey: ["auditLogSummary", "previous", periodMinutes, refKeys],
+    queryKey: visibilityKeys.auditSummary("previous", periodMinutes, refKeys),
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAuditLog().getAuditLogSummary(
@@ -379,7 +225,7 @@ const AuditLogHealthWidget = (props: AuditLogHealthWidgetProps) => {
   });
 
   const dataPoint = useQuery({
-    queryKey: ["auditLogDataPoint", periodMinutes, refKeys],
+    queryKey: visibilityKeys.auditDataPoint(periodMinutes, refKeys),
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAuditLog().getAuditLogDataPoint(
@@ -449,6 +295,8 @@ const AuditLogHealthWidget = (props: AuditLogHealthWidgetProps) => {
     topSessions,
   ].some((query) => query.isError);
 
+  const updatedAt = Math.max(curSummary.dataUpdatedAt, dataPoint.dataUpdatedAt);
+
   const refetchAll = () => {
     curSummary.refetch();
     prevSummary.refetch();
@@ -462,17 +310,21 @@ const AuditLogHealthWidget = (props: AuditLogHealthWidgetProps) => {
       <LogWidgetHeader
         icon={ClipboardList}
         title="Audit activity"
-        description={`Compared with the previous ${periodLabel}`}
+        description={`Compared with the previous ${rangeLabel}`}
         isLoading={isAnyLoading}
+        isError={hasError}
+        updatedAt={updatedAt}
         onRefresh={refetchAll}
       >
-        <PeriodSelector value={periodMinutes} onChange={setPeriodMinutes} />
+        {!props.hideRangeControl && (
+          <PeriodSelector value={periodMinutes} onChange={setPeriodMinutes} />
+        )}
       </LogWidgetHeader>
 
       {hasError && (
         <div
           role="alert"
-          className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[0.7rem] font-semibold text-amber-800"
+          className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800"
         >
           Some audit-log data could not be loaded. Showing the available
           results; try refreshing to retry.
@@ -521,7 +373,7 @@ const AuditLogHealthWidget = (props: AuditLogHealthWidgetProps) => {
 
           {n(cur.totalNumber) === 0 && (
             <div className="flex items-center justify-center py-8">
-              <span className="text-[0.75rem] font-semibold text-slate-400">
+              <span className="text-body font-normal text-slate-500">
                 No audit events in this period
               </span>
             </div>
@@ -529,25 +381,19 @@ const AuditLogHealthWidget = (props: AuditLogHealthWidgetProps) => {
         </>
       ) : (
         <div className="flex items-center justify-center py-8">
-          <span className="text-[0.75rem] font-semibold text-slate-400">
+          <span className="text-body font-normal text-slate-500">
             No data available
           </span>
         </div>
       )}
 
-      {dataPoint.data?.datapoints && dataPoint.data.datapoints.length > 0 && (
-        <div className="rounded-xl border border-slate-200 bg-white p-4">
-          <span className="text-[0.62rem] font-bold uppercase tracking-[0.07em] text-slate-400 block mb-3">
-            Activity — last {periodLabel}
-          </span>
-          <LineChart
-            points={dataPoint.data.datapoints.map((x) => ({
-              ts: x.timestamp!,
-              value: x.count,
-            }))}
-          />
-        </div>
-      )}
+      <ChartPanel
+        caption={`Activity — last ${rangeLabel}`}
+        points={(dataPoint.data?.datapoints ?? []).map((x) => ({
+          ts: x.timestamp!,
+          value: x.count,
+        }))}
+      />
 
       {((showTopUsers && topUsers.data && topUsers.data?.items.length > 0) ||
         (showTopSessions &&

@@ -102,17 +102,17 @@ export const MainInfo = (props: { item: CoreC.Gateway }): ResourceMainInfo => {
                 <div className="flex flex-col gap-1.5 w-full">
                   {status.wireguard.port > 0 && (
                     <div className="flex items-center gap-2">
-                      <span className="text-[0.68rem] font-bold uppercase tracking-[0.05em] text-slate-400 w-24 shrink-0">
+                      <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 w-24 shrink-0">
                         Port
                       </span>
-                      <span className="text-[0.78rem] font-semibold text-slate-700">
+                      <span className="text-body font-semibold text-slate-700">
                         {status.wireguard.port}
                       </span>
                     </div>
                   )}
                   {status.wireguard.publicKey && (
                     <div className="flex items-center gap-2">
-                      <span className="text-[0.68rem] font-bold uppercase tracking-[0.05em] text-slate-400 w-24 shrink-0">
+                      <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 w-24 shrink-0">
                         Public Key
                       </span>
                       <CopyText
@@ -123,10 +123,10 @@ export const MainInfo = (props: { item: CoreC.Gateway }): ResourceMainInfo => {
                   )}
                   {status.wireguard.keyRotatedAt && (
                     <div className="flex items-center gap-2">
-                      <span className="text-[0.68rem] font-bold uppercase tracking-[0.05em] text-slate-400 w-24 shrink-0">
+                      <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 w-24 shrink-0">
                         Key Rotated
                       </span>
-                      <span className="text-[0.78rem] font-semibold text-slate-700">
+                      <span className="text-body font-semibold text-slate-700">
                         <TimeAgo rfc3339={status.wireguard.keyRotatedAt} />
                       </span>
                     </div>

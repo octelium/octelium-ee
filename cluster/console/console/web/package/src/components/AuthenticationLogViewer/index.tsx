@@ -43,13 +43,13 @@ const DetailField = ({
   children: React.ReactNode;
   mono?: boolean;
 }) => (
-  <div className="flex min-h-14 min-w-0 flex-col gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.025)]">
-    <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-500">
+  <div className="flex min-h-14 min-w-0 flex-col gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-card">
+    <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
       {label}
     </span>
     <span
       className={twMerge(
-        "min-w-0 break-words text-[0.74rem] font-semibold leading-5 text-slate-700",
+        "min-w-0 break-words text-xs font-semibold leading-5 text-slate-700",
         mono && "font-mono",
       )}
     >
@@ -125,7 +125,7 @@ const AuthTypeBadge = ({
   return (
     <span
       className={twMerge(
-        "text-[0.65rem] font-bold px-1.5 py-px rounded border shrink-0",
+        "text-micro font-semibold px-1.5 py-px rounded border shrink-0",
         className,
       )}
     >
@@ -135,7 +135,7 @@ const AuthTypeBadge = ({
 };
 
 const BoolChip = ({ label }: { label: string }) => (
-  <span className="text-[0.65rem] font-bold px-1.5 py-px rounded border bg-emerald-50 text-emerald-700 border-emerald-200">
+  <span className="text-micro font-semibold px-1.5 py-px rounded border bg-emerald-50 text-emerald-700 border-emerald-200">
     {label}
   </span>
 );
@@ -152,7 +152,7 @@ const AuthenticationLogDetails = ({
   return (
     <div className="border-t border-slate-200 bg-slate-50/70 px-4 py-4 sm:px-5">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h4 className="text-[0.75rem] font-bold text-slate-700">
+        <h4 className="text-body font-semibold text-slate-700">
           Log details
         </h4>
         <Editor item={x} />
@@ -162,7 +162,7 @@ const AuthenticationLogDetails = ({
 
         {entry?.sessionRef && (
           <div className="col-span-full flex min-h-14 min-w-0 flex-col gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
-            <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-500">
+            <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
               Session
             </span>
             <CardSession itemRef={entry.sessionRef} />
@@ -171,7 +171,7 @@ const AuthenticationLogDetails = ({
 
         {(entry?.userRef || entry?.deviceRef) && (
           <div className="col-span-full flex min-h-14 min-w-0 flex-col gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
-            <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-500">
+            <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
               Identity context
             </span>
             <div className="flex flex-wrap items-center gap-1.5">
@@ -187,7 +187,7 @@ const AuthenticationLogDetails = ({
 
         {info && (
           <div className="col-span-full flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-100/60 p-3">
-            <span className="text-[0.62rem] font-bold uppercase tracking-[0.07em] text-slate-600">
+            <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-600">
               Authentication details
             </span>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -228,7 +228,7 @@ const AuthenticationLogDetails = ({
             )}
             {info.details.identityProvider.identityProviderRef && (
               <div className="flex flex-col gap-0.5">
-                <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+                <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
                   Identity Provider
                 </span>
                 <ResourceListLabel
@@ -243,7 +243,7 @@ const AuthenticationLogDetails = ({
           <>
             {info.details.credential.credentialRef && (
               <div className="flex flex-col gap-0.5">
-                <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+                <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
                   Credential
                 </span>
                 <ResourceListLabel
@@ -263,7 +263,7 @@ const AuthenticationLogDetails = ({
           <>
             {info.details.authenticator.authenticatorRef && (
               <div className="flex flex-col gap-0.5">
-                <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+                <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
                   Authenticator
                 </span>
                 <ResourceListLabel
@@ -351,17 +351,17 @@ export const AuthenticationLogC = ({
     <div
       className={twMerge(
         "mb-2 overflow-hidden rounded-xl border border-slate-200 bg-white",
-        "shadow-[0_1px_3px_rgba(15,23,42,0.04)] transition-[border-color,box-shadow] duration-500 ease-out",
-        "hover:border-slate-300 hover:shadow-[0_4px_14px_rgba(15,23,42,0.065)]",
+        "shadow-card transition-[border-color,box-shadow] duration-200 ease-out",
+        "hover:border-slate-300 hover:shadow-raised",
         expanded &&
-          "border-slate-300 shadow-[0_4px_16px_rgba(15,23,42,0.07)]",
+          "border-slate-300 shadow-raised",
       )}
     >
       <button
         type="button"
         aria-expanded={expanded}
         aria-controls={detailsID}
-        className="group flex w-full cursor-pointer items-start gap-3 px-3.5 py-3 text-left outline-none transition-colors duration-500 hover:bg-slate-50/50 focus-visible:bg-blue-50/40 sm:px-4"
+        className="group flex w-full cursor-pointer items-start gap-3 px-3.5 py-3 text-left outline-none transition-colors duration-200 hover:bg-slate-50/50 focus-visible:bg-blue-50/40 sm:px-4"
         onClick={() => setExpanded((v) => !v)}
       >
         <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-sky-200 bg-sky-50 text-sky-600">
@@ -370,21 +370,21 @@ export const AuthenticationLogC = ({
 
         <span className="flex min-w-0 flex-1 flex-col gap-2">
           <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5">
-            <span className="rounded-md border border-sky-200 bg-sky-50 px-2 py-1 text-[0.65rem] font-bold text-sky-700">
+            <span className="rounded-md border border-sky-200 bg-sky-50 px-2 py-1 text-micro font-semibold text-sky-700">
               Authentication
             </span>
 
             {userName ? (
               <span className="flex min-w-0 items-center gap-1.5">
-                <span className="shrink-0 text-[0.62rem] font-bold uppercase tracking-[0.05em] text-slate-400">
+                <span className="shrink-0 text-micro font-semibold uppercase tracking-[0.05em] text-slate-500">
                   User
                 </span>
-                <span className="max-w-48 truncate font-mono text-[0.7rem] font-semibold text-slate-700">
+                <span className="max-w-48 truncate font-mono text-xs font-semibold text-slate-700">
                   {userName}
                 </span>
               </span>
             ) : (
-              <span className="text-[0.7rem] font-semibold text-slate-400">
+              <span className="text-xs font-normal text-slate-500">
                 Unknown user
               </span>
             )}
@@ -392,10 +392,10 @@ export const AuthenticationLogC = ({
             {sessionName && (
               <span className="hidden min-w-0 items-center gap-1.5 sm:flex">
                 <span className="text-slate-300">·</span>
-                <span className="shrink-0 text-[0.62rem] font-bold uppercase tracking-[0.05em] text-slate-400">
+                <span className="shrink-0 text-micro font-semibold uppercase tracking-[0.05em] text-slate-500">
                   Session
                 </span>
-                <span className="max-w-36 truncate font-mono text-[0.67rem] font-medium text-slate-500">
+                <span className="max-w-36 truncate font-mono text-xs font-medium text-slate-500">
                   {sessionName}
                 </span>
               </span>
@@ -410,19 +410,19 @@ export const AuthenticationLogC = ({
               )}
 
             {aal && (
-              <span className="shrink-0 rounded-md bg-slate-800 px-1.5 py-0.5 font-mono text-[0.62rem] font-bold text-slate-100">
+              <span className="shrink-0 rounded-md bg-slate-800 px-1.5 py-0.5 font-mono text-micro font-semibold text-slate-100">
                 {aal}
               </span>
             )}
 
             {info?.downstream?.ipAddress && (
-              <span className="font-mono text-[0.67rem] font-semibold text-slate-500">
+              <span className="font-mono text-xs font-normal text-slate-500">
                 {info.downstream.ipAddress}
               </span>
             )}
 
             {info?.downstream?.clientVersion && (
-              <span className="text-[0.67rem] font-medium text-slate-400">
+              <span className="text-xs font-medium text-slate-500">
                 Client {info.downstream.clientVersion}
               </span>
             )}
@@ -432,13 +432,13 @@ export const AuthenticationLogC = ({
         <motion.span
           animate={{ rotate: expanded ? 180 : 0 }}
           transition={{ duration: 0.35, ease: "easeOut" }}
-          className="mt-2 flex shrink-0 text-slate-400 transition-colors duration-500 group-hover:text-slate-600"
+          className="mt-2 flex shrink-0 text-slate-500 transition-colors duration-200 group-hover:text-slate-600"
         >
           <ChevronDown size={15} strokeWidth={2.25} />
         </motion.span>
       </button>
 
-      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 border-t border-slate-100 bg-slate-50/40 px-4 py-1.5 pl-[60px] text-[0.6rem] font-semibold text-slate-400">
+      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 border-t border-slate-100 bg-slate-50/40 px-4 py-1.5 pl-[60px] text-micro font-normal text-slate-500">
         <TimeAgo rfc3339={x.metadata!.createdAt} />
         <span aria-hidden="true" className="text-slate-300">
           ·
@@ -725,7 +725,7 @@ const DoAuthenticationLogViewer = (props: {
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-4">
-        <span className="text-[0.68rem] font-semibold text-slate-400 tabular-nums">
+        <span className="text-xs font-normal text-slate-500 tabular-nums">
           {totalCount ? `${totalCount.toLocaleString()} entries` : "No entries"}
         </span>
         <button
@@ -734,7 +734,7 @@ const DoAuthenticationLogViewer = (props: {
             qry.refetch();
           }}
           disabled={qry.isLoading}
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[0.7rem] font-bold text-slate-500 border border-slate-200 bg-white hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 transition-colors duration-150 cursor-pointer shadow-[0_1px_2px_rgba(15,23,42,0.05)] disabled:opacity-50"
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-normal text-slate-500 border border-slate-200 bg-white hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 transition-colors duration-150 cursor-pointer shadow-card disabled:opacity-50"
         >
           <RefreshCw
             size={11}
@@ -748,7 +748,7 @@ const DoAuthenticationLogViewer = (props: {
       {qry.isError && (
         <div
           role="alert"
-          className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[0.72rem] font-semibold text-red-700"
+          className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700"
         >
           Authentication logs could not be loaded. Refresh to try again.
         </div>
@@ -764,7 +764,7 @@ const DoAuthenticationLogViewer = (props: {
 
           {qry.isSuccess && qry.data?.items.length === 0 && (
             <div className="flex items-center justify-center py-16">
-              <span className="text-[0.78rem] font-bold uppercase tracking-[0.08em] text-slate-400">
+              <span className="text-body font-semibold uppercase tracking-[0.08em] text-slate-500">
                 No authentication log entries found
               </span>
             </div>
@@ -810,7 +810,7 @@ export const AuthenticationLogList = (props: {
     <div className="flex w-full flex-col gap-4">
       {props.periodMinutes === undefined && (
         <div className="flex items-center gap-3">
-          <span className="shrink-0 text-[0.72rem] font-bold uppercase tracking-[0.05em] text-slate-500">
+          <span className="shrink-0 text-xs font-semibold uppercase tracking-[0.05em] text-slate-500">
             Since
           </span>
           <SelectFromTimestamp onUpdate={setLocalFrom} />
@@ -835,7 +835,7 @@ const AuthenticationLogViewer = (props: {
   return (
     <div className="w-full flex flex-col gap-6">
       <div className="flex items-center gap-3">
-        <span className="text-[0.72rem] font-bold uppercase tracking-[0.05em] text-slate-500 shrink-0">
+        <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 shrink-0">
           Since
         </span>
         <SelectFromTimestamp onUpdate={setFrom} />

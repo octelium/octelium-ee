@@ -2,6 +2,7 @@ import ReactEChartsCore from "echarts-for-react";
 import { GaugeChart as GaugeChartC } from "echarts/charts";
 import * as echarts from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
+import { CHART_INK } from "@/utils/charts/palette";
 
 echarts.use([CanvasRenderer, GaugeChartC]);
 
@@ -43,7 +44,7 @@ const CounterChart = (props: {
           fontSize: 11,
           fontWeight: 700,
           fontFamily: "Ubuntu, sans-serif",
-          color: "#94a3b8",
+          color: CHART_INK.muted,
         },
         detail: {
           valueAnimation: true,
@@ -63,7 +64,7 @@ const CounterChart = (props: {
   return (
     <div className="w-full flex flex-col">
       {title && (
-        <p className="text-[0.78rem] font-bold uppercase tracking-[0.05em] text-slate-800 mb-1 px-1">
+        <p className="text-body font-semibold uppercase tracking-[0.05em] text-slate-800 mb-1 px-1">
           {title}
         </p>
       )}

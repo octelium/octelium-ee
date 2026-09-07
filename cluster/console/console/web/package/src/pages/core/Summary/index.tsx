@@ -36,7 +36,7 @@ const SummaryWrap = (props: { children?: React.ReactNode; href: string }) => {
   return (
     <Link
       to={props.href}
-      className="w-full border-[1px] !cursor-pointer rounded-lg p-4 m-4 border-slate-300 font-bold bg-white shadow-sm flex hover:bg-transparent hover:border-slate-400 duration-500 transition-all"
+      className="w-full border-[1px] !cursor-pointer rounded-lg p-4 m-4 border-slate-300 font-bold bg-white shadow-sm flex hover:bg-transparent hover:border-slate-400 duration-200 transition-all"
     >
       <div className="w-full">{props.children}</div>
     </Link>

@@ -10,7 +10,7 @@ const LinkedResources = (props: {
 }) => {
   if (props.values.length === 0) {
     return (
-      <span className="text-[0.72rem] font-semibold text-slate-400">
+      <span className="text-xs font-normal text-slate-500">
         No {props.kind.toLowerCase()}s configured
       </span>
     );

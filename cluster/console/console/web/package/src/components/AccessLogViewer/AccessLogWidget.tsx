@@ -29,84 +29,28 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
-import LineChart from "../Charts/LineChart";
+import ChartPanel from "../Charts/ChartPanel";
 import { LogWidgetHeader } from "../LogWidget";
 import TopList from "../TopList";
 import {
   accessLogStatusValue,
   AccessLogStatusFilter,
 } from "./utils";
-
-interface PeriodOption {
-  label: string;
-  minutes: number;
-}
-
-const PRIMARY_PERIODS: PeriodOption[] = [
-  { label: "30m", minutes: 30 },
-  { label: "1h", minutes: 60 },
-  { label: "3h", minutes: 180 },
-  { label: "6h", minutes: 360 },
-  { label: "12h", minutes: 720 },
-  { label: "24h", minutes: 1440 },
-];
-
-const EXTENDED_PERIODS: PeriodOption[] = [
-  { label: "5m", minutes: 5 },
-  { label: "10m", minutes: 10 },
-  { label: "15m", minutes: 15 },
-  { label: "2d", minutes: 2880 },
-  { label: "3d", minutes: 4320 },
-  { label: "7d", minutes: 10080 },
-  { label: "14d", minutes: 20160 },
-];
-
-const ALL_PERIODS = [...PRIMARY_PERIODS, ...EXTENDED_PERIODS];
-
-const createDuration = (val: number, unit: string): Duration => {
-  const typePayload = match(unit)
-    .with("millisecond", () => ({
-      oneofKind: "milliseconds" as const,
-      milliseconds: val,
-    }))
-    .with("second", () => ({ oneofKind: "seconds" as const, seconds: val }))
-    .with("minute", () => ({ oneofKind: "minutes" as const, minutes: val }))
-    .with("hour", () => ({ oneofKind: "hours" as const, hours: val }))
-    .with("day", () => ({ oneofKind: "days" as const, days: val }))
-    .with("week", () => ({ oneofKind: "weeks" as const, weeks: val }))
-    .with("month", () => ({ oneofKind: "months" as const, months: val }))
-    .otherwise(() => ({ oneofKind: "seconds" as const, seconds: val }));
-  return Duration.create({ type: typePayload as any });
-};
-
-const getAutoInterval = (periodMinutes: number): Duration => {
-  if (periodMinutes <= 15) return createDuration(30, "second");
-  if (periodMinutes <= 60) return createDuration(1, "minute");
-  if (periodMinutes <= 180) return createDuration(5, "minute");
-  if (periodMinutes <= 360) return createDuration(10, "minute");
-  if (periodMinutes <= 720) return createDuration(15, "minute");
-  if (periodMinutes <= 1440) return createDuration(30, "minute");
-  if (periodMinutes <= 4320) return createDuration(1, "hour");
-  if (periodMinutes <= 10080) return createDuration(3, "hour");
-  return createDuration(6, "hour");
-};
-
-const buildTimestamps = (periodMinutes: number) => {
-  const now = dayjs();
-  const curFrom = now.subtract(periodMinutes, "minute").valueOf();
-  const curTo = now.valueOf();
-  const prevFrom = now.subtract(periodMinutes * 2, "minute").valueOf();
-  const prevTo = curFrom;
-  return { curFrom, curTo, prevFrom, prevTo };
-};
-
-const toTs = (ms: number) => Timestamp.fromDate(new Date(ms));
-
-const pct = (value: number, total: number) =>
-  total === 0 ? 0 : Math.round((value / total) * 100);
-
-const deltaPct = (cur: number, prev: number) =>
-  prev === 0 ? 0 : Math.round(((cur - prev) / prev) * 100);
+import {
+  ALL_PERIODS,
+  buildTimestamps,
+  deltaPct,
+  EXTENDED_PERIODS,
+  getAutoInterval,
+  n,
+  pct,
+  periodLabel,
+  PRIMARY_PERIODS,
+  refKey,
+  toTs,
+  visibilityKeys,
+} from "@/utils/visibility";
+import PeriodSelector from "../LogWidget/PeriodSelector";
 
 const TrendBadge = ({
   cur,
@@ -120,7 +64,7 @@ const TrendBadge = ({
   const d = deltaPct(cur, prev);
   if (d === 0 || prev === 0)
     return (
-      <span className="inline-flex items-center gap-0.5 text-[0.65rem] font-bold text-slate-400">
+      <span className="inline-flex items-center gap-0.5 text-micro font-normal text-slate-500">
         <Minus size={10} strokeWidth={3} />—
       </span>
     );
@@ -129,7 +73,7 @@ const TrendBadge = ({
   return (
     <span
       className={twMerge(
-        "inline-flex items-center gap-0.5 text-[0.65rem] font-bold",
+        "inline-flex items-center gap-0.5 text-micro font-semibold",
         favorable ? "text-emerald-600" : "text-red-500",
       )}
     >
@@ -190,7 +134,7 @@ const StatCard = ({
     <Link
       to={to}
       className={twMerge(
-        "group flex min-h-[112px] flex-col gap-2.5 rounded-xl border p-3 outline-none transition-[border-color,box-shadow] duration-500 hover:shadow-[0_5px_18px_rgba(15,23,42,0.07)] focus-visible:ring-2 focus-visible:ring-blue-500/30",
+        "group flex min-h-[112px] flex-col gap-2.5 rounded-xl border p-3 outline-none transition-[border-color,box-shadow] duration-200 hover:shadow-raised focus-visible:ring-2 focus-visible:ring-blue-500/30",
         colors.bg,
         colors.border,
       )}
@@ -198,7 +142,7 @@ const StatCard = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Icon size={14} className={colors.icon} strokeWidth={2.5} />
-          <span className="text-[0.7rem] font-bold uppercase tracking-[0.06em] text-slate-500">
+          <span className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
             {label}
           </span>
         </div>
@@ -210,7 +154,7 @@ const StatCard = ({
           />
           <ArrowUpRight
             size={11}
-            className="text-slate-300 transition-colors duration-500 group-hover:text-slate-500"
+            className="text-slate-300 transition-colors duration-200 group-hover:text-slate-500"
           />
         </div>
       </div>
@@ -221,7 +165,7 @@ const StatCard = ({
           {value.toLocaleString()}
         </span>
         {variant !== "total" && total > 0 && (
-          <span className="text-[0.72rem] font-semibold text-slate-400">
+          <span className="text-xs font-normal text-slate-500">
             {rate}%
           </span>
         )}
@@ -230,98 +174,17 @@ const StatCard = ({
         <div className="h-1 w-full bg-white/60 rounded-full overflow-hidden">
           <div
             className={twMerge(
-              "h-full rounded-full transition-[width] duration-500",
+              "h-full rounded-full transition-[width] duration-200",
               colors.bar,
             )}
             style={{ width: `${rate}%` }}
           />
         </div>
       )}
-      <div className="text-[0.64rem] font-semibold text-slate-400">
+      <div className="text-micro font-normal text-slate-500">
         Previous period: {prevValue.toLocaleString()}
       </div>
     </Link>
-  );
-};
-
-const PeriodSelector = ({
-  value,
-  onChange,
-}: {
-  value: number;
-  onChange: (v: number) => void;
-}) => {
-  const isExtended = EXTENDED_PERIODS.some((p) => p.minutes === value);
-  const extendedLabel = isExtended
-    ? ALL_PERIODS.find((p) => p.minutes === value)?.label
-    : undefined;
-  const primaryValue = PRIMARY_PERIODS.some((p) => p.minutes === value)
-    ? String(value)
-    : undefined;
-
-  return (
-    <div className="flex items-center gap-1">
-      <SegmentedControl
-        size="xs"
-        value={primaryValue}
-        onChange={(nextValue) => onChange(Number(nextValue))}
-        data={PRIMARY_PERIODS.map((opt) => ({
-          value: String(opt.minutes),
-          label: opt.label,
-        }))}
-      />
-
-      <Menu position="bottom-end" offset={4} withArrow={false}>
-        <Menu.Target>
-          <Button
-            type="button"
-            styles={{
-              root: {
-                height: "26px",
-                fontSize: "0.7rem",
-                fontWeight: 700,
-                fontFamily: "Ubuntu, sans-serif",
-                padding: "0 8px",
-                backgroundColor: isExtended ? "#0f172a" : "#ffffff",
-                color: isExtended ? "#ffffff" : "#64748b",
-                border: "none",
-                borderLeft: "1px solid #e2e8f0",
-                borderRadius: 0,
-                transition: "background-color 150ms, color 150ms",
-                "&:hover": {
-                  backgroundColor: isExtended ? "#1e293b" : "#f8fafc",
-                  color: isExtended ? "#ffffff" : "#0f172a",
-                },
-              },
-            }}
-          >
-            <span className="flex items-center gap-1">
-              {extendedLabel ?? "More"}
-              <ChevronDown size={10} strokeWidth={2.5} />
-            </span>
-          </Button>
-        </Menu.Target>
-        <Menu.Dropdown>
-          <div className="flex flex-col py-1 min-w-[100px]">
-            {EXTENDED_PERIODS.map((opt) => (
-              <button
-                type="button"
-                key={opt.minutes}
-                onClick={() => onChange(opt.minutes)}
-                className={twMerge(
-                  "flex items-center px-3 h-8 text-[0.75rem] font-bold cursor-pointer transition-colors duration-100 text-left",
-                  opt.minutes === value
-                    ? "bg-slate-900 text-white"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
-                )}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </Menu.Dropdown>
-      </Menu>
-    </div>
   );
 };
 
@@ -381,11 +244,10 @@ interface AccessLogHealthWidgetProps {
   policyRef?: ObjectReference;
   periodMinutes?: number;
   onPeriodChange?: (value: number) => void;
+  hideRangeControl?: boolean;
   status?: AccessLogStatusFilter;
   onStatusChange?: (value: AccessLogStatusFilter) => void;
 }
-
-const refKey = (ref?: ObjectReference) => ref?.uid ?? ref?.name ?? null;
 
 const getAccessLogPath = (
   props: AccessLogHealthWidgetProps,
@@ -421,8 +283,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
   const setStatus = props.onStatusChange ?? setLocalStatus;
   const { curFrom, curTo, prevFrom, prevTo } = buildTimestamps(periodMinutes);
   const autoInterval = getAutoInterval(periodMinutes);
-  const periodLabel =
-    ALL_PERIODS.find((o) => o.minutes === periodMinutes)?.label ?? "";
+  const rangeLabel = periodLabel(periodMinutes);
   const scopedLogsPath = getAccessLogPath(
     props,
     status === "allowed" ? "ALLOWED" : status === "denied" ? "DENIED" : undefined,
@@ -444,7 +305,12 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
   const showTopPolicies = !props.policyRef;
 
   const curSummary = useQuery({
-    queryKey: ["accessLogSummary", "current", periodMinutes, status, refKeys],
+    queryKey: visibilityKeys.accessSummary(
+      "current",
+      periodMinutes,
+      status,
+      refKeys,
+    ),
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAccessLog().getAccessLogSummary(
@@ -467,7 +333,12 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
   });
 
   const prevSummary = useQuery({
-    queryKey: ["accessLogSummary", "previous", periodMinutes, status, refKeys],
+    queryKey: visibilityKeys.accessSummary(
+      "previous",
+      periodMinutes,
+      status,
+      refKeys,
+    ),
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAccessLog().getAccessLogSummary(
@@ -490,7 +361,7 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
   });
 
   const dataPoint = useQuery({
-    queryKey: ["accessLogDataPoint", periodMinutes, status, refKeys],
+    queryKey: visibilityKeys.accessDataPoint(periodMinutes, status, refKeys),
     queryFn: async () => {
       const { response } =
         await getClientVisibilityAccessLog().getAccessLogDataPoint(
@@ -623,6 +494,8 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
     topSessions,
   ].some((query) => query.isError);
 
+  const updatedAt = Math.max(curSummary.dataUpdatedAt, dataPoint.dataUpdatedAt);
+
   const refetchAll = () => {
     curSummary.refetch();
     prevSummary.refetch();
@@ -638,20 +511,24 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
       <LogWidgetHeader
         icon={Activity}
         title="Access activity"
-        description={`Compared with the previous ${periodLabel}`}
+        description={`Compared with the previous ${rangeLabel}`}
         isLoading={isAnyLoading}
+        isError={hasError}
+        updatedAt={updatedAt}
         onRefresh={refetchAll}
       >
         <div className="flex flex-wrap items-center justify-end gap-1.5">
           <StatusSelector value={status} onChange={setStatus} />
+          {!props.hideRangeControl && (
           <PeriodSelector value={periodMinutes} onChange={setPeriodMinutes} />
+        )}
         </div>
       </LogWidgetHeader>
 
       {hasError && (
         <div
           role="alert"
-          className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[0.7rem] font-semibold text-amber-800"
+          className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800"
         >
           Some access-log data could not be loaded. Showing the available
           results; try refreshing to retry.
@@ -703,19 +580,19 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
             <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/70 px-3 py-2">
               <div className="flex-1 h-2 rounded-full bg-slate-200 overflow-hidden flex">
                 <div
-                  className="h-full bg-emerald-500 transition-[width] duration-500"
+                  className="h-full bg-emerald-500 transition-[width] duration-200"
                   style={{
                     width: `${pct(Number(curData.totalAllowed), Number(curData.totalNumber))}%`,
                   }}
                 />
                 <div
-                  className="h-full bg-red-500 transition-[width] duration-500"
+                  className="h-full bg-red-500 transition-[width] duration-200"
                   style={{
                     width: `${pct(Number(curData.totalDenied), Number(curData.totalNumber))}%`,
                   }}
                 />
               </div>
-              <span className="text-[0.65rem] font-bold text-slate-500 shrink-0 tabular-nums">
+              <span className="text-micro font-normal text-slate-500 shrink-0 tabular-nums">
                 {pct(Number(curData.totalAllowed), Number(curData.totalNumber))}
                 % allowed
               </span>
@@ -733,10 +610,10 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
                 key={label}
                 className="flex flex-col gap-0.5 px-3 py-2.5 rounded-lg border border-slate-200 bg-white"
               >
-                <span className="text-[0.6rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+                <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
                   {label}
                 </span>
-                <span className="text-[0.9rem] font-bold text-slate-700 tabular-nums">
+                <span className="text-sm font-bold text-slate-700 tabular-nums">
                   {value.toLocaleString()}
                 </span>
               </div>
@@ -745,25 +622,19 @@ const AccessLogHealthWidget = (props: AccessLogHealthWidgetProps) => {
         </>
       ) : (
         <div className="flex items-center justify-center py-8">
-          <span className="text-[0.75rem] font-semibold text-slate-400">
+          <span className="text-body font-normal text-slate-500">
             No data available for this period
           </span>
         </div>
       )}
 
-      {dataPoint.data?.datapoints && dataPoint.data.datapoints.length > 0 && (
-        <div className="rounded-xl border border-slate-200 bg-white p-4">
-          <span className="text-[0.62rem] font-bold uppercase tracking-[0.07em] text-slate-400 block mb-3">
-            Activity — last {periodLabel}
-          </span>
-          <LineChart
-            points={dataPoint.data.datapoints.map((x) => ({
-              ts: x.timestamp!,
-              value: x.count,
-            }))}
-          />
-        </div>
-      )}
+      <ChartPanel
+        caption={`Activity — last ${rangeLabel}`}
+        points={(dataPoint.data?.datapoints ?? []).map((x) => ({
+          ts: x.timestamp!,
+          value: x.count,
+        }))}
+      />
 
       {((showTopUsers && topUsers.data && topUsers.data?.items.length > 0) ||
         (showTopServices &&

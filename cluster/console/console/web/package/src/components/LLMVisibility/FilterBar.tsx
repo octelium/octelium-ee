@@ -35,7 +35,7 @@ const FilterBar = (props: {
   const [custom, setCustom] = React.useState(props.minutes === undefined);
 
   return (
-    <div className="flex w-full flex-col gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-[0_1px_4px_rgba(15,23,42,0.04)]">
+    <div className="flex w-full flex-col gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-card">
       <div className="flex flex-wrap items-center gap-2">
         <SegmentedControl
           size="xs"
@@ -116,7 +116,7 @@ const FilterBar = (props: {
 
       {props.drilldowns.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5 border-t border-slate-100 pt-2.5">
-          <span className="flex items-center gap-1.5 text-[0.63rem] font-bold uppercase tracking-[0.06em] text-slate-400">
+          <span className="flex items-center gap-1.5 text-micro font-semibold uppercase tracking-[0.06em] text-slate-500">
             <SlidersHorizontal size={11} strokeWidth={2.6} />
             Filters
           </span>
@@ -125,7 +125,7 @@ const FilterBar = (props: {
               key={drilldownID(drilldown)}
               className={twMerge(
                 "inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-50 py-0.5 pl-2 pr-0.5",
-                "text-[0.66rem] font-bold text-slate-600",
+                "text-micro font-normal text-slate-600",
               )}
             >
               {drilldownLabel(drilldown)}
@@ -133,7 +133,7 @@ const FilterBar = (props: {
                 type="button"
                 aria-label={`Remove ${drilldownLabel(drilldown)}`}
                 onClick={() => props.onRemoveDrilldown(drilldown)}
-                className="flex h-4 w-4 cursor-pointer items-center justify-center rounded text-slate-400 transition-colors duration-300 hover:bg-slate-200 hover:text-slate-700"
+                className="flex h-4 w-4 cursor-pointer items-center justify-center rounded text-slate-500 transition-colors duration-200 hover:bg-slate-200 hover:text-slate-700"
               >
                 <X size={10} strokeWidth={3} />
               </button>

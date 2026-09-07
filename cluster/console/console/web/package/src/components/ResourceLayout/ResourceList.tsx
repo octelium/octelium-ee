@@ -1,25 +1,25 @@
-import { getDomain } from "@/utils";
+import { getDomain, onError } from "@/utils";
 import {
   getAPIKindFromPath,
-  getAPIFromAPIVersion,
-  getClientResourceList,
-  getClientResourceListP,
+  deleteResourcePB,
   getListKeyFromPath,
-  getPBResourceListFromAPI,
+  getListOptionsPB,
   getRefNameQueryArgStr,
   getResourcePath,
+  listResourcesPB,
   getResourcePathFromAPIKind,
   hasAccessLog,
+  getAuditLogQueryArgStr,
   hasAuditLog,
   hasAuthenticationLog,
   hasSSHSessionLog,
+  invalidateResourceList,
   Resource,
   ResourceList,
   ResourceName,
 } from "@/utils/pb";
-import { ActionIcon, Button, Loader, Menu, Tooltip } from "@mantine/core";
-import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
+import { ActionIcon, Checkbox, Menu, Tooltip } from "@mantine/core";
+import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import React from "react";
 import {
   Link,
@@ -28,6 +28,8 @@ import {
   useNavigate,
   useSearchParams,
 } from "react-router-dom";
+import { toast } from "sonner";
+import { twMerge } from "tailwind-merge";
 import CopyText from "../CopyText";
 import Paginator from "../Paginator";
 import { ResourceListItem, ResourceListWrapper } from "../ResourceList";
@@ -41,6 +43,7 @@ import {
   Copy,
   ExternalLink,
   FileText,
+  FilterX,
   Library,
   MoreVertical,
   Pencil,
@@ -55,6 +58,11 @@ import DeleteResource from "../DeleteResource";
 import TimeAgo from "../TimeAgo";
 import CloneResource from "./CloneResource";
 import { parseQueryString } from "./queryParse";
+import ResourceListToolbar, {
+  ListDensity,
+  useListDensity,
+  useListParams,
+} from "./ResourceListToolbar";
 
 const ResourceItemActions = (props: {
   item: Resource;
@@ -88,10 +96,10 @@ const ResourceItemActions = (props: {
       label: "Authentication logs",
     },
     {
-      show: hasAuditLog(item),
-      to: `/visibility/auditlogs?${query}`,
+      show: true,
+      to: `/visibility/auditlogs?${getAuditLogQueryArgStr(item)}`,
       icon: Library,
-      label: "Audit logs",
+      label: hasAuditLog(item) ? "Audit logs" : "Change history",
     },
     {
       show: hasSSHSessionLog(item),
@@ -117,13 +125,12 @@ const ResourceItemActions = (props: {
             color="gray"
             size="sm"
             aria-label={`Actions for ${md.name}`}
-            onClick={(event) => event.stopPropagation()}
           >
             <MoreVertical size={16} strokeWidth={2.25} />
           </ActionIcon>
         </Menu.Target>
 
-        <Menu.Dropdown onClick={(event) => event.stopPropagation()}>
+        <Menu.Dropdown>
           <Menu.Label className="truncate">{md.name}</Menu.Label>
           <Menu.Item
             leftSection={<FileText size={14} />}
@@ -217,177 +224,349 @@ const ResourceItemActions = (props: {
   );
 };
 
-const Item = (props: { item: Resource; info: ResourceComponentInfo }) => {
-  const { item } = props;
+const isSelectable = (item: Resource, info: ResourceComponentInfo) =>
+  !item.metadata?.isSystem && !info.unDeletable;
+
+const SystemBadge = () => (
+  <Tooltip label="This is a system resource created by the cluster" withArrow>
+    <span className="inline-flex items-center rounded border border-blue-200 bg-blue-50 px-1.5 py-px text-xs font-medium leading-4 text-blue-700">
+      System
+    </span>
+  </Tooltip>
+);
+
+const RowTimestamp = (props: { item: Resource; className?: string }) => {
+  const md = props.item.metadata!;
+  const updated = md.updatedAt && md.updatedAt !== md.createdAt;
+  return (
+    <span
+      className={twMerge(
+        "whitespace-nowrap text-xs font-normal text-slate-600",
+        props.className,
+      )}
+    >
+      {updated ? "Updated " : "Created "}
+      <TimeAgo rfc3339={updated ? md.updatedAt : md.createdAt} />
+    </span>
+  );
+};
+
+const RowTitleLink = (props: {
+  item: Resource;
+  returnTo: string;
+  stretched?: boolean;
+}) => (
+  <Link
+    to={getResourcePath(props.item)}
+    state={{ returnTo: props.returnTo }}
+    preventScrollReset
+    className={twMerge(
+      "min-w-0 truncate rounded text-sm font-semibold text-slate-900",
+      "outline-none hover:underline focus-visible:ring-2 focus-visible:ring-blue-500/40",
+      props.stretched && "after:absolute after:inset-0 after:content-['']",
+    )}
+  >
+    {props.item.metadata!.name}
+  </Link>
+);
+
+const SelectBox = (props: {
+  item: Resource;
+  info: ResourceComponentInfo;
+  checked: boolean;
+  onToggle: (uid: string) => void;
+}) => {
+  if (!isSelectable(props.item, props.info)) {
+    return <span className="inline-block w-[18px]" aria-hidden="true" />;
+  }
+  return (
+    <Checkbox
+      size="xs"
+      className="relative z-10"
+      checked={props.checked}
+      aria-label={`Select ${props.item.metadata!.name}`}
+      onChange={() => props.onToggle(props.item.metadata!.uid)}
+    />
+  );
+};
+
+const CardItem = (props: {
+  item: Resource;
+  info: ResourceComponentInfo;
+  returnTo: string;
+  compact?: boolean;
+  checked: boolean;
+  onToggle: (uid: string) => void;
+}) => {
+  const { item, info, compact } = props;
   const md = item.metadata!;
-  const location = useLocation();
-  const returnTo = `${location.pathname}${location.search}`;
+  const Labels = info.List.labelComponent;
 
   return (
-    <div className="w-full font-semibold">
-      <div className="flex items-start gap-3 sm:gap-4">
-        {md.picURL && (
+    <div className="w-full">
+      <div className="flex items-start gap-3">
+        <div className="pt-0.5">
+          <SelectBox
+            item={item}
+            info={info}
+            checked={props.checked}
+            onToggle={props.onToggle}
+          />
+        </div>
+
+        {md.picURL && !compact && (
           <img
             src={md.picURL}
-            alt={md.displayName || md.name}
+            alt=""
             loading="lazy"
-            className="mt-0.5 h-10 w-10 shrink-0 rounded-lg border border-slate-200 object-cover shadow-sm"
+            className="mt-0.5 h-10 w-10 shrink-0 rounded-lg border border-slate-200 object-cover"
           />
         )}
 
-        <div className="flex min-w-0 flex-1 items-start justify-between gap-2">
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-              <span className="min-w-0 text-[0.92rem] font-bold text-slate-800">
-                <CopyText value={md.name} />
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <div className="flex min-w-0 items-center gap-2">
+            <RowTitleLink item={item} returnTo={props.returnTo} stretched />
+            <span className="relative z-10 shrink-0">
+              <CopyText value={md.name} hide />
+            </span>
+            {md.displayName && (
+              <span className="truncate text-sm font-normal text-slate-600">
+                {md.displayName}
               </span>
-
-              {md.displayName && (
-                <span className="truncate text-[0.82rem] font-semibold text-slate-500">
-                  {md.displayName}
-                </span>
-              )}
-
-              {md.isSystem && (
-                <Tooltip
-                  label="This is a system resource created by the cluster"
-                  withArrow
-                >
-                  <span className="inline-flex items-center px-1.5 py-px text-[0.65rem] font-bold uppercase tracking-wider rounded border border-blue-200 text-blue-600 bg-blue-50 leading-none">
-                    System
-                  </span>
-                </Tooltip>
-              )}
-            </div>
-
-            {md.description && (
-              <p className="mt-0.5 line-clamp-2 max-w-2xl text-[0.78rem] font-medium leading-5 text-slate-500">
-                {md.description}
-              </p>
             )}
-
-            <div className="mt-1 text-[0.7rem] font-medium text-slate-400">
-              Created <TimeAgo rfc3339={md.createdAt} />
-              {md.updatedAt && (
-                <span className="ml-2">
-                  · Updated <TimeAgo rfc3339={md.updatedAt} />
-                </span>
-              )}
-            </div>
+            {md.isSystem && <SystemBadge />}
+            {compact && (
+              <>
+                <div className="flex-1" />
+                <RowTimestamp item={item} />
+              </>
+            )}
           </div>
 
+          {md.description && !compact && (
+            <p className="line-clamp-2 max-w-2xl text-sm font-normal leading-5 text-slate-600">
+              {md.description}
+            </p>
+          )}
+
+          {!compact && <RowTimestamp item={item} />}
+        </div>
+
+        <div className="relative z-10 shrink-0">
           <ResourceItemActions
             item={item}
-            info={props.info}
-            returnTo={returnTo}
+            info={info}
+            returnTo={props.returnTo}
           />
         </div>
       </div>
 
-      {props.info.List.labelComponent && (
-        <div className="w-full">
-          {props.info.List.labelComponent({ item })}
+      {Labels && (
+        <div className="relative z-10 min-h-[26px] w-full">
+          <Labels item={item} />
         </div>
       )}
     </div>
   );
 };
 
-const ResourceListC = (props: {
-  itemsList: ResourceList;
+const TableView = (props: {
+  items: Resource[];
   info: ResourceComponentInfo;
+  returnTo: string;
+  selected: Set<string>;
+  onToggle: (uid: string) => void;
+  onToggleAll: () => void;
+  allSelected: boolean;
+  someSelected: boolean;
 }) => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const kindName = props.itemsList.kind.replace(/List$/, "");
-  const totalCount = props.itemsList.listResponseMeta?.totalCount ?? 0;
-  const api = getAPIFromAPIVersion(props.itemsList.apiVersion);
-  const collectionName = api
-    ? getResourcePathFromAPIKind({
-        api,
-        kind: kindName as ResourceName,
-      })
-    : undefined;
-  const countLabel =
-    totalCount === 1
-      ? kindName.toLowerCase()
-      : collectionName || `${kindName.toLowerCase()}s`;
+  const { info } = props;
+  const Labels = info.List.labelComponent;
 
   return (
-    <div className="w-full">
-      <div className="flex items-center justify-between mb-4">
-        {totalCount > 0 ? (
-          <span className="text-[0.72rem] font-semibold text-slate-400 tracking-wide">
-            {totalCount.toLocaleString()} {countLabel}
-          </span>
-        ) : (
-          <span />
-        )}
-
-        {!props.info.unCreatable && props.itemsList.items.length > 0 && (
-          <Button
-            variant="filled"
-            leftSection={<Plus size={14} />}
-            onClick={() => navigate("create")}
-          >
-            Create {kindName}
-          </Button>
-        )}
-      </div>
-
-      {props.info.List.SummaryComponent !== undefined && (
-        <div className="mb-6">
-          <props.info.List.SummaryComponent />
-        </div>
-      )}
-
-      {props.itemsList.items.length === 0 && (
-        <div className="flex min-h-72 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 px-6 py-14 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400 shadow-sm">
-            <SearchX size={20} strokeWidth={1.9} />
-          </div>
-          <h2 className="mt-4 text-sm font-bold text-slate-700">
-            No {kindName} resources found
-          </h2>
-          <p className="mt-1.5 max-w-sm text-[0.75rem] font-medium leading-5 text-slate-400">
-            There are no resources to display with the current filters or page.
-          </p>
-          {!props.info.unCreatable && (
-            <Button
-              className="mt-5"
-              variant="filled"
-              leftSection={<Plus size={14} />}
-              onClick={() => navigate("create")}
+    <div className="w-full overflow-x-auto rounded-xl border border-slate-200 bg-white">
+      <table className="w-full min-w-[720px] border-collapse text-left">
+        <thead>
+          <tr className="border-b border-slate-200 bg-slate-50/70">
+            <th scope="col" className="w-10 px-3 py-2.5">
+              <Checkbox
+                size="xs"
+                aria-label="Select all"
+                checked={props.allSelected}
+                indeterminate={props.someSelected && !props.allSelected}
+                onChange={props.onToggleAll}
+              />
+            </th>
+            <th
+              scope="col"
+              className="px-3 py-2.5 text-xs font-normal text-slate-600"
             >
-              Create {kindName}
-            </Button>
+              Name
+            </th>
+            {Labels && (
+              <th
+                scope="col"
+                className="px-3 py-2.5 text-xs font-normal text-slate-600"
+              >
+                Details
+              </th>
+            )}
+            <th
+              scope="col"
+              className="w-40 px-3 py-2.5 text-xs font-normal text-slate-600"
+            >
+              Last change
+            </th>
+            <th scope="col" className="w-12 px-3 py-2.5">
+              <span className="sr-only">Actions</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {props.items.map((item) => {
+            const md = item.metadata!;
+            return (
+              <tr
+                key={md.uid}
+                className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/70"
+              >
+                <td className="px-3 py-2.5 align-top">
+                  <SelectBox
+                    item={item}
+                    info={info}
+                    checked={props.selected.has(md.uid)}
+                    onToggle={props.onToggle}
+                  />
+                </td>
+                <td className="max-w-0 px-3 py-2.5 align-top">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <RowTitleLink item={item} returnTo={props.returnTo} />
+                    <CopyText value={md.name} hide />
+                    {md.isSystem && <SystemBadge />}
+                  </div>
+                  {md.displayName && (
+                    <div className="truncate text-xs font-normal text-slate-600">
+                      {md.displayName}
+                    </div>
+                  )}
+                </td>
+                {Labels && (
+                  <td className="px-3 py-2 align-top [&>div]:mt-0">
+                    <Labels item={item} />
+                  </td>
+                )}
+                <td className="px-3 py-2.5 align-top">
+                  <RowTimestamp item={item} />
+                </td>
+                <td className="px-3 py-2.5 align-top">
+                  <ResourceItemActions
+                    item={item}
+                    info={info}
+                    returnTo={props.returnTo}
+                  />
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+const EmptyState = (props: {
+  kindName: string;
+  filtered: boolean;
+  canCreate: boolean;
+  onCreate: () => void;
+  onClearFilters: () => void;
+}) => (
+  <div className="flex min-h-72 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-14 text-center">
+    <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500">
+      {props.filtered ? (
+        <FilterX size={20} strokeWidth={1.9} />
+      ) : (
+        <SearchX size={20} strokeWidth={1.9} />
+      )}
+    </div>
+    <h2 className="mt-4 text-sm font-semibold text-slate-800">
+      {props.filtered
+        ? "No results match your filters"
+        : `No ${props.kindName} resources yet`}
+    </h2>
+    <p className="mt-1.5 max-w-sm text-sm font-normal leading-5 text-slate-600">
+      {props.filtered
+        ? "Try a different search term, or clear the active filters to see everything."
+        : `Create the first ${props.kindName} to get started.`}
+    </p>
+    {props.filtered ? (
+      <button
+        type="button"
+        onClick={props.onClearFilters}
+        className="mt-5 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+      >
+        <FilterX size={14} strokeWidth={2.2} />
+        Clear filters
+      </button>
+    ) : (
+      props.canCreate && (
+        <button
+          type="button"
+          onClick={props.onCreate}
+          className="mt-5 inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-semibold text-white hover:bg-slate-800"
+        >
+          <Plus size={14} strokeWidth={2.2} />
+          Create {props.kindName}
+        </button>
+      )
+    )}
+  </div>
+);
+
+const ListSkeleton = (props: { density: ListDensity }) => {
+  const rows = Array.from({ length: 6 });
+
+  if (props.density === "table") {
+    return (
+      <div className="w-full animate-pulse overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <div className="h-9 border-b border-slate-200 bg-slate-50/70" />
+        {rows.map((_, index) => (
+          <div
+            key={index}
+            className="flex items-center gap-4 border-b border-slate-100 px-3 py-3 last:border-b-0"
+          >
+            <div className="h-3.5 w-3.5 rounded bg-slate-200" />
+            <div className="h-3 w-44 rounded bg-slate-200" />
+            <div className="h-3 flex-1 rounded bg-slate-100" />
+            <div className="h-3 w-24 rounded bg-slate-100" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="flex w-full animate-pulse flex-col gap-3"
+      aria-hidden="true"
+    >
+      {rows.map((_, index) => (
+        <div
+          key={index}
+          className={twMerge(
+            "w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 sm:px-5 sm:py-4",
+            props.density === "compact" ? "h-[52px]" : "h-[104px]",
+          )}
+        >
+          <div className="h-3 w-48 rounded bg-slate-200" />
+          {props.density !== "compact" && (
+            <>
+              <div className="mt-3 h-3 w-full max-w-md rounded bg-slate-100" />
+              <div className="mt-3 h-3 w-32 rounded bg-slate-100" />
+            </>
           )}
         </div>
-      )}
-
-      <Paginator meta={props.itemsList.listResponseMeta} />
-
-      <ResourceListWrapper>
-        {props.itemsList.items.map((item, i) => (
-          <motion.div
-            key={item.metadata!.uid}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.18, delay: i * 0.03, ease: "easeOut" }}
-          >
-            <ResourceListItem
-              path={getResourcePath(item)}
-              state={{
-                returnTo: `${location.pathname}${location.search}`,
-              }}
-            >
-              <Item item={item} info={props.info} />
-            </ResourceListItem>
-          </motion.div>
-        ))}
-      </ResourceListWrapper>
-
-      <Paginator meta={props.itemsList.listResponseMeta} />
+      ))}
     </div>
   );
 };
@@ -400,13 +579,8 @@ const useListReq = () => {
   const apiKind = getAPIKindFromPath(loc.pathname);
   if (!apiKind) return undefined;
 
-  // @ts-ignore
-  let req = getPBResourceListFromAPI(apiKind.api)![
-    // @ts-ignore
-    `List${apiKind.kind}Options`
-  ]["create"]({
-    common: CommonListOptions.create({}),
-  });
+  const optionsPB = getListOptionsPB(apiKind.api, apiKind.kind);
+  const req = optionsPB["create"]({ common: CommonListOptions.create({}) });
 
   if (searchParamsStr.length > 0) {
     let parsedQry = parseQueryString<{
@@ -422,72 +596,178 @@ const useListReq = () => {
       parsedQry.common.page = parsedQry.common.page - 1;
     }
 
-    // @ts-ignore
-    const req2 = getClientResourceListP(apiKind.api)![
-      // @ts-ignore
-      `List${apiKind.kind}Options`
-    ]["fromJsonString"](JSON.stringify(parsedQry));
-    // @ts-ignore
-    getClientResourceListP(apiKind.api)![`List${apiKind.kind}Options`][
-      "mergePartial"
-    ](req, req2);
+    const req2 = optionsPB["fromJsonString"](JSON.stringify(parsedQry));
+    optionsPB["mergePartial"](req, req2);
   }
 
   return req;
 };
 
-const ResourceListLoading = () => (
-  <motion.div
-    role="status"
-    aria-live="polite"
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    transition={{ duration: 0.5 }}
-    className="flex min-h-72 w-full flex-col items-center justify-center gap-3"
-  >
-    <motion.div
-      animate={{ opacity: [0.45, 1, 0.45], scale: [0.96, 1, 0.96] }}
-      transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-      className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm"
-    >
-      <Loader size={22} color="dark" type="oval" />
-    </motion.div>
-    <span className="text-[0.7rem] font-semibold tracking-wide text-slate-400">
-      Loading resources…
-    </span>
-  </motion.div>
-);
-
 const ResourceListContent = (props: { info: ResourceComponentInfo }) => {
   const loc = useLocation();
-  const apiKind = getAPIKindFromPath(loc.pathname);
-  if (!apiKind) return null;
+  const navigate = useNavigate();
+  const [density, setDensity] = useListDensity();
+  const [selected, setSelected] = React.useState<Set<string>>(new Set());
+  const { searchParams, activeFilterCount, clearFilters } = useListParams();
 
+  const apiKind = getAPIKindFromPath(loc.pathname);
   const req = useListReq();
 
-  const { isLoading, data } = useQuery({
+  const { isLoading, isFetching, data } = useQuery({
     queryKey: [
       getListKeyFromPath(loc.pathname),
-      // @ts-ignore
-      getPBResourceListFromAPI(apiKind.api)![`List${apiKind.kind}Options`][
-        "toJsonString"
-      ](req),
+      apiKind && req
+        ? getListOptionsPB(apiKind.api, apiKind.kind)["toJsonString"](req)
+        : "",
     ],
-    queryFn: async () => {
-      // @ts-ignore
-      return await getClientResourceList(apiKind.api)[`list${apiKind.kind}`](
-        req,
-      );
-    },
+    enabled: !!apiKind && !!req,
+    placeholderData: keepPreviousData,
+    queryFn: async () =>
+      await listResourcesPB(apiKind!.api, apiKind!.kind, req),
   });
 
-  if (!data || isLoading) return <ResourceListLoading />;
+  const itemList = data?.["response"] as ResourceList | undefined;
+  const items = itemList?.items ?? [];
 
-  const itemList = data["response"] as ResourceList | undefined;
+  React.useEffect(() => {
+    setSelected(new Set());
+  }, [loc.pathname, loc.search]);
+
+  const mutationBulkDelete = useMutation({
+    mutationFn: async (targets: Resource[]) => {
+      for (const target of targets) {
+        await deleteResourcePB(target);
+      }
+      return targets.length;
+    },
+    onSuccess: (count, targets) => {
+      if (targets[0]) invalidateResourceList(targets[0]);
+      setSelected(new Set());
+      toast.success(
+        `${count} ${count === 1 ? "resource" : "resources"} deleted`,
+      );
+    },
+    onError: (err: unknown) => onError(err as any),
+  });
+
+  if (!apiKind) return null;
+
+  const kindName = apiKind.kind as string;
+  const collectionName = getResourcePathFromAPIKind({
+    api: apiKind.api,
+    kind: apiKind.kind as ResourceName,
+  });
+  const totalCount = itemList?.listResponseMeta?.totalCount ?? 0;
+  const itemsPerPage =
+    Number(searchParams.get("common.itemsPerPage")) ||
+    itemList?.listResponseMeta?.itemsPerPage ||
+    10;
+  const countLabel =
+    totalCount === 1
+      ? kindName.toLowerCase()
+      : collectionName || `${kindName.toLowerCase()}s`;
+  const isPending = isLoading || !itemList;
+
+  const returnTo = `${loc.pathname}${loc.search}`;
+  const Summary = props.info.List.SummaryComponent;
+  const selectableItems = items.filter((item) =>
+    isSelectable(item, props.info),
+  );
+  const toggle = (uid: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(uid)) next.delete(uid);
+      else next.add(uid);
+      return next;
+    });
+  const toggleAll = () =>
+    setSelected((prev) =>
+      prev.size === selectableItems.length
+        ? new Set()
+        : new Set(selectableItems.map((item) => item.metadata!.uid)),
+    );
 
   return (
     <div className="w-full">
-      {itemList && <ResourceListC itemsList={itemList} info={props.info} />}
+      <ResourceListToolbar
+        kindName={kindName}
+        countLabel={countLabel}
+        totalCount={totalCount}
+        showCount={!isPending}
+        itemsPerPage={itemsPerPage}
+        isFetching={isFetching}
+        density={density}
+        onDensityChange={setDensity}
+        canCreate={!props.info.unCreatable}
+        onCreate={() => navigate("create")}
+        selectedCount={selected.size}
+        isDeleting={mutationBulkDelete.isPending}
+        onClearSelection={() => setSelected(new Set())}
+        onDeleteSelection={() =>
+          mutationBulkDelete.mutate(
+            items.filter((item) => selected.has(item.metadata!.uid)),
+          )
+        }
+      />
+
+      {Summary && (
+        <div className="mb-6">
+          <React.Suspense fallback={null}>
+            <Summary />
+          </React.Suspense>
+        </div>
+      )}
+
+      {isPending ? (
+        <ListSkeleton density={density} />
+      ) : items.length === 0 ? (
+        <EmptyState
+          kindName={kindName}
+          filtered={activeFilterCount > 0}
+          canCreate={!props.info.unCreatable}
+          onCreate={() => navigate("create")}
+          onClearFilters={clearFilters}
+        />
+      ) : density === "table" ? (
+        <React.Suspense fallback={<ListSkeleton density={density} />}>
+          <TableView
+            items={items}
+            info={props.info}
+            returnTo={returnTo}
+            selected={selected}
+            onToggle={toggle}
+            onToggleAll={toggleAll}
+            allSelected={
+              selectableItems.length > 0 &&
+              selected.size === selectableItems.length
+            }
+            someSelected={selected.size > 0}
+          />
+        </React.Suspense>
+      ) : (
+        <React.Suspense fallback={<ListSkeleton density={density} />}>
+          <ResourceListWrapper>
+            {items.map((item) => (
+              <ResourceListItem
+                key={item.metadata!.uid}
+                path={getResourcePath(item)}
+                compact={density === "compact"}
+              >
+                <CardItem
+                  item={item}
+                  info={props.info}
+                  returnTo={returnTo}
+                  compact={density === "compact"}
+                  checked={selected.has(item.metadata!.uid)}
+                  onToggle={toggle}
+                />
+              </ResourceListItem>
+            ))}
+          </ResourceListWrapper>
+        </React.Suspense>
+      )}
+
+      <Paginator meta={itemList?.listResponseMeta} showFilters={false} />
     </div>
   );
 };

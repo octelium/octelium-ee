@@ -118,7 +118,7 @@ const statusColor = (s: PlaybackStatus): string =>
       ? "text-emerald-400"
       : s.type === "stopped"
         ? "text-amber-400"
-        : "text-slate-400";
+        : "text-slate-500";
 
 const formatTime = (ms: number): string => {
   const totalSec = Math.floor(ms / 1000);
@@ -444,7 +444,7 @@ export const XTermSSHReplay: React.FC<XTermSSHReplayProps> = ({
       : 0;
 
   return (
-    <div className="w-full flex flex-col rounded-xl overflow-hidden border border-slate-700 shadow-[0_4px_24px_rgba(1,4,9,0.4)]">
+    <div className="w-full flex flex-col rounded-xl overflow-hidden border border-slate-700 shadow-overlay">
       <div
         ref={terminalRef}
         className="h-[min(60vh,640px)] min-h-[320px] max-h-[720px]"
@@ -453,7 +453,7 @@ export const XTermSSHReplay: React.FC<XTermSSHReplayProps> = ({
 
       <div className="bg-[#111827] border-t border-slate-700 px-4 pt-2.5 pb-3 flex flex-col gap-2">
         <div className="flex items-center gap-2">
-          <span className="text-[0.65rem] font-semibold text-slate-500 w-10 shrink-0 text-right tabular-nums">
+          <span className="text-micro font-normal text-slate-500 w-10 shrink-0 text-right tabular-nums">
             {formatTime(positionMs)}
           </span>
 
@@ -487,7 +487,7 @@ export const XTermSSHReplay: React.FC<XTermSSHReplayProps> = ({
             />
           </div>
 
-          <span className="text-[0.65rem] font-semibold text-slate-500 w-10 shrink-0 tabular-nums">
+          <span className="text-micro font-normal text-slate-500 w-10 shrink-0 tabular-nums">
             {formatTime(durationMs)}
           </span>
         </div>
@@ -515,14 +515,14 @@ export const XTermSSHReplay: React.FC<XTermSSHReplayProps> = ({
           <button
             type="button"
             onClick={resetTerminal}
-            className="flex items-center justify-center w-8 h-8 rounded-md cursor-pointer text-slate-400 hover:text-slate-200 hover:bg-slate-400/10 transition-colors duration-150"
+            className="flex items-center justify-center w-8 h-8 rounded-md cursor-pointer text-slate-500 hover:text-slate-200 hover:bg-slate-400/10 transition-colors duration-150"
             title="Reset"
             aria-label="Reset replay"
           >
             <RotateCcw size={13} strokeWidth={2.5} />
           </button>
 
-          <div className="flex items-center gap-1.5 rounded-md border border-slate-700 px-1.5 py-1 text-slate-400">
+          <div className="flex items-center gap-1.5 rounded-md border border-slate-700 px-1.5 py-1 text-slate-500">
             <Gauge size={12} strokeWidth={2.25} aria-hidden="true" />
             <span className="sr-only">Playback speed</span>
             {[0.5, 1, 2].map((speed) => (
@@ -535,10 +535,10 @@ export const XTermSSHReplay: React.FC<XTermSSHReplayProps> = ({
                 }}
                 aria-pressed={playbackSpeed === speed}
                 className={twMerge(
-                  "rounded px-1.5 py-0.5 text-[0.62rem] font-bold transition-colors duration-150",
+                  "rounded px-1.5 py-0.5 text-micro font-normal transition-colors duration-150",
                   playbackSpeed === speed
                     ? "bg-emerald-500 text-slate-950"
-                    : "text-slate-400 hover:bg-slate-700 hover:text-slate-100",
+                    : "text-slate-500 hover:bg-slate-700 hover:text-slate-100",
                 )}
               >
                 {speed}x
@@ -546,7 +546,7 @@ export const XTermSSHReplay: React.FC<XTermSSHReplayProps> = ({
             ))}
           </div>
 
-          <span className="hidden text-[0.62rem] font-semibold text-slate-500 sm:inline">
+          <span className="hidden text-micro font-normal text-slate-500 sm:inline">
             Long pauses are capped at 2s
           </span>
 
@@ -556,7 +556,7 @@ export const XTermSSHReplay: React.FC<XTermSSHReplayProps> = ({
             role="status"
             aria-live="polite"
             className={twMerge(
-              "text-right text-[0.72rem] font-semibold",
+              "text-right text-xs font-semibold",
               statusColor(playbackStatus),
             )}
           >

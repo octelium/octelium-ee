@@ -6,7 +6,7 @@ const Divider = (props: { children?: React.ReactNode }) => {
       <div className="flex-grow border-t border-gray-400"></div>
       <span
         className={twMerge(
-          "flex-shrink text-gray-400 font-bold",
+          "flex-shrink text-slate-500 font-bold",
           props.children ? "mx-4" : undefined
         )}
       >

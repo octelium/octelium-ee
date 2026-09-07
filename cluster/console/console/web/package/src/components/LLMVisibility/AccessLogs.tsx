@@ -90,7 +90,7 @@ const Chip = (props: {
     <span
       title={props.title}
       className={twMerge(
-        "inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-[0.62rem] font-bold",
+        "inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-micro font-normal",
         tone === "default" && "border-slate-200 bg-slate-50 text-slate-600",
         tone === "danger" && "border-red-200 bg-red-50 text-red-700",
         tone === "warning" && "border-amber-200 bg-amber-50 text-amber-700",
@@ -126,9 +126,9 @@ const Row = (props: { item: CoreP.AccessLog }) => {
   return (
     <div
       className={twMerge(
-        "overflow-hidden rounded-xl border bg-white transition-[border-color,box-shadow] duration-400",
+        "overflow-hidden rounded-xl border bg-white transition-[border-color,box-shadow] duration-200",
         opened
-          ? "border-slate-300 shadow-[0_4px_14px_rgba(15,23,42,0.07)]"
+          ? "border-slate-300 shadow-raised"
           : "border-slate-200",
       )}
     >
@@ -136,7 +136,7 @@ const Row = (props: { item: CoreP.AccessLog }) => {
         type="button"
         onClick={() => setOpened((value) => !value)}
         aria-expanded={opened}
-        className="flex w-full cursor-pointer items-center gap-3 px-3 py-2.5 text-left outline-none transition-colors duration-300 hover:bg-slate-50/70"
+        className="flex w-full cursor-pointer items-center gap-3 px-3 py-2.5 text-left outline-none transition-colors duration-200 hover:bg-slate-50/70"
       >
         <span
           aria-hidden="true"
@@ -147,7 +147,7 @@ const Row = (props: { item: CoreP.AccessLog }) => {
         />
         <span className="flex min-w-0 flex-1 flex-col gap-1">
           <span className="flex min-w-0 flex-wrap items-center gap-1.5">
-            <span className="truncate text-[0.76rem] font-bold text-slate-800">
+            <span className="truncate text-body font-semibold text-slate-800">
               {llm?.model?.effective || llm?.model?.requested || "—"}
             </span>
             <Chip tone="accent">
@@ -184,7 +184,7 @@ const Row = (props: { item: CoreP.AccessLog }) => {
               </Chip>
             )}
           </span>
-          <span className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-[0.65rem] font-semibold text-slate-400">
+          <span className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-micro font-normal text-slate-500">
             <span className="truncate">
               {common?.userRef?.name ?? "anonymous"}
             </span>
@@ -201,10 +201,10 @@ const Row = (props: { item: CoreP.AccessLog }) => {
         <span className="hidden shrink-0 items-center gap-4 sm:flex">
           <Tooltip label="Input / output tokens" withArrow>
             <span className="text-right">
-              <span className="block text-[0.58rem] font-bold uppercase tracking-[0.06em] text-slate-400">
+              <span className="block text-micro font-semibold uppercase tracking-[0.06em] text-slate-500">
                 Tokens
               </span>
-              <span className="block text-[0.72rem] font-bold tabular-nums text-slate-700">
+              <span className="block text-xs font-semibold tabular-nums text-slate-700">
                 {formatTokens(num(usage?.inputTokens))} /{" "}
                 {formatTokens(num(usage?.outputTokens))}
               </span>
@@ -212,10 +212,10 @@ const Row = (props: { item: CoreP.AccessLog }) => {
           </Tooltip>
           <Tooltip label="Latency · time to first token" withArrow>
             <span className="text-right">
-              <span className="block text-[0.58rem] font-bold uppercase tracking-[0.06em] text-slate-400">
+              <span className="block text-micro font-semibold uppercase tracking-[0.06em] text-slate-500">
                 Latency
               </span>
-              <span className="block text-[0.72rem] font-bold tabular-nums text-slate-700">
+              <span className="block text-xs font-semibold tabular-nums text-slate-700">
                 {formatMs(latency)}
                 {ttft > 0 ? ` · ${formatMs(ttft)}` : ""}
               </span>
@@ -227,7 +227,7 @@ const Row = (props: { item: CoreP.AccessLog }) => {
           size={14}
           strokeWidth={2.4}
           className={twMerge(
-            "shrink-0 text-slate-400 transition-transform duration-400",
+            "shrink-0 text-slate-500 transition-transform duration-200",
             opened && "rotate-180",
           )}
         />
@@ -376,10 +376,10 @@ const Row = (props: { item: CoreP.AccessLog }) => {
 
 const Detail = (props: { label: string; value?: string }) => (
   <div className="min-w-0">
-    <p className="truncate text-[0.6rem] font-bold uppercase tracking-[0.06em] text-slate-400">
+    <p className="truncate text-micro font-semibold uppercase tracking-[0.06em] text-slate-500">
       {props.label}
     </p>
-    <p className="mt-0.5 truncate text-[0.72rem] font-bold text-slate-700">
+    <p className="mt-0.5 truncate text-xs font-semibold text-slate-700">
       {props.value || "—"}
     </p>
   </div>

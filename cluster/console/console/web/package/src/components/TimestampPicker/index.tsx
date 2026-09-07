@@ -151,14 +151,14 @@ const TimestampPicker = ({
               <Clock3
                 size={14}
                 strokeWidth={2.25}
-                className={externalDate ? "text-slate-600" : "text-slate-400"}
+                className={externalDate ? "text-slate-600" : "text-slate-500"}
               />
             }
             rightSection={
               <ChevronDown
                 size={13}
                 strokeWidth={2.5}
-                className={`text-slate-400 transition-transform duration-300 ${
+                className={`text-slate-500 transition-transform duration-200 ${
                   opened ? "rotate-180" : ""
                 }`}
               />
@@ -170,16 +170,16 @@ const TimestampPicker = ({
                 minWidth: "220px",
                 cursor: "pointer",
                 textAlign: "left",
-                "&:hover": { borderColor: "#cbd5e1" },
               },
             }}
+            classNames={{ input: "hover:border-slate-300" }}
           >
             {externalDate ? (
-              <span className="text-[0.78rem] font-bold text-slate-700">
+              <span className="text-body font-semibold text-slate-700">
                 {formatTimestamp(externalDate)}
               </span>
             ) : (
-              <span className="text-[0.78rem] font-semibold text-slate-400">
+              <span className="text-body font-normal text-slate-500">
                 {placeholder}
               </span>
             )}
@@ -199,10 +199,10 @@ const TimestampPicker = ({
                 <CalendarDays size={14} strokeWidth={2.25} />
               </span>
               <div className="min-w-0">
-                <p className="text-[0.72rem] font-bold text-slate-700">
+                <p className="text-xs font-semibold text-slate-700">
                   Choose timestamp
                 </p>
-                <p className="mt-0.5 truncate text-[0.62rem] font-semibold text-slate-400">
+                <p className="mt-0.5 truncate text-micro font-normal text-slate-500">
                   {timeZone} · {isFuture ? "Future time" : "Local time"}
                 </p>
               </div>
@@ -264,7 +264,7 @@ const TimestampPicker = ({
                         }}
                       >
                         <span className="flex items-center gap-1">
-                          <span className="text-slate-400">
+                          <span className="text-slate-500">
                             {isFuture ? "in" : "−"}
                           </span>
                           {preset.shortLabel}
@@ -272,7 +272,7 @@ const TimestampPicker = ({
                       </Button>
                     ))}
                   </div>
-                  <p className="mt-3 text-center text-[0.62rem] font-semibold text-slate-400">
+                  <p className="mt-3 text-center text-micro font-normal text-slate-500">
                     Relative timestamps are calculated when selected.
                   </p>
                 </div>
@@ -322,7 +322,7 @@ const TimestampPicker = ({
                         label="Time"
                         value={timeValue}
                         leftSection={
-                          <Clock3 size={12} className="text-slate-400" />
+                          <Clock3 size={12} className="text-slate-500" />
                         }
                         onChange={(event) => {
                           setTimeValue(event.target.value);
@@ -338,14 +338,14 @@ const TimestampPicker = ({
                         }`}
                       >
                         <p
-                          className={`text-[0.6rem] font-bold uppercase tracking-[0.06em] ${
-                            validationError ? "text-red-500" : "text-slate-400"
+                          className={`text-micro font-bold uppercase tracking-[0.06em] ${
+                            validationError ? "text-red-500" : "text-slate-500"
                           }`}
                         >
                           {validationError ? "Check timestamp" : "Selection"}
                         </p>
                         <p
-                          className={`mt-1 text-[0.7rem] font-bold leading-relaxed ${
+                          className={`mt-1 text-xs font-bold leading-relaxed ${
                             validationError ? "text-red-700" : "text-slate-700"
                           }`}
                         >

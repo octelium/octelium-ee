@@ -70,10 +70,10 @@ export const IssueC = (props: { item: Certificate }) => {
                 <ShieldCheck size={15} />
               </span>
               <div>
-                <h2 className="text-[0.84rem] font-bold text-slate-900">
+                <h2 className="text-sm font-bold text-slate-900">
                   {presentation.successfulIssuance ? "Re-issue" : "Issue"} certificate
                 </h2>
-                <p className="text-[0.67rem] font-semibold text-slate-400">
+                <p className="text-xs font-normal text-slate-500">
                   {item.metadata?.displayName || item.metadata?.name}
                 </p>
               </div>
@@ -89,14 +89,14 @@ export const IssueC = (props: { item: Certificate }) => {
             </Alert>
             <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
               <div className="bg-white p-3">
-                <div className="text-[0.6rem] font-bold uppercase tracking-wide text-slate-400">Issuer</div>
-                <div className="mt-1 text-[0.72rem] font-semibold text-slate-700">
+                <div className="text-micro font-semibold uppercase tracking-wide text-slate-500">Issuer</div>
+                <div className="mt-1 text-xs font-semibold text-slate-700">
                   {item.status?.certificateIssuerRef?.name || "Cluster default"}
                 </div>
               </div>
               <div className="bg-white p-3">
-                <div className="text-[0.6rem] font-bold uppercase tracking-wide text-slate-400">Current validity</div>
-                <div className="mt-1 text-[0.72rem] font-semibold capitalize text-slate-700">
+                <div className="text-micro font-semibold uppercase tracking-wide text-slate-500">Current validity</div>
+                <div className="mt-1 text-xs font-semibold capitalize text-slate-700">
                   {presentation.expiryState}
                 </div>
               </div>
@@ -379,64 +379,64 @@ export const MainInfo = (props: { item: Certificate }): ResourceMainInfo => {
                 <div className="flex flex-col gap-1.5 w-full">
                   {item.status.info.commonName && (
                     <div className="flex items-center gap-2">
-                      <span className="text-[0.68rem] font-bold uppercase tracking-[0.05em] text-slate-400 w-20 shrink-0">
+                      <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 w-20 shrink-0">
                         Common Name
                       </span>
-                      <span className="text-[0.78rem] font-semibold text-slate-700">
+                      <span className="text-body font-semibold text-slate-700">
                         {item.status.info.commonName}
                       </span>
                     </div>
                   )}
                   {item.status.info.subject && (
                     <div className="flex items-center gap-2">
-                      <span className="text-[0.68rem] font-bold uppercase tracking-[0.05em] text-slate-400 w-20 shrink-0">
+                      <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 w-20 shrink-0">
                         Subject
                       </span>
-                      <span className="truncate text-[0.78rem] font-semibold text-slate-700">
+                      <span className="truncate text-body font-semibold text-slate-700">
                         {item.status.info.subject}
                       </span>
                     </div>
                   )}
                   {item.status.info.issuer && (
                     <div className="flex items-center gap-2">
-                      <span className="text-[0.68rem] font-bold uppercase tracking-[0.05em] text-slate-400 w-20 shrink-0">
+                      <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 w-20 shrink-0">
                         Issuer
                       </span>
-                      <span className="truncate text-[0.78rem] font-semibold text-slate-700">
+                      <span className="truncate text-body font-semibold text-slate-700">
                         {item.status.info.issuer}
                       </span>
                     </div>
                   )}
                   {item.status.info.notBefore && (
                     <div className="flex items-center gap-2">
-                      <span className="text-[0.68rem] font-bold uppercase tracking-[0.05em] text-slate-400 w-20 shrink-0">
+                      <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 w-20 shrink-0">
                         Not Before
                       </span>
-                      <span className="text-[0.78rem] font-semibold text-slate-700">
+                      <span className="text-body font-semibold text-slate-700">
                         <TimeAgo rfc3339={item.status.info.notBefore} />
                       </span>
                     </div>
                   )}
                   {item.status.info.notAfter && (
                     <div className="flex items-center gap-2">
-                      <span className="text-[0.68rem] font-bold uppercase tracking-[0.05em] text-slate-400 w-20 shrink-0">
+                      <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 w-20 shrink-0">
                         Not After
                       </span>
-                      <span className="text-[0.78rem] font-semibold text-slate-700">
+                      <span className="text-body font-semibold text-slate-700">
                         <TimeAgo rfc3339={item.status.info.notAfter} />
                       </span>
                     </div>
                   )}
                   {item.status.info.dnsNames.length > 0 && (
                     <div className="flex items-start gap-2">
-                      <span className="text-[0.68rem] font-bold uppercase tracking-[0.05em] text-slate-400 w-20 shrink-0 pt-0.5">
+                      <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 w-20 shrink-0 pt-0.5">
                         DNS Names
                       </span>
                       <div className="flex flex-wrap gap-1">
                         {item.status.info.dnsNames.map((name) => (
                           <span
                             key={name}
-                            className="inline-flex items-center rounded border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[0.68rem] font-semibold text-slate-600"
+                            className="inline-flex items-center rounded border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-xs font-normal text-slate-600"
                           >
                             {name}
                           </span>
@@ -474,7 +474,7 @@ export const MainInfo = (props: { item: Certificate }): ResourceMainInfo => {
                       >
                         <span
                           className={twMerge(
-                            "text-[0.7rem] font-bold",
+                            "text-xs font-semibold",
                             entry.state ===
                               Certificate_Status_Issuance_State.SUCCESS
                               ? "text-emerald-600"
@@ -486,7 +486,7 @@ export const MainInfo = (props: { item: Certificate }): ResourceMainInfo => {
                         >
                           {getIssuanceState(entry.state)}
                         </span>
-                        <div className="flex items-center gap-3 text-[0.68rem] font-semibold text-slate-500">
+                        <div className="flex items-center gap-3 text-xs font-normal text-slate-500">
                           {entry.issuanceCompletedAt && (
                             <span>
                               Completed <TimeAgo rfc3339={entry.issuanceCompletedAt} />

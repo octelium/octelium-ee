@@ -87,7 +87,7 @@ const TopTools = (props: {
               <span className="flex min-w-0 items-center gap-2">
                 <span className="truncate font-mono">{item.key}</span>
                 {row && (
-                  <span className="shrink-0 text-[0.6rem] font-semibold text-slate-400">
+                  <span className="shrink-0 text-micro font-normal text-slate-500">
                     {row.offered.toLocaleString()} offered ·{" "}
                     {row.called.toLocaleString()} called ·{" "}
                     {row.removed.toLocaleString()} removed

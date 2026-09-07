@@ -57,26 +57,26 @@ const RuleOverview = (props: { rules: AccessC.Policy_Spec_Rule[] }) => (
         >
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="truncate text-[0.75rem] font-bold text-slate-700">
+              <span className="truncate text-body font-semibold text-slate-700">
                 {rule.name || `Rule ${index + 1}`}
               </span>
               <span
                 className={twMerge(
-                  "rounded-md border px-1.5 py-0.5 text-[0.61rem] font-bold",
+                  "rounded-md border px-1.5 py-0.5 text-micro font-semibold",
                   effect.className,
                 )}
               >
                 {effect.label}
               </span>
             </div>
-            <p className="mt-1 text-[0.66rem] font-semibold text-slate-400">
+            <p className="mt-1 text-micro font-normal text-slate-500">
               {conditionLabel(rule.condition)}
               {reviewSteps > 0
                 ? ` · ${reviewSteps} review ${reviewSteps === 1 ? "step" : "steps"}`
                 : ""}
             </p>
           </div>
-          <span className="shrink-0 rounded-md border border-slate-200 bg-white px-2 py-1 text-[0.64rem] font-bold text-slate-500">
+          <span className="shrink-0 rounded-md border border-slate-200 bg-white px-2 py-1 text-micro font-normal text-slate-500">
             Priority {rule.priority > 0 ? `+${rule.priority}` : rule.priority}
           </span>
         </div>
@@ -128,43 +128,13 @@ export default (props: { item: AccessC.Policy }) => {
 
 export const MainInfo = (props: { item: AccessC.Policy }): ResourceMainInfo => {
   const { item } = props;
-  const mutationUpdate = useUpdateResource();
 
   return {
     items: [
       {
-        label: "Active",
-        value: (
-          <EditItemWrap
-            mutation={mutationUpdate}
-            label="active"
-            showComponent={
-              <span
-                className={twMerge(
-                  "text-[0.75rem] font-semibold",
-                  item.spec!.isDisabled ? "text-red-500" : "text-emerald-600",
-                )}
-              >
-                {item.spec!.isDisabled ? "Disabled" : "Active"}
-              </span>
-            }
-            editComponent={
-              <Switch
-                size="sm"
-                checked={!item.spec!.isDisabled}
-                onChange={(v) => {
-                  item.spec!.isDisabled = !v.currentTarget.checked;
-                  mutationUpdate.mutate(item);
-                }}
-              />
-            }
-          />
-        ),
-      },
-      {
         label: "Rules",
         value: (
-          <span className="text-[0.75rem] font-semibold text-slate-700">
+          <span className="text-body font-semibold text-slate-700">
             {item.spec!.rules.length}
           </span>
         ),

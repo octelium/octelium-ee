@@ -118,7 +118,7 @@ const Edit = (props: {
 
       <fieldset disabled className="space-y-4 opacity-55">
         <div className="overflow-x-auto rounded-xl border border-slate-200 bg-slate-50/50 p-3">
-          <div className="mb-2 flex items-center gap-2 text-[0.72rem] font-bold text-slate-700">
+          <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-slate-700">
             <Cloud size={14} /> Secret store backend
           </div>
           <SegmentedControl
@@ -131,7 +131,7 @@ const Edit = (props: {
         </div>
 
         <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
-          <div className="flex items-center gap-2 text-[0.75rem] font-bold text-slate-800">
+          <div className="flex items-center gap-2 text-body font-semibold text-slate-800">
             <Boxes size={15} /> Backend configuration
           </div>
 

@@ -14,7 +14,7 @@ const ItemContainer = (props: {
       )}
     >
       <div className="mr-2">
-        <div className="font-semibold text-black text-sm inline-flex">
+        <div className="font-semibold text-slate-900 text-sm inline-flex">
           {props.title}
         </div>
       </div>

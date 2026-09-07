@@ -102,15 +102,16 @@ export default (props: { item: CoreC.Service }) => {
 
 export const MainInfo = (props: { item: CoreC.Service }): ResourceMainInfo => {
   const { item } = props;
-  const mutationUpdate = useUpdateResource();
   const domain = getDomain();
   const privateFQDN = getServicePrivateFQDN(item, domain);
   const publicFQDN = getServicePublicFQDN(item, domain);
 
   return {
+    groupOrder: ["Networking", "Authorization"],
     items: [
       {
         label: "Mode",
+        primary: true,
         value: <Label>{getType(item)}</Label>,
       },
 
@@ -118,7 +119,8 @@ export const MainInfo = (props: { item: CoreC.Service }): ResourceMainInfo => {
         ? [
             {
               label: "Port",
-              value: <span className="text-[0.75rem]">{item.status.port}</span>,
+              group: "Networking",
+              value: <span className="text-body">{item.status.port}</span>,
             },
           ]
         : []),
@@ -127,6 +129,7 @@ export const MainInfo = (props: { item: CoreC.Service }): ResourceMainInfo => {
         ? [
             {
               label: "Namespace",
+              primary: true,
               value: (
                 <ResourceListLabel itemRef={item.status.namespaceRef} />
               ),
@@ -138,6 +141,7 @@ export const MainInfo = (props: { item: CoreC.Service }): ResourceMainInfo => {
         ? [
             {
               label: "Region",
+              primary: true,
               value: <ResourceListLabel itemRef={item.status.regionRef} />,
             },
           ]
@@ -145,6 +149,7 @@ export const MainInfo = (props: { item: CoreC.Service }): ResourceMainInfo => {
 
       {
         label: "Private FQDN",
+        group: "Networking",
         value: <CopyText value={privateFQDN} />,
         span: "full" as const,
       },
@@ -153,6 +158,7 @@ export const MainInfo = (props: { item: CoreC.Service }): ResourceMainInfo => {
         ? [
             {
               label: "Public FQDN",
+              group: "Networking",
               value: (
                 <div className="flex items-center gap-2">
                   <CopyText value={publicFQDN} />
@@ -161,7 +167,7 @@ export const MainInfo = (props: { item: CoreC.Service }): ResourceMainInfo => {
                       href={`https://${publicFQDN}`}
                       target="_blank"
                       rel="noreferrer noopener"
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[0.68rem] font-bold text-slate-500 border border-slate-200 bg-white hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 transition-colors duration-150"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-normal text-slate-500 border border-slate-200 bg-white hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 transition-colors duration-150"
                     >
                       <ExternalLink size={10} strokeWidth={2.5} />
                       Visit
@@ -178,6 +184,7 @@ export const MainInfo = (props: { item: CoreC.Service }): ResourceMainInfo => {
         ? [
             {
               label: "Flags",
+              group: "Networking",
               value: (
                 <div className="flex flex-wrap gap-1">
                   {item.spec!.isTLS && <Label>TLS</Label>}
@@ -197,6 +204,7 @@ export const MainInfo = (props: { item: CoreC.Service }): ResourceMainInfo => {
         ? [
             {
               label: "Primary hostname",
+              group: "Networking",
               value: <CopyText value={item.status.primaryHostname} />,
               span: "full" as const,
             },
@@ -207,6 +215,7 @@ export const MainInfo = (props: { item: CoreC.Service }): ResourceMainInfo => {
         ? [
             {
               label: "Private addresses",
+              group: "Networking",
               value: (
                 <div className="flex flex-wrap gap-1">
                   {item.status.addresses.flatMap((address) =>
@@ -230,6 +239,7 @@ export const MainInfo = (props: { item: CoreC.Service }): ResourceMainInfo => {
         ? [
             {
               label: "Policies",
+              group: "Authorization",
               value: (
                 <div className="flex flex-wrap gap-1">
                   {item.spec.authorization.policies.map((policy) => (
@@ -253,6 +263,7 @@ export const MainInfo = (props: { item: CoreC.Service }): ResourceMainInfo => {
         ? [
             {
               label: "Inline policies",
+              group: "Authorization",
               value: (
                 <div className="flex flex-wrap gap-1">
                   {item.spec.authorization.inlinePolicies.map(
@@ -273,36 +284,6 @@ export const MainInfo = (props: { item: CoreC.Service }): ResourceMainInfo => {
           ]
         : []),
 
-      {
-        label: "Active",
-        value: (
-          <EditItemWrap
-            mutation={mutationUpdate}
-            label="active"
-            showComponent={
-              <span
-                className={twMerge(
-                  "text-[0.75rem] font-semibold",
-                  item.spec!.isDisabled ? "text-red-500" : "text-emerald-600",
-                )}
-              >
-                {item.spec!.isDisabled ? "Disabled" : "Active"}
-              </span>
-            }
-            editComponent={
-              <Switch
-                size="sm"
-                checked={!item.spec!.isDisabled}
-                onChange={(v) => {
-                  const next = CoreC.Service.clone(item);
-                  next.spec!.isDisabled = !v.currentTarget.checked;
-                  mutationUpdate.mutate(next);
-                }}
-              />
-            }
-          />
-        ),
-      },
     ],
   };
 };

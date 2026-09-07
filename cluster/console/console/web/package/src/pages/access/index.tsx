@@ -1,4 +1,4 @@
-import { Item } from "@/pages/visibility/Main";
+import Item from "@/components/SummaryCard";
 import { motion } from "framer-motion";
 import { Summary as CatalogSummary } from "./Catalog/List";
 import { Summary as PolicySummary } from "./Policy/List";

@@ -50,7 +50,7 @@ const EditItemWrap = (props: {
                 props.mutation?.reset();
                 setEnabled(false);
               }}
-              className="flex items-center justify-center w-6 h-6 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors duration-150 cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center justify-center w-6 h-6 rounded text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors duration-150 cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 disabled:cursor-not-allowed disabled:opacity-50"
               title="Cancel"
               aria-label="Close editor"
             >
@@ -72,7 +72,7 @@ const EditItemWrap = (props: {
               onClick={() => setEnabled(true)}
               className={twMerge(
                 "flex items-center justify-center w-5 h-5 rounded cursor-pointer shrink-0",
-                "text-slate-400 hover:text-slate-600 hover:bg-slate-100",
+                "text-slate-500 hover:text-slate-600 hover:bg-slate-100",
                 "transition-colors duration-150",
                 "opacity-0 group-hover/edit:opacity-100 group-focus-within/edit:opacity-100 focus-visible:opacity-100",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500",
@@ -86,17 +86,17 @@ const EditItemWrap = (props: {
         )}
       </AnimatePresence>
       {enabled && props.mutation?.isPending && (
-        <span className="flex items-center gap-1 text-[0.68rem] font-semibold text-slate-500" role="status">
+        <span className="flex items-center gap-1 text-xs font-normal text-slate-500" role="status">
           <LoaderCircle size={11} className="animate-spin" /> Saving…
         </span>
       )}
       {enabled && props.mutation?.isError && (
-        <span className="text-[0.68rem] font-semibold text-red-600" role="alert">
+        <span className="text-xs font-semibold text-red-600" role="alert">
           {errorMessage}
         </span>
       )}
       {enabled && props.mutation?.isSuccess && !props.mutation.isPending && (
-        <span className="flex items-center gap-1 text-[0.68rem] font-semibold text-emerald-600" role="status">
+        <span className="flex items-center gap-1 text-xs font-semibold text-emerald-600" role="status">
           <Check size={11} /> Saved
         </span>
       )}

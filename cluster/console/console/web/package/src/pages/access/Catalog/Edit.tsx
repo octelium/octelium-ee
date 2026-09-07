@@ -60,10 +60,10 @@ const Edit = (props: {
                   <PanelTop size={14} strokeWidth={2.2} />
                 </span>
                 <div>
-                  <p className="text-[0.75rem] font-bold text-slate-700">
+                  <p className="text-body font-semibold text-slate-700">
                     Individual Services
                   </p>
-                  <p className="mt-0.5 text-[0.65rem] font-semibold leading-4 text-slate-400">
+                  <p className="mt-0.5 text-micro font-normal leading-4 text-slate-500">
                     Include only the selected Services.
                   </p>
                 </div>
@@ -89,10 +89,10 @@ const Edit = (props: {
                   <Library size={14} strokeWidth={2.2} />
                 </span>
                 <div>
-                  <p className="text-[0.75rem] font-bold text-slate-700">
+                  <p className="text-body font-semibold text-slate-700">
                     Namespace Services
                   </p>
-                  <p className="mt-0.5 text-[0.65rem] font-semibold leading-4 text-slate-400">
+                  <p className="mt-0.5 text-micro font-normal leading-4 text-slate-500">
                     Include Services belonging to the selected Namespaces.
                   </p>
                 </div>

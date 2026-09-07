@@ -164,7 +164,7 @@ const DurationPicker = ({
       className="w-full"
     >
       {description && (
-        <p className="mb-1 text-[0.7rem] font-semibold leading-5 text-slate-400">
+        <p className="mb-1 text-xs font-normal leading-5 text-slate-500">
           {description}
         </p>
       )}
@@ -189,7 +189,7 @@ const DurationPicker = ({
             leftSection={
               <Clock3
                 size={14}
-                className={current ? "text-slate-600" : "text-slate-400"}
+                className={current ? "text-slate-600" : "text-slate-500"}
                 strokeWidth={2.25}
               />
             }
@@ -197,7 +197,7 @@ const DurationPicker = ({
               <ChevronDown
                 size={13}
                 strokeWidth={2.5}
-                className={`text-slate-400 transition-transform duration-300 ${
+                className={`text-slate-500 transition-transform duration-200 ${
                   opened ? "rotate-180" : ""
                 }`}
               />
@@ -208,16 +208,16 @@ const DurationPicker = ({
               input: {
                 cursor: "pointer",
                 textAlign: "left",
-                "&:hover": { borderColor: "#cbd5e1" },
               },
             }}
+            classNames={{ input: "hover:border-slate-300" }}
           >
             {current ? (
-              <span className="text-[0.78rem] font-bold text-slate-700">
+              <span className="text-body font-semibold text-slate-700">
                 {formatDuration(current)}
               </span>
             ) : (
-              <span className="text-[0.78rem] font-semibold text-slate-400">
+              <span className="text-body font-normal text-slate-500">
                 {placeholder}
               </span>
             )}
@@ -237,10 +237,10 @@ const DurationPicker = ({
                 <Clock3 size={14} strokeWidth={2.25} />
               </span>
               <div className="min-w-0">
-                <p className="text-[0.72rem] font-bold text-slate-700">
+                <p className="text-xs font-semibold text-slate-700">
                   Choose duration
                 </p>
-                <p className="mt-0.5 truncate text-[0.62rem] font-semibold text-slate-400">
+                <p className="mt-0.5 truncate text-micro font-normal text-slate-500">
                   {current ? formatDuration(current) : "No duration selected"}
                 </p>
               </div>
@@ -309,7 +309,7 @@ const DurationPicker = ({
                       );
                     })}
                   </div>
-                  <p className="mt-3 text-center text-[0.62rem] font-semibold text-slate-400">
+                  <p className="mt-3 text-center text-micro font-normal text-slate-500">
                     Use Custom for seconds, milliseconds, or longer values.
                   </p>
                 </div>
@@ -347,10 +347,10 @@ const DurationPicker = ({
                   </div>
 
                   <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50/70 px-3 py-2.5">
-                    <p className="text-[0.62rem] font-bold uppercase tracking-[0.06em] text-slate-400">
+                    <p className="text-micro font-semibold uppercase tracking-[0.06em] text-slate-500">
                       Result
                     </p>
-                    <p className="mt-0.5 text-[0.75rem] font-bold text-slate-700">
+                    <p className="mt-0.5 text-body font-semibold text-slate-700">
                       {customIsValid
                         ? formatDuration({
                             val: customValue,

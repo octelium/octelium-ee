@@ -17,7 +17,7 @@ const CodeBlock = (props: { language?: string; code: string }) => {
   return (
     <div className="group relative my-3 overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
       <div className="flex items-center justify-between border-b border-slate-800 px-3 py-1.5">
-        <span className="text-[0.62rem] font-bold uppercase tracking-[0.08em] text-slate-400">
+        <span className="text-micro font-semibold uppercase tracking-[0.08em] text-slate-500">
           {props.language || "code"}
         </span>
         <Tooltip label={copied ? "Copied" : "Copy code"} withArrow>
@@ -31,13 +31,13 @@ const CodeBlock = (props: { language?: string; code: string }) => {
             {copied ? (
               <Check size={13} className="text-emerald-400" />
             ) : (
-              <Copy size={13} className="text-slate-400" />
+              <Copy size={13} className="text-slate-500" />
             )}
           </ActionIcon>
         </Tooltip>
       </div>
       <pre className="overflow-x-auto px-3 py-3">
-        <code className="font-mono text-[0.74rem] leading-6 text-slate-100">
+        <code className="font-mono text-xs leading-6 text-slate-100">
           {props.code}
         </code>
       </pre>
@@ -48,7 +48,7 @@ const CodeBlock = (props: { language?: string; code: string }) => {
 const Markdown = (props: { children: string; className?: string }) => (
   <div
     className={twMerge(
-      "min-w-0 text-[0.82rem] leading-6 text-slate-700",
+      "min-w-0 text-body leading-6 text-slate-700",
       props.className,
     )}
   >
@@ -63,7 +63,7 @@ const Markdown = (props: { children: string; className?: string }) => (
         ),
         em: ({ children }) => <em className="italic">{children}</em>,
         del: ({ children }) => (
-          <del className="text-slate-400 line-through">{children}</del>
+          <del className="text-slate-500 line-through">{children}</del>
         ),
         h1: ({ children }) => (
           <h1 className="mb-2 mt-4 text-base font-bold text-slate-900 first:mt-0">
@@ -76,7 +76,7 @@ const Markdown = (props: { children: string; className?: string }) => (
           </h2>
         ),
         h3: ({ children }) => (
-          <h3 className="mb-1.5 mt-3 text-[0.82rem] font-bold text-slate-800 first:mt-0">
+          <h3 className="mb-1.5 mt-3 text-body font-semibold text-slate-800 first:mt-0">
             {children}
           </h3>
         ),
@@ -114,7 +114,7 @@ const Markdown = (props: { children: string; className?: string }) => (
           ) : null,
         table: ({ children }) => (
           <div className="my-3 w-full overflow-x-auto rounded-xl border border-slate-200">
-            <table className="w-full border-collapse text-[0.76rem]">
+            <table className="w-full border-collapse text-body">
               {children}
             </table>
           </div>
@@ -144,7 +144,7 @@ const Markdown = (props: { children: string; className?: string }) => (
 
           return (
             <code
-              className="rounded border border-slate-200 bg-slate-100 px-1 py-0.5 font-mono text-[0.76rem] font-semibold text-slate-800"
+              className="rounded border border-slate-200 bg-slate-100 px-1 py-0.5 font-mono text-body font-semibold text-slate-800"
               {...rest}
             >
               {text}

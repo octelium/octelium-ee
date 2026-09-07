@@ -46,39 +46,9 @@ export default (props: { item: CoreC.Policy }) => {
 
 export const MainInfo = (props: { item: CoreC.Policy }): ResourceMainInfo => {
   const { item } = props;
-  const mutationUpdate = useUpdateResource();
 
   return {
     items: [
-      {
-        label: "Active",
-        value: (
-          <EditItemWrap
-            mutation={mutationUpdate}
-            label="active"
-            showComponent={
-              <span
-                className={twMerge(
-                  "text-[0.75rem] font-semibold",
-                  item.spec!.isDisabled ? "text-red-500" : "text-emerald-600",
-                )}
-              >
-                {item.spec!.isDisabled ? "Disabled" : "Active"}
-              </span>
-            }
-            editComponent={
-              <Switch
-                size="sm"
-                checked={!item.spec!.isDisabled}
-                onChange={(v) => {
-                  item.spec!.isDisabled = !v.currentTarget.checked;
-                  mutationUpdate.mutate(item);
-                }}
-              />
-            }
-          />
-        ),
-      },
     ],
   };
 };

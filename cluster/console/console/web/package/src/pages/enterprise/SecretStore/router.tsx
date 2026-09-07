@@ -1,34 +1,23 @@
 import { SecretStore } from "@/apis/enterprisev1/enterprisev1";
 import { ResourceComponentInfo } from "@/pages/utils/types";
-import { Resource } from "@/utils/pb";
-
-import Edit from "./Edit";
-import { LabelComponent, Summary } from "./List";
-import Main, { MainInfo } from "./Main";
+import { lazyNamed, lazyResourceInfo, lazySpec } from "@/pages/utils/lazy";
 
 const resourceComponentInfo: ResourceComponentInfo = {
   API: "enterprise",
   Kind: "SecretStore",
   List: {
-    labelComponent: ({ item }: { item: Resource }) => (
-      <LabelComponent item={item as SecretStore} />
-    ),
-    SummaryComponent: Summary,
+    labelComponent: lazyNamed(() => import("./List"), "LabelComponent"),
+    SummaryComponent: lazyNamed(() => import("./List"), "Summary"),
   },
   Item: {
-    Edit: ({ item, onUpdate }) => (
-      <Edit
-        item={item as SecretStore}
-        onUpdate={(next) => onUpdate(next)}
-      />
-    ),
-    Main: ({ item }) => <Main item={item as SecretStore} />,
+    Edit: lazySpec(() => import("./Edit")),
+    hasMain: true,
   },
   unCreatable: true,
   unDeletable: true,
   readOnlyEdit: true,
 
-  infoItemsGetter: ({ item }) => MainInfo({ item: item as SecretStore }),
+  infoItemsGetter: lazyResourceInfo(() => import("./Main")),
 };
 
 export default resourceComponentInfo;

@@ -92,10 +92,10 @@ export const SetCertificateC = (props: { item: Certificate }) => {
                 <ShieldCheck size={17} strokeWidth={2.2} />
               </span>
               <div className="min-w-0">
-                <h2 className="text-[0.86rem] font-bold text-slate-900">
+                <h2 className="text-sm font-bold text-slate-900">
                   Set certificate
                 </h2>
-                <p className="mt-0.5 truncate text-[0.69rem] font-semibold text-slate-400">
+                <p className="mt-0.5 truncate text-xs font-normal text-slate-500">
                   {props.item.metadata?.displayName ||
                     props.item.metadata?.name}
                 </p>
@@ -132,7 +132,7 @@ export const SetCertificateC = (props: { item: Certificate }) => {
               onChange={(value) => setCertificate(value ?? "")}
             />
             {certificate && !certificateValid && (
-              <p className="text-[0.68rem] font-semibold text-red-600">
+              <p className="text-xs font-semibold text-red-600">
                 The value does not contain a complete PEM certificate block.
               </p>
             )}
@@ -147,14 +147,14 @@ export const SetCertificateC = (props: { item: Certificate }) => {
               onChange={(value) => setPrivateKey(value ?? "")}
             />
             {privateKey && !privateKeyValid && (
-              <p className="text-[0.68rem] font-semibold text-red-600">
+              <p className="text-xs font-semibold text-red-600">
                 The value does not contain a complete PEM private-key block.
               </p>
             )}
           </div>
 
           <footer className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-white px-5 py-3.5">
-            <span className="text-[0.67rem] font-semibold text-slate-400">
+            <span className="text-xs font-normal text-slate-500">
               Sensitive input is cleared when this dialog closes.
             </span>
             <div className="flex items-center gap-2">

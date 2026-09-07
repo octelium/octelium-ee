@@ -72,7 +72,7 @@ const PolarChart = (props: {
           <div style="font-weight:700;margin-bottom:4px;font-family:Ubuntu,sans-serif">${params.name}</div>
           <div style="display:flex;align-items:baseline;gap:6px;">
             <span style="font-size:16px;font-weight:700;">${params.value.toLocaleString()}</span>
-            <span style="font-size:11px;color:#94a3b8">${pct}%</span>
+            <span style="font-size:11px;color:#64748b">${pct}%</span>
           </div>
         `;
       },
@@ -122,7 +122,7 @@ const PolarChart = (props: {
   return (
     <div className="w-full flex flex-col">
       {title && (
-        <p className="text-[0.78rem] font-bold uppercase tracking-[0.05em] text-slate-800 mb-1 px-1">
+        <p className="text-body font-semibold uppercase tracking-[0.05em] text-slate-800 mb-1 px-1">
           {title}
         </p>
       )}
@@ -137,7 +137,7 @@ const PolarChart = (props: {
         {data.map((item, i) => (
           <span
             key={item.name}
-            className="flex items-center gap-1.5 text-[0.72rem] font-semibold text-slate-500"
+            className="flex items-center gap-1.5 text-xs font-normal text-slate-500"
           >
             <span
               className="w-2 h-2 rounded-full shrink-0"

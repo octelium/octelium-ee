@@ -8,7 +8,7 @@ import {
   ResourceList,
 } from "@/utils/pb";
 import { Link2 } from "lucide-react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 import TimeAgo from "../TimeAgo";
 
@@ -19,59 +19,39 @@ export const ResourceListWrapper = (props: { children?: React.ReactNode }) => (
 export const ResourceListItem = (props: {
   children?: React.ReactNode;
   path?: string;
+  compact?: boolean;
+  overlayLabel?: string;
   state?: unknown;
 }) => {
-  const hasPath = !!props.path?.length;
-  const navigate = useNavigate();
   const location = useLocation();
   const isActive =
-    hasPath &&
+    !!props.path?.length &&
     (location.pathname === props.path ||
       location.pathname.startsWith(`${props.path}/`));
 
   return (
     <div
       className={twMerge(
-        "w-full bg-white",
+        "relative w-full bg-white",
         "border border-slate-200 rounded-xl",
-        "shadow-[0_1px_4px_rgba(15,23,42,0.06)]",
-        "px-4 py-3.5 sm:px-5 sm:py-4",
-        "transition-[border-color,box-shadow] duration-[600ms] ease-out",
-        "hover:border-slate-300 hover:shadow-[0_3px_14px_rgba(15,23,42,0.075)]",
-        hasPath &&
-          "cursor-pointer outline-none focus-visible:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-500/20",
-        isActive &&
-          "border-blue-200 shadow-[0_3px_14px_rgba(37,99,235,0.075)] ring-1 ring-blue-500/[0.07]",
+        "shadow-card",
+        props.compact ? "px-3 py-2.5 sm:px-4" : "px-4 py-3.5 sm:px-5 sm:py-4",
+        "transition-[border-color,box-shadow] duration-150 ease-out",
+        "hover:border-slate-300 hover:shadow-raised",
+        "focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-500/20",
+        isActive && "border-blue-200 shadow-raised ring-1 ring-blue-500/[0.07]",
       )}
-      role={hasPath ? "link" : undefined}
-      tabIndex={hasPath ? 0 : undefined}
       aria-current={isActive ? "page" : undefined}
-      onClick={(event) => {
-        if (
-          (event.target as HTMLElement).closest(
-            "a, button, input, select, textarea, [role='button']",
-          )
-        ) {
-          return;
-        }
-        if (hasPath) {
-          navigate(props.path!, {
-            state: props.state,
-            preventScrollReset: true,
-          });
-        }
-      }}
-      onKeyDown={(event) => {
-        if (event.target !== event.currentTarget) return;
-        if (hasPath && (event.key === "Enter" || event.key === " ")) {
-          event.preventDefault();
-          navigate(props.path!, {
-            state: props.state,
-            preventScrollReset: true,
-          });
-        }
-      }}
     >
+      {props.path && props.overlayLabel && (
+        <Link
+          to={props.path}
+          state={props.state}
+          preventScrollReset
+          aria-label={props.overlayLabel}
+          className="absolute inset-0 z-[1] rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+        />
+      )}
       {props.children}
     </div>
   );
@@ -98,7 +78,7 @@ export const ResourceListItemMetadata = (props: {
         )}
       </div>
       {md.createdAt && (
-        <div className="text-[0.72rem] font-semibold text-slate-400">
+        <div className="text-xs font-normal text-slate-500">
           Created <TimeAgo rfc3339={md.createdAt} />
         </div>
       )}
@@ -114,7 +94,7 @@ export const ResourceListInfo = (props: {
   if (!count) return null;
   return (
     <div className="w-full flex justify-end mb-1">
-      <span className="text-[0.72rem] font-semibold text-slate-400 tracking-wide">
+      <span className="text-xs font-semibold text-slate-500 tracking-wide">
         {count.toLocaleString()} items
       </span>
     </div>
@@ -135,11 +115,11 @@ const LabelContent = ({
   <span
     className={twMerge(
       "inline-flex min-h-6 max-w-full items-center gap-1.5 rounded-md border px-2 py-1 align-middle",
-      "bg-slate-50/80 border-slate-200 text-[0.7rem] font-semibold leading-none text-slate-600",
-      "shadow-[0_1px_1px_rgba(15,23,42,0.03)] transition-[background-color,border-color,color,box-shadow] duration-500",
+      "bg-slate-50/80 border-slate-200 text-xs font-normal leading-none text-slate-600",
+      "shadow-card transition-[background-color,border-color,color,box-shadow] duration-200",
       "[&_svg]:size-3 [&_svg]:shrink-0",
       interactive &&
-        "cursor-pointer border-blue-200/80 bg-blue-50/70 text-blue-700 hover:border-blue-300 hover:bg-white hover:text-blue-800 hover:shadow-[0_2px_6px_rgba(37,99,235,0.10)]",
+        "cursor-pointer border-blue-200/80 bg-blue-50/70 text-blue-700 hover:border-blue-300 hover:bg-white hover:text-blue-800 hover:shadow-card",
     )}
   >
     {reference && <Link2 aria-hidden="true" />}
@@ -247,7 +227,7 @@ export const ResourceListLabel = (props: {
 export const ResourceListLabelWrap = (props: {
   children?: React.ReactNode;
 }) => (
-  <div className="mt-2 flex w-full flex-row flex-wrap content-start items-center gap-1.5">
+  <div className="relative z-10 mt-2 flex w-full flex-row flex-wrap content-start items-center gap-1.5">
     {props.children}
   </div>
 );

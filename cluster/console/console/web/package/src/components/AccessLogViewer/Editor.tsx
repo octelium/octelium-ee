@@ -103,16 +103,16 @@ const Editor = ({ item }: { item: LogItem }) => {
           <div className="flex min-w-0 items-center gap-2">
             <FileJson
               size={15}
-              className="shrink-0 text-slate-400"
+              className="shrink-0 text-slate-500"
               strokeWidth={2.25}
             />
-            <span className="text-xs font-bold uppercase tracking-[0.06em] text-slate-500">
+            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
               JSON
             </span>
             <span className="truncate text-sm font-semibold text-slate-800">
               {item.kind}
             </span>
-            <span className="hidden items-center rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider text-slate-500 sm:inline-flex">
+            <span className="hidden items-center rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wider text-slate-500 sm:inline-flex">
               Read only
             </span>
           </div>
@@ -141,7 +141,7 @@ const Editor = ({ item }: { item: LogItem }) => {
       >
         <div className="flex min-h-0 flex-1 flex-col gap-3">
           <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-2 shadow-sm sm:px-3">
-            <span className="text-[0.65rem] font-semibold text-slate-400">
+            <span className="text-micro font-normal text-slate-500">
               {statistics.lines.toLocaleString()} lines ·{" "}
               {statistics.size.toLocaleString()} bytes
             </span>

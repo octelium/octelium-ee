@@ -1,11 +1,12 @@
 import { onError } from "@/utils";
 import {
+  API,
+  Resource,
   cloneResource,
-  getClient,
-  getPBFromAPI,
+  createResourcePB,
   getResourcePath,
   invalidateResourceList,
-  Resource,
+  newResourcePB,
 } from "@/utils/pb";
 import { Button, Modal, TextInput } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
@@ -45,8 +46,7 @@ const CloneResource = (props: {
 
   const mutation = useMutation({
     mutationFn: async () => {
-      // @ts-ignore
-      const next: Resource = getPBFromAPI(api)[kind]["create"]({
+      const next = newResourcePB(api as API, kind, {
         apiVersion: item.apiVersion,
         kind: item.kind,
         metadata: { name: name.trim() },
@@ -56,12 +56,11 @@ const CloneResource = (props: {
 
       next.spec = cloneResource(item).spec;
       if (kind.endsWith("Secret")) {
-        // @ts-ignore
-        next["data"] = cloneResource(item)["data"];
+        const source = cloneResource(item) as Resource & { data?: unknown };
+        (next as Resource & { data?: unknown }).data = source.data;
       }
 
-      // @ts-ignore
-      const { response } = await getClient(api)[`create${kind}`](next);
+      const { response } = await createResourcePB(api as API, kind, next);
       return response as Resource;
     },
     onSuccess: (response) => {
@@ -73,8 +72,7 @@ const CloneResource = (props: {
     },
     onError: (err: unknown) => {
       if (err instanceof Error) toast.error(err.message);
-      // @ts-ignore
-      onError(err);
+      onError(err as any);
     },
   });
 
@@ -119,16 +117,16 @@ const CloneResource = (props: {
                 className="text-slate-500 shrink-0"
                 strokeWidth={2}
               />
-              <span className="text-[0.82rem] font-bold text-slate-800">
+              <span className="text-body font-semibold text-slate-800">
                 Clone {kind}
               </span>
-              <span className="text-[0.7rem] font-semibold text-slate-400 font-mono">
+              <span className="text-xs font-normal text-slate-500 font-mono">
                 {originalName}
               </span>
             </div>
             <button
               onClick={close}
-              className="flex items-center justify-center w-6 h-6 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors duration-150 cursor-pointer"
+              className="flex items-center justify-center w-6 h-6 rounded text-slate-500 hover:text-slate-700 hover:bg-slate-200 transition-colors duration-150 cursor-pointer"
             >
               <X size={13} strokeWidth={2.5} />
             </button>

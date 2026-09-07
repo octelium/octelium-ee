@@ -29,7 +29,7 @@ export const getStatusMeta = (
       label: "Cancelled",
       className: "text-slate-500",
     }))
-    .otherwise(() => ({ label: "Unknown", className: "text-slate-400" }));
+    .otherwise(() => ({ label: "Unknown", className: "text-slate-500" }));
 
 export const getUrgencyLabel = (
   urgency?: AccessP.Request_Spec_Urgency,

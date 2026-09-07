@@ -27,6 +27,7 @@ import PageWrap from "@/components/PageWrap";
 import { SummaryItemCount } from "@/components/Summary";
 import {
   getClientVisibilityMetrics,
+  chartRefreshMillis,
   refetchIntervalChart,
 } from "@/utils/client";
 import { ActionIcon, SegmentedControl, Switch, Tooltip } from "@mantine/core";
@@ -223,14 +224,14 @@ const ServiceMetricCounter = (props: ServiceMetricCounterProps) => {
   return (
     <div className="min-w-0">
       {qry.isLoading ? (
-        <div className="flex min-h-[76px] items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.035)]">
+        <div className="flex min-h-[76px] items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 shadow-card">
           <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-slate-700" />
-          <span className="text-[0.68rem] font-semibold text-slate-400">Loading…</span>
+          <span className="text-xs font-normal text-slate-500">Loading…</span>
         </div>
       ) : qry.isError ? (
-        <div className="flex min-h-[76px] flex-col justify-center rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.035)]">
-          <span className="truncate text-[0.72rem] font-bold text-slate-600">{props.title}</span>
-          <span className="mt-0.5 truncate text-[0.65rem] font-semibold text-slate-400">Unavailable</span>
+        <div className="flex min-h-[76px] flex-col justify-center rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 shadow-card">
+          <span className="truncate text-xs font-normal text-slate-600">{props.title}</span>
+          <span className="mt-0.5 truncate text-micro font-normal text-slate-500">Unavailable</span>
         </div>
       ) : (
         <SummaryItemCount
@@ -239,7 +240,7 @@ const ServiceMetricCounter = (props: ServiceMetricCounterProps) => {
           formatCount={props.formatter}
         >
           {props.title}
-          <span className="ml-1 font-semibold text-slate-400">· {props.label}</span>
+          <span className="ml-1 font-semibold text-slate-500">· {props.label}</span>
           {partial && (
             <span className="ml-1 font-bold uppercase tracking-[0.06em] text-amber-600">
               · partial
@@ -262,7 +263,7 @@ const SectionIntro = (props: {
     </span>
     <div className="min-w-0">
       <h3 className="text-sm font-bold text-slate-800">{props.title}</h3>
-      <p className="mt-0.5 text-[0.7rem] font-medium leading-5 text-slate-500">
+      <p className="mt-0.5 text-xs font-medium leading-5 text-slate-500">
         {props.description}
       </p>
     </div>
@@ -1336,23 +1337,23 @@ export const ResourceMetrics = (props: { resource: MetricsResource }) => {
               <h2 className="text-sm font-bold text-slate-900">
                 {isService ? "Service metrics" : "Namespace metrics"}
               </h2>
-              <p className="mt-0.5 text-[0.7rem] font-medium leading-5 text-slate-500">
+              <p className="mt-0.5 text-xs font-medium leading-5 text-slate-500">
                 Vigil traffic, authorization outcomes, latency, and protocol
                 characteristics scoped to this {isService ? "Service" : "Namespace"}.
               </p>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {mode !== undefined && (
-                  <span className="rounded-md border border-blue-200 bg-blue-50 px-2 py-1 text-[0.62rem] font-bold text-blue-700">
+                  <span className="rounded-md border border-blue-200 bg-blue-50 px-2 py-1 text-micro font-semibold text-blue-700">
                     {modeLabel(mode)}
                   </span>
                 )}
                 {namespaceName && isService && (
-                  <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[0.62rem] font-bold text-slate-500">
+                  <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-micro font-normal text-slate-500">
                     Namespace · {namespaceName}
                   </span>
                 )}
                 {service?.status?.regionRef?.name && (
-                  <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[0.62rem] font-bold text-slate-500">
+                  <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-micro font-normal text-slate-500">
                     Region · {service.status.regionRef.name}
                   </span>
                 )}
@@ -1398,7 +1399,7 @@ export const ResourceMetrics = (props: { resource: MetricsResource }) => {
             ]}
           />
           <div className="flex items-center gap-2">
-            <Clock3 size={13} className="text-slate-400" />
+            <Clock3 size={13} className="text-slate-500" />
             <SegmentedControl
               size="xs"
               value={range}
@@ -1423,8 +1424,8 @@ export const ResourceMetrics = (props: { resource: MetricsResource }) => {
         <NamespaceDetails shared={shared} />
       )}
 
-      <p className="px-1 text-[0.62rem] font-semibold leading-5 text-slate-400">
-        Live refresh runs every {Math.round(refetchIntervalChart / 1000)} seconds
+      <p className="px-1 text-micro font-normal leading-5 text-slate-500">
+        Live refresh runs every {Math.round(chartRefreshMillis / 1000)} seconds
         while this page is visible. Historical values follow the current
         metrics retention policy.
       </p>

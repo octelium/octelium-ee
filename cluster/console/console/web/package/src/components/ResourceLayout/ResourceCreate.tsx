@@ -2,45 +2,38 @@ import { onError } from "@/utils";
 import {
   APIKind,
   cloneResource,
+  createResourcePB,
   getAPIKindFromPath,
-  getClient,
-  getPBFromAPI,
   getResourcePath,
+  getResourcePB,
   invalidateResourceList,
+  newResourcePB,
   Resource,
   resourceFromYAML,
-  resourceToYAML,
 } from "@/utils/pb";
-import { Button, SegmentedControl } from "@mantine/core";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { AnimatePresence, motion } from "framer-motion";
-import { FileCode, Plus, Settings, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import * as React from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import ContainerGen from "../ContainerGen";
-import MetadataEdit from "../MetadataEdit";
-import ResourceEditor from "../ResourceEditor";
+import ResourceForm from "./ResourceForm";
 
-const createResource = (apiKind: APIKind): Resource => {
-  // @ts-ignore
-  return getPBFromAPI(apiKind.api)[`${apiKind.kind}`]["create"]({
+type SpecComponent = React.ComponentType<{
+  item: Resource;
+  onUpdate: (item: Resource) => void;
+}>;
+
+const blankResource = (apiKind: APIKind): Resource =>
+  newResourcePB(apiKind.api, apiKind.kind, {
     apiVersion: `${apiKind.api}/v1`,
     kind: apiKind.kind,
     metadata: {},
     spec: {},
     status: {},
   });
-};
 
 const ResourceCreatePage = (props: {
-  specComponent: (props: {
-    item: Resource;
-    onUpdate: (item: Resource) => void;
-  }) => React.ReactNode;
-  dataComponent?: (props: {
-    item: Resource;
-    onUpdate: (item: Resource) => void;
-  }) => React.ReactNode;
+  specComponent: SpecComponent;
+  dataComponent?: SpecComponent;
   createResource?: () => Resource;
   onCreated?: (item: Resource) => void;
   onCancel?: () => void;
@@ -52,52 +45,48 @@ const ResourceCreatePage = (props: {
   const apiKind = getAPIKindFromPath(loc.pathname)!;
   const cloneUID = searchParams.get("cloneRef.uid") ?? undefined;
 
-  const [req, setReq] = React.useState<Resource>(
-    props.createResource ? props.createResource() : createResource(apiKind),
-  );
-  const [curYAML, setCurYAML] = React.useState(() => resourceToYAML(req));
-  const [activeTab, setActiveTab] = React.useState<"main" | "yaml">("main");
-  const [yamlParseError, setYamlParseError] = React.useState<string | null>(
-    null,
+  const [seed, setSeed] = React.useState<Resource>(() =>
+    props.createResource ? props.createResource() : blankResource(apiKind),
   );
 
-  useQuery({
+  const cloneQuery = useQuery({
     queryKey: ["resourceClone", apiKind.api, apiKind.kind, cloneUID],
     enabled: !!cloneUID,
     queryFn: async () => {
-      // @ts-ignore
-      const { response } = await getClient(apiKind.api)[`get${apiKind.kind}`]({
+      const { response } = await getResourcePB(apiKind.api, apiKind.kind, {
         uid: cloneUID,
-      } as any);
+      });
       return response as Resource;
-    },
-    select: (source) => {
-      if (!source) return;
-      const next = cloneResource(req);
-      next.spec = source.spec;
-      setReq(next);
-      setCurYAML(resourceToYAML(next));
     },
   });
 
+  const clonedUID = React.useRef<string | undefined>(undefined);
+
+  React.useEffect(() => {
+    const source = cloneQuery.data;
+    if (!source || clonedUID.current === cloneUID) return;
+    clonedUID.current = cloneUID;
+    setSeed((current) => {
+      const next = cloneResource(current);
+      next.spec = source.spec;
+      return next;
+    });
+  }, [cloneQuery.data, cloneUID]);
+
   const mutation = useMutation({
-    mutationFn: async () => {
-      let rsc: Resource | undefined;
-
-      if (activeTab === "yaml") {
-        rsc = resourceFromYAML(curYAML);
-        if (!rsc) {
-          throw new Error("Invalid YAML — could not parse resource.");
-        }
-      } else {
-        rsc = req;
-      }
-
-      // @ts-ignore
-      const { response } = await getClient(apiKind.api)[
-        // @ts-ignore
-        `create${apiKind.kind}`
-      ](rsc);
+    mutationFn: async (arg: {
+      req: Resource;
+      yaml: string;
+      isYAML: boolean;
+    }) => {
+      const resource = arg.isYAML ? resourceFromYAML(arg.yaml) : arg.req;
+      if (!resource)
+        throw new Error("Invalid YAML — could not parse resource.");
+      const { response } = await createResourcePB(
+        apiKind.api,
+        apiKind.kind,
+        resource,
+      );
       return response as Resource;
     },
     onSuccess: (response) => {
@@ -112,182 +101,30 @@ const ResourceCreatePage = (props: {
     onError: (err: unknown) => onError(err as any),
   });
 
-  const handleYAMLChange = (v: string) => {
-    setCurYAML(v);
-    const parsed = resourceFromYAML(v);
-    setYamlParseError(parsed ? null : "Invalid YAML — cannot parse resource");
-    if (parsed) setReq(cloneResource(parsed));
-  };
-
-  const handleTabChange = (value: string) => {
-    const nextTab = value as "main" | "yaml";
-    if (nextTab === "yaml") {
-      setCurYAML(resourceToYAML(req));
-      setYamlParseError(null);
-    } else {
-      const parsed = resourceFromYAML(curYAML);
-      if (!parsed) {
-        setYamlParseError("Invalid YAML — cannot parse resource");
-        return;
-      }
-      setReq(cloneResource(parsed));
-    }
-    setActiveTab(nextTab);
-  };
-
-  const canSubmit = activeTab === "yaml" ? yamlParseError === null : true;
-
   return (
-    <div className="w-full flex flex-col gap-6">
-      <div className="flex items-center">
-        <SegmentedControl
-          value={activeTab}
-          onChange={handleTabChange}
-          data={[
-            {
-              value: "main",
-              label: (
-                <span className="flex items-center gap-1.5 px-1">
-                  <Settings size={13} strokeWidth={2.5} />
-                  Configuration
-                </span>
-              ),
-            },
-            {
-              value: "yaml",
-              label: (
-                <span className="flex items-center gap-1.5 px-1">
-                  <FileCode size={13} strokeWidth={2.5} />
-                  YAML
-                </span>
-              ),
-            },
-          ]}
-        />
-      </div>
-
-      {activeTab === "main" ? (
-        <div className="flex flex-col gap-8">
-          {req.metadata && (
-            <ContainerGen title="Metadata">
-              <MetadataEdit
-                item={req}
-                onUpdate={(v) => {
-                  const next = cloneResource(req);
-                  next.metadata = v;
-                  setReq(next);
-                }}
-              />
-            </ContainerGen>
-          )}
-
-          {props.specComponent && (
-            <ContainerGen title="Spec">
-              {React.createElement(props.specComponent, {
-                item: req,
-                onUpdate: (item) => {
-                  const next = cloneResource(req);
-                  next.spec = item.spec;
-                  if (item.kind.endsWith("Secret")) {
-                    // @ts-ignore
-                    next["data"] = item["data"];
-                  }
-                  setReq(next);
-                },
-              })}
-            </ContainerGen>
-          )}
-
-          {props.dataComponent && (
-            <ContainerGen title="Data">
-              {React.createElement(props.dataComponent, {
-                item: req,
-                onUpdate: (item) => {
-                  const next = cloneResource(req);
-                  const nextWithData = next as Resource & { data?: unknown };
-                  const itemWithData = item as Resource & { data?: unknown };
-                  nextWithData.data = itemWithData.data;
-                  setReq(next);
-                },
-              })}
-            </ContainerGen>
-          )}
-        </div>
-      ) : (
-        <div className="flex flex-col gap-3">
-          <ResourceEditor
-            item={req}
-            value={curYAML}
-            onResourceChange={(item) => setReq(cloneResource(item))}
-            onChange={handleYAMLChange}
-          />
-
-          <AnimatePresence>
-            {yamlParseError && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.15 }}
-                className="overflow-hidden"
-              >
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-50 border border-red-200">
-                  <X
-                    size={12}
-                    className="text-red-500 shrink-0"
-                    strokeWidth={2.5}
-                  />
-                  <span className="text-[0.72rem] font-semibold text-red-700">
-                    {yamlParseError}
-                  </span>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      )}
-
-      <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-        {mutation.isError && (
-          <span className="text-[0.72rem] font-semibold text-red-600">
-            Creation failed — check the form and try again.
-          </span>
-        )}
-        <div className="flex-1" />
-
-        <div className="flex items-center gap-2">
-          <Button
-            variant="default"
-            leftSection={<X size={13} strokeWidth={2.5} />}
-            disabled={mutation.isPending}
-            onClick={() => {
-              if (props.onCancel) {
-                props.onCancel();
-                return;
-              }
-              navigate("..", {
-                relative: "path",
-                state: loc.state,
-                preventScrollReset: true,
-              });
-            }}
-          >
-            Cancel
-          </Button>
-
-          <Button
-            variant="filled"
-            color="dark"
-            leftSection={<Plus size={13} strokeWidth={2.5} />}
-            disabled={mutation.isPending || !canSubmit}
-            loading={mutation.isPending}
-            onClick={() => mutation.mutate()}
-          >
-            {mutation.isPending ? "Creating…" : `Create ${apiKind.kind}`}
-          </Button>
-        </div>
-      </div>
-    </div>
+    <ResourceForm
+      item={seed}
+      specComponent={props.specComponent}
+      dataComponent={props.dataComponent}
+      submitIcon={<Plus size={13} strokeWidth={2.25} />}
+      submitLabel={`Create ${apiKind.kind}`}
+      submitPendingLabel="Creating…"
+      isPending={mutation.isPending}
+      isError={mutation.isError}
+      errorLabel="Creation failed — check the form and try again."
+      onCancel={() => {
+        if (props.onCancel) {
+          props.onCancel();
+          return;
+        }
+        navigate("..", {
+          relative: "path",
+          state: loc.state,
+          preventScrollReset: true,
+        });
+      }}
+      onSubmit={(req, yaml, isYAML) => mutation.mutate({ req, yaml, isYAML })}
+    />
   );
 };
 

@@ -59,16 +59,16 @@ const Edit = (props: {
   const acme = req.spec.type.acme;
 
   return (
-    <section className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50 shadow-[0_1px_3px_rgba(15,23,42,0.035)]">
+    <section className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50 shadow-card">
       <div className="flex items-start gap-3 border-b border-slate-200 bg-white px-4 py-3.5">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-white">
           <ShieldCheck size={17} strokeWidth={2.2} />
         </span>
         <div>
-          <h3 className="text-[0.8rem] font-bold text-slate-800">
+          <h3 className="text-body font-semibold text-slate-800">
             ACME configuration
           </h3>
-          <p className="mt-0.5 text-[0.68rem] font-semibold leading-relaxed text-slate-400">
+          <p className="mt-0.5 text-xs font-normal leading-relaxed text-slate-500">
             Configure the ACME account used to issue and renew managed cluster
             certificates. The directory URL and contact email are sent to the
             selected ACME provider.
@@ -107,14 +107,14 @@ const Edit = (props: {
         />
 
         <div className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 md:col-span-2">
-          <div className="text-[0.62rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+          <div className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
             Challenge solver
           </div>
           <div className="mt-1 flex items-center gap-2">
-            <span className="rounded-md border border-blue-200 bg-blue-50 px-2 py-1 text-[0.68rem] font-bold text-blue-700">
+            <span className="rounded-md border border-blue-200 bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700">
               DNS-01
             </span>
-            <span className="text-[0.68rem] font-semibold text-slate-500">
+            <span className="text-xs font-normal text-slate-500">
               Domain ownership is verified using DNS challenge records managed
               by the configured DNS provider.
             </span>

@@ -40,13 +40,13 @@ const GroupHeading = ({ kind }: { kind: "and" | "or" | "none" }) => {
     <div className="flex flex-wrap items-center gap-2 py-1">
       <span
         className={twMerge(
-          "rounded-md border px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.07em]",
+          "rounded-md border px-2 py-0.5 text-micro font-semibold uppercase tracking-[0.07em]",
           meta.badge,
         )}
       >
         {meta.label}
       </span>
-      <span className="text-[0.65rem] font-semibold text-slate-400">
+      <span className="text-micro font-normal text-slate-500">
         {meta.description}
       </span>
     </div>
@@ -59,7 +59,7 @@ const Separator = ({ kind }: { kind: "and" | "or" | "none" }) => {
     <div className="flex items-center py-1 pl-1">
       <span
         className={twMerge(
-          "rounded border px-1.5 py-px text-[0.56rem] font-bold uppercase tracking-widest",
+          "rounded border px-1.5 py-px text-micro font-semibold uppercase tracking-widest",
           meta.separatorStyle,
         )}
       >
@@ -76,12 +76,12 @@ export const ExprChip = ({ item }: { item: Condition_Expression }) => {
 
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-      <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-[0.7rem] font-bold text-slate-700">
-        <Braces size={11} strokeWidth={2.25} className="text-slate-400" />
+      <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
+        <Braces size={11} strokeWidth={2.25} className="text-slate-500" />
         {definition?.title ?? "Unknown expression"}
       </span>
-      <span className="text-[0.65rem] font-semibold text-slate-400">is</span>
-      <span className="min-w-0 rounded-md border border-slate-200 bg-white px-2 py-1 text-[0.7rem] font-bold text-slate-700">
+      <span className="text-micro font-normal text-slate-500">is</span>
+      <span className="min-w-0 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700">
         {definition?.components.Value({ item }) ?? "Not configured"}
       </span>
     </div>
@@ -156,17 +156,17 @@ const PrintCond = ({
     .with({ oneofKind: "not" }, (type) => (
       <div className="rounded-lg border border-red-100 bg-red-50/50 p-2.5">
         <div className="mb-2 flex items-center gap-2">
-          <span className="rounded-md border border-red-200 bg-white px-2 py-0.5 text-[0.58rem] font-bold uppercase tracking-[0.07em] text-red-600">
+          <span className="rounded-md border border-red-200 bg-white px-2 py-0.5 text-micro font-semibold uppercase tracking-[0.07em] text-red-600">
             NOT
           </span>
-          <span className="text-[0.63rem] font-semibold text-red-700/70">
+          <span className="text-micro font-semibold text-red-700/70">
             Result is inverted
           </span>
         </div>
         {type.not.expression ? (
           <ExprChip item={type.not.expression} />
         ) : (
-          <span className="text-[0.68rem] font-semibold text-red-600/70">
+          <span className="text-xs font-semibold text-red-600/70">
             Negated expression is not configured
           </span>
         )}
@@ -178,10 +178,10 @@ const PrintCond = ({
           <Sparkles size={11} strokeWidth={2.25} />
         </span>
         <div>
-          <p className="text-[0.7rem] font-bold text-slate-700">
+          <p className="text-xs font-semibold text-slate-700">
             Match everything
           </p>
-          <p className="mt-0.5 text-[0.62rem] font-semibold text-slate-400">
+          <p className="mt-0.5 text-micro font-normal text-slate-500">
             No restrictions are applied
           </p>
         </div>
@@ -189,7 +189,7 @@ const PrintCond = ({
       </div>
     ))
     .otherwise(() => (
-      <div className="rounded-lg border border-dashed border-slate-200 px-3 py-3 text-center text-[0.68rem] font-semibold text-slate-400">
+      <div className="rounded-lg border border-dashed border-slate-200 px-3 py-3 text-center text-xs font-normal text-slate-500">
         Condition is not configured
       </div>
     ));

@@ -11,7 +11,6 @@ interface Settings {
   orderBy: MetaPB.CommonListOptions_OrderBy;
   // itemsPerPageNavigator?: number;
   listOptFilter?: any;
-  useListSearch?: boolean;
 }
 
 export default Settings;

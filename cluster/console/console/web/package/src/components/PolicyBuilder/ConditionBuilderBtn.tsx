@@ -100,7 +100,7 @@ const ConditionBuilderBtn = (props: {
                 <h2 className="truncate text-sm font-bold tracking-tight text-slate-900">
                   Visual condition builder
                 </h2>
-                <p className="mt-0.5 hidden text-[0.68rem] font-semibold text-slate-400 sm:block">
+                <p className="mt-0.5 hidden text-xs font-normal text-slate-500 sm:block">
                   Build nested policy logic without writing CEL or Rego.
                 </p>
               </div>
@@ -176,10 +176,10 @@ const ConditionBuilderBtn = (props: {
                     <Sparkles size={13} strokeWidth={2.25} />
                   </span>
                   <div>
-                    <p className="text-[0.74rem] font-bold text-slate-700">
+                    <p className="text-xs font-semibold text-slate-700">
                       Define the authorization logic
                     </p>
-                    <p className="mt-0.5 text-[0.67rem] font-semibold leading-relaxed text-slate-400">
+                    <p className="mt-0.5 text-xs font-normal leading-relaxed text-slate-500">
                       Choose a condition type, configure expressions, and nest
                       AND, OR, or NOR groups where needed.
                     </p>
@@ -205,10 +205,10 @@ const ConditionBuilderBtn = (props: {
               <div className="sticky top-0">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-[0.7rem] font-bold uppercase tracking-[0.07em] text-slate-600">
+                    <p className="text-xs font-semibold uppercase tracking-[0.07em] text-slate-600">
                       Logic preview
                     </p>
-                    <p className="mt-0.5 text-[0.64rem] font-semibold text-slate-400">
+                    <p className="mt-0.5 text-micro font-normal text-slate-500">
                       Live representation of this condition
                     </p>
                   </div>
@@ -231,15 +231,15 @@ const ConditionBuilderBtn = (props: {
                 }`}
               />
               <span
-                className={`text-[0.68rem] font-semibold ${
-                  changed ? "text-amber-700" : "text-slate-400"
+                className={`text-xs font-semibold ${
+                  changed ? "text-amber-700" : "text-slate-500"
                 }`}
               >
                 {changed ? "Draft has unapplied changes" : "No changes yet"}
               </span>
             </div>
             {mutation.isError && (
-              <p className="mr-3 text-[0.68rem] font-semibold text-red-600" role="alert">
+              <p className="mr-3 text-xs font-semibold text-red-600" role="alert">
                 The condition could not be applied. Try again.
               </p>
             )}

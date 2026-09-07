@@ -113,10 +113,10 @@ export const InfoDetail = (props: {
 }) => {
   return (
     <div className="w-full flex items-center justify-center text-sm mb-1">
-      <div className="font-bold text-black mr-2 min-w-[80px]">
+      <div className="font-bold text-slate-900 mr-2 min-w-[80px]">
         {props.label}
       </div>
-      <div className="flex-1 w-full text-gray-700 font-bold">
+      <div className="flex-1 w-full text-slate-700 font-bold">
         {props.children}
       </div>
     </div>
@@ -388,13 +388,13 @@ export const AccessLogC = (props: { accessLog: AccessLog }) => {
         <div>
           <Editor item={props.accessLog} />
         </div>
-        <span className="font-bold text-slate-500 text-xs mx-2">
+        <span className="font-normal text-slate-500 text-xs mx-2">
           <TimeAgo rfc3339={x.metadata!.createdAt} />
         </span>
 
         <span
           className={twMerge(
-            `text-xs p-1 mx-1 text-white font-bold rounded-md shadow-xl`,
+            `text-xs p-1 mx-1 text-white font-semibold rounded-md shadow-xl`,
             x.entry?.common?.status === AccessLog_Entry_Common_Status.ALLOWED
               ? `bg-green-700`
               : `bg-red-600`,
@@ -620,7 +620,7 @@ const AccessLogViewer = (props: {
   return (
     <div className="w-full">
       <div className="flex items-center mb-4">
-        <div className="font-bold text-gray-800 mr-2">Filter Since</div>
+        <div className="font-bold text-slate-800 mr-2">Filter Since</div>
         <SelectFromTimestamp
           onUpdate={(v) => {
             setFrom(v);

@@ -74,17 +74,17 @@ const SecretTextAreaCustom = (props: {
         error: { fontSize: "0.68rem", fontWeight: 600, marginTop: "6px" },
       }}
     >
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.05)] transition-[border-color,box-shadow] duration-500 focus-within:border-slate-400 focus-within:shadow-[0_0_0_3px_rgba(148,163,184,0.15)]">
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card transition-[border-color,box-shadow] duration-200 focus-within:border-slate-400 focus-within:shadow-card">
         <div className="flex min-h-10 flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/70 px-2.5 py-1.5">
           <div className="flex min-w-0 items-center gap-2">
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-900 text-white">
               <KeyRound size={12} strokeWidth={2.5} />
             </span>
-            <span className="truncate text-[0.68rem] font-bold text-slate-600">
+            <span className="truncate text-xs font-normal text-slate-600">
               Secret value
             </span>
             {value && (
-              <span className="hidden text-[0.6rem] font-semibold text-slate-400 sm:inline">
+              <span className="hidden text-micro font-normal text-slate-500 sm:inline">
                 {value.length.toLocaleString()} characters
               </span>
             )}
@@ -185,7 +185,6 @@ const SecretTextAreaCustom = (props: {
               padding: "12px 14px",
               resize: "vertical",
               transition: "none",
-              "&:focus": { outline: "none" },
             },
           }}
         />

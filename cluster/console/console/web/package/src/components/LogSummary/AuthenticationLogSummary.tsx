@@ -94,7 +94,7 @@ const AuthenticationLogSummary = (props: {
     <div>
       {/**
        <div className="flex items-center mb-6">
-        <div className="font-bold text-gray-700 text-shadow-2xs text-xl">
+        <div className="font-bold text-slate-700 text-shadow-2xs text-xl">
           Summary
         </div>
         <Button

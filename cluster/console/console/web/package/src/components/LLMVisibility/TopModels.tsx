@@ -110,7 +110,7 @@ const TopModels = (props: {
               <span className="flex min-w-0 items-center gap-2">
                 <span className="truncate">{item.key || "Not set"}</span>
                 {row && row.requested !== row.effective && (
-                  <span className="shrink-0 rounded bg-amber-50 px-1.5 py-px text-[0.58rem] font-bold uppercase tracking-[0.04em] text-amber-700">
+                  <span className="shrink-0 rounded bg-amber-50 px-1.5 py-px text-micro font-semibold uppercase tracking-[0.04em] text-amber-700">
                     rewritten
                   </span>
                 )}

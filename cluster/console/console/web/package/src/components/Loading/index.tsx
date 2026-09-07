@@ -36,7 +36,7 @@ export const ListLoading = (props: { label: string }) => (
     >
       <Loader size="sm" color="dark" type="oval" />
     </motion.div>
-    <span className="text-[0.7rem] font-semibold tracking-wide text-slate-400">
+    <span className="text-xs font-semibold tracking-wide text-slate-500">
       Loading {props.label}…
     </span>
   </motion.div>

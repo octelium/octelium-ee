@@ -56,12 +56,12 @@ const StatCard = ({
   variant?: "success" | "danger" | "neutral";
 }) => (
   <div className="flex flex-col gap-0.5 px-4 py-3 rounded-lg border border-slate-200 bg-white">
-    <span className="text-[0.62rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+    <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
       {label}
     </span>
     <span
       className={twMerge(
-        "text-[0.85rem] font-bold",
+        "text-sm font-bold",
         variant === "success" && "text-emerald-600",
         variant === "danger" && "text-red-600",
         variant === "neutral" && "text-slate-700",
@@ -79,25 +79,25 @@ const UpgradeStateBadge = ({
 }) =>
   match(state)
     .with(ClusterConfig_Status_UpgradeRequest_State.SUCCESS, () => (
-      <span className="inline-flex items-center gap-1 text-[0.72rem] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+      <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
         <CheckCircle2 size={11} strokeWidth={2.5} />
         Succeeded
       </span>
     ))
     .with(ClusterConfig_Status_UpgradeRequest_State.FAILED, () => (
-      <span className="inline-flex items-center gap-1 text-[0.72rem] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
+      <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
         <XCircle size={11} strokeWidth={2.5} />
         Failed
       </span>
     ))
     .with(ClusterConfig_Status_UpgradeRequest_State.UPGRADING, () => (
-      <span className="inline-flex items-center gap-1 text-[0.72rem] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+      <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
         <Loader2 size={11} strokeWidth={2.5} className="animate-spin" />
         Upgrading
       </span>
     ))
     .with(ClusterConfig_Status_UpgradeRequest_State.UPGRADE_REQUESTED, () => (
-      <span className="inline-flex items-center gap-1 text-[0.72rem] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+      <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
         <Clock size={11} strokeWidth={2.5} />
         Requested
       </span>
@@ -111,9 +111,9 @@ const VersionChip = ({
   label: string;
   version: string;
 }) => (
-  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-slate-200 bg-slate-50 text-[0.65rem] font-bold text-slate-600">
+  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-slate-200 bg-slate-50 text-micro font-normal text-slate-600">
     {label}
-    <span className={version ? "text-slate-800" : "text-slate-400"}>
+    <span className={version ? "text-slate-800" : "text-slate-500"}>
       {version || "latest"}
     </span>
   </span>
@@ -152,10 +152,10 @@ const UpgradeHistory = ({
   return (
     <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50/60">
-        <span className="text-[0.72rem] font-bold uppercase tracking-[0.05em] text-slate-500">
+        <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500">
           Upgrade history
         </span>
-        <span className="text-[0.65rem] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">
+        <span className="text-micro font-normal px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">
           {items.length}
         </span>
       </div>
@@ -175,7 +175,7 @@ const UpgradeHistory = ({
               <UpgradeStateBadge state={item.state} />
               <VersionChips request={item.request} />
             </div>
-            <span className="text-[0.7rem] font-semibold text-slate-400 shrink-0">
+            <span className="text-xs font-normal text-slate-500 shrink-0">
               <TimeAgo rfc3339={item.doneAt ?? item.createdAt} />
             </span>
           </div>
@@ -185,7 +185,7 @@ const UpgradeHistory = ({
       {hasMore && (
         <button
           onClick={() => setExpanded((v) => !v)}
-          className="w-full flex items-center justify-center gap-1.5 px-4 py-2 border-t border-slate-100 bg-slate-50/60 text-[0.72rem] font-bold text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors duration-150 cursor-pointer"
+          className="w-full flex items-center justify-center gap-1.5 px-4 py-2 border-t border-slate-100 bg-slate-50/60 text-xs font-normal text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors duration-150 cursor-pointer"
         >
           {expanded ? "Show less" : `Show all ${items.length}`}
           <motion.span
@@ -239,14 +239,14 @@ const PackageRow = ({
     >
       <div className="flex items-start justify-between px-4 py-3 gap-4">
         <div className="flex flex-col gap-0.5 min-w-0">
-          <span className="text-[0.78rem] font-bold text-slate-800">
+          <span className="text-body font-semibold text-slate-800">
             {label}
           </span>
-          <span className="text-[0.7rem] font-semibold text-slate-400">
+          <span className="text-xs font-normal text-slate-500">
             {description}
           </span>
           {(currentVersion || latestVersion) && (
-            <span className="mt-1 text-[0.66rem] font-semibold text-slate-500">
+            <span className="mt-1 text-micro font-normal text-slate-500">
               {currentVersion || "Unknown"}
               <ArrowUpCircle className="mx-1 inline" size={10} />
               {version || latestVersion || "Latest"}
@@ -281,7 +281,7 @@ const PackageRow = ({
                   }
                 }}
                 label={
-                  <span className="text-[0.74rem] font-semibold text-slate-600">
+                  <span className="text-xs font-normal text-slate-600">
                     Override the default latest version
                   </span>
                 }
@@ -427,7 +427,7 @@ const UpgradeCluster = (props: { upgradeInProgress?: boolean }) => {
                 className="text-slate-600 shrink-0"
                 strokeWidth={2.5}
               />
-              <span className="text-[0.85rem] font-bold text-slate-800">
+              <span className="text-sm font-bold text-slate-800">
                 Upgrade cluster
               </span>
             </div>
@@ -448,14 +448,14 @@ const UpgradeCluster = (props: { upgradeInProgress?: boolean }) => {
                 className="text-amber-600 shrink-0 mt-0.5"
                 strokeWidth={2.5}
               />
-              <p className="text-[0.72rem] font-semibold text-amber-700">
+              <p className="text-xs font-semibold text-amber-700">
                 Select the components you want to upgrade and confirm below.
                 Each component upgrades to the latest version unless you
                 override it.
               </p>
             </div>
 
-            <p className="text-[0.68rem] font-bold uppercase tracking-[0.07em] text-slate-400 mt-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.07em] text-slate-500 mt-1">
               Components
             </p>
 
@@ -532,10 +532,10 @@ const UpgradeCluster = (props: { upgradeInProgress?: boolean }) => {
                 <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-slate-50 border border-slate-200">
                   <ChevronRight
                     size={13}
-                    className="text-slate-400 shrink-0 mt-0.5"
+                    className="text-slate-500 shrink-0 mt-0.5"
                     strokeWidth={2.5}
                   />
-                  <div className="text-[0.72rem] font-semibold text-slate-600">
+                  <div className="text-xs font-normal text-slate-600">
                     Selected:{" "}
                     {[
                       req.request?.core &&
@@ -558,7 +558,7 @@ const UpgradeCluster = (props: { upgradeInProgress?: boolean }) => {
               color="red"
               size="sm"
               label={
-                <span className="text-[0.78rem] font-semibold text-slate-600">
+                <span className="text-body font-normal text-slate-600">
                   Yes, upgrade the Cluster.
                 </span>
               }
@@ -604,7 +604,7 @@ export default () => {
   if (qry.isLoading) {
     return (
       <div className="flex min-h-64 items-center justify-center">
-        <Loader2 className="animate-spin text-slate-400" size={22} />
+        <Loader2 className="animate-spin text-slate-500" size={22} />
       </div>
     );
   }
@@ -637,7 +637,7 @@ export default () => {
 
   return (
     <div className="flex w-full flex-col gap-5 pb-8">
-      <header className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-[0_1px_4px_rgba(15,23,42,0.04)] sm:flex-row sm:items-center sm:justify-between sm:p-5">
+      <header className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-card sm:flex-row sm:items-center sm:justify-between sm:p-5">
         <div className="flex min-w-0 items-start gap-3">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm">
             <ServerCog size={19} strokeWidth={2.1} />
@@ -648,7 +648,7 @@ export default () => {
                 Cluster management
               </h1>
             </div>
-            <p className="mt-1 max-w-2xl text-[0.73rem] font-medium leading-relaxed text-slate-500">
+            <p className="mt-1 max-w-2xl text-xs font-medium leading-relaxed text-slate-500">
               Review installed package versions, plan upgrades, and follow the
               rollout state across the cluster.
             </p>
@@ -668,12 +668,12 @@ export default () => {
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[0.78rem] font-bold text-blue-900">
+              <span className="text-body font-semibold text-blue-900">
                 Cluster upgrade is active
               </span>
               <UpgradeStateBadge state={current.state} />
             </div>
-            <div className="mt-1 text-[0.69rem] font-semibold text-blue-700/75">
+            <div className="mt-1 text-xs font-semibold text-blue-700/75">
               Started <TimeAgo rfc3339={current.createdAt} />. Package services
               may restart while the rollout is applied.
             </div>
@@ -714,7 +714,7 @@ export default () => {
 
       {isIdle && (
         <div className="flex items-center justify-center py-6">
-          <span className="text-[0.75rem] font-semibold text-slate-400">
+          <span className="text-body font-normal text-slate-500">
             No upgrades have been performed yet
           </span>
         </div>

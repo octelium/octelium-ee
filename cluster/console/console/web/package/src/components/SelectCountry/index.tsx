@@ -6,10 +6,19 @@ import {
 } from "@mantine/core";
 import countries from "i18n-iso-countries";
 import enLocale from "i18n-iso-countries/langs/en.json";
-
-import "flag-icons/css/flag-icons.min.css";
+import * as React from "react";
 
 countries.registerLocale(enLocale);
+
+let flagStyles: Promise<unknown> | undefined;
+
+const useFlagStyles = () => {
+  React.useEffect(() => {
+    if (!flagStyles) {
+      flagStyles = import("flag-icons/css/flag-icons.min.css");
+    }
+  }, []);
+};
 
 const countryOptions = Object.entries(
   countries.getNames("en", { select: "official" }),
@@ -18,6 +27,7 @@ const countryOptions = Object.entries(
   .sort((a, b) => a.label.localeCompare(b.label));
 
 export const CountryFlag = (props: { code?: string }) => {
+  useFlagStyles();
   const code = props.code?.trim().toLowerCase();
   if (!code || code.length !== 2) return null;
 
@@ -34,7 +44,7 @@ const renderOption: SelectProps["renderOption"] = ({ option }) => (
   <span className="flex items-center gap-2">
     <CountryFlag code={option.value} />
     <span className="min-w-0 truncate">{option.label}</span>
-    <span className="ml-auto text-[0.65rem] font-bold uppercase text-slate-400">
+    <span className="ml-auto text-micro font-semibold uppercase text-slate-500">
       {option.value}
     </span>
   </span>
@@ -44,7 +54,7 @@ const renderMultiOption: MultiSelectProps["renderOption"] = ({ option }) => (
   <span className="flex items-center gap-2">
     <CountryFlag code={option.value} />
     <span className="min-w-0 truncate">{option.label}</span>
-    <span className="ml-auto text-[0.65rem] font-bold uppercase text-slate-400">
+    <span className="ml-auto text-micro font-semibold uppercase text-slate-500">
       {option.value}
     </span>
   </span>

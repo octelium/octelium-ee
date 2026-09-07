@@ -58,13 +58,6 @@ export const slice = createSlice({
     ) => {
       state.listOptFilter = action.payload.listOptFilter;
     },
-
-    setUseListSearch: (
-      state,
-      action: PayloadAction<{ useListSearch?: boolean }>
-    ) => {
-      state.useListSearch = action.payload.useListSearch;
-    },
   },
 });
 
@@ -75,7 +68,6 @@ export const {
   setOrderByType,
   setOrderByMode,
   setListOptFilter,
-  setUseListSearch,
 } = slice.actions;
 
 export default slice.reducer;

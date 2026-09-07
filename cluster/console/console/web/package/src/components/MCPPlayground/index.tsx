@@ -121,8 +121,8 @@ const ArgumentEditor = (props: {
   <div className="space-y-3">
     <div className="flex items-center justify-between gap-3">
       <div>
-        <p className="text-xs font-bold text-slate-700">{props.title}</p>
-        <p className="text-[0.68rem] font-semibold text-slate-500">
+        <p className="text-xs font-semibold text-slate-700">{props.title}</p>
+        <p className="text-xs font-normal text-slate-500">
           {props.description}
         </p>
       </div>
@@ -137,7 +137,7 @@ const ArgumentEditor = (props: {
       </Button>
     </div>
     {props.rows.length === 0 ? (
-      <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-center text-xs font-semibold text-slate-500">
+      <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-center text-xs font-normal text-slate-500">
         No values. This is valid when the method accepts an empty argument object.
       </div>
     ) : (
@@ -537,8 +537,8 @@ const MCPPlayground = (props: { service: Service }) => {
         size="min(760px, 100vw)"
         title={
           <div className="flex min-w-0 items-center gap-2">
-            <Wrench size={15} className="shrink-0 text-slate-400" />
-            <span className="text-xs font-bold uppercase tracking-[0.06em] text-slate-500">
+            <Wrench size={15} className="shrink-0 text-slate-500" />
+            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
               MCP playground
             </span>
             <span className="truncate text-sm font-semibold text-slate-800">
@@ -570,7 +570,7 @@ const MCPPlayground = (props: { service: Service }) => {
               </span>
               <div className="min-w-0">
                 <p className="text-sm font-bold text-slate-800">Call the MCP endpoint</p>
-                <p className="mt-1 text-xs font-semibold leading-5 text-slate-500">
+                <p className="mt-1 text-xs font-normal leading-5 text-slate-500">
                   Build a tools request without writing JSON. The playground sends a JSON-RPC
                   request directly to this Service.
                 </p>
@@ -603,7 +603,7 @@ const MCPPlayground = (props: { service: Service }) => {
                 <Badge size="sm" variant="light" color="teal">
                   Initialized session
                 </Badge>
-                <span className="min-w-0 flex-1 truncate text-[0.68rem] font-semibold text-emerald-800">
+                <span className="min-w-0 flex-1 truncate text-xs font-semibold text-emerald-800">
                   {sessionID}
                 </span>
                 <Button
@@ -738,7 +738,7 @@ const MCPPlayground = (props: { service: Service }) => {
             )}
 
             {(method === "ping" || method === "server/discover") && (
-              <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-xs font-semibold text-slate-500">
+              <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-xs font-normal text-slate-500">
                 This method does not require additional parameters.
               </div>
             )}
@@ -767,20 +767,20 @@ const MCPPlayground = (props: { service: Service }) => {
             <div className="grid gap-4 lg:grid-cols-2">
               {request !== undefined && (
                 <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-                  <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.05em] text-slate-500">
+                  <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.05em] text-slate-500">
                     <Send size={13} /> Request
                   </div>
-                  <pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-slate-50 p-3 text-[0.68rem] font-semibold leading-5 text-slate-700">
+                  <pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-slate-50 p-3 text-xs font-semibold leading-5 text-slate-700">
                     {formatResult(request)}
                   </pre>
                 </div>
               )}
               {response !== undefined && (
                 <div className="rounded-xl border border-emerald-200 bg-white p-3 shadow-sm">
-                  <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.05em] text-emerald-700">
+                  <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.05em] text-emerald-700">
                     <Check size={13} /> Response
                   </div>
-                  <pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-emerald-50/60 p-3 text-[0.68rem] font-semibold leading-5 text-slate-700">
+                  <pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-emerald-50/60 p-3 text-xs font-semibold leading-5 text-slate-700">
                     {formatResult(response)}
                   </pre>
                 </div>

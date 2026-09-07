@@ -1,10 +1,11 @@
 import * as MetaPB from "@/apis/metav1/metav1";
 import {
+  API,
   getAPIFromAPIVersion,
   getAPIKindFromPath,
-  getClient,
   getGetKeyFromPath,
   getGetKeyFromRef,
+  getResourcePB,
   Resource,
 } from "@/utils/pb";
 import { useQuery } from "@tanstack/react-query";
@@ -16,21 +17,18 @@ export const useContextResource = () => {
   const loc = useLocation();
 
   const apiKind = getAPIKindFromPath(loc.pathname);
-  if (!apiKind) {
-    return undefined;
-  }
 
   const { isSuccess, isLoading, isError, error, data, refetch } = useQuery({
     queryKey: [getGetKeyFromPath(loc.pathname), name],
-    queryFn: () => {
-      //@ts-ignore
-      return getClient(apiKind.api)[`get${apiKind.kind}`]({
-        name,
-      } as any);
-    },
+    queryFn: () => getResourcePB(apiKind!.api, apiKind!.kind, { name }),
+    enabled: !!apiKind,
     retry: (failureCount, error) =>
       (error as { code?: string })?.code !== "NOT_FOUND" && failureCount < 3,
   });
+
+  if (!apiKind) {
+    return undefined;
+  }
 
   return {
     isSuccess,
@@ -46,14 +44,12 @@ export const useContextResource = () => {
 export const useResourceFromRef = (resourceRef: MetaPB.ObjectReference) => {
   const { isSuccess, isLoading, isError, data } = useQuery({
     queryKey: [getGetKeyFromRef(resourceRef!), resourceRef!.name],
-    queryFn: () => {
-      //@ts-ignore
-      return getClient(getAPIFromAPIVersion(resourceRef.apiVersion))[
-        `get${resourceRef!.kind}`
-      ]({
-        name: resourceRef!.name,
-      } as any);
-    },
+    queryFn: () =>
+      getResourcePB(
+        getAPIFromAPIVersion(resourceRef.apiVersion) as API,
+        resourceRef.kind,
+        { name: resourceRef.name },
+      ),
     enabled: resourceRef?.name.length > 0,
   });
 

@@ -3,14 +3,15 @@ import { GaugeChart as GaugeChartC } from "echarts/charts";
 import { TooltipComponent } from "echarts/components";
 import * as echarts from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
+import { CHART_INK, STATUS_COLORS } from "@/utils/charts/palette";
 
 echarts.use([CanvasRenderer, GaugeChartC, TooltipComponent]);
 
 const getGaugeColor = (pct: number): string => {
-  if (pct >= 80) return "#16a34a";
-  if (pct >= 50) return "#1d4ed8";
-  if (pct >= 25) return "#d97706";
-  return "#dc2626";
+  if (pct >= 80) return STATUS_COLORS.good;
+  if (pct >= 50) return STATUS_COLORS.warning;
+  if (pct >= 25) return STATUS_COLORS.serious;
+  return STATUS_COLORS.critical;
 };
 
 const GaugeChart = (props: {
@@ -27,7 +28,7 @@ const GaugeChart = (props: {
   const option = {
     tooltip: {
       formatter: () =>
-        `<strong>${name}</strong><br/>${num.toLocaleString()} / ${total.toLocaleString()} &nbsp;<span style="color:#94a3b8">${pctDisplay}%</span>`,
+        `<strong>${name}</strong><br/>${num.toLocaleString()} / ${total.toLocaleString()} &nbsp;<span style="color:#64748b">${pctDisplay}%</span>`,
       backgroundColor: "#1e293b",
       borderColor: "#334155",
       borderWidth: 1,
@@ -90,7 +91,7 @@ const GaugeChart = (props: {
           fontSize: 11,
           fontWeight: 700,
           fontFamily: "Ubuntu, sans-serif",
-          color: "#94a3b8",
+          color: CHART_INK.muted,
           formatter: name,
         },
 
@@ -110,7 +111,7 @@ const GaugeChart = (props: {
   return (
     <div className="w-full flex flex-col">
       {title && (
-        <p className="text-[0.78rem] font-bold uppercase tracking-[0.05em] text-slate-800 mb-1 px-1">
+        <p className="text-body font-semibold uppercase tracking-[0.05em] text-slate-800 mb-1 px-1">
           {title}
         </p>
       )}
@@ -122,11 +123,11 @@ const GaugeChart = (props: {
         lazyUpdate
       />
       <div className="flex items-center justify-center gap-1 -mt-2">
-        <span className="text-[0.72rem] font-semibold text-slate-400">
+        <span className="text-xs font-normal text-slate-500">
           {num.toLocaleString()}
         </span>
-        <span className="text-[0.65rem] text-slate-300">/</span>
-        <span className="text-[0.72rem] font-semibold text-slate-400">
+        <span className="text-micro text-slate-300">/</span>
+        <span className="text-xs font-normal text-slate-500">
           {total.toLocaleString()}
         </span>
       </div>

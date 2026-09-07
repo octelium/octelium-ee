@@ -1,9 +1,9 @@
 import { ListSecretOptions } from "@/apis/corev1/corev1";
 import {
   API,
-  getClient,
-  printResourceNameWithDisplay,
   ResourceList,
+  listSecretsPB,
+  printResourceNameWithDisplay,
 } from "@/utils/pb";
 import { Select } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
@@ -18,12 +18,8 @@ const SelectSecret = (props: {
   const { isLoading, isSuccess, data } = useQuery({
     gcTime: 1,
     queryKey: ["selectSecret", props.api],
-    queryFn: async () => {
-      // @ts-ignore
-      return await getClient(props.api)["listSecret"](
-        ListSecretOptions.create({}),
-      );
-    },
+    queryFn: async () =>
+      await listSecretsPB(props.api as API, ListSecretOptions.create({})),
   });
 
   if (!data) {

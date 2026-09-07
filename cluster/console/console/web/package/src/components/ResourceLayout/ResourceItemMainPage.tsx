@@ -1,4 +1,9 @@
-import { ResourceInfoMainItem, ResourceMainInfo } from "@/pages/utils/types";
+import { Metadata } from "@/apis/metav1/metav1";
+import {
+  ResourceInfoComponent,
+  ResourceInfoMainItem,
+  ResourceMainInfo,
+} from "@/pages/utils/types";
 import { Resource } from "@/utils/pb";
 import { EyeOff, ShieldAlert, Tag } from "lucide-react";
 import * as React from "react";
@@ -7,36 +12,288 @@ import { twMerge } from "tailwind-merge";
 import CopyText from "../CopyText";
 import DeleteResource from "../DeleteResource";
 import PageWrap from "../PageWrap";
+import { ResourceListLabel } from "../ResourceList";
 import ResourceYAML from "../ResourceYAML";
 import ResourceSchema from "../ResourceSchema";
 import TimeAgo from "../TimeAgo";
 import CloneResource from "./CloneResource";
-import ResourceInfoItems from "./ResourceInfoItems";
+import ResourceStatus from "./ResourceStatus";
 import { useContextResource } from "./utils";
+
+const METADATA_GROUP = "Metadata";
+
+const isEmptyValue = (value: React.ReactNode) =>
+  value === null ||
+  value === undefined ||
+  value === false ||
+  value === "" ||
+  (Array.isArray(value) && value.length === 0);
 
 const InfoCell = ({
   label,
+  hint,
   children,
-  span,
+  className,
 }: {
   label: string;
+  hint?: string;
   children: React.ReactNode;
-  span?: "full" | "half";
+  className?: string;
 }) => (
   <div
     className={twMerge(
-      "flex min-w-0 items-start gap-3 bg-white px-3 py-2.5 sm:px-4",
-      span === "full" ? "sm:col-span-2" : "col-span-1",
+      "@container flex min-w-0 flex-col gap-1 px-4 py-3 @sm:flex-row @sm:gap-4",
+      className,
     )}
   >
-    <span className="w-24 shrink-0 pt-0.5 text-[0.61rem] font-bold uppercase leading-4 tracking-[0.06em] text-slate-500">
-      {label}
-    </span>
-    <div className="min-w-0 flex-1 text-[0.76rem] font-semibold leading-5 text-slate-700">
+    <div className="flex shrink-0 flex-col @sm:w-32 @lg:w-40">
+      <span className="text-xs font-normal leading-5 text-slate-500">
+        {label}
+      </span>
+      {hint && (
+        <span className="text-xs font-normal leading-4 text-slate-500">
+          {hint}
+        </span>
+      )}
+    </div>
+    <div className="min-w-0 flex-1 text-sm font-normal leading-6 text-slate-800">
       {children}
     </div>
   </div>
 );
+
+const SectionHeading = ({ title }: { title: string }) => (
+  <div className="flex items-center gap-3 border-y border-slate-200 bg-slate-50/70 px-4 py-2">
+    <span className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
+      {title}
+    </span>
+    <div className="h-px flex-1 bg-slate-200" />
+  </div>
+);
+
+const InfoGrid = ({ items }: { items: ResourceInfoMainItem[] }) => {
+  let column = 0;
+  let row = 0;
+
+  const cells = items.map((item) => {
+    const full = item.span === "full";
+    if (full && column === 1) {
+      row += 1;
+      column = 0;
+    }
+    const cell = { item, full, isLeft: !full && column === 0, row };
+    if (full || column === 1) {
+      row += 1;
+      column = 0;
+    } else {
+      column = 1;
+    }
+    return cell;
+  });
+
+  return (
+    <div className="grid grid-cols-1 @2xl:grid-cols-2">
+      {cells.map(({ item, full, isLeft, row: cellRow }, index) => (
+        <InfoCell
+          key={item.label}
+          label={item.label}
+          hint={item.hint}
+          className={twMerge(
+            index > 0 && "border-t border-slate-100",
+            full && "@2xl:col-span-2",
+            isLeft && "@2xl:border-r @2xl:border-slate-100",
+            index > 0 && cellRow === 0 && "@2xl:border-t-0",
+          )}
+        >
+          {item.value}
+        </InfoCell>
+      ))}
+    </div>
+  );
+};
+
+const PrimaryTiles = ({ items }: { items: ResourceInfoMainItem[] }) => (
+  <div className="flex flex-wrap gap-3 border-b border-slate-200 bg-slate-50/40 px-4 py-4">
+    {items.map((item) => (
+      <div
+        key={item.label}
+        className="flex min-w-[168px] max-w-[320px] flex-1 flex-col gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5"
+      >
+        <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500">
+          {item.label}
+        </span>
+        <div className="min-w-0 text-sm font-medium leading-6 text-slate-900">
+          {item.value}
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+const KeyValueChips = ({
+  entries,
+  emptyLabel,
+}: {
+  entries: [string, string][];
+  emptyLabel: string;
+}) => {
+  const [expanded, setExpanded] = React.useState(false);
+  const limit = 8;
+  const visible = expanded ? entries : entries.slice(0, limit);
+  const hidden = entries.length - visible.length;
+
+  if (entries.length === 0)
+    return <span className="text-slate-500">{emptyLabel}</span>;
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {visible.map(([key, value]) => (
+        <span
+          key={key}
+          className="inline-flex max-w-full items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs leading-none"
+        >
+          <span className="shrink-0 font-semibold text-slate-600">{key}</span>
+          {value !== "" && (
+            <>
+              <span aria-hidden="true" className="h-3 w-px bg-slate-200" />
+              <span className="truncate font-normal text-slate-700">
+                {value}
+              </span>
+            </>
+          )}
+        </span>
+      ))}
+      {hidden > 0 && (
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="rounded-md px-1.5 py-1 text-xs font-normal text-slate-500 underline underline-offset-2 hover:text-slate-800"
+        >
+          +{hidden} more
+        </button>
+      )}
+    </div>
+  );
+};
+
+const buildMetadataItems = (md: Metadata): ResourceInfoMainItem[] => {
+  const labels = Object.entries(md.labels ?? {});
+  const annotations = Object.entries(md.annotations ?? {});
+
+  return [
+    {
+      label: "UID",
+      value: (
+        <span className="break-all font-mono text-xs text-slate-600">
+          <CopyText value={md.uid} />
+        </span>
+      ),
+      group: METADATA_GROUP,
+    },
+    ...(md.createdAt
+      ? [
+          {
+            label: "Created",
+            value: <TimeAgo rfc3339={md.createdAt} />,
+            group: METADATA_GROUP,
+          },
+        ]
+      : []),
+    ...(md.updatedAt
+      ? [
+          {
+            label: "Updated",
+            value: <TimeAgo rfc3339={md.updatedAt} />,
+            group: METADATA_GROUP,
+          },
+        ]
+      : []),
+    ...(md.actorRef?.kind
+      ? [
+          {
+            label: "Last change",
+            value: (
+              <span className="flex flex-wrap items-center gap-1.5">
+                <ResourceListLabel itemRef={md.actorRef} />
+                {md.actorOperation && (
+                  <span className="text-xs text-slate-500">
+                    {md.actorOperation.toLowerCase()}
+                  </span>
+                )}
+              </span>
+            ),
+            group: METADATA_GROUP,
+          },
+        ]
+      : []),
+    ...(md.resourceVersion
+      ? [
+          {
+            label: "Resource version",
+            value: (
+              <span className="break-all font-mono text-xs text-slate-600">
+                <CopyText value={md.resourceVersion} />
+              </span>
+            ),
+            group: METADATA_GROUP,
+          },
+        ]
+      : []),
+    ...(md.description
+      ? [
+          {
+            label: "Description",
+            value: <span className="text-slate-700">{md.description}</span>,
+            span: "full" as const,
+            group: METADATA_GROUP,
+          },
+        ]
+      : []),
+    ...(md.tags?.length
+      ? [
+          {
+            label: "Tags",
+            value: (
+              <div className="flex flex-wrap gap-1.5">
+                {md.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-medium leading-none text-slate-700"
+                  >
+                    <Tag size={10} strokeWidth={2.25} />
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            ),
+            span: "full" as const,
+            group: METADATA_GROUP,
+          },
+        ]
+      : []),
+    ...(labels.length
+      ? [
+          {
+            label: "Labels",
+            hint: "Used by selectors and Policies",
+            value: <KeyValueChips entries={labels} emptyLabel="None" />,
+            span: "full" as const,
+            group: METADATA_GROUP,
+          },
+        ]
+      : []),
+    ...(annotations.length
+      ? [
+          {
+            label: "Annotations",
+            value: <KeyValueChips entries={annotations} emptyLabel="None" />,
+            span: "full" as const,
+            group: METADATA_GROUP,
+          },
+        ]
+      : []),
+  ];
+};
 
 const ResourceNotFound = (props: { parentPath: string }) => {
   const navigate = useNavigate();
@@ -59,13 +316,13 @@ const ResourceNotFound = (props: { parentPath: string }) => {
       <p className="text-lg font-bold text-slate-800">
         This resource does not exist.
       </p>
-      <p className="text-sm font-semibold text-slate-500" role="status">
+      <p className="text-sm font-normal text-slate-600" role="status">
         Returning to the resource list in {seconds} second
         {seconds === 1 ? "" : "s"}.
       </p>
       <button
         type="button"
-        className="text-sm font-bold text-slate-700 underline underline-offset-4 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500"
+        className="text-sm font-semibold text-slate-700 underline underline-offset-4 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500"
         onClick={() => navigate(props.parentPath, { replace: true })}
       >
         Return now
@@ -79,14 +336,14 @@ const ResourceLoadError = (props: { error: unknown; retry: () => void }) => (
     <p className="text-lg font-bold text-slate-800">
       This resource could not be loaded.
     </p>
-    <p className="max-w-xl text-sm font-semibold text-red-600" role="alert">
+    <p className="max-w-xl text-sm font-normal text-red-600" role="alert">
       {props.error instanceof Error
         ? props.error.message
         : "An unexpected error occurred."}
     </p>
     <button
       type="button"
-      className="text-sm font-bold text-slate-700 underline underline-offset-4 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500"
+      className="text-sm font-semibold text-slate-700 underline underline-offset-4 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500"
       onClick={props.retry}
     >
       Try again
@@ -94,9 +351,33 @@ const ResourceLoadError = (props: { error: unknown; retry: () => void }) => (
   </div>
 );
 
+export const ResourceOverviewSkeleton = () => (
+  <div className="w-full animate-pulse overflow-hidden rounded-xl border border-slate-200 bg-white">
+    <div className="flex items-center gap-3 border-b border-slate-200 bg-slate-50/60 px-4 py-4">
+      <div className="h-10 w-10 shrink-0 rounded-lg bg-slate-200" />
+      <div className="flex flex-1 flex-col gap-2">
+        <div className="h-4 w-48 rounded bg-slate-200" />
+        <div className="h-3 w-32 rounded bg-slate-100" />
+      </div>
+      <div className="h-7 w-24 rounded-md bg-slate-100" />
+    </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <div
+          key={index}
+          className="flex gap-4 border-t border-slate-100 px-4 py-3"
+        >
+          <div className="h-3 w-24 shrink-0 rounded bg-slate-100" />
+          <div className="h-3 w-full max-w-56 rounded bg-slate-100" />
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 const ResourceItemMainPage = (props: {
-  mainItemsGetter?: (props: { item: Resource }) => ResourceMainInfo;
-  mainAction?: (props: { item: Resource }) => React.ReactNode;
+  infoComponent?: ResourceInfoComponent;
+  mainAction?: React.ComponentType<{ item: Resource }>;
   unDeletable?: boolean;
   cloneable?: boolean;
 }) => {
@@ -117,11 +398,11 @@ const ResourceItemMainPage = (props: {
   }
 
   return (
-    <PageWrap qry={ctx}>
+    <PageWrap qry={ctx} skeleton={<ResourceOverviewSkeleton />}>
       {ctx.data && (
         <ResourceMainContent
           resource={ctx.data}
-          mainItemsGetter={props.mainItemsGetter}
+          infoComponent={props.infoComponent}
           mainAction={props.mainAction}
           unDeletable={props.unDeletable}
           cloneable={props.cloneable}
@@ -133,89 +414,119 @@ const ResourceItemMainPage = (props: {
 
 const ResourceMainContent = (props: {
   resource: Resource;
-  mainItemsGetter?: (props: { item: Resource }) => ResourceMainInfo;
-  mainAction?: (props: { item: Resource }) => React.ReactNode;
+  infoComponent?: ResourceInfoComponent;
+  mainAction?: React.ComponentType<{ item: Resource }>;
   unDeletable?: boolean;
   cloneable?: boolean;
 }) => {
-  const { resource: item } = props;
+  const render = (info: ResourceMainInfo) => (
+    <ResourceOverview
+      resource={props.resource}
+      info={info}
+      mainAction={props.mainAction}
+      unDeletable={props.unDeletable}
+      cloneable={props.cloneable}
+    />
+  );
+
+  const Info = props.infoComponent;
+
+  return Info ? (
+    <React.Suspense fallback={<ResourceOverviewSkeleton />}>
+      <Info item={props.resource}>{render}</Info>
+    </React.Suspense>
+  ) : (
+    render({})
+  );
+};
+
+const ResourceOverview = (props: {
+  resource: Resource;
+  info: ResourceMainInfo;
+  mainAction?: React.ComponentType<{ item: Resource }>;
+  unDeletable?: boolean;
+  cloneable?: boolean;
+}) => {
+  const { resource: item, info } = props;
   const md = item.metadata!;
 
-  const sharedItems: ResourceInfoMainItem[] = [
-    {
-      label: "UID",
-      value: (
-        <span className="break-all text-[0.72rem] text-slate-500">
-          <CopyText value={md.uid} />
-        </span>
-      ),
-    },
-    ...(md.createdAt
-      ? [
-          {
-            label: "Created",
-            value: <TimeAgo rfc3339={md.createdAt} />,
-          },
-        ]
-      : []),
-    ...(md.updatedAt
-      ? [
-          {
-            label: "Updated",
-            value: <TimeAgo rfc3339={md.updatedAt} />,
-          },
-        ]
-      : []),
-    ...(md.description
-      ? [
-          {
-            label: "Description",
-            value: <span className="text-slate-500">{md.description}</span>,
-            span: "full" as const,
-          },
-        ]
-      : []),
-  ];
+  const specificItems = (info.items ?? []).filter(
+    (entry) => !isEmptyValue(entry.value),
+  );
+  const primaryItems = specificItems.filter((entry) => entry.primary);
+  const detailItems = specificItems.filter((entry) => !entry.primary);
+  const defaultGroup = `${item.kind} details`;
+
+  const groups: { title: string; items: ResourceInfoMainItem[] }[] = [];
+  const groupIndex = new Map<string, number>();
+
+  const push = (title: string, entry: ResourceInfoMainItem) => {
+    let index = groupIndex.get(title);
+    if (index === undefined) {
+      index = groups.length;
+      groupIndex.set(title, index);
+      groups.push({ title, items: [] });
+    }
+    groups[index].items.push(entry);
+  };
+
+  for (const entry of detailItems) push(entry.group ?? defaultGroup, entry);
+  for (const entry of buildMetadataItems(md)) push(METADATA_GROUP, entry);
+
+  const order = info.groupOrder ?? [];
+  groups.sort((a, b) => {
+    if (a.title === METADATA_GROUP) return 1;
+    if (b.title === METADATA_GROUP) return -1;
+    const ai = order.indexOf(a.title);
+    const bi = order.indexOf(b.title);
+    if (ai === -1 && bi === -1) return 0;
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
 
   return (
-    <div className="flex w-full flex-col gap-4">
-      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_1px_4px_rgba(15,23,42,0.05)]">
-        <header className="flex flex-col gap-4 border-b border-slate-200 bg-slate-50/60 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex min-w-0 items-center gap-3">
-            {md.picURL?.length > 0 && (
+    <div className="@container flex w-full flex-col gap-4">
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card">
+        <header className="flex flex-col gap-4 border-b border-slate-200 bg-slate-50/60 px-4 py-4 @3xl:flex-row @3xl:items-start @3xl:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            {md.picURL && md.picURL.length > 0 && (
               <img
                 src={md.picURL}
                 className="h-11 w-11 shrink-0 rounded-lg border border-slate-200 object-cover shadow-sm"
-                alt={md.displayName || md.name}
+                alt=""
                 loading="lazy"
               />
             )}
 
-            <div className="flex min-w-0 flex-col gap-1">
+            <div className="flex min-w-0 flex-col gap-1.5">
               <div className="flex min-w-0 flex-wrap items-center gap-2">
-                <span className="truncate text-sm font-bold text-slate-800">
-                  <CopyText value={md.name} />
-                </span>
-                <span className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[0.61rem] font-bold uppercase tracking-[0.05em] text-slate-500">
+                <span className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-xs font-medium text-slate-600">
                   {item.kind}
                 </span>
+                <h1 className="min-w-0 break-all text-base font-bold leading-6 text-slate-900">
+                  {md.name}
+                </h1>
+                <CopyText value={md.name} hide />
+                <ResourceStatus item={item} status={info.status} />
                 {md.isSystem && (
-                  <span className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[0.61rem] font-bold text-blue-700">
-                    <ShieldAlert size={10} strokeWidth={2.5} />
+                  <span className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-700">
+                    <ShieldAlert size={11} strokeWidth={2.25} />
                     System
                   </span>
                 )}
                 {md.isUserHidden && (
-                  <span className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[0.61rem] font-bold text-slate-600">
-                    <EyeOff size={10} strokeWidth={2.5} />
+                  <span className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-600">
+                    <EyeOff size={11} strokeWidth={2.25} />
                     Hidden
                   </span>
                 )}
               </div>
+
               {md.displayName && (
-                <span className="truncate text-[0.76rem] font-medium text-slate-500">
+                <p className="truncate text-sm font-normal text-slate-600">
                   {md.displayName}
-                </span>
+                </p>
               )}
             </div>
           </div>
@@ -225,7 +536,12 @@ const ResourceMainContent = (props: {
             role="toolbar"
             aria-label={`Actions for ${md.name}`}
           >
-            {props.mainAction && <props.mainAction item={item} />}
+            {info.actions}
+            {props.mainAction && (
+              <React.Suspense fallback={null}>
+                <props.mainAction item={item} />
+              </React.Suspense>
+            )}
             <ResourceYAML item={item} size="xs" />
             <ResourceSchema item={item} />
             {props.cloneable && <CloneResource item={item} />}
@@ -241,57 +557,14 @@ const ResourceMainContent = (props: {
           </div>
         </header>
 
-        <div className="grid grid-cols-1 gap-px bg-slate-200/70 sm:grid-cols-2">
-          {sharedItems.map((x) => (
-            <InfoCell key={x.label} label={x.label} span={x.span}>
-              {x.value}
-            </InfoCell>
-          ))}
-        </div>
+        {primaryItems.length > 0 && <PrimaryTiles items={primaryItems} />}
 
-        {props.mainItemsGetter && (
-          <ResourceInfoItems getter={props.mainItemsGetter} item={item}>
-            {(specificItems) =>
-              specificItems.length > 0 ? (
-                <>
-                  <div className="flex items-center gap-3 border-y border-slate-200 bg-slate-50/70 px-4 py-2">
-                    <span className="text-[0.62rem] font-bold uppercase tracking-[0.07em] text-slate-500">
-                      {item.kind} details
-                    </span>
-                    <div className="h-px flex-1 bg-slate-200" />
-                  </div>
-                  <div className="grid grid-cols-1 gap-px bg-slate-200/70 sm:grid-cols-2">
-                    {specificItems.map((x) => (
-                      <InfoCell key={x.label} label={x.label} span={x.span}>
-                        {x.value}
-                      </InfoCell>
-                    ))}
-                  </div>
-                </>
-              ) : null
-            }
-          </ResourceInfoItems>
-        )}
-
-        {md.tags && md.tags.length > 0 && (
-          <div className="flex items-start gap-3 border-t border-slate-200 px-4 py-3">
-            <span className="w-24 shrink-0 pt-1 text-[0.61rem] font-bold uppercase tracking-[0.06em] text-slate-500">
-              Tags
-            </span>
-            <div className="flex flex-wrap gap-1.5">
-              {md.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="inline-flex min-h-6 items-center gap-1 rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-[0.68rem] font-bold text-slate-600"
-                >
-                  <Tag size={9} strokeWidth={2.5} />
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
+        {groups.map((group) => (
+          <React.Fragment key={group.title}>
+            <SectionHeading title={group.title} />
+            <InfoGrid items={group.items} />
+          </React.Fragment>
+        ))}
       </section>
     </div>
   );

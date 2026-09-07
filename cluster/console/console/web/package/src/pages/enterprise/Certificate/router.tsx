@@ -1,28 +1,19 @@
 import { ResourceComponentInfo } from "@/pages/utils/types";
-
-import Edit from "./Edit";
-import { ExtraComponent, LabelComponent, Summary } from "./List";
-import Main, { MainInfo } from "./Main";
+import { lazyNamed, lazyResourceInfo, lazySpec } from "@/pages/utils/lazy";
 
 const resourceComponentInfo: ResourceComponentInfo = {
   API: "enterprise",
   Kind: "Certificate",
   List: {
-    // @ts-ignore
-    labelComponent: LabelComponent,
-    // @ts-ignore
-    extraComponent: ExtraComponent,
-    SummaryComponent: Summary,
+    labelComponent: lazyNamed(() => import("./List"), "LabelComponent"),
+    SummaryComponent: lazyNamed(() => import("./List"), "Summary"),
   },
   Item: {
-    // @ts-ignore
-    Edit: Edit,
-    // @ts-ignore
-    Main: Main,
+    Edit: lazySpec(() => import("./Edit")),
+    hasMain: true,
   },
 
-  // @ts-ignore
-  infoItemsGetter: MainInfo,
+  infoItemsGetter: lazyResourceInfo(() => import("./Main")),
   unCreatable: true,
 };
 

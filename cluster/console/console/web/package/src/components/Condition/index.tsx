@@ -311,7 +311,7 @@ const Cond = (props: {
             (x) => x.oneofKind === "match",
             (t) => (
               <div>
-                <p className="text-[0.68rem] font-bold text-slate-600">CEL expression</p>
+                <p className="text-xs font-normal text-slate-600">CEL expression</p>
                 <CELEditor
                   label="CEL expression"
                   invalid={!isConditionComplete(req)}
@@ -328,7 +328,7 @@ const Cond = (props: {
             (x) => x.oneofKind === "not",
             (t) => (
               <div>
-                <p className="text-[0.68rem] font-bold text-slate-600">CEL expression to negate</p>
+                <p className="text-xs font-normal text-slate-600">CEL expression to negate</p>
                 <CELEditor
                   label="CEL expression to negate"
                   invalid={!isConditionComplete(req)}

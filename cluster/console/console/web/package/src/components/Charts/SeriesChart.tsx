@@ -1,4 +1,11 @@
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
+import {
+  axisLabelStyle,
+  CHART_INK,
+  SERIES_COLORS,
+  seriesColor,
+  splitLineStyle,
+} from "@/utils/charts/palette";
 import ReactEChartsCore from "echarts-for-react";
 import { BarChart, LineChart as LineChartC } from "echarts/charts";
 import {
@@ -21,18 +28,6 @@ echarts.use([
   CanvasRenderer,
 ]);
 
-export const SERIES_COLORS = [
-  "#2563eb",
-  "#0891b2",
-  "#7c3aed",
-  "#16a34a",
-  "#d97706",
-  "#db2777",
-  "#0d9488",
-  "#dc2626",
-  "#4f46e5",
-  "#64748b",
-];
 
 export interface Series {
   name: string;
@@ -101,7 +96,7 @@ const SeriesChart = ({
       animationDuration: 600,
       animationEasing: "cubicOut",
       aria: { enabled: true, decal: { show: false } },
-      color: SERIES_COLORS,
+      color: [...SERIES_COLORS],
       grid: {
         top: data.length > 1 ? 34 : 16,
         right: 14,
@@ -176,7 +171,7 @@ const SeriesChart = ({
         axisLine: { lineStyle: { color: "#e2e8f0" } },
         axisTick: { show: false },
         axisLabel: {
-          color: "#94a3b8",
+          color: CHART_INK.muted,
           fontSize: 10,
           fontFamily: "Ubuntu, sans-serif",
           fontWeight: 600,
@@ -194,7 +189,7 @@ const SeriesChart = ({
         axisLine: { show: false },
         axisTick: { show: false },
         axisLabel: {
-          color: "#94a3b8",
+          color: CHART_INK.muted,
           fontSize: 10,
           fontFamily: "Ubuntu, sans-serif",
           fontWeight: 600,
@@ -202,7 +197,7 @@ const SeriesChart = ({
           formatter: valueFormatter,
         },
         splitLine: {
-          lineStyle: { color: "#e2e8f0", type: "dashed", opacity: 0.7 },
+          ...splitLineStyle,
         },
       },
       series: data.map((item, index) => ({
@@ -229,10 +224,8 @@ const SeriesChart = ({
         ...(variant === "bar" && {
           barMaxWidth: 20,
           itemStyle: {
-            borderRadius: stacked
-              ? [0, 0, 0, 0]
-              : [4, 4, 1, 1],
-            color: SERIES_COLORS[index % SERIES_COLORS.length],
+            borderRadius: stacked ? [0, 0, 0, 0] : [4, 4, 1, 1],
+            color: seriesColor(index),
           },
         }),
       })),
@@ -246,7 +239,7 @@ const SeriesChart = ({
         className="flex w-full items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/60 px-4 text-center"
         style={{ height }}
       >
-        <p className="text-xs font-semibold text-slate-400">{emptyLabel}</p>
+        <p className="text-xs font-normal text-slate-500">{emptyLabel}</p>
       </div>
     );
   }

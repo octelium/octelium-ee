@@ -143,21 +143,21 @@ const ResourceYAML = (props: {
           <div className="flex min-w-0 items-center gap-2">
             <FileText
               size={15}
-              className="shrink-0 text-slate-400"
+              className="shrink-0 text-slate-500"
               strokeWidth={2.25}
             />
-            <span className="text-xs font-bold uppercase tracking-[0.06em] text-slate-500">
+            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
               YAML
             </span>
             <span className="text-sm font-semibold text-slate-800 truncate">
               {item.metadata?.name}
             </span>
-            <span className="hidden text-xs font-semibold text-slate-400 sm:inline">
+            <span className="hidden text-xs font-normal text-slate-500 sm:inline">
               {item.kind}
             </span>
             {item.metadata?.isSystem && (
               <Tooltip label="System resource" withArrow>
-                <span className="hidden items-center rounded-md border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider text-blue-600 sm:inline-flex">
+                <span className="hidden items-center rounded-md border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-micro font-semibold uppercase tracking-wider text-blue-600 sm:inline-flex">
                   System
                 </span>
               </Tooltip>
@@ -271,7 +271,7 @@ const ResourceYAML = (props: {
                     }`}
                   />
                   <span
-                    className={`truncate text-[0.72rem] font-semibold ${
+                    className={`truncate text-xs font-semibold ${
                       isChanged && !isReadOnly
                         ? "text-amber-700"
                         : "text-slate-500"

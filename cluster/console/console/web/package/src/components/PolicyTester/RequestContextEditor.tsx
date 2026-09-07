@@ -254,8 +254,8 @@ const MapEditor = ({
     <div className="rounded-xl border border-slate-200 bg-white p-3.5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[0.68rem] font-bold text-slate-700">{label}</p>
-          <p className="mt-0.5 text-[0.63rem] font-semibold text-slate-400">
+          <p className="text-xs font-semibold text-slate-700">{label}</p>
+          <p className="mt-0.5 text-micro font-normal text-slate-500">
             {description}
           </p>
         </div>
@@ -276,7 +276,7 @@ const MapEditor = ({
       </div>
 
       {entries.length === 0 ? (
-        <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-[0.65rem] font-semibold text-slate-400">
+        <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-micro font-normal text-slate-500">
           No entries added
         </p>
       ) : (
@@ -423,8 +423,8 @@ const JsonObjectEditor = (props: {
     <div className="rounded-xl border border-slate-200 bg-white p-3.5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[0.68rem] font-bold text-slate-700">{props.title}</p>
-          <p className="mt-0.5 text-[0.63rem] font-semibold text-slate-400">
+          <p className="text-xs font-semibold text-slate-700">{props.title}</p>
+          <p className="mt-0.5 text-micro font-normal text-slate-500">
             {props.description}
           </p>
         </div>
@@ -449,7 +449,7 @@ const JsonObjectEditor = (props: {
       </div>
 
       {entries.length === 0 ? (
-        <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-[0.65rem] font-semibold text-slate-400">
+        <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-micro font-normal text-slate-500">
           {props.emptyText ?? "No keys added"}
         </p>
       ) : (
@@ -694,8 +694,8 @@ const MCPBodyEditor = (props: {
             <Braces size={13} strokeWidth={2.25} />
           </span>
           <div>
-            <p className="text-[0.68rem] font-bold text-slate-700">MCP JSON request body</p>
-            <p className="mt-0.5 text-[0.63rem] font-semibold text-slate-400">
+            <p className="text-xs font-semibold text-slate-700">MCP JSON request body</p>
+            <p className="mt-0.5 text-micro font-normal text-slate-500">
               Build a JSON-RPC body from the selected MCP context
             </p>
           </div>
@@ -726,8 +726,8 @@ const MCPBodyEditor = (props: {
       >
         <div className="space-y-4">
           <div className="rounded-xl border border-blue-100 bg-blue-50/60 px-3.5 py-3">
-            <p className="text-[0.68rem] font-bold text-blue-800">Synchronized envelope</p>
-            <p className="mt-1 text-[0.63rem] font-semibold leading-relaxed text-blue-700/70">
+            <p className="text-xs font-semibold text-blue-800">Synchronized envelope</p>
+            <p className="mt-1 text-micro font-semibold leading-relaxed text-blue-700/70">
               The JSON-RPC method, protocol version, target name, request ID, and notification state come from the MCP fields you selected above.
             </p>
           </div>
@@ -798,9 +798,9 @@ const MCPBodyEditor = (props: {
           <div className="rounded-xl border border-slate-200 bg-slate-900 p-3.5 text-slate-100">
             <div className="mb-2 flex items-center gap-2">
               <Braces size={13} className="text-blue-300" />
-              <p className="text-[0.68rem] font-bold">JSON preview</p>
+              <p className="text-xs font-semibold">JSON preview</p>
             </div>
-            <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words text-[0.66rem] font-medium leading-relaxed text-slate-300">
+            <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words text-micro font-medium leading-relaxed text-slate-300">
               {JSON.stringify(body, null, 2)}
             </pre>
           </div>
@@ -1101,8 +1101,8 @@ const LLMBodyEditor = (props: {
             <Braces size={13} strokeWidth={2.25} />
           </span>
           <div>
-            <p className="text-[0.68rem] font-bold text-slate-700">LLM JSON request body</p>
-            <p className="mt-0.5 text-[0.63rem] font-semibold text-slate-400">
+            <p className="text-xs font-semibold text-slate-700">LLM JSON request body</p>
+            <p className="mt-0.5 text-micro font-normal text-slate-500">
               Build the {llmRouteLabel(route)} payload from the selected context
             </p>
           </div>
@@ -1133,8 +1133,8 @@ const LLMBodyEditor = (props: {
       >
         <div className="space-y-4">
           <div className="rounded-xl border border-violet-100 bg-violet-50/60 px-3.5 py-3">
-            <p className="text-[0.68rem] font-bold text-violet-800">Synchronized LLM context</p>
-            <p className="mt-1 text-[0.63rem] font-semibold leading-relaxed text-violet-700/70">
+            <p className="text-xs font-semibold text-violet-800">Synchronized LLM context</p>
+            <p className="mt-1 text-micro font-semibold leading-relaxed text-violet-700/70">
               Protocol, operation, model, stream state, token limits, and tool names come from the LLM fields above. Provider-specific fields remain editable below.
             </p>
           </div>
@@ -1143,10 +1143,10 @@ const LLMBodyEditor = (props: {
             <div className="rounded-xl border border-slate-200 bg-white p-3.5">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-[0.68rem] font-bold text-slate-700">
+                  <p className="text-xs font-semibold text-slate-700">
                     {route === Core.RequestContext_Request_LLM_Route.MESSAGES ? "Anthropic messages" : "Conversation messages"}
                   </p>
-                  <p className="mt-0.5 text-[0.63rem] font-semibold text-slate-400">
+                  <p className="mt-0.5 text-micro font-normal text-slate-500">
                     Add the ordered messages sent to the model
                   </p>
                 </div>
@@ -1162,7 +1162,7 @@ const LLMBodyEditor = (props: {
               </div>
               <div className="mt-3 space-y-3">
                 {messages.length === 0 ? (
-                  <p className="rounded-lg bg-slate-50 px-3 py-2 text-[0.65rem] font-semibold text-slate-400">
+                  <p className="rounded-lg bg-slate-50 px-3 py-2 text-micro font-normal text-slate-500">
                     No messages added
                   </p>
                 ) : (
@@ -1285,9 +1285,9 @@ const LLMBodyEditor = (props: {
           <div className="rounded-xl border border-slate-200 bg-slate-900 p-3.5 text-slate-100">
             <div className="mb-2 flex items-center gap-2">
               <Braces size={13} className="text-violet-300" />
-              <p className="text-[0.68rem] font-bold">JSON preview</p>
+              <p className="text-xs font-semibold">JSON preview</p>
             </div>
-            <pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words text-[0.66rem] font-medium leading-relaxed text-slate-300">
+            <pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words text-micro font-medium leading-relaxed text-slate-300">
               {JSON.stringify(body, null, 2)}
             </pre>
           </div>
@@ -1473,10 +1473,10 @@ const NestedHTTP = ({
   <div className="rounded-xl border border-slate-200 bg-white">
     <div className="flex items-center justify-between gap-3 px-3.5 py-3">
       <div>
-        <p className="text-[0.68rem] font-bold text-slate-700">
+        <p className="text-xs font-semibold text-slate-700">
           Underlying HTTP request
         </p>
-        <p className="mt-0.5 text-[0.63rem] font-semibold text-slate-400">
+        <p className="mt-0.5 text-micro font-normal text-slate-500">
           Add transport-level HTTP attributes when relevant
         </p>
       </div>
@@ -1514,8 +1514,8 @@ const MCPClientEditor = ({
   <div className="rounded-xl border border-slate-200 bg-white">
     <div className="flex items-center justify-between gap-3 px-3.5 py-3">
       <div>
-        <p className="text-[0.68rem] font-bold text-slate-700">MCP client information</p>
-        <p className="mt-0.5 text-[0.63rem] font-semibold text-slate-400">
+        <p className="text-xs font-semibold text-slate-700">MCP client information</p>
+        <p className="mt-0.5 text-micro font-normal text-slate-500">
           Self-reported client metadata, not an identity signal
         </p>
       </div>

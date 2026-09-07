@@ -154,16 +154,18 @@ export default (props: { item: CoreP.Device }) => {
 
 export const MainInfo = (props: { item: CoreP.Device }): ResourceMainInfo => {
   const { item } = props;
-  const mutationUpdate = useUpdateResource();
 
   return {
+    groupOrder: ["Hardware", "Security", "Authorization"],
     items: [
       {
         label: "User",
+        primary: true,
         value: <ResourceListLabel itemRef={item.status!.userRef} />,
       },
       {
         label: "OS",
+        primary: true,
         value: (
           <Label>
             <span className="flex items-center gap-1">
@@ -174,76 +176,11 @@ export const MainInfo = (props: { item: CoreP.Device }): ResourceMainInfo => {
         ),
       },
 
-      {
-        label: "State",
-        value: (
-          <EditItemWrap
-            mutation={mutationUpdate}
-            label="state"
-            showComponent={
-              <span
-                className={twMerge(
-                  "text-sm font-semibold",
-                  match(item.spec!.state)
-                    .with(
-                      CoreP.Device_Spec_State.ACTIVE,
-                      () => "text-emerald-600",
-                    )
-                    .with(
-                      CoreP.Device_Spec_State.REJECTED,
-                      () => "text-red-500",
-                    )
-                    .with(
-                      CoreP.Device_Spec_State.PENDING,
-                      () => "text-amber-500",
-                    )
-                    .otherwise(() => "text-slate-600"),
-                )}
-              >
-                {match(item.spec!.state)
-                  .with(CoreP.Device_Spec_State.ACTIVE, () => "Active")
-                  .with(CoreP.Device_Spec_State.REJECTED, () => "Rejected")
-                  .with(CoreP.Device_Spec_State.PENDING, () => "Pending")
-                  .otherwise(() => "")}
-              </span>
-            }
-            editComponent={
-              <Select
-                size="sm"
-                data={[
-                  {
-                    label: "Active",
-                    value:
-                      CoreP.Device_Spec_State[CoreP.Device_Spec_State.ACTIVE],
-                  },
-                  {
-                    label: "Pending",
-                    value:
-                      CoreP.Device_Spec_State[CoreP.Device_Spec_State.PENDING],
-                  },
-                  {
-                    label: "Rejected",
-                    value:
-                      CoreP.Device_Spec_State[CoreP.Device_Spec_State.REJECTED],
-                  },
-                ]}
-                value={CoreP.Device_Spec_State[item.spec!.state]}
-                onChange={(v) => {
-                  if (!v) return;
-                  const next = CoreP.Device.clone(item);
-                  next.spec!.state = CoreP.Device_Spec_State[v as "ACTIVE"];
-                  mutationUpdate.mutate(next);
-                }}
-              />
-            }
-          />
-        ),
-      },
-
       ...(item.status!.hostname
         ? [
             {
               label: "Hostname",
+              primary: true,
               value: <CopyText value={item.status!.hostname} />,
             },
           ]
@@ -253,6 +190,7 @@ export const MainInfo = (props: { item: CoreP.Device }): ResourceMainInfo => {
         ? [
             {
               label: "Device ID",
+              group: "Hardware",
               value: <CopyText value={item.status!.id} />,
             },
           ]
@@ -262,6 +200,7 @@ export const MainInfo = (props: { item: CoreP.Device }): ResourceMainInfo => {
         ? [
             {
               label: "Serial number",
+              group: "Hardware",
               value: <CopyText value={item.status!.serialNumber} />,
             },
           ]
@@ -271,6 +210,7 @@ export const MainInfo = (props: { item: CoreP.Device }): ResourceMainInfo => {
         ? [
             {
               label: "MAC addresses",
+              group: "Hardware",
               value: (
                 <div className="flex flex-wrap gap-1">
                   {item.status!.macAddresses.map((x) => (
@@ -289,6 +229,7 @@ export const MainInfo = (props: { item: CoreP.Device }): ResourceMainInfo => {
         ? [
             {
               label: "Security state",
+              group: "Security",
               value: <span className="font-semibold text-red-600">Locked</span>,
             },
           ]
@@ -298,6 +239,7 @@ export const MainInfo = (props: { item: CoreP.Device }): ResourceMainInfo => {
         ? [
             {
               label: "Policies",
+              group: "Authorization",
               value: (
                 <div className="flex flex-wrap gap-1">
                   {item.spec.authorization.policies.map((policy) => (
@@ -321,6 +263,7 @@ export const MainInfo = (props: { item: CoreP.Device }): ResourceMainInfo => {
         ? [
             {
               label: "Inline policies",
+              group: "Authorization",
               value: (
                 <div className="flex flex-wrap gap-1">
                   {item.spec.authorization.inlinePolicies.map(
@@ -345,6 +288,7 @@ export const MainInfo = (props: { item: CoreP.Device }): ResourceMainInfo => {
         ? [
             {
               label: "Device posture",
+              group: "Security",
               value: (
                 <div className="flex flex-wrap gap-1">
                   <ResourceListLabel label="Risk">
@@ -438,6 +382,7 @@ export const MainInfo = (props: { item: CoreP.Device }): ResourceMainInfo => {
         ? [
             {
               label: "Probe attempt",
+              group: "Security",
               value: (
                 <div className="flex flex-wrap gap-1">
                   {item.status.probeAttempt.uid && (

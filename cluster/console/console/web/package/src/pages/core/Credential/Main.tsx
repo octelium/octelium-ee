@@ -311,9 +311,24 @@ export const MainInfo = (props: {
         });
 
   return {
+    groupOrder: ["Usage", "Security", "Authorization"],
+    actions: (
+      <>
+        <Button
+          variant="default"
+          size="compact-sm"
+          leftSection={<RefreshCw size={11} strokeWidth={2.5} />}
+          onClick={open}
+        >
+          Generate / Rotate
+        </Button>
+        <GenerateTokenModal item={item} opened={opened} onClose={close} />
+      </>
+    ),
     items: [
       {
         label: "User",
+        primary: true,
         value: <ResourceListLabel itemRef={userRef} />,
       },
       {
@@ -323,7 +338,7 @@ export const MainInfo = (props: {
             mutation={mutationUpdate}
             label="type"
             showComponent={
-              <span className="text-[0.75rem] font-semibold text-slate-700">
+              <span className="text-body font-semibold text-slate-700">
                 {match(item.spec!.type)
                   .with(
                     CoreP.Credential_Spec_Type.AUTH_TOKEN,
@@ -384,8 +399,9 @@ export const MainInfo = (props: {
         ? [
             {
               label: "Expires",
+              primary: true,
               value: (
-                <span className="text-[0.75rem] font-semibold text-slate-600">
+                <span className="text-body font-normal text-slate-600">
                   <TimeAgo rfc3339={item.spec!.expiresAt} />
                 </span>
               ),
@@ -397,8 +413,9 @@ export const MainInfo = (props: {
         ? [
             {
               label: "Last rotation",
+              group: "Usage",
               value: (
-                <span className="text-[0.75rem] font-semibold text-slate-600">
+                <span className="text-body font-normal text-slate-600">
                   <TimeAgo rfc3339={item.status!.lastRotationAt} />
                 </span>
               ),
@@ -410,8 +427,9 @@ export const MainInfo = (props: {
         ? [
             {
               label: "Total rotations",
+              group: "Usage",
               value: (
-                <span className="text-[0.75rem] font-semibold text-slate-700 tabular-nums">
+                <span className="text-body font-semibold text-slate-700 tabular-nums">
                   {item.status!.totalRotations}
                 </span>
               ),
@@ -423,11 +441,12 @@ export const MainInfo = (props: {
         ? [
             {
               label: "Total authentications",
+              group: "Usage",
               value: (
-                <span className="text-[0.75rem] font-semibold text-slate-700 tabular-nums">
+                <span className="text-body font-semibold text-slate-700 tabular-nums">
                   {item.status!.totalAuthentications}
                   {item.spec!.maxAuthentications > 0 && (
-                    <span className="text-slate-400 font-medium ml-1">
+                    <span className="text-slate-500 font-medium ml-1">
                       / {item.spec!.maxAuthentications} max
                     </span>
                   )}
@@ -441,8 +460,9 @@ export const MainInfo = (props: {
         ? [
             {
               label: "Max authentications",
+              group: "Usage",
               value: (
-                <span className="text-[0.75rem] font-semibold text-slate-700 tabular-nums">
+                <span className="text-body font-semibold text-slate-700 tabular-nums">
                   {item.spec!.maxAuthentications}
                 </span>
               ),
@@ -452,6 +472,7 @@ export const MainInfo = (props: {
 
       {
         label: "Session type",
+        group: "Usage",
         value:
           item.spec!.sessionType === CoreC.Session_Status_Type.CLIENT
             ? "Client"
@@ -464,6 +485,7 @@ export const MainInfo = (props: {
         ? [
             {
               label: "Lifecycle",
+              group: "Usage",
               value: "Automatically delete after reaching the usage limit",
               span: "full" as const,
             },
@@ -474,6 +496,7 @@ export const MainInfo = (props: {
         ? [
             {
               label: "Security state",
+              group: "Security",
               value: <span className="font-semibold text-red-600">Locked</span>,
             },
           ]
@@ -483,6 +506,7 @@ export const MainInfo = (props: {
         ? [
             {
               label: "Policies",
+              group: "Authorization",
               value: (
                 <div className="flex flex-wrap gap-1">
                   {item.spec.authorization.policies.map((policy) => (
@@ -506,6 +530,7 @@ export const MainInfo = (props: {
         ? [
             {
               label: "Inline policies",
+              group: "Authorization",
               value: (
                 <div className="flex flex-wrap gap-1">
                   {item.spec.authorization.inlinePolicies.map(
@@ -526,54 +551,6 @@ export const MainInfo = (props: {
           ]
         : []),
 
-      {
-        label: "Active",
-        value: (
-          <EditItemWrap
-            mutation={mutationUpdate}
-            label="active"
-            showComponent={
-              <span
-                className={twMerge(
-                  "text-[0.75rem] font-semibold",
-                  item.spec!.isDisabled ? "text-red-500" : "text-emerald-600",
-                )}
-              >
-                {item.spec!.isDisabled ? "Disabled" : "Active"}
-              </span>
-            }
-            editComponent={
-              <Switch
-                size="sm"
-                checked={!item.spec!.isDisabled}
-                onChange={(v) => {
-                  const next = CoreC.Credential.clone(item);
-                  next.spec!.isDisabled = !v.currentTarget.checked;
-                  mutationUpdate.mutate(next);
-                }}
-              />
-            }
-          />
-        ),
-      },
-
-      {
-        label: "Token",
-        value: (
-          <>
-            <Button
-              variant="default"
-              size="xs"
-              leftSection={<RefreshCw size={11} strokeWidth={2.5} />}
-              onClick={open}
-            >
-              Generate / Rotate
-            </Button>
-            <GenerateTokenModal item={item} opened={opened} onClose={close} />
-          </>
-        ),
-        span: "full" as const,
-      },
     ],
   };
 };

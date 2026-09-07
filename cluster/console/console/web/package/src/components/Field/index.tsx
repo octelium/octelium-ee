@@ -33,7 +33,7 @@ const Field = (props: {
         className={twMerge(
           "inline-flex w-full outline-none p-2 border-[3px]",
           "rounded-lg border-gray-400 focus:border-gray-900",
-          "transition-all duration-300 focus:shadow-md",
+          "transition-all duration-200 focus:shadow-md",
           "resize-none",
           "font-semibold"
         )}
@@ -69,7 +69,7 @@ const Field = (props: {
       className={twMerge(
         "inline-flex w-full outline-none p-2 border-[2px]",
         "rounded-lg border-gray-400 focus:border-gray-900",
-        "transition-all duration-300 focus:shadow-md",
+        "transition-all duration-200 focus:shadow-md",
         "font-semibold"
       )}
     />

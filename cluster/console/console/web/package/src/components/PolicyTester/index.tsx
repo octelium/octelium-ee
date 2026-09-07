@@ -82,8 +82,8 @@ const OptionalPanel = ({
   <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
     <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50/60 px-4 py-3.5 sm:px-5">
       <div className="min-w-0">
-        <h3 className="text-[0.8rem] font-bold text-slate-800">{title}</h3>
-        <p className="mt-0.5 text-[0.7rem] font-semibold text-slate-400">
+        <h3 className="text-body font-semibold text-slate-800">{title}</h3>
+        <p className="mt-0.5 text-xs font-normal text-slate-500">
           {description}
         </p>
       </div>
@@ -91,7 +91,7 @@ const OptionalPanel = ({
         <button
           type="button"
           onClick={onRemove}
-          className="flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-[0.68rem] font-bold text-slate-500 transition-colors duration-500 hover:bg-red-50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+          className="flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-normal text-slate-500 transition-colors duration-200 hover:bg-red-50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
         >
           <Trash2 size={13} strokeWidth={2.25} />
           Remove
@@ -100,7 +100,7 @@ const OptionalPanel = ({
         <button
           type="button"
           onClick={onEnable}
-          className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[0.68rem] font-bold text-slate-600 shadow-sm transition-colors duration-500 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+          className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-normal text-slate-600 shadow-sm transition-colors duration-200 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
         >
           <Plus size={13} strokeWidth={2.5} />
           Add
@@ -138,19 +138,19 @@ const EndpointCard = ({
   icon: React.ComponentType<{ size?: number; strokeWidth?: number }>;
   children: React.ReactNode;
 }) => (
-  <div className="min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.04)] sm:p-5">
+  <div className="min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-card sm:p-5">
     <div className="mb-4 flex items-start gap-3">
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-white shadow-sm">
         <Icon size={16} strokeWidth={2.25} />
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="text-[0.58rem] font-bold uppercase tracking-[0.08em] text-slate-400">
+          <span className="text-micro font-semibold uppercase tracking-[0.08em] text-slate-500">
             Step {step}
           </span>
         </div>
         <h3 className="mt-0.5 text-sm font-bold text-slate-800">{title}</h3>
-        <p className="mt-0.5 text-[0.68rem] font-semibold text-slate-400">
+        <p className="mt-0.5 text-xs font-normal text-slate-500">
           {description}
         </p>
       </div>
@@ -259,7 +259,7 @@ const PolicyTester = () => {
             <h2 className="text-base font-bold tracking-tight text-slate-900">
               Policy authorization tester
             </h2>
-            <p className="mt-1 max-w-2xl text-xs font-semibold leading-relaxed text-slate-500">
+            <p className="mt-1 max-w-2xl text-xs font-normal leading-relaxed text-slate-500">
               Simulate a connection between a downstream identity and an
               upstream resource before applying policy changes.
             </p>
@@ -275,10 +275,10 @@ const PolicyTester = () => {
           >
             <div>
               <div className="mb-2">
-                <p className="text-[0.72rem] font-bold text-slate-700">
+                <p className="text-xs font-semibold text-slate-700">
                   Identity type
                 </p>
-                <p className="mt-0.5 text-[0.66rem] font-semibold text-slate-400">
+                <p className="mt-0.5 text-micro font-normal text-slate-500">
                   Choose the identity that is making the request
                 </p>
               </div>
@@ -340,10 +340,10 @@ const PolicyTester = () => {
           >
             <div>
               <div className="mb-2">
-                <p className="text-[0.72rem] font-bold text-slate-700">
+                <p className="text-xs font-semibold text-slate-700">
                   Resource type
                 </p>
-                <p className="mt-0.5 text-[0.66rem] font-semibold text-slate-400">
+                <p className="mt-0.5 text-micro font-normal text-slate-500">
                   Choose the resource being accessed
                 </p>
               </div>
@@ -453,10 +453,10 @@ const PolicyTester = () => {
         <div className="flex items-center gap-2.5">
           <Network size={15} className="shrink-0 text-slate-500" />
           <div>
-            <p className="text-[0.72rem] font-bold text-slate-700">
+            <p className="text-xs font-semibold text-slate-700">
               Ready to evaluate
             </p>
-            <p className="mt-0.5 text-[0.65rem] font-semibold text-slate-400">
+            <p className="mt-0.5 text-micro font-normal text-slate-500">
               {canTest
                 ? "Both connection endpoints are selected."
                 : "Select both a downstream identity and upstream resource."}
@@ -501,7 +501,7 @@ const PolicyTester = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_4px_18px_rgba(15,23,42,0.06)]"
+            className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-raised"
           >
             <div
               className={twMerge(
@@ -537,7 +537,7 @@ const PolicyTester = () => {
                   </p>
                   <p
                     className={twMerge(
-                      "mt-0.5 text-[0.65rem] font-semibold",
+                      "mt-0.5 text-micro font-semibold",
                       resp.isAuthorized ? "text-emerald-700" : "text-red-700",
                     )}
                   >
@@ -556,7 +556,7 @@ const PolicyTester = () => {
             <div className="p-4 sm:p-5">
               <div className="grid grid-cols-[minmax(0,1fr)_70px_minmax(0,1fr)] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_160px_minmax(0,1fr)] sm:gap-4">
                 <div className="min-w-0 rounded-lg border border-slate-200 bg-slate-50/60 p-2.5">
-                  <span className="mb-2 block text-[0.58rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+                  <span className="mb-2 block text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
                     Downstream
                   </span>
                   {resultDownstream && (
@@ -567,7 +567,7 @@ const PolicyTester = () => {
                   color={resp.isAuthorized ? "#059669" : "#dc2626"}
                 />
                 <div className="min-w-0 rounded-lg border border-slate-200 bg-slate-50/60 p-2.5">
-                  <span className="mb-2 block text-[0.58rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+                  <span className="mb-2 block text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
                     Upstream
                   </span>
                   {resultUpstream && (
@@ -580,11 +580,11 @@ const PolicyTester = () => {
                 <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
                   <div className="flex items-center gap-2">
                     <Braces size={14} className="text-slate-500" />
-                    <span className="text-[0.62rem] font-bold uppercase tracking-[0.08em] text-slate-500">
+                    <span className="text-micro font-semibold uppercase tracking-[0.08em] text-slate-500">
                       Decision reason
                     </span>
                   </div>
-                  <p className="mt-2 text-[0.8rem] font-bold text-slate-700">
+                  <p className="mt-2 text-body font-semibold text-slate-700">
                     {getPolicyReason(resp.reason.type)}
                   </p>
 

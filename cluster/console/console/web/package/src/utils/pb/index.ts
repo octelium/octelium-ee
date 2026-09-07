@@ -276,6 +276,25 @@ export const resourceMetadataToJSON = (arg: Resource): string =>
 export const resourceMetadataToYAML = (arg: Resource): string =>
   jsonToYAML(resourceMetadataToJSON(arg));
 
+export const resourceFingerprint = (arg: Resource): string => {
+  try {
+    switch (getAPI(arg)) {
+      case "core":
+        return CoreP[arg.kind as ResourceCoreName].toJsonString(arg as any);
+      case "enterprise":
+        return EnterpriseP[arg.kind as ResourceEnterpriseName].toJsonString(
+          arg as any,
+        );
+      case "access":
+        return AccessP[arg.kind as ResourceAccessName].toJsonString(arg as any);
+      default:
+        return "";
+    }
+  } catch {
+    return "";
+  }
+};
+
 export const resourceToYAML = (arg: Resource): string => {
   try {
     return Yaml.dump(JSON.parse(resourceToJSON(arg)));
@@ -507,6 +526,39 @@ export const getClientResourceListP = (api: API) =>
     .with("access", () => VisibilityAccessP)
     .otherwise(() => undefined);
 
+type AnyClient = Record<string, (...args: any[]) => any>;
+type AnyMessageType = Record<string, (...args: any[]) => any>;
+
+export const getListOptionsPB = (api: API, kind: string): AnyMessageType =>
+  (getClientResourceListP(api) as unknown as Record<string, AnyMessageType>)[
+    `List${kind}Options`
+  ];
+
+export const listResourcesPB = (api: API, kind: string, req: unknown) =>
+  (getClientResourceList(api) as unknown as AnyClient)[`list${kind}`](req);
+
+export const getResourcePB = (api: API, kind: string, arg: unknown) =>
+  (getClient(api) as unknown as AnyClient)[`get${kind}`](arg);
+
+export const createResourcePB = (api: API, kind: string, arg: unknown) =>
+  (getClient(api) as unknown as AnyClient)[`create${kind}`](arg);
+
+export const updateResourcePB = (arg: Resource) =>
+  (getResourceClient(arg) as unknown as AnyClient)[`update${arg.kind}`](arg);
+
+export const deleteResourcePB = (arg: Resource) =>
+  (getResourceClient(arg) as unknown as AnyClient)[`delete${arg.kind}`]({
+    uid: arg.metadata!.uid,
+  });
+
+export const listSecretsPB = (api: API, arg: unknown) =>
+  (getClient(api) as unknown as AnyClient)["listSecret"](arg);
+
+export const newResourcePB = (api: API, kind: string, arg: unknown): Resource =>
+  (getPBFromAPI(api) as unknown as Record<string, AnyMessageType>)[kind][
+    "create"
+  ](arg) as Resource;
+
 export const printResourceNameWithDisplay = (arg: Resource): string =>
   arg.metadata?.displayName
     ? `${arg.metadata.name} (${arg.metadata.displayName})`
@@ -613,6 +665,11 @@ export const getRefNameQueryArgStr = (arg: Resource): string => {
   const r = getRefNameQueryArg(arg);
   return `${r.key}.name=${r.name}`;
 };
+
+export const getAuditLogQueryArgStr = (arg: Resource): string =>
+  hasAuditLog(arg)
+    ? getRefNameQueryArgStr(arg)
+    : `resourceRef.name=${arg.metadata?.name}`;
 
 export const getVisibilityAPIKindFromPath = (
   pth: string,

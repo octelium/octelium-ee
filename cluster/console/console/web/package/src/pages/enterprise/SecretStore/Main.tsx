@@ -15,7 +15,7 @@ const copied = (value?: string) =>
   value ? (
     <CopyText value={value} />
   ) : (
-    <span className="text-slate-400">Not configured</span>
+    <span className="text-slate-500">Not configured</span>
   );
 
 export default (_props: { item: EnterpriseP.SecretStore }) => <></>;
@@ -140,12 +140,12 @@ export const MainInfo = (props: {
             {presentation.syncState.label}
           </span>
           {sync.createdAt && (
-            <span className="text-[0.68rem] font-semibold text-slate-400">
+            <span className="text-xs font-normal text-slate-500">
               Started <TimeAgo rfc3339={sync.createdAt} />
             </span>
           )}
           {sync.completedAt && (
-            <span className="text-[0.68rem] font-semibold text-slate-400">
+            <span className="text-xs font-normal text-slate-500">
               Completed <TimeAgo rfc3339={sync.completedAt} />
             </span>
           )}
@@ -169,7 +169,7 @@ export const MainInfo = (props: {
               >
                 <span
                   className={twMerge(
-                    "text-[0.7rem] font-bold",
+                    "text-xs font-semibold",
                     state.tone === "success"
                       ? "text-emerald-600"
                       : state.tone === "danger"
@@ -182,7 +182,7 @@ export const MainInfo = (props: {
                     : ""}
                   {state.label}
                 </span>
-                <div className="flex gap-3 text-[0.67rem] font-semibold text-slate-400">
+                <div className="flex gap-3 text-xs font-normal text-slate-500">
                   {entry.createdAt && (
                     <span>Started <TimeAgo rfc3339={entry.createdAt} /></span>
                   )}

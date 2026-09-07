@@ -108,8 +108,8 @@ const Edit = (props: {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="text-[0.72rem] font-bold text-slate-700">Provider status</div>
-          <div className="mt-0.5 text-[0.67rem] font-semibold text-slate-400">
+          <div className="text-xs font-semibold text-slate-700">Provider status</div>
+          <div className="mt-0.5 text-xs font-normal text-slate-500">
             Disabled providers cannot synchronize users or groups.
           </div>
         </div>
@@ -125,7 +125,7 @@ const Edit = (props: {
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3">
-        <div className="mb-2 text-[0.72rem] font-bold text-slate-700">
+        <div className="mb-2 text-xs font-semibold text-slate-700">
           Directory source
         </div>
         <SegmentedControl
@@ -149,7 +149,7 @@ const Edit = (props: {
 
       {type.oneofKind === "googleWorkspace" && (
         <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
-          <div className="flex items-center gap-2 text-[0.75rem] font-bold text-slate-800">
+          <div className="flex items-center gap-2 text-body font-semibold text-slate-800">
             <Cloud size={15} /> Google Workspace
           </div>
           <div className="grid gap-4 md:grid-cols-2">
@@ -237,7 +237,7 @@ const Edit = (props: {
 
       {type.oneofKind === "keycloak" && (
         <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
-          <div className="flex items-center gap-2 text-[0.75rem] font-bold text-slate-800">
+          <div className="flex items-center gap-2 text-body font-semibold text-slate-800">
             <KeyRound size={15} /> Keycloak
           </div>
           <div className="grid gap-4 md:grid-cols-2">

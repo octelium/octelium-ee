@@ -178,71 +178,6 @@ export default (props: { item: CoreC.Session }) => {
   );
 };
 
-const SessionStateControl = (props: { item: CoreC.Session }) => {
-  const { item } = props;
-  const mutationUpdate = useUpdateResource();
-
-  return (
-    <EditItemWrap
-      mutation={mutationUpdate}
-      label="state"
-      showComponent={
-        <span
-          className={twMerge(
-            "text-[0.75rem] font-semibold",
-            match(item.spec!.state)
-              .with(
-                CoreP.Session_Spec_State.ACTIVE,
-                () => "text-emerald-600",
-              )
-              .with(
-                CoreP.Session_Spec_State.REJECTED,
-                () => "text-red-500",
-              )
-              .with(
-                CoreP.Session_Spec_State.PENDING,
-                () => "text-amber-500",
-              )
-              .otherwise(() => "text-slate-600"),
-          )}
-        >
-          {match(item.spec!.state)
-            .with(CoreP.Session_Spec_State.ACTIVE, () => "Active")
-            .with(CoreP.Session_Spec_State.REJECTED, () => "Rejected")
-            .with(CoreP.Session_Spec_State.PENDING, () => "Pending")
-            .otherwise(() => "")}
-        </span>
-      }
-      editComponent={
-        <Select
-          size="xs"
-          data={[
-            {
-              label: "Active",
-              value: CoreP.Session_Spec_State[CoreP.Session_Spec_State.ACTIVE],
-            },
-            {
-              label: "Pending",
-              value: CoreP.Session_Spec_State[CoreP.Session_Spec_State.PENDING],
-            },
-            {
-              label: "Rejected",
-              value: CoreP.Session_Spec_State[CoreP.Session_Spec_State.REJECTED],
-            },
-          ]}
-          value={CoreP.Session_Spec_State[item.spec!.state]}
-          onChange={(v) => {
-            if (!v) return;
-            const clone = CoreP.Session.clone(item);
-            clone.spec!.state = CoreP.Session_Spec_State[v as "ACTIVE"];
-            mutationUpdate.mutate(clone);
-          }}
-        />
-      }
-    />
-  );
-};
-
 const SessionExpirationControl = (props: { item: CoreC.Session }) => {
   const { item } = props;
   const mutationUpdate = useUpdateResource();
@@ -252,7 +187,7 @@ const SessionExpirationControl = (props: { item: CoreC.Session }) => {
       mutation={mutationUpdate}
       label="expiration"
       showComponent={
-        <span className="text-[0.75rem] font-semibold text-slate-600">
+        <span className="text-body font-normal text-slate-600">
           {item.spec?.expiresAt ? (
             <TimeAgo rfc3339={item.spec.expiresAt} />
           ) : (
@@ -281,11 +216,13 @@ export const MainInfo = (props: { item: CoreC.Session }): ResourceMainInfo => {
   const { item } = props;
 
   return {
+    groupOrder: ["Security", "Authorization"],
     items: [
       ...(item.status?.userRef?.name || item.status?.userRef?.uid
         ? [
             {
               label: "User",
+              primary: true,
               value: <ResourceListLabel itemRef={item.status.userRef} />,
             },
           ]
@@ -294,31 +231,29 @@ export const MainInfo = (props: { item: CoreC.Session }): ResourceMainInfo => {
         ? [
             {
               label: "Device",
+              primary: true,
               value: <ResourceListLabel itemRef={item.status!.deviceRef} />,
             },
           ]
         : []),
       {
         label: "Type",
+        primary: true,
         value: <Label>{getType(item)}</Label>,
-      },
-
-      {
-        label: "State",
-        value: <SessionStateControl item={item} />,
       },
 
       ...(item.status?.isConnected
         ? [
             {
               label: "Connected",
+              primary: true,
               value: (
                 <span className="flex items-center gap-1.5">
                   <span className="relative flex w-2.5 h-2.5 shrink-0">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                     <span className="relative inline-flex rounded-full w-2.5 h-2.5 bg-emerald-500" />
                   </span>
-                  <span className="text-[0.75rem] font-semibold text-emerald-600">
+                  <span className="text-body font-semibold text-emerald-600">
                     Live
                   </span>
                 </span>
@@ -329,6 +264,7 @@ export const MainInfo = (props: { item: CoreC.Session }): ResourceMainInfo => {
 
       {
         label: "Security signals",
+        group: "Security",
         value: (
           <div className="flex flex-wrap gap-1">
             <SessionCompactSecurityInfo item={item} />
@@ -339,6 +275,7 @@ export const MainInfo = (props: { item: CoreC.Session }): ResourceMainInfo => {
 
       {
         label: "Expires",
+        group: "Security",
         value: <SessionExpirationControl item={item} />,
       },
 
@@ -346,6 +283,7 @@ export const MainInfo = (props: { item: CoreC.Session }): ResourceMainInfo => {
         ? [
             {
               label: "Policies",
+              group: "Authorization",
               value: (
                 <div className="flex flex-wrap gap-1">
                   {item.spec.authorization.policies.map((policy) => (
@@ -369,6 +307,7 @@ export const MainInfo = (props: { item: CoreC.Session }): ResourceMainInfo => {
         ? [
             {
               label: "Inline policies",
+              group: "Authorization",
               value: (
                 <div className="flex flex-wrap gap-1">
                   {item.spec.authorization.inlinePolicies.map(
@@ -391,6 +330,7 @@ export const MainInfo = (props: { item: CoreC.Session }): ResourceMainInfo => {
 
       {
         label: "Session status",
+        group: "Security",
         value: <SessionOperationalDetails item={item} />,
         span: "full",
       },

@@ -58,7 +58,7 @@ const StateBadge = ({ state }: { state: SSHSession_State }) => {
   return (
     <span
       className={twMerge(
-        "inline-flex h-6 items-center gap-1.5 rounded-full border px-2.5 text-[0.66rem] font-semibold",
+        "inline-flex h-6 items-center gap-1.5 rounded-full border px-2.5 text-micro font-semibold",
         className,
       )}
     >
@@ -101,10 +101,10 @@ export const SSHSessionC = (props: { item: SSHSession }) => {
             <SquareTerminal size={16} strokeWidth={2.2} />
           </span>
           <div className="min-w-0">
-            <span className="block text-[0.63rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+            <span className="block text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
               SSH recording
             </span>
-            <span className="mt-0.5 block truncate text-[0.76rem] font-semibold text-slate-700">
+            <span className="mt-0.5 block truncate text-body font-semibold text-slate-700">
               <CopyText value={item.id} truncate={32} />
             </span>
           </div>
@@ -115,8 +115,8 @@ export const SSHSessionC = (props: { item: SSHSession }) => {
       <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
         {item.startedAt && (
           <div className="flex min-w-0 items-center gap-2 rounded-lg border border-slate-200/80 bg-slate-50/60 px-2.5 py-1.5">
-            <Clock3 size={12} className="shrink-0 text-slate-400" />
-            <span className="min-w-0 text-[0.67rem] font-semibold text-slate-500">
+            <Clock3 size={12} className="shrink-0 text-slate-500" />
+            <span className="min-w-0 text-xs font-normal text-slate-500">
               <span className="mr-1 font-bold text-slate-600">Started</span>
               <TimeAgo rfc3339={item.startedAt} />
             </span>
@@ -124,8 +124,8 @@ export const SSHSessionC = (props: { item: SSHSession }) => {
         )}
         {item.endedAt && (
           <div className="flex min-w-0 items-center gap-2 rounded-lg border border-slate-200/80 bg-slate-50/60 px-2.5 py-1.5">
-            <CheckCircle2 size={12} className="shrink-0 text-slate-400" />
-            <span className="min-w-0 text-[0.67rem] font-semibold text-slate-500">
+            <CheckCircle2 size={12} className="shrink-0 text-slate-500" />
+            <span className="min-w-0 text-xs font-normal text-slate-500">
               <span className="mr-1 font-bold text-slate-600">Ended</span>
               <TimeAgo rfc3339={item.endedAt} />
             </span>
@@ -133,7 +133,7 @@ export const SSHSessionC = (props: { item: SSHSession }) => {
         )}
         {duration && (
           <div className="flex min-w-0 items-center gap-2 rounded-lg border border-slate-200/80 bg-slate-50/60 px-2.5 py-1.5">
-            <span className="text-[0.67rem] font-semibold text-slate-500">
+            <span className="text-xs font-normal text-slate-500">
               <span className="mr-1 font-bold text-slate-600">
                 {item.state === SSHSession_State.ONGOING
                   ? "Elapsed"
@@ -268,7 +268,7 @@ export const SSHSessionViewer = (props: {
     <div className="w-full flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="text-[0.72rem] font-bold uppercase tracking-[0.05em] text-slate-500 shrink-0">
+          <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 shrink-0">
             Since
           </span>
           <SelectFromTimestamp
@@ -287,7 +287,7 @@ export const SSHSessionViewer = (props: {
           type="button"
           onClick={() => qry.refetch()}
           disabled={qry.isLoading}
-          className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[0.7rem] font-bold text-slate-500 shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition-colors duration-150 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-normal text-slate-500 shadow-card transition-colors duration-150 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Radio
             size={11}
@@ -301,7 +301,7 @@ export const SSHSessionViewer = (props: {
       {qry.isError && (
         <div
           role="alert"
-          className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[0.72rem] font-semibold text-red-700"
+          className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700"
         >
           SSH sessions could not be loaded. Refresh to try again.
         </div>
@@ -320,7 +320,7 @@ export const SSHSessionViewer = (props: {
 
       {qry.data?.items.length === 0 && (
         <div className="flex items-center justify-center py-16">
-          <span className="text-[0.78rem] font-bold uppercase tracking-[0.08em] text-slate-400">
+          <span className="text-body font-semibold uppercase tracking-[0.08em] text-slate-500">
             No SSH sessions found
           </span>
         </div>
@@ -333,6 +333,7 @@ export const SSHSessionViewer = (props: {
               <ResourceListItem
                 key={x.id || `${x.startedAt?.seconds ?? "session"}-${x.state}`}
                 path={x.id ? `/visibility/ssh/${x.id}` : undefined}
+                overlayLabel={`Open SSH session ${x.id ?? ""}`.trim()}
               >
                 <SSHSessionC item={x} />
               </ResourceListItem>

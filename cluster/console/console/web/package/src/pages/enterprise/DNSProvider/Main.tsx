@@ -16,11 +16,11 @@ const secretRef = (name?: string) =>
       })}
     />
   ) : (
-    <span className="text-slate-400">Not configured</span>
+    <span className="text-slate-500">Not configured</span>
   );
 
 const copied = (value?: string) =>
-  value ? <CopyText value={value} /> : <span className="text-slate-400">Not configured</span>;
+  value ? <CopyText value={value} /> : <span className="text-slate-500">Not configured</span>;
 
 export default (_props: { item: EnterpriseP.DNSProvider }) => <></>;
 

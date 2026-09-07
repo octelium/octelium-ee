@@ -120,11 +120,11 @@ const Item = (props: { item: Service }) => {
           <div className="flex items-center font-bold">
             <ResourceYAML item={item} size="xs" />
             <Link to={getResourcePath(item)}>
-              <span className="text-gray-800 mr-2 flex flex-row">
+              <span className="text-slate-800 mr-2 flex flex-row">
                 <CopyText value={getServiceHostname(item)} />
               </span>
               {md.displayName && (
-                <span className="text-gray-600">{md.displayName}</span>
+                <span className="text-slate-600">{md.displayName}</span>
               )}
             </Link>
           </div>

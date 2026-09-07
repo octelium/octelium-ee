@@ -105,7 +105,7 @@ export const MainInfo = (props: { item: AccessC.Review }): ResourceMainInfo => {
               label: "Justification",
               span: "full" as const,
               value: (
-                <span className="text-[0.78rem] font-semibold text-slate-700">
+                <span className="text-body font-semibold text-slate-700">
                   {item.spec.justification}
                 </span>
               ),
@@ -131,7 +131,7 @@ export const MainInfo = (props: { item: AccessC.Review }): ResourceMainInfo => {
             {
               label: "Request details",
               value: (
-                <span className="inline-flex items-center gap-1.5 text-[0.72rem] font-semibold text-slate-400">
+                <span className="inline-flex items-center gap-1.5 text-xs font-normal text-slate-500">
                   <Loader2 size={12} className="animate-spin" />
                   Loading request context…
                 </span>
@@ -146,7 +146,7 @@ export const MainInfo = (props: { item: AccessC.Review }): ResourceMainInfo => {
             {
               label: "Request details",
               value: (
-                <span className="text-[0.72rem] font-semibold text-red-600">
+                <span className="text-xs font-semibold text-red-600">
                   The linked request details could not be loaded.
                 </span>
               ),
@@ -228,7 +228,7 @@ export const MainInfo = (props: { item: AccessC.Review }): ResourceMainInfo => {
             {
               label: "Request justification",
               value: (
-                <span className="text-[0.78rem] font-semibold text-slate-700">
+                <span className="text-body font-semibold text-slate-700">
                   {request.spec.justification}
                 </span>
               ),

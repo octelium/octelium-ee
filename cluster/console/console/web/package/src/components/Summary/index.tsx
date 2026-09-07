@@ -50,7 +50,7 @@ export const SummaryItemCount = (props: {
               exit={{ y: `${direction * -110}%`, opacity: 0 }}
               transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
               className={twMerge(
-                "block truncate text-[1.55rem] font-bold leading-8 tracking-[-0.035em] tabular-nums",
+                "block truncate text-2xl font-bold leading-8 tracking-[-0.035em] tabular-nums",
                 active ? "text-slate-900" : "text-slate-700",
               )}
             >
@@ -65,14 +65,14 @@ export const SummaryItemCount = (props: {
           <ArrowRight
             size={13}
             strokeWidth={2.5}
-            className="mt-1 shrink-0 text-slate-300 transition-[color,transform] duration-500 group-hover:translate-x-0.5 group-hover:text-slate-600"
+            className="mt-1 shrink-0 text-slate-300 transition-[color,transform] duration-200 group-hover:translate-x-0.5 group-hover:text-slate-600"
           />
         ) : null}
       </div>
 
       <span
         className={twMerge(
-          "truncate text-[0.72rem] font-bold leading-4 text-slate-500 transition-colors duration-500",
+          "truncate text-xs font-normal leading-4 text-slate-500 transition-colors duration-200",
           to && !active && "group-hover:text-slate-800",
           active && "text-slate-700",
         )}
@@ -89,12 +89,12 @@ export const SummaryItemCount = (props: {
       transition={{ duration: 0.22, ease: "easeOut" }}
       className={twMerge(
         "group relative min-w-0 overflow-hidden rounded-lg border bg-white",
-        "shadow-[0_1px_2px_rgba(15,23,42,0.035)]",
-        "transition-[background-color,border-color,box-shadow] duration-500 ease-out",
+        "shadow-card",
+        "transition-[background-color,border-color,box-shadow] duration-200 ease-out",
         active
-          ? "border-slate-300 bg-slate-50 shadow-[0_2px_8px_rgba(15,23,42,0.07)] ring-1 ring-slate-900/[0.04]"
+          ? "border-slate-300 bg-slate-50 shadow-raised ring-1 ring-slate-900/[0.04]"
           : to
-            ? "border-slate-200 hover:border-slate-300 hover:shadow-[0_4px_12px_rgba(15,23,42,0.07)]"
+            ? "border-slate-200 hover:border-slate-300 hover:shadow-raised"
             : "border-slate-200",
       )}
     >
@@ -131,14 +131,14 @@ export const SummaryItemCountWrap = (props: { children?: React.ReactNode }) => (
 export const SummaryNoItems = (props: { children?: React.ReactNode }) => (
   <div className="flex min-h-[190px] w-full items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50/50 px-6 text-center">
     <div className="flex flex-col items-center gap-3">
-      <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 shadow-sm">
+      <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm">
         <Inbox size={18} strokeWidth={2} />
       </span>
       <div className="flex flex-col gap-1">
         <span className="text-sm font-bold text-slate-600">
           {props.children ?? "No items found"}
         </span>
-        <span className="text-[0.72rem] font-semibold text-slate-400">
+        <span className="text-xs font-normal text-slate-500">
           Resources will appear here when they become available.
         </span>
       </div>

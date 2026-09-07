@@ -10,35 +10,51 @@ export type ResourceComponentInfo = {
   unEditable?: boolean;
   readOnlyEdit?: boolean;
   cloneable?: boolean;
-  infoItemsGetter?: (props: { item: Resource }) => ResourceMainInfo;
+  infoItemsGetter?: ResourceInfoComponent;
 };
 
 export type ResourceComponentInfoList = {
-  labelComponent?: (props: { item: Resource }) => React.ReactNode;
-  extraComponent?: (props: { item: Resource }) => React.ReactNode;
-  listFilter?: () => React.ReactNode;
-  SummaryComponent?: (...args: any[]) => React.ReactNode;
-  AccessLogComponent?: () => React.ReactNode;
+  labelComponent?: React.ComponentType<{ item: Resource }>;
+  SummaryComponent?: React.ComponentType<any>;
 };
 
 export type ResourceComponentInfoItem = {
-  Main?: (props: { item: Resource }) => React.ReactNode;
-  MainAction?: (props: { item: Resource }) => React.ReactNode;
-  Edit?: (props: {
+  hasMain?: boolean;
+  MainAction?: React.ComponentType<{ item: Resource }>;
+  Edit?: React.ComponentType<{
     item: Resource;
     onUpdate: (item: Resource) => void;
-  }) => React.ReactNode;
-  itemInfo?: (props: { item: Resource }) => React.ReactNode;
-
+  }>;
   createResource?: () => Resource;
 };
 
+export type ResourceInfoComponent = React.ComponentType<{
+  item: Resource;
+  children: (info: ResourceMainInfo) => React.ReactNode;
+}>;
+
+export type ResourceStatusTone =
+  "neutral" | "success" | "warning" | "danger" | "info";
+
+export interface ResourceStatusInfo {
+  label: string;
+  tone?: ResourceStatusTone;
+  hint?: React.ReactNode;
+  control?: React.ReactNode;
+}
+
 export interface ResourceMainInfo {
   items?: ResourceInfoMainItem[];
+  status?: ResourceStatusInfo;
+  actions?: React.ReactNode;
+  groupOrder?: string[];
 }
 
 export interface ResourceInfoMainItem {
   label: string;
   value: React.ReactNode;
   span?: "half" | "full";
+  group?: string;
+  primary?: boolean;
+  hint?: string;
 }

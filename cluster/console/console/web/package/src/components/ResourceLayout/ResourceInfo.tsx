@@ -30,10 +30,10 @@ const Field = ({
   children: React.ReactNode;
 }) => (
   <div className="flex items-baseline gap-2 min-w-0">
-    <span className="text-[0.62rem] font-bold uppercase tracking-[0.07em] text-slate-400 shrink-0 w-[80px]">
+    <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500 shrink-0 w-[80px]">
       {label}
     </span>
-    <div className="text-[0.75rem] font-semibold text-slate-700 leading-snug min-w-0 flex-1">
+    <div className="text-body font-semibold text-slate-700 leading-snug min-w-0 flex-1">
       {children}
     </div>
   </div>
@@ -45,7 +45,7 @@ const ResourceInfo = (props: { resource: Resource }) => {
 
   return (
     <div className="flex flex-col gap-3 w-full">
-      {md.picURL?.length > 0 && (
+      {md.picURL && md.picURL.length > 0 && (
         <img
           src={md.picURL}
           className="w-12 h-12 rounded-full border border-slate-200 shadow-sm"
@@ -55,7 +55,7 @@ const ResourceInfo = (props: { resource: Resource }) => {
 
       <div className="flex flex-col gap-2">
         <Field label="Name">
-          <span className="flex items-center gap-1.5 font-mono text-[0.72rem]">
+          <span className="flex items-center gap-1.5 font-mono text-xs">
             <CopyText value={md.name} />
           </span>
         </Field>
@@ -67,14 +67,14 @@ const ResourceInfo = (props: { resource: Resource }) => {
         )}
 
         <Field label="UID">
-          <span className="font-mono text-[0.68rem] text-slate-500 break-all">
+          <span className="font-mono text-xs text-slate-500 break-all">
             <CopyText value={md.uid} />
           </span>
         </Field>
 
         {md.description && (
           <Field label="Description">
-            <span className="text-slate-500 text-[0.72rem] leading-relaxed">
+            <span className="text-slate-500 text-xs leading-relaxed">
               {md.description}
             </span>
           </Field>
@@ -93,14 +93,14 @@ const ResourceInfo = (props: { resource: Resource }) => {
 
       {md.tags && md.tags.length > 0 && (
         <div className="flex flex-col gap-1">
-          <span className="text-[0.58rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+          <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
             Tags
           </span>
           <div className="flex flex-wrap gap-1">
             {md.tags.map((tag) => (
               <span
                 key={tag}
-                className="inline-flex items-center gap-1 h-[20px] px-1.5 rounded text-[0.65rem] font-bold bg-slate-800 text-slate-100 border border-slate-700"
+                className="inline-flex items-center gap-1 h-[20px] px-1.5 rounded text-micro font-semibold bg-slate-800 text-slate-100 border border-slate-700"
               >
                 <Tag size={9} strokeWidth={2.5} />
                 {tag}
@@ -113,13 +113,13 @@ const ResourceInfo = (props: { resource: Resource }) => {
       {(md.isSystem || md.isUserHidden) && (
         <div className="flex items-center gap-1.5">
           {md.isSystem && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-px text-[0.62rem] font-bold rounded border border-blue-200 text-blue-600 bg-blue-50">
+            <span className="inline-flex items-center gap-1 px-1.5 py-px text-micro font-semibold rounded border border-blue-200 text-blue-600 bg-blue-50">
               <ShieldAlert size={9} strokeWidth={2.5} />
               System
             </span>
           )}
           {md.isUserHidden && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-px text-[0.62rem] font-bold rounded border border-slate-200 text-slate-500 bg-slate-50">
+            <span className="inline-flex items-center gap-1 px-1.5 py-px text-micro font-normal rounded border border-slate-200 text-slate-500 bg-slate-50">
               <EyeOff size={9} strokeWidth={2.5} />
               Hidden
             </span>
@@ -133,7 +133,7 @@ const ResourceInfo = (props: { resource: Resource }) => {
           <ResourceYAML item={item} size="xs" />
           <Link
             to={getResourcePath(item)}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[0.68rem] font-bold text-slate-500 border border-slate-200 bg-white hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 transition-colors duration-150"
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-normal text-slate-500 border border-slate-200 bg-white hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 transition-colors duration-150"
           >
             <ExternalLink size={10} strokeWidth={2.5} />
             Details
@@ -154,7 +154,7 @@ export const ResourceVisibilityButtons = (props: {
   const qryNameArg = getRefNameQueryArgStr(item);
 
   const btnClass =
-    "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[0.65rem] font-bold border transition-colors duration-150 text-slate-500 border-slate-200 bg-white hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50";
+    "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-micro font-bold border transition-colors duration-150 text-slate-500 border-slate-200 bg-white hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50";
 
   const buttons = [
     {

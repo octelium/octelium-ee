@@ -37,6 +37,12 @@ import * as echarts from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 import { useEffect, useMemo, useState } from "react";
 import DurationPicker from "../DurationPicker";
+import {
+  axisLabelStyle,
+  CHART_INK,
+  SERIES_COLORS,
+  splitLineStyle,
+} from "@/utils/charts/palette";
 
 echarts.use([
   LineChartC,
@@ -47,19 +53,6 @@ echarts.use([
   DataZoomComponent,
   CanvasRenderer,
 ]);
-
-const LINE_COLORS = [
-  "#2563eb",
-  "#0891b2",
-  "#4f46e5",
-  "#0d9488",
-  "#7c3aed",
-  "#16a34a",
-  "#d97706",
-  "#db2777",
-  "#475569",
-  "#dc2626",
-];
 
 const DEFAULT_STEP = Duration.create({
   type: { oneofKind: "minutes", minutes: 1 },
@@ -639,7 +632,7 @@ const MetricChart = (props: MetricChartProps) => {
     const multi = series.length > 1;
 
     return {
-      color: LINE_COLORS,
+      color: [...SERIES_COLORS],
 
       animation: statistics.pointCount <= 1_000,
       animationDuration: 650,
@@ -740,7 +733,7 @@ const MetricChart = (props: MetricChartProps) => {
             pageIconColor: "#64748b",
             pageIconInactiveColor: "#cbd5e1",
             pageTextStyle: {
-              color: "#94a3b8",
+              color: CHART_INK.muted,
               fontFamily: "Ubuntu, sans-serif",
               fontSize: 10,
             },
@@ -757,11 +750,11 @@ const MetricChart = (props: MetricChartProps) => {
         type: "time",
         min: chartRange.from,
         max: chartRange.to,
-        axisLine: { lineStyle: { color: "#e2e8f0" } },
+        axisLine: { lineStyle: { color: CHART_INK.axis } },
         axisTick: { show: false },
         splitLine: { show: false },
         axisLabel: {
-          color: "#94a3b8",
+          color: CHART_INK.muted,
           fontSize: 10,
           fontFamily: "Ubuntu, sans-serif",
           fontWeight: 600,
@@ -778,10 +771,10 @@ const MetricChart = (props: MetricChartProps) => {
         axisLine: { show: false },
         axisTick: { show: false },
         splitLine: {
-          lineStyle: { color: "#e2e8f0", type: "dashed", opacity: 0.7 },
+          ...splitLineStyle,
         },
         axisLabel: {
-          color: "#94a3b8",
+          color: CHART_INK.muted,
           fontSize: 10,
           fontFamily: "Ubuntu, sans-serif",
           fontWeight: 600,
@@ -810,7 +803,7 @@ const MetricChart = (props: MetricChartProps) => {
         progressive: 400,
         progressiveThreshold: 800,
         lineStyle: {
-          color: LINE_COLORS[i % LINE_COLORS.length],
+          color: SERIES_COLORS[i % SERIES_COLORS.length],
           width: multi ? 2 : 2.5,
           cap: "round",
           join: "round",
@@ -836,7 +829,7 @@ const MetricChart = (props: MetricChartProps) => {
               },
         data: s.data,
         itemStyle: {
-          color: LINE_COLORS[i % LINE_COLORS.length],
+          color: SERIES_COLORS[i % SERIES_COLORS.length],
           borderColor: "#ffffff",
           borderWidth: 2,
         },
@@ -879,24 +872,24 @@ const MetricChart = (props: MetricChartProps) => {
             </h3>
             {(qry.data?.truncation?.seriesTruncated ||
               qry.data?.truncation?.pointsTruncated) && (
-              <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.06em] text-amber-700">
+              <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-micro font-semibold uppercase tracking-[0.06em] text-amber-700">
                 Partial data
               </span>
             )}
             {qry.isFetching && !qry.isLoading && (
-              <span className="flex items-center gap-1.5 text-[0.65rem] font-semibold text-slate-400">
+              <span className="flex items-center gap-1.5 text-micro font-normal text-slate-500">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500" />
                 Updating
               </span>
             )}
             {failed && series.length > 0 && (
-              <span className="flex items-center gap-1.5 text-[0.65rem] font-semibold text-amber-600">
+              <span className="flex items-center gap-1.5 text-micro font-semibold text-amber-600">
                 <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
                 Refresh failed · showing previous data
               </span>
             )}
           </div>
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-[0.65rem] font-semibold text-slate-400">
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-micro font-normal text-slate-500">
             <span>{metric}</span>
             {effectiveUnit && (
               <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-slate-500">
@@ -908,7 +901,7 @@ const MetricChart = (props: MetricChartProps) => {
 
         {supportsStep && !hideResolution && (
           <div className="w-36 shrink-0">
-            <span className="mb-1 block text-[0.58rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+            <span className="mb-1 block text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
               Resolution
             </span>
             <DurationPicker
@@ -925,10 +918,10 @@ const MetricChart = (props: MetricChartProps) => {
           <dl className="flex flex-wrap items-center justify-end gap-4 px-1 py-3 sm:gap-6">
             {headerStatistics.map((statistic) => (
               <div key={statistic.label} className="text-right">
-                <dt className="text-[0.58rem] font-bold uppercase tracking-[0.07em] text-slate-400">
+                <dt className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
                   {statistic.label}
                 </dt>
-                <dd className="mt-0.5 text-xs font-bold tabular-nums text-slate-700">
+                <dd className="mt-0.5 text-xs font-semibold tabular-nums text-slate-700">
                   {statistic.value}
                 </dd>
               </div>
@@ -944,7 +937,7 @@ const MetricChart = (props: MetricChartProps) => {
               lazyUpdate
             />
           </div>
-          <p className="mt-2 px-1 text-right text-[0.6rem] font-semibold text-slate-400">
+          <p className="mt-2 px-1 text-right text-micro font-normal text-slate-500">
             Drag to pan · Shift + scroll to zoom
           </p>
         </>
@@ -956,7 +949,7 @@ const MetricChart = (props: MetricChartProps) => {
           className="flex w-full flex-col items-center justify-center gap-3 text-center"
         >
           <span className="h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
-          <span className="text-xs font-semibold text-slate-400">
+          <span className="text-xs font-normal text-slate-500">
             Loading metric data…
           </span>
         </div>
@@ -971,13 +964,13 @@ const MetricChart = (props: MetricChartProps) => {
             <p className="text-sm font-bold text-slate-700">
               Metric unavailable
             </p>
-            <p className="mt-1 line-clamp-2 text-xs font-semibold text-slate-400">
+            <p className="mt-1 line-clamp-2 text-xs font-normal text-slate-500">
               {errorMessage}
             </p>
             <button
               type="button"
               onClick={() => qry.refetch()}
-              className="mt-3 rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold text-white transition-colors duration-500 hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"
+              className="mt-3 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition-colors duration-200 hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"
             >
               Try again
             </button>
@@ -994,7 +987,7 @@ const MetricChart = (props: MetricChartProps) => {
             <p className="text-sm font-bold text-slate-600">
               {notRecorded ? "Metric not recorded" : "No metric data"}
             </p>
-            <p className="mt-1 text-xs font-semibold text-slate-400">
+            <p className="mt-1 text-xs font-normal text-slate-500">
               {notRecorded
                 ? `No component has reported ${metric} to the metricstore yet.`
                 : "No numeric samples were returned for this time range."}

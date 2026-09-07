@@ -121,7 +121,7 @@ const makeMarkerItem = (
   components: {
     Value: () => null,
     Edit: () => (
-      <p className="text-[0.75rem] font-semibold text-slate-500 leading-relaxed">
+      <p className="text-body font-normal text-slate-500 leading-relaxed">
         {note ??
           "This condition matches on presence. No further configuration is required."}
       </p>
@@ -640,7 +640,7 @@ const MCPToolArgumentEditor = (props: {
         onChange={(next) => props.onChange({ path: next, match })}
       />
       <div className="space-y-2">
-        <p className="text-[0.72rem] font-bold text-slate-700">Value rule</p>
+        <p className="text-xs font-semibold text-slate-700">Value rule</p>
         <SegmentedControl
           fullWidth
           size="sm"
@@ -716,7 +716,7 @@ const MCPToolArgumentEditor = (props: {
         />
       )}
       {(matchType === "isNull" || matchType === "exists") && (
-        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[0.7rem] font-semibold text-slate-500">
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-normal text-slate-500">
           {matchType === "isNull"
             ? "Matches only when the argument is explicitly null."
             : "Matches when the argument path exists, including when its value is null."}
@@ -1514,7 +1514,7 @@ export const itemList: ItemDef[] = [
               {countryMatch.type.in.values.map((code) => (
                 <span
                   key={code}
-                  className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[0.67rem] font-bold text-slate-600"
+                  className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-xs font-normal text-slate-600"
                 >
                   <CountryFlag code={code} />
                   {code}
