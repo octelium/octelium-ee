@@ -49,7 +49,7 @@ export const LabelComponent = (props: { item: CoreP.Authenticator }) => {
       <ResourceListLabel>
         <span
           className={
-            match(item.spec!.state)
+            match(item.spec?.state)
               .with(
                 CoreP.Authenticator_Spec_State.ACTIVE,
                 () => "text-emerald-600",
@@ -65,7 +65,7 @@ export const LabelComponent = (props: { item: CoreP.Authenticator }) => {
               .otherwise(() => "text-slate-500")
           }
         >
-          {match(item.spec!.state)
+          {match(item.spec?.state)
             .with(CoreP.Authenticator_Spec_State.ACTIVE, () => "Active")
             .with(CoreP.Authenticator_Spec_State.REJECTED, () => "Rejected")
             .with(CoreP.Authenticator_Spec_State.PENDING, () => "Pending")
@@ -73,13 +73,15 @@ export const LabelComponent = (props: { item: CoreP.Authenticator }) => {
         </span>
       </ResourceListLabel>
 
-      {!item.status!.isRegistered && (
+      {!item.status?.isRegistered && (
         <ResourceListLabel>
           <span className="text-red-500">Not registered</span>
         </ResourceListLabel>
       )}
 
-      <ResourceListLabel itemRef={item.status!.userRef}></ResourceListLabel>
+      {item.status?.userRef && (
+        <ResourceListLabel itemRef={item.status.userRef}></ResourceListLabel>
+      )}
       {(item.status?.deviceRef?.name || item.status?.deviceRef?.uid) && (
         <ResourceListLabel itemRef={item.status.deviceRef} />
       )}

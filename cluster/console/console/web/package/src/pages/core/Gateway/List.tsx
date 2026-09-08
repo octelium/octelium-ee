@@ -22,25 +22,27 @@ export const LabelComponent = (props: { item: Gateway }) => {
 
   return (
     <ResourceListLabelWrap>
-      <ResourceListLabel itemRef={item.status!.regionRef} />
+      {item.status?.regionRef && (
+        <ResourceListLabel itemRef={item.status.regionRef} />
+      )}
       {item.status?.hostname && (
         <ResourceListLabel label="Hostname">
           {item.status.hostname}
         </ResourceListLabel>
       )}
-      {!!item.status?.publicIPs.length && (
+      {!!item.status?.publicIPs?.length && (
         <ResourceListLabel label="Public IPs">
           {item.status.publicIPs.length}
         </ResourceListLabel>
       )}
       {(item.status?.wireguard?.port ?? 0) > 0 && (
         <ResourceListLabel label="WireGuard">
-          :{item.status!.wireguard!.port}
+          :{item.status?.wireguard?.port}
         </ResourceListLabel>
       )}
       {(item.status?.quicv0?.port ?? 0) > 0 && (
         <ResourceListLabel label="QUICv0">
-          :{item.status!.quicv0!.port}
+          :{item.status?.quicv0?.port}
         </ResourceListLabel>
       )}
     </ResourceListLabelWrap>

@@ -1,6 +1,7 @@
 import React from "react";
 
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
+import { Tooltip } from "@mantine/core";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import utc from "dayjs/plugin/utc";
@@ -72,9 +73,13 @@ const TimeAgo = (props: { rfc3339?: Timestamp }) => {
   const date = dayjs(Timestamp.toDate(props.rfc3339));
 
   return (
-    <span title={date.local().format("hh:mm:ss A, ddd MMM D, YYYY")}>
-      {date.from(currentTime)}
-    </span>
+    <Tooltip
+      label={date.local().format("hh:mm:ss A, ddd MMM D, YYYY")}
+      transitionProps={{ transition: "fade", duration: 150 }}
+      withArrow
+    >
+      <span>{date.from(currentTime)}</span>
+    </Tooltip>
   );
 };
 

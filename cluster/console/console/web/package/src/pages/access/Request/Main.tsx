@@ -16,7 +16,7 @@ export const ItemInfo = (props: { item: AccessC.Request }) => {
         <span className={meta.className}>{meta.label}</span>
       </InfoItem>
       <InfoItem title="Urgency">
-        <span>{getUrgencyLabel(item.spec!.urgency)}</span>
+        <span>{getUrgencyLabel(item.spec?.urgency)}</span>
       </InfoItem>
     </>
   );
@@ -52,18 +52,18 @@ export const MainInfo = (props: {
       })
     : undefined;
   const subjectRef =
-    item.spec?.subject?.type.oneofKind === "userRef"
+    item.spec?.subject?.type?.oneofKind === "userRef"
       ? item.spec.subject.type.userRef
       : undefined;
   const resourceRef =
-    item.spec?.resource?.type.oneofKind === "serviceRef"
+    item.spec?.resource?.type?.oneofKind === "serviceRef"
       ? ObjectReference.create({
           ...item.spec.resource.type.serviceRef,
           apiVersion:
             item.spec.resource.type.serviceRef.apiVersion || "core/v1",
           kind: item.spec.resource.type.serviceRef.kind || "Service",
         })
-      : item.spec?.resource?.type.oneofKind === "catalog"
+      : item.spec?.resource?.type?.oneofKind === "catalog"
         ? ObjectReference.create({
             ...item.spec.resource.type.catalog.catalogRef,
             apiVersion:
@@ -96,7 +96,7 @@ export const MainInfo = (props: {
         label: "Urgency",
         value: (
           <span className="text-sm font-semibold text-slate-700">
-            {getUrgencyLabel(item.spec!.urgency)}
+            {getUrgencyLabel(item.spec?.urgency)}
           </span>
         ),
       },

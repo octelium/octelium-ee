@@ -55,7 +55,9 @@ export const LabelComponent = (props: { item: Credential }) => {
         </ResourceListLabel>
       )}
 
-      <ResourceListLabel itemRef={item.status!.userRef}></ResourceListLabel>
+      {item.status?.userRef && (
+        <ResourceListLabel itemRef={item.status.userRef}></ResourceListLabel>
+      )}
       {item.spec?.isDisabled && (
         <ResourceListLabel>
           <span className="flex items-center text-red-500">Disabled</span>

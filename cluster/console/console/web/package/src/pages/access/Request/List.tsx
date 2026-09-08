@@ -50,18 +50,18 @@ export const LabelComponent = (props: { item: Request }) => {
       })
     : undefined;
   const subjectRef =
-    item.spec?.subject?.type.oneofKind === "userRef"
+    item.spec?.subject?.type?.oneofKind === "userRef"
       ? item.spec.subject.type.userRef
       : undefined;
   const resourceRef =
-    item.spec?.resource?.type.oneofKind === "serviceRef"
+    item.spec?.resource?.type?.oneofKind === "serviceRef"
       ? ObjectReference.create({
           ...item.spec.resource.type.serviceRef,
           apiVersion:
             item.spec.resource.type.serviceRef.apiVersion || "core/v1",
           kind: item.spec.resource.type.serviceRef.kind || "Service",
         })
-      : item.spec?.resource?.type.oneofKind === "catalog"
+      : item.spec?.resource?.type?.oneofKind === "catalog"
         ? ObjectReference.create({
             ...item.spec.resource.type.catalog.catalogRef,
             apiVersion:
@@ -77,9 +77,9 @@ export const LabelComponent = (props: { item: Request }) => {
       <ResourceListLabel>
         <span className={meta.className}>{meta.label}</span>
       </ResourceListLabel>
-      {item.spec!.urgency !== undefined && item.spec!.urgency !== 0 && (
+      {item.spec?.urgency !== undefined && item.spec.urgency !== 0 && (
         <ResourceListLabel>
-          {getUrgencyLabel(item.spec!.urgency)}
+          {getUrgencyLabel(item.spec.urgency)}
         </ResourceListLabel>
       )}
       {(requesterRef?.name || requesterRef?.uid) && (

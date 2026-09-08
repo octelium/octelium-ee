@@ -28,7 +28,7 @@ import { useSearchParams } from "react-router-dom";
 import { match } from "ts-pattern";
 
 export const getType = (svc: IdentityProvider): string => {
-  return match(svc.spec?.type.oneofKind)
+  return match(svc.spec?.type?.oneofKind)
     .with("github", () => "GitHub")
     .with("oidc", () => "OpenID Connect")
     .with("saml", () => "SAML")
@@ -48,7 +48,7 @@ export const LabelComponent = (props: { item: IdentityProvider }) => {
 
   return (
     <ResourceListLabelWrap>
-      {item.spec!.isDisabled && (
+      {item.spec?.isDisabled && (
         <ResourceListLabel>
           <span className="text-red-500">Disabled</span>
         </ResourceListLabel>

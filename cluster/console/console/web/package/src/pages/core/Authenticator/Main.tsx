@@ -12,7 +12,7 @@ import { ResourceMainInfo } from "@/pages/utils/types";
 import { twMerge } from "tailwind-merge";
 
 export const getType = (item: CoreP.Authenticator) => {
-  return match(item.status!.type)
+  return match(item.status?.type)
     .with(CoreP.Authenticator_Status_Type.TPM, () => "TPM")
     .with(CoreP.Authenticator_Status_Type.FIDO, () => "FIDO")
     .with(CoreP.Authenticator_Status_Type.TOTP, () => "TOTP")

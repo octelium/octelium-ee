@@ -25,7 +25,7 @@ export const LabelComponent = (props: { item: Region }) => {
           {item.status.publicHostname}
         </ResourceListLabel>
       )}
-      {!!item.status?.ingressAddresses.length && (
+      {!!item.status?.ingressAddresses?.length && (
         <ResourceListLabel label="Ingress addresses">
           {item.status.ingressAddresses.length}
         </ResourceListLabel>

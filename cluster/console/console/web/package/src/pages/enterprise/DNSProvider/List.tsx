@@ -19,7 +19,7 @@ import { VscAzure } from "react-icons/vsc";
 import { match } from "ts-pattern";
 
 export const getDNSProviderType = (item: DNSProvider): string =>
-  match(item.spec?.type.oneofKind)
+  match(item.spec?.type?.oneofKind)
     .with("cloudflare", () => "Cloudflare")
     .with("aws", () => "AWS Route 53")
     .with("digitalocean", () => "DigitalOcean")

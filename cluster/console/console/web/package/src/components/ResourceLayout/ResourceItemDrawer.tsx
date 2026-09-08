@@ -1,4 +1,4 @@
-import { useHasDirtyForm } from "@/utils/forms";
+import { approveNextNavigation, useHasDirtyForm } from "@/utils/forms";
 import { getAPIKindFromPath } from "@/utils/pb";
 import { Drawer } from "@mantine/core";
 import { useEffect, useState } from "react";
@@ -29,14 +29,20 @@ const ResourceItemDrawer = () => {
     };
   }, [resourcePath]);
 
+  const requestClose = () => {
+    if (hasDirtyForm) {
+      if (!window.confirm("Discard unsaved changes?")) return;
+      approveNextNavigation();
+    }
+    setOpened(false);
+  };
+
   return (
     <Drawer
       opened={opened}
-      onClose={() => setOpened(false)}
+      onClose={requestClose}
       position="right"
       size="min(900px, 100vw)"
-      closeOnClickOutside={!hasDirtyForm}
-      closeOnEscape={!hasDirtyForm}
       transitionProps={{
         transition: "slide-left",
         duration: 250,

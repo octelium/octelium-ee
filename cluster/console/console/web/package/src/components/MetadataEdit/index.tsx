@@ -3,6 +3,7 @@ import { getShortNameFromStr, Resource } from "@/utils/pb";
 import {
   ActionIcon,
   Button,
+  Collapse,
   SimpleGrid,
   TagsInput,
   Textarea,
@@ -11,6 +12,7 @@ import {
 } from "@mantine/core";
 import {
   AlignLeft,
+  ChevronDown,
   LockKeyhole,
   Plus,
   ShieldCheck,
@@ -19,6 +21,7 @@ import {
   Type,
 } from "lucide-react";
 import * as React from "react";
+import { twMerge } from "tailwind-merge";
 import Section from "../Section";
 
 interface Row {
@@ -143,6 +146,11 @@ const MetadataEdit = (props: {
   const isSystem = !!sourceMetadata?.isSystem;
   const isNameLocked = isSystem || !!props.isUpdateMode;
 
+  const hasLabelsOrAnnotations =
+    Object.keys(req.labels ?? {}).length > 0 ||
+    Object.keys(req.annotations ?? {}).length > 0;
+  const [moreOpen, setMoreOpen] = React.useState(hasLabelsOrAnnotations);
+
   const update = (partial: Partial<Metadata>) => {
     const next = Metadata.clone(sourceMetadata ?? Metadata.create());
     Object.assign(next, partial);
@@ -246,43 +254,77 @@ const MetadataEdit = (props: {
         />
       </SimpleGrid>
 
-      <Section
-        level={2}
-        title="Labels"
-        description="Key/value pairs used by selectors and Policies."
-        obj={req.labels}
-        onSet={() => update({ labels: {} })}
-        onUnset={() => update({ labels: {} })}
-        noDelete
-      >
-        <KeyValueEditor
-          resourceUID={req.uid}
-          value={req.labels}
-          disabled={isSystem}
-          keyPlaceholder="team"
-          valuePlaceholder="platform"
-          onChange={(labels) => update({ labels })}
-        />
-      </Section>
+      <div className="rounded-lg border border-slate-200/70">
+        <button
+          type="button"
+          onClick={() => setMoreOpen((value) => !value)}
+          aria-expanded={moreOpen}
+          className="group flex w-full items-center gap-2 px-3.5 py-2.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+        >
+          <ChevronDown
+            size={14}
+            strokeWidth={2.25}
+            className={twMerge(
+              "shrink-0 text-slate-500 transition-transform duration-150",
+              !moreOpen && "-rotate-90",
+            )}
+          />
+          <span className="text-body font-semibold text-slate-900">
+            Labels &amp; annotations
+          </span>
+          {hasLabelsOrAnnotations && (
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-1.5 py-px text-micro font-medium text-slate-600">
+              {Object.keys(req.labels ?? {}).length +
+                Object.keys(req.annotations ?? {}).length}
+            </span>
+          )}
+          {!moreOpen && (
+            <span className="text-xs font-normal text-slate-500">More</span>
+          )}
+        </button>
 
-      <Section
-        level={2}
-        title="Annotations"
-        description="Free-form metadata that is not used for selection."
-        obj={req.annotations}
-        onSet={() => update({ annotations: {} })}
-        onUnset={() => update({ annotations: {} })}
-        noDelete
-      >
-        <KeyValueEditor
-          resourceUID={req.uid}
-          value={req.annotations}
-          disabled={isSystem}
-          keyPlaceholder="octelium.com/owner"
-          valuePlaceholder="platform-team"
-          onChange={(annotations) => update({ annotations })}
-        />
-      </Section>
+        <Collapse expanded={moreOpen} transitionDuration={150}>
+          <div className="flex flex-col gap-4 border-t border-slate-100 px-3.5 py-3.5">
+            <Section
+              level={2}
+              title="Labels"
+              description="Key/value pairs used by selectors and Policies."
+              obj={req.labels}
+              onSet={() => update({ labels: {} })}
+              onUnset={() => update({ labels: {} })}
+              noDelete
+            >
+              <KeyValueEditor
+                resourceUID={req.uid}
+                value={req.labels}
+                disabled={isSystem}
+                keyPlaceholder="team"
+                valuePlaceholder="platform"
+                onChange={(labels) => update({ labels })}
+              />
+            </Section>
+
+            <Section
+              level={2}
+              title="Annotations"
+              description="Free-form metadata that is not used for selection."
+              obj={req.annotations}
+              onSet={() => update({ annotations: {} })}
+              onUnset={() => update({ annotations: {} })}
+              noDelete
+            >
+              <KeyValueEditor
+                resourceUID={req.uid}
+                value={req.annotations}
+                disabled={isSystem}
+                keyPlaceholder="octelium.com/owner"
+                valuePlaceholder="platform-team"
+                onChange={(annotations) => update({ annotations })}
+              />
+            </Section>
+          </div>
+        </Collapse>
+      </div>
     </div>
   );
 };

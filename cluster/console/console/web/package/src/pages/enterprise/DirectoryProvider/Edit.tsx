@@ -75,7 +75,7 @@ const Edit = (props: {
     const next = cloneForEdit(props.item);
     setReq(next);
     configurations.current = {
-      [next.spec?.type.oneofKind ?? "scim"]: structuredClone(
+      [next.spec?.type?.oneofKind ?? "scim"]: structuredClone(
         next.spec?.type ?? createType("scim"),
       ),
     };

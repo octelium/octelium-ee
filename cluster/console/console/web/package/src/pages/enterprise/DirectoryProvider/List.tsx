@@ -20,15 +20,15 @@ import { SiGoogle, SiKeycloak } from "react-icons/si";
 import { match } from "ts-pattern";
 
 export const getType = (item: DirectoryProvider): string =>
-  match(item.spec?.type.oneofKind)
+  match(item.spec?.type?.oneofKind)
     .with("scim", () => "SCIM")
     .with("googleWorkspace", () => "Google Workspace")
     .with("keycloak", () => "Keycloak")
     .otherwise(() => "Not configured");
 
 export const isSyncable = (item: DirectoryProvider): boolean =>
-  item.spec?.type.oneofKind === "googleWorkspace" ||
-  item.spec?.type.oneofKind === "keycloak";
+  item.spec?.type?.oneofKind === "googleWorkspace" ||
+  item.spec?.type?.oneofKind === "keycloak";
 
 export const getSyncStateMeta = (
   state?: DirectoryProvider_Status_Synchronization_State,
@@ -74,7 +74,7 @@ export const getDirectoryProviderPresentation = (item: DirectoryProvider) => {
 
   return {
     type: getType(item),
-    isScim: item.spec?.type.oneofKind === "scim",
+    isScim: item.spec?.type?.oneofKind === "scim",
     isSyncable: isSyncable(item),
     currentSync,
     previousSyncs,

@@ -18,7 +18,7 @@ import { VscAzure } from "react-icons/vsc";
 import { match } from "ts-pattern";
 
 export const getType = (item: CollectorExporter): string =>
-  match(item.spec?.type.oneofKind)
+  match(item.spec?.type?.oneofKind)
     .with("otlp", () => "OTLP")
     .with("otlpHTTP", () => "OTLP HTTP")
     .with("elasticsearch", () => "Elasticsearch")

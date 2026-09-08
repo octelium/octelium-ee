@@ -1,7 +1,7 @@
 import { API, Resource, ResourceName } from "@/utils/pb";
 import { Drawer } from "@mantine/core";
 import * as React from "react";
-import { useHasDirtyForm } from "@/utils/forms";
+import { approveNextNavigation, useHasDirtyForm } from "@/utils/forms";
 import { useLocation, useNavigate } from "react-router-dom";
 import ResourceCreatePage from "./ResourceCreate";
 
@@ -53,7 +53,16 @@ const ResourceCreateRoute = (props: Props) => {
   }
 
   const returnTo = state?.returnTo ?? `/${props.api}`;
-  const close = () => setOpened(false);
+  const close = () => {
+    approveNextNavigation();
+    setOpened(false);
+  };
+  const requestClose = () => {
+    if (hasDirtyForm && !window.confirm("Discard unsaved changes?")) {
+      return;
+    }
+    close();
+  };
   const handleExited = () => {
     const returnState =
       state?.returnState && typeof state.returnState === "object"
@@ -72,11 +81,9 @@ const ResourceCreateRoute = (props: Props) => {
   return (
     <Drawer
       opened={opened}
-      onClose={close}
+      onClose={requestClose}
       position="right"
       size="min(960px, 100vw)"
-      closeOnClickOutside={!hasDirtyForm}
-      closeOnEscape={!hasDirtyForm}
       transitionProps={{
         transition: "slide-left",
         duration: 250,

@@ -27,18 +27,17 @@ export const LabelComponent = (props: { item: Policy }) => {
 
   return (
     <ResourceListLabelWrap>
-      {item.spec!.isDisabled && (
+      {item.spec?.isDisabled && (
         <ResourceListLabel>
           <span className="text-red-400">Disabled</span>
         </ResourceListLabel>
       )}
-      {item.spec!.rules && item.spec!.rules.length > 0 && (
-        <ResourceListLabel>{item.spec!.rules.length} Rules</ResourceListLabel>
+      {!!item.spec?.rules?.length && (
+        <ResourceListLabel>{item.spec.rules.length} Rules</ResourceListLabel>
       )}
-      {item.spec!.enforcementRules &&
-        item.spec!.enforcementRules.length > 0 && (
+      {!!item.spec?.enforcementRules?.length && (
         <ResourceListLabel>
-          {item.spec!.enforcementRules.length} Enforcement Rules
+          {item.spec.enforcementRules.length} Enforcement Rules
         </ResourceListLabel>
       )}
     </ResourceListLabelWrap>

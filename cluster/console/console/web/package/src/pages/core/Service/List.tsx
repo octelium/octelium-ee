@@ -55,7 +55,7 @@ import { SiPostgresql } from "react-icons/si";
 import { VscMcp } from "react-icons/vsc";
 
 export const getType = (svc: Service): string => {
-  return printServiceMode(svc.spec!.mode);
+  return printServiceMode(svc.spec?.mode ?? Service_Spec_Mode.MODE_UNSET);
 };
 
 const ItemDetails = (props: { item: Service; domain: string }) => {
@@ -160,14 +160,16 @@ export const LabelComponent = (props: { item: Service }) => {
       <ResourceListLabel
         label="Mode"
         to={toURLWithQry(`/core/services`, {
-          mode: Service_Spec_Mode[item.spec!.mode],
+          mode: Service_Spec_Mode[item.spec?.mode ?? Service_Spec_Mode.MODE_UNSET],
         })}
       >
         {getType(item)}
       </ResourceListLabel>
-      <ResourceListLabel
-        itemRef={item.status!.namespaceRef}
-      ></ResourceListLabel>
+      {item.status?.namespaceRef && (
+        <ResourceListLabel
+          itemRef={item.status.namespaceRef}
+        ></ResourceListLabel>
+      )}
 
       {item.status?.port && item.status.port > 0 && (
         <ResourceListLabel label="Port">{item.status.port}</ResourceListLabel>
@@ -190,7 +192,9 @@ export const LabelComponent = (props: { item: Service }) => {
           <span className="text-red-500">Disabled</span>
         </ResourceListLabel>
       )}
-      <ResourceListLabel itemRef={item.status!.regionRef}></ResourceListLabel>
+      {item.status?.regionRef && (
+        <ResourceListLabel itemRef={item.status.regionRef}></ResourceListLabel>
+      )}
     </ResourceListLabelWrap>
   );
 };

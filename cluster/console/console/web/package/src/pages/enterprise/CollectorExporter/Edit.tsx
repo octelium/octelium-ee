@@ -525,7 +525,7 @@ const Edit = (props: {
   const configurations = React.useRef<
     Partial<Record<string, EnterpriseP.CollectorExporter_Spec["type"]>>
   >({
-    [req.spec?.type.oneofKind ?? "otlp"]: structuredClone(
+    [req.spec?.type?.oneofKind ?? "otlp"]: structuredClone(
       req.spec?.type ?? { oneofKind: undefined },
     ),
   });

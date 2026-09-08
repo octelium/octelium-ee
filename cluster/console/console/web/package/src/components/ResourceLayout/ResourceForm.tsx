@@ -1,7 +1,11 @@
 import ContainerGen from "@/components/ContainerGen";
 import MetadataEdit from "@/components/MetadataEdit";
 import ResourceEditor from "@/components/ResourceEditor";
-import { useRegisterDirtyForm, validateResourceName } from "@/utils/forms";
+import {
+  consumeNavigationApproval,
+  useRegisterDirtyForm,
+  validateResourceName,
+} from "@/utils/forms";
 import {
   cloneResource,
   Resource,
@@ -130,12 +134,24 @@ const ResourceForm = (props: ResourceFormProps) => {
 
   useRegisterDirtyForm(isDirty && !props.readOnly);
 
-  const blocker = useBlocker(
-    ({ currentLocation, nextLocation }) =>
+  const submitting = React.useRef(false);
+  const prevPending = React.useRef(props.isPending);
+
+  React.useEffect(() => {
+    if (prevPending.current && !props.isPending) {
+      submitting.current = false;
+    }
+    prevPending.current = props.isPending;
+  }, [props.isPending]);
+
+  const blocker = useBlocker(({ currentLocation, nextLocation }) => {
+    if (submitting.current || consumeNavigationApproval()) return false;
+    return (
       isDirty &&
       !props.readOnly &&
-      currentLocation.pathname !== nextLocation.pathname,
-  );
+      currentLocation.pathname !== nextLocation.pathname
+    );
+  });
 
   const yamlTimer = React.useRef<number | undefined>(undefined);
 
@@ -193,7 +209,7 @@ const ResourceForm = (props: ResourceFormProps) => {
   };
 
   return (
-    <div className="flex w-full flex-col gap-6 pb-24">
+    <div className="flex w-full flex-col gap-6">
       <div className="flex items-center">
         <SegmentedControl
           value={activeTab}
@@ -305,8 +321,8 @@ const ResourceForm = (props: ResourceFormProps) => {
         </div>
       )}
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85 sm:left-[264px]">
-        <div className="mx-auto flex w-full max-w-[var(--page-max-width)] flex-wrap items-center gap-3 px-4 py-3 sm:px-6">
+      <div className="sticky bottom-0 z-30 rounded-xl border border-slate-200 bg-white/95 shadow-raised backdrop-blur supports-[backdrop-filter]:bg-white/85">
+        <div className="flex w-full flex-wrap items-center gap-3 px-4 py-3">
           <div className="flex min-w-0 flex-1 flex-col">
             {props.isError ? (
               <span className="text-xs font-medium text-red-600">
@@ -352,7 +368,10 @@ const ResourceForm = (props: ResourceFormProps) => {
             }
             disabled={!canSubmit}
             loading={props.isPending}
-            onClick={() => props.onSubmit(req, curYAML, activeTab === "yaml")}
+            onClick={() => {
+              submitting.current = true;
+              props.onSubmit(req, curYAML, activeTab === "yaml");
+            }}
           >
             {props.isPending ? props.submitPendingLabel : props.submitLabel}
           </Button>

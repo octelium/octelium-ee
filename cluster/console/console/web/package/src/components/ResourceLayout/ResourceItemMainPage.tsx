@@ -184,7 +184,7 @@ const buildMetadataItems = (md: Metadata): ResourceInfoMainItem[] => {
     {
       label: "UID",
       value: (
-        <span className="break-all font-mono text-xs text-slate-600">
+        <span className="break-all font-mono text-micro font-semibold text-slate-600">
           <CopyText value={md.uid} />
         </span>
       ),
@@ -231,7 +231,7 @@ const buildMetadataItems = (md: Metadata): ResourceInfoMainItem[] => {
           {
             label: "Resource version",
             value: (
-              <span className="break-all font-mono text-xs text-slate-600">
+              <span className="break-all font-mono text-micro font-semibold text-slate-600">
                 <CopyText value={md.resourceVersion} />
               </span>
             ),

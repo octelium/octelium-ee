@@ -15,7 +15,7 @@ import { AlertTriangle, CheckCircle2, Globe2, Loader2 } from "lucide-react";
 import { match } from "ts-pattern";
 
 export const getType = (item: CertificateIssuer): string =>
-  match(item.spec?.type.oneofKind)
+  match(item.spec?.type?.oneofKind)
     .with("acme", () => "ACME")
     .otherwise(() => "Not configured");
 
@@ -29,9 +29,9 @@ export const getIssuerState = (state?: CertificateIssuer_Status_State) =>
 export const getIssuerPresentation = (item: CertificateIssuer) => {
   const state = item.status?.state;
   const acme =
-    item.spec?.type.oneofKind === "acme" ? item.spec.type.acme : undefined;
+    item.spec?.type?.oneofKind === "acme" ? item.spec.type.acme : undefined;
   const accountSecret =
-    item.status?.type.oneofKind === "acme"
+    item.status?.type?.oneofKind === "acme"
       ? item.status.type.acme.secretRef
       : undefined;
   let serverHost: string | undefined;
@@ -51,7 +51,7 @@ export const getIssuerPresentation = (item: CertificateIssuer) => {
     accountSecret,
     serverHost,
     solver:
-      acme?.solver?.type.oneofKind === "dns" ? "DNS-01" : "Not configured",
+      acme?.solver?.type?.oneofKind === "dns" ? "DNS-01" : "Not configured",
   };
 };
 

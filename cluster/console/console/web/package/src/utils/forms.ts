@@ -41,6 +41,28 @@ export const useRegisterDirtyForm = (dirty: boolean) => {
 export const useHasDirtyForm = () =>
   React.useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
+let navigationApproved = false;
+let approvalTimer: number | undefined;
+
+// A one-shot bypass for the router's dirty-form blocker, for navigations we
+// already confirmed elsewhere (e.g. a Drawer's own outside-click prompt).
+// Needed because that navigation fires asynchronously after a close
+// animation, by which point the form that owns the blocker may be unmounted.
+export const approveNextNavigation = () => {
+  navigationApproved = true;
+  if (approvalTimer) window.clearTimeout(approvalTimer);
+  approvalTimer = window.setTimeout(() => {
+    navigationApproved = false;
+  }, 4000);
+};
+
+export const consumeNavigationApproval = () => {
+  if (!navigationApproved) return false;
+  navigationApproved = false;
+  if (approvalTimer) window.clearTimeout(approvalTimer);
+  return true;
+};
+
 export const RESOURCE_NAME_PATTERN = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
 
 export const validateResourceName = (name: string): string | undefined => {

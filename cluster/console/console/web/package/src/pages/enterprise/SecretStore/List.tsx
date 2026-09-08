@@ -21,7 +21,7 @@ import { VscAzure } from "react-icons/vsc";
 import { match } from "ts-pattern";
 
 export const getSecretStoreType = (item: SecretStore): string =>
-  match(item.spec?.type.oneofKind)
+  match(item.spec?.type?.oneofKind)
     .with("kubernetes", () => "Kubernetes")
     .with("hashicorpVault", () => "HashiCorp Vault")
     .with("awsKeyManagementService", () => "AWS KMS")

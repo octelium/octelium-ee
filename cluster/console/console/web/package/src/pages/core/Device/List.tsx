@@ -64,7 +64,7 @@ export const LabelComponent = (props: { item: Device }) => {
       <ResourceListLabel>
         <span
           className={twMerge(
-            match(item.spec!.state)
+            match(item.spec?.state)
               .with(CoreP.Device_Spec_State.REJECTED, () => `text-red-400`)
               .with(CoreP.Device_Spec_State.ACTIVE, () => `text-green-400`)
               .with(CoreP.Device_Spec_State.PENDING, () => `text-yellow-400`)
@@ -77,11 +77,13 @@ export const LabelComponent = (props: { item: Device }) => {
       <DeviceTypeLabel item={item} />
       {item.status?.hostname && (
         <ResourceListLabel label="Hostname">
-          {item.status!.hostname}
+          {item.status.hostname}
         </ResourceListLabel>
       )}
 
-      <ResourceListLabel itemRef={item.status!.userRef}></ResourceListLabel>
+      {item.status?.userRef && (
+        <ResourceListLabel itemRef={item.status.userRef}></ResourceListLabel>
+      )}
       {item.status?.isLocked && (
         <ResourceListLabel>
           <span className="text-red-500">Locked</span>
