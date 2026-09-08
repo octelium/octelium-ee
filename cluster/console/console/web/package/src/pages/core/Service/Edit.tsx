@@ -380,6 +380,7 @@ const createConfigTypeForMode = (
         }),
       };
     case CoreP.Service_Spec_Mode.RDP_WEB:
+    case CoreP.Service_Spec_Mode.RDP:
       return {
         oneofKind: "rdp",
         rdp: CoreP.Service_Spec_Config_RDP.create({
@@ -9357,6 +9358,10 @@ const Edit = (props: {
               value: CoreP.Service_Spec_Mode[CoreP.Service_Spec_Mode.RDP_WEB],
             },
             {
+              label: "RDP",
+              value: CoreP.Service_Spec_Mode[CoreP.Service_Spec_Mode.RDP],
+            },
+            {
               label: "MCP Gateway",
               value: CoreP.Service_Spec_Mode[CoreP.Service_Spec_Mode.MCP],
             },
@@ -9591,30 +9596,36 @@ const Edit = (props: {
                       },
                     });
               })
-              .with(CoreP.Service_Spec_Mode.RDP_WEB, () => {
-                const previousConfig =
-                  configsByMode.current[CoreP.Service_Spec_Mode.RDP_WEB];
-                req.spec!.config = previousConfig
-                  ? CoreP.Service_Spec_Config.clone(previousConfig)
-                  : CoreP.Service_Spec_Config.create({
-                      upstream: {
-                        type: {
-                          oneofKind: "url",
-                          url: "",
-                        },
-                      },
-                      type: {
-                        oneofKind: "rdp",
-                        rdp: {
-                          auth: {
-                            password: {
-                              type: { oneofKind: "fromSecret", fromSecret: "" },
-                            },
+              .with(
+                CoreP.Service_Spec_Mode.RDP_WEB,
+                CoreP.Service_Spec_Mode.RDP,
+                (mode) => {
+                  const previousConfig = configsByMode.current[mode];
+                  req.spec!.config = previousConfig
+                    ? CoreP.Service_Spec_Config.clone(previousConfig)
+                    : CoreP.Service_Spec_Config.create({
+                        upstream: {
+                          type: {
+                            oneofKind: "url",
+                            url: "",
                           },
-                        } as CoreP.Service_Spec_Config_RDP,
-                      },
-                    });
-              })
+                        },
+                        type: {
+                          oneofKind: "rdp",
+                          rdp: {
+                            auth: {
+                              password: {
+                                type: {
+                                  oneofKind: "fromSecret",
+                                  fromSecret: "",
+                                },
+                              },
+                            },
+                          } as CoreP.Service_Spec_Config_RDP,
+                        },
+                      });
+                },
+              )
               .with(CoreP.Service_Spec_Mode.MCP, () => {
                 const previousConfig =
                   configsByMode.current[CoreP.Service_Spec_Mode.MCP];

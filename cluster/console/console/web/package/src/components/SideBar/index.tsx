@@ -115,7 +115,6 @@ export const IconAccessLog = ShieldEllipsis;
 const sections = [
   {
     label: "Core",
-    description: "Core API resources",
     prefix: "/core",
     defaultPath: "/core",
     icon: Cpu,
@@ -123,7 +122,6 @@ const sections = [
   },
   {
     label: "Enterprise",
-    description: "Enterprise API resources",
     prefix: "/enterprise",
     defaultPath: "/enterprise/certificates",
     icon: Building2,
@@ -131,7 +129,6 @@ const sections = [
   },
   {
     label: "Access",
-    description: "Requests and access governance",
     prefix: "/access",
     defaultPath: "/access/policies",
     icon: UserCheck,
@@ -139,7 +136,6 @@ const sections = [
   },
   {
     label: "Cluster Management",
-    description: "Cluster managed upgrades",
     prefix: "/clusterman",
     defaultPath: "/clusterman",
     icon: Settings2,
@@ -147,7 +143,6 @@ const sections = [
   },
   {
     label: "Visibility",
-    description: "Logs, sessions, and activity",
     prefix: "/visibility",
     defaultPath: "/visibility",
     icon: Eye,
@@ -341,18 +336,8 @@ export default function Sidebar() {
                       >
                         <Icon size={14} strokeWidth={2.25} />
                       </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-body font-semibold">
-                          {s.label}
-                        </span>
-                        <span
-                          className={twMerge(
-                            "mt-0.5 block truncate text-micro font-normal",
-                            isActive ? "text-slate-300" : "text-slate-500",
-                          )}
-                        >
-                          {s.description}
-                        </span>
+                      <span className="min-w-0 flex-1 truncate text-body font-semibold">
+                        {s.label}
                       </span>
                       {isActive && (
                         <Check

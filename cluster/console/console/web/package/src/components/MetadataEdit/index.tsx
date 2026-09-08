@@ -146,10 +146,12 @@ const MetadataEdit = (props: {
   const isSystem = !!sourceMetadata?.isSystem;
   const isNameLocked = isSystem || !!props.isUpdateMode;
 
-  const hasLabelsOrAnnotations =
+  const hasMoreFields =
+    !!req.tags?.length ||
+    !!req.description ||
     Object.keys(req.labels ?? {}).length > 0 ||
     Object.keys(req.annotations ?? {}).length > 0;
-  const [moreOpen, setMoreOpen] = React.useState(hasLabelsOrAnnotations);
+  const [moreOpen, setMoreOpen] = React.useState(hasMoreFields);
 
   const update = (partial: Partial<Metadata>) => {
     const next = Metadata.clone(sourceMetadata ?? Metadata.create());
@@ -226,34 +228,6 @@ const MetadataEdit = (props: {
         )}
       </SimpleGrid>
 
-      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm" verticalSpacing="sm">
-        <TagsInput
-          label="Tags"
-          disabled={isSystem}
-          placeholder="Add a tag"
-          description="Optional tags that classify this resource."
-          value={req.tags}
-          leftSection={<Tag size={13} strokeWidth={2.25} />}
-          onChange={(tags) => update({ tags })}
-          clearable
-        />
-
-        <Textarea
-          value={req.description}
-          disabled={isSystem}
-          label="Description"
-          description="Short description of this resource, up to 1000 characters."
-          placeholder="Describe this resource…"
-          minRows={2}
-          autosize
-          maxRows={4}
-          leftSection={<AlignLeft size={13} strokeWidth={2.25} />}
-          onChange={(event) =>
-            update({ description: event.currentTarget.value })
-          }
-        />
-      </SimpleGrid>
-
       <div className="rounded-lg border border-slate-200/70">
         <button
           type="button"
@@ -270,14 +244,8 @@ const MetadataEdit = (props: {
             )}
           />
           <span className="text-body font-semibold text-slate-900">
-            Labels &amp; annotations
+            Tags, description, labels &amp; annotations
           </span>
-          {hasLabelsOrAnnotations && (
-            <span className="rounded-full border border-slate-200 bg-slate-50 px-1.5 py-px text-micro font-medium text-slate-600">
-              {Object.keys(req.labels ?? {}).length +
-                Object.keys(req.annotations ?? {}).length}
-            </span>
-          )}
           {!moreOpen && (
             <span className="text-xs font-normal text-slate-500">More</span>
           )}
@@ -285,6 +253,34 @@ const MetadataEdit = (props: {
 
         <Collapse expanded={moreOpen} transitionDuration={150}>
           <div className="flex flex-col gap-4 border-t border-slate-100 px-3.5 py-3.5">
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm" verticalSpacing="sm">
+              <TagsInput
+                label="Tags"
+                disabled={isSystem}
+                placeholder="Add a tag"
+                description="Optional tags that classify this resource."
+                value={req.tags}
+                leftSection={<Tag size={13} strokeWidth={2.25} />}
+                onChange={(tags) => update({ tags })}
+                clearable
+              />
+
+              <Textarea
+                value={req.description}
+                disabled={isSystem}
+                label="Description"
+                description="Short description of this resource, up to 1000 characters."
+                placeholder="Describe this resource…"
+                minRows={2}
+                autosize
+                maxRows={4}
+                leftSection={<AlignLeft size={13} strokeWidth={2.25} />}
+                onChange={(event) =>
+                  update({ description: event.currentTarget.value })
+                }
+              />
+            </SimpleGrid>
+
             <Section
               level={2}
               title="Labels"
