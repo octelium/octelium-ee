@@ -75,7 +75,13 @@ const TimeAgo = (props: { rfc3339?: Timestamp }) => {
   return (
     <Tooltip
       label={date.local().format("hh:mm:ss A, ddd MMM D, YYYY")}
-      transitionProps={{ transition: "fade", duration: 150 }}
+      transitionProps={{
+        transition: "pop",
+        duration: 160,
+        exitDuration: 110,
+        timingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
+      }}
+      styles={{ tooltip: { fontWeight: 700 } }}
       withArrow
     >
       <span>{date.from(currentTime)}</span>

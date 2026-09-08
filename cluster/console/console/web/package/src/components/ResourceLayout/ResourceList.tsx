@@ -247,18 +247,24 @@ const SystemBadge = () => (
   </Tooltip>
 );
 
-const RowTimestamp = (props: { item: Resource; className?: string }) => {
+const RowTimestamp = (props: {
+  item: Resource;
+  className?: string;
+  mode?: "auto" | "created" | "updated";
+}) => {
   const md = props.item.metadata!;
-  const updated = md.updatedAt && md.updatedAt !== md.createdAt;
+  const mode = props.mode ?? "auto";
+  const hasUpdate = !!md.updatedAt && md.updatedAt !== md.createdAt;
+  const showUpdated = mode === "updated" || (mode === "auto" && hasUpdate);
   return (
     <span
       className={twMerge(
-        "whitespace-nowrap text-xs font-normal text-slate-600",
+        "relative z-10 inline-flex items-center gap-1 whitespace-nowrap text-xs font-normal text-slate-600",
         props.className,
       )}
     >
-      {updated ? "Updated " : "Created "}
-      <TimeAgo rfc3339={updated ? md.updatedAt : md.createdAt} />
+      {showUpdated ? "Updated" : "Created"}
+      <TimeAgo rfc3339={showUpdated ? md.updatedAt : md.createdAt} />
     </span>
   );
 };
@@ -361,7 +367,14 @@ const CardItem = (props: {
             </p>
           )}
 
-          {!compact && <RowTimestamp item={item} />}
+          {!compact && (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
+              <RowTimestamp item={item} mode="created" />
+              {md.updatedAt && md.updatedAt !== md.createdAt && (
+                <RowTimestamp item={item} mode="updated" />
+              )}
+            </div>
+          )}
         </div>
 
         <div className="relative z-10 shrink-0">
@@ -455,7 +468,12 @@ const TableView = (props: {
                       {md.displayName}
                     </div>
                   )}
-                  <RowTimestamp item={item} className="mt-1" />
+                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5">
+                    <RowTimestamp item={item} mode="created" />
+                    {md.updatedAt && md.updatedAt !== md.createdAt && (
+                      <RowTimestamp item={item} mode="updated" />
+                    )}
+                  </div>
                 </td>
                 {Labels && (
                   <td className="px-3 py-2 align-top [&>div]:mt-0">
@@ -517,7 +535,7 @@ const EmptyState = (props: {
         <button
           type="button"
           onClick={props.onCreate}
-          className="mt-5 inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-semibold text-white shadow-[0_8px_20px_-6px_rgba(15,23,42,0.35)] hover:bg-slate-800"
+          className="mt-5 inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-sm !font-bold text-white shadow-[0_8px_20px_-6px_rgba(15,23,42,0.35)] hover:bg-slate-800"
         >
           <Plus size={14} strokeWidth={2.2} />
           Create {props.kindName}
@@ -770,6 +788,10 @@ const useListReq = () => {
     optionsPB["mergePartial"](req, req2);
   }
 
+  if (!req.common!.itemsPerPage) {
+    req.common!.itemsPerPage = 25;
+  }
+
   return req;
 };
 
@@ -837,7 +859,7 @@ const ResourceListContent = (props: { info: ResourceComponentInfo }) => {
   const itemsPerPage =
     Number(searchParams.get("common.itemsPerPage")) ||
     itemList?.listResponseMeta?.itemsPerPage ||
-    10;
+    25;
   const countLabel =
     totalCount === 1
       ? kindName.toLowerCase()

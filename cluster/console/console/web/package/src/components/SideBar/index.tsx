@@ -96,7 +96,6 @@ const itemsAccess = [
 ];
 
 const itemsVisibility = [
-  { title: "LLM", url: "/visibility/llm", icon: BrainCircuit },
   { title: "Access Logs", url: "/visibility/accesslogs", icon: ShieldEllipsis },
   {
     title: "Authentication Logs",
@@ -107,6 +106,7 @@ const itemsVisibility = [
   { title: "Component Logs", url: "/visibility/componentlogs", icon: Scroll },
   { title: "SSH Sessions", url: "/visibility/ssh", icon: SquareTerminal },
   { title: "Metrics", url: "/visibility/metrics", icon: ChartNoAxesCombined },
+  { title: "LLM", url: "/visibility/llm", icon: BrainCircuit },
 ];
 
 export const IconAuthenticationLog = ShieldUser;
@@ -123,14 +123,14 @@ const sections = [
   {
     label: "Enterprise",
     prefix: "/enterprise",
-    defaultPath: "/enterprise/certificates",
+    defaultPath: "/enterprise",
     icon: Building2,
     items: itemsEnterprise,
   },
   {
     label: "Access",
     prefix: "/access",
-    defaultPath: "/access/policies",
+    defaultPath: "/access",
     icon: UserCheck,
     items: itemsAccess,
   },
@@ -365,15 +365,14 @@ export default function Sidebar() {
               key={item.title}
               viewTransition
               to={item.url}
-              className={twMerge(
+              className={`text-body font-semibold ${twMerge(
                 "flex w-full items-center gap-2",
                 "py-1.5 px-2.5 rounded-md",
-                "text-body font-normal",
                 "transition-colors duration-150",
                 isActive
                   ? "bg-slate-900 text-white shadow-sm"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/70",
-              )}
+              )}`}
             >
               <item.icon
                 size={15}
