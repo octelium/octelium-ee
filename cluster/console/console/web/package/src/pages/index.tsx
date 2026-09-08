@@ -73,7 +73,7 @@ export default () => {
 
         <AppShell.Navbar
           p="md"
-          className="!bg-transparent"
+          className="!bg-slate-100"
           style={{ zIndex: 10 }}
         >
           <SideBar />
