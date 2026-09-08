@@ -42,3 +42,15 @@ export const getUrgencyLabel = (
     .with(AccessP.Request_Spec_Urgency.VERY_HIGH, () => "Very High")
     .with(AccessP.Request_Spec_Urgency.HIGHEST, () => "Highest")
     .otherwise(() => "Unset");
+
+export const getUrgencyColor = (
+  urgency?: AccessP.Request_Spec_Urgency,
+): string =>
+  match(urgency)
+    .with(AccessP.Request_Spec_Urgency.VERY_LOW, () => "#64748b")
+    .with(AccessP.Request_Spec_Urgency.LOW, () => "#059669")
+    .with(AccessP.Request_Spec_Urgency.NORMAL, () => "#2563eb")
+    .with(AccessP.Request_Spec_Urgency.HIGH, () => "#d97706")
+    .with(AccessP.Request_Spec_Urgency.VERY_HIGH, () => "#ea580c")
+    .with(AccessP.Request_Spec_Urgency.HIGHEST, () => "#dc2626")
+    .otherwise(() => "#94a3b8");

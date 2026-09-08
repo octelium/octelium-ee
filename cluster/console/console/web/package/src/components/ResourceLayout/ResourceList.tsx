@@ -397,7 +397,7 @@ const TableView = (props: {
 
   return (
     <div className="w-full overflow-x-auto rounded-xl border border-slate-200 bg-white">
-      <table className="w-full min-w-[720px] border-collapse text-left">
+      <table className="w-full min-w-[720px] table-fixed border-collapse text-left">
         <thead>
           <tr className="border-b border-slate-200 bg-slate-50/70">
             <th scope="col" className="w-10 px-3 py-2.5">
@@ -411,7 +411,7 @@ const TableView = (props: {
             </th>
             <th
               scope="col"
-              className="px-3 py-2.5 text-xs font-normal text-slate-600"
+              className="w-72 px-3 py-2.5 text-xs font-normal text-slate-600"
             >
               Name
             </th>
@@ -423,12 +423,6 @@ const TableView = (props: {
                 Details
               </th>
             )}
-            <th
-              scope="col"
-              className="w-40 px-3 py-2.5 text-xs font-normal text-slate-600"
-            >
-              Last change
-            </th>
             <th scope="col" className="w-12 px-3 py-2.5">
               <span className="sr-only">Actions</span>
             </th>
@@ -450,7 +444,7 @@ const TableView = (props: {
                     onToggle={props.onToggle}
                   />
                 </td>
-                <td className="max-w-0 px-3 py-2.5 align-top">
+                <td className="px-3 py-2.5 align-top">
                   <div className="flex min-w-0 items-center gap-2">
                     <RowTitleLink item={item} returnTo={props.returnTo} />
                     <CopyText value={md.name} hide />
@@ -461,15 +455,13 @@ const TableView = (props: {
                       {md.displayName}
                     </div>
                   )}
+                  <RowTimestamp item={item} className="mt-1" />
                 </td>
                 {Labels && (
                   <td className="px-3 py-2 align-top [&>div]:mt-0">
                     <Labels item={item} />
                   </td>
                 )}
-                <td className="px-3 py-2.5 align-top">
-                  <RowTimestamp item={item} />
-                </td>
                 <td className="px-3 py-2.5 align-top">
                   <ResourceItemActions
                     item={item}

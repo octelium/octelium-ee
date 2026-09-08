@@ -99,6 +99,7 @@ const STREAM_MODES = new Set<Service_Spec_Mode>([
   Service_Spec_Mode.POSTGRES,
   Service_Spec_Mode.MYSQL,
   Service_Spec_Mode.SOCKS5,
+  Service_Spec_Mode.RDP,
 ]);
 
 const increaseCounterOperation = counterOp(CounterOperation_Function.INCREASE);

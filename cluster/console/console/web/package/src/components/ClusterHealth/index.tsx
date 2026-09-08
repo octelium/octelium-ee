@@ -17,6 +17,7 @@ import {
   getClientVisibilityAuditLog,
   getClientVisibilityAuthenticationLog,
   getClientVisibilityComponentLog,
+  getClientVisibilityCore,
   refetchIntervalChart,
 } from "@/utils/client";
 import {
@@ -345,6 +346,17 @@ const ClusterHealth = (props: { periodMinutes: number }) => {
     refetchInterval: SUMMARY_REFETCH,
   });
 
+  const sessionSummary = useQuery({
+    queryKey: ["visibility", "core", "summary", "Session"],
+    queryFn: async () => {
+      const { response } = await getClientVisibilityCore().getSessionSummary(
+        {},
+      );
+      return response;
+    },
+    refetchInterval: SUMMARY_REFETCH,
+  });
+
   const componentErrorPoints = useQuery({
     queryKey: visibilityKeys.componentErrorDataPoint(periodMinutes),
     queryFn: async () => {
@@ -366,8 +378,7 @@ const ClusterHealth = (props: { periodMinutes: number }) => {
   const requestsPrev = n(accessPrev.data?.totalNumber);
   const denied = n(accessCur.data?.totalDenied);
   const deniedPrev = n(accessPrev.data?.totalDenied);
-  const sessions = n(accessCur.data?.totalSession);
-  const sessionsPrev = n(accessPrev.data?.totalSession);
+  const connectedSessions = n(sessionSummary.data?.totalConnected);
   const auths = n(authCur.data?.totalNumber);
   const authsPrev = n(authPrev.data?.totalNumber);
   const changes = n(auditCur.data?.totalNumber);
@@ -410,20 +421,19 @@ const ClusterHealth = (props: { periodMinutes: number }) => {
         rangeLabel={rangeLabel}
         points={allPoints}
         color={STATUS_COLORS.critical}
-        to="/visibility/accesslogs?status=denied"
+        to="/visibility/accesslogs?status=DENIED"
         isLoading={accessCur.isLoading}
       />
       <Tile
-        label="Sessions seen"
-        value={sessions}
-        cur={sessions}
-        prev={sessionsPrev}
+        label="Connected sessions"
+        value={connectedSessions}
+        cur={connectedSessions}
+        prev={connectedSessions}
         upIsGood
         rangeLabel={rangeLabel}
-        points={allPoints}
         color={seriesColor(2)}
-        to="/core/sessions"
-        isLoading={accessCur.isLoading}
+        to="/core/sessions?isConnected=true"
+        isLoading={sessionSummary.isLoading}
       />
       <Tile
         label="Authentications"
@@ -438,7 +448,7 @@ const ClusterHealth = (props: { periodMinutes: number }) => {
         isLoading={authCur.isLoading}
       />
       <Tile
-        label="Admin changes"
+        label="Audit logs"
         value={changes}
         cur={changes}
         prev={changesPrev}

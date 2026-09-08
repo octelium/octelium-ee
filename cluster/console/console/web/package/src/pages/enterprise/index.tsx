@@ -1,3 +1,4 @@
+import EnterpriseResourceInventory from "@/components/EnterpriseResourceInventory";
 import Item from "@/components/SummaryCard";
 import { SummaryItemCount, SummaryItemCountWrap, SummaryNoItems } from "@/components/Summary";
 import { getClientVisibilityEnterprise } from "@/utils/client";
@@ -30,15 +31,19 @@ export default () => (
     initial={{ opacity: 0, y: 6 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.2, ease: "easeOut" }}
-    className="grid grid-cols-1 gap-4 py-4 lg:grid-cols-2"
+    className="flex flex-col gap-4 py-4"
   >
-    <Item title="Certificates" link="/enterprise/certificates"><CertificateSummary showNoItems /></Item>
-    <Item title="Certificate Issuers" link="/enterprise/certificateissuers"><CertificateIssuerSummary showNoItems /></Item>
-    <Item title="Directory Providers" link="/enterprise/directoryproviders"><DirectoryProviderSummary showNoItems /></Item>
-    <Item title="Directory Inventory"><DirectoryInventorySummary /></Item>
-    <Item title="Collector Exporters" link="/enterprise/collectorexporters"><CollectorExporterSummary showNoItems /></Item>
-    <Item title="DNS Providers" link="/enterprise/dnsproviders"><DNSProviderSummary showNoItems /></Item>
-    <Item title="Secret Stores" link="/enterprise/secretstores"><SecretStoreSummary showNoItems /></Item>
-    <Item title="Secrets" link="/enterprise/secrets"><SecretSummary showNoItems /></Item>
+    <EnterpriseResourceInventory />
+
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <Item title="Certificates" link="/enterprise/certificates"><CertificateSummary showNoItems /></Item>
+      <Item title="Certificate Issuers" link="/enterprise/certificateissuers"><CertificateIssuerSummary showNoItems /></Item>
+      <Item title="Directory Providers" link="/enterprise/directoryproviders"><DirectoryProviderSummary showNoItems /></Item>
+      <Item title="Directory Inventory"><DirectoryInventorySummary /></Item>
+      <Item title="Collector Exporters" link="/enterprise/collectorexporters"><CollectorExporterSummary showNoItems /></Item>
+      <Item title="DNS Providers" link="/enterprise/dnsproviders"><DNSProviderSummary showNoItems /></Item>
+      <Item title="Secret Stores" link="/enterprise/secretstores"><SecretStoreSummary showNoItems /></Item>
+      <Item title="Secrets" link="/enterprise/secrets"><SecretSummary showNoItems /></Item>
+    </div>
   </motion.div>
 );

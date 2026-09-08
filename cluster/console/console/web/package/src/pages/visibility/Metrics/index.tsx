@@ -386,6 +386,7 @@ const Metrics = () => {
       Service_Spec_Mode.POSTGRES,
       Service_Spec_Mode.MYSQL,
       Service_Spec_Mode.SOCKS5,
+      Service_Spec_Mode.RDP,
     ].includes(serviceMode);
   const effectiveTrafficDetail =
     serviceMode === Service_Spec_Mode.DNS

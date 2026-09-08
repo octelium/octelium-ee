@@ -33,6 +33,7 @@ const TYPE_LABEL_MAP: Record<string, string> = {
   DNS: "DNS",
   SOCKS5: "SOCKS5",
   RDP_WEB: "RDP Web",
+  RDP: "RDP",
 };
 
 const BOOLEAN_PARAM_LABELS: Record<string, string> = {

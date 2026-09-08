@@ -589,6 +589,7 @@ export const printServiceMode = (mode: CoreP.Service_Spec_Mode): string =>
     .with(CoreP.Service_Spec_Mode.DNS, () => "DNS")
     .with(CoreP.Service_Spec_Mode.SOCKS5, () => "SOCKS5")
     .with(CoreP.Service_Spec_Mode.RDP_WEB, () => "RDP Web")
+    .with(CoreP.Service_Spec_Mode.RDP, () => "RDP")
     .with(CoreP.Service_Spec_Mode.MCP, () => "MCP")
     .with(CoreP.Service_Spec_Mode.LLM, () => "LLM / AI")
     .otherwise((v) => v.toString());
