@@ -269,6 +269,7 @@ const ResourceListToolbar = (props: {
           <Button
             variant="filled"
             color="dark"
+            className="!shadow-[0_8px_20px_-6px_rgba(15,23,42,0.35)]"
             leftSection={<Plus size={14} />}
             onClick={props.onCreate}
           >

@@ -102,9 +102,9 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .mantine-Pagination-control[data-active] {
-  background-color: #0f172a;
-  border-color: #0f172a;
-  color: #ffffff;
+  background-color: #0f172a !important;
+  border-color: #0f172a !important;
+  color: #ffffff !important;
 }
 
 .mantine-Button-root:focus-visible,

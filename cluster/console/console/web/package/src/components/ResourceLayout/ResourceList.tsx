@@ -18,7 +18,15 @@ import {
   ResourceList,
   ResourceName,
 } from "@/utils/pb";
-import { ActionIcon, Checkbox, Menu, Tooltip } from "@mantine/core";
+import {
+  ActionIcon,
+  Button,
+  Checkbox,
+  Menu,
+  Modal,
+  Switch,
+  Tooltip,
+} from "@mantine/core";
 import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import React from "react";
 import {
@@ -40,19 +48,23 @@ import { Service, Service_Spec_Mode } from "@/apis/corev1/corev1";
 import { CommonListOptions } from "@/apis/metav1/metav1";
 import { getServicePublicURL } from "@/utils/octelium";
 import {
+  AlertTriangle,
   Copy,
   ExternalLink,
   FileText,
   FilterX,
   Library,
+  Loader2,
   MoreVertical,
   Pencil,
   Plus,
   SearchX,
+  ShieldAlert,
   ShieldEllipsis,
   ShieldUser,
   SquareTerminal,
   Trash2,
+  X,
 } from "lucide-react";
 import DeleteResource from "../DeleteResource";
 import TimeAgo from "../TimeAgo";
@@ -262,7 +274,7 @@ const RowTitleLink = (props: {
     preventScrollReset
     className={twMerge(
       "min-w-0 truncate rounded text-sm font-semibold text-slate-900",
-      "outline-none hover:underline focus-visible:ring-2 focus-visible:ring-blue-500/40",
+      "outline-none transition-colors hover:text-black focus-visible:ring-2 focus-visible:ring-blue-500/40",
       props.stretched && "after:absolute after:inset-0 after:content-['']",
     )}
   >
@@ -513,7 +525,7 @@ const EmptyState = (props: {
         <button
           type="button"
           onClick={props.onCreate}
-          className="mt-5 inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-semibold text-white hover:bg-slate-800"
+          className="mt-5 inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-semibold text-white shadow-[0_8px_20px_-6px_rgba(15,23,42,0.35)] hover:bg-slate-800"
         >
           <Plus size={14} strokeWidth={2.2} />
           Create {props.kindName}
@@ -522,6 +534,172 @@ const EmptyState = (props: {
     )}
   </div>
 );
+
+const BulkDeleteModal = (props: {
+  opened: boolean;
+  onClose: () => void;
+  items: Resource[];
+  kindName: string;
+  isPending: boolean;
+  onConfirm: () => void;
+}) => {
+  const [isConfirmed, setIsConfirmed] = React.useState(false);
+  const count = props.items.length;
+  const kindLabel = `${props.kindName}${count === 1 ? "" : "s"}`;
+
+  React.useEffect(() => {
+    if (!props.opened) setIsConfirmed(false);
+  }, [props.opened]);
+
+  const handleClose = () => {
+    if (props.isPending) return;
+    setIsConfirmed(false);
+    props.onClose();
+  };
+
+  return (
+    <Modal
+      opened={props.opened}
+      onClose={handleClose}
+      centered
+      size="md"
+      withCloseButton={false}
+      padding={0}
+      closeOnClickOutside={!props.isPending}
+      closeOnEscape={!props.isPending}
+      overlayProps={{ backgroundOpacity: 0.25, blur: 1 }}
+      transitionProps={{ transition: "pop", duration: 250 }}
+      styles={{
+        content: {
+          border: "1px solid #e2e8f0",
+          borderRadius: "14px",
+          boxShadow: "0 24px 64px rgba(15,23,42,0.18)",
+          overflow: "hidden",
+        },
+      }}
+    >
+      <div className="flex flex-col">
+        <header className="flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-50/70 px-4 py-3.5 sm:px-5">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-600 text-white shadow-sm">
+              <Trash2 size={16} strokeWidth={2.25} />
+            </span>
+            <div className="min-w-0">
+              <h2 className="truncate text-sm font-bold text-slate-900">
+                Delete {count} {kindLabel}
+              </h2>
+              <p className="mt-0.5 text-micro font-normal text-slate-500">
+                Permanent destructive action
+              </p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="subtle"
+            color="gray"
+            size="compact-xs"
+            disabled={props.isPending}
+            leftSection={<X size={12} strokeWidth={2.5} />}
+            onClick={handleClose}
+          >
+            Close
+          </Button>
+        </header>
+
+        <div className="space-y-4 px-4 py-4 sm:px-5">
+          <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50/70 px-3.5 py-3">
+            <AlertTriangle
+              size={16}
+              className="mt-0.5 shrink-0 text-red-600"
+              strokeWidth={2.25}
+            />
+            <div>
+              <p className="text-body font-semibold text-red-800">
+                This action cannot be undone
+              </p>
+              <p className="mt-1 text-xs font-semibold leading-relaxed text-red-700/80">
+                {count} {count === 1 ? "resource" : "resources"} will be
+                permanently removed from the cluster. Review the list below
+                carefully before continuing.
+              </p>
+            </div>
+          </div>
+
+          <section className="max-h-48 overflow-y-auto rounded-xl border border-slate-200 bg-white">
+            {props.items.map((item) => (
+              <div
+                key={item.metadata!.uid}
+                className="flex items-center gap-2 border-b border-slate-100 px-3.5 py-2 last:border-b-0"
+              >
+                <ShieldAlert
+                  size={13}
+                  className="shrink-0 text-slate-400"
+                  strokeWidth={2.25}
+                />
+                <span className="min-w-0 truncate text-xs font-semibold text-slate-700">
+                  {item.metadata!.name}
+                </span>
+              </div>
+            ))}
+          </section>
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50/60 px-3.5 py-3">
+            <Switch
+              autoFocus
+              checked={isConfirmed}
+              disabled={props.isPending}
+              color="red.8"
+              size="sm"
+              label="I understand that this action is permanent"
+              description={`Confirm deletion of ${count} ${kindLabel.toLowerCase()}`}
+              onChange={(event) => setIsConfirmed(event.currentTarget.checked)}
+              styles={{
+                label: {
+                  color: "#334155",
+                  fontSize: "0.75rem",
+                  fontWeight: 700,
+                },
+                description: {
+                  color: "#94a3b8",
+                  fontSize: "0.67rem",
+                  fontWeight: 600,
+                  marginTop: 2,
+                },
+              }}
+            />
+          </div>
+        </div>
+
+        <footer className="flex items-center justify-end gap-2 border-t border-slate-200 bg-slate-50/70 px-4 py-3 sm:px-5">
+          <Button
+            type="button"
+            variant="default"
+            disabled={props.isPending}
+            onClick={handleClose}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            color="red.8"
+            disabled={!isConfirmed || props.isPending}
+            loading={props.isPending}
+            leftSection={
+              props.isPending ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : (
+                <Trash2 size={13} strokeWidth={2.25} />
+              )
+            }
+            onClick={props.onConfirm}
+          >
+            {props.isPending ? "Deleting…" : `Delete ${count} ${kindLabel}`}
+          </Button>
+        </footer>
+      </div>
+    </Modal>
+  );
+};
 
 const ListSkeleton = (props: { density: ListDensity }) => {
   const rows = Array.from({ length: 6 });
@@ -608,6 +786,7 @@ const ResourceListContent = (props: { info: ResourceComponentInfo }) => {
   const navigate = useNavigate();
   const [density, setDensity] = useListDensity();
   const [selected, setSelected] = React.useState<Set<string>>(new Set());
+  const [deleteModalOpened, setDeleteModalOpened] = React.useState(false);
   const { searchParams, activeFilterCount, clearFilters } = useListParams();
 
   const apiKind = getAPIKindFromPath(loc.pathname);
@@ -647,6 +826,7 @@ const ResourceListContent = (props: { info: ResourceComponentInfo }) => {
     onSuccess: (count, targets) => {
       if (targets[0]) invalidateResourceList(targets[0]);
       setSelected(new Set());
+      setDeleteModalOpened(false);
       toast.success(
         `${count} ${count === 1 ? "resource" : "resources"} deleted`,
       );
@@ -690,6 +870,7 @@ const ResourceListContent = (props: { info: ResourceComponentInfo }) => {
         ? new Set()
         : new Set(selectableItems.map((item) => item.metadata!.uid)),
     );
+  const selectedItems = items.filter((item) => selected.has(item.metadata!.uid));
 
   return (
     <div className="w-full">
@@ -707,11 +888,16 @@ const ResourceListContent = (props: { info: ResourceComponentInfo }) => {
         selectedCount={selected.size}
         isDeleting={mutationBulkDelete.isPending}
         onClearSelection={() => setSelected(new Set())}
-        onDeleteSelection={() =>
-          mutationBulkDelete.mutate(
-            items.filter((item) => selected.has(item.metadata!.uid)),
-          )
-        }
+        onDeleteSelection={() => setDeleteModalOpened(true)}
+      />
+
+      <BulkDeleteModal
+        opened={deleteModalOpened}
+        onClose={() => setDeleteModalOpened(false)}
+        items={selectedItems}
+        kindName={kindName}
+        isPending={mutationBulkDelete.isPending}
+        onConfirm={() => mutationBulkDelete.mutate(selectedItems)}
       />
 
       {Summary && (

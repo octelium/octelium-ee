@@ -34,12 +34,11 @@ export const ResourceListItem = (props: {
       className={twMerge(
         "relative w-full bg-white",
         "border border-slate-200 rounded-xl",
-        "shadow-card",
+        "shadow-[0_1px_3px_rgba(15,23,42,0.04)]",
         props.compact ? "px-3 py-2.5 sm:px-4" : "px-4 py-3.5 sm:px-5 sm:py-4",
-        "transition-[border-color,box-shadow] duration-150 ease-out",
-        "hover:border-slate-300 hover:shadow-raised",
-        "focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-500/20",
-        isActive && "border-blue-200 shadow-raised ring-1 ring-blue-500/[0.07]",
+        "transition-[background-color,border-color,box-shadow] duration-500 ease-out",
+        "hover:border-slate-300 hover:bg-transparent hover:shadow-[0_10px_28px_-8px_rgba(15,23,42,0.12)]",
+        isActive && "border-slate-300 shadow-raised",
       )}
       aria-current={isActive ? "page" : undefined}
     >
