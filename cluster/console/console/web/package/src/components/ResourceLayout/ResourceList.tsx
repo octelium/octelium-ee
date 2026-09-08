@@ -612,16 +612,20 @@ const ResourceListContent = (props: { info: ResourceComponentInfo }) => {
 
   const apiKind = getAPIKindFromPath(loc.pathname);
   const req = useListReq();
+  const listKey = getListKeyFromPath(loc.pathname);
 
   const { isLoading, isFetching, data } = useQuery({
     queryKey: [
-      getListKeyFromPath(loc.pathname),
+      listKey,
       apiKind && req
         ? getListOptionsPB(apiKind.api, apiKind.kind)["toJsonString"](req)
         : "",
     ],
     enabled: !!apiKind && !!req,
-    placeholderData: keepPreviousData,
+    placeholderData: (previousData, previousQuery) =>
+      previousQuery?.queryKey[0] === listKey
+        ? keepPreviousData(previousData)
+        : undefined,
     queryFn: async () =>
       await listResourcesPB(apiKind!.api, apiKind!.kind, req),
   });
@@ -712,7 +716,7 @@ const ResourceListContent = (props: { info: ResourceComponentInfo }) => {
 
       {Summary && (
         <div className="mb-6">
-          <React.Suspense fallback={null}>
+          <React.Suspense key={listKey} fallback={null}>
             <Summary />
           </React.Suspense>
         </div>
@@ -729,7 +733,7 @@ const ResourceListContent = (props: { info: ResourceComponentInfo }) => {
           onClearFilters={clearFilters}
         />
       ) : density === "table" ? (
-        <React.Suspense fallback={<ListSkeleton density={density} />}>
+        <React.Suspense key={listKey} fallback={<ListSkeleton density={density} />}>
           <TableView
             items={items}
             info={props.info}
@@ -745,7 +749,7 @@ const ResourceListContent = (props: { info: ResourceComponentInfo }) => {
           />
         </React.Suspense>
       ) : (
-        <React.Suspense fallback={<ListSkeleton density={density} />}>
+        <React.Suspense key={listKey} fallback={<ListSkeleton density={density} />}>
           <ResourceListWrapper>
             {items.map((item) => (
               <ResourceListItem

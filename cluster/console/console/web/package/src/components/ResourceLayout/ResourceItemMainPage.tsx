@@ -46,7 +46,7 @@ const InfoCell = ({
       className,
     )}
   >
-    <div className="flex shrink-0 flex-col @sm:w-32 @lg:w-40">
+    <div className="flex shrink-0 flex-col @sm:w-24 @lg:w-32">
       <span className="text-xs font-normal leading-5 text-slate-500">
         {label}
       </span>

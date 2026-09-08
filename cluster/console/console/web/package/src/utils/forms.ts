@@ -44,10 +44,6 @@ export const useHasDirtyForm = () =>
 let navigationApproved = false;
 let approvalTimer: number | undefined;
 
-// A one-shot bypass for the router's dirty-form blocker, for navigations we
-// already confirmed elsewhere (e.g. a Drawer's own outside-click prompt).
-// Needed because that navigation fires asynchronously after a close
-// animation, by which point the form that owns the blocker may be unmounted.
 export const approveNextNavigation = () => {
   navigationApproved = true;
   if (approvalTimer) window.clearTimeout(approvalTimer);

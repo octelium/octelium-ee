@@ -1,4 +1,5 @@
 import { RouteObject, useRoutes } from "react-router-dom";
+import { PageLoading } from "@/components/Loading";
 import routerClusterMan from "./clusterman/router";
 import Home from "./Home";
 import routerSettings from "./Settings/router";
@@ -65,11 +66,7 @@ const LazyRouteGroup = (props: { load: RouteLoader }) => {
   }
 
   if (!routes) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center px-6 text-center">
-        <p className="text-sm font-semibold text-slate-500">Loading…</p>
-      </div>
-    );
+    return <PageLoading className="min-h-[50vh]" />;
   }
 
   return renderedRoutes;
