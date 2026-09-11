@@ -18,6 +18,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 import { ReviewerService } from "./accessv1";
+import type { SetReviewDecisionRequest } from "./accessv1";
 import type { CancelReviewRequest } from "./accessv1";
 import type { ListReviewerReviewOptions } from "./accessv1";
 import type { ListReviewerRequestOptions } from "./accessv1";
@@ -34,6 +35,22 @@ import type { CancelRequestRequest } from "./accessv1";
 import type { RpcTransport } from "@protobuf-ts/runtime-rpc";
 import type { ServiceInfo } from "@protobuf-ts/runtime-rpc";
 import { MainService } from "./accessv1";
+import type { IntegrationBindingList } from "./accessv1";
+import type { ListIntegrationBindingOptions } from "./accessv1";
+import type { IntegrationBinding } from "./accessv1";
+import type { ResolveIntegrationIdentityResponse } from "./accessv1";
+import type { ResolveIntegrationIdentityRequest } from "./accessv1";
+import type { IntegrationIdentityList } from "./accessv1";
+import type { ListIntegrationIdentityOptions } from "./accessv1";
+import type { IntegrationIdentity } from "./accessv1";
+import type { IntegrationTargetList } from "./accessv1";
+import type { ListIntegrationTargetOptions } from "./accessv1";
+import type { IntegrationTarget } from "./accessv1";
+import type { SynchronizeIntegrationResponse } from "./accessv1";
+import type { SynchronizeIntegrationRequest } from "./accessv1";
+import type { IntegrationList } from "./accessv1";
+import type { ListIntegrationOptions } from "./accessv1";
+import type { Integration } from "./accessv1";
 import type { Review } from "./accessv1";
 import type { ReviewList } from "./accessv1";
 import type { ListReviewOptions } from "./accessv1";
@@ -168,6 +185,123 @@ export interface IMainServiceClient {
      * @generated from protobuf rpc: DeleteReview
      */
     deleteReview(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult>;
+    /**
+     * CreateIntegration creates an Integration
+     *
+     * @generated from protobuf rpc: CreateIntegration
+     */
+    createIntegration(input: Integration, options?: RpcOptions): UnaryCall<Integration, Integration>;
+    /**
+     * GetIntegration retrieves a specific Integration
+     *
+     * @generated from protobuf rpc: GetIntegration
+     */
+    getIntegration(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, Integration>;
+    /**
+     * UpdateIntegration updates an Integration
+     *
+     * @generated from protobuf rpc: UpdateIntegration
+     */
+    updateIntegration(input: Integration, options?: RpcOptions): UnaryCall<Integration, Integration>;
+    /**
+     * DeleteIntegration deletes an Integration
+     *
+     * @generated from protobuf rpc: DeleteIntegration
+     */
+    deleteIntegration(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult>;
+    /**
+     * ListIntegration lists Integrations
+     *
+     * @generated from protobuf rpc: ListIntegration
+     */
+    listIntegration(input: ListIntegrationOptions, options?: RpcOptions): UnaryCall<ListIntegrationOptions, IntegrationList>;
+    /**
+     * SynchronizeIntegration requests a refresh of the Integration's external
+     * tenant information and of its health.
+     *
+     * @generated from protobuf rpc: SynchronizeIntegration
+     */
+    synchronizeIntegration(input: SynchronizeIntegrationRequest, options?: RpcOptions): UnaryCall<SynchronizeIntegrationRequest, SynchronizeIntegrationResponse>;
+    /**
+     * CreateIntegrationTarget creates an IntegrationTarget
+     *
+     * @generated from protobuf rpc: CreateIntegrationTarget
+     */
+    createIntegrationTarget(input: IntegrationTarget, options?: RpcOptions): UnaryCall<IntegrationTarget, IntegrationTarget>;
+    /**
+     * GetIntegrationTarget retrieves a specific IntegrationTarget
+     *
+     * @generated from protobuf rpc: GetIntegrationTarget
+     */
+    getIntegrationTarget(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, IntegrationTarget>;
+    /**
+     * UpdateIntegrationTarget updates an IntegrationTarget
+     *
+     * @generated from protobuf rpc: UpdateIntegrationTarget
+     */
+    updateIntegrationTarget(input: IntegrationTarget, options?: RpcOptions): UnaryCall<IntegrationTarget, IntegrationTarget>;
+    /**
+     * DeleteIntegrationTarget deletes an IntegrationTarget
+     *
+     * @generated from protobuf rpc: DeleteIntegrationTarget
+     */
+    deleteIntegrationTarget(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult>;
+    /**
+     * ListIntegrationTarget lists IntegrationTargets
+     *
+     * @generated from protobuf rpc: ListIntegrationTarget
+     */
+    listIntegrationTarget(input: ListIntegrationTargetOptions, options?: RpcOptions): UnaryCall<ListIntegrationTargetOptions, IntegrationTargetList>;
+    /**
+     * CreateIntegrationIdentity creates an IntegrationIdentity
+     *
+     * @generated from protobuf rpc: CreateIntegrationIdentity
+     */
+    createIntegrationIdentity(input: IntegrationIdentity, options?: RpcOptions): UnaryCall<IntegrationIdentity, IntegrationIdentity>;
+    /**
+     * GetIntegrationIdentity retrieves a specific IntegrationIdentity
+     *
+     * @generated from protobuf rpc: GetIntegrationIdentity
+     */
+    getIntegrationIdentity(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, IntegrationIdentity>;
+    /**
+     * UpdateIntegrationIdentity updates an IntegrationIdentity
+     *
+     * @generated from protobuf rpc: UpdateIntegrationIdentity
+     */
+    updateIntegrationIdentity(input: IntegrationIdentity, options?: RpcOptions): UnaryCall<IntegrationIdentity, IntegrationIdentity>;
+    /**
+     * DeleteIntegrationIdentity deletes an IntegrationIdentity
+     *
+     * @generated from protobuf rpc: DeleteIntegrationIdentity
+     */
+    deleteIntegrationIdentity(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult>;
+    /**
+     * ListIntegrationIdentity lists IntegrationIdentities
+     *
+     * @generated from protobuf rpc: ListIntegrationIdentity
+     */
+    listIntegrationIdentity(input: ListIntegrationIdentityOptions, options?: RpcOptions): UnaryCall<ListIntegrationIdentityOptions, IntegrationIdentityList>;
+    /**
+     * ResolveIntegrationIdentity reports how an external actor of an
+     * Integration is currently resolved to a Cluster User. It is a diagnostic
+     * method that does not change any state.
+     *
+     * @generated from protobuf rpc: ResolveIntegrationIdentity
+     */
+    resolveIntegrationIdentity(input: ResolveIntegrationIdentityRequest, options?: RpcOptions): UnaryCall<ResolveIntegrationIdentityRequest, ResolveIntegrationIdentityResponse>;
+    /**
+     * GetIntegrationBinding retrieves a specific IntegrationBinding
+     *
+     * @generated from protobuf rpc: GetIntegrationBinding
+     */
+    getIntegrationBinding(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, IntegrationBinding>;
+    /**
+     * ListIntegrationBinding lists IntegrationBindings
+     *
+     * @generated from protobuf rpc: ListIntegrationBinding
+     */
+    listIntegrationBinding(input: ListIntegrationBindingOptions, options?: RpcOptions): UnaryCall<ListIntegrationBindingOptions, IntegrationBindingList>;
 }
 /**
  * MainService is the management API of the Octelium access API which provides
@@ -339,6 +473,180 @@ export class MainServiceClient implements IMainServiceClient, ServiceInfo {
     deleteReview(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult> {
         const method = this.methods[16], opt = this._transport.mergeOptions(options);
         return stackIntercept<DeleteOptions, OperationResult>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * CreateIntegration creates an Integration
+     *
+     * @generated from protobuf rpc: CreateIntegration
+     */
+    createIntegration(input: Integration, options?: RpcOptions): UnaryCall<Integration, Integration> {
+        const method = this.methods[17], opt = this._transport.mergeOptions(options);
+        return stackIntercept<Integration, Integration>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * GetIntegration retrieves a specific Integration
+     *
+     * @generated from protobuf rpc: GetIntegration
+     */
+    getIntegration(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, Integration> {
+        const method = this.methods[18], opt = this._transport.mergeOptions(options);
+        return stackIntercept<GetOptions, Integration>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * UpdateIntegration updates an Integration
+     *
+     * @generated from protobuf rpc: UpdateIntegration
+     */
+    updateIntegration(input: Integration, options?: RpcOptions): UnaryCall<Integration, Integration> {
+        const method = this.methods[19], opt = this._transport.mergeOptions(options);
+        return stackIntercept<Integration, Integration>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * DeleteIntegration deletes an Integration
+     *
+     * @generated from protobuf rpc: DeleteIntegration
+     */
+    deleteIntegration(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult> {
+        const method = this.methods[20], opt = this._transport.mergeOptions(options);
+        return stackIntercept<DeleteOptions, OperationResult>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * ListIntegration lists Integrations
+     *
+     * @generated from protobuf rpc: ListIntegration
+     */
+    listIntegration(input: ListIntegrationOptions, options?: RpcOptions): UnaryCall<ListIntegrationOptions, IntegrationList> {
+        const method = this.methods[21], opt = this._transport.mergeOptions(options);
+        return stackIntercept<ListIntegrationOptions, IntegrationList>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * SynchronizeIntegration requests a refresh of the Integration's external
+     * tenant information and of its health.
+     *
+     * @generated from protobuf rpc: SynchronizeIntegration
+     */
+    synchronizeIntegration(input: SynchronizeIntegrationRequest, options?: RpcOptions): UnaryCall<SynchronizeIntegrationRequest, SynchronizeIntegrationResponse> {
+        const method = this.methods[22], opt = this._transport.mergeOptions(options);
+        return stackIntercept<SynchronizeIntegrationRequest, SynchronizeIntegrationResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * CreateIntegrationTarget creates an IntegrationTarget
+     *
+     * @generated from protobuf rpc: CreateIntegrationTarget
+     */
+    createIntegrationTarget(input: IntegrationTarget, options?: RpcOptions): UnaryCall<IntegrationTarget, IntegrationTarget> {
+        const method = this.methods[23], opt = this._transport.mergeOptions(options);
+        return stackIntercept<IntegrationTarget, IntegrationTarget>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * GetIntegrationTarget retrieves a specific IntegrationTarget
+     *
+     * @generated from protobuf rpc: GetIntegrationTarget
+     */
+    getIntegrationTarget(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, IntegrationTarget> {
+        const method = this.methods[24], opt = this._transport.mergeOptions(options);
+        return stackIntercept<GetOptions, IntegrationTarget>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * UpdateIntegrationTarget updates an IntegrationTarget
+     *
+     * @generated from protobuf rpc: UpdateIntegrationTarget
+     */
+    updateIntegrationTarget(input: IntegrationTarget, options?: RpcOptions): UnaryCall<IntegrationTarget, IntegrationTarget> {
+        const method = this.methods[25], opt = this._transport.mergeOptions(options);
+        return stackIntercept<IntegrationTarget, IntegrationTarget>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * DeleteIntegrationTarget deletes an IntegrationTarget
+     *
+     * @generated from protobuf rpc: DeleteIntegrationTarget
+     */
+    deleteIntegrationTarget(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult> {
+        const method = this.methods[26], opt = this._transport.mergeOptions(options);
+        return stackIntercept<DeleteOptions, OperationResult>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * ListIntegrationTarget lists IntegrationTargets
+     *
+     * @generated from protobuf rpc: ListIntegrationTarget
+     */
+    listIntegrationTarget(input: ListIntegrationTargetOptions, options?: RpcOptions): UnaryCall<ListIntegrationTargetOptions, IntegrationTargetList> {
+        const method = this.methods[27], opt = this._transport.mergeOptions(options);
+        return stackIntercept<ListIntegrationTargetOptions, IntegrationTargetList>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * CreateIntegrationIdentity creates an IntegrationIdentity
+     *
+     * @generated from protobuf rpc: CreateIntegrationIdentity
+     */
+    createIntegrationIdentity(input: IntegrationIdentity, options?: RpcOptions): UnaryCall<IntegrationIdentity, IntegrationIdentity> {
+        const method = this.methods[28], opt = this._transport.mergeOptions(options);
+        return stackIntercept<IntegrationIdentity, IntegrationIdentity>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * GetIntegrationIdentity retrieves a specific IntegrationIdentity
+     *
+     * @generated from protobuf rpc: GetIntegrationIdentity
+     */
+    getIntegrationIdentity(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, IntegrationIdentity> {
+        const method = this.methods[29], opt = this._transport.mergeOptions(options);
+        return stackIntercept<GetOptions, IntegrationIdentity>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * UpdateIntegrationIdentity updates an IntegrationIdentity
+     *
+     * @generated from protobuf rpc: UpdateIntegrationIdentity
+     */
+    updateIntegrationIdentity(input: IntegrationIdentity, options?: RpcOptions): UnaryCall<IntegrationIdentity, IntegrationIdentity> {
+        const method = this.methods[30], opt = this._transport.mergeOptions(options);
+        return stackIntercept<IntegrationIdentity, IntegrationIdentity>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * DeleteIntegrationIdentity deletes an IntegrationIdentity
+     *
+     * @generated from protobuf rpc: DeleteIntegrationIdentity
+     */
+    deleteIntegrationIdentity(input: DeleteOptions, options?: RpcOptions): UnaryCall<DeleteOptions, OperationResult> {
+        const method = this.methods[31], opt = this._transport.mergeOptions(options);
+        return stackIntercept<DeleteOptions, OperationResult>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * ListIntegrationIdentity lists IntegrationIdentities
+     *
+     * @generated from protobuf rpc: ListIntegrationIdentity
+     */
+    listIntegrationIdentity(input: ListIntegrationIdentityOptions, options?: RpcOptions): UnaryCall<ListIntegrationIdentityOptions, IntegrationIdentityList> {
+        const method = this.methods[32], opt = this._transport.mergeOptions(options);
+        return stackIntercept<ListIntegrationIdentityOptions, IntegrationIdentityList>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * ResolveIntegrationIdentity reports how an external actor of an
+     * Integration is currently resolved to a Cluster User. It is a diagnostic
+     * method that does not change any state.
+     *
+     * @generated from protobuf rpc: ResolveIntegrationIdentity
+     */
+    resolveIntegrationIdentity(input: ResolveIntegrationIdentityRequest, options?: RpcOptions): UnaryCall<ResolveIntegrationIdentityRequest, ResolveIntegrationIdentityResponse> {
+        const method = this.methods[33], opt = this._transport.mergeOptions(options);
+        return stackIntercept<ResolveIntegrationIdentityRequest, ResolveIntegrationIdentityResponse>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * GetIntegrationBinding retrieves a specific IntegrationBinding
+     *
+     * @generated from protobuf rpc: GetIntegrationBinding
+     */
+    getIntegrationBinding(input: GetOptions, options?: RpcOptions): UnaryCall<GetOptions, IntegrationBinding> {
+        const method = this.methods[34], opt = this._transport.mergeOptions(options);
+        return stackIntercept<GetOptions, IntegrationBinding>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * ListIntegrationBinding lists IntegrationBindings
+     *
+     * @generated from protobuf rpc: ListIntegrationBinding
+     */
+    listIntegrationBinding(input: ListIntegrationBindingOptions, options?: RpcOptions): UnaryCall<ListIntegrationBindingOptions, IntegrationBindingList> {
+        const method = this.methods[35], opt = this._transport.mergeOptions(options);
+        return stackIntercept<ListIntegrationBindingOptions, IntegrationBindingList>("unary", this._transport, method, opt, input);
     }
 }
 /**
@@ -582,6 +890,17 @@ export interface IReviewerServiceClient {
      * @generated from protobuf rpc: CancelReview
      */
     cancelReview(input: CancelReviewRequest, options?: RpcOptions): UnaryCall<CancelReviewRequest, OperationResult>;
+    /**
+     * SetReviewDecision sets the decision of the calling User on a pending
+     * Request. It is an idempotent command that creates the Review of the
+     * Request's current review Step if it does not exist yet, or replaces its
+     * current decision otherwise. An unset decision withdraws it. The Cluster
+     * itself derives the reviewer, the reviewed Request, the review Step and
+     * the origin of the decision.
+     *
+     * @generated from protobuf rpc: SetReviewDecision
+     */
+    setReviewDecision(input: SetReviewDecisionRequest, options?: RpcOptions): UnaryCall<SetReviewDecisionRequest, Review>;
 }
 /**
  * ReviewerService is the reviewer-facing API of the access API. It is used by
@@ -662,5 +981,19 @@ export class ReviewerServiceClient implements IReviewerServiceClient, ServiceInf
     cancelReview(input: CancelReviewRequest, options?: RpcOptions): UnaryCall<CancelReviewRequest, OperationResult> {
         const method = this.methods[6], opt = this._transport.mergeOptions(options);
         return stackIntercept<CancelReviewRequest, OperationResult>("unary", this._transport, method, opt, input);
+    }
+    /**
+     * SetReviewDecision sets the decision of the calling User on a pending
+     * Request. It is an idempotent command that creates the Review of the
+     * Request's current review Step if it does not exist yet, or replaces its
+     * current decision otherwise. An unset decision withdraws it. The Cluster
+     * itself derives the reviewer, the reviewed Request, the review Step and
+     * the origin of the decision.
+     *
+     * @generated from protobuf rpc: SetReviewDecision
+     */
+    setReviewDecision(input: SetReviewDecisionRequest, options?: RpcOptions): UnaryCall<SetReviewDecisionRequest, Review> {
+        const method = this.methods[7], opt = this._transport.mergeOptions(options);
+        return stackIntercept<SetReviewDecisionRequest, Review>("unary", this._transport, method, opt, input);
     }
 }

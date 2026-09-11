@@ -11,9 +11,9 @@ package reviews
 import (
 	"context"
 
+	"github.com/octelium/octelium-ee/cluster/common/accesscmd"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium/apis/main/accessv1"
-	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
 	"github.com/octelium/octelium/cluster/common/urscsrv"
@@ -115,7 +115,7 @@ func (c *Controller) reconcile(ctx context.Context, rev *accessv1.Review, force 
 
 	step := actionReview.Steps[int(next.Status.Review.CurrentStep)]
 
-	isReviewer, err := c.userMatchesAnyReviewer(ctx, rev.Status.UserRef, step.Reviewers)
+	isReviewer, err := c.isEligibleReviewer(ctx, rev.Status.UserRef, step, next)
 	if err != nil {
 		return err
 	}
@@ -176,7 +176,7 @@ func (c *Controller) applyApproval(
 
 	step := actionReview.Steps[int(req.Status.Review.CurrentStep)]
 
-	approved, err := c.isStepApproved(ctx, step, currentStepReviews)
+	approved, err := c.isStepApproved(ctx, req, step, currentStepReviews)
 	if err != nil {
 		return err
 	}
@@ -248,18 +248,19 @@ func (c *Controller) getCurrentStepReviews(
 
 func (c *Controller) isStepApproved(
 	ctx context.Context,
+	req *accessv1.Request,
 	step *accessv1.Policy_Spec_Rule_Action_Review_Step,
 	reviews []*accessv1.Review,
 ) (bool, error) {
 	switch step.ApprovalRequirement {
 	case accessv1.Policy_Spec_Rule_Action_Review_Step_ANY:
-		return c.isStepApprovedAny(ctx, step, reviews)
+		return c.isStepApprovedAny(ctx, req, step, reviews)
 
 	case accessv1.Policy_Spec_Rule_Action_Review_Step_ALL:
-		return c.isStepApprovedAll(ctx, step, reviews)
+		return c.isStepApprovedAll(ctx, req, step, reviews)
 
 	case accessv1.Policy_Spec_Rule_Action_Review_Step_COUNT:
-		return c.isStepApprovedCount(ctx, step, reviews)
+		return c.isStepApprovedCount(ctx, req, step, reviews)
 
 	case accessv1.Policy_Spec_Rule_Action_Review_Step_APPROVAL_REQUIREMENT_UNSET:
 		return false, errors.Errorf("approval requirement must be set")
@@ -271,6 +272,7 @@ func (c *Controller) isStepApproved(
 
 func (c *Controller) isStepApprovedAny(
 	ctx context.Context,
+	req *accessv1.Request,
 	step *accessv1.Policy_Spec_Rule_Action_Review_Step,
 	reviews []*accessv1.Review,
 ) (bool, error) {
@@ -279,7 +281,7 @@ func (c *Controller) isStepApprovedAny(
 			continue
 		}
 
-		ok, err := c.userMatchesAnyReviewer(ctx, rev.Status.UserRef, step.Reviewers)
+		ok, err := c.isEligibleReviewer(ctx, rev.Status.UserRef, step, req)
 		if err != nil {
 			return false, err
 		}
@@ -294,6 +296,7 @@ func (c *Controller) isStepApprovedAny(
 
 func (c *Controller) isStepApprovedAll(
 	ctx context.Context,
+	req *accessv1.Request,
 	step *accessv1.Policy_Spec_Rule_Action_Review_Step,
 	reviews []*accessv1.Review,
 ) (bool, error) {
@@ -301,12 +304,12 @@ func (c *Controller) isStepApprovedAll(
 		return false, nil
 	}
 
-	reviewerUIDs, err := c.getStepReviewerUIDs(ctx, step)
+	usrs, err := accesscmd.GetStepReviewerUsers(ctx, c.octeliumC, step, req)
 	if err != nil {
 		return false, err
 	}
 
-	if len(reviewerUIDs) == 0 {
+	if len(usrs) == 0 {
 		return false, nil
 	}
 
@@ -324,8 +327,8 @@ func (c *Controller) isStepApprovedAll(
 		approvals[rev.Status.UserRef.Uid] = struct{}{}
 	}
 
-	for _, uid := range reviewerUIDs {
-		if _, ok := approvals[uid]; !ok {
+	for _, usr := range usrs {
+		if _, ok := approvals[usr.Metadata.Uid]; !ok {
 			return false, nil
 		}
 	}
@@ -333,79 +336,31 @@ func (c *Controller) isStepApprovedAll(
 	return true, nil
 }
 
-func (c *Controller) getStepReviewerUIDs(
+func (c *Controller) isEligibleReviewer(
 	ctx context.Context,
+	userRef *metav1.ObjectReference,
 	step *accessv1.Policy_Spec_Rule_Action_Review_Step,
-) ([]string, error) {
-	seen := map[string]struct{}{}
-	ret := []string{}
-
-	addUID := func(uid string) {
-		if uid == "" {
-			return
-		}
-
-		if _, ok := seen[uid]; ok {
-			return
-		}
-		seen[uid] = struct{}{}
-
-		ret = append(ret, uid)
-	}
-
-	for _, reviewer := range step.Reviewers {
-		if reviewer == nil {
-			return nil, nil
-		}
-
-		switch reviewer.Type.(type) {
-		case *accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_User_:
-			addUID(reviewer.GetUser().GetUserRef().GetUid())
-
-		case *accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_Group_:
-			usrs, err := c.getGroupUsers(ctx, reviewer.GetGroup().GetGroupRef())
-			if err != nil {
-				return nil, err
-			}
-
-			for _, usr := range usrs {
-				addUID(usr.Metadata.Uid)
-			}
-
-		default:
-			return nil, nil
-		}
-	}
-
-	return ret, nil
-}
-
-func (c *Controller) getGroupUsers(
-	ctx context.Context,
-	groupRef *metav1.ObjectReference,
-) ([]*corev1.User, error) {
-	grp, err := c.getGroup(ctx, groupRef)
+	req *accessv1.Request,
+) (bool, error) {
+	usr, err := accesscmd.GetUser(ctx, c.octeliumC, userRef)
 	if err != nil {
-		return nil, err
-	}
-	if grp == nil {
-		return nil, nil
+		return false, err
 	}
 
-	usrList, err := c.octeliumC.CoreC().ListUser(ctx, &rmetav1.ListOptions{
-		Filters: []*rmetav1.ListOptions_Filter{
-			urscsrv.FilterFieldIncludesValStr("spec.groups", grp.Metadata.Name),
-		},
-	})
-	if err != nil {
-		return nil, err
+	if !accesscmd.IsUserEligible(usr) {
+		return false, nil
 	}
 
-	return usrList.Items, nil
+	if !accesscmd.IsSeparationOfDutiesSatisfied(step, usr, req) {
+		return false, nil
+	}
+
+	return accesscmd.UserMatchesAnyReviewer(ctx, c.octeliumC, userRef, step.Reviewers)
 }
 
 func (c *Controller) isStepApprovedCount(
 	ctx context.Context,
+	req *accessv1.Request,
 	step *accessv1.Policy_Spec_Rule_Action_Review_Step,
 	reviews []*accessv1.Review,
 ) (bool, error) {
@@ -424,7 +379,7 @@ func (c *Controller) isStepApprovedCount(
 			continue
 		}
 
-		ok, err := c.userMatchesAnyReviewer(ctx, rev.Status.UserRef, step.Reviewers)
+		ok, err := c.isEligibleReviewer(ctx, rev.Status.UserRef, step, req)
 		if err != nil {
 			return false, err
 		}
@@ -437,107 +392,6 @@ func (c *Controller) isStepApprovedCount(
 	}
 
 	return uint32(len(approvals)) >= step.ApprovalCount, nil
-}
-
-func (c *Controller) userMatchesAnyReviewer(
-	ctx context.Context,
-	userRef *metav1.ObjectReference,
-	reviewers []*accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer,
-) (bool, error) {
-	for _, reviewer := range reviewers {
-		if reviewer == nil {
-			continue
-		}
-
-		ok, err := c.userMatchesReviewer(ctx, userRef, reviewer)
-		if err != nil {
-			return false, err
-		}
-
-		if ok {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
-func (c *Controller) userMatchesReviewer(
-	ctx context.Context,
-	userRef *metav1.ObjectReference,
-	reviewer *accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer,
-) (bool, error) {
-	if userRef == nil || userRef.Uid == "" || reviewer == nil {
-		return false, nil
-	}
-
-	switch reviewer.Type.(type) {
-	case *accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_User_:
-		return reviewer.GetUser().GetUserRef() != nil &&
-			reviewer.GetUser().GetUserRef().Uid != "" &&
-			reviewer.GetUser().GetUserRef().Uid == userRef.Uid, nil
-
-	case *accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_Group_:
-		return c.userMatchesGroup(ctx, userRef, reviewer.GetGroup().GetGroupRef())
-
-	default:
-		return false, nil
-	}
-}
-
-func (c *Controller) userMatchesGroup(
-	ctx context.Context,
-	userRef *metav1.ObjectReference,
-	groupRef *metav1.ObjectReference,
-) (bool, error) {
-	if userRef == nil || userRef.Uid == "" || groupRef == nil {
-		return false, nil
-	}
-
-	grp, err := c.getGroup(ctx, groupRef)
-	if err != nil {
-		return false, err
-	}
-	if grp == nil {
-		return false, nil
-	}
-
-	usr, err := c.octeliumC.CoreC().GetUser(ctx, &rmetav1.GetOptions{
-		Uid: userRef.Uid,
-	})
-	if err != nil {
-		if grpcerr.IsNotFound(err) {
-			return false, nil
-		}
-		return false, err
-	}
-
-	for _, groupName := range usr.Spec.Groups {
-		if groupName == grp.Metadata.Name {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
-func (c *Controller) getGroup(ctx context.Context, ref *metav1.ObjectReference) (*corev1.Group, error) {
-	if ref == nil {
-		return nil, nil
-	}
-
-	grp, err := c.octeliumC.CoreC().GetGroup(ctx, &rmetav1.GetOptions{
-		Uid:  ref.Uid,
-		Name: ref.Name,
-	})
-	if err != nil {
-		if grpcerr.IsNotFound(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	return grp, nil
 }
 
 func (c *Controller) getRequest(ctx context.Context, ref *metav1.ObjectReference) (*accessv1.Request, error) {

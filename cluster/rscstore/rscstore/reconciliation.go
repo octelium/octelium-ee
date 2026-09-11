@@ -71,6 +71,10 @@ func accessResourceKinds() []resourceKind {
 		{api: uaccessv1.API, version: uaccessv1.Version, kind: uaccessv1.KindPolicy},
 		{api: uaccessv1.API, version: uaccessv1.Version, kind: uaccessv1.KindRequest},
 		{api: uaccessv1.API, version: uaccessv1.Version, kind: uaccessv1.KindReview},
+		{api: uaccessv1.API, version: uaccessv1.Version, kind: uaccessv1.KindIntegration},
+		{api: uaccessv1.API, version: uaccessv1.Version, kind: uaccessv1.KindIntegrationTarget},
+		{api: uaccessv1.API, version: uaccessv1.Version, kind: uaccessv1.KindIntegrationIdentity},
+		{api: uaccessv1.API, version: uaccessv1.Version, kind: uaccessv1.KindIntegrationBinding},
 	}
 }
 

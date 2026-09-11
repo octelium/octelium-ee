@@ -1,0 +1,341 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/IntegrationBindingList",
+    "definitions": {
+        "IntegrationBindingList": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version (i.e. \"access/v1\")"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource name (i.e. `IntegrationBindingList`)."
+                },
+                "items": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.IntegrationBinding"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Items is the list of IntegrationBindings."
+                },
+                "listResponseMeta": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ListResponseMeta",
+                    "additionalProperties": false,
+                    "description": "ListResponseMeta is common information about the list."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Integration Binding List",
+            "description": "IntegrationBindingList is the list of IntegrationBindings returned by the ListIntegrationBinding method."
+        },
+        "octelium.api.main.access.v1.IntegrationBinding": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version (i.e. \"access/v1\")"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource name (i.e. `IntegrationBinding`)."
+                },
+                "metadata": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Metadata",
+                    "additionalProperties": false,
+                    "description": "Metadata is the object's metadata."
+                },
+                "spec": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.IntegrationBinding.Spec",
+                    "additionalProperties": false,
+                    "description": "Spec is the IntegrationBinding specification."
+                },
+                "status": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.IntegrationBinding.Status",
+                    "additionalProperties": false,
+                    "description": "Status is the current status of the IntegrationBinding."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Integration Binding",
+            "description": "IntegrationBinding is the Cluster-managed link between an access Request and one external object that represents it inside an Integration (e.g. a Slack message or a Jira issue). It is the durable desired state of that external object: the access workflow only declares that a Request has to be presented somewhere while the Cluster reconciles the external object itself, retries the failed deliveries and closes the outstanding presentations once the Request reaches a final state. A provider outage therefore never blocks, and never silently decides, an access Request."
+        },
+        "octelium.api.main.access.v1.IntegrationBinding.Spec": {
+            "properties": {
+                "integrationRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "IntegrationRef is the reference of the Integration that delivers the external object."
+                },
+                "requestRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "RequestRef is the reference of the presented Request."
+                },
+                "targetRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "TargetRef is the reference of the IntegrationTarget that the external object is delivered to. It is unset for the direct deliveries."
+                },
+                "userRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "UserRef is the reference of the Cluster User that the external object is directly delivered to. It is unset for the IntegrationTarget deliveries."
+                },
+                "stepIndex": {
+                    "type": "integer",
+                    "description": "StepIndex is the zero-based index of the review Step that the external object presents. It is only set for the REVIEW_SURFACE purpose."
+                },
+                "stepName": {
+                    "type": "string",
+                    "description": "StepName is the name of the review Step that the external object presents. It is only set for the REVIEW_SURFACE purpose."
+                },
+                "purpose": {
+                    "enum": [
+                        "PURPOSE_UNSET",
+                        "REVIEW_SURFACE",
+                        "NOTIFICATION"
+                    ],
+                    "type": "string",
+                    "title": "Purpose",
+                    "description": "Purpose is what the external object represents"
+                },
+                "interactionMode": {
+                    "enum": [
+                        "INTERACTION_MODE_UNSET",
+                        "DEEP_LINK_ONLY",
+                        "INTERACTIVE"
+                    ],
+                    "type": "string",
+                    "title": "Interaction Mode",
+                    "description": "InteractionMode is how much the external provider is trusted to act on the presented Request"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Spec",
+            "description": "Spec is the IntegrationBinding specification"
+        },
+        "octelium.api.main.access.v1.IntegrationBinding.Status": {
+            "properties": {
+                "state": {
+                    "enum": [
+                        "STATE_UNSET",
+                        "PENDING",
+                        "READY",
+                        "DEGRADED",
+                        "CLOSED"
+                    ],
+                    "type": "string",
+                    "title": "State",
+                    "description": "State is the current state of the external object"
+                },
+                "externalID": {
+                    "type": "string",
+                    "description": "ExternalID is the provider's identifier of the external object (e.g. a Slack message timestamp or a Jira issue key)."
+                },
+                "externalURL": {
+                    "type": "string",
+                    "description": "ExternalURL is a link to the external object."
+                },
+                "externalRecipientID": {
+                    "type": "string",
+                    "description": "ExternalRecipientID is the provider's identifier of the destination that the external object was delivered to (e.g. a Slack channel ID)."
+                },
+                "desiredRevision": {
+                    "type": "string",
+                    "description": "DesiredRevision is the fingerprint of the presentation that the external object has to reflect."
+                },
+                "appliedRevision": {
+                    "type": "string",
+                    "description": "AppliedRevision is the fingerprint of the presentation that the external object currently reflects."
+                },
+                "lastSuccessAt": {
+                    "type": "string",
+                    "description": "LastSuccessAt is the time of the last successful delivery.",
+                    "format": "date-time"
+                },
+                "nextAttemptAt": {
+                    "type": "string",
+                    "description": "NextAttemptAt is the time before which no further delivery is attempted. It is set by the Cluster's backoff upon the failures.",
+                    "format": "date-time"
+                },
+                "attempts": {
+                    "type": "integer",
+                    "description": "Attempts is the number of the consecutive failed deliveries."
+                },
+                "lastError": {
+                    "type": "string",
+                    "description": "LastError is the error of the last failed delivery."
+                },
+                "lastExternalEventIDs": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "LastExternalEventIDs is the list of the identifiers of the most recent provider events that were accepted through the external object. It is used to discard the duplicate deliveries of the same external action."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Status",
+            "description": "Status is the current status of the IntegrationBinding"
+        },
+        "octelium.api.main.meta.v1.ListResponseMeta": {
+            "properties": {
+                "page": {
+                    "type": "integer",
+                    "description": "Page is the page number. Starts with zero."
+                },
+                "itemsPerPage": {
+                    "type": "integer",
+                    "description": "ItemsPerPage is the number of items per page."
+                },
+                "totalCount": {
+                    "type": "integer",
+                    "description": "TotalCount is the total count of items that can be obtained."
+                },
+                "hasMore": {
+                    "type": "boolean",
+                    "description": "HasMore shows whether a next page is available"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "List Response Meta",
+            "description": "ListResponseMeta is the pagination information that is common to every List response."
+        },
+        "octelium.api.main.meta.v1.Metadata": {
+            "properties": {
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the unique UUID value for the object assigned by the Cluster. Read-only."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name of the object. It must be unique within a certain API/Version/Kind tuple."
+                },
+                "createdAt": {
+                    "type": "string",
+                    "description": "CreatedAt is the timestamp of creation of the object. Read-only.",
+                    "format": "date-time"
+                },
+                "updatedAt": {
+                    "type": "string",
+                    "description": "UpdatedAt is the timestamp of when the object was last updated. Read-only.",
+                    "format": "date-time"
+                },
+                "displayName": {
+                    "type": "string",
+                    "description": "DisplayName is the name that can be shown publicly for the object. Doesn't need to be unique."
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Description is used to describe the object in a short sentence. Maximum characters are 1000."
+                },
+                "labels": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "Labels is a map of string keys and values to organize objects."
+                },
+                "tags": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Tags is an optional array of tags that classify the Resource."
+                },
+                "annotations": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "Annotations is a map of string keys and values that can be used to store arbitrary metadata about the object."
+                },
+                "picURL": {
+                    "type": "string",
+                    "description": "PicURL is the Picture URL of the resource."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is a unique ID that represent the current version of the resource object. Used by the Cluster to detect updates."
+                },
+                "lastResourceVersion": {
+                    "type": "string",
+                    "description": "LastResourceVersion is the ResourceVersion of the last update of the Resource."
+                },
+                "actorRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "ActorRef is the object reference to the Actor resource, typically a Session, who is responsible for the current resource change. If ActorRef is not set, then the current change of the resource was done by the Cluster"
+                },
+                "actorOperation": {
+                    "type": "string",
+                    "description": "ActorOperation is the gRPC full method triggered by the actorRef to modify the Resource"
+                },
+                "isSystem": {
+                    "type": "boolean",
+                    "description": "IsSystem means that the resource is created by the Cluster and it cannot be managed by the administrators. Read-only."
+                },
+                "specLabels": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "SpecLabels is map used internally by the Cluster for quick searches among lists of objects. Read-only."
+                },
+                "isUserHidden": {
+                    "type": "boolean",
+                    "description": "IsUserHidden means that the resource object is hidden from ordinary Users and should not be exposed via the User APIs."
+                },
+                "isSystemHidden": {
+                    "type": "boolean",
+                    "description": "IsSystemHidden means that the resource object is hidden by the Cluster and should not be exposed via the APIs."
+                },
+                "systemLabels": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "SystemLabels is a similar map to specLabels. Used only by the Cluster."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Metadata",
+            "description": "Metadata is the metadata that is common to every Cluster resource. It carries the resource's identity (i.e. its UID and name), its human-readable information as well as the Cluster-managed bookkeeping of the resource's versioning and provenance."
+        },
+        "octelium.api.main.meta.v1.ObjectReference": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version of the reference resource"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource kind. A kind is unique per an APIVersion."
+                },
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the resource object UID. A UID is unique across the entire Cluster."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the resource object name. A name is unique per a certain kind."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is the resourceVersion of the resource."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Object Reference",
+            "description": "ObjectReference is a reference to another Cluster resource. It identifies the referenced resource by its kind and either its UID or its name."
+        }
+    }
+}

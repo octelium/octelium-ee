@@ -1,0 +1,74 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/ResolveIntegrationIdentityResponse",
+    "definitions": {
+        "ResolveIntegrationIdentityResponse": {
+            "properties": {
+                "isResolved": {
+                    "type": "boolean",
+                    "description": "IsResolved is whether the identity could be resolved at all."
+                },
+                "userRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "UserRef is the reference of the resolved Cluster User."
+                },
+                "externalID": {
+                    "type": "string",
+                    "description": "ExternalID is the identifier of the resolved external actor."
+                },
+                "source": {
+                    "enum": [
+                        "SOURCE_UNSET",
+                        "MANUAL",
+                        "EMAIL_DISCOVERY"
+                    ],
+                    "type": "string",
+                    "title": "Source",
+                    "description": "Source is how the link was established"
+                },
+                "integrationIdentityRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "IntegrationIdentityRef is the reference of the IntegrationIdentity that carries the link."
+                },
+                "detail": {
+                    "type": "string",
+                    "description": "Detail explains why the resolution succeeded or failed."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Resolve Integration Identity Response",
+            "description": "ResolveIntegrationIdentityResponse is the response of the ResolveIntegrationIdentity method."
+        },
+        "octelium.api.main.meta.v1.ObjectReference": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version of the reference resource"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource kind. A kind is unique per an APIVersion."
+                },
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the resource object UID. A UID is unique across the entire Cluster."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the resource object name. A name is unique per a certain kind."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is the resourceVersion of the resource."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Object Reference",
+            "description": "ObjectReference is a reference to another Cluster resource. It identifies the referenced resource by its kind and either its UID or its name."
+        }
+    }
+}

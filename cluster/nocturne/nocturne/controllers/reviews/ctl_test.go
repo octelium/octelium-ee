@@ -48,6 +48,10 @@ func objRef(kind string) *metav1.ObjectReference {
 	}
 }
 
+func newUserRef(t *testing.T, ctx context.Context, octeliumC octeliumc.ClientInterface) *metav1.ObjectReference {
+	return umetav1.GetObjectReference(createUser(t, ctx, octeliumC))
+}
+
 func userReviewer(ref *metav1.ObjectReference) *accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer {
 	return &accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer{
 		Type: &accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_User_{
@@ -144,7 +148,7 @@ func createPendingRequest(t *testing.T, ctx context.Context, octeliumC octeliumc
 			Urgency: accessv1.Request_Spec_NORMAL,
 		},
 		Status: &accessv1.Request_Status{
-			UserRef: objRef("User"),
+			UserRef: newUserRef(t, ctx, octeliumC),
 			State: &accessv1.Request_Status_State{
 				CreatedAt: pbutils.Now(),
 				Status:    accessv1.Request_Status_State_PENDING,
@@ -188,7 +192,7 @@ func getRequest(t *testing.T, ctx context.Context, octeliumC octeliumc.ClientInt
 func TestReviewSingleStepAnyApprove(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
-	userA := objRef("User")
+	userA := newUserRef(t, ctx, octeliumC)
 	req := createPendingRequest(t, ctx, octeliumC, reviewRule(anyStep(userReviewer(userA))), 0)
 	reqRef := umetav1.GetObjectReference(req)
 
@@ -204,7 +208,7 @@ func TestReviewSingleStepAnyApprove(t *testing.T) {
 func TestReviewSingleStepReject(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
-	userA := objRef("User")
+	userA := newUserRef(t, ctx, octeliumC)
 	req := createPendingRequest(t, ctx, octeliumC, reviewRule(anyStep(userReviewer(userA))), 0)
 	reqRef := umetav1.GetObjectReference(req)
 
@@ -218,11 +222,11 @@ func TestReviewSingleStepReject(t *testing.T) {
 func TestReviewNonReviewerIgnored(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
-	userA := objRef("User")
+	userA := newUserRef(t, ctx, octeliumC)
 	req := createPendingRequest(t, ctx, octeliumC, reviewRule(anyStep(userReviewer(userA))), 0)
 	reqRef := umetav1.GetObjectReference(req)
 
-	rev := createReview(t, ctx, octeliumC, reqRef, objRef("User"), 0, accessv1.Review_Spec_DECISION_APPROVE)
+	rev := createReview(t, ctx, octeliumC, reqRef, newUserRef(t, ctx, octeliumC), 0, accessv1.Review_Spec_DECISION_APPROVE)
 	assert.Nil(t, ctrl.OnAdd(ctx, rev))
 
 	reqG := getRequest(t, ctx, octeliumC, req.Metadata.Uid)
@@ -233,7 +237,7 @@ func TestReviewNonReviewerIgnored(t *testing.T) {
 func TestReviewWrongStepIndexIgnored(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
-	userA := objRef("User")
+	userA := newUserRef(t, ctx, octeliumC)
 	req := createPendingRequest(t, ctx, octeliumC, reviewRule(anyStep(userReviewer(userA))), 0)
 	reqRef := umetav1.GetObjectReference(req)
 
@@ -248,9 +252,9 @@ func TestReviewWrongStepIndexIgnored(t *testing.T) {
 func TestReviewCountQuorum(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
-	userA := objRef("User")
-	userB := objRef("User")
-	userC := objRef("User")
+	userA := newUserRef(t, ctx, octeliumC)
+	userB := newUserRef(t, ctx, octeliumC)
+	userC := newUserRef(t, ctx, octeliumC)
 	req := createPendingRequest(t, ctx, octeliumC,
 		reviewRule(countStep(2, userReviewer(userA), userReviewer(userB), userReviewer(userC))), 0)
 	reqRef := umetav1.GetObjectReference(req)
@@ -273,8 +277,8 @@ func TestReviewCountQuorum(t *testing.T) {
 func TestReviewAllQuorum(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
-	userA := objRef("User")
-	userB := objRef("User")
+	userA := newUserRef(t, ctx, octeliumC)
+	userB := newUserRef(t, ctx, octeliumC)
 	req := createPendingRequest(t, ctx, octeliumC,
 		reviewRule(allStep(userReviewer(userA), userReviewer(userB))), 0)
 	reqRef := umetav1.GetObjectReference(req)
@@ -291,8 +295,8 @@ func TestReviewAllQuorum(t *testing.T) {
 func TestReviewMultiStep(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
-	userA := objRef("User")
-	userB := objRef("User")
+	userA := newUserRef(t, ctx, octeliumC)
+	userB := newUserRef(t, ctx, octeliumC)
 	req := createPendingRequest(t, ctx, octeliumC,
 		reviewRule(anyStep(userReviewer(userA)), anyStep(userReviewer(userB))), 0)
 	reqRef := umetav1.GetObjectReference(req)
@@ -314,9 +318,9 @@ func TestReviewMultiStep(t *testing.T) {
 func TestReviewMultiStepMixed(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
-	userA := objRef("User")
-	userB := objRef("User")
-	userD := objRef("User")
+	userA := newUserRef(t, ctx, octeliumC)
+	userB := newUserRef(t, ctx, octeliumC)
+	userD := newUserRef(t, ctx, octeliumC)
 	req := createPendingRequest(t, ctx, octeliumC,
 		reviewRule(
 			countStep(2, userReviewer(userA), userReviewer(userB)),
@@ -340,8 +344,8 @@ func TestReviewMultiStepMixed(t *testing.T) {
 func TestReviewWrongStepReviewerIgnored(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
-	userA := objRef("User")
-	userB := objRef("User")
+	userA := newUserRef(t, ctx, octeliumC)
+	userB := newUserRef(t, ctx, octeliumC)
 	req := createPendingRequest(t, ctx, octeliumC,
 		reviewRule(anyStep(userReviewer(userA)), anyStep(userReviewer(userB))), 0)
 	reqRef := umetav1.GetObjectReference(req)
@@ -358,8 +362,8 @@ func TestReviewWrongStepReviewerIgnored(t *testing.T) {
 func TestReviewDuplicateIgnored(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
-	userA := objRef("User")
-	userB := objRef("User")
+	userA := newUserRef(t, ctx, octeliumC)
+	userB := newUserRef(t, ctx, octeliumC)
 	req := createPendingRequest(t, ctx, octeliumC,
 		reviewRule(countStep(2, userReviewer(userA), userReviewer(userB))), 0)
 	reqRef := umetav1.GetObjectReference(req)
@@ -376,8 +380,8 @@ func TestReviewDuplicateIgnored(t *testing.T) {
 func TestReviewForceFlipToReject(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
-	userA := objRef("User")
-	userB := objRef("User")
+	userA := newUserRef(t, ctx, octeliumC)
+	userB := newUserRef(t, ctx, octeliumC)
 	req := createPendingRequest(t, ctx, octeliumC,
 		reviewRule(countStep(2, userReviewer(userA), userReviewer(userB))), 0)
 	reqRef := umetav1.GetObjectReference(req)
@@ -397,12 +401,12 @@ func TestReviewForceFlipToReject(t *testing.T) {
 func TestReviewRequestNotPending(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
-	userA := objRef("User")
+	userA := newUserRef(t, ctx, octeliumC)
 	req, err := octeliumC.AccessC().CreateRequest(ctx, &accessv1.Request{
 		Metadata: &metav1.Metadata{Name: utilrand.GetRandomStringCanonical(8)},
 		Spec:     &accessv1.Request_Spec{Urgency: accessv1.Request_Spec_NORMAL},
 		Status: &accessv1.Request_Status{
-			UserRef: objRef("User"),
+			UserRef: newUserRef(t, ctx, octeliumC),
 			State: &accessv1.Request_Status_State{
 				CreatedAt: pbutils.Now(),
 				Status:    accessv1.Request_Status_State_APPROVED,
@@ -430,7 +434,7 @@ func TestReviewPendingNoRule(t *testing.T) {
 		Metadata: &metav1.Metadata{Name: utilrand.GetRandomStringCanonical(8)},
 		Spec:     &accessv1.Request_Spec{Urgency: accessv1.Request_Spec_NORMAL},
 		Status: &accessv1.Request_Status{
-			UserRef: objRef("User"),
+			UserRef: newUserRef(t, ctx, octeliumC),
 			State: &accessv1.Request_Status_State{
 				CreatedAt: pbutils.Now(),
 				Status:    accessv1.Request_Status_State_PENDING,
@@ -440,7 +444,7 @@ func TestReviewPendingNoRule(t *testing.T) {
 	assert.Nil(t, err, "%+v", err)
 	reqRef := umetav1.GetObjectReference(req)
 
-	rev := createReview(t, ctx, octeliumC, reqRef, objRef("User"), 0, accessv1.Review_Spec_DECISION_APPROVE)
+	rev := createReview(t, ctx, octeliumC, reqRef, newUserRef(t, ctx, octeliumC), 0, accessv1.Review_Spec_DECISION_APPROVE)
 	assert.NotNil(t, ctrl.OnAdd(ctx, rev))
 }
 
@@ -483,8 +487,8 @@ func TestReviewDecisionUnset(t *testing.T) {
 func TestReviewAllQuorumFromStore(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
-	userA := objRef("User")
-	userB := objRef("User")
+	userA := newUserRef(t, ctx, octeliumC)
+	userB := newUserRef(t, ctx, octeliumC)
 	req := createPendingRequest(t, ctx, octeliumC,
 		reviewRule(allStep(userReviewer(userA), userReviewer(userB))), 0)
 	reqRef := umetav1.GetObjectReference(req)
@@ -502,8 +506,8 @@ func TestReviewAllQuorumFromStore(t *testing.T) {
 func TestReviewQuorumIgnoresOtherRequests(t *testing.T) {
 	ctx, ctrl, octeliumC := newControllerTest(t)
 
-	userA := objRef("User")
-	userB := objRef("User")
+	userA := newUserRef(t, ctx, octeliumC)
+	userB := newUserRef(t, ctx, octeliumC)
 
 	other := createPendingRequest(t, ctx, octeliumC,
 		reviewRule(allStep(userReviewer(userA), userReviewer(userB))), 0)

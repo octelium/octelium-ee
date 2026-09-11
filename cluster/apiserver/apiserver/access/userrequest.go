@@ -11,6 +11,7 @@ package access
 import (
 	"context"
 
+	"github.com/octelium/octelium-ee/cluster/common/accesscmd"
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
@@ -19,10 +20,7 @@ import (
 	"github.com/octelium/octelium/cluster/common/grpcutils"
 	"github.com/octelium/octelium/cluster/common/urscsrv"
 	"github.com/octelium/octelium/cluster/common/userctx"
-	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
-	"github.com/octelium/octelium/pkg/grpcerr"
-	"github.com/octelium/octelium/pkg/utils/utilrand"
 )
 
 func (s *ServerUser) CreateRequest(ctx context.Context, req *accessv1.Request) (*accessv1.Request, error) {
@@ -45,48 +43,13 @@ func (s *ServerUser) doCreateRequest(ctx context.Context, req *accessv1.Request,
 		return nil, err
 	}
 
-	name, err := s.generateRequestName(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	spec := pbutils.Clone(req.Spec).(*accessv1.Request_Spec)
-	if forSubject {
-		if spec.Subject == nil || spec.Subject.GetUserRef() == nil {
-			return nil, grpcutils.InvalidArg("Subject UserRef must be set")
-		}
-	} else {
-		spec.Subject = &accessv1.Request_Spec_Subject{
-			Type: &accessv1.Request_Spec_Subject_UserRef{
-				UserRef: umetav1.GetObjectReference(i.User),
-			},
-		}
-	}
-
-	item := &accessv1.Request{
-		Metadata: &metav1.Metadata{
-			Name: name,
-		},
-		Spec: spec,
-		Status: &accessv1.Request_Status{
-			UserRef: umetav1.GetObjectReference(i.User),
-			State: &accessv1.Request_Status_State{
-				CreatedAt: pbutils.Now(),
-				Status:    accessv1.Request_Status_State_PENDING,
-			},
-		},
-	}
-
-	if err := s.validateUserRequest(ctx, item); err != nil {
-		return nil, err
-	}
-
-	item, err = s.octeliumC.AccessC().CreateRequest(ctx, item)
-	if err != nil {
-		return nil, serr.InternalWithErr(err)
-	}
-
-	return item, nil
+	return accesscmd.CreateRequest(ctx, &accesscmd.CreateRequestOpts{
+		OcteliumC:  s.octeliumC,
+		Requester:  i.User,
+		Spec:       req.Spec,
+		ForSubject: forSubject,
+		Origin:     apiOrigin(i),
+	})
 }
 
 func (s *ServerUser) GetRequest(ctx context.Context, req *metav1.GetOptions) (*accessv1.Request, error) {
@@ -148,7 +111,7 @@ func (s *ServerUser) UpdateRequest(ctx context.Context, req *accessv1.Request) (
 		return nil, err
 	}
 
-	if err := s.validateUserRequest(ctx, req); err != nil {
+	if err := accesscmd.ValidateRequestSpec(ctx, s.octeliumC, req.Spec); err != nil {
 		return nil, err
 	}
 
@@ -225,130 +188,6 @@ func (s *ServerUser) CancelRequest(ctx context.Context, req *accessv1.CancelRequ
 	}
 
 	return &metav1.OperationResult{}, nil
-}
-
-func (s *ServerUser) validateUserRequest(ctx context.Context, req *accessv1.Request) error {
-	if req.Spec == nil {
-		return grpcutils.InvalidArg("Nil Spec")
-	}
-
-	if req.Spec.Resource == nil {
-		return grpcutils.InvalidArg("Resource must be set")
-	}
-
-	switch req.Spec.Resource.Type.(type) {
-	case *accessv1.Request_Spec_Resource_ServiceRef:
-		if err := s.validateUserRequestService(ctx, req.Spec.Resource.GetServiceRef()); err != nil {
-			return err
-		}
-
-	case *accessv1.Request_Spec_Resource_Catalog_:
-		if req.Spec.Resource.GetCatalog() == nil {
-			return grpcutils.InvalidArg("Catalog resource must be set")
-		}
-		if err := s.validateUserRequestCatalog(ctx, req.Spec.Resource.GetCatalog().CatalogRef); err != nil {
-			return err
-		}
-
-	default:
-		return grpcutils.InvalidArg("Resource type must be set")
-	}
-
-	if req.Spec.Subject != nil {
-		switch req.Spec.Subject.Type.(type) {
-		case *accessv1.Request_Spec_Subject_UserRef:
-			if err := s.validateUserRequestSubjectUser(ctx, req.Spec.Subject.GetUserRef()); err != nil {
-				return err
-			}
-
-		default:
-			return grpcutils.InvalidArg("Subject type must be set")
-		}
-	}
-
-	switch req.Spec.Urgency {
-	case accessv1.Request_Spec_URGENCY_UNSET,
-		accessv1.Request_Spec_VERY_LOW,
-		accessv1.Request_Spec_LOW,
-		accessv1.Request_Spec_NORMAL,
-		accessv1.Request_Spec_HIGH,
-		accessv1.Request_Spec_VERY_HIGH,
-		accessv1.Request_Spec_HIGHEST:
-	default:
-		return grpcutils.InvalidArg("Invalid Urgency")
-	}
-
-	if len(req.Spec.Justification) > 1500 {
-		return grpcutils.InvalidArg("Justification is too long")
-	}
-
-	return nil
-}
-
-func (s *ServerUser) validateUserRequestService(ctx context.Context, ref *metav1.ObjectReference) error {
-	if err := apivalidation.CheckObjectRef(ref, &apivalidation.CheckGetOptionsOpts{
-		ParentsMax: 1,
-	}); err != nil {
-		return err
-	}
-
-	_, err := s.octeliumC.CoreC().GetService(ctx, apivalidation.ObjectReferenceToRGetOptions(ref))
-	if err != nil {
-		return serr.K8sNotFoundOrInternalWithErr(err)
-	}
-
-	return nil
-}
-
-func (s *ServerUser) validateUserRequestCatalog(ctx context.Context, ref *metav1.ObjectReference) error {
-	if err := apivalidation.CheckObjectRef(ref, &apivalidation.CheckGetOptionsOpts{}); err != nil {
-		return err
-	}
-
-	_, err := s.octeliumC.AccessC().GetCatalog(ctx, apivalidation.ObjectReferenceToRGetOptions(ref))
-	if err != nil {
-		return serr.K8sNotFoundOrInternalWithErr(err)
-	}
-
-	return nil
-}
-
-func (s *ServerUser) validateUserRequestSubjectUser(ctx context.Context, ref *metav1.ObjectReference) error {
-	if err := apivalidation.CheckObjectRef(ref, &apivalidation.CheckGetOptionsOpts{}); err != nil {
-		return err
-	}
-
-	_, err := s.octeliumC.CoreC().GetUser(ctx, apivalidation.ObjectReferenceToRGetOptions(ref))
-	if err != nil {
-		return serr.K8sNotFoundOrInternalWithErr(err)
-	}
-
-	return nil
-}
-
-func (s *ServerUser) generateRequestName(ctx context.Context) (string, error) {
-	const attemptsPerLength = 32
-
-	for n := 3; n <= 8; n++ {
-		for i := 0; i < attemptsPerLength; i++ {
-			name := utilrand.GetRandomStringCanonical(n)
-
-			_, err := s.octeliumC.AccessC().GetRequest(ctx, &rmetav1.GetOptions{
-				Name: name,
-			})
-			if err == nil {
-				continue
-			}
-
-			if grpcerr.IsNotFound(err) {
-				return name, nil
-			}
-
-			return "", serr.InternalWithErr(err)
-		}
-	}
-
-	return "", grpcutils.Internal("Could not generate a unique Request name")
 }
 
 func checkUserOwnsRequest(userUID string, req *accessv1.Request) error {

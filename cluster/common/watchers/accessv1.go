@@ -68,6 +68,46 @@ func (c *AccessV1Watcher) Review(
 	return runWatcherAccessV1(ctx, c.octeliumC, opts, uaccessv1.KindReview, onCreate, onUpdate, onDelete)
 }
 
+func (c *AccessV1Watcher) Integration(
+	ctx context.Context,
+	opts *watchers.Opts,
+	onCreate func(ctx context.Context, item *accessv1.Integration) error,
+	onUpdate func(ctx context.Context, new, old *accessv1.Integration) error,
+	onDelete func(ctx context.Context, item *accessv1.Integration) error,
+) error {
+	return runWatcherAccessV1(ctx, c.octeliumC, opts, uaccessv1.KindIntegration, onCreate, onUpdate, onDelete)
+}
+
+func (c *AccessV1Watcher) IntegrationTarget(
+	ctx context.Context,
+	opts *watchers.Opts,
+	onCreate func(ctx context.Context, item *accessv1.IntegrationTarget) error,
+	onUpdate func(ctx context.Context, new, old *accessv1.IntegrationTarget) error,
+	onDelete func(ctx context.Context, item *accessv1.IntegrationTarget) error,
+) error {
+	return runWatcherAccessV1(ctx, c.octeliumC, opts, uaccessv1.KindIntegrationTarget, onCreate, onUpdate, onDelete)
+}
+
+func (c *AccessV1Watcher) IntegrationIdentity(
+	ctx context.Context,
+	opts *watchers.Opts,
+	onCreate func(ctx context.Context, item *accessv1.IntegrationIdentity) error,
+	onUpdate func(ctx context.Context, new, old *accessv1.IntegrationIdentity) error,
+	onDelete func(ctx context.Context, item *accessv1.IntegrationIdentity) error,
+) error {
+	return runWatcherAccessV1(ctx, c.octeliumC, opts, uaccessv1.KindIntegrationIdentity, onCreate, onUpdate, onDelete)
+}
+
+func (c *AccessV1Watcher) IntegrationBinding(
+	ctx context.Context,
+	opts *watchers.Opts,
+	onCreate func(ctx context.Context, item *accessv1.IntegrationBinding) error,
+	onUpdate func(ctx context.Context, new, old *accessv1.IntegrationBinding) error,
+	onDelete func(ctx context.Context, item *accessv1.IntegrationBinding) error,
+) error {
+	return runWatcherAccessV1(ctx, c.octeliumC, opts, uaccessv1.KindIntegrationBinding, onCreate, onUpdate, onDelete)
+}
+
 func runWatcherAccessV1[T uaccessv1.ResourceObjectRefG](
 	ctx context.Context, octeliumC octeliumc.ClientInterface,
 	opts *watchers.Opts,

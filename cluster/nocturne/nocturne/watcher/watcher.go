@@ -31,13 +31,22 @@ const maxRequestStateHistory = 100
 var accessWatchInterval = durationFromEnv(
 	"OCTELIUM_NOCTURNE_ACCESS_WATCH_INTERVAL", 5*time.Minute)
 
-type Watcher struct {
-	octeliumC octeliumc.ClientInterface
+var integrationBindingWatchInterval = durationFromEnv(
+	"OCTELIUM_NOCTURNE_INTEGRATION_BINDING_WATCH_INTERVAL", time.Minute)
+
+type BindingReconciler interface {
+	Reconcile(ctx context.Context, itm *accessv1.IntegrationBinding) error
 }
 
-func InitWatcher(octeliumC octeliumc.ClientInterface) *Watcher {
+type Watcher struct {
+	octeliumC  octeliumc.ClientInterface
+	bindingCtl BindingReconciler
+}
+
+func InitWatcher(octeliumC octeliumc.ClientInterface, bindingCtl BindingReconciler) *Watcher {
 	return &Watcher{
-		octeliumC: octeliumC,
+		octeliumC:  octeliumC,
+		bindingCtl: bindingCtl,
 	}
 }
 
@@ -449,4 +458,91 @@ func setRequestState(req *accessv1.Request, status accessv1.Request_Status_State
 func (w *Watcher) Run(ctx context.Context) {
 	go w.runRequests(ctx)
 	go w.runPolicyTriggers(ctx)
+	go w.runIntegrationBindings(ctx)
+}
+
+func (w *Watcher) runIntegrationBindings(ctx context.Context) {
+	zap.L().Debug("Starting access IntegrationBinding watcher")
+
+	doRun := func() error {
+		itmList, err := w.listIntegrationBindings(ctx)
+		if err != nil {
+			return err
+		}
+
+		for _, itm := range itmList {
+			if !isIntegrationBindingDue(itm) {
+				continue
+			}
+
+			if err := w.bindingCtl.Reconcile(ctx, itm); err != nil {
+				zap.L().Warn("Could not reconcile an IntegrationBinding",
+					zap.String("binding", itm.Metadata.Name), zap.Error(err))
+			}
+		}
+
+		return nil
+	}
+
+	tickerCh := time.NewTicker(integrationBindingWatchInterval)
+	defer tickerCh.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-tickerCh.C:
+			if err := doRun(); err != nil {
+				zap.L().Error("Could not run access IntegrationBinding watcher doFn",
+					zap.Error(err))
+			}
+		}
+	}
+}
+
+func (w *Watcher) listIntegrationBindings(ctx context.Context) ([]*accessv1.IntegrationBinding, error) {
+	var ret []*accessv1.IntegrationBinding
+	var page uint32
+
+	for {
+		itmList, err := w.octeliumC.AccessC().ListIntegrationBinding(ctx, &rmetav1.ListOptions{
+			Paginate:     true,
+			ItemsPerPage: 500,
+			Page:         page,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		ret = append(ret, itmList.Items...)
+
+		if itmList.ListResponseMeta == nil || !itmList.ListResponseMeta.HasMore {
+			return ret, nil
+		}
+
+		page = page + 1
+	}
+}
+
+func isIntegrationBindingDue(itm *accessv1.IntegrationBinding) bool {
+	if itm == nil || itm.Status == nil {
+		return false
+	}
+
+	if itm.Status.State == accessv1.IntegrationBinding_Status_CLOSED &&
+		itm.Status.AppliedRevision == itm.Status.DesiredRevision {
+		return false
+	}
+
+	if itm.Status.State == accessv1.IntegrationBinding_Status_READY &&
+		itm.Status.AppliedRevision == itm.Status.DesiredRevision {
+		return false
+	}
+
+	if itm.Status.NextAttemptAt != nil && itm.Status.NextAttemptAt.IsValid() &&
+		itm.Status.NextAttemptAt.AsTime().After(time.Now()) {
+		return false
+	}
+
+	return true
 }

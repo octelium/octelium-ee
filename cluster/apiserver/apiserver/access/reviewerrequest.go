@@ -11,6 +11,7 @@ package access
 import (
 	"context"
 
+	"github.com/octelium/octelium-ee/cluster/common/accesscmd"
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/metav1"
@@ -20,7 +21,6 @@ import (
 	"github.com/octelium/octelium/cluster/common/grpcutils"
 	"github.com/octelium/octelium/cluster/common/urscsrv"
 	"github.com/octelium/octelium/cluster/common/userctx"
-	"github.com/octelium/octelium/pkg/grpcerr"
 )
 
 func (s *ServerReviewer) GetRequest(ctx context.Context, req *metav1.GetOptions) (*accessv1.Request, error) {
@@ -99,84 +99,5 @@ func (s *ServerReviewer) ListRequest(ctx context.Context,
 
 func (s *ServerReviewer) canReviewRequest(ctx context.Context,
 	usr *corev1.User, req *accessv1.Request) (bool, error) {
-	if req.Status.State == nil ||
-		req.Status.State.Status != accessv1.Request_Status_State_PENDING {
-		return false, nil
-	}
-
-	if req.Status.Rule == nil ||
-		req.Status.Rule.Action == nil ||
-		req.Status.Rule.Action.GetReview() == nil {
-		return false, nil
-	}
-
-	actionReview := req.Status.Rule.Action.GetReview()
-	if len(actionReview.Steps) == 0 {
-		return false, nil
-	}
-
-	currentStep := currentReviewStep(req)
-
-	if currentStep < 0 || int(currentStep) >= len(actionReview.Steps) {
-		return false, nil
-	}
-
-	step := actionReview.Steps[currentStep]
-
-	for _, reviewer := range step.Reviewers {
-		if reviewer == nil {
-			continue
-		}
-
-		switch reviewer.Type.(type) {
-		case *accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_User_:
-			if reviewer.GetUser().GetUserRef() != nil &&
-				reviewer.GetUser().GetUserRef().Uid != "" &&
-				reviewer.GetUser().GetUserRef().Uid == usr.Metadata.Uid {
-				return true, nil
-			}
-
-		case *accessv1.Policy_Spec_Rule_Action_Review_Step_Reviewer_Group_:
-			ok, err := s.userMatchesReviewerGroup(ctx, usr, reviewer.GetGroup().GetGroupRef())
-			if err != nil {
-				return false, err
-			}
-			if ok {
-				return true, nil
-			}
-		}
-	}
-
-	return false, nil
-}
-
-func (s *ServerReviewer) userMatchesReviewerGroup(ctx context.Context,
-	usr *corev1.User, groupRef *metav1.ObjectReference) (bool, error) {
-	if groupRef == nil {
-		return false, nil
-	}
-
-	grp, err := s.octeliumC.CoreC().GetGroup(ctx, apivalidation.ObjectReferenceToRGetOptions(groupRef))
-	if err != nil {
-		if grpcerr.IsNotFound(err) {
-			return false, nil
-		}
-		return false, serr.K8sNotFoundOrInternalWithErr(err)
-	}
-
-	for _, groupName := range usr.Spec.Groups {
-		if groupName == grp.Metadata.Name {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
-func currentReviewStep(req *accessv1.Request) int32 {
-	if req == nil || req.Status == nil || req.Status.Review == nil {
-		return 0
-	}
-
-	return req.Status.Review.CurrentStep
+	return accesscmd.CanReview(ctx, s.octeliumC, usr, req)
 }

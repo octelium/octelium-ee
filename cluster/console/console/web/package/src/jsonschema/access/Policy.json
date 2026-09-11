@@ -88,6 +88,14 @@
                 "name": {
                     "type": "string",
                     "description": "Name is the name of the Rule. It is required and it must be unique within the Policy."
+                },
+                "notifications": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Surface"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Notifications is the list of the external Integration surfaces on which the outcome of the matched Requests is delivered. Unlike the review Surfaces of a Step, these are purely informational and they never carry any action."
                 }
             },
             "additionalProperties": false,
@@ -185,6 +193,23 @@
                     "type": "string",
                     "title": "On Timeout",
                     "description": "OnTimeout is what happens to the Request once the Step's timeout is reached"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name of the Step. It is required and it must be unique within the review workflow."
+                },
+                "surfaces": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Surface"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Surfaces is the list of the external Integration surfaces on which the Requests reaching the Step are presented to their reviewers. The Cluster's own access portal is always available regardless of this list."
+                },
+                "separationOfDuties": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.SeparationOfDuties",
+                    "additionalProperties": false,
+                    "description": "SeparationOfDuties controls whether the requester and the subject of a Request are allowed to review it themselves even when they match the Step's Reviewers. Both are denied by default."
                 }
             },
             "additionalProperties": false,
@@ -550,6 +575,164 @@
             ],
             "title": "Subject",
             "description": "Subject matches the subject of the Request (i.e. the User that the access is requested for) which is not necessarily the same User that created the Request"
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.SeparationOfDuties": {
+            "properties": {
+                "allowRequesterReview": {
+                    "type": "boolean",
+                    "description": "AllowRequesterReview allows the User that created the Request to review it. It is denied by default."
+                },
+                "allowSubjectReview": {
+                    "type": "boolean",
+                    "description": "AllowSubjectReview allows the User that the access is requested for to review the Request. It is denied by default."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Separation Of Duties",
+            "description": "SeparationOfDuties controls whether the Users that are involved in a Request are allowed to review it themselves"
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Surface": {
+            "properties": {
+                "destination": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination",
+                    "additionalProperties": false,
+                    "description": "Destination is the audience of the Surface. Required."
+                },
+                "interactionMode": {
+                    "enum": [
+                        "INTERACTION_MODE_UNSET",
+                        "DEEP_LINK_ONLY",
+                        "INTERACTIVE"
+                    ],
+                    "type": "string",
+                    "title": "Interaction Mode",
+                    "description": "InteractionMode is how much the external provider is trusted to act on the presented Request"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Surface",
+            "description": "Surface is an external Integration destination on which the Cluster presents a Request. The access Policy only describes the audience and how much the external provider is trusted. The provider-specific configuration itself belongs to the Integration and to the IntegrationTarget resources."
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination": {
+            "properties": {
+                "reviewers": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Reviewers",
+                    "additionalProperties": false,
+                    "description": "Reviewers delivers to the current reviewers of the Request."
+                },
+                "requester": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Requester",
+                    "additionalProperties": false,
+                    "description": "Requester delivers to the requester of the Request."
+                },
+                "subject": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Subject",
+                    "additionalProperties": false,
+                    "description": "Subject delivers to the subject of the Request."
+                },
+                "targetRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "TargetRef is the reference of a shared IntegrationTarget (e.g. a chat channel or a service desk project)."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "reviewers"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requester"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "subject"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "targetRef"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "reviewers"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requester"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "subject"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "targetRef"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Destination",
+            "description": "Destination is the audience of the Surface"
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Requester": {
+            "properties": {
+                "integrationRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "IntegrationRef is the reference of the Integration whose external User the requester is resolved to."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Requester",
+            "description": "Requester delivers directly to the User that created the Request"
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Reviewers": {
+            "properties": {
+                "integrationRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "IntegrationRef is the reference of the Integration whose external Users the reviewers are resolved to."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Reviewers",
+            "description": "Reviewers delivers directly to every User that can currently review the Request at its current Step"
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Subject": {
+            "properties": {
+                "integrationRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "IntegrationRef is the reference of the Integration whose external User the subject is resolved to."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Subject",
+            "description": "Subject delivers directly to the User that the access is requested for"
         },
         "octelium.api.main.access.v1.Policy.Status": {
             "additionalProperties": false,

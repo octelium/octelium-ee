@@ -10,6 +10,7 @@ package harness
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -193,6 +194,10 @@ func (h *H) CreateAccessPolicy(t *testing.T,
 
 	ctx, cancel := h.Ctx(t)
 	defer cancel()
+
+	for _, rule := range rules {
+		setReviewStepNames(rule)
+	}
 
 	ret, err := h.AccessC().CreatePolicy(ctx, &accessv1.Policy{
 		Metadata: &metav1.Metadata{Name: h.Name()},
@@ -392,4 +397,16 @@ func (h *H) WaitRequestStep(t *testing.T,
 		})
 
 	return ret
+}
+
+func setReviewStepNames(rule *accessv1.Policy_Spec_Rule) {
+	if rule == nil || rule.Action == nil || rule.Action.GetReview() == nil {
+		return
+	}
+
+	for idx, step := range rule.Action.GetReview().Steps {
+		if step != nil && step.Name == "" {
+			step.Name = fmt.Sprintf("step-%d", idx+1)
+		}
+	}
 }

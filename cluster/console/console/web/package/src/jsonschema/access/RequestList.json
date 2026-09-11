@@ -31,6 +31,43 @@
             "title": "Request List",
             "description": "RequestList is the list of Requests returned by the ListRequest method."
         },
+        "octelium.api.main.access.v1.Origin": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "TYPE_UNSET",
+                        "API",
+                        "INTEGRATION",
+                        "SYSTEM"
+                    ],
+                    "type": "string",
+                    "title": "Type",
+                    "description": "Type is the kind of the transport that the operation came from"
+                },
+                "integrationRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "IntegrationRef is the reference of the Integration that authenticated the external actor. It is only set for the INTEGRATION type."
+                },
+                "externalActorID": {
+                    "type": "string",
+                    "description": "ExternalActorID is the stable identifier of the external actor within the Integration's provider (e.g. a Slack user ID or an Atlassian account ID). It is only set for the INTEGRATION type."
+                },
+                "externalEventID": {
+                    "type": "string",
+                    "description": "ExternalEventID is the identifier of the provider event that carried the operation. It is used to recognize the duplicate deliveries of the same external action."
+                },
+                "sessionRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "SessionRef is the reference of the Session that performed the operation. It is only set for the API type."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Origin",
+            "description": "Origin is where an access Request or a Review came from. It is entirely derived by the Cluster from the authenticated transport of the operation itself and it is never accepted from the callers."
+        },
         "octelium.api.main.access.v1.Policy.Spec.Rule": {
             "properties": {
                 "condition": {
@@ -66,6 +103,14 @@
                 "name": {
                     "type": "string",
                     "description": "Name is the name of the Rule. It is required and it must be unique within the Policy."
+                },
+                "notifications": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Surface"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Notifications is the list of the external Integration surfaces on which the outcome of the matched Requests is delivered. Unlike the review Surfaces of a Step, these are purely informational and they never carry any action."
                 }
             },
             "additionalProperties": false,
@@ -163,6 +208,23 @@
                     "type": "string",
                     "title": "On Timeout",
                     "description": "OnTimeout is what happens to the Request once the Step's timeout is reached"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name of the Step. It is required and it must be unique within the review workflow."
+                },
+                "surfaces": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Surface"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "Surfaces is the list of the external Integration surfaces on which the Requests reaching the Step are presented to their reviewers. The Cluster's own access portal is always available regardless of this list."
+                },
+                "separationOfDuties": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.SeparationOfDuties",
+                    "additionalProperties": false,
+                    "description": "SeparationOfDuties controls whether the requester and the subject of a Request are allowed to review it themselves even when they match the Step's Reviewers. Both are denied by default."
                 }
             },
             "additionalProperties": false,
@@ -529,6 +591,164 @@
             "title": "Subject",
             "description": "Subject matches the subject of the Request (i.e. the User that the access is requested for) which is not necessarily the same User that created the Request"
         },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.SeparationOfDuties": {
+            "properties": {
+                "allowRequesterReview": {
+                    "type": "boolean",
+                    "description": "AllowRequesterReview allows the User that created the Request to review it. It is denied by default."
+                },
+                "allowSubjectReview": {
+                    "type": "boolean",
+                    "description": "AllowSubjectReview allows the User that the access is requested for to review the Request. It is denied by default."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Separation Of Duties",
+            "description": "SeparationOfDuties controls whether the Users that are involved in a Request are allowed to review it themselves"
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Surface": {
+            "properties": {
+                "destination": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination",
+                    "additionalProperties": false,
+                    "description": "Destination is the audience of the Surface. Required."
+                },
+                "interactionMode": {
+                    "enum": [
+                        "INTERACTION_MODE_UNSET",
+                        "DEEP_LINK_ONLY",
+                        "INTERACTIVE"
+                    ],
+                    "type": "string",
+                    "title": "Interaction Mode",
+                    "description": "InteractionMode is how much the external provider is trusted to act on the presented Request"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Surface",
+            "description": "Surface is an external Integration destination on which the Cluster presents a Request. The access Policy only describes the audience and how much the external provider is trusted. The provider-specific configuration itself belongs to the Integration and to the IntegrationTarget resources."
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination": {
+            "properties": {
+                "reviewers": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Reviewers",
+                    "additionalProperties": false,
+                    "description": "Reviewers delivers to the current reviewers of the Request."
+                },
+                "requester": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Requester",
+                    "additionalProperties": false,
+                    "description": "Requester delivers to the requester of the Request."
+                },
+                "subject": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Subject",
+                    "additionalProperties": false,
+                    "description": "Subject delivers to the subject of the Request."
+                },
+                "targetRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "TargetRef is the reference of a shared IntegrationTarget (e.g. a chat channel or a service desk project)."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "reviewers"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "requester"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "subject"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "targetRef"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "reviewers"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "requester"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "subject"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "targetRef"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Destination",
+            "description": "Destination is the audience of the Surface"
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Requester": {
+            "properties": {
+                "integrationRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "IntegrationRef is the reference of the Integration whose external User the requester is resolved to."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Requester",
+            "description": "Requester delivers directly to the User that created the Request"
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Reviewers": {
+            "properties": {
+                "integrationRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "IntegrationRef is the reference of the Integration whose external Users the reviewers are resolved to."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Reviewers",
+            "description": "Reviewers delivers directly to every User that can currently review the Request at its current Step"
+        },
+        "octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Subject": {
+            "properties": {
+                "integrationRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "IntegrationRef is the reference of the Integration whose external User the subject is resolved to."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Subject",
+            "description": "Subject delivers directly to the User that the access is requested for"
+        },
         "octelium.api.main.access.v1.Request": {
             "properties": {
                 "apiVersion": {
@@ -758,6 +978,16 @@
                     "type": "string",
                     "description": "AccessEndsAt is the time at which the granted access ends. The Request's state is set to EXPIRED once it passes.",
                     "format": "date-time"
+                },
+                "origin": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Origin",
+                    "additionalProperties": false,
+                    "description": "Origin is where the Request was created from. It is entirely set by the Cluster from the authenticated transport of the creation itself."
+                },
+                "effectiveDuration": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Duration",
+                    "additionalProperties": false,
+                    "description": "EffectiveDuration is how long the granted access actually lasts for once the Request is approved. It is the Request's `spec.duration` capped by the `maxAccessDuration` of the matched Rule's Authorization and it is computed as soon as the Rule is matched so that it can be shown to the reviewers before they decide."
                 }
             },
             "additionalProperties": false,

@@ -12,6 +12,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/octelium/octelium-ee/cluster/common/accesscmd"
 	"github.com/octelium/octelium-ee/cluster/common/tests"
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/metav1"
@@ -230,16 +231,16 @@ func TestReviewerReview(t *testing.T) {
 	assert.Equal(t, accessv1.Review_Spec_DECISION_UNSET, reviewC.Spec.Decision)
 }
 
-func TestHasReviewerReviewBeenApplied(t *testing.T) {
+func TestHasReviewBeenApplied(t *testing.T) {
 	review := &accessv1.Review{
 		Metadata: &metav1.Metadata{Uid: utilrand.GetRandomStringCanonical(16)},
 	}
 
 	req := &accessv1.Request{Status: &accessv1.Request_Status{}}
-	assert.False(t, hasReviewerReviewBeenApplied(req, review))
+	assert.False(t, accesscmd.HasReviewBeenApplied(req, review))
 
 	req.Status.Review = &accessv1.Request_Status_Review{CurrentStep: 0}
-	assert.False(t, hasReviewerReviewBeenApplied(req, review))
+	assert.False(t, accesscmd.HasReviewBeenApplied(req, review))
 
 	req.Status.Review.LastSteps = []*accessv1.Request_Status_Review_Step{
 		{
@@ -247,13 +248,13 @@ func TestHasReviewerReviewBeenApplied(t *testing.T) {
 			StepIndex: 0,
 		},
 	}
-	assert.False(t, hasReviewerReviewBeenApplied(req, review))
+	assert.False(t, accesscmd.HasReviewBeenApplied(req, review))
 
 	req.Status.Review.CurrentStep = 1
-	assert.True(t, hasReviewerReviewBeenApplied(req, review))
+	assert.True(t, accesscmd.HasReviewBeenApplied(req, review))
 
 	other := &accessv1.Review{
 		Metadata: &metav1.Metadata{Uid: utilrand.GetRandomStringCanonical(16)},
 	}
-	assert.False(t, hasReviewerReviewBeenApplied(req, other))
+	assert.False(t, accesscmd.HasReviewBeenApplied(req, other))
 }

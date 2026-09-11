@@ -33,6 +33,43 @@
             "title": "Review",
             "description": "Review is a reviewer's decision on a pending access Request. A Review is created via the ReviewerService by a User that is set as a Reviewer of the Request's current review Step. Once the Reviews of the current Step satisfy its approval requirement, the Request either moves to the next Step or, if there is no next Step, it is approved. A single rejecting Review, on the other hand, immediately rejects the Request."
         },
+        "octelium.api.main.access.v1.Origin": {
+            "properties": {
+                "type": {
+                    "enum": [
+                        "TYPE_UNSET",
+                        "API",
+                        "INTEGRATION",
+                        "SYSTEM"
+                    ],
+                    "type": "string",
+                    "title": "Type",
+                    "description": "Type is the kind of the transport that the operation came from"
+                },
+                "integrationRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "IntegrationRef is the reference of the Integration that authenticated the external actor. It is only set for the INTEGRATION type."
+                },
+                "externalActorID": {
+                    "type": "string",
+                    "description": "ExternalActorID is the stable identifier of the external actor within the Integration's provider (e.g. a Slack user ID or an Atlassian account ID). It is only set for the INTEGRATION type."
+                },
+                "externalEventID": {
+                    "type": "string",
+                    "description": "ExternalEventID is the identifier of the provider event that carried the operation. It is used to recognize the duplicate deliveries of the same external action."
+                },
+                "sessionRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "SessionRef is the reference of the Session that performed the operation. It is only set for the API type."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Origin",
+            "description": "Origin is where an access Request or a Review came from. It is entirely derived by the Cluster from the authenticated transport of the operation itself and it is never accepted from the callers."
+        },
         "octelium.api.main.access.v1.Review.Spec": {
             "properties": {
                 "justification": {
@@ -91,6 +128,15 @@
                 "stepIndex": {
                     "type": "integer",
                     "description": "StepIndex is the zero-based index of the Request's review Step that the Review applies to."
+                },
+                "stepName": {
+                    "type": "string",
+                    "description": "StepName is the name of the Request's review Step that the Review applies to."
+                },
+                "origin": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Origin",
+                    "additionalProperties": false,
+                    "description": "Origin is where the current decision was set from. It is entirely set by the Cluster from the authenticated transport of the decision itself."
                 }
             },
             "additionalProperties": false,
@@ -109,6 +155,11 @@
                     "type": "string",
                     "description": "SetAt is the time at which that specification was set.",
                     "format": "date-time"
+                },
+                "origin": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Origin",
+                    "additionalProperties": false,
+                    "description": "Origin is where that specification was set from."
                 }
             },
             "additionalProperties": false,

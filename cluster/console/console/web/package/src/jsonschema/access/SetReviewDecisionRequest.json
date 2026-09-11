@@ -1,0 +1,65 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/SetReviewDecisionRequest",
+    "definitions": {
+        "SetReviewDecisionRequest": {
+            "properties": {
+                "requestRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "RequestRef is the reference of the reviewed Request. Required."
+                },
+                "decision": {
+                    "enum": [
+                        "DECISION_UNSET",
+                        "DECISION_APPROVE",
+                        "DECISION_REJECT"
+                    ],
+                    "type": "string",
+                    "title": "Decision",
+                    "description": "Decision is the reviewer's decision on the Request"
+                },
+                "justification": {
+                    "type": "string",
+                    "description": "Justification is the reviewer's free-form explanation of the decision. It cannot be longer than 1500 characters."
+                },
+                "expectedStepName": {
+                    "type": "string",
+                    "description": "ExpectedStepName is an optional safety check. If it is set and the Request is no longer waiting for that review Step, the decision is rejected instead of being applied to another Step."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Set Review Decision Request",
+            "description": "SetReviewDecisionRequest is the request of the SetReviewDecision method."
+        },
+        "octelium.api.main.meta.v1.ObjectReference": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version of the reference resource"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource kind. A kind is unique per an APIVersion."
+                },
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the resource object UID. A UID is unique across the entire Cluster."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the resource object name. A name is unique per a certain kind."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is the resourceVersion of the resource."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Object Reference",
+            "description": "ObjectReference is a reference to another Cluster resource. It identifies the referenced resource by its kind and either its UID or its name."
+        }
+    }
+}

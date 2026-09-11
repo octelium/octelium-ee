@@ -149,6 +149,15 @@ export interface Policy_Spec_Rule {
      * @generated from protobuf field: string name = 6
      */
     name: string;
+    /**
+     * Notifications is the list of the external Integration surfaces on
+     * which the outcome of the matched Requests is delivered. Unlike the
+     * review Surfaces of a Step, these are purely informational and they
+     * never carry any action.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.Policy.Spec.Rule.Surface notifications = 7
+     */
+    notifications: Policy_Spec_Rule_Surface[];
 }
 /**
  * Condition is the Rule's condition that has to match the access
@@ -391,6 +400,31 @@ export interface Policy_Spec_Rule_Action_Review_Step {
      * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.OnTimeout onTimeout = 5
      */
     onTimeout: Policy_Spec_Rule_Action_Review_Step_OnTimeout;
+    /**
+     * Name is the name of the Step. It is required and it must be
+     * unique within the review workflow.
+     *
+     * @generated from protobuf field: string name = 6
+     */
+    name: string;
+    /**
+     * Surfaces is the list of the external Integration surfaces on
+     * which the Requests reaching the Step are presented to their
+     * reviewers. The Cluster's own access portal is always available
+     * regardless of this list.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.Policy.Spec.Rule.Surface surfaces = 7
+     */
+    surfaces: Policy_Spec_Rule_Surface[];
+    /**
+     * SeparationOfDuties controls whether the requester and the
+     * subject of a Request are allowed to review it themselves even
+     * when they match the Step's Reviewers. Both are denied by
+     * default.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.SeparationOfDuties separationOfDuties = 8
+     */
+    separationOfDuties?: Policy_Spec_Rule_SeparationOfDuties;
 }
 /**
  * Reviewer is a User that is allowed to review the Requests that
@@ -545,6 +579,175 @@ export interface Policy_Spec_Rule_Authorization {
      * @generated from protobuf field: octelium.api.main.meta.v1.Duration maxAccessDuration = 3
      */
     maxAccessDuration?: Duration;
+}
+/**
+ * SeparationOfDuties controls whether the Users that are involved in a
+ * Request are allowed to review it themselves
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.SeparationOfDuties
+ */
+export interface Policy_Spec_Rule_SeparationOfDuties {
+    /**
+     * AllowRequesterReview allows the User that created the Request to
+     * review it. It is denied by default.
+     *
+     * @generated from protobuf field: bool allowRequesterReview = 1
+     */
+    allowRequesterReview: boolean;
+    /**
+     * AllowSubjectReview allows the User that the access is requested for
+     * to review the Request. It is denied by default.
+     *
+     * @generated from protobuf field: bool allowSubjectReview = 2
+     */
+    allowSubjectReview: boolean;
+}
+/**
+ * Surface is an external Integration destination on which the Cluster
+ * presents a Request. The access Policy only describes the audience and
+ * how much the external provider is trusted. The provider-specific
+ * configuration itself belongs to the Integration and to the
+ * IntegrationTarget resources.
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.Surface
+ */
+export interface Policy_Spec_Rule_Surface {
+    /**
+     * Destination is the audience of the Surface. Required.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination destination = 1
+     */
+    destination?: Policy_Spec_Rule_Surface_Destination;
+    /**
+     * InteractionMode is how much the external provider is trusted to act
+     * on the presented Request. It is ignored by the Rule's
+     * notification Surfaces which are never interactive.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Surface.InteractionMode interactionMode = 2
+     */
+    interactionMode: Policy_Spec_Rule_Surface_InteractionMode;
+}
+/**
+ * Destination is the audience of the Surface
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination
+ */
+export interface Policy_Spec_Rule_Surface_Destination {
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "reviewers";
+        /**
+         * Reviewers delivers to the current reviewers of the Request.
+         *
+         * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Reviewers reviewers = 1
+         */
+        reviewers: Policy_Spec_Rule_Surface_Destination_Reviewers;
+    } | {
+        oneofKind: "requester";
+        /**
+         * Requester delivers to the requester of the Request.
+         *
+         * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Requester requester = 2
+         */
+        requester: Policy_Spec_Rule_Surface_Destination_Requester;
+    } | {
+        oneofKind: "subject";
+        /**
+         * Subject delivers to the subject of the Request.
+         *
+         * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Subject subject = 3
+         */
+        subject: Policy_Spec_Rule_Surface_Destination_Subject;
+    } | {
+        oneofKind: "targetRef";
+        /**
+         * TargetRef is the reference of a shared IntegrationTarget (e.g.
+         * a chat channel or a service desk project).
+         *
+         * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference targetRef = 4
+         */
+        targetRef: ObjectReference;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * Reviewers delivers directly to every User that can currently
+ * review the Request at its current Step
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Reviewers
+ */
+export interface Policy_Spec_Rule_Surface_Destination_Reviewers {
+    /**
+     * IntegrationRef is the reference of the Integration whose
+     * external Users the reviewers are resolved to.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference integrationRef = 1
+     */
+    integrationRef?: ObjectReference;
+}
+/**
+ * Requester delivers directly to the User that created the Request
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Requester
+ */
+export interface Policy_Spec_Rule_Surface_Destination_Requester {
+    /**
+     * IntegrationRef is the reference of the Integration whose
+     * external User the requester is resolved to.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference integrationRef = 1
+     */
+    integrationRef?: ObjectReference;
+}
+/**
+ * Subject delivers directly to the User that the access is
+ * requested for
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Subject
+ */
+export interface Policy_Spec_Rule_Surface_Destination_Subject {
+    /**
+     * IntegrationRef is the reference of the Integration whose
+     * external User the subject is resolved to.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference integrationRef = 1
+     */
+    integrationRef?: ObjectReference;
+}
+/**
+ * InteractionMode is how much the external provider is trusted to act
+ * on the presented Request
+ *
+ * @generated from protobuf enum octelium.api.main.access.v1.Policy.Spec.Rule.Surface.InteractionMode
+ */
+export enum Policy_Spec_Rule_Surface_InteractionMode {
+    /**
+     * INTERACTION_MODE_UNSET is equivalent to DEEP_LINK_ONLY. It is the
+     * default mode.
+     *
+     * @generated from protobuf enum value: INTERACTION_MODE_UNSET = 0;
+     */
+    INTERACTION_MODE_UNSET = 0,
+    /**
+     * DEEP_LINK_ONLY presents the Request without any action. The
+     * decisions themselves have to be submitted to the Cluster.
+     *
+     * @generated from protobuf enum value: DEEP_LINK_ONLY = 1;
+     */
+    DEEP_LINK_ONLY = 1,
+    /**
+     * INTERACTIVE lets the external provider submit the decisions of
+     * its own actors back to the Cluster. Every such decision is
+     * authenticated by the provider's Integration and is authorized by
+     * the Cluster exactly like a decision that is submitted via the
+     * ReviewerService.
+     *
+     * @generated from protobuf enum value: INTERACTIVE = 2;
+     */
+    INTERACTIVE = 2
 }
 /**
  * Effect is the effect of the Rule on the matched access Request
@@ -1026,6 +1229,23 @@ export interface Request_Status {
      * @generated from protobuf field: google.protobuf.Timestamp accessEndsAt = 10
      */
     accessEndsAt?: Timestamp;
+    /**
+     * Origin is where the Request was created from. It is entirely set by the
+     * Cluster from the authenticated transport of the creation itself.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Origin origin = 11
+     */
+    origin?: Origin;
+    /**
+     * EffectiveDuration is how long the granted access actually lasts for
+     * once the Request is approved. It is the Request's `spec.duration`
+     * capped by the `maxAccessDuration` of the matched Rule's Authorization
+     * and it is computed as soon as the Rule is matched so that it can be
+     * shown to the reviewers before they decide.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.Duration effectiveDuration = 12
+     */
+    effectiveDuration?: Duration;
 }
 /**
  * State is a state of the Request at a certain point in time
@@ -1321,6 +1541,20 @@ export interface Review_Status {
      * @generated from protobuf field: int32 stepIndex = 6
      */
     stepIndex: number;
+    /**
+     * StepName is the name of the Request's review Step that the Review
+     * applies to.
+     *
+     * @generated from protobuf field: string stepName = 7
+     */
+    stepName: string;
+    /**
+     * Origin is where the current decision was set from. It is entirely set
+     * by the Cluster from the authenticated transport of the decision itself.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Origin origin = 8
+     */
+    origin?: Origin;
 }
 /**
  * Revision is a previous version of the Review's Spec
@@ -1340,6 +1574,12 @@ export interface Review_Status_Revision {
      * @generated from protobuf field: google.protobuf.Timestamp setAt = 2
      */
     setAt?: Timestamp;
+    /**
+     * Origin is where that specification was set from.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Origin origin = 3
+     */
+    origin?: Origin;
 }
 /**
  * ReviewList is the list of Reviews returned by the ListReview method.
@@ -1639,6 +1879,1610 @@ export interface CancelReviewRequest {
      */
     reviewRef?: ObjectReference;
 }
+/**
+ * Origin is where an access Request or a Review came from. It is entirely
+ * derived by the Cluster from the authenticated transport of the operation
+ * itself and it is never accepted from the callers.
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Origin
+ */
+export interface Origin {
+    /**
+     * Type is the kind of the transport that the operation came from.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Origin.Type type = 1
+     */
+    type: Origin_Type;
+    /**
+     * IntegrationRef is the reference of the Integration that authenticated the
+     * external actor. It is only set for the INTEGRATION type.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference integrationRef = 2
+     */
+    integrationRef?: ObjectReference;
+    /**
+     * ExternalActorID is the stable identifier of the external actor within the
+     * Integration's provider (e.g. a Slack user ID or an Atlassian account ID).
+     * It is only set for the INTEGRATION type.
+     *
+     * @generated from protobuf field: string externalActorID = 3
+     */
+    externalActorID: string;
+    /**
+     * ExternalEventID is the identifier of the provider event that carried the
+     * operation. It is used to recognize the duplicate deliveries of the same
+     * external action.
+     *
+     * @generated from protobuf field: string externalEventID = 4
+     */
+    externalEventID: string;
+    /**
+     * SessionRef is the reference of the Session that performed the operation.
+     * It is only set for the API type.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference sessionRef = 5
+     */
+    sessionRef?: ObjectReference;
+}
+/**
+ * Type is the kind of the transport that the operation came from
+ *
+ * @generated from protobuf enum octelium.api.main.access.v1.Origin.Type
+ */
+export enum Origin_Type {
+    /**
+     * TYPE_UNSET means that no origin is recorded.
+     *
+     * @generated from protobuf enum value: TYPE_UNSET = 0;
+     */
+    TYPE_UNSET = 0,
+    /**
+     * API means that the operation was performed by a User via the Cluster's
+     * own API (e.g. the access portal or the CLI).
+     *
+     * @generated from protobuf enum value: API = 1;
+     */
+    API = 1,
+    /**
+     * INTEGRATION means that the operation was performed by an external actor
+     * of an Integration.
+     *
+     * @generated from protobuf enum value: INTEGRATION = 2;
+     */
+    INTEGRATION = 2,
+    /**
+     * SYSTEM means that the operation was performed by the Cluster itself.
+     *
+     * @generated from protobuf enum value: SYSTEM = 3;
+     */
+    SYSTEM = 3
+}
+/**
+ * Integration is a connection to an external provider (e.g. a chat or a
+ * ticketing system) that the Cluster uses to present its access Requests to
+ * their reviewers, to notify the requesters of the outcomes and, when it is
+ * explicitly trusted to do so, to accept the decisions and the Requests of
+ * its own external actors. An Integration never decides anything by itself:
+ * the Cluster remains the only owner of the access Requests, of the reviewer
+ * eligibility, of the approval requirements and of the granted access.
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Integration
+ */
+export interface Integration {
+    /**
+     * APIVersion is the API version (i.e. "access/v1")
+     *
+     * @generated from protobuf field: string apiVersion = 1
+     */
+    apiVersion: string;
+    /**
+     * Kind is the resource name (i.e. `Integration`).
+     *
+     * @generated from protobuf field: string kind = 2
+     */
+    kind: string;
+    /**
+     * Metadata is the object's metadata.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.Metadata metadata = 3
+     */
+    metadata?: Metadata;
+    /**
+     * Spec is the Integration specification.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Integration.Spec spec = 4
+     */
+    spec?: Integration_Spec;
+    /**
+     * Status is the current status of the Integration.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Integration.Status status = 5
+     */
+    status?: Integration_Status;
+}
+/**
+ * Spec is the Integration specification
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Integration.Spec
+ */
+export interface Integration_Spec {
+    /**
+     * IsDisabled disables the Integration. A disabled Integration neither
+     * delivers anything nor accepts any inbound request.
+     *
+     * @generated from protobuf field: bool isDisabled = 1
+     */
+    isDisabled: boolean;
+    /**
+     * IdentityResolution controls how the external actors of the Integration
+     * are resolved to the Cluster Users.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Integration.Spec.IdentityResolution identityResolution = 2
+     */
+    identityResolution?: Integration_Spec_IdentityResolution;
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "slack";
+        /**
+         * Slack sets the Slack specific options.
+         *
+         * @generated from protobuf field: octelium.api.main.access.v1.Integration.Spec.Slack slack = 10
+         */
+        slack: Integration_Spec_Slack;
+    } | {
+        oneofKind: "jira";
+        /**
+         * Jira sets the Jira specific options.
+         *
+         * @generated from protobuf field: octelium.api.main.access.v1.Integration.Spec.Jira jira = 11
+         */
+        jira: Integration_Spec_Jira;
+    } | {
+        oneofKind: "webhook";
+        /**
+         * Webhook sets the generic webhook specific options.
+         *
+         * @generated from protobuf field: octelium.api.main.access.v1.Integration.Spec.Webhook webhook = 12
+         */
+        webhook: Integration_Spec_Webhook;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * IdentityResolution controls how the external actors of the Integration
+ * are resolved to the Cluster Users
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Integration.Spec.IdentityResolution
+ */
+export interface Integration_Spec_IdentityResolution {
+    /**
+     * DisableEmailDiscovery disables resolving an external actor from the
+     * email that the provider itself reports for it. When it is disabled,
+     * only the explicitly set IntegrationIdentities are used.
+     *
+     * @generated from protobuf field: bool disableEmailDiscovery = 1
+     */
+    disableEmailDiscovery: boolean;
+}
+/**
+ * Slack sets the Slack specific options
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Integration.Spec.Slack
+ */
+export interface Integration_Spec_Slack {
+    /**
+     * BotToken is the bot token (i.e. `xoxb-...`) of the Slack app.
+     * Required.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Integration.Spec.Slack.BotToken botToken = 1
+     */
+    botToken?: Integration_Spec_Slack_BotToken;
+    /**
+     * SigningSecret is the signing secret that is used to verify the
+     * requests that Slack sends to the Cluster. Required.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Integration.Spec.Slack.SigningSecret signingSecret = 2
+     */
+    signingSecret?: Integration_Spec_Slack_SigningSecret;
+    /**
+     * TeamID is the ID of the Slack workspace (i.e. `T...`) that the
+     * Integration is bound to. The inbound requests of any other workspace
+     * are rejected. It is discovered by the Cluster if it is unset.
+     *
+     * @generated from protobuf field: string teamID = 3
+     */
+    teamID: string;
+    /**
+     * BaseURL overrides the base URL of the Slack API. If unset, the
+     * default public API URL is used.
+     *
+     * @generated from protobuf field: string baseURL = 4
+     */
+    baseURL: string;
+}
+/**
+ * BotToken is the token of the Slack app
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Integration.Spec.Slack.BotToken
+ */
+export interface Integration_Spec_Slack_BotToken {
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "fromSecret";
+        /**
+         * FromSecret sets the name of the Secret whose value contains the
+         * bot token
+         *
+         * @generated from protobuf field: string fromSecret = 1
+         */
+        fromSecret: string;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * SigningSecret is the signing secret of the Slack app
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Integration.Spec.Slack.SigningSecret
+ */
+export interface Integration_Spec_Slack_SigningSecret {
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "fromSecret";
+        /**
+         * FromSecret sets the name of the Secret whose value contains the
+         * signing secret
+         *
+         * @generated from protobuf field: string fromSecret = 1
+         */
+        fromSecret: string;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * Jira sets the Jira specific options
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Integration.Spec.Jira
+ */
+export interface Integration_Spec_Jira {
+    /**
+     * URL is the base URL of the Jira site (e.g.
+     * `https://example.atlassian.net`). Required.
+     *
+     * @generated from protobuf field: string url = 1
+     */
+    url: string;
+    /**
+     * Email is the email of the Atlassian account whose API token is used
+     * to access the Jira REST API. Required.
+     *
+     * @generated from protobuf field: string email = 2
+     */
+    email: string;
+    /**
+     * APIToken is the API token of the Atlassian account. Required.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Integration.Spec.Jira.APIToken apiToken = 3
+     */
+    apiToken?: Integration_Spec_Jira_APIToken;
+    /**
+     * WebhookSecret is the secret that Jira signs its webhook deliveries
+     * with. It is required in order to accept any inbound Jira request.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Integration.Spec.Jira.WebhookSecret webhookSecret = 4
+     */
+    webhookSecret?: Integration_Spec_Jira_WebhookSecret;
+}
+/**
+ * APIToken is the API token of the Atlassian account
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Integration.Spec.Jira.APIToken
+ */
+export interface Integration_Spec_Jira_APIToken {
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "fromSecret";
+        /**
+         * FromSecret sets the name of the Secret whose value contains the
+         * API token
+         *
+         * @generated from protobuf field: string fromSecret = 1
+         */
+        fromSecret: string;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * WebhookSecret is the shared secret of the Jira webhook
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Integration.Spec.Jira.WebhookSecret
+ */
+export interface Integration_Spec_Jira_WebhookSecret {
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "fromSecret";
+        /**
+         * FromSecret sets the name of the Secret whose value contains the
+         * webhook secret
+         *
+         * @generated from protobuf field: string fromSecret = 1
+         */
+        fromSecret: string;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * Webhook sets the generic webhook specific options. It is the escape
+ * hatch that lets the Requests be delivered to, and be acted upon by, the
+ * systems that the Cluster does not natively support.
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Integration.Spec.Webhook
+ */
+export interface Integration_Spec_Webhook {
+    /**
+     * URL is the URL that the Cluster delivers its presentations to.
+     * Required.
+     *
+     * @generated from protobuf field: string url = 1
+     */
+    url: string;
+    /**
+     * SigningSecret is the secret that the Cluster signs its outbound
+     * deliveries with using HMAC-SHA256 over the raw request body. The
+     * signature is sent in the `X-Octelium-Signature` header together with
+     * the `X-Octelium-Timestamp` header. Required.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Integration.Spec.Webhook.SigningSecret signingSecret = 2
+     */
+    signingSecret?: Integration_Spec_Webhook_SigningSecret;
+    /**
+     * InboundSecret is the secret that the external system signs its
+     * requests to the Cluster with using the same scheme as the outbound
+     * deliveries. It is required in order to accept any inbound request.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Integration.Spec.Webhook.InboundSecret inboundSecret = 3
+     */
+    inboundSecret?: Integration_Spec_Webhook_InboundSecret;
+}
+/**
+ * SigningSecret is the secret that the outbound deliveries are signed
+ * with
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Integration.Spec.Webhook.SigningSecret
+ */
+export interface Integration_Spec_Webhook_SigningSecret {
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "fromSecret";
+        /**
+         * FromSecret sets the name of the Secret whose value contains the
+         * signing secret
+         *
+         * @generated from protobuf field: string fromSecret = 1
+         */
+        fromSecret: string;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * InboundSecret is the secret of the inbound requests
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Integration.Spec.Webhook.InboundSecret
+ */
+export interface Integration_Spec_Webhook_InboundSecret {
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "fromSecret";
+        /**
+         * FromSecret sets the name of the Secret whose value contains the
+         * inbound secret
+         *
+         * @generated from protobuf field: string fromSecret = 1
+         */
+        fromSecret: string;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * Status is the current status of the Integration
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Integration.Status
+ */
+export interface Integration_Status {
+    /**
+     * ID is an opaque identifier that is generated by the Cluster upon the
+     * Integration's creation. It is the path segment that identifies the
+     * Integration in the Cluster's inbound integration endpoints which are
+     * served by the Cluster's public Service at
+     * `/integration/v1/callback/<ID>/<provider>/...` (e.g.
+     * `/slack/interactions`, `/slack/commands`, `/slack/events`,
+     * `/jira/webhook` and `/webhook`).
+     *
+     * @generated from protobuf field: string id = 1
+     */
+    id: string;
+    /**
+     * Type is the provider of the Integration.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Integration.Status.Type type = 2
+     */
+    type: Integration_Status_Type;
+    /**
+     * State is the current health of the Integration.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Integration.Status.State state = 3
+     */
+    state: Integration_Status_State;
+    /**
+     * Capabilities is the list of the operations that the Integration
+     * supports.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.Integration.Status.Capability capabilities = 4
+     */
+    capabilities: Integration_Status_Capability[];
+    /**
+     * ExternalTenantID is the identifier of the provider's tenant that the
+     * Integration is bound to (e.g. a Slack workspace ID). Every inbound
+     * request of any other tenant is rejected.
+     *
+     * @generated from protobuf field: string externalTenantID = 5
+     */
+    externalTenantID: string;
+    /**
+     * ExternalTenantName is the human readable name of the provider's tenant.
+     *
+     * @generated from protobuf field: string externalTenantName = 6
+     */
+    externalTenantName: string;
+    /**
+     * LastSuccessAt is the time of the last successful provider operation.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp lastSuccessAt = 7
+     */
+    lastSuccessAt?: Timestamp;
+    /**
+     * LastFailureAt is the time of the last failed provider operation.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp lastFailureAt = 8
+     */
+    lastFailureAt?: Timestamp;
+    /**
+     * LastError is the error of the last failed provider operation.
+     *
+     * @generated from protobuf field: string lastError = 9
+     */
+    lastError: string;
+    /**
+     * Synchronization is the currently ongoing or last requested
+     * synchronization.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Integration.Status.Synchronization synchronization = 10
+     */
+    synchronization?: Integration_Status_Synchronization;
+    /**
+     * LastSynchronizations is the list of the most recent synchronizations.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.Integration.Status.Synchronization lastSynchronizations = 11
+     */
+    lastSynchronizations: Integration_Status_Synchronization[];
+}
+/**
+ * Synchronization is the state of a refresh of the Integration's external
+ * information
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.Integration.Status.Synchronization
+ */
+export interface Integration_Status_Synchronization {
+    /**
+     * CreatedAt is the date at which the synchronization was requested.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp createdAt = 1
+     */
+    createdAt?: Timestamp;
+    /**
+     * State is the current state of the synchronization.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Integration.Status.Synchronization.State state = 2
+     */
+    state: Integration_Status_Synchronization_State;
+    /**
+     * CompletedAt is the date at which the synchronization completed or
+     * failed.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp completedAt = 3
+     */
+    completedAt?: Timestamp;
+}
+/**
+ * State is the current state of the synchronization
+ *
+ * @generated from protobuf enum octelium.api.main.access.v1.Integration.Status.Synchronization.State
+ */
+export enum Integration_Status_Synchronization_State {
+    /**
+     * STATE_UNSET is the default unset value.
+     *
+     * @generated from protobuf enum value: STATE_UNSET = 0;
+     */
+    STATE_UNSET = 0,
+    /**
+     * SYNC_REQUESTED means that the synchronization has been requested
+     * and is not started yet.
+     *
+     * @generated from protobuf enum value: SYNC_REQUESTED = 1;
+     */
+    SYNC_REQUESTED = 1,
+    /**
+     * SYNCING means that the synchronization is currently in progress.
+     *
+     * @generated from protobuf enum value: SYNCING = 2;
+     */
+    SYNCING = 2,
+    /**
+     * SUCCESS means that the synchronization has successfully completed.
+     *
+     * @generated from protobuf enum value: SUCCESS = 3;
+     */
+    SUCCESS = 3,
+    /**
+     * FAILED means that the synchronization has failed.
+     *
+     * @generated from protobuf enum value: FAILED = 4;
+     */
+    FAILED = 4
+}
+/**
+ * Type is the provider of the Integration
+ *
+ * @generated from protobuf enum octelium.api.main.access.v1.Integration.Status.Type
+ */
+export enum Integration_Status_Type {
+    /**
+     * TYPE_UNSET is the default unset value.
+     *
+     * @generated from protobuf enum value: TYPE_UNSET = 0;
+     */
+    TYPE_UNSET = 0,
+    /**
+     * SLACK is a Slack Integration.
+     *
+     * @generated from protobuf enum value: SLACK = 1;
+     */
+    SLACK = 1,
+    /**
+     * JIRA is a Jira Integration.
+     *
+     * @generated from protobuf enum value: JIRA = 2;
+     */
+    JIRA = 2,
+    /**
+     * WEBHOOK is a generic webhook Integration.
+     *
+     * @generated from protobuf enum value: WEBHOOK = 3;
+     */
+    WEBHOOK = 3
+}
+/**
+ * State is the current health of the Integration
+ *
+ * @generated from protobuf enum octelium.api.main.access.v1.Integration.Status.State
+ */
+export enum Integration_Status_State {
+    /**
+     * STATE_UNSET means that the Integration has not been checked yet.
+     *
+     * @generated from protobuf enum value: STATE_UNSET = 0;
+     */
+    STATE_UNSET = 0,
+    /**
+     * READY means that the provider is reachable and that the credentials
+     * are valid.
+     *
+     * @generated from protobuf enum value: READY = 1;
+     */
+    READY = 1,
+    /**
+     * DEGRADED means that the last operation failed while an earlier one
+     * succeeded.
+     *
+     * @generated from protobuf enum value: DEGRADED = 2;
+     */
+    DEGRADED = 2,
+    /**
+     * ERROR means that the Integration is unusable.
+     *
+     * @generated from protobuf enum value: ERROR = 3;
+     */
+    ERROR = 3
+}
+/**
+ * Capability is an operation that the Integration's provider supports
+ *
+ * @generated from protobuf enum octelium.api.main.access.v1.Integration.Status.Capability
+ */
+export enum Integration_Status_Capability {
+    /**
+     * CAPABILITY_UNSET is the default unset value.
+     *
+     * @generated from protobuf enum value: CAPABILITY_UNSET = 0;
+     */
+    CAPABILITY_UNSET = 0,
+    /**
+     * NOTIFICATION means that the provider can deliver a presentation to an
+     * IntegrationTarget.
+     *
+     * @generated from protobuf enum value: NOTIFICATION = 1;
+     */
+    NOTIFICATION = 1,
+    /**
+     * DIRECT_USER_DELIVERY means that the provider can deliver a
+     * presentation directly to an individual external User.
+     *
+     * @generated from protobuf enum value: DIRECT_USER_DELIVERY = 2;
+     */
+    DIRECT_USER_DELIVERY = 2,
+    /**
+     * INTERACTIVE_REVIEW means that the provider can submit the decisions
+     * of its own actors back to the Cluster.
+     *
+     * @generated from protobuf enum value: INTERACTIVE_REVIEW = 3;
+     */
+    INTERACTIVE_REVIEW = 3,
+    /**
+     * REQUEST_CREATION means that the provider can create access Requests
+     * on behalf of its own actors.
+     *
+     * @generated from protobuf enum value: REQUEST_CREATION = 4;
+     */
+    REQUEST_CREATION = 4,
+    /**
+     * IDENTITY_RESOLUTION means that the provider can resolve its own
+     * actors to the Cluster Users.
+     *
+     * @generated from protobuf enum value: IDENTITY_RESOLUTION = 5;
+     */
+    IDENTITY_RESOLUTION = 5,
+    /**
+     * PRESENTATION_UPDATE means that an already delivered presentation can
+     * be updated and closed as the Request moves on.
+     *
+     * @generated from protobuf enum value: PRESENTATION_UPDATE = 6;
+     */
+    PRESENTATION_UPDATE = 6
+}
+/**
+ * IntegrationList is the list of Integrations returned by the ListIntegration
+ * method.
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.IntegrationList
+ */
+export interface IntegrationList {
+    /**
+     * APIVersion is the API version (i.e. "access/v1")
+     *
+     * @generated from protobuf field: string apiVersion = 1
+     */
+    apiVersion: string;
+    /**
+     * Kind is the resource name (i.e. `IntegrationList`).
+     *
+     * @generated from protobuf field: string kind = 2
+     */
+    kind: string;
+    /**
+     * Items is the list of Integrations.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.Integration items = 3
+     */
+    items: Integration[];
+    /**
+     * ListResponseMeta is common information about the list.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ListResponseMeta listResponseMeta = 4
+     */
+    listResponseMeta?: ListResponseMeta;
+}
+/**
+ * IntegrationTarget is a named and reusable destination inside an Integration
+ * (e.g. a Slack channel or a Jira project). It keeps the provider-specific
+ * identifiers out of the access Policies which only refer to the Target by
+ * its reference.
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.IntegrationTarget
+ */
+export interface IntegrationTarget {
+    /**
+     * APIVersion is the API version (i.e. "access/v1")
+     *
+     * @generated from protobuf field: string apiVersion = 1
+     */
+    apiVersion: string;
+    /**
+     * Kind is the resource name (i.e. `IntegrationTarget`).
+     *
+     * @generated from protobuf field: string kind = 2
+     */
+    kind: string;
+    /**
+     * Metadata is the object's metadata.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.Metadata metadata = 3
+     */
+    metadata?: Metadata;
+    /**
+     * Spec is the IntegrationTarget specification.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.IntegrationTarget.Spec spec = 4
+     */
+    spec?: IntegrationTarget_Spec;
+    /**
+     * Status is the current status of the IntegrationTarget.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.IntegrationTarget.Status status = 5
+     */
+    status?: IntegrationTarget_Status;
+}
+/**
+ * Spec is the IntegrationTarget specification
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.IntegrationTarget.Spec
+ */
+export interface IntegrationTarget_Spec {
+    /**
+     * IntegrationRef is the reference of the Integration that the Target
+     * belongs to. Required.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference integrationRef = 1
+     */
+    integrationRef?: ObjectReference;
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "slack";
+        /**
+         * Slack sets the Slack specific options.
+         *
+         * @generated from protobuf field: octelium.api.main.access.v1.IntegrationTarget.Spec.Slack slack = 10
+         */
+        slack: IntegrationTarget_Spec_Slack;
+    } | {
+        oneofKind: "jira";
+        /**
+         * Jira sets the Jira specific options.
+         *
+         * @generated from protobuf field: octelium.api.main.access.v1.IntegrationTarget.Spec.Jira jira = 11
+         */
+        jira: IntegrationTarget_Spec_Jira;
+    } | {
+        oneofKind: "webhook";
+        /**
+         * Webhook sets the generic webhook specific options.
+         *
+         * @generated from protobuf field: octelium.api.main.access.v1.IntegrationTarget.Spec.Webhook webhook = 12
+         */
+        webhook: IntegrationTarget_Spec_Webhook;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * Slack sets the Slack specific options
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.IntegrationTarget.Spec.Slack
+ */
+export interface IntegrationTarget_Spec_Slack {
+    /**
+     * ChannelID is the ID of the Slack channel (i.e. `C...`) that the
+     * presentations are delivered to. Required.
+     *
+     * @generated from protobuf field: string channelID = 1
+     */
+    channelID: string;
+    /**
+     * MentionUserGroupID is the ID of the Slack user group (i.e. `S...`)
+     * that is mentioned in the delivered presentations.
+     *
+     * @generated from protobuf field: string mentionUserGroupID = 2
+     */
+    mentionUserGroupID: string;
+}
+/**
+ * Jira sets the Jira specific options
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.IntegrationTarget.Spec.Jira
+ */
+export interface IntegrationTarget_Spec_Jira {
+    /**
+     * ProjectKey is the key of the Jira project that the issues are created
+     * in. Required.
+     *
+     * @generated from protobuf field: string projectKey = 1
+     */
+    projectKey: string;
+    /**
+     * IssueTypeName is the name of the Jira issue type of the created
+     * issues. It defaults to `Task`.
+     *
+     * @generated from protobuf field: string issueTypeName = 2
+     */
+    issueTypeName: string;
+    /**
+     * ApproveStatus is the name of the Jira status which, once an issue
+     * reaches it, submits an approving decision to the Cluster. It is only
+     * used by the INTERACTIVE review Surfaces.
+     *
+     * @generated from protobuf field: string approveStatus = 3
+     */
+    approveStatus: string;
+    /**
+     * RejectStatus is the name of the Jira status which, once an issue
+     * reaches it, submits a rejecting decision to the Cluster. It is only
+     * used by the INTERACTIVE review Surfaces.
+     *
+     * @generated from protobuf field: string rejectStatus = 4
+     */
+    rejectStatus: string;
+}
+/**
+ * Webhook sets the generic webhook specific options
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.IntegrationTarget.Spec.Webhook
+ */
+export interface IntegrationTarget_Spec_Webhook {
+    /**
+     * URL overrides the URL of the Integration for this Target.
+     *
+     * @generated from protobuf field: string url = 1
+     */
+    url: string;
+    /**
+     * Name is an opaque label that is included in the delivered payloads so
+     * that the receiving system can route them.
+     *
+     * @generated from protobuf field: string name = 2
+     */
+    name: string;
+}
+/**
+ * Status is the current status of the IntegrationTarget
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.IntegrationTarget.Status
+ */
+export interface IntegrationTarget_Status {
+    /**
+     * Type is the provider of the Target's Integration.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Integration.Status.Type type = 1
+     */
+    type: Integration_Status_Type;
+}
+/**
+ * IntegrationTargetList is the list of IntegrationTargets returned by the
+ * ListIntegrationTarget method.
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.IntegrationTargetList
+ */
+export interface IntegrationTargetList {
+    /**
+     * APIVersion is the API version (i.e. "access/v1")
+     *
+     * @generated from protobuf field: string apiVersion = 1
+     */
+    apiVersion: string;
+    /**
+     * Kind is the resource name (i.e. `IntegrationTargetList`).
+     *
+     * @generated from protobuf field: string kind = 2
+     */
+    kind: string;
+    /**
+     * Items is the list of IntegrationTargets.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.IntegrationTarget items = 3
+     */
+    items: IntegrationTarget[];
+    /**
+     * ListResponseMeta is common information about the list.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ListResponseMeta listResponseMeta = 4
+     */
+    listResponseMeta?: ListResponseMeta;
+}
+/**
+ * IntegrationIdentity is the link between an external actor of an Integration
+ * and the Cluster User that it acts as. It is the only trust boundary of the
+ * inbound integration requests: the Cluster never takes the identity of an
+ * actor from the payloads of the provider itself.
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.IntegrationIdentity
+ */
+export interface IntegrationIdentity {
+    /**
+     * APIVersion is the API version (i.e. "access/v1")
+     *
+     * @generated from protobuf field: string apiVersion = 1
+     */
+    apiVersion: string;
+    /**
+     * Kind is the resource name (i.e. `IntegrationIdentity`).
+     *
+     * @generated from protobuf field: string kind = 2
+     */
+    kind: string;
+    /**
+     * Metadata is the object's metadata.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.Metadata metadata = 3
+     */
+    metadata?: Metadata;
+    /**
+     * Spec is the IntegrationIdentity specification.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.IntegrationIdentity.Spec spec = 4
+     */
+    spec?: IntegrationIdentity_Spec;
+    /**
+     * Status is the current status of the IntegrationIdentity.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.IntegrationIdentity.Status status = 5
+     */
+    status?: IntegrationIdentity_Status;
+}
+/**
+ * Spec is the IntegrationIdentity specification
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.IntegrationIdentity.Spec
+ */
+export interface IntegrationIdentity_Spec {
+    /**
+     * IntegrationRef is the reference of the Integration that the external
+     * actor belongs to. Required.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference integrationRef = 1
+     */
+    integrationRef?: ObjectReference;
+    /**
+     * UserRef is the reference of the Cluster User that the external actor
+     * acts as. Required.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference userRef = 2
+     */
+    userRef?: ObjectReference;
+    /**
+     * ExternalID is the stable identifier of the external actor within the
+     * provider (e.g. a Slack user ID or an Atlassian account ID). It must be
+     * unique within the Integration. Required.
+     *
+     * @generated from protobuf field: string externalID = 3
+     */
+    externalID: string;
+}
+/**
+ * Status is the current status of the IntegrationIdentity
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.IntegrationIdentity.Status
+ */
+export interface IntegrationIdentity_Status {
+    /**
+     * Source is how the link was established.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.IntegrationIdentity.Status.Source source = 1
+     */
+    source: IntegrationIdentity_Status_Source;
+    /**
+     * VerifiedAt is the time at which the link was last confirmed against the
+     * provider.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp verifiedAt = 2
+     */
+    verifiedAt?: Timestamp;
+    /**
+     * ExternalUsername is the provider's user name of the external actor. It
+     * is informational.
+     *
+     * @generated from protobuf field: string externalUsername = 3
+     */
+    externalUsername: string;
+    /**
+     * ExternalEmail is the email that the provider reports for the external
+     * actor. It is informational.
+     *
+     * @generated from protobuf field: string externalEmail = 4
+     */
+    externalEmail: string;
+}
+/**
+ * Source is how the link was established
+ *
+ * @generated from protobuf enum octelium.api.main.access.v1.IntegrationIdentity.Status.Source
+ */
+export enum IntegrationIdentity_Status_Source {
+    /**
+     * SOURCE_UNSET is the default unset value.
+     *
+     * @generated from protobuf enum value: SOURCE_UNSET = 0;
+     */
+    SOURCE_UNSET = 0,
+    /**
+     * MANUAL means that the link was explicitly set via the API.
+     *
+     * @generated from protobuf enum value: MANUAL = 1;
+     */
+    MANUAL = 1,
+    /**
+     * EMAIL_DISCOVERY means that the link was discovered by the Cluster
+     * from the email that the provider reports for the external actor.
+     *
+     * @generated from protobuf enum value: EMAIL_DISCOVERY = 2;
+     */
+    EMAIL_DISCOVERY = 2
+}
+/**
+ * IntegrationIdentityList is the list of IntegrationIdentities returned by the
+ * ListIntegrationIdentity method.
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.IntegrationIdentityList
+ */
+export interface IntegrationIdentityList {
+    /**
+     * APIVersion is the API version (i.e. "access/v1")
+     *
+     * @generated from protobuf field: string apiVersion = 1
+     */
+    apiVersion: string;
+    /**
+     * Kind is the resource name (i.e. `IntegrationIdentityList`).
+     *
+     * @generated from protobuf field: string kind = 2
+     */
+    kind: string;
+    /**
+     * Items is the list of IntegrationIdentities.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.IntegrationIdentity items = 3
+     */
+    items: IntegrationIdentity[];
+    /**
+     * ListResponseMeta is common information about the list.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ListResponseMeta listResponseMeta = 4
+     */
+    listResponseMeta?: ListResponseMeta;
+}
+/**
+ * IntegrationBinding is the Cluster-managed link between an access Request and
+ * one external object that represents it inside an Integration (e.g. a Slack
+ * message or a Jira issue). It is the durable desired state of that external
+ * object: the access workflow only declares that a Request has to be
+ * presented somewhere while the Cluster reconciles the external object
+ * itself, retries the failed deliveries and closes the outstanding
+ * presentations once the Request reaches a final state. A provider outage
+ * therefore never blocks, and never silently decides, an access Request.
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.IntegrationBinding
+ */
+export interface IntegrationBinding {
+    /**
+     * APIVersion is the API version (i.e. "access/v1")
+     *
+     * @generated from protobuf field: string apiVersion = 1
+     */
+    apiVersion: string;
+    /**
+     * Kind is the resource name (i.e. `IntegrationBinding`).
+     *
+     * @generated from protobuf field: string kind = 2
+     */
+    kind: string;
+    /**
+     * Metadata is the object's metadata.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.Metadata metadata = 3
+     */
+    metadata?: Metadata;
+    /**
+     * Spec is the IntegrationBinding specification.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.IntegrationBinding.Spec spec = 4
+     */
+    spec?: IntegrationBinding_Spec;
+    /**
+     * Status is the current status of the IntegrationBinding.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.IntegrationBinding.Status status = 5
+     */
+    status?: IntegrationBinding_Status;
+}
+/**
+ * Spec is the IntegrationBinding specification
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.IntegrationBinding.Spec
+ */
+export interface IntegrationBinding_Spec {
+    /**
+     * IntegrationRef is the reference of the Integration that delivers the
+     * external object.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference integrationRef = 1
+     */
+    integrationRef?: ObjectReference;
+    /**
+     * RequestRef is the reference of the presented Request.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference requestRef = 2
+     */
+    requestRef?: ObjectReference;
+    /**
+     * TargetRef is the reference of the IntegrationTarget that the external
+     * object is delivered to. It is unset for the direct deliveries.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference targetRef = 3
+     */
+    targetRef?: ObjectReference;
+    /**
+     * UserRef is the reference of the Cluster User that the external object
+     * is directly delivered to. It is unset for the IntegrationTarget
+     * deliveries.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference userRef = 4
+     */
+    userRef?: ObjectReference;
+    /**
+     * StepIndex is the zero-based index of the review Step that the external
+     * object presents. It is only set for the REVIEW_SURFACE purpose.
+     *
+     * @generated from protobuf field: int32 stepIndex = 5
+     */
+    stepIndex: number;
+    /**
+     * StepName is the name of the review Step that the external object
+     * presents. It is only set for the REVIEW_SURFACE purpose.
+     *
+     * @generated from protobuf field: string stepName = 6
+     */
+    stepName: string;
+    /**
+     * Purpose is what the external object represents.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.IntegrationBinding.Spec.Purpose purpose = 7
+     */
+    purpose: IntegrationBinding_Spec_Purpose;
+    /**
+     * InteractionMode is how much the provider is trusted to act on the
+     * presented Request.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Policy.Spec.Rule.Surface.InteractionMode interactionMode = 8
+     */
+    interactionMode: Policy_Spec_Rule_Surface_InteractionMode;
+}
+/**
+ * Purpose is what the external object represents
+ *
+ * @generated from protobuf enum octelium.api.main.access.v1.IntegrationBinding.Spec.Purpose
+ */
+export enum IntegrationBinding_Spec_Purpose {
+    /**
+     * PURPOSE_UNSET is an invalid purpose.
+     *
+     * @generated from protobuf enum value: PURPOSE_UNSET = 0;
+     */
+    PURPOSE_UNSET = 0,
+    /**
+     * REVIEW_SURFACE means that the external object presents a Request to
+     * its reviewers at a specific review Step.
+     *
+     * @generated from protobuf enum value: REVIEW_SURFACE = 1;
+     */
+    REVIEW_SURFACE = 1,
+    /**
+     * NOTIFICATION means that the external object informs its audience of
+     * the outcome of a Request.
+     *
+     * @generated from protobuf enum value: NOTIFICATION = 2;
+     */
+    NOTIFICATION = 2
+}
+/**
+ * Status is the current status of the IntegrationBinding
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.IntegrationBinding.Status
+ */
+export interface IntegrationBinding_Status {
+    /**
+     * State is the current state of the external object.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.IntegrationBinding.Status.State state = 1
+     */
+    state: IntegrationBinding_Status_State;
+    /**
+     * ExternalID is the provider's identifier of the external object (e.g. a
+     * Slack message timestamp or a Jira issue key).
+     *
+     * @generated from protobuf field: string externalID = 2
+     */
+    externalID: string;
+    /**
+     * ExternalURL is a link to the external object.
+     *
+     * @generated from protobuf field: string externalURL = 3
+     */
+    externalURL: string;
+    /**
+     * ExternalRecipientID is the provider's identifier of the destination
+     * that the external object was delivered to (e.g. a Slack channel ID).
+     *
+     * @generated from protobuf field: string externalRecipientID = 4
+     */
+    externalRecipientID: string;
+    /**
+     * DesiredRevision is the fingerprint of the presentation that the
+     * external object has to reflect.
+     *
+     * @generated from protobuf field: string desiredRevision = 5
+     */
+    desiredRevision: string;
+    /**
+     * AppliedRevision is the fingerprint of the presentation that the
+     * external object currently reflects.
+     *
+     * @generated from protobuf field: string appliedRevision = 6
+     */
+    appliedRevision: string;
+    /**
+     * LastSuccessAt is the time of the last successful delivery.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp lastSuccessAt = 7
+     */
+    lastSuccessAt?: Timestamp;
+    /**
+     * NextAttemptAt is the time before which no further delivery is
+     * attempted. It is set by the Cluster's backoff upon the failures.
+     *
+     * @generated from protobuf field: google.protobuf.Timestamp nextAttemptAt = 8
+     */
+    nextAttemptAt?: Timestamp;
+    /**
+     * Attempts is the number of the consecutive failed deliveries.
+     *
+     * @generated from protobuf field: uint32 attempts = 9
+     */
+    attempts: number;
+    /**
+     * LastError is the error of the last failed delivery.
+     *
+     * @generated from protobuf field: string lastError = 10
+     */
+    lastError: string;
+    /**
+     * LastExternalEventIDs is the list of the identifiers of the most recent
+     * provider events that were accepted through the external object. It is
+     * used to discard the duplicate deliveries of the same external action.
+     *
+     * @generated from protobuf field: repeated string lastExternalEventIDs = 11
+     */
+    lastExternalEventIDs: string[];
+}
+/**
+ * State is the current state of the external object
+ *
+ * @generated from protobuf enum octelium.api.main.access.v1.IntegrationBinding.Status.State
+ */
+export enum IntegrationBinding_Status_State {
+    /**
+     * STATE_UNSET is the default unset value.
+     *
+     * @generated from protobuf enum value: STATE_UNSET = 0;
+     */
+    STATE_UNSET = 0,
+    /**
+     * PENDING means that the external object has not been created yet.
+     *
+     * @generated from protobuf enum value: PENDING = 1;
+     */
+    PENDING = 1,
+    /**
+     * READY means that the external object reflects the current state of
+     * the Request.
+     *
+     * @generated from protobuf enum value: READY = 2;
+     */
+    READY = 2,
+    /**
+     * DEGRADED means that the external object exists but that it could not
+     * be brought up to date.
+     *
+     * @generated from protobuf enum value: DEGRADED = 3;
+     */
+    DEGRADED = 3,
+    /**
+     * CLOSED means that the Request reached a final state and that the
+     * external object no longer carries any action.
+     *
+     * @generated from protobuf enum value: CLOSED = 4;
+     */
+    CLOSED = 4
+}
+/**
+ * IntegrationBindingList is the list of IntegrationBindings returned by the
+ * ListIntegrationBinding method.
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.IntegrationBindingList
+ */
+export interface IntegrationBindingList {
+    /**
+     * APIVersion is the API version (i.e. "access/v1")
+     *
+     * @generated from protobuf field: string apiVersion = 1
+     */
+    apiVersion: string;
+    /**
+     * Kind is the resource name (i.e. `IntegrationBindingList`).
+     *
+     * @generated from protobuf field: string kind = 2
+     */
+    kind: string;
+    /**
+     * Items is the list of IntegrationBindings.
+     *
+     * @generated from protobuf field: repeated octelium.api.main.access.v1.IntegrationBinding items = 3
+     */
+    items: IntegrationBinding[];
+    /**
+     * ListResponseMeta is common information about the list.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ListResponseMeta listResponseMeta = 4
+     */
+    listResponseMeta?: ListResponseMeta;
+}
+/**
+ * ListIntegrationOptions is the list options of the ListIntegration method.
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.ListIntegrationOptions
+ */
+export interface ListIntegrationOptions {
+    /**
+     * Common is the common list options.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.CommonListOptions common = 1
+     */
+    common?: CommonListOptions;
+}
+/**
+ * ListIntegrationTargetOptions is the list options of the
+ * ListIntegrationTarget method.
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.ListIntegrationTargetOptions
+ */
+export interface ListIntegrationTargetOptions {
+    /**
+     * Common is the common list options.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.CommonListOptions common = 1
+     */
+    common?: CommonListOptions;
+    /**
+     * IntegrationRef restricts the list to the IntegrationTargets of a specific
+     * Integration.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference integrationRef = 2
+     */
+    integrationRef?: ObjectReference;
+}
+/**
+ * ListIntegrationIdentityOptions is the list options of the
+ * ListIntegrationIdentity method.
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.ListIntegrationIdentityOptions
+ */
+export interface ListIntegrationIdentityOptions {
+    /**
+     * Common is the common list options.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.CommonListOptions common = 1
+     */
+    common?: CommonListOptions;
+    /**
+     * IntegrationRef restricts the list to the IntegrationIdentities of a
+     * specific Integration.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference integrationRef = 2
+     */
+    integrationRef?: ObjectReference;
+    /**
+     * UserRef restricts the list to the IntegrationIdentities of a specific
+     * User.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference userRef = 3
+     */
+    userRef?: ObjectReference;
+}
+/**
+ * ListIntegrationBindingOptions is the list options of the
+ * ListIntegrationBinding method.
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.ListIntegrationBindingOptions
+ */
+export interface ListIntegrationBindingOptions {
+    /**
+     * Common is the common list options.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.CommonListOptions common = 1
+     */
+    common?: CommonListOptions;
+    /**
+     * IntegrationRef restricts the list to the IntegrationBindings of a
+     * specific Integration.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference integrationRef = 2
+     */
+    integrationRef?: ObjectReference;
+    /**
+     * RequestRef restricts the list to the IntegrationBindings of a specific
+     * Request.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference requestRef = 3
+     */
+    requestRef?: ObjectReference;
+}
+/**
+ * SetReviewDecisionRequest is the request of the SetReviewDecision method.
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.SetReviewDecisionRequest
+ */
+export interface SetReviewDecisionRequest {
+    /**
+     * RequestRef is the reference of the reviewed Request. Required.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference requestRef = 1
+     */
+    requestRef?: ObjectReference;
+    /**
+     * Decision is the reviewer's decision on the Request. An unset decision
+     * withdraws the current one.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.Review.Spec.Decision decision = 2
+     */
+    decision: Review_Spec_Decision;
+    /**
+     * Justification is the reviewer's free-form explanation of the decision. It
+     * cannot be longer than 1500 characters.
+     *
+     * @generated from protobuf field: string justification = 3
+     */
+    justification: string;
+    /**
+     * ExpectedStepName is an optional safety check. If it is set and the
+     * Request is no longer waiting for that review Step, the decision is
+     * rejected instead of being applied to another Step.
+     *
+     * @generated from protobuf field: string expectedStepName = 4
+     */
+    expectedStepName: string;
+}
+/**
+ * SynchronizeIntegrationRequest is the request of the SynchronizeIntegration
+ * method.
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.SynchronizeIntegrationRequest
+ */
+export interface SynchronizeIntegrationRequest {
+    /**
+     * IntegrationRef is the reference of the Integration to be synchronized.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference integrationRef = 1
+     */
+    integrationRef?: ObjectReference;
+}
+/**
+ * SynchronizeIntegrationResponse is the response of the
+ * SynchronizeIntegration method.
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.SynchronizeIntegrationResponse
+ */
+export interface SynchronizeIntegrationResponse {
+}
+/**
+ * ResolveIntegrationIdentityRequest is the request of the
+ * ResolveIntegrationIdentity method.
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.ResolveIntegrationIdentityRequest
+ */
+export interface ResolveIntegrationIdentityRequest {
+    /**
+     * IntegrationRef is the reference of the Integration. Required.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference integrationRef = 1
+     */
+    integrationRef?: ObjectReference;
+    /**
+     * @generated from protobuf oneof: type
+     */
+    type: {
+        oneofKind: "externalID";
+        /**
+         * ExternalID resolves the Cluster User of an external actor.
+         *
+         * @generated from protobuf field: string externalID = 2
+         */
+        externalID: string;
+    } | {
+        oneofKind: "userRef";
+        /**
+         * UserRef resolves the external actor of a Cluster User.
+         *
+         * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference userRef = 3
+         */
+        userRef: ObjectReference;
+    } | {
+        oneofKind: undefined;
+    };
+}
+/**
+ * ResolveIntegrationIdentityResponse is the response of the
+ * ResolveIntegrationIdentity method.
+ *
+ * @generated from protobuf message octelium.api.main.access.v1.ResolveIntegrationIdentityResponse
+ */
+export interface ResolveIntegrationIdentityResponse {
+    /**
+     * IsResolved is whether the identity could be resolved at all.
+     *
+     * @generated from protobuf field: bool isResolved = 1
+     */
+    isResolved: boolean;
+    /**
+     * UserRef is the reference of the resolved Cluster User.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference userRef = 2
+     */
+    userRef?: ObjectReference;
+    /**
+     * ExternalID is the identifier of the resolved external actor.
+     *
+     * @generated from protobuf field: string externalID = 3
+     */
+    externalID: string;
+    /**
+     * Source is how the link was established.
+     *
+     * @generated from protobuf field: octelium.api.main.access.v1.IntegrationIdentity.Status.Source source = 4
+     */
+    source: IntegrationIdentity_Status_Source;
+    /**
+     * IntegrationIdentityRef is the reference of the IntegrationIdentity that
+     * carries the link.
+     *
+     * @generated from protobuf field: octelium.api.main.meta.v1.ObjectReference integrationIdentityRef = 5
+     */
+    integrationIdentityRef?: ObjectReference;
+    /**
+     * Detail explains why the resolution succeeded or failed.
+     *
+     * @generated from protobuf field: string detail = 6
+     */
+    detail: string;
+}
 // @generated message type with reflection information, may provide speed optimized methods
 class Policy$Type extends MessageType<Policy> {
     constructor() {
@@ -1779,7 +3623,8 @@ class Policy_Spec_Rule$Type extends MessageType<Policy_Spec_Rule> {
             { no: 3, name: "priority", kind: "scalar", T: 5 /*ScalarType.INT32*/ },
             { no: 4, name: "action", kind: "message", T: () => Policy_Spec_Rule_Action },
             { no: 5, name: "authorization", kind: "message", T: () => Policy_Spec_Rule_Authorization },
-            { no: 6, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+            { no: 6, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 7, name: "notifications", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Policy_Spec_Rule_Surface }
         ]);
     }
     create(value?: PartialMessage<Policy_Spec_Rule>): Policy_Spec_Rule {
@@ -1787,6 +3632,7 @@ class Policy_Spec_Rule$Type extends MessageType<Policy_Spec_Rule> {
         message.effect = 0;
         message.priority = 0;
         message.name = "";
+        message.notifications = [];
         if (value !== undefined)
             reflectionMergePartial<Policy_Spec_Rule>(this, message, value);
         return message;
@@ -1813,6 +3659,9 @@ class Policy_Spec_Rule$Type extends MessageType<Policy_Spec_Rule> {
                     break;
                 case /* string name */ 6:
                     message.name = reader.string();
+                    break;
+                case /* repeated octelium.api.main.access.v1.Policy.Spec.Rule.Surface notifications */ 7:
+                    message.notifications.push(Policy_Spec_Rule_Surface.internalBinaryRead(reader, reader.uint32(), options));
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -1844,6 +3693,9 @@ class Policy_Spec_Rule$Type extends MessageType<Policy_Spec_Rule> {
         /* string name = 6; */
         if (message.name !== "")
             writer.tag(6, WireType.LengthDelimited).string(message.name);
+        /* repeated octelium.api.main.access.v1.Policy.Spec.Rule.Surface notifications = 7; */
+        for (let i = 0; i < message.notifications.length; i++)
+            Policy_Spec_Rule_Surface.internalBinaryWrite(message.notifications[i], writer.tag(7, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -2283,7 +4135,10 @@ class Policy_Spec_Rule_Action_Review_Step$Type extends MessageType<Policy_Spec_R
             { no: 2, name: "approvalRequirement", kind: "enum", T: () => ["octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.ApprovalRequirement", Policy_Spec_Rule_Action_Review_Step_ApprovalRequirement] },
             { no: 3, name: "approvalCount", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
             { no: 4, name: "timeout", kind: "message", T: () => Duration },
-            { no: 5, name: "onTimeout", kind: "enum", T: () => ["octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.OnTimeout", Policy_Spec_Rule_Action_Review_Step_OnTimeout, "ON_TIMEOUT_"] }
+            { no: 5, name: "onTimeout", kind: "enum", T: () => ["octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.OnTimeout", Policy_Spec_Rule_Action_Review_Step_OnTimeout, "ON_TIMEOUT_"] },
+            { no: 6, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 7, name: "surfaces", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Policy_Spec_Rule_Surface },
+            { no: 8, name: "separationOfDuties", kind: "message", T: () => Policy_Spec_Rule_SeparationOfDuties }
         ]);
     }
     create(value?: PartialMessage<Policy_Spec_Rule_Action_Review_Step>): Policy_Spec_Rule_Action_Review_Step {
@@ -2292,6 +4147,8 @@ class Policy_Spec_Rule_Action_Review_Step$Type extends MessageType<Policy_Spec_R
         message.approvalRequirement = 0;
         message.approvalCount = 0;
         message.onTimeout = 0;
+        message.name = "";
+        message.surfaces = [];
         if (value !== undefined)
             reflectionMergePartial<Policy_Spec_Rule_Action_Review_Step>(this, message, value);
         return message;
@@ -2315,6 +4172,15 @@ class Policy_Spec_Rule_Action_Review_Step$Type extends MessageType<Policy_Spec_R
                     break;
                 case /* octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.OnTimeout onTimeout */ 5:
                     message.onTimeout = reader.int32();
+                    break;
+                case /* string name */ 6:
+                    message.name = reader.string();
+                    break;
+                case /* repeated octelium.api.main.access.v1.Policy.Spec.Rule.Surface surfaces */ 7:
+                    message.surfaces.push(Policy_Spec_Rule_Surface.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* octelium.api.main.access.v1.Policy.Spec.Rule.SeparationOfDuties separationOfDuties */ 8:
+                    message.separationOfDuties = Policy_Spec_Rule_SeparationOfDuties.internalBinaryRead(reader, reader.uint32(), options, message.separationOfDuties);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -2343,6 +4209,15 @@ class Policy_Spec_Rule_Action_Review_Step$Type extends MessageType<Policy_Spec_R
         /* octelium.api.main.access.v1.Policy.Spec.Rule.Action.Review.Step.OnTimeout onTimeout = 5; */
         if (message.onTimeout !== 0)
             writer.tag(5, WireType.Varint).int32(message.onTimeout);
+        /* string name = 6; */
+        if (message.name !== "")
+            writer.tag(6, WireType.LengthDelimited).string(message.name);
+        /* repeated octelium.api.main.access.v1.Policy.Spec.Rule.Surface surfaces = 7; */
+        for (let i = 0; i < message.surfaces.length; i++)
+            Policy_Spec_Rule_Surface.internalBinaryWrite(message.surfaces[i], writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Policy.Spec.Rule.SeparationOfDuties separationOfDuties = 8; */
+        if (message.separationOfDuties)
+            Policy_Spec_Rule_SeparationOfDuties.internalBinaryWrite(message.separationOfDuties, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -2567,6 +4442,333 @@ class Policy_Spec_Rule_Authorization$Type extends MessageType<Policy_Spec_Rule_A
  * @generated MessageType for protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.Authorization
  */
 export const Policy_Spec_Rule_Authorization = new Policy_Spec_Rule_Authorization$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Policy_Spec_Rule_SeparationOfDuties$Type extends MessageType<Policy_Spec_Rule_SeparationOfDuties> {
+    constructor() {
+        super("octelium.api.main.access.v1.Policy.Spec.Rule.SeparationOfDuties", [
+            { no: 1, name: "allowRequesterReview", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 2, name: "allowSubjectReview", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Policy_Spec_Rule_SeparationOfDuties>): Policy_Spec_Rule_SeparationOfDuties {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.allowRequesterReview = false;
+        message.allowSubjectReview = false;
+        if (value !== undefined)
+            reflectionMergePartial<Policy_Spec_Rule_SeparationOfDuties>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Policy_Spec_Rule_SeparationOfDuties): Policy_Spec_Rule_SeparationOfDuties {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bool allowRequesterReview */ 1:
+                    message.allowRequesterReview = reader.bool();
+                    break;
+                case /* bool allowSubjectReview */ 2:
+                    message.allowSubjectReview = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Policy_Spec_Rule_SeparationOfDuties, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bool allowRequesterReview = 1; */
+        if (message.allowRequesterReview !== false)
+            writer.tag(1, WireType.Varint).bool(message.allowRequesterReview);
+        /* bool allowSubjectReview = 2; */
+        if (message.allowSubjectReview !== false)
+            writer.tag(2, WireType.Varint).bool(message.allowSubjectReview);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.SeparationOfDuties
+ */
+export const Policy_Spec_Rule_SeparationOfDuties = new Policy_Spec_Rule_SeparationOfDuties$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Policy_Spec_Rule_Surface$Type extends MessageType<Policy_Spec_Rule_Surface> {
+    constructor() {
+        super("octelium.api.main.access.v1.Policy.Spec.Rule.Surface", [
+            { no: 1, name: "destination", kind: "message", T: () => Policy_Spec_Rule_Surface_Destination },
+            { no: 2, name: "interactionMode", kind: "enum", T: () => ["octelium.api.main.access.v1.Policy.Spec.Rule.Surface.InteractionMode", Policy_Spec_Rule_Surface_InteractionMode] }
+        ]);
+    }
+    create(value?: PartialMessage<Policy_Spec_Rule_Surface>): Policy_Spec_Rule_Surface {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.interactionMode = 0;
+        if (value !== undefined)
+            reflectionMergePartial<Policy_Spec_Rule_Surface>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Policy_Spec_Rule_Surface): Policy_Spec_Rule_Surface {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination destination */ 1:
+                    message.destination = Policy_Spec_Rule_Surface_Destination.internalBinaryRead(reader, reader.uint32(), options, message.destination);
+                    break;
+                case /* octelium.api.main.access.v1.Policy.Spec.Rule.Surface.InteractionMode interactionMode */ 2:
+                    message.interactionMode = reader.int32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Policy_Spec_Rule_Surface, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination destination = 1; */
+        if (message.destination)
+            Policy_Spec_Rule_Surface_Destination.internalBinaryWrite(message.destination, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Policy.Spec.Rule.Surface.InteractionMode interactionMode = 2; */
+        if (message.interactionMode !== 0)
+            writer.tag(2, WireType.Varint).int32(message.interactionMode);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.Surface
+ */
+export const Policy_Spec_Rule_Surface = new Policy_Spec_Rule_Surface$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Policy_Spec_Rule_Surface_Destination$Type extends MessageType<Policy_Spec_Rule_Surface_Destination> {
+    constructor() {
+        super("octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination", [
+            { no: 1, name: "reviewers", kind: "message", oneof: "type", T: () => Policy_Spec_Rule_Surface_Destination_Reviewers },
+            { no: 2, name: "requester", kind: "message", oneof: "type", T: () => Policy_Spec_Rule_Surface_Destination_Requester },
+            { no: 3, name: "subject", kind: "message", oneof: "type", T: () => Policy_Spec_Rule_Surface_Destination_Subject },
+            { no: 4, name: "targetRef", kind: "message", oneof: "type", T: () => ObjectReference }
+        ]);
+    }
+    create(value?: PartialMessage<Policy_Spec_Rule_Surface_Destination>): Policy_Spec_Rule_Surface_Destination {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<Policy_Spec_Rule_Surface_Destination>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Policy_Spec_Rule_Surface_Destination): Policy_Spec_Rule_Surface_Destination {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Reviewers reviewers */ 1:
+                    message.type = {
+                        oneofKind: "reviewers",
+                        reviewers: Policy_Spec_Rule_Surface_Destination_Reviewers.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).reviewers)
+                    };
+                    break;
+                case /* octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Requester requester */ 2:
+                    message.type = {
+                        oneofKind: "requester",
+                        requester: Policy_Spec_Rule_Surface_Destination_Requester.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).requester)
+                    };
+                    break;
+                case /* octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Subject subject */ 3:
+                    message.type = {
+                        oneofKind: "subject",
+                        subject: Policy_Spec_Rule_Surface_Destination_Subject.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).subject)
+                    };
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference targetRef */ 4:
+                    message.type = {
+                        oneofKind: "targetRef",
+                        targetRef: ObjectReference.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).targetRef)
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Policy_Spec_Rule_Surface_Destination, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Reviewers reviewers = 1; */
+        if (message.type.oneofKind === "reviewers")
+            Policy_Spec_Rule_Surface_Destination_Reviewers.internalBinaryWrite(message.type.reviewers, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Requester requester = 2; */
+        if (message.type.oneofKind === "requester")
+            Policy_Spec_Rule_Surface_Destination_Requester.internalBinaryWrite(message.type.requester, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Subject subject = 3; */
+        if (message.type.oneofKind === "subject")
+            Policy_Spec_Rule_Surface_Destination_Subject.internalBinaryWrite(message.type.subject, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference targetRef = 4; */
+        if (message.type.oneofKind === "targetRef")
+            ObjectReference.internalBinaryWrite(message.type.targetRef, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination
+ */
+export const Policy_Spec_Rule_Surface_Destination = new Policy_Spec_Rule_Surface_Destination$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Policy_Spec_Rule_Surface_Destination_Reviewers$Type extends MessageType<Policy_Spec_Rule_Surface_Destination_Reviewers> {
+    constructor() {
+        super("octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Reviewers", [
+            { no: 1, name: "integrationRef", kind: "message", T: () => ObjectReference }
+        ]);
+    }
+    create(value?: PartialMessage<Policy_Spec_Rule_Surface_Destination_Reviewers>): Policy_Spec_Rule_Surface_Destination_Reviewers {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Policy_Spec_Rule_Surface_Destination_Reviewers>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Policy_Spec_Rule_Surface_Destination_Reviewers): Policy_Spec_Rule_Surface_Destination_Reviewers {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference integrationRef */ 1:
+                    message.integrationRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.integrationRef);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Policy_Spec_Rule_Surface_Destination_Reviewers, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.ObjectReference integrationRef = 1; */
+        if (message.integrationRef)
+            ObjectReference.internalBinaryWrite(message.integrationRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Reviewers
+ */
+export const Policy_Spec_Rule_Surface_Destination_Reviewers = new Policy_Spec_Rule_Surface_Destination_Reviewers$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Policy_Spec_Rule_Surface_Destination_Requester$Type extends MessageType<Policy_Spec_Rule_Surface_Destination_Requester> {
+    constructor() {
+        super("octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Requester", [
+            { no: 1, name: "integrationRef", kind: "message", T: () => ObjectReference }
+        ]);
+    }
+    create(value?: PartialMessage<Policy_Spec_Rule_Surface_Destination_Requester>): Policy_Spec_Rule_Surface_Destination_Requester {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Policy_Spec_Rule_Surface_Destination_Requester>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Policy_Spec_Rule_Surface_Destination_Requester): Policy_Spec_Rule_Surface_Destination_Requester {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference integrationRef */ 1:
+                    message.integrationRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.integrationRef);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Policy_Spec_Rule_Surface_Destination_Requester, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.ObjectReference integrationRef = 1; */
+        if (message.integrationRef)
+            ObjectReference.internalBinaryWrite(message.integrationRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Requester
+ */
+export const Policy_Spec_Rule_Surface_Destination_Requester = new Policy_Spec_Rule_Surface_Destination_Requester$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Policy_Spec_Rule_Surface_Destination_Subject$Type extends MessageType<Policy_Spec_Rule_Surface_Destination_Subject> {
+    constructor() {
+        super("octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Subject", [
+            { no: 1, name: "integrationRef", kind: "message", T: () => ObjectReference }
+        ]);
+    }
+    create(value?: PartialMessage<Policy_Spec_Rule_Surface_Destination_Subject>): Policy_Spec_Rule_Surface_Destination_Subject {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<Policy_Spec_Rule_Surface_Destination_Subject>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Policy_Spec_Rule_Surface_Destination_Subject): Policy_Spec_Rule_Surface_Destination_Subject {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference integrationRef */ 1:
+                    message.integrationRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.integrationRef);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Policy_Spec_Rule_Surface_Destination_Subject, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.ObjectReference integrationRef = 1; */
+        if (message.integrationRef)
+            ObjectReference.internalBinaryWrite(message.integrationRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Policy.Spec.Rule.Surface.Destination.Subject
+ */
+export const Policy_Spec_Rule_Surface_Destination_Subject = new Policy_Spec_Rule_Surface_Destination_Subject$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class Policy_Status$Type extends MessageType<Policy_Status> {
     constructor() {
@@ -3334,7 +5536,9 @@ class Request_Status$Type extends MessageType<Request_Status> {
             { no: 7, name: "policyRef", kind: "message", T: () => ObjectReference },
             { no: 8, name: "rule", kind: "message", T: () => Policy_Spec_Rule },
             { no: 9, name: "review", kind: "message", T: () => Request_Status_Review },
-            { no: 10, name: "accessEndsAt", kind: "message", T: () => Timestamp }
+            { no: 10, name: "accessEndsAt", kind: "message", T: () => Timestamp },
+            { no: 11, name: "origin", kind: "message", T: () => Origin },
+            { no: 12, name: "effectiveDuration", kind: "message", T: () => Duration }
         ]);
     }
     create(value?: PartialMessage<Request_Status>): Request_Status {
@@ -3379,6 +5583,12 @@ class Request_Status$Type extends MessageType<Request_Status> {
                 case /* google.protobuf.Timestamp accessEndsAt */ 10:
                     message.accessEndsAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.accessEndsAt);
                     break;
+                case /* octelium.api.main.access.v1.Origin origin */ 11:
+                    message.origin = Origin.internalBinaryRead(reader, reader.uint32(), options, message.origin);
+                    break;
+                case /* octelium.api.main.meta.v1.Duration effectiveDuration */ 12:
+                    message.effectiveDuration = Duration.internalBinaryRead(reader, reader.uint32(), options, message.effectiveDuration);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -3421,6 +5631,12 @@ class Request_Status$Type extends MessageType<Request_Status> {
         /* google.protobuf.Timestamp accessEndsAt = 10; */
         if (message.accessEndsAt)
             Timestamp.internalBinaryWrite(message.accessEndsAt, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Origin origin = 11; */
+        if (message.origin)
+            Origin.internalBinaryWrite(message.origin, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.Duration effectiveDuration = 12; */
+        if (message.effectiveDuration)
+            Duration.internalBinaryWrite(message.effectiveDuration, writer.tag(12, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -3818,7 +6034,9 @@ class Review_Status$Type extends MessageType<Review_Status> {
             { no: 3, name: "setAt", kind: "message", T: () => Timestamp },
             { no: 4, name: "lastSetsAt", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Timestamp },
             { no: 5, name: "lastRevisions", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Review_Status_Revision },
-            { no: 6, name: "stepIndex", kind: "scalar", T: 5 /*ScalarType.INT32*/ }
+            { no: 6, name: "stepIndex", kind: "scalar", T: 5 /*ScalarType.INT32*/ },
+            { no: 7, name: "stepName", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 8, name: "origin", kind: "message", T: () => Origin }
         ]);
     }
     create(value?: PartialMessage<Review_Status>): Review_Status {
@@ -3826,6 +6044,7 @@ class Review_Status$Type extends MessageType<Review_Status> {
         message.lastSetsAt = [];
         message.lastRevisions = [];
         message.stepIndex = 0;
+        message.stepName = "";
         if (value !== undefined)
             reflectionMergePartial<Review_Status>(this, message, value);
         return message;
@@ -3852,6 +6071,12 @@ class Review_Status$Type extends MessageType<Review_Status> {
                     break;
                 case /* int32 stepIndex */ 6:
                     message.stepIndex = reader.int32();
+                    break;
+                case /* string stepName */ 7:
+                    message.stepName = reader.string();
+                    break;
+                case /* octelium.api.main.access.v1.Origin origin */ 8:
+                    message.origin = Origin.internalBinaryRead(reader, reader.uint32(), options, message.origin);
                     break;
                 default:
                     let u = options.readUnknownField;
@@ -3883,6 +6108,12 @@ class Review_Status$Type extends MessageType<Review_Status> {
         /* int32 stepIndex = 6; */
         if (message.stepIndex !== 0)
             writer.tag(6, WireType.Varint).int32(message.stepIndex);
+        /* string stepName = 7; */
+        if (message.stepName !== "")
+            writer.tag(7, WireType.LengthDelimited).string(message.stepName);
+        /* octelium.api.main.access.v1.Origin origin = 8; */
+        if (message.origin)
+            Origin.internalBinaryWrite(message.origin, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -3898,7 +6129,8 @@ class Review_Status_Revision$Type extends MessageType<Review_Status_Revision> {
     constructor() {
         super("octelium.api.main.access.v1.Review.Status.Revision", [
             { no: 1, name: "spec", kind: "message", T: () => Review_Spec },
-            { no: 2, name: "setAt", kind: "message", T: () => Timestamp }
+            { no: 2, name: "setAt", kind: "message", T: () => Timestamp },
+            { no: 3, name: "origin", kind: "message", T: () => Origin }
         ]);
     }
     create(value?: PartialMessage<Review_Status_Revision>): Review_Status_Revision {
@@ -3918,6 +6150,9 @@ class Review_Status_Revision$Type extends MessageType<Review_Status_Revision> {
                 case /* google.protobuf.Timestamp setAt */ 2:
                     message.setAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.setAt);
                     break;
+                case /* octelium.api.main.access.v1.Origin origin */ 3:
+                    message.origin = Origin.internalBinaryRead(reader, reader.uint32(), options, message.origin);
+                    break;
                 default:
                     let u = options.readUnknownField;
                     if (u === "throw")
@@ -3936,6 +6171,9 @@ class Review_Status_Revision$Type extends MessageType<Review_Status_Revision> {
         /* google.protobuf.Timestamp setAt = 2; */
         if (message.setAt)
             Timestamp.internalBinaryWrite(message.setAt, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Origin origin = 3; */
+        if (message.origin)
+            Origin.internalBinaryWrite(message.origin, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
         let u = options.writeUnknownFields;
         if (u !== false)
             (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
@@ -4816,6 +7054,2676 @@ class CancelReviewRequest$Type extends MessageType<CancelReviewRequest> {
  * @generated MessageType for protobuf message octelium.api.main.access.v1.CancelReviewRequest
  */
 export const CancelReviewRequest = new CancelReviewRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Origin$Type extends MessageType<Origin> {
+    constructor() {
+        super("octelium.api.main.access.v1.Origin", [
+            { no: 1, name: "type", kind: "enum", T: () => ["octelium.api.main.access.v1.Origin.Type", Origin_Type] },
+            { no: 2, name: "integrationRef", kind: "message", T: () => ObjectReference },
+            { no: 3, name: "externalActorID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "externalEventID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 5, name: "sessionRef", kind: "message", T: () => ObjectReference }
+        ]);
+    }
+    create(value?: PartialMessage<Origin>): Origin {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = 0;
+        message.externalActorID = "";
+        message.externalEventID = "";
+        if (value !== undefined)
+            reflectionMergePartial<Origin>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Origin): Origin {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.access.v1.Origin.Type type */ 1:
+                    message.type = reader.int32();
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference integrationRef */ 2:
+                    message.integrationRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.integrationRef);
+                    break;
+                case /* string externalActorID */ 3:
+                    message.externalActorID = reader.string();
+                    break;
+                case /* string externalEventID */ 4:
+                    message.externalEventID = reader.string();
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference sessionRef */ 5:
+                    message.sessionRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.sessionRef);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Origin, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.access.v1.Origin.Type type = 1; */
+        if (message.type !== 0)
+            writer.tag(1, WireType.Varint).int32(message.type);
+        /* octelium.api.main.meta.v1.ObjectReference integrationRef = 2; */
+        if (message.integrationRef)
+            ObjectReference.internalBinaryWrite(message.integrationRef, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* string externalActorID = 3; */
+        if (message.externalActorID !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.externalActorID);
+        /* string externalEventID = 4; */
+        if (message.externalEventID !== "")
+            writer.tag(4, WireType.LengthDelimited).string(message.externalEventID);
+        /* octelium.api.main.meta.v1.ObjectReference sessionRef = 5; */
+        if (message.sessionRef)
+            ObjectReference.internalBinaryWrite(message.sessionRef, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Origin
+ */
+export const Origin = new Origin$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Integration$Type extends MessageType<Integration> {
+    constructor() {
+        super("octelium.api.main.access.v1.Integration", [
+            { no: 1, name: "apiVersion", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "kind", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "metadata", kind: "message", T: () => Metadata },
+            { no: 4, name: "spec", kind: "message", T: () => Integration_Spec },
+            { no: 5, name: "status", kind: "message", T: () => Integration_Status }
+        ]);
+    }
+    create(value?: PartialMessage<Integration>): Integration {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.apiVersion = "";
+        message.kind = "";
+        if (value !== undefined)
+            reflectionMergePartial<Integration>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Integration): Integration {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string apiVersion */ 1:
+                    message.apiVersion = reader.string();
+                    break;
+                case /* string kind */ 2:
+                    message.kind = reader.string();
+                    break;
+                case /* octelium.api.main.meta.v1.Metadata metadata */ 3:
+                    message.metadata = Metadata.internalBinaryRead(reader, reader.uint32(), options, message.metadata);
+                    break;
+                case /* octelium.api.main.access.v1.Integration.Spec spec */ 4:
+                    message.spec = Integration_Spec.internalBinaryRead(reader, reader.uint32(), options, message.spec);
+                    break;
+                case /* octelium.api.main.access.v1.Integration.Status status */ 5:
+                    message.status = Integration_Status.internalBinaryRead(reader, reader.uint32(), options, message.status);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Integration, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string apiVersion = 1; */
+        if (message.apiVersion !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.apiVersion);
+        /* string kind = 2; */
+        if (message.kind !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.kind);
+        /* octelium.api.main.meta.v1.Metadata metadata = 3; */
+        if (message.metadata)
+            Metadata.internalBinaryWrite(message.metadata, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Integration.Spec spec = 4; */
+        if (message.spec)
+            Integration_Spec.internalBinaryWrite(message.spec, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Integration.Status status = 5; */
+        if (message.status)
+            Integration_Status.internalBinaryWrite(message.status, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Integration
+ */
+export const Integration = new Integration$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Integration_Spec$Type extends MessageType<Integration_Spec> {
+    constructor() {
+        super("octelium.api.main.access.v1.Integration.Spec", [
+            { no: 1, name: "isDisabled", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 2, name: "identityResolution", kind: "message", T: () => Integration_Spec_IdentityResolution },
+            { no: 10, name: "slack", kind: "message", oneof: "type", T: () => Integration_Spec_Slack },
+            { no: 11, name: "jira", kind: "message", oneof: "type", T: () => Integration_Spec_Jira },
+            { no: 12, name: "webhook", kind: "message", oneof: "type", T: () => Integration_Spec_Webhook }
+        ]);
+    }
+    create(value?: PartialMessage<Integration_Spec>): Integration_Spec {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.isDisabled = false;
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<Integration_Spec>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Integration_Spec): Integration_Spec {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bool isDisabled */ 1:
+                    message.isDisabled = reader.bool();
+                    break;
+                case /* octelium.api.main.access.v1.Integration.Spec.IdentityResolution identityResolution */ 2:
+                    message.identityResolution = Integration_Spec_IdentityResolution.internalBinaryRead(reader, reader.uint32(), options, message.identityResolution);
+                    break;
+                case /* octelium.api.main.access.v1.Integration.Spec.Slack slack */ 10:
+                    message.type = {
+                        oneofKind: "slack",
+                        slack: Integration_Spec_Slack.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).slack)
+                    };
+                    break;
+                case /* octelium.api.main.access.v1.Integration.Spec.Jira jira */ 11:
+                    message.type = {
+                        oneofKind: "jira",
+                        jira: Integration_Spec_Jira.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).jira)
+                    };
+                    break;
+                case /* octelium.api.main.access.v1.Integration.Spec.Webhook webhook */ 12:
+                    message.type = {
+                        oneofKind: "webhook",
+                        webhook: Integration_Spec_Webhook.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).webhook)
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Integration_Spec, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bool isDisabled = 1; */
+        if (message.isDisabled !== false)
+            writer.tag(1, WireType.Varint).bool(message.isDisabled);
+        /* octelium.api.main.access.v1.Integration.Spec.IdentityResolution identityResolution = 2; */
+        if (message.identityResolution)
+            Integration_Spec_IdentityResolution.internalBinaryWrite(message.identityResolution, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Integration.Spec.Slack slack = 10; */
+        if (message.type.oneofKind === "slack")
+            Integration_Spec_Slack.internalBinaryWrite(message.type.slack, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Integration.Spec.Jira jira = 11; */
+        if (message.type.oneofKind === "jira")
+            Integration_Spec_Jira.internalBinaryWrite(message.type.jira, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Integration.Spec.Webhook webhook = 12; */
+        if (message.type.oneofKind === "webhook")
+            Integration_Spec_Webhook.internalBinaryWrite(message.type.webhook, writer.tag(12, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Integration.Spec
+ */
+export const Integration_Spec = new Integration_Spec$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Integration_Spec_IdentityResolution$Type extends MessageType<Integration_Spec_IdentityResolution> {
+    constructor() {
+        super("octelium.api.main.access.v1.Integration.Spec.IdentityResolution", [
+            { no: 1, name: "disableEmailDiscovery", kind: "scalar", T: 8 /*ScalarType.BOOL*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Integration_Spec_IdentityResolution>): Integration_Spec_IdentityResolution {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.disableEmailDiscovery = false;
+        if (value !== undefined)
+            reflectionMergePartial<Integration_Spec_IdentityResolution>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Integration_Spec_IdentityResolution): Integration_Spec_IdentityResolution {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bool disableEmailDiscovery */ 1:
+                    message.disableEmailDiscovery = reader.bool();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Integration_Spec_IdentityResolution, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bool disableEmailDiscovery = 1; */
+        if (message.disableEmailDiscovery !== false)
+            writer.tag(1, WireType.Varint).bool(message.disableEmailDiscovery);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Integration.Spec.IdentityResolution
+ */
+export const Integration_Spec_IdentityResolution = new Integration_Spec_IdentityResolution$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Integration_Spec_Slack$Type extends MessageType<Integration_Spec_Slack> {
+    constructor() {
+        super("octelium.api.main.access.v1.Integration.Spec.Slack", [
+            { no: 1, name: "botToken", kind: "message", T: () => Integration_Spec_Slack_BotToken },
+            { no: 2, name: "signingSecret", kind: "message", T: () => Integration_Spec_Slack_SigningSecret },
+            { no: 3, name: "teamID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "baseURL", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Integration_Spec_Slack>): Integration_Spec_Slack {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.teamID = "";
+        message.baseURL = "";
+        if (value !== undefined)
+            reflectionMergePartial<Integration_Spec_Slack>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Integration_Spec_Slack): Integration_Spec_Slack {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.access.v1.Integration.Spec.Slack.BotToken botToken */ 1:
+                    message.botToken = Integration_Spec_Slack_BotToken.internalBinaryRead(reader, reader.uint32(), options, message.botToken);
+                    break;
+                case /* octelium.api.main.access.v1.Integration.Spec.Slack.SigningSecret signingSecret */ 2:
+                    message.signingSecret = Integration_Spec_Slack_SigningSecret.internalBinaryRead(reader, reader.uint32(), options, message.signingSecret);
+                    break;
+                case /* string teamID */ 3:
+                    message.teamID = reader.string();
+                    break;
+                case /* string baseURL */ 4:
+                    message.baseURL = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Integration_Spec_Slack, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.access.v1.Integration.Spec.Slack.BotToken botToken = 1; */
+        if (message.botToken)
+            Integration_Spec_Slack_BotToken.internalBinaryWrite(message.botToken, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Integration.Spec.Slack.SigningSecret signingSecret = 2; */
+        if (message.signingSecret)
+            Integration_Spec_Slack_SigningSecret.internalBinaryWrite(message.signingSecret, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* string teamID = 3; */
+        if (message.teamID !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.teamID);
+        /* string baseURL = 4; */
+        if (message.baseURL !== "")
+            writer.tag(4, WireType.LengthDelimited).string(message.baseURL);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Integration.Spec.Slack
+ */
+export const Integration_Spec_Slack = new Integration_Spec_Slack$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Integration_Spec_Slack_BotToken$Type extends MessageType<Integration_Spec_Slack_BotToken> {
+    constructor() {
+        super("octelium.api.main.access.v1.Integration.Spec.Slack.BotToken", [
+            { no: 1, name: "fromSecret", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Integration_Spec_Slack_BotToken>): Integration_Spec_Slack_BotToken {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<Integration_Spec_Slack_BotToken>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Integration_Spec_Slack_BotToken): Integration_Spec_Slack_BotToken {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string fromSecret */ 1:
+                    message.type = {
+                        oneofKind: "fromSecret",
+                        fromSecret: reader.string()
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Integration_Spec_Slack_BotToken, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string fromSecret = 1; */
+        if (message.type.oneofKind === "fromSecret")
+            writer.tag(1, WireType.LengthDelimited).string(message.type.fromSecret);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Integration.Spec.Slack.BotToken
+ */
+export const Integration_Spec_Slack_BotToken = new Integration_Spec_Slack_BotToken$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Integration_Spec_Slack_SigningSecret$Type extends MessageType<Integration_Spec_Slack_SigningSecret> {
+    constructor() {
+        super("octelium.api.main.access.v1.Integration.Spec.Slack.SigningSecret", [
+            { no: 1, name: "fromSecret", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Integration_Spec_Slack_SigningSecret>): Integration_Spec_Slack_SigningSecret {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<Integration_Spec_Slack_SigningSecret>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Integration_Spec_Slack_SigningSecret): Integration_Spec_Slack_SigningSecret {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string fromSecret */ 1:
+                    message.type = {
+                        oneofKind: "fromSecret",
+                        fromSecret: reader.string()
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Integration_Spec_Slack_SigningSecret, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string fromSecret = 1; */
+        if (message.type.oneofKind === "fromSecret")
+            writer.tag(1, WireType.LengthDelimited).string(message.type.fromSecret);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Integration.Spec.Slack.SigningSecret
+ */
+export const Integration_Spec_Slack_SigningSecret = new Integration_Spec_Slack_SigningSecret$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Integration_Spec_Jira$Type extends MessageType<Integration_Spec_Jira> {
+    constructor() {
+        super("octelium.api.main.access.v1.Integration.Spec.Jira", [
+            { no: 1, name: "url", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "email", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "apiToken", kind: "message", T: () => Integration_Spec_Jira_APIToken },
+            { no: 4, name: "webhookSecret", kind: "message", T: () => Integration_Spec_Jira_WebhookSecret }
+        ]);
+    }
+    create(value?: PartialMessage<Integration_Spec_Jira>): Integration_Spec_Jira {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.url = "";
+        message.email = "";
+        if (value !== undefined)
+            reflectionMergePartial<Integration_Spec_Jira>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Integration_Spec_Jira): Integration_Spec_Jira {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string url */ 1:
+                    message.url = reader.string();
+                    break;
+                case /* string email */ 2:
+                    message.email = reader.string();
+                    break;
+                case /* octelium.api.main.access.v1.Integration.Spec.Jira.APIToken apiToken */ 3:
+                    message.apiToken = Integration_Spec_Jira_APIToken.internalBinaryRead(reader, reader.uint32(), options, message.apiToken);
+                    break;
+                case /* octelium.api.main.access.v1.Integration.Spec.Jira.WebhookSecret webhookSecret */ 4:
+                    message.webhookSecret = Integration_Spec_Jira_WebhookSecret.internalBinaryRead(reader, reader.uint32(), options, message.webhookSecret);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Integration_Spec_Jira, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string url = 1; */
+        if (message.url !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.url);
+        /* string email = 2; */
+        if (message.email !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.email);
+        /* octelium.api.main.access.v1.Integration.Spec.Jira.APIToken apiToken = 3; */
+        if (message.apiToken)
+            Integration_Spec_Jira_APIToken.internalBinaryWrite(message.apiToken, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Integration.Spec.Jira.WebhookSecret webhookSecret = 4; */
+        if (message.webhookSecret)
+            Integration_Spec_Jira_WebhookSecret.internalBinaryWrite(message.webhookSecret, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Integration.Spec.Jira
+ */
+export const Integration_Spec_Jira = new Integration_Spec_Jira$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Integration_Spec_Jira_APIToken$Type extends MessageType<Integration_Spec_Jira_APIToken> {
+    constructor() {
+        super("octelium.api.main.access.v1.Integration.Spec.Jira.APIToken", [
+            { no: 1, name: "fromSecret", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Integration_Spec_Jira_APIToken>): Integration_Spec_Jira_APIToken {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<Integration_Spec_Jira_APIToken>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Integration_Spec_Jira_APIToken): Integration_Spec_Jira_APIToken {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string fromSecret */ 1:
+                    message.type = {
+                        oneofKind: "fromSecret",
+                        fromSecret: reader.string()
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Integration_Spec_Jira_APIToken, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string fromSecret = 1; */
+        if (message.type.oneofKind === "fromSecret")
+            writer.tag(1, WireType.LengthDelimited).string(message.type.fromSecret);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Integration.Spec.Jira.APIToken
+ */
+export const Integration_Spec_Jira_APIToken = new Integration_Spec_Jira_APIToken$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Integration_Spec_Jira_WebhookSecret$Type extends MessageType<Integration_Spec_Jira_WebhookSecret> {
+    constructor() {
+        super("octelium.api.main.access.v1.Integration.Spec.Jira.WebhookSecret", [
+            { no: 1, name: "fromSecret", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Integration_Spec_Jira_WebhookSecret>): Integration_Spec_Jira_WebhookSecret {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<Integration_Spec_Jira_WebhookSecret>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Integration_Spec_Jira_WebhookSecret): Integration_Spec_Jira_WebhookSecret {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string fromSecret */ 1:
+                    message.type = {
+                        oneofKind: "fromSecret",
+                        fromSecret: reader.string()
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Integration_Spec_Jira_WebhookSecret, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string fromSecret = 1; */
+        if (message.type.oneofKind === "fromSecret")
+            writer.tag(1, WireType.LengthDelimited).string(message.type.fromSecret);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Integration.Spec.Jira.WebhookSecret
+ */
+export const Integration_Spec_Jira_WebhookSecret = new Integration_Spec_Jira_WebhookSecret$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Integration_Spec_Webhook$Type extends MessageType<Integration_Spec_Webhook> {
+    constructor() {
+        super("octelium.api.main.access.v1.Integration.Spec.Webhook", [
+            { no: 1, name: "url", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "signingSecret", kind: "message", T: () => Integration_Spec_Webhook_SigningSecret },
+            { no: 3, name: "inboundSecret", kind: "message", T: () => Integration_Spec_Webhook_InboundSecret }
+        ]);
+    }
+    create(value?: PartialMessage<Integration_Spec_Webhook>): Integration_Spec_Webhook {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.url = "";
+        if (value !== undefined)
+            reflectionMergePartial<Integration_Spec_Webhook>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Integration_Spec_Webhook): Integration_Spec_Webhook {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string url */ 1:
+                    message.url = reader.string();
+                    break;
+                case /* octelium.api.main.access.v1.Integration.Spec.Webhook.SigningSecret signingSecret */ 2:
+                    message.signingSecret = Integration_Spec_Webhook_SigningSecret.internalBinaryRead(reader, reader.uint32(), options, message.signingSecret);
+                    break;
+                case /* octelium.api.main.access.v1.Integration.Spec.Webhook.InboundSecret inboundSecret */ 3:
+                    message.inboundSecret = Integration_Spec_Webhook_InboundSecret.internalBinaryRead(reader, reader.uint32(), options, message.inboundSecret);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Integration_Spec_Webhook, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string url = 1; */
+        if (message.url !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.url);
+        /* octelium.api.main.access.v1.Integration.Spec.Webhook.SigningSecret signingSecret = 2; */
+        if (message.signingSecret)
+            Integration_Spec_Webhook_SigningSecret.internalBinaryWrite(message.signingSecret, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Integration.Spec.Webhook.InboundSecret inboundSecret = 3; */
+        if (message.inboundSecret)
+            Integration_Spec_Webhook_InboundSecret.internalBinaryWrite(message.inboundSecret, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Integration.Spec.Webhook
+ */
+export const Integration_Spec_Webhook = new Integration_Spec_Webhook$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Integration_Spec_Webhook_SigningSecret$Type extends MessageType<Integration_Spec_Webhook_SigningSecret> {
+    constructor() {
+        super("octelium.api.main.access.v1.Integration.Spec.Webhook.SigningSecret", [
+            { no: 1, name: "fromSecret", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Integration_Spec_Webhook_SigningSecret>): Integration_Spec_Webhook_SigningSecret {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<Integration_Spec_Webhook_SigningSecret>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Integration_Spec_Webhook_SigningSecret): Integration_Spec_Webhook_SigningSecret {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string fromSecret */ 1:
+                    message.type = {
+                        oneofKind: "fromSecret",
+                        fromSecret: reader.string()
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Integration_Spec_Webhook_SigningSecret, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string fromSecret = 1; */
+        if (message.type.oneofKind === "fromSecret")
+            writer.tag(1, WireType.LengthDelimited).string(message.type.fromSecret);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Integration.Spec.Webhook.SigningSecret
+ */
+export const Integration_Spec_Webhook_SigningSecret = new Integration_Spec_Webhook_SigningSecret$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Integration_Spec_Webhook_InboundSecret$Type extends MessageType<Integration_Spec_Webhook_InboundSecret> {
+    constructor() {
+        super("octelium.api.main.access.v1.Integration.Spec.Webhook.InboundSecret", [
+            { no: 1, name: "fromSecret", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<Integration_Spec_Webhook_InboundSecret>): Integration_Spec_Webhook_InboundSecret {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<Integration_Spec_Webhook_InboundSecret>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Integration_Spec_Webhook_InboundSecret): Integration_Spec_Webhook_InboundSecret {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string fromSecret */ 1:
+                    message.type = {
+                        oneofKind: "fromSecret",
+                        fromSecret: reader.string()
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Integration_Spec_Webhook_InboundSecret, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string fromSecret = 1; */
+        if (message.type.oneofKind === "fromSecret")
+            writer.tag(1, WireType.LengthDelimited).string(message.type.fromSecret);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Integration.Spec.Webhook.InboundSecret
+ */
+export const Integration_Spec_Webhook_InboundSecret = new Integration_Spec_Webhook_InboundSecret$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Integration_Status$Type extends MessageType<Integration_Status> {
+    constructor() {
+        super("octelium.api.main.access.v1.Integration.Status", [
+            { no: 1, name: "id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "type", kind: "enum", T: () => ["octelium.api.main.access.v1.Integration.Status.Type", Integration_Status_Type] },
+            { no: 3, name: "state", kind: "enum", T: () => ["octelium.api.main.access.v1.Integration.Status.State", Integration_Status_State] },
+            { no: 4, name: "capabilities", kind: "enum", repeat: 1 /*RepeatType.PACKED*/, T: () => ["octelium.api.main.access.v1.Integration.Status.Capability", Integration_Status_Capability] },
+            { no: 5, name: "externalTenantID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 6, name: "externalTenantName", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 7, name: "lastSuccessAt", kind: "message", T: () => Timestamp },
+            { no: 8, name: "lastFailureAt", kind: "message", T: () => Timestamp },
+            { no: 9, name: "lastError", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 10, name: "synchronization", kind: "message", T: () => Integration_Status_Synchronization },
+            { no: 11, name: "lastSynchronizations", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Integration_Status_Synchronization }
+        ]);
+    }
+    create(value?: PartialMessage<Integration_Status>): Integration_Status {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.id = "";
+        message.type = 0;
+        message.state = 0;
+        message.capabilities = [];
+        message.externalTenantID = "";
+        message.externalTenantName = "";
+        message.lastError = "";
+        message.lastSynchronizations = [];
+        if (value !== undefined)
+            reflectionMergePartial<Integration_Status>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Integration_Status): Integration_Status {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string id */ 1:
+                    message.id = reader.string();
+                    break;
+                case /* octelium.api.main.access.v1.Integration.Status.Type type */ 2:
+                    message.type = reader.int32();
+                    break;
+                case /* octelium.api.main.access.v1.Integration.Status.State state */ 3:
+                    message.state = reader.int32();
+                    break;
+                case /* repeated octelium.api.main.access.v1.Integration.Status.Capability capabilities */ 4:
+                    if (wireType === WireType.LengthDelimited)
+                        for (let e = reader.int32() + reader.pos; reader.pos < e;)
+                            message.capabilities.push(reader.int32());
+                    else
+                        message.capabilities.push(reader.int32());
+                    break;
+                case /* string externalTenantID */ 5:
+                    message.externalTenantID = reader.string();
+                    break;
+                case /* string externalTenantName */ 6:
+                    message.externalTenantName = reader.string();
+                    break;
+                case /* google.protobuf.Timestamp lastSuccessAt */ 7:
+                    message.lastSuccessAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.lastSuccessAt);
+                    break;
+                case /* google.protobuf.Timestamp lastFailureAt */ 8:
+                    message.lastFailureAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.lastFailureAt);
+                    break;
+                case /* string lastError */ 9:
+                    message.lastError = reader.string();
+                    break;
+                case /* octelium.api.main.access.v1.Integration.Status.Synchronization synchronization */ 10:
+                    message.synchronization = Integration_Status_Synchronization.internalBinaryRead(reader, reader.uint32(), options, message.synchronization);
+                    break;
+                case /* repeated octelium.api.main.access.v1.Integration.Status.Synchronization lastSynchronizations */ 11:
+                    message.lastSynchronizations.push(Integration_Status_Synchronization.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Integration_Status, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string id = 1; */
+        if (message.id !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.id);
+        /* octelium.api.main.access.v1.Integration.Status.Type type = 2; */
+        if (message.type !== 0)
+            writer.tag(2, WireType.Varint).int32(message.type);
+        /* octelium.api.main.access.v1.Integration.Status.State state = 3; */
+        if (message.state !== 0)
+            writer.tag(3, WireType.Varint).int32(message.state);
+        /* repeated octelium.api.main.access.v1.Integration.Status.Capability capabilities = 4; */
+        if (message.capabilities.length) {
+            writer.tag(4, WireType.LengthDelimited).fork();
+            for (let i = 0; i < message.capabilities.length; i++)
+                writer.int32(message.capabilities[i]);
+            writer.join();
+        }
+        /* string externalTenantID = 5; */
+        if (message.externalTenantID !== "")
+            writer.tag(5, WireType.LengthDelimited).string(message.externalTenantID);
+        /* string externalTenantName = 6; */
+        if (message.externalTenantName !== "")
+            writer.tag(6, WireType.LengthDelimited).string(message.externalTenantName);
+        /* google.protobuf.Timestamp lastSuccessAt = 7; */
+        if (message.lastSuccessAt)
+            Timestamp.internalBinaryWrite(message.lastSuccessAt, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp lastFailureAt = 8; */
+        if (message.lastFailureAt)
+            Timestamp.internalBinaryWrite(message.lastFailureAt, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* string lastError = 9; */
+        if (message.lastError !== "")
+            writer.tag(9, WireType.LengthDelimited).string(message.lastError);
+        /* octelium.api.main.access.v1.Integration.Status.Synchronization synchronization = 10; */
+        if (message.synchronization)
+            Integration_Status_Synchronization.internalBinaryWrite(message.synchronization, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        /* repeated octelium.api.main.access.v1.Integration.Status.Synchronization lastSynchronizations = 11; */
+        for (let i = 0; i < message.lastSynchronizations.length; i++)
+            Integration_Status_Synchronization.internalBinaryWrite(message.lastSynchronizations[i], writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Integration.Status
+ */
+export const Integration_Status = new Integration_Status$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class Integration_Status_Synchronization$Type extends MessageType<Integration_Status_Synchronization> {
+    constructor() {
+        super("octelium.api.main.access.v1.Integration.Status.Synchronization", [
+            { no: 1, name: "createdAt", kind: "message", T: () => Timestamp },
+            { no: 2, name: "state", kind: "enum", T: () => ["octelium.api.main.access.v1.Integration.Status.Synchronization.State", Integration_Status_Synchronization_State] },
+            { no: 3, name: "completedAt", kind: "message", T: () => Timestamp }
+        ]);
+    }
+    create(value?: PartialMessage<Integration_Status_Synchronization>): Integration_Status_Synchronization {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.state = 0;
+        if (value !== undefined)
+            reflectionMergePartial<Integration_Status_Synchronization>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: Integration_Status_Synchronization): Integration_Status_Synchronization {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* google.protobuf.Timestamp createdAt */ 1:
+                    message.createdAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.createdAt);
+                    break;
+                case /* octelium.api.main.access.v1.Integration.Status.Synchronization.State state */ 2:
+                    message.state = reader.int32();
+                    break;
+                case /* google.protobuf.Timestamp completedAt */ 3:
+                    message.completedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.completedAt);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: Integration_Status_Synchronization, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* google.protobuf.Timestamp createdAt = 1; */
+        if (message.createdAt)
+            Timestamp.internalBinaryWrite(message.createdAt, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Integration.Status.Synchronization.State state = 2; */
+        if (message.state !== 0)
+            writer.tag(2, WireType.Varint).int32(message.state);
+        /* google.protobuf.Timestamp completedAt = 3; */
+        if (message.completedAt)
+            Timestamp.internalBinaryWrite(message.completedAt, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.Integration.Status.Synchronization
+ */
+export const Integration_Status_Synchronization = new Integration_Status_Synchronization$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class IntegrationList$Type extends MessageType<IntegrationList> {
+    constructor() {
+        super("octelium.api.main.access.v1.IntegrationList", [
+            { no: 1, name: "apiVersion", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "kind", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => Integration },
+            { no: 4, name: "listResponseMeta", kind: "message", T: () => ListResponseMeta }
+        ]);
+    }
+    create(value?: PartialMessage<IntegrationList>): IntegrationList {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.apiVersion = "";
+        message.kind = "";
+        message.items = [];
+        if (value !== undefined)
+            reflectionMergePartial<IntegrationList>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: IntegrationList): IntegrationList {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string apiVersion */ 1:
+                    message.apiVersion = reader.string();
+                    break;
+                case /* string kind */ 2:
+                    message.kind = reader.string();
+                    break;
+                case /* repeated octelium.api.main.access.v1.Integration items */ 3:
+                    message.items.push(Integration.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* octelium.api.main.meta.v1.ListResponseMeta listResponseMeta */ 4:
+                    message.listResponseMeta = ListResponseMeta.internalBinaryRead(reader, reader.uint32(), options, message.listResponseMeta);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: IntegrationList, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string apiVersion = 1; */
+        if (message.apiVersion !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.apiVersion);
+        /* string kind = 2; */
+        if (message.kind !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.kind);
+        /* repeated octelium.api.main.access.v1.Integration items = 3; */
+        for (let i = 0; i < message.items.length; i++)
+            Integration.internalBinaryWrite(message.items[i], writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ListResponseMeta listResponseMeta = 4; */
+        if (message.listResponseMeta)
+            ListResponseMeta.internalBinaryWrite(message.listResponseMeta, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.IntegrationList
+ */
+export const IntegrationList = new IntegrationList$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class IntegrationTarget$Type extends MessageType<IntegrationTarget> {
+    constructor() {
+        super("octelium.api.main.access.v1.IntegrationTarget", [
+            { no: 1, name: "apiVersion", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "kind", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "metadata", kind: "message", T: () => Metadata },
+            { no: 4, name: "spec", kind: "message", T: () => IntegrationTarget_Spec },
+            { no: 5, name: "status", kind: "message", T: () => IntegrationTarget_Status }
+        ]);
+    }
+    create(value?: PartialMessage<IntegrationTarget>): IntegrationTarget {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.apiVersion = "";
+        message.kind = "";
+        if (value !== undefined)
+            reflectionMergePartial<IntegrationTarget>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: IntegrationTarget): IntegrationTarget {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string apiVersion */ 1:
+                    message.apiVersion = reader.string();
+                    break;
+                case /* string kind */ 2:
+                    message.kind = reader.string();
+                    break;
+                case /* octelium.api.main.meta.v1.Metadata metadata */ 3:
+                    message.metadata = Metadata.internalBinaryRead(reader, reader.uint32(), options, message.metadata);
+                    break;
+                case /* octelium.api.main.access.v1.IntegrationTarget.Spec spec */ 4:
+                    message.spec = IntegrationTarget_Spec.internalBinaryRead(reader, reader.uint32(), options, message.spec);
+                    break;
+                case /* octelium.api.main.access.v1.IntegrationTarget.Status status */ 5:
+                    message.status = IntegrationTarget_Status.internalBinaryRead(reader, reader.uint32(), options, message.status);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: IntegrationTarget, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string apiVersion = 1; */
+        if (message.apiVersion !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.apiVersion);
+        /* string kind = 2; */
+        if (message.kind !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.kind);
+        /* octelium.api.main.meta.v1.Metadata metadata = 3; */
+        if (message.metadata)
+            Metadata.internalBinaryWrite(message.metadata, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.IntegrationTarget.Spec spec = 4; */
+        if (message.spec)
+            IntegrationTarget_Spec.internalBinaryWrite(message.spec, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.IntegrationTarget.Status status = 5; */
+        if (message.status)
+            IntegrationTarget_Status.internalBinaryWrite(message.status, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.IntegrationTarget
+ */
+export const IntegrationTarget = new IntegrationTarget$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class IntegrationTarget_Spec$Type extends MessageType<IntegrationTarget_Spec> {
+    constructor() {
+        super("octelium.api.main.access.v1.IntegrationTarget.Spec", [
+            { no: 1, name: "integrationRef", kind: "message", T: () => ObjectReference },
+            { no: 10, name: "slack", kind: "message", oneof: "type", T: () => IntegrationTarget_Spec_Slack },
+            { no: 11, name: "jira", kind: "message", oneof: "type", T: () => IntegrationTarget_Spec_Jira },
+            { no: 12, name: "webhook", kind: "message", oneof: "type", T: () => IntegrationTarget_Spec_Webhook }
+        ]);
+    }
+    create(value?: PartialMessage<IntegrationTarget_Spec>): IntegrationTarget_Spec {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<IntegrationTarget_Spec>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: IntegrationTarget_Spec): IntegrationTarget_Spec {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference integrationRef */ 1:
+                    message.integrationRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.integrationRef);
+                    break;
+                case /* octelium.api.main.access.v1.IntegrationTarget.Spec.Slack slack */ 10:
+                    message.type = {
+                        oneofKind: "slack",
+                        slack: IntegrationTarget_Spec_Slack.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).slack)
+                    };
+                    break;
+                case /* octelium.api.main.access.v1.IntegrationTarget.Spec.Jira jira */ 11:
+                    message.type = {
+                        oneofKind: "jira",
+                        jira: IntegrationTarget_Spec_Jira.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).jira)
+                    };
+                    break;
+                case /* octelium.api.main.access.v1.IntegrationTarget.Spec.Webhook webhook */ 12:
+                    message.type = {
+                        oneofKind: "webhook",
+                        webhook: IntegrationTarget_Spec_Webhook.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).webhook)
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: IntegrationTarget_Spec, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.ObjectReference integrationRef = 1; */
+        if (message.integrationRef)
+            ObjectReference.internalBinaryWrite(message.integrationRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.IntegrationTarget.Spec.Slack slack = 10; */
+        if (message.type.oneofKind === "slack")
+            IntegrationTarget_Spec_Slack.internalBinaryWrite(message.type.slack, writer.tag(10, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.IntegrationTarget.Spec.Jira jira = 11; */
+        if (message.type.oneofKind === "jira")
+            IntegrationTarget_Spec_Jira.internalBinaryWrite(message.type.jira, writer.tag(11, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.IntegrationTarget.Spec.Webhook webhook = 12; */
+        if (message.type.oneofKind === "webhook")
+            IntegrationTarget_Spec_Webhook.internalBinaryWrite(message.type.webhook, writer.tag(12, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.IntegrationTarget.Spec
+ */
+export const IntegrationTarget_Spec = new IntegrationTarget_Spec$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class IntegrationTarget_Spec_Slack$Type extends MessageType<IntegrationTarget_Spec_Slack> {
+    constructor() {
+        super("octelium.api.main.access.v1.IntegrationTarget.Spec.Slack", [
+            { no: 1, name: "channelID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "mentionUserGroupID", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<IntegrationTarget_Spec_Slack>): IntegrationTarget_Spec_Slack {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.channelID = "";
+        message.mentionUserGroupID = "";
+        if (value !== undefined)
+            reflectionMergePartial<IntegrationTarget_Spec_Slack>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: IntegrationTarget_Spec_Slack): IntegrationTarget_Spec_Slack {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string channelID */ 1:
+                    message.channelID = reader.string();
+                    break;
+                case /* string mentionUserGroupID */ 2:
+                    message.mentionUserGroupID = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: IntegrationTarget_Spec_Slack, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string channelID = 1; */
+        if (message.channelID !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.channelID);
+        /* string mentionUserGroupID = 2; */
+        if (message.mentionUserGroupID !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.mentionUserGroupID);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.IntegrationTarget.Spec.Slack
+ */
+export const IntegrationTarget_Spec_Slack = new IntegrationTarget_Spec_Slack$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class IntegrationTarget_Spec_Jira$Type extends MessageType<IntegrationTarget_Spec_Jira> {
+    constructor() {
+        super("octelium.api.main.access.v1.IntegrationTarget.Spec.Jira", [
+            { no: 1, name: "projectKey", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "issueTypeName", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "approveStatus", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "rejectStatus", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<IntegrationTarget_Spec_Jira>): IntegrationTarget_Spec_Jira {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.projectKey = "";
+        message.issueTypeName = "";
+        message.approveStatus = "";
+        message.rejectStatus = "";
+        if (value !== undefined)
+            reflectionMergePartial<IntegrationTarget_Spec_Jira>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: IntegrationTarget_Spec_Jira): IntegrationTarget_Spec_Jira {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string projectKey */ 1:
+                    message.projectKey = reader.string();
+                    break;
+                case /* string issueTypeName */ 2:
+                    message.issueTypeName = reader.string();
+                    break;
+                case /* string approveStatus */ 3:
+                    message.approveStatus = reader.string();
+                    break;
+                case /* string rejectStatus */ 4:
+                    message.rejectStatus = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: IntegrationTarget_Spec_Jira, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string projectKey = 1; */
+        if (message.projectKey !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.projectKey);
+        /* string issueTypeName = 2; */
+        if (message.issueTypeName !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.issueTypeName);
+        /* string approveStatus = 3; */
+        if (message.approveStatus !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.approveStatus);
+        /* string rejectStatus = 4; */
+        if (message.rejectStatus !== "")
+            writer.tag(4, WireType.LengthDelimited).string(message.rejectStatus);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.IntegrationTarget.Spec.Jira
+ */
+export const IntegrationTarget_Spec_Jira = new IntegrationTarget_Spec_Jira$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class IntegrationTarget_Spec_Webhook$Type extends MessageType<IntegrationTarget_Spec_Webhook> {
+    constructor() {
+        super("octelium.api.main.access.v1.IntegrationTarget.Spec.Webhook", [
+            { no: 1, name: "url", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "name", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<IntegrationTarget_Spec_Webhook>): IntegrationTarget_Spec_Webhook {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.url = "";
+        message.name = "";
+        if (value !== undefined)
+            reflectionMergePartial<IntegrationTarget_Spec_Webhook>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: IntegrationTarget_Spec_Webhook): IntegrationTarget_Spec_Webhook {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string url */ 1:
+                    message.url = reader.string();
+                    break;
+                case /* string name */ 2:
+                    message.name = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: IntegrationTarget_Spec_Webhook, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string url = 1; */
+        if (message.url !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.url);
+        /* string name = 2; */
+        if (message.name !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.name);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.IntegrationTarget.Spec.Webhook
+ */
+export const IntegrationTarget_Spec_Webhook = new IntegrationTarget_Spec_Webhook$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class IntegrationTarget_Status$Type extends MessageType<IntegrationTarget_Status> {
+    constructor() {
+        super("octelium.api.main.access.v1.IntegrationTarget.Status", [
+            { no: 1, name: "type", kind: "enum", T: () => ["octelium.api.main.access.v1.Integration.Status.Type", Integration_Status_Type] }
+        ]);
+    }
+    create(value?: PartialMessage<IntegrationTarget_Status>): IntegrationTarget_Status {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = 0;
+        if (value !== undefined)
+            reflectionMergePartial<IntegrationTarget_Status>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: IntegrationTarget_Status): IntegrationTarget_Status {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.access.v1.Integration.Status.Type type */ 1:
+                    message.type = reader.int32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: IntegrationTarget_Status, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.access.v1.Integration.Status.Type type = 1; */
+        if (message.type !== 0)
+            writer.tag(1, WireType.Varint).int32(message.type);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.IntegrationTarget.Status
+ */
+export const IntegrationTarget_Status = new IntegrationTarget_Status$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class IntegrationTargetList$Type extends MessageType<IntegrationTargetList> {
+    constructor() {
+        super("octelium.api.main.access.v1.IntegrationTargetList", [
+            { no: 1, name: "apiVersion", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "kind", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => IntegrationTarget },
+            { no: 4, name: "listResponseMeta", kind: "message", T: () => ListResponseMeta }
+        ]);
+    }
+    create(value?: PartialMessage<IntegrationTargetList>): IntegrationTargetList {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.apiVersion = "";
+        message.kind = "";
+        message.items = [];
+        if (value !== undefined)
+            reflectionMergePartial<IntegrationTargetList>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: IntegrationTargetList): IntegrationTargetList {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string apiVersion */ 1:
+                    message.apiVersion = reader.string();
+                    break;
+                case /* string kind */ 2:
+                    message.kind = reader.string();
+                    break;
+                case /* repeated octelium.api.main.access.v1.IntegrationTarget items */ 3:
+                    message.items.push(IntegrationTarget.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* octelium.api.main.meta.v1.ListResponseMeta listResponseMeta */ 4:
+                    message.listResponseMeta = ListResponseMeta.internalBinaryRead(reader, reader.uint32(), options, message.listResponseMeta);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: IntegrationTargetList, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string apiVersion = 1; */
+        if (message.apiVersion !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.apiVersion);
+        /* string kind = 2; */
+        if (message.kind !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.kind);
+        /* repeated octelium.api.main.access.v1.IntegrationTarget items = 3; */
+        for (let i = 0; i < message.items.length; i++)
+            IntegrationTarget.internalBinaryWrite(message.items[i], writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ListResponseMeta listResponseMeta = 4; */
+        if (message.listResponseMeta)
+            ListResponseMeta.internalBinaryWrite(message.listResponseMeta, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.IntegrationTargetList
+ */
+export const IntegrationTargetList = new IntegrationTargetList$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class IntegrationIdentity$Type extends MessageType<IntegrationIdentity> {
+    constructor() {
+        super("octelium.api.main.access.v1.IntegrationIdentity", [
+            { no: 1, name: "apiVersion", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "kind", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "metadata", kind: "message", T: () => Metadata },
+            { no: 4, name: "spec", kind: "message", T: () => IntegrationIdentity_Spec },
+            { no: 5, name: "status", kind: "message", T: () => IntegrationIdentity_Status }
+        ]);
+    }
+    create(value?: PartialMessage<IntegrationIdentity>): IntegrationIdentity {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.apiVersion = "";
+        message.kind = "";
+        if (value !== undefined)
+            reflectionMergePartial<IntegrationIdentity>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: IntegrationIdentity): IntegrationIdentity {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string apiVersion */ 1:
+                    message.apiVersion = reader.string();
+                    break;
+                case /* string kind */ 2:
+                    message.kind = reader.string();
+                    break;
+                case /* octelium.api.main.meta.v1.Metadata metadata */ 3:
+                    message.metadata = Metadata.internalBinaryRead(reader, reader.uint32(), options, message.metadata);
+                    break;
+                case /* octelium.api.main.access.v1.IntegrationIdentity.Spec spec */ 4:
+                    message.spec = IntegrationIdentity_Spec.internalBinaryRead(reader, reader.uint32(), options, message.spec);
+                    break;
+                case /* octelium.api.main.access.v1.IntegrationIdentity.Status status */ 5:
+                    message.status = IntegrationIdentity_Status.internalBinaryRead(reader, reader.uint32(), options, message.status);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: IntegrationIdentity, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string apiVersion = 1; */
+        if (message.apiVersion !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.apiVersion);
+        /* string kind = 2; */
+        if (message.kind !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.kind);
+        /* octelium.api.main.meta.v1.Metadata metadata = 3; */
+        if (message.metadata)
+            Metadata.internalBinaryWrite(message.metadata, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.IntegrationIdentity.Spec spec = 4; */
+        if (message.spec)
+            IntegrationIdentity_Spec.internalBinaryWrite(message.spec, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.IntegrationIdentity.Status status = 5; */
+        if (message.status)
+            IntegrationIdentity_Status.internalBinaryWrite(message.status, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.IntegrationIdentity
+ */
+export const IntegrationIdentity = new IntegrationIdentity$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class IntegrationIdentity_Spec$Type extends MessageType<IntegrationIdentity_Spec> {
+    constructor() {
+        super("octelium.api.main.access.v1.IntegrationIdentity.Spec", [
+            { no: 1, name: "integrationRef", kind: "message", T: () => ObjectReference },
+            { no: 2, name: "userRef", kind: "message", T: () => ObjectReference },
+            { no: 3, name: "externalID", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<IntegrationIdentity_Spec>): IntegrationIdentity_Spec {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.externalID = "";
+        if (value !== undefined)
+            reflectionMergePartial<IntegrationIdentity_Spec>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: IntegrationIdentity_Spec): IntegrationIdentity_Spec {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference integrationRef */ 1:
+                    message.integrationRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.integrationRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference userRef */ 2:
+                    message.userRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.userRef);
+                    break;
+                case /* string externalID */ 3:
+                    message.externalID = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: IntegrationIdentity_Spec, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.ObjectReference integrationRef = 1; */
+        if (message.integrationRef)
+            ObjectReference.internalBinaryWrite(message.integrationRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference userRef = 2; */
+        if (message.userRef)
+            ObjectReference.internalBinaryWrite(message.userRef, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* string externalID = 3; */
+        if (message.externalID !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.externalID);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.IntegrationIdentity.Spec
+ */
+export const IntegrationIdentity_Spec = new IntegrationIdentity_Spec$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class IntegrationIdentity_Status$Type extends MessageType<IntegrationIdentity_Status> {
+    constructor() {
+        super("octelium.api.main.access.v1.IntegrationIdentity.Status", [
+            { no: 1, name: "source", kind: "enum", T: () => ["octelium.api.main.access.v1.IntegrationIdentity.Status.Source", IntegrationIdentity_Status_Source] },
+            { no: 2, name: "verifiedAt", kind: "message", T: () => Timestamp },
+            { no: 3, name: "externalUsername", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "externalEmail", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<IntegrationIdentity_Status>): IntegrationIdentity_Status {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.source = 0;
+        message.externalUsername = "";
+        message.externalEmail = "";
+        if (value !== undefined)
+            reflectionMergePartial<IntegrationIdentity_Status>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: IntegrationIdentity_Status): IntegrationIdentity_Status {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.access.v1.IntegrationIdentity.Status.Source source */ 1:
+                    message.source = reader.int32();
+                    break;
+                case /* google.protobuf.Timestamp verifiedAt */ 2:
+                    message.verifiedAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.verifiedAt);
+                    break;
+                case /* string externalUsername */ 3:
+                    message.externalUsername = reader.string();
+                    break;
+                case /* string externalEmail */ 4:
+                    message.externalEmail = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: IntegrationIdentity_Status, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.access.v1.IntegrationIdentity.Status.Source source = 1; */
+        if (message.source !== 0)
+            writer.tag(1, WireType.Varint).int32(message.source);
+        /* google.protobuf.Timestamp verifiedAt = 2; */
+        if (message.verifiedAt)
+            Timestamp.internalBinaryWrite(message.verifiedAt, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* string externalUsername = 3; */
+        if (message.externalUsername !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.externalUsername);
+        /* string externalEmail = 4; */
+        if (message.externalEmail !== "")
+            writer.tag(4, WireType.LengthDelimited).string(message.externalEmail);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.IntegrationIdentity.Status
+ */
+export const IntegrationIdentity_Status = new IntegrationIdentity_Status$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class IntegrationIdentityList$Type extends MessageType<IntegrationIdentityList> {
+    constructor() {
+        super("octelium.api.main.access.v1.IntegrationIdentityList", [
+            { no: 1, name: "apiVersion", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "kind", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => IntegrationIdentity },
+            { no: 4, name: "listResponseMeta", kind: "message", T: () => ListResponseMeta }
+        ]);
+    }
+    create(value?: PartialMessage<IntegrationIdentityList>): IntegrationIdentityList {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.apiVersion = "";
+        message.kind = "";
+        message.items = [];
+        if (value !== undefined)
+            reflectionMergePartial<IntegrationIdentityList>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: IntegrationIdentityList): IntegrationIdentityList {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string apiVersion */ 1:
+                    message.apiVersion = reader.string();
+                    break;
+                case /* string kind */ 2:
+                    message.kind = reader.string();
+                    break;
+                case /* repeated octelium.api.main.access.v1.IntegrationIdentity items */ 3:
+                    message.items.push(IntegrationIdentity.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* octelium.api.main.meta.v1.ListResponseMeta listResponseMeta */ 4:
+                    message.listResponseMeta = ListResponseMeta.internalBinaryRead(reader, reader.uint32(), options, message.listResponseMeta);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: IntegrationIdentityList, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string apiVersion = 1; */
+        if (message.apiVersion !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.apiVersion);
+        /* string kind = 2; */
+        if (message.kind !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.kind);
+        /* repeated octelium.api.main.access.v1.IntegrationIdentity items = 3; */
+        for (let i = 0; i < message.items.length; i++)
+            IntegrationIdentity.internalBinaryWrite(message.items[i], writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ListResponseMeta listResponseMeta = 4; */
+        if (message.listResponseMeta)
+            ListResponseMeta.internalBinaryWrite(message.listResponseMeta, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.IntegrationIdentityList
+ */
+export const IntegrationIdentityList = new IntegrationIdentityList$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class IntegrationBinding$Type extends MessageType<IntegrationBinding> {
+    constructor() {
+        super("octelium.api.main.access.v1.IntegrationBinding", [
+            { no: 1, name: "apiVersion", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "kind", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "metadata", kind: "message", T: () => Metadata },
+            { no: 4, name: "spec", kind: "message", T: () => IntegrationBinding_Spec },
+            { no: 5, name: "status", kind: "message", T: () => IntegrationBinding_Status }
+        ]);
+    }
+    create(value?: PartialMessage<IntegrationBinding>): IntegrationBinding {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.apiVersion = "";
+        message.kind = "";
+        if (value !== undefined)
+            reflectionMergePartial<IntegrationBinding>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: IntegrationBinding): IntegrationBinding {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string apiVersion */ 1:
+                    message.apiVersion = reader.string();
+                    break;
+                case /* string kind */ 2:
+                    message.kind = reader.string();
+                    break;
+                case /* octelium.api.main.meta.v1.Metadata metadata */ 3:
+                    message.metadata = Metadata.internalBinaryRead(reader, reader.uint32(), options, message.metadata);
+                    break;
+                case /* octelium.api.main.access.v1.IntegrationBinding.Spec spec */ 4:
+                    message.spec = IntegrationBinding_Spec.internalBinaryRead(reader, reader.uint32(), options, message.spec);
+                    break;
+                case /* octelium.api.main.access.v1.IntegrationBinding.Status status */ 5:
+                    message.status = IntegrationBinding_Status.internalBinaryRead(reader, reader.uint32(), options, message.status);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: IntegrationBinding, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string apiVersion = 1; */
+        if (message.apiVersion !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.apiVersion);
+        /* string kind = 2; */
+        if (message.kind !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.kind);
+        /* octelium.api.main.meta.v1.Metadata metadata = 3; */
+        if (message.metadata)
+            Metadata.internalBinaryWrite(message.metadata, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.IntegrationBinding.Spec spec = 4; */
+        if (message.spec)
+            IntegrationBinding_Spec.internalBinaryWrite(message.spec, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.IntegrationBinding.Status status = 5; */
+        if (message.status)
+            IntegrationBinding_Status.internalBinaryWrite(message.status, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.IntegrationBinding
+ */
+export const IntegrationBinding = new IntegrationBinding$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class IntegrationBinding_Spec$Type extends MessageType<IntegrationBinding_Spec> {
+    constructor() {
+        super("octelium.api.main.access.v1.IntegrationBinding.Spec", [
+            { no: 1, name: "integrationRef", kind: "message", T: () => ObjectReference },
+            { no: 2, name: "requestRef", kind: "message", T: () => ObjectReference },
+            { no: 3, name: "targetRef", kind: "message", T: () => ObjectReference },
+            { no: 4, name: "userRef", kind: "message", T: () => ObjectReference },
+            { no: 5, name: "stepIndex", kind: "scalar", T: 5 /*ScalarType.INT32*/ },
+            { no: 6, name: "stepName", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 7, name: "purpose", kind: "enum", T: () => ["octelium.api.main.access.v1.IntegrationBinding.Spec.Purpose", IntegrationBinding_Spec_Purpose] },
+            { no: 8, name: "interactionMode", kind: "enum", T: () => ["octelium.api.main.access.v1.Policy.Spec.Rule.Surface.InteractionMode", Policy_Spec_Rule_Surface_InteractionMode] }
+        ]);
+    }
+    create(value?: PartialMessage<IntegrationBinding_Spec>): IntegrationBinding_Spec {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.stepIndex = 0;
+        message.stepName = "";
+        message.purpose = 0;
+        message.interactionMode = 0;
+        if (value !== undefined)
+            reflectionMergePartial<IntegrationBinding_Spec>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: IntegrationBinding_Spec): IntegrationBinding_Spec {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference integrationRef */ 1:
+                    message.integrationRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.integrationRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference requestRef */ 2:
+                    message.requestRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.requestRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference targetRef */ 3:
+                    message.targetRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.targetRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference userRef */ 4:
+                    message.userRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.userRef);
+                    break;
+                case /* int32 stepIndex */ 5:
+                    message.stepIndex = reader.int32();
+                    break;
+                case /* string stepName */ 6:
+                    message.stepName = reader.string();
+                    break;
+                case /* octelium.api.main.access.v1.IntegrationBinding.Spec.Purpose purpose */ 7:
+                    message.purpose = reader.int32();
+                    break;
+                case /* octelium.api.main.access.v1.Policy.Spec.Rule.Surface.InteractionMode interactionMode */ 8:
+                    message.interactionMode = reader.int32();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: IntegrationBinding_Spec, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.ObjectReference integrationRef = 1; */
+        if (message.integrationRef)
+            ObjectReference.internalBinaryWrite(message.integrationRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference requestRef = 2; */
+        if (message.requestRef)
+            ObjectReference.internalBinaryWrite(message.requestRef, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference targetRef = 3; */
+        if (message.targetRef)
+            ObjectReference.internalBinaryWrite(message.targetRef, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference userRef = 4; */
+        if (message.userRef)
+            ObjectReference.internalBinaryWrite(message.userRef, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        /* int32 stepIndex = 5; */
+        if (message.stepIndex !== 0)
+            writer.tag(5, WireType.Varint).int32(message.stepIndex);
+        /* string stepName = 6; */
+        if (message.stepName !== "")
+            writer.tag(6, WireType.LengthDelimited).string(message.stepName);
+        /* octelium.api.main.access.v1.IntegrationBinding.Spec.Purpose purpose = 7; */
+        if (message.purpose !== 0)
+            writer.tag(7, WireType.Varint).int32(message.purpose);
+        /* octelium.api.main.access.v1.Policy.Spec.Rule.Surface.InteractionMode interactionMode = 8; */
+        if (message.interactionMode !== 0)
+            writer.tag(8, WireType.Varint).int32(message.interactionMode);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.IntegrationBinding.Spec
+ */
+export const IntegrationBinding_Spec = new IntegrationBinding_Spec$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class IntegrationBinding_Status$Type extends MessageType<IntegrationBinding_Status> {
+    constructor() {
+        super("octelium.api.main.access.v1.IntegrationBinding.Status", [
+            { no: 1, name: "state", kind: "enum", T: () => ["octelium.api.main.access.v1.IntegrationBinding.Status.State", IntegrationBinding_Status_State] },
+            { no: 2, name: "externalID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "externalURL", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "externalRecipientID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 5, name: "desiredRevision", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 6, name: "appliedRevision", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 7, name: "lastSuccessAt", kind: "message", T: () => Timestamp },
+            { no: 8, name: "nextAttemptAt", kind: "message", T: () => Timestamp },
+            { no: 9, name: "attempts", kind: "scalar", T: 13 /*ScalarType.UINT32*/ },
+            { no: 10, name: "lastError", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 11, name: "lastExternalEventIDs", kind: "scalar", repeat: 2 /*RepeatType.UNPACKED*/, T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<IntegrationBinding_Status>): IntegrationBinding_Status {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.state = 0;
+        message.externalID = "";
+        message.externalURL = "";
+        message.externalRecipientID = "";
+        message.desiredRevision = "";
+        message.appliedRevision = "";
+        message.attempts = 0;
+        message.lastError = "";
+        message.lastExternalEventIDs = [];
+        if (value !== undefined)
+            reflectionMergePartial<IntegrationBinding_Status>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: IntegrationBinding_Status): IntegrationBinding_Status {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.access.v1.IntegrationBinding.Status.State state */ 1:
+                    message.state = reader.int32();
+                    break;
+                case /* string externalID */ 2:
+                    message.externalID = reader.string();
+                    break;
+                case /* string externalURL */ 3:
+                    message.externalURL = reader.string();
+                    break;
+                case /* string externalRecipientID */ 4:
+                    message.externalRecipientID = reader.string();
+                    break;
+                case /* string desiredRevision */ 5:
+                    message.desiredRevision = reader.string();
+                    break;
+                case /* string appliedRevision */ 6:
+                    message.appliedRevision = reader.string();
+                    break;
+                case /* google.protobuf.Timestamp lastSuccessAt */ 7:
+                    message.lastSuccessAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.lastSuccessAt);
+                    break;
+                case /* google.protobuf.Timestamp nextAttemptAt */ 8:
+                    message.nextAttemptAt = Timestamp.internalBinaryRead(reader, reader.uint32(), options, message.nextAttemptAt);
+                    break;
+                case /* uint32 attempts */ 9:
+                    message.attempts = reader.uint32();
+                    break;
+                case /* string lastError */ 10:
+                    message.lastError = reader.string();
+                    break;
+                case /* repeated string lastExternalEventIDs */ 11:
+                    message.lastExternalEventIDs.push(reader.string());
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: IntegrationBinding_Status, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.access.v1.IntegrationBinding.Status.State state = 1; */
+        if (message.state !== 0)
+            writer.tag(1, WireType.Varint).int32(message.state);
+        /* string externalID = 2; */
+        if (message.externalID !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.externalID);
+        /* string externalURL = 3; */
+        if (message.externalURL !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.externalURL);
+        /* string externalRecipientID = 4; */
+        if (message.externalRecipientID !== "")
+            writer.tag(4, WireType.LengthDelimited).string(message.externalRecipientID);
+        /* string desiredRevision = 5; */
+        if (message.desiredRevision !== "")
+            writer.tag(5, WireType.LengthDelimited).string(message.desiredRevision);
+        /* string appliedRevision = 6; */
+        if (message.appliedRevision !== "")
+            writer.tag(6, WireType.LengthDelimited).string(message.appliedRevision);
+        /* google.protobuf.Timestamp lastSuccessAt = 7; */
+        if (message.lastSuccessAt)
+            Timestamp.internalBinaryWrite(message.lastSuccessAt, writer.tag(7, WireType.LengthDelimited).fork(), options).join();
+        /* google.protobuf.Timestamp nextAttemptAt = 8; */
+        if (message.nextAttemptAt)
+            Timestamp.internalBinaryWrite(message.nextAttemptAt, writer.tag(8, WireType.LengthDelimited).fork(), options).join();
+        /* uint32 attempts = 9; */
+        if (message.attempts !== 0)
+            writer.tag(9, WireType.Varint).uint32(message.attempts);
+        /* string lastError = 10; */
+        if (message.lastError !== "")
+            writer.tag(10, WireType.LengthDelimited).string(message.lastError);
+        /* repeated string lastExternalEventIDs = 11; */
+        for (let i = 0; i < message.lastExternalEventIDs.length; i++)
+            writer.tag(11, WireType.LengthDelimited).string(message.lastExternalEventIDs[i]);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.IntegrationBinding.Status
+ */
+export const IntegrationBinding_Status = new IntegrationBinding_Status$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class IntegrationBindingList$Type extends MessageType<IntegrationBindingList> {
+    constructor() {
+        super("octelium.api.main.access.v1.IntegrationBindingList", [
+            { no: 1, name: "apiVersion", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 2, name: "kind", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "items", kind: "message", repeat: 2 /*RepeatType.UNPACKED*/, T: () => IntegrationBinding },
+            { no: 4, name: "listResponseMeta", kind: "message", T: () => ListResponseMeta }
+        ]);
+    }
+    create(value?: PartialMessage<IntegrationBindingList>): IntegrationBindingList {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.apiVersion = "";
+        message.kind = "";
+        message.items = [];
+        if (value !== undefined)
+            reflectionMergePartial<IntegrationBindingList>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: IntegrationBindingList): IntegrationBindingList {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string apiVersion */ 1:
+                    message.apiVersion = reader.string();
+                    break;
+                case /* string kind */ 2:
+                    message.kind = reader.string();
+                    break;
+                case /* repeated octelium.api.main.access.v1.IntegrationBinding items */ 3:
+                    message.items.push(IntegrationBinding.internalBinaryRead(reader, reader.uint32(), options));
+                    break;
+                case /* octelium.api.main.meta.v1.ListResponseMeta listResponseMeta */ 4:
+                    message.listResponseMeta = ListResponseMeta.internalBinaryRead(reader, reader.uint32(), options, message.listResponseMeta);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: IntegrationBindingList, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string apiVersion = 1; */
+        if (message.apiVersion !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.apiVersion);
+        /* string kind = 2; */
+        if (message.kind !== "")
+            writer.tag(2, WireType.LengthDelimited).string(message.kind);
+        /* repeated octelium.api.main.access.v1.IntegrationBinding items = 3; */
+        for (let i = 0; i < message.items.length; i++)
+            IntegrationBinding.internalBinaryWrite(message.items[i], writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ListResponseMeta listResponseMeta = 4; */
+        if (message.listResponseMeta)
+            ListResponseMeta.internalBinaryWrite(message.listResponseMeta, writer.tag(4, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.IntegrationBindingList
+ */
+export const IntegrationBindingList = new IntegrationBindingList$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ListIntegrationOptions$Type extends MessageType<ListIntegrationOptions> {
+    constructor() {
+        super("octelium.api.main.access.v1.ListIntegrationOptions", [
+            { no: 1, name: "common", kind: "message", T: () => CommonListOptions }
+        ]);
+    }
+    create(value?: PartialMessage<ListIntegrationOptions>): ListIntegrationOptions {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<ListIntegrationOptions>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListIntegrationOptions): ListIntegrationOptions {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.CommonListOptions common */ 1:
+                    message.common = CommonListOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListIntegrationOptions, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.CommonListOptions common = 1; */
+        if (message.common)
+            CommonListOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.ListIntegrationOptions
+ */
+export const ListIntegrationOptions = new ListIntegrationOptions$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ListIntegrationTargetOptions$Type extends MessageType<ListIntegrationTargetOptions> {
+    constructor() {
+        super("octelium.api.main.access.v1.ListIntegrationTargetOptions", [
+            { no: 1, name: "common", kind: "message", T: () => CommonListOptions },
+            { no: 2, name: "integrationRef", kind: "message", T: () => ObjectReference }
+        ]);
+    }
+    create(value?: PartialMessage<ListIntegrationTargetOptions>): ListIntegrationTargetOptions {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<ListIntegrationTargetOptions>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListIntegrationTargetOptions): ListIntegrationTargetOptions {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.CommonListOptions common */ 1:
+                    message.common = CommonListOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference integrationRef */ 2:
+                    message.integrationRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.integrationRef);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListIntegrationTargetOptions, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.CommonListOptions common = 1; */
+        if (message.common)
+            CommonListOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference integrationRef = 2; */
+        if (message.integrationRef)
+            ObjectReference.internalBinaryWrite(message.integrationRef, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.ListIntegrationTargetOptions
+ */
+export const ListIntegrationTargetOptions = new ListIntegrationTargetOptions$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ListIntegrationIdentityOptions$Type extends MessageType<ListIntegrationIdentityOptions> {
+    constructor() {
+        super("octelium.api.main.access.v1.ListIntegrationIdentityOptions", [
+            { no: 1, name: "common", kind: "message", T: () => CommonListOptions },
+            { no: 2, name: "integrationRef", kind: "message", T: () => ObjectReference },
+            { no: 3, name: "userRef", kind: "message", T: () => ObjectReference }
+        ]);
+    }
+    create(value?: PartialMessage<ListIntegrationIdentityOptions>): ListIntegrationIdentityOptions {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<ListIntegrationIdentityOptions>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListIntegrationIdentityOptions): ListIntegrationIdentityOptions {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.CommonListOptions common */ 1:
+                    message.common = CommonListOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference integrationRef */ 2:
+                    message.integrationRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.integrationRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference userRef */ 3:
+                    message.userRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.userRef);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListIntegrationIdentityOptions, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.CommonListOptions common = 1; */
+        if (message.common)
+            CommonListOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference integrationRef = 2; */
+        if (message.integrationRef)
+            ObjectReference.internalBinaryWrite(message.integrationRef, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference userRef = 3; */
+        if (message.userRef)
+            ObjectReference.internalBinaryWrite(message.userRef, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.ListIntegrationIdentityOptions
+ */
+export const ListIntegrationIdentityOptions = new ListIntegrationIdentityOptions$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ListIntegrationBindingOptions$Type extends MessageType<ListIntegrationBindingOptions> {
+    constructor() {
+        super("octelium.api.main.access.v1.ListIntegrationBindingOptions", [
+            { no: 1, name: "common", kind: "message", T: () => CommonListOptions },
+            { no: 2, name: "integrationRef", kind: "message", T: () => ObjectReference },
+            { no: 3, name: "requestRef", kind: "message", T: () => ObjectReference }
+        ]);
+    }
+    create(value?: PartialMessage<ListIntegrationBindingOptions>): ListIntegrationBindingOptions {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<ListIntegrationBindingOptions>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ListIntegrationBindingOptions): ListIntegrationBindingOptions {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.CommonListOptions common */ 1:
+                    message.common = CommonListOptions.internalBinaryRead(reader, reader.uint32(), options, message.common);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference integrationRef */ 2:
+                    message.integrationRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.integrationRef);
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference requestRef */ 3:
+                    message.requestRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.requestRef);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ListIntegrationBindingOptions, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.CommonListOptions common = 1; */
+        if (message.common)
+            CommonListOptions.internalBinaryWrite(message.common, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference integrationRef = 2; */
+        if (message.integrationRef)
+            ObjectReference.internalBinaryWrite(message.integrationRef, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.meta.v1.ObjectReference requestRef = 3; */
+        if (message.requestRef)
+            ObjectReference.internalBinaryWrite(message.requestRef, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.ListIntegrationBindingOptions
+ */
+export const ListIntegrationBindingOptions = new ListIntegrationBindingOptions$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SetReviewDecisionRequest$Type extends MessageType<SetReviewDecisionRequest> {
+    constructor() {
+        super("octelium.api.main.access.v1.SetReviewDecisionRequest", [
+            { no: 1, name: "requestRef", kind: "message", T: () => ObjectReference },
+            { no: 2, name: "decision", kind: "enum", T: () => ["octelium.api.main.access.v1.Review.Spec.Decision", Review_Spec_Decision, "DECISION_"] },
+            { no: 3, name: "justification", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "expectedStepName", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<SetReviewDecisionRequest>): SetReviewDecisionRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.decision = 0;
+        message.justification = "";
+        message.expectedStepName = "";
+        if (value !== undefined)
+            reflectionMergePartial<SetReviewDecisionRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: SetReviewDecisionRequest): SetReviewDecisionRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference requestRef */ 1:
+                    message.requestRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.requestRef);
+                    break;
+                case /* octelium.api.main.access.v1.Review.Spec.Decision decision */ 2:
+                    message.decision = reader.int32();
+                    break;
+                case /* string justification */ 3:
+                    message.justification = reader.string();
+                    break;
+                case /* string expectedStepName */ 4:
+                    message.expectedStepName = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: SetReviewDecisionRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.ObjectReference requestRef = 1; */
+        if (message.requestRef)
+            ObjectReference.internalBinaryWrite(message.requestRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* octelium.api.main.access.v1.Review.Spec.Decision decision = 2; */
+        if (message.decision !== 0)
+            writer.tag(2, WireType.Varint).int32(message.decision);
+        /* string justification = 3; */
+        if (message.justification !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.justification);
+        /* string expectedStepName = 4; */
+        if (message.expectedStepName !== "")
+            writer.tag(4, WireType.LengthDelimited).string(message.expectedStepName);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.SetReviewDecisionRequest
+ */
+export const SetReviewDecisionRequest = new SetReviewDecisionRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SynchronizeIntegrationRequest$Type extends MessageType<SynchronizeIntegrationRequest> {
+    constructor() {
+        super("octelium.api.main.access.v1.SynchronizeIntegrationRequest", [
+            { no: 1, name: "integrationRef", kind: "message", T: () => ObjectReference }
+        ]);
+    }
+    create(value?: PartialMessage<SynchronizeIntegrationRequest>): SynchronizeIntegrationRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<SynchronizeIntegrationRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: SynchronizeIntegrationRequest): SynchronizeIntegrationRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference integrationRef */ 1:
+                    message.integrationRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.integrationRef);
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: SynchronizeIntegrationRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.ObjectReference integrationRef = 1; */
+        if (message.integrationRef)
+            ObjectReference.internalBinaryWrite(message.integrationRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.SynchronizeIntegrationRequest
+ */
+export const SynchronizeIntegrationRequest = new SynchronizeIntegrationRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SynchronizeIntegrationResponse$Type extends MessageType<SynchronizeIntegrationResponse> {
+    constructor() {
+        super("octelium.api.main.access.v1.SynchronizeIntegrationResponse", []);
+    }
+    create(value?: PartialMessage<SynchronizeIntegrationResponse>): SynchronizeIntegrationResponse {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        if (value !== undefined)
+            reflectionMergePartial<SynchronizeIntegrationResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: SynchronizeIntegrationResponse): SynchronizeIntegrationResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: SynchronizeIntegrationResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.SynchronizeIntegrationResponse
+ */
+export const SynchronizeIntegrationResponse = new SynchronizeIntegrationResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ResolveIntegrationIdentityRequest$Type extends MessageType<ResolveIntegrationIdentityRequest> {
+    constructor() {
+        super("octelium.api.main.access.v1.ResolveIntegrationIdentityRequest", [
+            { no: 1, name: "integrationRef", kind: "message", T: () => ObjectReference },
+            { no: 2, name: "externalID", kind: "scalar", oneof: "type", T: 9 /*ScalarType.STRING*/ },
+            { no: 3, name: "userRef", kind: "message", oneof: "type", T: () => ObjectReference }
+        ]);
+    }
+    create(value?: PartialMessage<ResolveIntegrationIdentityRequest>): ResolveIntegrationIdentityRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.type = { oneofKind: undefined };
+        if (value !== undefined)
+            reflectionMergePartial<ResolveIntegrationIdentityRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ResolveIntegrationIdentityRequest): ResolveIntegrationIdentityRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* octelium.api.main.meta.v1.ObjectReference integrationRef */ 1:
+                    message.integrationRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.integrationRef);
+                    break;
+                case /* string externalID */ 2:
+                    message.type = {
+                        oneofKind: "externalID",
+                        externalID: reader.string()
+                    };
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference userRef */ 3:
+                    message.type = {
+                        oneofKind: "userRef",
+                        userRef: ObjectReference.internalBinaryRead(reader, reader.uint32(), options, (message.type as any).userRef)
+                    };
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ResolveIntegrationIdentityRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* octelium.api.main.meta.v1.ObjectReference integrationRef = 1; */
+        if (message.integrationRef)
+            ObjectReference.internalBinaryWrite(message.integrationRef, writer.tag(1, WireType.LengthDelimited).fork(), options).join();
+        /* string externalID = 2; */
+        if (message.type.oneofKind === "externalID")
+            writer.tag(2, WireType.LengthDelimited).string(message.type.externalID);
+        /* octelium.api.main.meta.v1.ObjectReference userRef = 3; */
+        if (message.type.oneofKind === "userRef")
+            ObjectReference.internalBinaryWrite(message.type.userRef, writer.tag(3, WireType.LengthDelimited).fork(), options).join();
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.ResolveIntegrationIdentityRequest
+ */
+export const ResolveIntegrationIdentityRequest = new ResolveIntegrationIdentityRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class ResolveIntegrationIdentityResponse$Type extends MessageType<ResolveIntegrationIdentityResponse> {
+    constructor() {
+        super("octelium.api.main.access.v1.ResolveIntegrationIdentityResponse", [
+            { no: 1, name: "isResolved", kind: "scalar", T: 8 /*ScalarType.BOOL*/ },
+            { no: 2, name: "userRef", kind: "message", T: () => ObjectReference },
+            { no: 3, name: "externalID", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 4, name: "source", kind: "enum", T: () => ["octelium.api.main.access.v1.IntegrationIdentity.Status.Source", IntegrationIdentity_Status_Source] },
+            { no: 5, name: "integrationIdentityRef", kind: "message", T: () => ObjectReference },
+            { no: 6, name: "detail", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
+    }
+    create(value?: PartialMessage<ResolveIntegrationIdentityResponse>): ResolveIntegrationIdentityResponse {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.isResolved = false;
+        message.externalID = "";
+        message.source = 0;
+        message.detail = "";
+        if (value !== undefined)
+            reflectionMergePartial<ResolveIntegrationIdentityResponse>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: ResolveIntegrationIdentityResponse): ResolveIntegrationIdentityResponse {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* bool isResolved */ 1:
+                    message.isResolved = reader.bool();
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference userRef */ 2:
+                    message.userRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.userRef);
+                    break;
+                case /* string externalID */ 3:
+                    message.externalID = reader.string();
+                    break;
+                case /* octelium.api.main.access.v1.IntegrationIdentity.Status.Source source */ 4:
+                    message.source = reader.int32();
+                    break;
+                case /* octelium.api.main.meta.v1.ObjectReference integrationIdentityRef */ 5:
+                    message.integrationIdentityRef = ObjectReference.internalBinaryRead(reader, reader.uint32(), options, message.integrationIdentityRef);
+                    break;
+                case /* string detail */ 6:
+                    message.detail = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: ResolveIntegrationIdentityResponse, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* bool isResolved = 1; */
+        if (message.isResolved !== false)
+            writer.tag(1, WireType.Varint).bool(message.isResolved);
+        /* octelium.api.main.meta.v1.ObjectReference userRef = 2; */
+        if (message.userRef)
+            ObjectReference.internalBinaryWrite(message.userRef, writer.tag(2, WireType.LengthDelimited).fork(), options).join();
+        /* string externalID = 3; */
+        if (message.externalID !== "")
+            writer.tag(3, WireType.LengthDelimited).string(message.externalID);
+        /* octelium.api.main.access.v1.IntegrationIdentity.Status.Source source = 4; */
+        if (message.source !== 0)
+            writer.tag(4, WireType.Varint).int32(message.source);
+        /* octelium.api.main.meta.v1.ObjectReference integrationIdentityRef = 5; */
+        if (message.integrationIdentityRef)
+            ObjectReference.internalBinaryWrite(message.integrationIdentityRef, writer.tag(5, WireType.LengthDelimited).fork(), options).join();
+        /* string detail = 6; */
+        if (message.detail !== "")
+            writer.tag(6, WireType.LengthDelimited).string(message.detail);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
+}
+/**
+ * @generated MessageType for protobuf message octelium.api.main.access.v1.ResolveIntegrationIdentityResponse
+ */
+export const ResolveIntegrationIdentityResponse = new ResolveIntegrationIdentityResponse$Type();
 /**
  * @generated ServiceType for protobuf service octelium.api.main.access.v1.MainService
  */
@@ -4836,7 +9744,26 @@ export const MainService = new ServiceType("octelium.api.main.access.v1.MainServ
     { name: "RevokeRequest", options: {}, I: RevokeRequestRequest, O: OperationResult },
     { name: "ListReview", options: {}, I: ListReviewOptions, O: ReviewList },
     { name: "GetReview", options: {}, I: GetOptions, O: Review },
-    { name: "DeleteReview", options: {}, I: DeleteOptions, O: OperationResult }
+    { name: "DeleteReview", options: {}, I: DeleteOptions, O: OperationResult },
+    { name: "CreateIntegration", options: {}, I: Integration, O: Integration },
+    { name: "GetIntegration", options: {}, I: GetOptions, O: Integration },
+    { name: "UpdateIntegration", options: {}, I: Integration, O: Integration },
+    { name: "DeleteIntegration", options: {}, I: DeleteOptions, O: OperationResult },
+    { name: "ListIntegration", options: {}, I: ListIntegrationOptions, O: IntegrationList },
+    { name: "SynchronizeIntegration", options: {}, I: SynchronizeIntegrationRequest, O: SynchronizeIntegrationResponse },
+    { name: "CreateIntegrationTarget", options: {}, I: IntegrationTarget, O: IntegrationTarget },
+    { name: "GetIntegrationTarget", options: {}, I: GetOptions, O: IntegrationTarget },
+    { name: "UpdateIntegrationTarget", options: {}, I: IntegrationTarget, O: IntegrationTarget },
+    { name: "DeleteIntegrationTarget", options: {}, I: DeleteOptions, O: OperationResult },
+    { name: "ListIntegrationTarget", options: {}, I: ListIntegrationTargetOptions, O: IntegrationTargetList },
+    { name: "CreateIntegrationIdentity", options: {}, I: IntegrationIdentity, O: IntegrationIdentity },
+    { name: "GetIntegrationIdentity", options: {}, I: GetOptions, O: IntegrationIdentity },
+    { name: "UpdateIntegrationIdentity", options: {}, I: IntegrationIdentity, O: IntegrationIdentity },
+    { name: "DeleteIntegrationIdentity", options: {}, I: DeleteOptions, O: OperationResult },
+    { name: "ListIntegrationIdentity", options: {}, I: ListIntegrationIdentityOptions, O: IntegrationIdentityList },
+    { name: "ResolveIntegrationIdentity", options: {}, I: ResolveIntegrationIdentityRequest, O: ResolveIntegrationIdentityResponse },
+    { name: "GetIntegrationBinding", options: {}, I: GetOptions, O: IntegrationBinding },
+    { name: "ListIntegrationBinding", options: {}, I: ListIntegrationBindingOptions, O: IntegrationBindingList }
 ]);
 /**
  * @generated ServiceType for protobuf service octelium.api.main.access.v1.UserService
@@ -4863,5 +9790,6 @@ export const ReviewerService = new ServiceType("octelium.api.main.access.v1.Revi
     { name: "GetReview", options: {}, I: GetOptions, O: Review },
     { name: "CreateReview", options: {}, I: Review, O: Review },
     { name: "UpdateReview", options: {}, I: Review, O: Review },
-    { name: "CancelReview", options: {}, I: CancelReviewRequest, O: OperationResult }
+    { name: "CancelReview", options: {}, I: CancelReviewRequest, O: OperationResult },
+    { name: "SetReviewDecision", options: {}, I: SetReviewDecisionRequest, O: Review }
 ]);

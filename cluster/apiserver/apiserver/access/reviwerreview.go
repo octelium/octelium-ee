@@ -10,8 +10,8 @@ package access
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/octelium/octelium-ee/cluster/common/accesscmd"
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
@@ -23,10 +23,40 @@ import (
 	"github.com/octelium/octelium/cluster/common/userctx"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
 	"github.com/octelium/octelium/pkg/common/pbutils"
-	"github.com/octelium/octelium/pkg/grpcerr"
-	"github.com/octelium/octelium/pkg/utils/utilrand"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
+
+func (s *ServerReviewer) SetReviewDecision(ctx context.Context,
+	req *accessv1.SetReviewDecisionRequest) (*accessv1.Review, error) {
+	i, err := userctx.GetUserCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if req == nil || req.RequestRef == nil {
+		return nil, grpcutils.InvalidArg("RequestRef must be set")
+	}
+
+	if err := apivalidation.CheckObjectRef(req.RequestRef,
+		&apivalidation.CheckGetOptionsOpts{}); err != nil {
+		return nil, err
+	}
+
+	request, err := s.octeliumC.AccessC().GetRequest(ctx,
+		apivalidation.ObjectReferenceToRGetOptions(req.RequestRef))
+	if err != nil {
+		return nil, serr.K8sNotFoundOrInternalWithErr(err)
+	}
+
+	return accesscmd.SetReviewDecision(ctx, &accesscmd.SetReviewDecisionOpts{
+		OcteliumC:        s.octeliumC,
+		Reviewer:         i.User,
+		Request:          request,
+		Decision:         req.Decision,
+		Justification:    req.Justification,
+		ExpectedStepName: req.ExpectedStepName,
+		Origin:           apiOrigin(i),
+	})
+}
 
 func (s *ServerReviewer) CreateReview(ctx context.Context, req *accessv1.Review) (*accessv1.Review, error) {
 	i, err := userctx.GetUserCtx(ctx)
@@ -49,52 +79,41 @@ func (s *ServerReviewer) CreateReview(ctx context.Context, req *accessv1.Review)
 		return nil, grpcutils.InvalidArg("RequestRef must be set")
 	}
 
-	if err := apivalidation.CheckObjectRef(req.Status.RequestRef, &apivalidation.CheckGetOptionsOpts{}); err != nil {
+	if err := apivalidation.CheckObjectRef(req.Status.RequestRef,
+		&apivalidation.CheckGetOptionsOpts{}); err != nil {
 		return nil, err
 	}
 
-	request, err := s.octeliumC.AccessC().GetRequest(ctx, apivalidation.ObjectReferenceToRGetOptions(req.Status.RequestRef))
+	request, err := s.octeliumC.AccessC().GetRequest(ctx,
+		apivalidation.ObjectReferenceToRGetOptions(req.Status.RequestRef))
 	if err != nil {
 		return nil, serr.K8sNotFoundOrInternalWithErr(err)
 	}
 
-	ok, err := s.canReviewRequest(ctx, i.User, request)
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, grpcutils.Unauthorized("You are not allowed to review this Request")
-	}
-
-	if err := s.ensureNoExistingReviewerReview(ctx, i.User.Metadata.Uid, request.Metadata.Uid); err != nil {
-		return nil, err
-	}
-
-	name, err := s.generateReviewName(ctx, request.Metadata.Name)
+	step, stepIndex, err := accesscmd.CurrentStep(request)
 	if err != nil {
 		return nil, err
 	}
 
-	metadata := apisrvcommon.MetadataFrom(req.Metadata)
-	metadata.Name = name
-
-	item := &accessv1.Review{
-		Metadata: metadata,
-		Spec:     pbutils.Clone(req.Spec).(*accessv1.Review_Spec),
-		Status: &accessv1.Review_Status{
-			UserRef:    umetav1.GetObjectReference(i.User),
-			RequestRef: umetav1.GetObjectReference(request),
-			SetAt:      pbutils.Now(),
-			StepIndex:  currentReviewStep(request),
-		},
-	}
-
-	item, err = s.octeliumC.AccessC().CreateReview(ctx, item)
+	existing, err := accesscmd.GetStepReview(ctx, s.octeliumC, request, stepIndex,
+		i.User.Metadata.Uid)
 	if err != nil {
-		return nil, serr.InternalWithErr(err)
+		return nil, err
+	}
+	if existing != nil {
+		return nil, grpcutils.AlreadyExists(
+			"You already have a Review for this Request at the %s review Step", step.Name)
 	}
 
-	return item, nil
+	return accesscmd.SetReviewDecision(ctx, &accesscmd.SetReviewDecisionOpts{
+		OcteliumC:        s.octeliumC,
+		Reviewer:         i.User,
+		Request:          request,
+		Decision:         req.Spec.Decision,
+		Justification:    req.Spec.Justification,
+		ExpectedStepName: step.Name,
+		Origin:           apiOrigin(i),
+	})
 }
 
 func (s *ServerReviewer) GetReview(ctx context.Context, req *metav1.GetOptions) (*accessv1.Review, error) {
@@ -176,27 +195,27 @@ func (s *ServerReviewer) UpdateReview(ctx context.Context, req *accessv1.Review)
 		return nil, err
 	}
 
-	ok, err := s.canReviewRequest(ctx, i.User, request)
+	item, err = accesscmd.SetReviewDecision(ctx, &accesscmd.SetReviewDecisionOpts{
+		OcteliumC:        s.octeliumC,
+		Reviewer:         i.User,
+		Request:          request,
+		Decision:         req.Spec.Decision,
+		Justification:    req.Spec.Justification,
+		ExpectedStepName: item.Status.StepName,
+		Origin:           apiOrigin(i),
+	})
 	if err != nil {
 		return nil, err
 	}
-	if !ok {
-		return nil, grpcutils.InvalidArg("This Review can no longer be updated")
+
+	next := pbutils.Clone(item).(*accessv1.Review)
+	apisrvcommon.MetadataUpdate(next.Metadata, req.Metadata)
+
+	if pbutils.IsEqual(item, next) {
+		return item, nil
 	}
 
-	if hasReviewerReviewBeenApplied(request, item) {
-		return nil, grpcutils.InvalidArg("Applied Reviews cannot be updated")
-	}
-
-	apisrvcommon.MetadataUpdate(item.Metadata, req.Metadata)
-
-	if !pbutils.IsEqual(item.Spec, req.Spec) {
-		appendReviewerReviewRevision(item)
-		item.Spec = pbutils.Clone(req.Spec).(*accessv1.Review_Spec)
-		item.Status.SetAt = pbutils.Now()
-	}
-
-	item, err = s.octeliumC.AccessC().UpdateReview(ctx, item)
+	item, err = s.octeliumC.AccessC().UpdateReview(ctx, next)
 	if err != nil {
 		return nil, serr.K8sInternal(err)
 	}
@@ -220,7 +239,8 @@ func (s *ServerReviewer) CancelReview(ctx context.Context, req *accessv1.CancelR
 		return nil, err
 	}
 
-	item, err := s.octeliumC.AccessC().GetReview(ctx, apivalidation.ObjectReferenceToRGetOptions(req.ReviewRef))
+	item, err := s.octeliumC.AccessC().GetReview(ctx,
+		apivalidation.ObjectReferenceToRGetOptions(req.ReviewRef))
 	if err != nil {
 		return nil, serr.K8sNotFoundOrInternalWithErr(err)
 	}
@@ -229,35 +249,24 @@ func (s *ServerReviewer) CancelReview(ctx context.Context, req *accessv1.CancelR
 		return nil, err
 	}
 
+	if item.Spec.Decision == accessv1.Review_Spec_DECISION_UNSET {
+		return &metav1.OperationResult{}, nil
+	}
+
 	request, err := s.getReviewerReviewRequest(ctx, item)
 	if err != nil {
 		return nil, err
 	}
 
-	ok, err := s.canReviewRequest(ctx, i.User, request)
-	if err != nil {
+	if _, err := accesscmd.SetReviewDecision(ctx, &accesscmd.SetReviewDecisionOpts{
+		OcteliumC:        s.octeliumC,
+		Reviewer:         i.User,
+		Request:          request,
+		Decision:         accessv1.Review_Spec_DECISION_UNSET,
+		ExpectedStepName: item.Status.StepName,
+		Origin:           apiOrigin(i),
+	}); err != nil {
 		return nil, err
-	}
-	if !ok {
-		return nil, grpcutils.InvalidArg("This Review can no longer be cancelled")
-	}
-
-	if hasReviewerReviewBeenApplied(request, item) {
-		return nil, grpcutils.InvalidArg("Applied Reviews cannot be cancelled")
-	}
-
-	if item.Spec.Decision == accessv1.Review_Spec_DECISION_UNSET {
-		return &metav1.OperationResult{}, nil
-	}
-
-	appendReviewerReviewRevision(item)
-
-	item.Spec.Decision = accessv1.Review_Spec_DECISION_UNSET
-	item.Spec.Justification = ""
-	item.Status.SetAt = pbutils.Now()
-
-	if _, err := s.octeliumC.AccessC().UpdateReview(ctx, item); err != nil {
-		return nil, serr.InternalWithErr(err)
 	}
 
 	return &metav1.OperationResult{}, nil
@@ -268,55 +277,13 @@ func (s *ServerReviewer) getReviewerReviewRequest(ctx context.Context, review *a
 		return nil, grpcutils.InvalidArg("Review has no RequestRef")
 	}
 
-	request, err := s.octeliumC.AccessC().GetRequest(ctx, apivalidation.ObjectReferenceToRGetOptions(review.Status.RequestRef))
+	request, err := s.octeliumC.AccessC().GetRequest(ctx,
+		apivalidation.ObjectReferenceToRGetOptions(review.Status.RequestRef))
 	if err != nil {
 		return nil, serr.K8sNotFoundOrInternalWithErr(err)
 	}
 
 	return request, nil
-}
-
-func (s *ServerReviewer) ensureNoExistingReviewerReview(ctx context.Context, userUID, requestUID string) error {
-	itemList, err := s.octeliumC.AccessC().ListReview(ctx, &rmetav1.ListOptions{
-		Filters: []*rmetav1.ListOptions_Filter{
-			urscsrv.FilterStatusUserUID(userUID),
-			urscsrv.FilterFieldEQValStr("status.requestRef.uid", requestUID),
-		},
-	})
-	if err != nil {
-		return serr.InternalWithErr(err)
-	}
-
-	if len(itemList.Items) > 0 {
-		return grpcutils.AlreadyExists("You already have a Review for this Request")
-	}
-
-	return nil
-}
-
-func (s *ServerReviewer) generateReviewName(ctx context.Context, requestName string) (string, error) {
-	const attemptsPerLength = 32
-
-	for n := 3; n <= 8; n++ {
-		for i := 0; i < attemptsPerLength; i++ {
-			name := fmt.Sprintf("%s.%s", utilrand.GetRandomStringCanonical(n), requestName)
-
-			_, err := s.octeliumC.AccessC().GetReview(ctx, &rmetav1.GetOptions{
-				Name: name,
-			})
-			if err == nil {
-				continue
-			}
-
-			if grpcerr.IsNotFound(err) {
-				return name, nil
-			}
-
-			return "", serr.InternalWithErr(err)
-		}
-	}
-
-	return "", grpcutils.Internal("Could not generate a unique Review name")
 }
 
 func validateReviewerReviewSpec(req *accessv1.Review) error {
@@ -331,6 +298,10 @@ func validateReviewerReviewSpec(req *accessv1.Review) error {
 		return grpcutils.InvalidArg("Decision must be APPROVE or REJECT")
 	}
 
+	if len(req.Spec.Justification) > accesscmd.MaxJustificationLen {
+		return grpcutils.InvalidArg("Justification is too long")
+	}
+
 	return nil
 }
 
@@ -342,58 +313,14 @@ func checkReviewerOwnsReview(userUID string, review *accessv1.Review) error {
 	return nil
 }
 
-func hasReviewerReviewBeenApplied(req *accessv1.Request, review *accessv1.Review) bool {
-	if req.Status.Review == nil {
-		return false
+func apiOrigin(i *userctx.UserCtx) *accessv1.Origin {
+	ret := &accessv1.Origin{
+		Type: accessv1.Origin_API,
 	}
 
-	for _, step := range req.Status.Review.LastSteps {
-		if step.ReviewRef == nil ||
-			step.ReviewRef.Uid == "" ||
-			step.ReviewRef.Uid != review.Metadata.Uid {
-			continue
-		}
-
-		if step.StepIndex != req.Status.Review.CurrentStep {
-			return true
-		}
+	if i.Session != nil {
+		ret.SessionRef = umetav1.GetObjectReference(i.Session)
 	}
 
-	return false
-}
-
-const maxReviewRevisions = 100
-
-func appendReviewerReviewRevision(review *accessv1.Review) {
-	revisionSetAt := review.Status.SetAt
-	if revisionSetAt == nil {
-		revisionSetAt = pbutils.Now()
-	}
-
-	if review.Spec != nil {
-		revision := &accessv1.Review_Status_Revision{
-			Spec:  pbutils.Clone(review.Spec).(*accessv1.Review_Spec),
-			SetAt: revisionSetAt,
-		}
-
-		review.Status.LastRevisions = append(
-			[]*accessv1.Review_Status_Revision{revision},
-			review.Status.LastRevisions...,
-		)
-
-		if len(review.Status.LastRevisions) > maxReviewRevisions {
-			review.Status.LastRevisions = review.Status.LastRevisions[:maxReviewRevisions]
-		}
-	}
-
-	if review.Status.SetAt != nil {
-		review.Status.LastSetsAt = append(
-			[]*timestamppb.Timestamp{review.Status.SetAt},
-			review.Status.LastSetsAt...,
-		)
-
-		if len(review.Status.LastSetsAt) > maxReviewRevisions {
-			review.Status.LastSetsAt = review.Status.LastSetsAt[:maxReviewRevisions]
-		}
-	}
+	return ret
 }

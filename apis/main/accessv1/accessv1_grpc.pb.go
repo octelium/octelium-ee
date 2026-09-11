@@ -29,23 +29,42 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	MainService_CreateCatalog_FullMethodName = "/octelium.api.main.access.v1.MainService/CreateCatalog"
-	MainService_GetCatalog_FullMethodName    = "/octelium.api.main.access.v1.MainService/GetCatalog"
-	MainService_UpdateCatalog_FullMethodName = "/octelium.api.main.access.v1.MainService/UpdateCatalog"
-	MainService_DeleteCatalog_FullMethodName = "/octelium.api.main.access.v1.MainService/DeleteCatalog"
-	MainService_ListCatalog_FullMethodName   = "/octelium.api.main.access.v1.MainService/ListCatalog"
-	MainService_CreatePolicy_FullMethodName  = "/octelium.api.main.access.v1.MainService/CreatePolicy"
-	MainService_GetPolicy_FullMethodName     = "/octelium.api.main.access.v1.MainService/GetPolicy"
-	MainService_UpdatePolicy_FullMethodName  = "/octelium.api.main.access.v1.MainService/UpdatePolicy"
-	MainService_DeletePolicy_FullMethodName  = "/octelium.api.main.access.v1.MainService/DeletePolicy"
-	MainService_ListPolicy_FullMethodName    = "/octelium.api.main.access.v1.MainService/ListPolicy"
-	MainService_GetRequest_FullMethodName    = "/octelium.api.main.access.v1.MainService/GetRequest"
-	MainService_DeleteRequest_FullMethodName = "/octelium.api.main.access.v1.MainService/DeleteRequest"
-	MainService_ListRequest_FullMethodName   = "/octelium.api.main.access.v1.MainService/ListRequest"
-	MainService_RevokeRequest_FullMethodName = "/octelium.api.main.access.v1.MainService/RevokeRequest"
-	MainService_ListReview_FullMethodName    = "/octelium.api.main.access.v1.MainService/ListReview"
-	MainService_GetReview_FullMethodName     = "/octelium.api.main.access.v1.MainService/GetReview"
-	MainService_DeleteReview_FullMethodName  = "/octelium.api.main.access.v1.MainService/DeleteReview"
+	MainService_CreateCatalog_FullMethodName              = "/octelium.api.main.access.v1.MainService/CreateCatalog"
+	MainService_GetCatalog_FullMethodName                 = "/octelium.api.main.access.v1.MainService/GetCatalog"
+	MainService_UpdateCatalog_FullMethodName              = "/octelium.api.main.access.v1.MainService/UpdateCatalog"
+	MainService_DeleteCatalog_FullMethodName              = "/octelium.api.main.access.v1.MainService/DeleteCatalog"
+	MainService_ListCatalog_FullMethodName                = "/octelium.api.main.access.v1.MainService/ListCatalog"
+	MainService_CreatePolicy_FullMethodName               = "/octelium.api.main.access.v1.MainService/CreatePolicy"
+	MainService_GetPolicy_FullMethodName                  = "/octelium.api.main.access.v1.MainService/GetPolicy"
+	MainService_UpdatePolicy_FullMethodName               = "/octelium.api.main.access.v1.MainService/UpdatePolicy"
+	MainService_DeletePolicy_FullMethodName               = "/octelium.api.main.access.v1.MainService/DeletePolicy"
+	MainService_ListPolicy_FullMethodName                 = "/octelium.api.main.access.v1.MainService/ListPolicy"
+	MainService_GetRequest_FullMethodName                 = "/octelium.api.main.access.v1.MainService/GetRequest"
+	MainService_DeleteRequest_FullMethodName              = "/octelium.api.main.access.v1.MainService/DeleteRequest"
+	MainService_ListRequest_FullMethodName                = "/octelium.api.main.access.v1.MainService/ListRequest"
+	MainService_RevokeRequest_FullMethodName              = "/octelium.api.main.access.v1.MainService/RevokeRequest"
+	MainService_ListReview_FullMethodName                 = "/octelium.api.main.access.v1.MainService/ListReview"
+	MainService_GetReview_FullMethodName                  = "/octelium.api.main.access.v1.MainService/GetReview"
+	MainService_DeleteReview_FullMethodName               = "/octelium.api.main.access.v1.MainService/DeleteReview"
+	MainService_CreateIntegration_FullMethodName          = "/octelium.api.main.access.v1.MainService/CreateIntegration"
+	MainService_GetIntegration_FullMethodName             = "/octelium.api.main.access.v1.MainService/GetIntegration"
+	MainService_UpdateIntegration_FullMethodName          = "/octelium.api.main.access.v1.MainService/UpdateIntegration"
+	MainService_DeleteIntegration_FullMethodName          = "/octelium.api.main.access.v1.MainService/DeleteIntegration"
+	MainService_ListIntegration_FullMethodName            = "/octelium.api.main.access.v1.MainService/ListIntegration"
+	MainService_SynchronizeIntegration_FullMethodName     = "/octelium.api.main.access.v1.MainService/SynchronizeIntegration"
+	MainService_CreateIntegrationTarget_FullMethodName    = "/octelium.api.main.access.v1.MainService/CreateIntegrationTarget"
+	MainService_GetIntegrationTarget_FullMethodName       = "/octelium.api.main.access.v1.MainService/GetIntegrationTarget"
+	MainService_UpdateIntegrationTarget_FullMethodName    = "/octelium.api.main.access.v1.MainService/UpdateIntegrationTarget"
+	MainService_DeleteIntegrationTarget_FullMethodName    = "/octelium.api.main.access.v1.MainService/DeleteIntegrationTarget"
+	MainService_ListIntegrationTarget_FullMethodName      = "/octelium.api.main.access.v1.MainService/ListIntegrationTarget"
+	MainService_CreateIntegrationIdentity_FullMethodName  = "/octelium.api.main.access.v1.MainService/CreateIntegrationIdentity"
+	MainService_GetIntegrationIdentity_FullMethodName     = "/octelium.api.main.access.v1.MainService/GetIntegrationIdentity"
+	MainService_UpdateIntegrationIdentity_FullMethodName  = "/octelium.api.main.access.v1.MainService/UpdateIntegrationIdentity"
+	MainService_DeleteIntegrationIdentity_FullMethodName  = "/octelium.api.main.access.v1.MainService/DeleteIntegrationIdentity"
+	MainService_ListIntegrationIdentity_FullMethodName    = "/octelium.api.main.access.v1.MainService/ListIntegrationIdentity"
+	MainService_ResolveIntegrationIdentity_FullMethodName = "/octelium.api.main.access.v1.MainService/ResolveIntegrationIdentity"
+	MainService_GetIntegrationBinding_FullMethodName      = "/octelium.api.main.access.v1.MainService/GetIntegrationBinding"
+	MainService_ListIntegrationBinding_FullMethodName     = "/octelium.api.main.access.v1.MainService/ListIntegrationBinding"
 )
 
 // MainServiceClient is the client API for MainService service.
@@ -95,6 +114,47 @@ type MainServiceClient interface {
 	GetReview(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*Review, error)
 	// DeleteReview deletes a Review
 	DeleteReview(ctx context.Context, in *metav1.DeleteOptions, opts ...grpc.CallOption) (*metav1.OperationResult, error)
+	// CreateIntegration creates an Integration
+	CreateIntegration(ctx context.Context, in *Integration, opts ...grpc.CallOption) (*Integration, error)
+	// GetIntegration retrieves a specific Integration
+	GetIntegration(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*Integration, error)
+	// UpdateIntegration updates an Integration
+	UpdateIntegration(ctx context.Context, in *Integration, opts ...grpc.CallOption) (*Integration, error)
+	// DeleteIntegration deletes an Integration
+	DeleteIntegration(ctx context.Context, in *metav1.DeleteOptions, opts ...grpc.CallOption) (*metav1.OperationResult, error)
+	// ListIntegration lists Integrations
+	ListIntegration(ctx context.Context, in *ListIntegrationOptions, opts ...grpc.CallOption) (*IntegrationList, error)
+	// SynchronizeIntegration requests a refresh of the Integration's external
+	// tenant information and of its health.
+	SynchronizeIntegration(ctx context.Context, in *SynchronizeIntegrationRequest, opts ...grpc.CallOption) (*SynchronizeIntegrationResponse, error)
+	// CreateIntegrationTarget creates an IntegrationTarget
+	CreateIntegrationTarget(ctx context.Context, in *IntegrationTarget, opts ...grpc.CallOption) (*IntegrationTarget, error)
+	// GetIntegrationTarget retrieves a specific IntegrationTarget
+	GetIntegrationTarget(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*IntegrationTarget, error)
+	// UpdateIntegrationTarget updates an IntegrationTarget
+	UpdateIntegrationTarget(ctx context.Context, in *IntegrationTarget, opts ...grpc.CallOption) (*IntegrationTarget, error)
+	// DeleteIntegrationTarget deletes an IntegrationTarget
+	DeleteIntegrationTarget(ctx context.Context, in *metav1.DeleteOptions, opts ...grpc.CallOption) (*metav1.OperationResult, error)
+	// ListIntegrationTarget lists IntegrationTargets
+	ListIntegrationTarget(ctx context.Context, in *ListIntegrationTargetOptions, opts ...grpc.CallOption) (*IntegrationTargetList, error)
+	// CreateIntegrationIdentity creates an IntegrationIdentity
+	CreateIntegrationIdentity(ctx context.Context, in *IntegrationIdentity, opts ...grpc.CallOption) (*IntegrationIdentity, error)
+	// GetIntegrationIdentity retrieves a specific IntegrationIdentity
+	GetIntegrationIdentity(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*IntegrationIdentity, error)
+	// UpdateIntegrationIdentity updates an IntegrationIdentity
+	UpdateIntegrationIdentity(ctx context.Context, in *IntegrationIdentity, opts ...grpc.CallOption) (*IntegrationIdentity, error)
+	// DeleteIntegrationIdentity deletes an IntegrationIdentity
+	DeleteIntegrationIdentity(ctx context.Context, in *metav1.DeleteOptions, opts ...grpc.CallOption) (*metav1.OperationResult, error)
+	// ListIntegrationIdentity lists IntegrationIdentities
+	ListIntegrationIdentity(ctx context.Context, in *ListIntegrationIdentityOptions, opts ...grpc.CallOption) (*IntegrationIdentityList, error)
+	// ResolveIntegrationIdentity reports how an external actor of an
+	// Integration is currently resolved to a Cluster User. It is a diagnostic
+	// method that does not change any state.
+	ResolveIntegrationIdentity(ctx context.Context, in *ResolveIntegrationIdentityRequest, opts ...grpc.CallOption) (*ResolveIntegrationIdentityResponse, error)
+	// GetIntegrationBinding retrieves a specific IntegrationBinding
+	GetIntegrationBinding(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*IntegrationBinding, error)
+	// ListIntegrationBinding lists IntegrationBindings
+	ListIntegrationBinding(ctx context.Context, in *ListIntegrationBindingOptions, opts ...grpc.CallOption) (*IntegrationBindingList, error)
 }
 
 type mainServiceClient struct {
@@ -275,6 +335,196 @@ func (c *mainServiceClient) DeleteReview(ctx context.Context, in *metav1.DeleteO
 	return out, nil
 }
 
+func (c *mainServiceClient) CreateIntegration(ctx context.Context, in *Integration, opts ...grpc.CallOption) (*Integration, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Integration)
+	err := c.cc.Invoke(ctx, MainService_CreateIntegration_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mainServiceClient) GetIntegration(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*Integration, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Integration)
+	err := c.cc.Invoke(ctx, MainService_GetIntegration_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mainServiceClient) UpdateIntegration(ctx context.Context, in *Integration, opts ...grpc.CallOption) (*Integration, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Integration)
+	err := c.cc.Invoke(ctx, MainService_UpdateIntegration_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mainServiceClient) DeleteIntegration(ctx context.Context, in *metav1.DeleteOptions, opts ...grpc.CallOption) (*metav1.OperationResult, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(metav1.OperationResult)
+	err := c.cc.Invoke(ctx, MainService_DeleteIntegration_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mainServiceClient) ListIntegration(ctx context.Context, in *ListIntegrationOptions, opts ...grpc.CallOption) (*IntegrationList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IntegrationList)
+	err := c.cc.Invoke(ctx, MainService_ListIntegration_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mainServiceClient) SynchronizeIntegration(ctx context.Context, in *SynchronizeIntegrationRequest, opts ...grpc.CallOption) (*SynchronizeIntegrationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SynchronizeIntegrationResponse)
+	err := c.cc.Invoke(ctx, MainService_SynchronizeIntegration_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mainServiceClient) CreateIntegrationTarget(ctx context.Context, in *IntegrationTarget, opts ...grpc.CallOption) (*IntegrationTarget, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IntegrationTarget)
+	err := c.cc.Invoke(ctx, MainService_CreateIntegrationTarget_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mainServiceClient) GetIntegrationTarget(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*IntegrationTarget, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IntegrationTarget)
+	err := c.cc.Invoke(ctx, MainService_GetIntegrationTarget_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mainServiceClient) UpdateIntegrationTarget(ctx context.Context, in *IntegrationTarget, opts ...grpc.CallOption) (*IntegrationTarget, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IntegrationTarget)
+	err := c.cc.Invoke(ctx, MainService_UpdateIntegrationTarget_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mainServiceClient) DeleteIntegrationTarget(ctx context.Context, in *metav1.DeleteOptions, opts ...grpc.CallOption) (*metav1.OperationResult, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(metav1.OperationResult)
+	err := c.cc.Invoke(ctx, MainService_DeleteIntegrationTarget_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mainServiceClient) ListIntegrationTarget(ctx context.Context, in *ListIntegrationTargetOptions, opts ...grpc.CallOption) (*IntegrationTargetList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IntegrationTargetList)
+	err := c.cc.Invoke(ctx, MainService_ListIntegrationTarget_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mainServiceClient) CreateIntegrationIdentity(ctx context.Context, in *IntegrationIdentity, opts ...grpc.CallOption) (*IntegrationIdentity, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IntegrationIdentity)
+	err := c.cc.Invoke(ctx, MainService_CreateIntegrationIdentity_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mainServiceClient) GetIntegrationIdentity(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*IntegrationIdentity, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IntegrationIdentity)
+	err := c.cc.Invoke(ctx, MainService_GetIntegrationIdentity_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mainServiceClient) UpdateIntegrationIdentity(ctx context.Context, in *IntegrationIdentity, opts ...grpc.CallOption) (*IntegrationIdentity, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IntegrationIdentity)
+	err := c.cc.Invoke(ctx, MainService_UpdateIntegrationIdentity_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mainServiceClient) DeleteIntegrationIdentity(ctx context.Context, in *metav1.DeleteOptions, opts ...grpc.CallOption) (*metav1.OperationResult, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(metav1.OperationResult)
+	err := c.cc.Invoke(ctx, MainService_DeleteIntegrationIdentity_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mainServiceClient) ListIntegrationIdentity(ctx context.Context, in *ListIntegrationIdentityOptions, opts ...grpc.CallOption) (*IntegrationIdentityList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IntegrationIdentityList)
+	err := c.cc.Invoke(ctx, MainService_ListIntegrationIdentity_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mainServiceClient) ResolveIntegrationIdentity(ctx context.Context, in *ResolveIntegrationIdentityRequest, opts ...grpc.CallOption) (*ResolveIntegrationIdentityResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResolveIntegrationIdentityResponse)
+	err := c.cc.Invoke(ctx, MainService_ResolveIntegrationIdentity_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mainServiceClient) GetIntegrationBinding(ctx context.Context, in *metav1.GetOptions, opts ...grpc.CallOption) (*IntegrationBinding, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IntegrationBinding)
+	err := c.cc.Invoke(ctx, MainService_GetIntegrationBinding_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mainServiceClient) ListIntegrationBinding(ctx context.Context, in *ListIntegrationBindingOptions, opts ...grpc.CallOption) (*IntegrationBindingList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IntegrationBindingList)
+	err := c.cc.Invoke(ctx, MainService_ListIntegrationBinding_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MainServiceServer is the server API for MainService service.
 // All implementations must embed UnimplementedMainServiceServer
 // for forward compatibility.
@@ -322,6 +572,47 @@ type MainServiceServer interface {
 	GetReview(context.Context, *metav1.GetOptions) (*Review, error)
 	// DeleteReview deletes a Review
 	DeleteReview(context.Context, *metav1.DeleteOptions) (*metav1.OperationResult, error)
+	// CreateIntegration creates an Integration
+	CreateIntegration(context.Context, *Integration) (*Integration, error)
+	// GetIntegration retrieves a specific Integration
+	GetIntegration(context.Context, *metav1.GetOptions) (*Integration, error)
+	// UpdateIntegration updates an Integration
+	UpdateIntegration(context.Context, *Integration) (*Integration, error)
+	// DeleteIntegration deletes an Integration
+	DeleteIntegration(context.Context, *metav1.DeleteOptions) (*metav1.OperationResult, error)
+	// ListIntegration lists Integrations
+	ListIntegration(context.Context, *ListIntegrationOptions) (*IntegrationList, error)
+	// SynchronizeIntegration requests a refresh of the Integration's external
+	// tenant information and of its health.
+	SynchronizeIntegration(context.Context, *SynchronizeIntegrationRequest) (*SynchronizeIntegrationResponse, error)
+	// CreateIntegrationTarget creates an IntegrationTarget
+	CreateIntegrationTarget(context.Context, *IntegrationTarget) (*IntegrationTarget, error)
+	// GetIntegrationTarget retrieves a specific IntegrationTarget
+	GetIntegrationTarget(context.Context, *metav1.GetOptions) (*IntegrationTarget, error)
+	// UpdateIntegrationTarget updates an IntegrationTarget
+	UpdateIntegrationTarget(context.Context, *IntegrationTarget) (*IntegrationTarget, error)
+	// DeleteIntegrationTarget deletes an IntegrationTarget
+	DeleteIntegrationTarget(context.Context, *metav1.DeleteOptions) (*metav1.OperationResult, error)
+	// ListIntegrationTarget lists IntegrationTargets
+	ListIntegrationTarget(context.Context, *ListIntegrationTargetOptions) (*IntegrationTargetList, error)
+	// CreateIntegrationIdentity creates an IntegrationIdentity
+	CreateIntegrationIdentity(context.Context, *IntegrationIdentity) (*IntegrationIdentity, error)
+	// GetIntegrationIdentity retrieves a specific IntegrationIdentity
+	GetIntegrationIdentity(context.Context, *metav1.GetOptions) (*IntegrationIdentity, error)
+	// UpdateIntegrationIdentity updates an IntegrationIdentity
+	UpdateIntegrationIdentity(context.Context, *IntegrationIdentity) (*IntegrationIdentity, error)
+	// DeleteIntegrationIdentity deletes an IntegrationIdentity
+	DeleteIntegrationIdentity(context.Context, *metav1.DeleteOptions) (*metav1.OperationResult, error)
+	// ListIntegrationIdentity lists IntegrationIdentities
+	ListIntegrationIdentity(context.Context, *ListIntegrationIdentityOptions) (*IntegrationIdentityList, error)
+	// ResolveIntegrationIdentity reports how an external actor of an
+	// Integration is currently resolved to a Cluster User. It is a diagnostic
+	// method that does not change any state.
+	ResolveIntegrationIdentity(context.Context, *ResolveIntegrationIdentityRequest) (*ResolveIntegrationIdentityResponse, error)
+	// GetIntegrationBinding retrieves a specific IntegrationBinding
+	GetIntegrationBinding(context.Context, *metav1.GetOptions) (*IntegrationBinding, error)
+	// ListIntegrationBinding lists IntegrationBindings
+	ListIntegrationBinding(context.Context, *ListIntegrationBindingOptions) (*IntegrationBindingList, error)
 	mustEmbedUnimplementedMainServiceServer()
 }
 
@@ -382,6 +673,63 @@ func (UnimplementedMainServiceServer) GetReview(context.Context, *metav1.GetOpti
 }
 func (UnimplementedMainServiceServer) DeleteReview(context.Context, *metav1.DeleteOptions) (*metav1.OperationResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteReview not implemented")
+}
+func (UnimplementedMainServiceServer) CreateIntegration(context.Context, *Integration) (*Integration, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateIntegration not implemented")
+}
+func (UnimplementedMainServiceServer) GetIntegration(context.Context, *metav1.GetOptions) (*Integration, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetIntegration not implemented")
+}
+func (UnimplementedMainServiceServer) UpdateIntegration(context.Context, *Integration) (*Integration, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateIntegration not implemented")
+}
+func (UnimplementedMainServiceServer) DeleteIntegration(context.Context, *metav1.DeleteOptions) (*metav1.OperationResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteIntegration not implemented")
+}
+func (UnimplementedMainServiceServer) ListIntegration(context.Context, *ListIntegrationOptions) (*IntegrationList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListIntegration not implemented")
+}
+func (UnimplementedMainServiceServer) SynchronizeIntegration(context.Context, *SynchronizeIntegrationRequest) (*SynchronizeIntegrationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SynchronizeIntegration not implemented")
+}
+func (UnimplementedMainServiceServer) CreateIntegrationTarget(context.Context, *IntegrationTarget) (*IntegrationTarget, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateIntegrationTarget not implemented")
+}
+func (UnimplementedMainServiceServer) GetIntegrationTarget(context.Context, *metav1.GetOptions) (*IntegrationTarget, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetIntegrationTarget not implemented")
+}
+func (UnimplementedMainServiceServer) UpdateIntegrationTarget(context.Context, *IntegrationTarget) (*IntegrationTarget, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateIntegrationTarget not implemented")
+}
+func (UnimplementedMainServiceServer) DeleteIntegrationTarget(context.Context, *metav1.DeleteOptions) (*metav1.OperationResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteIntegrationTarget not implemented")
+}
+func (UnimplementedMainServiceServer) ListIntegrationTarget(context.Context, *ListIntegrationTargetOptions) (*IntegrationTargetList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListIntegrationTarget not implemented")
+}
+func (UnimplementedMainServiceServer) CreateIntegrationIdentity(context.Context, *IntegrationIdentity) (*IntegrationIdentity, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateIntegrationIdentity not implemented")
+}
+func (UnimplementedMainServiceServer) GetIntegrationIdentity(context.Context, *metav1.GetOptions) (*IntegrationIdentity, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetIntegrationIdentity not implemented")
+}
+func (UnimplementedMainServiceServer) UpdateIntegrationIdentity(context.Context, *IntegrationIdentity) (*IntegrationIdentity, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateIntegrationIdentity not implemented")
+}
+func (UnimplementedMainServiceServer) DeleteIntegrationIdentity(context.Context, *metav1.DeleteOptions) (*metav1.OperationResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteIntegrationIdentity not implemented")
+}
+func (UnimplementedMainServiceServer) ListIntegrationIdentity(context.Context, *ListIntegrationIdentityOptions) (*IntegrationIdentityList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListIntegrationIdentity not implemented")
+}
+func (UnimplementedMainServiceServer) ResolveIntegrationIdentity(context.Context, *ResolveIntegrationIdentityRequest) (*ResolveIntegrationIdentityResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ResolveIntegrationIdentity not implemented")
+}
+func (UnimplementedMainServiceServer) GetIntegrationBinding(context.Context, *metav1.GetOptions) (*IntegrationBinding, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetIntegrationBinding not implemented")
+}
+func (UnimplementedMainServiceServer) ListIntegrationBinding(context.Context, *ListIntegrationBindingOptions) (*IntegrationBindingList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListIntegrationBinding not implemented")
 }
 func (UnimplementedMainServiceServer) mustEmbedUnimplementedMainServiceServer() {}
 func (UnimplementedMainServiceServer) testEmbeddedByValue()                     {}
@@ -710,6 +1058,348 @@ func _MainService_DeleteReview_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MainService_CreateIntegration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Integration)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MainServiceServer).CreateIntegration(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MainService_CreateIntegration_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MainServiceServer).CreateIntegration(ctx, req.(*Integration))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MainService_GetIntegration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(metav1.GetOptions)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MainServiceServer).GetIntegration(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MainService_GetIntegration_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MainServiceServer).GetIntegration(ctx, req.(*metav1.GetOptions))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MainService_UpdateIntegration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Integration)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MainServiceServer).UpdateIntegration(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MainService_UpdateIntegration_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MainServiceServer).UpdateIntegration(ctx, req.(*Integration))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MainService_DeleteIntegration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(metav1.DeleteOptions)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MainServiceServer).DeleteIntegration(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MainService_DeleteIntegration_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MainServiceServer).DeleteIntegration(ctx, req.(*metav1.DeleteOptions))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MainService_ListIntegration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListIntegrationOptions)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MainServiceServer).ListIntegration(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MainService_ListIntegration_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MainServiceServer).ListIntegration(ctx, req.(*ListIntegrationOptions))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MainService_SynchronizeIntegration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SynchronizeIntegrationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MainServiceServer).SynchronizeIntegration(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MainService_SynchronizeIntegration_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MainServiceServer).SynchronizeIntegration(ctx, req.(*SynchronizeIntegrationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MainService_CreateIntegrationTarget_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IntegrationTarget)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MainServiceServer).CreateIntegrationTarget(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MainService_CreateIntegrationTarget_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MainServiceServer).CreateIntegrationTarget(ctx, req.(*IntegrationTarget))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MainService_GetIntegrationTarget_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(metav1.GetOptions)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MainServiceServer).GetIntegrationTarget(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MainService_GetIntegrationTarget_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MainServiceServer).GetIntegrationTarget(ctx, req.(*metav1.GetOptions))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MainService_UpdateIntegrationTarget_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IntegrationTarget)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MainServiceServer).UpdateIntegrationTarget(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MainService_UpdateIntegrationTarget_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MainServiceServer).UpdateIntegrationTarget(ctx, req.(*IntegrationTarget))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MainService_DeleteIntegrationTarget_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(metav1.DeleteOptions)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MainServiceServer).DeleteIntegrationTarget(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MainService_DeleteIntegrationTarget_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MainServiceServer).DeleteIntegrationTarget(ctx, req.(*metav1.DeleteOptions))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MainService_ListIntegrationTarget_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListIntegrationTargetOptions)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MainServiceServer).ListIntegrationTarget(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MainService_ListIntegrationTarget_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MainServiceServer).ListIntegrationTarget(ctx, req.(*ListIntegrationTargetOptions))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MainService_CreateIntegrationIdentity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IntegrationIdentity)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MainServiceServer).CreateIntegrationIdentity(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MainService_CreateIntegrationIdentity_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MainServiceServer).CreateIntegrationIdentity(ctx, req.(*IntegrationIdentity))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MainService_GetIntegrationIdentity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(metav1.GetOptions)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MainServiceServer).GetIntegrationIdentity(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MainService_GetIntegrationIdentity_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MainServiceServer).GetIntegrationIdentity(ctx, req.(*metav1.GetOptions))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MainService_UpdateIntegrationIdentity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IntegrationIdentity)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MainServiceServer).UpdateIntegrationIdentity(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MainService_UpdateIntegrationIdentity_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MainServiceServer).UpdateIntegrationIdentity(ctx, req.(*IntegrationIdentity))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MainService_DeleteIntegrationIdentity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(metav1.DeleteOptions)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MainServiceServer).DeleteIntegrationIdentity(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MainService_DeleteIntegrationIdentity_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MainServiceServer).DeleteIntegrationIdentity(ctx, req.(*metav1.DeleteOptions))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MainService_ListIntegrationIdentity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListIntegrationIdentityOptions)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MainServiceServer).ListIntegrationIdentity(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MainService_ListIntegrationIdentity_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MainServiceServer).ListIntegrationIdentity(ctx, req.(*ListIntegrationIdentityOptions))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MainService_ResolveIntegrationIdentity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResolveIntegrationIdentityRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MainServiceServer).ResolveIntegrationIdentity(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MainService_ResolveIntegrationIdentity_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MainServiceServer).ResolveIntegrationIdentity(ctx, req.(*ResolveIntegrationIdentityRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MainService_GetIntegrationBinding_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(metav1.GetOptions)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MainServiceServer).GetIntegrationBinding(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MainService_GetIntegrationBinding_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MainServiceServer).GetIntegrationBinding(ctx, req.(*metav1.GetOptions))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MainService_ListIntegrationBinding_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListIntegrationBindingOptions)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MainServiceServer).ListIntegrationBinding(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MainService_ListIntegrationBinding_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MainServiceServer).ListIntegrationBinding(ctx, req.(*ListIntegrationBindingOptions))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MainService_ServiceDesc is the grpc.ServiceDesc for MainService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -784,6 +1474,82 @@ var MainService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteReview",
 			Handler:    _MainService_DeleteReview_Handler,
+		},
+		{
+			MethodName: "CreateIntegration",
+			Handler:    _MainService_CreateIntegration_Handler,
+		},
+		{
+			MethodName: "GetIntegration",
+			Handler:    _MainService_GetIntegration_Handler,
+		},
+		{
+			MethodName: "UpdateIntegration",
+			Handler:    _MainService_UpdateIntegration_Handler,
+		},
+		{
+			MethodName: "DeleteIntegration",
+			Handler:    _MainService_DeleteIntegration_Handler,
+		},
+		{
+			MethodName: "ListIntegration",
+			Handler:    _MainService_ListIntegration_Handler,
+		},
+		{
+			MethodName: "SynchronizeIntegration",
+			Handler:    _MainService_SynchronizeIntegration_Handler,
+		},
+		{
+			MethodName: "CreateIntegrationTarget",
+			Handler:    _MainService_CreateIntegrationTarget_Handler,
+		},
+		{
+			MethodName: "GetIntegrationTarget",
+			Handler:    _MainService_GetIntegrationTarget_Handler,
+		},
+		{
+			MethodName: "UpdateIntegrationTarget",
+			Handler:    _MainService_UpdateIntegrationTarget_Handler,
+		},
+		{
+			MethodName: "DeleteIntegrationTarget",
+			Handler:    _MainService_DeleteIntegrationTarget_Handler,
+		},
+		{
+			MethodName: "ListIntegrationTarget",
+			Handler:    _MainService_ListIntegrationTarget_Handler,
+		},
+		{
+			MethodName: "CreateIntegrationIdentity",
+			Handler:    _MainService_CreateIntegrationIdentity_Handler,
+		},
+		{
+			MethodName: "GetIntegrationIdentity",
+			Handler:    _MainService_GetIntegrationIdentity_Handler,
+		},
+		{
+			MethodName: "UpdateIntegrationIdentity",
+			Handler:    _MainService_UpdateIntegrationIdentity_Handler,
+		},
+		{
+			MethodName: "DeleteIntegrationIdentity",
+			Handler:    _MainService_DeleteIntegrationIdentity_Handler,
+		},
+		{
+			MethodName: "ListIntegrationIdentity",
+			Handler:    _MainService_ListIntegrationIdentity_Handler,
+		},
+		{
+			MethodName: "ResolveIntegrationIdentity",
+			Handler:    _MainService_ResolveIntegrationIdentity_Handler,
+		},
+		{
+			MethodName: "GetIntegrationBinding",
+			Handler:    _MainService_GetIntegrationBinding_Handler,
+		},
+		{
+			MethodName: "ListIntegrationBinding",
+			Handler:    _MainService_ListIntegrationBinding_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -1277,13 +2043,14 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	ReviewerService_GetRequest_FullMethodName   = "/octelium.api.main.access.v1.ReviewerService/GetRequest"
-	ReviewerService_ListRequest_FullMethodName  = "/octelium.api.main.access.v1.ReviewerService/ListRequest"
-	ReviewerService_ListReview_FullMethodName   = "/octelium.api.main.access.v1.ReviewerService/ListReview"
-	ReviewerService_GetReview_FullMethodName    = "/octelium.api.main.access.v1.ReviewerService/GetReview"
-	ReviewerService_CreateReview_FullMethodName = "/octelium.api.main.access.v1.ReviewerService/CreateReview"
-	ReviewerService_UpdateReview_FullMethodName = "/octelium.api.main.access.v1.ReviewerService/UpdateReview"
-	ReviewerService_CancelReview_FullMethodName = "/octelium.api.main.access.v1.ReviewerService/CancelReview"
+	ReviewerService_GetRequest_FullMethodName        = "/octelium.api.main.access.v1.ReviewerService/GetRequest"
+	ReviewerService_ListRequest_FullMethodName       = "/octelium.api.main.access.v1.ReviewerService/ListRequest"
+	ReviewerService_ListReview_FullMethodName        = "/octelium.api.main.access.v1.ReviewerService/ListReview"
+	ReviewerService_GetReview_FullMethodName         = "/octelium.api.main.access.v1.ReviewerService/GetReview"
+	ReviewerService_CreateReview_FullMethodName      = "/octelium.api.main.access.v1.ReviewerService/CreateReview"
+	ReviewerService_UpdateReview_FullMethodName      = "/octelium.api.main.access.v1.ReviewerService/UpdateReview"
+	ReviewerService_CancelReview_FullMethodName      = "/octelium.api.main.access.v1.ReviewerService/CancelReview"
+	ReviewerService_SetReviewDecision_FullMethodName = "/octelium.api.main.access.v1.ReviewerService/SetReviewDecision"
 )
 
 // ReviewerServiceClient is the client API for ReviewerService service.
@@ -1312,6 +2079,13 @@ type ReviewerServiceClient interface {
 	// CancelReview resets the decision of a Review that has not yet been
 	// applied to its Request
 	CancelReview(ctx context.Context, in *CancelReviewRequest, opts ...grpc.CallOption) (*metav1.OperationResult, error)
+	// SetReviewDecision sets the decision of the calling User on a pending
+	// Request. It is an idempotent command that creates the Review of the
+	// Request's current review Step if it does not exist yet, or replaces its
+	// current decision otherwise. An unset decision withdraws it. The Cluster
+	// itself derives the reviewer, the reviewed Request, the review Step and
+	// the origin of the decision.
+	SetReviewDecision(ctx context.Context, in *SetReviewDecisionRequest, opts ...grpc.CallOption) (*Review, error)
 }
 
 type reviewerServiceClient struct {
@@ -1392,6 +2166,16 @@ func (c *reviewerServiceClient) CancelReview(ctx context.Context, in *CancelRevi
 	return out, nil
 }
 
+func (c *reviewerServiceClient) SetReviewDecision(ctx context.Context, in *SetReviewDecisionRequest, opts ...grpc.CallOption) (*Review, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Review)
+	err := c.cc.Invoke(ctx, ReviewerService_SetReviewDecision_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ReviewerServiceServer is the server API for ReviewerService service.
 // All implementations must embed UnimplementedReviewerServiceServer
 // for forward compatibility.
@@ -1418,6 +2202,13 @@ type ReviewerServiceServer interface {
 	// CancelReview resets the decision of a Review that has not yet been
 	// applied to its Request
 	CancelReview(context.Context, *CancelReviewRequest) (*metav1.OperationResult, error)
+	// SetReviewDecision sets the decision of the calling User on a pending
+	// Request. It is an idempotent command that creates the Review of the
+	// Request's current review Step if it does not exist yet, or replaces its
+	// current decision otherwise. An unset decision withdraws it. The Cluster
+	// itself derives the reviewer, the reviewed Request, the review Step and
+	// the origin of the decision.
+	SetReviewDecision(context.Context, *SetReviewDecisionRequest) (*Review, error)
 	mustEmbedUnimplementedReviewerServiceServer()
 }
 
@@ -1448,6 +2239,9 @@ func (UnimplementedReviewerServiceServer) UpdateReview(context.Context, *Review)
 }
 func (UnimplementedReviewerServiceServer) CancelReview(context.Context, *CancelReviewRequest) (*metav1.OperationResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CancelReview not implemented")
+}
+func (UnimplementedReviewerServiceServer) SetReviewDecision(context.Context, *SetReviewDecisionRequest) (*Review, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetReviewDecision not implemented")
 }
 func (UnimplementedReviewerServiceServer) mustEmbedUnimplementedReviewerServiceServer() {}
 func (UnimplementedReviewerServiceServer) testEmbeddedByValue()                         {}
@@ -1596,6 +2390,24 @@ func _ReviewerService_CancelReview_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ReviewerService_SetReviewDecision_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetReviewDecisionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReviewerServiceServer).SetReviewDecision(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReviewerService_SetReviewDecision_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReviewerServiceServer).SetReviewDecision(ctx, req.(*SetReviewDecisionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ReviewerService_ServiceDesc is the grpc.ServiceDesc for ReviewerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1630,6 +2442,10 @@ var ReviewerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CancelReview",
 			Handler:    _ReviewerService_CancelReview_Handler,
+		},
+		{
+			MethodName: "SetReviewDecision",
+			Handler:    _ReviewerService_SetReviewDecision_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

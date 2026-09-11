@@ -1,0 +1,12 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/SynchronizeIntegrationResponse",
+    "definitions": {
+        "SynchronizeIntegrationResponse": {
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Synchronize Integration Response",
+            "description": "SynchronizeIntegrationResponse is the response of the SynchronizeIntegration method."
+        }
+    }
+}

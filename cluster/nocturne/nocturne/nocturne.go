@@ -22,6 +22,8 @@ import (
 	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/controllers/devicemanagers"
 	devcontroller "github.com/octelium/octelium-ee/cluster/nocturne/nocturne/controllers/devices"
 	dpcontroller "github.com/octelium/octelium-ee/cluster/nocturne/nocturne/controllers/directoryproviders"
+	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/controllers/integrationbindings"
+	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/controllers/integrations"
 	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/controllers/requests"
 	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/controllers/reviews"
 	sesscontroller "github.com/octelium/octelium-ee/cluster/nocturne/nocturne/controllers/sessions"
@@ -149,6 +151,27 @@ func Run(ctx context.Context) error {
 		}
 	}
 
+	bindingCtl, err := integrationbindings.NewController(ctx, octeliumC)
+	if err != nil {
+		return err
+	}
+
+	{
+		ctl, err := integrations.NewController(ctx, octeliumC)
+		if err != nil {
+			return err
+		}
+		if err := aWatcher.Integration(ctx, nil,
+			ctl.OnAdd, ctl.OnUpdate, ctl.OnDelete); err != nil {
+			return err
+		}
+	}
+
+	if err := aWatcher.IntegrationBinding(ctx, nil,
+		bindingCtl.OnAdd, bindingCtl.OnUpdate, bindingCtl.OnDelete); err != nil {
+		return err
+	}
+
 	{
 		sessCtl, err := sesscontroller.NewController(ctx, octeliumC)
 		if err != nil {
@@ -160,7 +183,7 @@ func Run(ctx context.Context) error {
 		}
 	}
 
-	ewatcher.InitWatcher(octeliumC).Run(ctx)
+	ewatcher.InitWatcher(octeliumC, bindingCtl).Run(ctx)
 
 	zap.L().Info("Enterprise Nocturne is now running...")
 	healthcheck.Run(vutils.HealthCheckPortMain)

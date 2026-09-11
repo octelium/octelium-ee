@@ -34,15 +34,22 @@ const defaultMaxAccessDuration = 24 * time.Hour
 const PolicyTriggerNamePrefix = "access-request-"
 
 type Controller struct {
-	octeliumC octeliumc.ClientInterface
+	octeliumC     octeliumc.ClientInterface
+	clusterDomain string
 }
 
 func NewController(
 	ctx context.Context,
 	octeliumC octeliumc.ClientInterface,
 ) (*Controller, error) {
+	cc, err := octeliumC.CoreV1Utils().GetClusterConfig(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Controller{
-		octeliumC: octeliumC,
+		octeliumC:     octeliumC,
+		clusterDomain: cc.Status.Domain,
 	}, nil
 }
 
@@ -55,10 +62,22 @@ func (c *Controller) OnUpdate(ctx context.Context, new, old *accessv1.Request) e
 }
 
 func (c *Controller) OnDelete(ctx context.Context, itm *accessv1.Request) error {
+	if err := c.deleteIntegrationBindings(ctx, itm); err != nil {
+		return err
+	}
+
 	return c.deletePolicyTriggerOf(ctx, itm)
 }
 
 func (c *Controller) reconcile(ctx context.Context, itm *accessv1.Request) error {
+	if err := c.doReconcile(ctx, itm); err != nil {
+		return err
+	}
+
+	return c.ensureIntegrationBindings(ctx, itm)
+}
+
+func (c *Controller) doReconcile(ctx context.Context, itm *accessv1.Request) error {
 	next := pbutils.Clone(itm).(*accessv1.Request)
 
 	if next.Status.State == nil ||
@@ -127,6 +146,8 @@ func (c *Controller) initializeRequest(ctx context.Context, req *accessv1.Reques
 		c.setState(req, accessv1.Request_Status_State_REJECTED)
 
 	case accessv1.Policy_Spec_Rule_REVIEW:
+		c.setEffectiveDuration(req, rule.Authorization)
+
 		if rule.Action == nil || rule.Action.GetReview() == nil {
 			return errors.Errorf("matched review rule %q has no review action", rule.Name)
 		}
@@ -149,6 +170,8 @@ func (c *Controller) initializeRequest(ctx context.Context, req *accessv1.Reques
 		}
 
 	case accessv1.Policy_Spec_Rule_AUTO_APPROVE:
+		c.setEffectiveDuration(req, rule.Authorization)
+
 		c.setState(req, accessv1.Request_Status_State_APPROVED)
 
 		if req.Status.ApprovalStartAt == nil {
@@ -629,7 +652,10 @@ func (c *Controller) ensureAccessEndsAt(req *accessv1.Request) {
 		return
 	}
 
-	accessDuration := c.getAccessDuration(req, req.Status.Rule.Authorization)
+	accessDuration := umetav1.ToDuration(req.Status.EffectiveDuration).ToGo()
+	if accessDuration <= 0 {
+		accessDuration = c.getAccessDuration(req, req.Status.Rule.Authorization)
+	}
 	if accessDuration <= 0 {
 		return
 	}
@@ -691,6 +717,22 @@ func (c *Controller) setState(req *accessv1.Request, status accessv1.Request_Sta
 		if req.Status.ApprovalEndAt == nil {
 			req.Status.ApprovalEndAt = now
 		}
+	}
+}
+
+func (c *Controller) setEffectiveDuration(
+	req *accessv1.Request,
+	authz *accessv1.Policy_Spec_Rule_Authorization,
+) {
+	accessDuration := c.getAccessDuration(req, authz)
+	if accessDuration <= 0 {
+		return
+	}
+
+	req.Status.EffectiveDuration = &metav1.Duration{
+		Type: &metav1.Duration_Seconds{
+			Seconds: uint32(accessDuration.Seconds()),
+		},
 	}
 }
 

@@ -11,6 +11,7 @@ package access
 import (
 	"context"
 
+	"github.com/octelium/octelium-ee/cluster/common/accessintg"
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
@@ -154,6 +155,12 @@ func (s *ServerMain) validatePolicy(ctx context.Context, req *accessv1.Policy) e
 
 		if err := s.validatePolicyCondition(ctx, rule.Condition, 0); err != nil {
 			return err
+		}
+
+		for _, surface := range rule.Notifications {
+			if err := s.validatePolicySurface(ctx, rule.Name, surface, false); err != nil {
+				return err
+			}
 		}
 
 		switch rule.Effect {
@@ -362,10 +369,27 @@ func (s *ServerMain) validatePolicyReview(ctx context.Context,
 		return grpcutils.InvalidArg("Rule %s Review must include at least one Step", ruleName)
 	}
 
+	seenSteps := map[string]struct{}{}
+
 	for idx, step := range review.Steps {
 		if step == nil {
 			return grpcutils.InvalidArg("Rule %s Review Step %d is nil", ruleName, idx)
 		}
+
+		if step.Name == "" {
+			return grpcutils.InvalidArg("Rule %s Review Step %d name must be set", ruleName, idx)
+		}
+
+		if err := apivalidation.ValidateName(step.Name, 0, 0); err != nil {
+			return grpcutils.InvalidArg("Rule %s Review Step %d has an invalid name: %s",
+				ruleName, idx, step.Name)
+		}
+
+		if _, ok := seenSteps[step.Name]; ok {
+			return grpcutils.InvalidArg("Rule %s has a duplicate Review Step name: %s",
+				ruleName, step.Name)
+		}
+		seenSteps[step.Name] = struct{}{}
 
 		if len(step.Reviewers) == 0 {
 			return grpcutils.InvalidArg("Rule %s Review Step %d must include at least one Reviewer", ruleName, idx)
@@ -421,12 +445,130 @@ func (s *ServerMain) validatePolicyReview(ctx context.Context,
 		}
 
 		switch step.ApprovalRequirement {
-		case accessv1.Policy_Spec_Rule_Action_Review_Step_ALL,
-			accessv1.Policy_Spec_Rule_Action_Review_Step_ANY,
-			accessv1.Policy_Spec_Rule_Action_Review_Step_COUNT:
+		case accessv1.Policy_Spec_Rule_Action_Review_Step_ANY,
+			accessv1.Policy_Spec_Rule_Action_Review_Step_ALL:
+			if step.ApprovalCount != 0 {
+				return grpcutils.InvalidArg(
+					"Rule %s Review Step %s must not set approvalCount", ruleName, step.Name)
+			}
+
+		case accessv1.Policy_Spec_Rule_Action_Review_Step_COUNT:
+			if step.ApprovalCount == 0 {
+				return grpcutils.InvalidArg(
+					"Rule %s Review Step %s must set approvalCount", ruleName, step.Name)
+			}
+
 		default:
 			return grpcutils.InvalidArg("Rule %s Review Step %d has invalid OnApproval", ruleName, idx)
 		}
+
+		if step.Timeout != nil {
+			if err := apivalidation.ValidateDuration(step.Timeout); err != nil {
+				return err
+			}
+		}
+
+		for _, surface := range step.Surfaces {
+			if err := s.validatePolicySurface(ctx, ruleName, surface, true); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (s *ServerMain) validatePolicySurface(ctx context.Context, ruleName string,
+	surface *accessv1.Policy_Spec_Rule_Surface, isReviewSurface bool) error {
+	if surface == nil {
+		return grpcutils.InvalidArg("Rule %s has a nil Surface", ruleName)
+	}
+
+	if surface.Destination == nil {
+		return grpcutils.InvalidArg("Rule %s has a Surface without a destination", ruleName)
+	}
+
+	switch surface.InteractionMode {
+	case accessv1.Policy_Spec_Rule_Surface_INTERACTION_MODE_UNSET,
+		accessv1.Policy_Spec_Rule_Surface_DEEP_LINK_ONLY,
+		accessv1.Policy_Spec_Rule_Surface_INTERACTIVE:
+	default:
+		return grpcutils.InvalidArg("Rule %s has a Surface with an invalid interactionMode", ruleName)
+	}
+
+	switch surface.Destination.Type.(type) {
+	case *accessv1.Policy_Spec_Rule_Surface_Destination_Reviewers_:
+		if !isReviewSurface {
+			return grpcutils.InvalidArg(
+				"Rule %s cannot notify the reviewers outside of a review Step", ruleName)
+		}
+
+		return s.validateSurfaceIntegration(ctx, ruleName,
+			surface.Destination.GetReviewers().GetIntegrationRef(),
+			accessv1.Integration_Status_DIRECT_USER_DELIVERY)
+
+	case *accessv1.Policy_Spec_Rule_Surface_Destination_Requester_:
+		if isReviewSurface {
+			return grpcutils.InvalidArg(
+				"Rule %s cannot present a review Step to the requester", ruleName)
+		}
+
+		return s.validateSurfaceIntegration(ctx, ruleName,
+			surface.Destination.GetRequester().GetIntegrationRef(),
+			accessv1.Integration_Status_DIRECT_USER_DELIVERY)
+
+	case *accessv1.Policy_Spec_Rule_Surface_Destination_Subject_:
+		if isReviewSurface {
+			return grpcutils.InvalidArg(
+				"Rule %s cannot present a review Step to the subject", ruleName)
+		}
+
+		return s.validateSurfaceIntegration(ctx, ruleName,
+			surface.Destination.GetSubject().GetIntegrationRef(),
+			accessv1.Integration_Status_DIRECT_USER_DELIVERY)
+
+	case *accessv1.Policy_Spec_Rule_Surface_Destination_TargetRef:
+		if err := apivalidation.CheckObjectRef(surface.Destination.GetTargetRef(),
+			&apivalidation.CheckGetOptionsOpts{}); err != nil {
+			return err
+		}
+
+		target, err := s.octeliumC.AccessC().GetIntegrationTarget(ctx,
+			apivalidation.ObjectReferenceToRGetOptions(surface.Destination.GetTargetRef()))
+		if err != nil {
+			if grpcerr.IsNotFound(err) {
+				return grpcutils.InvalidArg("The IntegrationTarget does not exist")
+			}
+			return grpcutils.InternalWithErr(err)
+		}
+
+		return s.validateSurfaceIntegration(ctx, ruleName, target.Spec.IntegrationRef,
+			accessv1.Integration_Status_NOTIFICATION)
+
+	default:
+		return grpcutils.InvalidArg("Rule %s has a Surface without a destination type", ruleName)
+	}
+}
+
+func (s *ServerMain) validateSurfaceIntegration(ctx context.Context, ruleName string,
+	ref *metav1.ObjectReference, capability accessv1.Integration_Status_Capability) error {
+	if err := apivalidation.CheckObjectRef(ref, &apivalidation.CheckGetOptionsOpts{}); err != nil {
+		return err
+	}
+
+	integration, err := s.octeliumC.AccessC().GetIntegration(ctx,
+		apivalidation.ObjectReferenceToRGetOptions(ref))
+	if err != nil {
+		if grpcerr.IsNotFound(err) {
+			return grpcutils.InvalidArg("The Integration does not exist")
+		}
+		return grpcutils.InternalWithErr(err)
+	}
+
+	if !accessintg.HasCapability(integration, capability) {
+		return grpcutils.InvalidArg(
+			"Rule %s uses the Integration %s which does not support %s",
+			ruleName, integration.Metadata.Name, capability.String())
 	}
 
 	return nil

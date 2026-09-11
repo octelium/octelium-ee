@@ -16,6 +16,7 @@ import (
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/tests"
+	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/controllers/integrationbindings"
 	"github.com/octelium/octelium-ee/cluster/nocturne/nocturne/controllers/requests"
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/corev1"
@@ -37,7 +38,10 @@ func newWatcherTest(t *testing.T) (context.Context, *Watcher, octeliumc.ClientIn
 		tst.Destroy()
 	})
 
-	return ctx, InitWatcher(tst.C.OcteliumC), tst.C.OcteliumC
+	bindingCtl, err := integrationbindings.NewController(ctx, tst.C.OcteliumC)
+	assert.Nil(t, err)
+
+	return ctx, InitWatcher(tst.C.OcteliumC, bindingCtl), tst.C.OcteliumC
 }
 
 func objRef(kind string) *metav1.ObjectReference {

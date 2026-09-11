@@ -1,0 +1,646 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/Integration",
+    "definitions": {
+        "Integration": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version (i.e. \"access/v1\")"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource name (i.e. `Integration`)."
+                },
+                "metadata": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.Metadata",
+                    "additionalProperties": false,
+                    "description": "Metadata is the object's metadata."
+                },
+                "spec": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Integration.Spec",
+                    "additionalProperties": false,
+                    "description": "Spec is the Integration specification."
+                },
+                "status": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Integration.Status",
+                    "additionalProperties": false,
+                    "description": "Status is the current status of the Integration."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Integration",
+            "description": "Integration is a connection to an external provider (e.g. a chat or a ticketing system) that the Cluster uses to present its access Requests to their reviewers, to notify the requesters of the outcomes and, when it is explicitly trusted to do so, to accept the decisions and the Requests of its own external actors. An Integration never decides anything by itself: the Cluster remains the only owner of the access Requests, of the reviewer eligibility, of the approval requirements and of the granted access."
+        },
+        "octelium.api.main.access.v1.Integration.Spec": {
+            "properties": {
+                "isDisabled": {
+                    "type": "boolean",
+                    "description": "IsDisabled disables the Integration. A disabled Integration neither delivers anything nor accepts any inbound request."
+                },
+                "identityResolution": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Integration.Spec.IdentityResolution",
+                    "additionalProperties": false,
+                    "description": "IdentityResolution controls how the external actors of the Integration are resolved to the Cluster Users."
+                },
+                "slack": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Integration.Spec.Slack",
+                    "additionalProperties": false,
+                    "description": "Slack sets the Slack specific options."
+                },
+                "jira": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Integration.Spec.Jira",
+                    "additionalProperties": false,
+                    "description": "Jira sets the Jira specific options."
+                },
+                "webhook": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Integration.Spec.Webhook",
+                    "additionalProperties": false,
+                    "description": "Webhook sets the generic webhook specific options."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "slack"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "jira"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "webhook"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "slack"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "jira"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "webhook"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Spec",
+            "description": "Spec is the Integration specification"
+        },
+        "octelium.api.main.access.v1.Integration.Spec.IdentityResolution": {
+            "properties": {
+                "disableEmailDiscovery": {
+                    "type": "boolean",
+                    "description": "DisableEmailDiscovery disables resolving an external actor from the email that the provider itself reports for it. When it is disabled, only the explicitly set IntegrationIdentities are used."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Identity Resolution",
+            "description": "IdentityResolution controls how the external actors of the Integration are resolved to the Cluster Users"
+        },
+        "octelium.api.main.access.v1.Integration.Spec.Jira": {
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "URL is the base URL of the Jira site (e.g. `https://example.atlassian.net`). Required."
+                },
+                "email": {
+                    "type": "string",
+                    "description": "Email is the email of the Atlassian account whose API token is used to access the Jira REST API. Required."
+                },
+                "apiToken": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Integration.Spec.Jira.APIToken",
+                    "additionalProperties": false,
+                    "description": "APIToken is the API token of the Atlassian account. Required."
+                },
+                "webhookSecret": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Integration.Spec.Jira.WebhookSecret",
+                    "additionalProperties": false,
+                    "description": "WebhookSecret is the secret that Jira signs its webhook deliveries with. It is required in order to accept any inbound Jira request."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Jira",
+            "description": "Jira sets the Jira specific options"
+        },
+        "octelium.api.main.access.v1.Integration.Spec.Jira.APIToken": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the API token"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "API Token",
+            "description": "APIToken is the API token of the Atlassian account"
+        },
+        "octelium.api.main.access.v1.Integration.Spec.Jira.WebhookSecret": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the webhook secret"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Webhook Secret",
+            "description": "WebhookSecret is the shared secret of the Jira webhook"
+        },
+        "octelium.api.main.access.v1.Integration.Spec.Slack": {
+            "properties": {
+                "botToken": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Integration.Spec.Slack.BotToken",
+                    "additionalProperties": false,
+                    "description": "BotToken is the bot token (i.e. `xoxb-...`) of the Slack app. Required."
+                },
+                "signingSecret": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Integration.Spec.Slack.SigningSecret",
+                    "additionalProperties": false,
+                    "description": "SigningSecret is the signing secret that is used to verify the requests that Slack sends to the Cluster. Required."
+                },
+                "teamID": {
+                    "type": "string",
+                    "description": "TeamID is the ID of the Slack workspace (i.e. `T...`) that the Integration is bound to. The inbound requests of any other workspace are rejected. It is discovered by the Cluster if it is unset."
+                },
+                "baseURL": {
+                    "type": "string",
+                    "description": "BaseURL overrides the base URL of the Slack API. If unset, the default public API URL is used."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Slack",
+            "description": "Slack sets the Slack specific options"
+        },
+        "octelium.api.main.access.v1.Integration.Spec.Slack.BotToken": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the bot token"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Bot Token",
+            "description": "BotToken is the token of the Slack app"
+        },
+        "octelium.api.main.access.v1.Integration.Spec.Slack.SigningSecret": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the signing secret"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Signing Secret",
+            "description": "SigningSecret is the signing secret of the Slack app"
+        },
+        "octelium.api.main.access.v1.Integration.Spec.Webhook": {
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "URL is the URL that the Cluster delivers its presentations to. Required."
+                },
+                "signingSecret": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Integration.Spec.Webhook.SigningSecret",
+                    "additionalProperties": false,
+                    "description": "SigningSecret is the secret that the Cluster signs its outbound deliveries with using HMAC-SHA256 over the raw request body. The signature is sent in the `X-Octelium-Signature` header together with the `X-Octelium-Timestamp` header. Required."
+                },
+                "inboundSecret": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Integration.Spec.Webhook.InboundSecret",
+                    "additionalProperties": false,
+                    "description": "InboundSecret is the secret that the external system signs its requests to the Cluster with using the same scheme as the outbound deliveries. It is required in order to accept any inbound request."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Webhook",
+            "description": "Webhook sets the generic webhook specific options. It is the escape hatch that lets the Requests be delivered to, and be acted upon by, the systems that the Cluster does not natively support."
+        },
+        "octelium.api.main.access.v1.Integration.Spec.Webhook.InboundSecret": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the inbound secret"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Inbound Secret",
+            "description": "InboundSecret is the secret of the inbound requests"
+        },
+        "octelium.api.main.access.v1.Integration.Spec.Webhook.SigningSecret": {
+            "properties": {
+                "fromSecret": {
+                    "type": "string",
+                    "description": "FromSecret sets the name of the Secret whose value contains the signing secret"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "fromSecret"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "fromSecret"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "Signing Secret",
+            "description": "SigningSecret is the secret that the outbound deliveries are signed with"
+        },
+        "octelium.api.main.access.v1.Integration.Status": {
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "ID is an opaque identifier that is generated by the Cluster upon the Integration's creation. It is the path segment that identifies the Integration in the Cluster's inbound integration endpoints which are served by the Cluster's public Service at `/integration/v1/callback/\u003cID\u003e/\u003cprovider\u003e/...` (e.g. `/slack/interactions`, `/slack/commands`, `/slack/events`, `/jira/webhook` and `/webhook`)."
+                },
+                "type": {
+                    "enum": [
+                        "TYPE_UNSET",
+                        "SLACK",
+                        "JIRA",
+                        "WEBHOOK"
+                    ],
+                    "type": "string",
+                    "title": "Type",
+                    "description": "Type is the provider of the Integration"
+                },
+                "state": {
+                    "enum": [
+                        "STATE_UNSET",
+                        "READY",
+                        "DEGRADED",
+                        "ERROR"
+                    ],
+                    "type": "string",
+                    "title": "State",
+                    "description": "State is the current health of the Integration"
+                },
+                "capabilities": {
+                    "items": {
+                        "enum": [
+                            "CAPABILITY_UNSET",
+                            "NOTIFICATION",
+                            "DIRECT_USER_DELIVERY",
+                            "INTERACTIVE_REVIEW",
+                            "REQUEST_CREATION",
+                            "IDENTITY_RESOLUTION",
+                            "PRESENTATION_UPDATE"
+                        ]
+                    },
+                    "type": "array",
+                    "title": "Capability",
+                    "description": "Capability is an operation that the Integration's provider supports"
+                },
+                "externalTenantID": {
+                    "type": "string",
+                    "description": "ExternalTenantID is the identifier of the provider's tenant that the Integration is bound to (e.g. a Slack workspace ID). Every inbound request of any other tenant is rejected."
+                },
+                "externalTenantName": {
+                    "type": "string",
+                    "description": "ExternalTenantName is the human readable name of the provider's tenant."
+                },
+                "lastSuccessAt": {
+                    "type": "string",
+                    "description": "LastSuccessAt is the time of the last successful provider operation.",
+                    "format": "date-time"
+                },
+                "lastFailureAt": {
+                    "type": "string",
+                    "description": "LastFailureAt is the time of the last failed provider operation.",
+                    "format": "date-time"
+                },
+                "lastError": {
+                    "type": "string",
+                    "description": "LastError is the error of the last failed provider operation."
+                },
+                "synchronization": {
+                    "$ref": "#/definitions/octelium.api.main.access.v1.Integration.Status.Synchronization",
+                    "additionalProperties": false,
+                    "description": "Synchronization is the currently ongoing or last requested synchronization."
+                },
+                "lastSynchronizations": {
+                    "items": {
+                        "$ref": "#/definitions/octelium.api.main.access.v1.Integration.Status.Synchronization"
+                    },
+                    "additionalProperties": false,
+                    "type": "array",
+                    "description": "LastSynchronizations is the list of the most recent synchronizations."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Status",
+            "description": "Status is the current status of the Integration"
+        },
+        "octelium.api.main.access.v1.Integration.Status.Synchronization": {
+            "properties": {
+                "createdAt": {
+                    "type": "string",
+                    "description": "CreatedAt is the date at which the synchronization was requested.",
+                    "format": "date-time"
+                },
+                "state": {
+                    "enum": [
+                        "STATE_UNSET",
+                        "SYNC_REQUESTED",
+                        "SYNCING",
+                        "SUCCESS",
+                        "FAILED"
+                    ],
+                    "type": "string",
+                    "title": "State",
+                    "description": "State is the current state of the synchronization"
+                },
+                "completedAt": {
+                    "type": "string",
+                    "description": "CompletedAt is the date at which the synchronization completed or failed.",
+                    "format": "date-time"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Synchronization",
+            "description": "Synchronization is the state of a refresh of the Integration's external information"
+        },
+        "octelium.api.main.meta.v1.Metadata": {
+            "properties": {
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the unique UUID value for the object assigned by the Cluster. Read-only."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the name of the object. It must be unique within a certain API/Version/Kind tuple."
+                },
+                "createdAt": {
+                    "type": "string",
+                    "description": "CreatedAt is the timestamp of creation of the object. Read-only.",
+                    "format": "date-time"
+                },
+                "updatedAt": {
+                    "type": "string",
+                    "description": "UpdatedAt is the timestamp of when the object was last updated. Read-only.",
+                    "format": "date-time"
+                },
+                "displayName": {
+                    "type": "string",
+                    "description": "DisplayName is the name that can be shown publicly for the object. Doesn't need to be unique."
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Description is used to describe the object in a short sentence. Maximum characters are 1000."
+                },
+                "labels": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "Labels is a map of string keys and values to organize objects."
+                },
+                "tags": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array",
+                    "description": "Tags is an optional array of tags that classify the Resource."
+                },
+                "annotations": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "Annotations is a map of string keys and values that can be used to store arbitrary metadata about the object."
+                },
+                "picURL": {
+                    "type": "string",
+                    "description": "PicURL is the Picture URL of the resource."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is a unique ID that represent the current version of the resource object. Used by the Cluster to detect updates."
+                },
+                "lastResourceVersion": {
+                    "type": "string",
+                    "description": "LastResourceVersion is the ResourceVersion of the last update of the Resource."
+                },
+                "actorRef": {
+                    "$ref": "#/definitions/octelium.api.main.meta.v1.ObjectReference",
+                    "additionalProperties": false,
+                    "description": "ActorRef is the object reference to the Actor resource, typically a Session, who is responsible for the current resource change. If ActorRef is not set, then the current change of the resource was done by the Cluster"
+                },
+                "actorOperation": {
+                    "type": "string",
+                    "description": "ActorOperation is the gRPC full method triggered by the actorRef to modify the Resource"
+                },
+                "isSystem": {
+                    "type": "boolean",
+                    "description": "IsSystem means that the resource is created by the Cluster and it cannot be managed by the administrators. Read-only."
+                },
+                "specLabels": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "SpecLabels is map used internally by the Cluster for quick searches among lists of objects. Read-only."
+                },
+                "isUserHidden": {
+                    "type": "boolean",
+                    "description": "IsUserHidden means that the resource object is hidden from ordinary Users and should not be exposed via the User APIs."
+                },
+                "isSystemHidden": {
+                    "type": "boolean",
+                    "description": "IsSystemHidden means that the resource object is hidden by the Cluster and should not be exposed via the APIs."
+                },
+                "systemLabels": {
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "type": "object",
+                    "description": "SystemLabels is a similar map to specLabels. Used only by the Cluster."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Metadata",
+            "description": "Metadata is the metadata that is common to every Cluster resource. It carries the resource's identity (i.e. its UID and name), its human-readable information as well as the Cluster-managed bookkeeping of the resource's versioning and provenance."
+        },
+        "octelium.api.main.meta.v1.ObjectReference": {
+            "properties": {
+                "apiVersion": {
+                    "type": "string",
+                    "description": "APIVersion is the API version of the reference resource"
+                },
+                "kind": {
+                    "type": "string",
+                    "description": "Kind is the resource kind. A kind is unique per an APIVersion."
+                },
+                "uid": {
+                    "type": "string",
+                    "description": "UID is the resource object UID. A UID is unique across the entire Cluster."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name is the resource object name. A name is unique per a certain kind."
+                },
+                "resourceVersion": {
+                    "type": "string",
+                    "description": "ResourceVersion is the resourceVersion of the resource."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Object Reference",
+            "description": "ObjectReference is a reference to another Cluster resource. It identifies the referenced resource by its kind and either its UID or its name."
+        }
+    }
+}

@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/asaskevich/govalidator"
+	"github.com/octelium/octelium-ee/cluster/common/accessintg/ingress"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
 	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
@@ -40,6 +41,8 @@ type Server struct {
 
 	clusterDomain string
 	rootURL       string
+
+	integrationSrv *ingress.Server
 
 	oidcInfo atomic.Value
 }
@@ -73,9 +76,10 @@ func newServer(ctx context.Context, octeliumC octeliumc.ClientInterface) (*Serve
 	}
 
 	ret := &Server{
-		octeliumC:     octeliumC,
-		clusterDomain: cc.Status.Domain,
-		rootURL:       fmt.Sprintf("https://public.octelium.%s", cc.Status.Domain),
+		octeliumC:      octeliumC,
+		clusterDomain:  cc.Status.Domain,
+		rootURL:        fmt.Sprintf("https://public.octelium.%s", cc.Status.Domain),
+		integrationSrv: ingress.NewServer(octeliumC, cc.Status.Domain),
 	}
 
 	ret.oidcInfo.Store(map[string]*oidcInfo{})
@@ -145,6 +149,8 @@ func (s *Server) Run(ctx context.Context) error {
 		if err := srv.Shutdown(shutdownCtx); err != nil {
 			zap.L().Warn("Could not gracefully shutdown publicserver", zap.Error(err))
 		}
+
+		s.integrationSrv.Close()
 	}()
 
 	go func() {
@@ -179,6 +185,9 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case strings.HasPrefix(r.URL.Path, "/.well-known"):
 		s.handleWellKnown(w, r)
+		return
+	case strings.HasPrefix(r.URL.Path, integrationPathPrefix):
+		s.handleIntegration(w, r)
 		return
 	default:
 		http.NotFound(w, r)
