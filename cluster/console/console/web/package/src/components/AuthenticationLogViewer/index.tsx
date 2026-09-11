@@ -229,7 +229,7 @@ const AuthenticationLogDetails = ({
 
         {info?.details.oneofKind === "identityProvider" && (
           <>
-            {info.details.identityProvider.type != null && (
+            {info.details.identityProvider.type > 0 && (
               <DetailField label="Provider type">
                 {
                   IdentityProvider_Status_Type[
@@ -263,7 +263,7 @@ const AuthenticationLogDetails = ({
 
         {info?.details.oneofKind === "credential" && (
           <>
-            {info.details.credential.type != null && (
+            {info.details.credential.type > 0 && (
               <DetailField label="Credential type">
                 {Credential_Spec_Type[info.details.credential.type]}
               </DetailField>
@@ -298,7 +298,7 @@ const AuthenticationLogDetails = ({
                 />
               </div>
             )}
-            {info.details.authenticator.type != null && (
+            {info.details.authenticator.type > 0 && (
               <DetailField label="Authenticator type">
                 {Authenticator_Status_Type[info.details.authenticator.type]}
               </DetailField>
@@ -423,7 +423,11 @@ export const AuthenticationLogC = ({
     info.aal !== Session_Status_Authentication_Info_AAL.AAL_UNSET
       ? getAALName(info.aal)
       : null;
-  const userName = entry.userRef?.name ?? entry.userRef?.uid;
+  const userName =
+    entry.userRef?.name ??
+    entry.userRef?.uid ??
+    x.metadata?.actorRef?.name ??
+    x.metadata?.actorRef?.uid;
   const sessionName = entry.sessionRef?.name ?? entry.sessionRef?.uid;
   const detailName =
     info?.details.oneofKind === "identityProvider"

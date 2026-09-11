@@ -11,6 +11,8 @@ import {
   AccessLog_Entry_Info_SSH_Type,
   AccessLog_Entry_Info_TCP_Type,
   AccessLog_Entry_Info_UDP_Type,
+  Service_Spec_Config_LLM_Operation,
+  Service_Spec_Config_LLM_Protocol,
   Service_Spec_Mode,
 } from "@/apis/corev1/corev1";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
@@ -658,6 +660,42 @@ const AccessLogDetails = ({ accessLog }: { accessLog: AccessLog }) => {
             )}
           </>
         )}
+
+        {info.type.oneofKind === "llm" && (
+          <>
+            {info.type.llm.model?.requested && (
+              <DetailField label="Requested model">
+                {info.type.llm.model.requested}
+              </DetailField>
+            )}
+            {info.type.llm.model?.effective && (
+              <DetailField label="Effective model">
+                {info.type.llm.model.effective}
+              </DetailField>
+            )}
+            {info.type.llm.protocol > 0 && (
+              <DetailField label="Protocol">
+                {Service_Spec_Config_LLM_Protocol[info.type.llm.protocol]}
+              </DetailField>
+            )}
+            {info.type.llm.operation > 0 && (
+              <DetailField label="Operation">
+                {Service_Spec_Config_LLM_Operation[info.type.llm.operation]}
+              </DetailField>
+            )}
+            {info.type.llm.usage && (
+              <DetailField label="Input / output tokens">
+                {info.type.llm.usage.inputTokens.toLocaleString()} /{" "}
+                {info.type.llm.usage.outputTokens.toLocaleString()}
+              </DetailField>
+            )}
+            {info.type.llm.http?.response?.code && (
+              <DetailField label="HTTP status">
+                <HttpStatusBadge code={info.type.llm.http.response.code} />
+              </DetailField>
+            )}
+          </>
+        )}
             </div>
           </div>
         )}
@@ -682,15 +720,24 @@ export const AccessLogC = ({ accessLog }: { accessLog: AccessLog }) => {
     common.reason?.type != null &&
     (common.reason.type as number) !==
       (AccessLog_Entry_Common_Reason_Type.TYPE_UNKNOWN_REASON as number);
-  const sourceRef = common.userRef ?? common.sessionRef;
+  const sourceRef = common.userRef ?? common.sessionRef ?? x.metadata?.actorRef;
   const sourceName = sourceRef?.name ?? sourceRef?.uid;
   const serviceName = common.serviceRef?.name ?? common.serviceRef?.uid;
   const duration = durationBetween(common.startedAt, common.endedAt);
   let operation: string | undefined;
   let target: string | undefined;
   let response: React.ReactNode;
+  let responseLabel = "Response";
 
-  if (info?.type.oneofKind === "http") {
+  if (info?.type.oneofKind === "tcp") {
+    operation = AccessLog_Entry_Info_TCP_Type[info.type.tcp.type];
+    if (info.type.tcp.receivedBytes > 0 || info.type.tcp.sentBytes > 0) {
+      responseLabel = "Traffic";
+      response = `${convertBytes(info.type.tcp.receivedBytes)} in · ${convertBytes(info.type.tcp.sentBytes)} out`;
+    }
+  } else if (info?.type.oneofKind === "udp") {
+    operation = AccessLog_Entry_Info_UDP_Type[info.type.udp.type];
+  } else if (info?.type.oneofKind === "http") {
     operation = info.type.http.request?.method;
     target = info.type.http.request?.path;
     if (info.type.http.response?.code) {
@@ -725,6 +772,43 @@ export const AccessLogC = ({ accessLog }: { accessLog: AccessLog }) => {
     operation = info.type.ssh.type
       ? AccessLog_Entry_Info_SSH_Type[info.type.ssh.type]
       : undefined;
+    if (info.type.ssh.details.oneofKind === "directTCPIPStart") {
+      target = `${info.type.ssh.details.directTCPIPStart.host}:${info.type.ssh.details.directTCPIPStart.port}`;
+    } else if (info.type.ssh.details.oneofKind === "sessionRequestExec") {
+      target = info.type.ssh.details.sessionRequestExec.command;
+    } else if (info.type.ssh.details.oneofKind === "sessionRequestSubsystem") {
+      target = info.type.ssh.details.sessionRequestSubsystem.name;
+    }
+  } else if (info?.type.oneofKind === "socks5") {
+    operation = AccessLog_Entry_Info_SOCKS5_Type[info.type.socks5.type];
+    target = info.type.socks5.host
+      ? `${info.type.socks5.host}${info.type.socks5.port ? `:${info.type.socks5.port}` : ""}`
+      : undefined;
+    if (
+      info.type.socks5.receivedBytes > 0 ||
+      info.type.socks5.sentBytes > 0
+    ) {
+      responseLabel = "Traffic";
+      response = `${convertBytes(info.type.socks5.receivedBytes)} in · ${convertBytes(info.type.socks5.sentBytes)} out`;
+    }
+  } else if (info?.type.oneofKind === "mcp") {
+    operation = info.type.mcp.method;
+    target = info.type.mcp.name;
+    if (info.type.mcp.isProtocolError) {
+      response = (
+        <span className="font-mono font-semibold text-red-600">
+          {info.type.mcp.errorCode}
+        </span>
+      );
+    } else if (info.type.mcp.resultType) {
+      response = info.type.mcp.resultType;
+    }
+  } else if (info?.type.oneofKind === "llm") {
+    operation = info.type.llm.model?.effective || info.type.llm.model?.requested;
+    target = info.type.llm.http?.request?.path;
+    if (info.type.llm.http?.response?.code) {
+      response = <HttpStatusBadge code={info.type.llm.http.response.code} />;
+    }
   }
 
   return (
@@ -812,7 +896,7 @@ export const AccessLogC = ({ accessLog }: { accessLog: AccessLog }) => {
             {response && (
               <span className="text-right">
                 <span className="block text-[9px] font-semibold uppercase tracking-[0.06em] text-slate-500">
-                  Response
+                  {responseLabel}
                 </span>
                 <span className="block text-xs font-semibold tabular-nums text-slate-700">
                   {response}

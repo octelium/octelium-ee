@@ -166,9 +166,13 @@ export const AuditLogC = ({ auditLog }: { auditLog: AuditLog }) => {
 
   if (!entry) return null;
 
-  const actorRef = entry.userRef ?? entry.sessionRef;
+  const actorRef = entry.userRef ?? entry.sessionRef ?? x.metadata?.actorRef;
   const actorName = actorRef?.name ?? actorRef?.uid;
-  const actorLabel = entry.userRef ? "User" : "Session";
+  const actorLabel = entry.userRef
+    ? "User"
+    : entry.sessionRef
+      ? "Session"
+      : "Actor";
   const resourceName = entry.resourceRef?.name ?? entry.resourceRef?.uid;
 
   return (
