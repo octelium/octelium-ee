@@ -295,21 +295,8 @@ const buildMetadataItems = (md: Metadata): ResourceInfoMainItem[] => {
   ];
 };
 
-const ResourceNotFound = (props: { parentPath: string }) => {
+export const ResourceNotFound = (props: { parentPath: string }) => {
   const navigate = useNavigate();
-  const [seconds, setSeconds] = React.useState(5);
-
-  React.useEffect(() => {
-    const interval = window.setInterval(
-      () => setSeconds((value) => Math.max(0, value - 1)),
-      1000,
-    );
-    return () => window.clearInterval(interval);
-  }, []);
-
-  React.useEffect(() => {
-    if (seconds === 0) navigate(props.parentPath, { replace: true });
-  }, [navigate, props.parentPath, seconds]);
 
   return (
     <div className="flex min-h-[55vh] w-full flex-col items-center justify-center gap-3 text-center">
@@ -317,21 +304,23 @@ const ResourceNotFound = (props: { parentPath: string }) => {
         This resource does not exist.
       </p>
       <p className="text-sm font-normal text-slate-600" role="status">
-        Returning to the resource list in {seconds} second
-        {seconds === 1 ? "" : "s"}.
+        It may have been deleted, renamed, or you may no longer have access.
       </p>
       <button
         type="button"
         className="text-sm font-semibold text-slate-700 underline underline-offset-4 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500"
         onClick={() => navigate(props.parentPath, { replace: true })}
       >
-        Return now
+        Return to the resource list
       </button>
     </div>
   );
 };
 
-const ResourceLoadError = (props: { error: unknown; retry: () => void }) => (
+export const ResourceLoadError = (props: {
+  error: unknown;
+  retry: () => void;
+}) => (
   <div className="flex min-h-[55vh] w-full flex-col items-center justify-center gap-3 text-center">
     <p className="text-lg font-bold text-slate-800">
       This resource could not be loaded.

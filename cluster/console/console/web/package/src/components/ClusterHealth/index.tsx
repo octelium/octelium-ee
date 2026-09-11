@@ -9,7 +9,10 @@ import {
   GetComponentLogDataPointRequest,
   GetComponentLogSummaryRequest,
 } from "@/apis/visibilityv1/visibilityv1";
-import { ComponentLog_Entry_Level } from "@/apis/corev1/corev1";
+import {
+  AccessLog_Entry_Common_Status,
+  ComponentLog_Entry_Level,
+} from "@/apis/corev1/corev1";
 import LineChart from "@/components/Charts/LineChart";
 import { seriesColor, STATUS_COLORS } from "@/utils/charts/palette";
 import {
@@ -95,50 +98,76 @@ const Tile = (props: {
   value: number;
   suffix?: string;
   cur: number;
-  prev: number;
+  prev?: number;
   upIsGood: boolean;
   rangeLabel: string;
   points?: Point[];
   color: string;
   to: string;
   isLoading?: boolean;
-}) => (
-  <div className="relative flex flex-col gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3.5 transition-shadow duration-150 hover:shadow-raised">
-    <div className="flex items-baseline justify-between gap-2">
-      <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
-        {props.label}
-      </span>
-      {props.suffix && (
-        <span className="text-micro font-normal tabular-nums text-slate-500">
-          {props.suffix}
+  isError?: boolean;
+  hasData?: boolean;
+}) => {
+  const unavailable = props.isError && !props.hasData;
+  return (
+    <div className="relative flex flex-col gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3.5 transition-shadow duration-150 hover:shadow-raised">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
+          {props.label}
+        </span>
+        {props.suffix && (
+          <span className="text-micro font-normal tabular-nums text-slate-500">
+            {props.suffix}
+          </span>
+        )}
+      </div>
+
+      {props.isLoading ? (
+        <div className="h-7 w-20 animate-pulse rounded bg-slate-100" />
+      ) : unavailable ? (
+        <span className="text-2xl font-semibold leading-none text-slate-400">
+          —
+        </span>
+      ) : (
+        <span className="text-2xl font-semibold leading-none text-slate-900">
+          {compact(props.value)}
         </span>
       )}
+
+      {unavailable ? (
+        <span className="text-micro font-semibold text-red-700">
+          Unavailable
+        </span>
+      ) : props.prev === undefined ? (
+        <span className="text-micro font-normal text-slate-500">
+          Current live state
+        </span>
+      ) : (
+        <Delta
+          cur={props.cur}
+          prev={props.prev}
+          upIsGood={props.upIsGood}
+          rangeLabel={props.rangeLabel}
+        />
+      )}
+
+      {!unavailable && (
+        <LineChart
+          sparkline
+          points={props.points}
+          color={props.color}
+          height={28}
+        />
+      )}
+
+      <Link
+        to={props.to}
+        className="absolute inset-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+        aria-label={`${props.label} — open logs`}
+      />
     </div>
-
-    {props.isLoading ? (
-      <div className="h-7 w-20 animate-pulse rounded bg-slate-100" />
-    ) : (
-      <span className="text-2xl font-semibold leading-none text-slate-900">
-        {compact(props.value)}
-      </span>
-    )}
-
-    <Delta
-      cur={props.cur}
-      prev={props.prev}
-      upIsGood={props.upIsGood}
-      rangeLabel={props.rangeLabel}
-    />
-
-    <LineChart sparkline points={props.points} color={props.color} height={28} />
-
-    <Link
-      to={props.to}
-      className="absolute inset-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
-      aria-label={`${props.label} — open logs`}
-    />
-  </div>
-);
+  );
+};
 
 const toPoints = (
   datapoints?: { timestamp?: Timestamp; count: number | bigint }[],
@@ -146,6 +175,23 @@ const toPoints = (
   (datapoints ?? [])
     .filter((x) => !!x.timestamp)
     .map((x) => ({ ts: x.timestamp!, value: Number(x.count) }));
+
+const mergePoints = (...series: Point[][]): Point[] => {
+  const merged = new Map<string, Point>();
+  for (const points of series) {
+    for (const point of points) {
+      const key = `${point.ts.seconds}:${point.ts.nanos}`;
+      const current = merged.get(key);
+      merged.set(key, {
+        ts: point.ts,
+        value: (current?.value ?? 0) + point.value,
+      });
+    }
+  }
+  return Array.from(merged.values()).sort(
+    (a, b) => a.ts.seconds - b.ts.seconds || a.ts.nanos - b.ts.nanos,
+  );
+};
 
 const ClusterHealth = (props: { periodMinutes: number }) => {
   const { periodMinutes } = props;
@@ -202,6 +248,27 @@ const ClusterHealth = (props: { periodMinutes: number }) => {
             from: toTs(curFrom),
             to: toTs(curTo),
             interval,
+          }),
+        );
+      return response;
+    },
+    refetchInterval: refetchIntervalChart,
+  });
+
+  const deniedPoints = useQuery({
+    queryKey: visibilityKeys.accessDataPoint(
+      periodMinutes,
+      "denied",
+      NO_REFS,
+    ),
+    queryFn: async () => {
+      const { response } =
+        await getClientVisibilityAccessLog().getAccessLogDataPoint(
+          GetAccessLogDataPointRequest.create({
+            from: toTs(curFrom),
+            to: toTs(curTo),
+            interval,
+            status: AccessLog_Entry_Common_Status.DENIED,
           }),
         );
       return response;
@@ -374,6 +441,46 @@ const ClusterHealth = (props: { periodMinutes: number }) => {
     refetchInterval: refetchIntervalChart,
   });
 
+  const componentPanicPoints = useQuery({
+    queryKey: [
+      ...visibilityKeys.componentErrorDataPoint(periodMinutes),
+      "panic",
+    ],
+    queryFn: async () => {
+      const { response } =
+        await getClientVisibilityComponentLog().getComponentLogDataPoint(
+          GetComponentLogDataPointRequest.create({
+            from: toTs(curFrom),
+            to: toTs(curTo),
+            interval,
+            level: ComponentLog_Entry_Level.PANIC,
+          }),
+        );
+      return response;
+    },
+    refetchInterval: refetchIntervalChart,
+  });
+
+  const componentFatalPoints = useQuery({
+    queryKey: [
+      ...visibilityKeys.componentErrorDataPoint(periodMinutes),
+      "fatal",
+    ],
+    queryFn: async () => {
+      const { response } =
+        await getClientVisibilityComponentLog().getComponentLogDataPoint(
+          GetComponentLogDataPointRequest.create({
+            from: toTs(curFrom),
+            to: toTs(curTo),
+            interval,
+            level: ComponentLog_Entry_Level.FATAL,
+          }),
+        );
+      return response;
+    },
+    refetchInterval: refetchIntervalChart,
+  });
+
   const requests = n(accessCur.data?.totalNumber);
   const requestsPrev = n(accessPrev.data?.totalNumber);
   const denied = n(accessCur.data?.totalDenied);
@@ -410,6 +517,8 @@ const ClusterHealth = (props: { periodMinutes: number }) => {
         color={seriesColor(0)}
         to="/visibility/accesslogs"
         isLoading={accessCur.isLoading}
+        isError={accessCur.isError}
+        hasData={accessCur.data !== undefined}
       />
       <Tile
         label="Denied"
@@ -419,21 +528,25 @@ const ClusterHealth = (props: { periodMinutes: number }) => {
         prev={deniedPrev}
         upIsGood={false}
         rangeLabel={rangeLabel}
-        points={allPoints}
+        points={toPoints(deniedPoints.data?.datapoints)}
         color={STATUS_COLORS.critical}
         to="/visibility/accesslogs?status=DENIED"
         isLoading={accessCur.isLoading}
+        isError={accessCur.isError}
+        hasData={accessCur.data !== undefined}
       />
       <Tile
         label="Connected sessions"
         value={connectedSessions}
         cur={connectedSessions}
-        prev={connectedSessions}
+        prev={undefined}
         upIsGood
         rangeLabel={rangeLabel}
         color={seriesColor(2)}
         to="/core/sessions?isConnected=true"
         isLoading={sessionSummary.isLoading}
+        isError={sessionSummary.isError}
+        hasData={sessionSummary.data !== undefined}
       />
       <Tile
         label="Authentications"
@@ -446,6 +559,8 @@ const ClusterHealth = (props: { periodMinutes: number }) => {
         color={seriesColor(1)}
         to="/visibility/authenticationlogs"
         isLoading={authCur.isLoading}
+        isError={authCur.isError}
+        hasData={authCur.data !== undefined}
       />
       <Tile
         label="Audit logs"
@@ -458,6 +573,8 @@ const ClusterHealth = (props: { periodMinutes: number }) => {
         color={seriesColor(5)}
         to="/visibility/auditlogs"
         isLoading={auditCur.isLoading}
+        isError={auditCur.isError}
+        hasData={auditCur.data !== undefined}
       />
       <Tile
         label="Component errors"
@@ -466,10 +583,16 @@ const ClusterHealth = (props: { periodMinutes: number }) => {
         prev={errorsPrev}
         upIsGood={false}
         rangeLabel={rangeLabel}
-        points={toPoints(componentErrorPoints.data?.datapoints)}
+        points={mergePoints(
+          toPoints(componentErrorPoints.data?.datapoints),
+          toPoints(componentPanicPoints.data?.datapoints),
+          toPoints(componentFatalPoints.data?.datapoints),
+        )}
         color={STATUS_COLORS.critical}
         to="/visibility/componentlogs"
         isLoading={componentCur.isLoading}
+        isError={componentCur.isError}
+        hasData={componentCur.data !== undefined}
       />
     </section>
   );

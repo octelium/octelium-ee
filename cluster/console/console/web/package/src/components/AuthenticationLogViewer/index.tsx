@@ -826,6 +826,8 @@ const AuthenticationLogViewer = (props: {
   sessionRef?: ObjectReference;
   deviceRef?: ObjectReference;
   identityProviderRef?: ObjectReference;
+  credentialRef?: ObjectReference;
+  authenticatorRef?: ObjectReference;
   itemsPerPage?: number;
 }) => {
   const [from, setFrom] = React.useState<Timestamp>(
@@ -846,6 +848,8 @@ const AuthenticationLogViewer = (props: {
         sessionRef={props.sessionRef}
         deviceRef={props.deviceRef}
         identityProviderRef={props.identityProviderRef}
+        credentialRef={props.credentialRef}
+        authenticatorRef={props.authenticatorRef}
         from={from}
       />
 
@@ -854,6 +858,8 @@ const AuthenticationLogViewer = (props: {
         sessionRef={props.sessionRef}
         deviceRef={props.deviceRef}
         identityProviderRef={props.identityProviderRef}
+        credentialRef={props.credentialRef}
+        authenticatorRef={props.authenticatorRef}
         from={from}
       />
     </div>

@@ -31,6 +31,8 @@ export const useLogListReq = () => {
     sessionRef?: objectRef;
     serviceRef?: objectRef;
     identityProviderRef?: objectRef;
+    credentialRef?: objectRef;
+    authenticatorRef?: objectRef;
     resourceRef?: objectRef;
     regionRef?: objectRef;
     deviceRef?: objectRef;

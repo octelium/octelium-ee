@@ -13,6 +13,8 @@ export default () => {
         sessionRef={toObjectRef(req?.sessionRef)}
         deviceRef={toObjectRef(req?.deviceRef)}
         identityProviderRef={toObjectRef(req?.identityProviderRef)}
+        credentialRef={toObjectRef(req?.credentialRef)}
+        authenticatorRef={toObjectRef(req?.authenticatorRef)}
       />
     </div>
   );

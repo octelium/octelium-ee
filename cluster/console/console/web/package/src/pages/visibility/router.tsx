@@ -6,7 +6,12 @@ import sshRouter from "./ssh/router";
 const MainPage = React.lazy(() => import("./Main"));
 const MetricsPage = React.lazy(() => import("./Metrics"));
 const LLMPage = React.lazy(() => import("./LLM"));
-const LogViewer = React.lazy(() => import("@/components/LogViewer"));
+const AccessLogsPage = React.lazy(() => import("./accesslogs"));
+const AuditLogsPage = React.lazy(() => import("./auditlogs"));
+const AuthenticationLogsPage = React.lazy(
+  () => import("./authenticationlogs"),
+);
+const ComponentLogsPage = React.lazy(() => import("./componentlogs"));
 
 const LazyPage = (props: { children: React.ReactNode }) => (
   <React.Suspense fallback={<PageLoading />}>{props.children}</React.Suspense>
@@ -49,7 +54,7 @@ export default (): RouteObject => {
         path: "accesslogs",
         element: (
           <LazyPage>
-            <LogViewer />
+            <AccessLogsPage />
           </LazyPage>
         ),
       },
@@ -57,7 +62,7 @@ export default (): RouteObject => {
         path: "auditlogs",
         element: (
           <LazyPage>
-            <LogViewer />
+            <AuditLogsPage />
           </LazyPage>
         ),
       },
@@ -65,7 +70,7 @@ export default (): RouteObject => {
         path: "authenticationlogs",
         element: (
           <LazyPage>
-            <LogViewer />
+            <AuthenticationLogsPage />
           </LazyPage>
         ),
       },
@@ -73,7 +78,7 @@ export default (): RouteObject => {
         path: "componentlogs",
         element: (
           <LazyPage>
-            <LogViewer />
+            <ComponentLogsPage />
           </LazyPage>
         ),
       },

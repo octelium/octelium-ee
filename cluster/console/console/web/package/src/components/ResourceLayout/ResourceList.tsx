@@ -1,4 +1,4 @@
-import { getDomain, onError } from "@/utils";
+import { getDomain } from "@/utils";
 import {
   getAPIKindFromPath,
   deleteResourcePB,
@@ -27,6 +27,7 @@ import {
   Switch,
   Tooltip,
 } from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
 import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import React from "react";
 import {
@@ -34,14 +35,16 @@ import {
   Outlet,
   useLocation,
   useNavigate,
-  useSearchParams,
 } from "react-router-dom";
 import { toast } from "sonner";
 import { twMerge } from "tailwind-merge";
 import CopyText from "../CopyText";
 import Paginator from "../Paginator";
-import { ResourceListItem, ResourceListWrapper } from "../ResourceList";
-import ResourceYAML from "../ResourceYAML";
+import {
+  CompactResourceListLabels,
+  ResourceListItem,
+  ResourceListWrapper,
+} from "../ResourceList";
 
 import { ResourceComponentInfo } from "@/pages/utils/types";
 import { Service, Service_Spec_Mode } from "@/apis/corev1/corev1";
@@ -58,6 +61,7 @@ import {
   MoreVertical,
   Pencil,
   Plus,
+  RefreshCw,
   SearchX,
   ShieldAlert,
   ShieldEllipsis,
@@ -66,26 +70,37 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import DeleteResource from "../DeleteResource";
 import TimeAgo from "../TimeAgo";
-import CloneResource from "./CloneResource";
+import { CompactSummary } from "../Summary";
+import DeleteResource from "../DeleteResource";
 import { parseQueryString } from "./queryParse";
+import CloneResource from "./CloneResource";
 import ResourceListToolbar, {
   ListDensity,
   useListDensity,
   useListParams,
 } from "./ResourceListToolbar";
 
+const LazyResourceYAML = React.lazy(() => import("../ResourceYAML"));
+
+type ResourceItemAction = {
+  type: "yaml" | "clone" | "delete";
+  item: Resource;
+};
+
+const searchFromReturnTo = (returnTo: string) => {
+  const queryIndex = returnTo.indexOf("?");
+  return queryIndex >= 0 ? returnTo.slice(queryIndex) : "";
+};
+
 const ResourceItemActions = (props: {
   item: Resource;
   info: ResourceComponentInfo;
   returnTo: string;
+  onAction: (action: ResourceItemAction) => void;
 }) => {
-  const { item, info, returnTo } = props;
+  const { item, info, returnTo, onAction } = props;
   const md = item.metadata!;
-  const [yamlOpened, setYamlOpened] = React.useState(false);
-  const [cloneOpened, setCloneOpened] = React.useState(false);
-  const [deleteOpened, setDeleteOpened] = React.useState(false);
   const publicURL =
     item.apiVersion === "core/v1" &&
     item.kind === "Service" &&
@@ -122,15 +137,14 @@ const ResourceItemActions = (props: {
   ].filter(({ show }) => show);
 
   return (
-    <>
-      <Menu
-        position="bottom-end"
-        width={230}
-        shadow="md"
-        withinPortal
-        transitionProps={{ transition: "pop-top-right", duration: 180 }}
-        styles={{ item: { fontWeight: 600 } }}
-      >
+    <Menu
+      position="bottom-end"
+      width={230}
+      shadow="md"
+      withinPortal
+      transitionProps={{ transition: "pop-top-right", duration: 180 }}
+      styles={{ item: { fontWeight: 600 } }}
+    >
         <Menu.Target>
           <ActionIcon
             variant="subtle"
@@ -146,14 +160,14 @@ const ResourceItemActions = (props: {
           <Menu.Label className="truncate">{md.name}</Menu.Label>
           <Menu.Item
             leftSection={<FileText size={14} />}
-            onClick={() => setYamlOpened(true)}
+            onClick={() => onAction({ type: "yaml", item })}
           >
             View YAML
           </Menu.Item>
           {!info.unEditable && !md.isSystem && (
             <Menu.Item
               component={Link}
-              to={`${getResourcePath(item)}/edit`}
+              to={`${getResourcePath(item)}/edit${searchFromReturnTo(returnTo)}`}
               state={{ returnTo }}
               preventScrollReset
               leftSection={<Pencil size={14} />}
@@ -164,7 +178,7 @@ const ResourceItemActions = (props: {
           {info.cloneable && (
             <Menu.Item
               leftSection={<Copy size={14} />}
-              onClick={() => setCloneOpened(true)}
+              onClick={() => onAction({ type: "clone", item })}
             >
               Clone
             </Menu.Item>
@@ -200,39 +214,14 @@ const ResourceItemActions = (props: {
               <Menu.Item
                 color="red"
                 leftSection={<Trash2 size={14} />}
-                onClick={() => setDeleteOpened(true)}
+                onClick={() => onAction({ type: "delete", item })}
               >
                 Delete
               </Menu.Item>
             </>
           )}
         </Menu.Dropdown>
-      </Menu>
-
-      <ResourceYAML
-        item={item}
-        hideTrigger
-        opened={yamlOpened}
-        onClose={() => setYamlOpened(false)}
-      />
-      {info.cloneable && (
-        <CloneResource
-          item={item}
-          hideTrigger
-          opened={cloneOpened}
-          onClose={() => setCloneOpened(false)}
-        />
-      )}
-      {!info.unDeletable && !md.isSystem && (
-        <DeleteResource
-          item={item}
-          doNotNavigateAfter
-          hideTrigger
-          opened={deleteOpened}
-          onClose={() => setDeleteOpened(false)}
-        />
-      )}
-    </>
+    </Menu>
   );
 };
 
@@ -275,7 +264,7 @@ const RowTitleLink = (props: {
   stretched?: boolean;
 }) => (
   <Link
-    to={getResourcePath(props.item)}
+    to={`${getResourcePath(props.item)}${searchFromReturnTo(props.returnTo)}`}
     state={{ returnTo: props.returnTo }}
     preventScrollReset
     className={twMerge(
@@ -315,6 +304,7 @@ const CardItem = (props: {
   compact?: boolean;
   checked: boolean;
   onToggle: (uid: string) => void;
+  onAction: (action: ResourceItemAction) => void;
 }) => {
   const { item, info, compact } = props;
   const md = item.metadata!;
@@ -369,10 +359,7 @@ const CardItem = (props: {
 
           {!compact && (
             <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
-              <RowTimestamp item={item} mode="created" />
-              {md.updatedAt && md.updatedAt !== md.createdAt && (
-                <RowTimestamp item={item} mode="updated" />
-              )}
+              <RowTimestamp item={item} />
             </div>
           )}
         </div>
@@ -382,13 +369,20 @@ const CardItem = (props: {
             item={item}
             info={info}
             returnTo={props.returnTo}
+            onAction={props.onAction}
           />
         </div>
       </div>
 
       {Labels && (
         <div className="relative z-10 min-h-[26px] w-full">
-          <Labels item={item} />
+          {compact ? (
+            <CompactResourceListLabels>
+              <Labels item={item} />
+            </CompactResourceListLabels>
+          ) : (
+            <Labels item={item} />
+          )}
         </div>
       )}
     </div>
@@ -404,19 +398,20 @@ const TableView = (props: {
   onToggleAll: () => void;
   allSelected: boolean;
   someSelected: boolean;
+  onAction: (action: ResourceItemAction) => void;
 }) => {
   const { info } = props;
   const Labels = info.List.labelComponent;
 
   return (
     <div className="w-full overflow-x-auto rounded-xl border border-slate-200 bg-white">
-      <table className="w-full min-w-[720px] table-fixed border-collapse text-left">
+      <table className="w-full min-w-[760px] table-fixed border-collapse text-left">
         <thead>
           <tr className="border-b border-slate-200 bg-slate-50/70">
             <th scope="col" className="w-10 px-3 py-2.5">
               <Checkbox
                 size="xs"
-                aria-label="Select all"
+                aria-label="Select all deletable resources on this page"
                 checked={props.allSelected}
                 indeterminate={props.someSelected && !props.allSelected}
                 onChange={props.onToggleAll}
@@ -424,18 +419,24 @@ const TableView = (props: {
             </th>
             <th
               scope="col"
-              className="w-72 px-3 py-2.5 text-xs font-normal text-slate-600"
+              className="w-72 px-3 py-2.5 text-xs font-semibold text-slate-600"
             >
-              Name
+              Resource
             </th>
             {Labels && (
               <th
                 scope="col"
-                className="px-3 py-2.5 text-xs font-normal text-slate-600"
+                className="px-3 py-2.5 text-xs font-semibold text-slate-600"
               >
-                Details
+                Properties
               </th>
             )}
+            <th
+              scope="col"
+              className="w-36 px-3 py-2.5 text-xs font-semibold text-slate-600"
+            >
+              Last modified
+            </th>
             <th scope="col" className="w-12 px-3 py-2.5">
               <span className="sr-only">Actions</span>
             </th>
@@ -468,23 +469,23 @@ const TableView = (props: {
                       {md.displayName}
                     </div>
                   )}
-                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5">
-                    <RowTimestamp item={item} mode="created" />
-                    {md.updatedAt && md.updatedAt !== md.createdAt && (
-                      <RowTimestamp item={item} mode="updated" />
-                    )}
-                  </div>
                 </td>
                 {Labels && (
                   <td className="px-3 py-2 align-top [&>div]:mt-0">
-                    <Labels item={item} />
+                    <CompactResourceListLabels>
+                      <Labels item={item} />
+                    </CompactResourceListLabels>
                   </td>
                 )}
+                <td className="px-3 py-2.5 align-top">
+                  <RowTimestamp item={item} />
+                </td>
                 <td className="px-3 py-2.5 align-top">
                   <ResourceItemActions
                     item={item}
                     info={info}
                     returnTo={props.returnTo}
+                    onAction={props.onAction}
                   />
                 </td>
               </tr>
@@ -551,6 +552,7 @@ const BulkDeleteModal = (props: {
   items: Resource[];
   kindName: string;
   isPending: boolean;
+  progress?: { completed: number; total: number };
   onConfirm: () => void;
 }) => {
   const [isConfirmed, setIsConfirmed] = React.useState(false);
@@ -703,7 +705,9 @@ const BulkDeleteModal = (props: {
             }
             onClick={props.onConfirm}
           >
-            {props.isPending ? "Deleting…" : `Delete ${count} ${kindLabel}`}
+            {props.isPending
+              ? `Deleting ${props.progress?.completed ?? 0}/${props.progress?.total ?? count}…`
+              : `Delete ${count} ${kindLabel}`}
           </Button>
         </footer>
       </div>
@@ -759,55 +763,138 @@ const ListSkeleton = (props: { density: ListDensity }) => {
   );
 };
 
-const useListReq = () => {
-  const [searchParams] = useSearchParams();
-  const searchParamsStr = searchParams.toString();
-  const loc = useLocation();
-
-  const apiKind = getAPIKindFromPath(loc.pathname);
-  if (!apiKind) return undefined;
+const buildListReq = (pathname: string, search: string) => {
+  const apiKind = getAPIKindFromPath(pathname);
+  if (!apiKind) return { apiKind: undefined, req: undefined };
 
   const optionsPB = getListOptionsPB(apiKind.api, apiKind.kind);
   const req = optionsPB["create"]({ common: CommonListOptions.create({}) });
+  const searchParams = new URLSearchParams(search);
+  let requestWarning: string | undefined;
 
-  if (searchParamsStr.length > 0) {
-    let parsedQry = parseQueryString<{
-      type?: string;
-      mode: string;
-      common?: { page?: number; itemsPerPage?: number };
-      namespaceRef?: { uid?: string; name?: string };
-      userRef?: { uid?: string; name?: string };
-      deviceRef?: { uid?: string; name?: string };
-    }>(searchParams.toString());
-
-    if (parsedQry.common?.page && parsedQry.common.page > 0) {
-      parsedQry.common.page = parsedQry.common.page - 1;
+  const page = Number(searchParams.get("common.page"));
+  if (searchParams.has("common.page")) {
+    if (!Number.isFinite(page) || page < 1) {
+      searchParams.delete("common.page");
+      requestWarning = "The page parameter was invalid and has been ignored.";
+    } else {
+      searchParams.set("common.page", `${Math.min(Math.floor(page), 100000)}`);
     }
-
-    const req2 = optionsPB["fromJsonString"](JSON.stringify(parsedQry));
-    optionsPB["mergePartial"](req, req2);
   }
 
-  if (!req.common!.itemsPerPage) {
-    req.common!.itemsPerPage = 25;
+  const pageSize = Number(searchParams.get("common.itemsPerPage"));
+  if (
+    searchParams.has("common.itemsPerPage") &&
+    ![10, 25, 50, 100].includes(pageSize)
+  ) {
+    searchParams.set("common.itemsPerPage", "25");
+    requestWarning = "The page size was invalid and has been reset to 25.";
   }
 
-  return req;
+  const orderType = searchParams.get("common.orderBy.type");
+  if (orderType && orderType !== "NAME" && orderType !== "CREATED_AT") {
+    searchParams.delete("common.orderBy.type");
+    requestWarning = "The sort field was invalid and has been ignored.";
+  }
+  const orderMode = searchParams.get("common.orderBy.mode");
+  if (orderMode && orderMode !== "ASC" && orderMode !== "DESC") {
+    searchParams.delete("common.orderBy.mode");
+    requestWarning = "The sort direction was invalid and has been ignored.";
+  }
+
+  try {
+    if (searchParams.size > 0) {
+      const parsedQry = parseQueryString<{
+        type?: string;
+        mode?: string;
+        common?: { page?: number; itemsPerPage?: number };
+        namespaceRef?: { uid?: string; name?: string };
+        userRef?: { uid?: string; name?: string };
+        deviceRef?: { uid?: string; name?: string };
+      }>(searchParams.toString());
+
+      if (parsedQry.common?.page && parsedQry.common.page > 0) {
+        parsedQry.common.page -= 1;
+      }
+
+      const parsedReq = optionsPB["fromJsonString"](
+        JSON.stringify(parsedQry),
+      );
+      optionsPB["mergePartial"](req, parsedReq);
+    }
+  } catch {
+    requestWarning =
+      "Some URL filters are not valid for this resource type and were ignored.";
+  }
+
+  if (!req.common!.itemsPerPage) req.common!.itemsPerPage = 25;
+  return { apiKind, req, requestWarning };
 };
+
+const ListErrorState = (props: {
+  message?: string;
+  onRetry: () => void;
+}) => (
+  <div
+    role="alert"
+    className="flex min-h-64 flex-col items-center justify-center rounded-2xl border border-red-200 bg-red-50/60 px-6 py-12 text-center"
+  >
+    <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-red-200 bg-white text-red-600">
+      <AlertTriangle size={19} strokeWidth={2} />
+    </div>
+    <h2 className="mt-4 text-sm font-semibold text-slate-900">
+      Resources could not be loaded
+    </h2>
+    <p className="mt-1.5 max-w-md text-sm text-slate-600">
+      {props.message ?? "Check your connection and try again."}
+    </p>
+    <Button
+      className="mt-5"
+      variant="default"
+      leftSection={<RefreshCw size={14} />}
+      onClick={props.onRetry}
+    >
+      Try again
+    </Button>
+  </div>
+);
 
 const ResourceListContent = (props: { info: ResourceComponentInfo }) => {
   const loc = useLocation();
   const navigate = useNavigate();
-  const [density, setDensity] = useListDensity();
   const [selected, setSelected] = React.useState<Set<string>>(new Set());
   const [deleteModalOpened, setDeleteModalOpened] = React.useState(false);
-  const { searchParams, activeFilterCount, clearFilters } = useListParams();
+  const [activeAction, setActiveAction] =
+    React.useState<ResourceItemAction | null>(null);
+  const [deleteProgress, setDeleteProgress] = React.useState({
+    completed: 0,
+    total: 0,
+  });
+  const { activeFilterCount, clearFilters } = useListParams();
 
-  const apiKind = getAPIKindFromPath(loc.pathname);
-  const req = useListReq();
-  const listKey = getListKeyFromPath(loc.pathname);
+  const pathSegments = loc.pathname.split("/").filter(Boolean);
+  const listPathname = `/${pathSegments.slice(0, 2).join("/")}`;
+  const isDrawerOpen = pathSegments.length > 2;
+  const stateReturnTo = (loc.state as { returnTo?: unknown } | null)?.returnTo;
+  let listSearch = loc.search;
+  if (isDrawerOpen && typeof stateReturnTo === "string") {
+    try {
+      const returnURL = new URL(stateReturnTo, window.location.origin);
+      if (returnURL.pathname === listPathname) listSearch = returnURL.search;
+    } catch {}
+  }
 
-  const { isLoading, isFetching, data } = useQuery({
+  const listKey = getListKeyFromPath(listPathname);
+  const [density, setDensity] = useListDensity(listKey || listPathname);
+  const isNarrow = useMediaQuery("(max-width: 48em)");
+  const effectiveDensity =
+    isNarrow && density === "table" ? "compact" : density;
+  const { apiKind, req, requestWarning } = React.useMemo(
+    () => buildListReq(listPathname, listSearch),
+    [listPathname, listSearch],
+  );
+
+  const { isLoading, isFetching, isError, error, data, refetch } = useQuery({
     queryKey: [
       listKey,
       apiKind && req
@@ -828,24 +915,50 @@ const ResourceListContent = (props: { info: ResourceComponentInfo }) => {
 
   React.useEffect(() => {
     setSelected(new Set());
-  }, [loc.pathname, loc.search]);
+  }, [listPathname, listSearch]);
 
   const mutationBulkDelete = useMutation({
     mutationFn: async (targets: Resource[]) => {
-      for (const target of targets) {
-        await deleteResourcePB(target);
-      }
-      return targets.length;
-    },
-    onSuccess: (count, targets) => {
-      if (targets[0]) invalidateResourceList(targets[0]);
-      setSelected(new Set());
-      setDeleteModalOpened(false);
-      toast.success(
-        `${count} ${count === 1 ? "resource" : "resources"} deleted`,
+      setDeleteProgress({ completed: 0, total: targets.length });
+      const failed: Resource[] = [];
+      const succeeded: Resource[] = [];
+      let nextIndex = 0;
+      const worker = async () => {
+        while (nextIndex < targets.length) {
+          const target = targets[nextIndex++];
+          try {
+            await deleteResourcePB(target);
+            succeeded.push(target);
+          } catch {
+            failed.push(target);
+          } finally {
+            setDeleteProgress((current) => ({
+              ...current,
+              completed: current.completed + 1,
+            }));
+          }
+        }
+      };
+      await Promise.all(
+        Array.from({ length: Math.min(4, targets.length) }, () => worker()),
       );
+      return { succeeded, failed };
     },
-    onError: (err: unknown) => onError(err as any),
+    onSuccess: ({ succeeded, failed }) => {
+      if (succeeded[0]) invalidateResourceList(succeeded[0]);
+      setSelected(new Set(failed.map((item) => item.metadata!.uid)));
+      setDeleteModalOpened(false);
+      if (succeeded.length > 0) {
+        toast.success(
+          `${succeeded.length} ${succeeded.length === 1 ? "resource" : "resources"} deleted`,
+        );
+      }
+      if (failed.length > 0) {
+        toast.error(
+          `${failed.length} ${failed.length === 1 ? "resource" : "resources"} could not be deleted and remain selected`,
+        );
+      }
+    },
   });
 
   if (!apiKind) return null;
@@ -856,17 +969,18 @@ const ResourceListContent = (props: { info: ResourceComponentInfo }) => {
     kind: apiKind.kind as ResourceName,
   });
   const totalCount = itemList?.listResponseMeta?.totalCount ?? 0;
+  const effectiveSearchParams = new URLSearchParams(listSearch);
   const itemsPerPage =
-    Number(searchParams.get("common.itemsPerPage")) ||
+    Number(effectiveSearchParams.get("common.itemsPerPage")) ||
     itemList?.listResponseMeta?.itemsPerPage ||
     25;
   const countLabel =
     totalCount === 1
       ? kindName.toLowerCase()
       : collectionName || `${kindName.toLowerCase()}s`;
-  const isPending = isLoading || !itemList;
+  const isPending = isLoading || (!itemList && !isError);
 
-  const returnTo = `${loc.pathname}${loc.search}`;
+  const returnTo = `${listPathname}${listSearch}`;
   const Summary = props.info.List.SummaryComponent;
   const selectableItems = items.filter((item) =>
     isSelectable(item, props.info),
@@ -895,10 +1009,14 @@ const ResourceListContent = (props: { info: ResourceComponentInfo }) => {
         showCount={!isPending}
         itemsPerPage={itemsPerPage}
         isFetching={isFetching}
-        density={density}
+        density={effectiveDensity}
         onDensityChange={setDensity}
         canCreate={!props.info.unCreatable}
-        onCreate={() => navigate("create")}
+        onCreate={() =>
+          navigate(`${listPathname}/create${listSearch}`, {
+            state: { returnTo },
+          })
+        }
         selectedCount={selected.size}
         isDeleting={mutationBulkDelete.isPending}
         onClearSelection={() => setSelected(new Set())}
@@ -911,29 +1029,110 @@ const ResourceListContent = (props: { info: ResourceComponentInfo }) => {
         items={selectedItems}
         kindName={kindName}
         isPending={mutationBulkDelete.isPending}
+        progress={deleteProgress}
         onConfirm={() => mutationBulkDelete.mutate(selectedItems)}
       />
 
-      {Summary && (
-        <div className="mb-6">
-          <React.Suspense key={listKey} fallback={null}>
-            <Summary />
+      {activeAction && (
+        <React.Suspense fallback={null}>
+          {activeAction.type === "yaml" && (
+            <LazyResourceYAML
+              item={activeAction.item}
+              hideTrigger
+              opened
+              onClose={() => setActiveAction(null)}
+            />
+          )}
+          {activeAction.type === "clone" && (
+            <CloneResource
+              item={activeAction.item}
+              hideTrigger
+              opened
+              onClose={() => setActiveAction(null)}
+            />
+          )}
+          {activeAction.type === "delete" && (
+            <DeleteResource
+              item={activeAction.item}
+              doNotNavigateAfter
+              hideTrigger
+              opened
+              onClose={() => setActiveAction(null)}
+            />
+          )}
+        </React.Suspense>
+      )}
+
+      {Summary && !isDrawerOpen && (
+        <section
+          aria-label="Resource summary"
+          className="mb-4 min-h-[64px] rounded-xl border border-slate-200 bg-white/60 p-2"
+        >
+          <React.Suspense
+            key={listKey}
+            fallback={<div className="h-12 animate-pulse rounded-lg bg-slate-100" />}
+          >
+            <CompactSummary>
+              <Summary />
+            </CompactSummary>
           </React.Suspense>
+        </section>
+      )}
+
+      {requestWarning && (
+        <div
+          role="status"
+          className="mb-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+        >
+          <AlertTriangle size={14} className="mt-px shrink-0" />
+          <span>{requestWarning}</span>
         </div>
       )}
 
-      {isPending ? (
-        <ListSkeleton density={density} />
+      {isError && itemList && (
+        <div
+          role="alert"
+          className="mb-3 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+        >
+          <AlertTriangle size={14} className="shrink-0" />
+          <span>Refresh failed. Showing the last successfully loaded data.</span>
+          <button className="ml-auto font-semibold" onClick={() => refetch()}>
+            Retry
+          </button>
+        </div>
+      )}
+
+      {isError && !itemList ? (
+        <ListErrorState
+          message={error instanceof Error ? error.message : undefined}
+          onRetry={() => refetch()}
+        />
+      ) : isPending ? (
+        <ListSkeleton density={effectiveDensity} />
       ) : items.length === 0 ? (
         <EmptyState
           kindName={kindName}
-          filtered={activeFilterCount > 0}
+          filtered={
+            isDrawerOpen
+              ? Array.from(effectiveSearchParams.entries()).some(
+                  ([key, value]) =>
+                    !!value &&
+                    key !== "common.page" &&
+                    key !== "common.itemsPerPage" &&
+                    !key.startsWith("common.orderBy"),
+                )
+              : activeFilterCount > 0
+          }
           canCreate={!props.info.unCreatable}
-          onCreate={() => navigate("create")}
+          onCreate={() =>
+            navigate(`${listPathname}/create${listSearch}`, {
+              state: { returnTo },
+            })
+          }
           onClearFilters={clearFilters}
         />
-      ) : density === "table" ? (
-        <React.Suspense key={listKey} fallback={<ListSkeleton density={density} />}>
+      ) : effectiveDensity === "table" ? (
+        <React.Suspense key={listKey} fallback={<ListSkeleton density={effectiveDensity} />}>
           <TableView
             items={items}
             info={props.info}
@@ -946,24 +1145,26 @@ const ResourceListContent = (props: { info: ResourceComponentInfo }) => {
               selected.size === selectableItems.length
             }
             someSelected={selected.size > 0}
+            onAction={setActiveAction}
           />
         </React.Suspense>
       ) : (
-        <React.Suspense key={listKey} fallback={<ListSkeleton density={density} />}>
+        <React.Suspense key={listKey} fallback={<ListSkeleton density={effectiveDensity} />}>
           <ResourceListWrapper>
             {items.map((item) => (
               <ResourceListItem
                 key={item.metadata!.uid}
                 path={getResourcePath(item)}
-                compact={density === "compact"}
+                compact={effectiveDensity === "compact"}
               >
                 <CardItem
                   item={item}
                   info={props.info}
                   returnTo={returnTo}
-                  compact={density === "compact"}
+                  compact={effectiveDensity === "compact"}
                   checked={selected.has(item.metadata!.uid)}
                   onToggle={toggle}
+                  onAction={setActiveAction}
                 />
               </ResourceListItem>
             ))}

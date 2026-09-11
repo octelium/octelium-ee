@@ -1,7 +1,7 @@
 import { formatNumber } from "@/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Inbox } from "lucide-react";
-import { useRef } from "react";
+import { createContext, useContext, useRef } from "react";
 import { Link } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 
@@ -10,6 +10,14 @@ type SummaryIcon = React.ElementType<{
   size?: number | string;
   strokeWidth?: number | string;
 }>;
+
+const CompactSummaryContext = createContext(false);
+
+export const CompactSummary = (props: { children: React.ReactNode }) => (
+  <CompactSummaryContext.Provider value>
+    {props.children}
+  </CompactSummaryContext.Provider>
+);
 
 export const SummaryItemCount = (props: {
   children?: React.ReactNode;
@@ -30,6 +38,7 @@ export const SummaryItemCount = (props: {
     formatCount,
   } = props;
   const Icon = icon;
+  const isCompact = useContext(CompactSummaryContext);
   const prevCountRef = useRef<number | undefined>(undefined);
 
   if (count === undefined || count < 0 || (!showZero && count < 1)) return null;
@@ -41,7 +50,12 @@ export const SummaryItemCount = (props: {
   const content = (
     <>
       <div className="flex min-w-0 items-start justify-between gap-2">
-        <div className="h-8 min-w-0 overflow-hidden">
+        <div
+          className={twMerge(
+            "min-w-0 overflow-hidden",
+            isCompact ? "h-7" : "h-8",
+          )}
+        >
           <AnimatePresence mode="popLayout" initial={false}>
             <motion.span
               key={count}
@@ -50,7 +64,8 @@ export const SummaryItemCount = (props: {
               exit={{ y: `${direction * -110}%`, opacity: 0 }}
               transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
               className={twMerge(
-                "block truncate text-2xl font-bold leading-8 tracking-[-0.035em] tabular-nums",
+                "block truncate font-bold tracking-[-0.035em] tabular-nums",
+                isCompact ? "text-xl leading-7" : "text-2xl leading-8",
                 active ? "text-slate-900" : "text-slate-700",
               )}
             >
@@ -109,12 +124,24 @@ export const SummaryItemCount = (props: {
       {to && !active ? (
         <Link
           to={to}
-          className="relative z-10 flex min-h-[76px] w-full flex-col justify-center gap-1 px-3.5 py-2.5 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-500"
+          className={twMerge(
+            "relative z-10 flex w-full flex-col justify-center gap-1 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-500",
+            isCompact
+              ? "min-h-[58px] px-3 py-2"
+              : "min-h-[76px] px-3.5 py-2.5",
+          )}
         >
           {content}
         </Link>
       ) : (
-        <div className="relative z-10 flex min-h-[76px] w-full flex-col justify-center gap-1 px-3.5 py-2.5">
+        <div
+          className={twMerge(
+            "relative z-10 flex w-full flex-col justify-center gap-1",
+            isCompact
+              ? "min-h-[58px] px-3 py-2"
+              : "min-h-[76px] px-3.5 py-2.5",
+          )}
+        >
           {content}
         </div>
       )}
@@ -122,11 +149,21 @@ export const SummaryItemCount = (props: {
   );
 };
 
-export const SummaryItemCountWrap = (props: { children?: React.ReactNode }) => (
-  <div className="grid w-full grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-2">
-    {props.children}
-  </div>
-);
+export const SummaryItemCountWrap = (props: { children?: React.ReactNode }) => {
+  const isCompact = useContext(CompactSummaryContext);
+  return (
+    <div
+      className={twMerge(
+        "grid w-full",
+        isCompact
+          ? "grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-1.5"
+          : "grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-2",
+      )}
+    >
+      {props.children}
+    </div>
+  );
+};
 
 export const SummaryNoItems = (props: { children?: React.ReactNode }) => (
   <div className="flex min-h-[190px] w-full items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50/50 px-6 text-center">

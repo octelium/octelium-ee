@@ -85,7 +85,7 @@ export default (): RouteObject => {
         path: "summary",
         element: <Summary />,
       })
-      .concat([clusterConfigRouter()], {
+      .concat({
         path: "",
         element: <MainPage />,
       }),
@@ -203,6 +203,7 @@ const getResourceChildrenRouter = (arg: ResourceComponentInfo): RouteObject => {
         "IdentityProvider",
         "Credential",
         "Authenticator",
+        "Device",
         () => true,
       )
       .otherwise(() => false)

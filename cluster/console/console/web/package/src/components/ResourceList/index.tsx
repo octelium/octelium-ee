@@ -10,7 +10,18 @@ import {
 import { Link2 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
+import { createContext, useContext } from "react";
 import TimeAgo from "../TimeAgo";
+
+const CompactLabelsContext = createContext(false);
+
+export const CompactResourceListLabels = (props: {
+  children: React.ReactNode;
+}) => (
+  <CompactLabelsContext.Provider value>
+    {props.children}
+  </CompactLabelsContext.Provider>
+);
 
 export const ResourceListWrapper = (props: { children?: React.ReactNode }) => (
   <div className="flex flex-col w-full gap-3">{props.children}</div>
@@ -225,8 +236,18 @@ export const ResourceListLabel = (props: {
 
 export const ResourceListLabelWrap = (props: {
   children?: React.ReactNode;
-}) => (
-  <div className="relative z-10 mt-2 flex w-full flex-row flex-wrap content-start items-center gap-1.5">
-    {props.children}
-  </div>
-);
+}) => {
+  const isCompact = useContext(CompactLabelsContext);
+  return (
+    <div
+      className={twMerge(
+        "relative z-10 flex w-full flex-row content-start items-center gap-1.5",
+        isCompact
+          ? "mt-1 flex-nowrap overflow-x-auto pb-0.5"
+          : "mt-2 flex-wrap",
+      )}
+    >
+      {props.children}
+    </div>
+  );
+};

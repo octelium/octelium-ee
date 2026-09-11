@@ -14,6 +14,9 @@ const REF_PARAM_LABELS: Record<string, string> = {
   "regionRef.name": "Region",
   "policyRef.name": "Policy",
   "credentialRef.name": "Credential",
+  "authenticatorRef.name": "Authenticator",
+  "resourceRef.name": "Resource",
+  "clusterRef.name": "Cluster",
 };
 
 const TYPE_LABEL_MAP: Record<string, string> = {
@@ -51,13 +54,33 @@ export interface FilterChip {
   value: string;
 }
 
+const formatParamLabel = (key: string) => {
+  const leaf = key.split(".").at(-1) ?? key;
+  const spaced = leaf.replace(/([a-z0-9])([A-Z])/g, "$1 $2");
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+};
+
+export const isListFilterParam = (key: string, value: string) =>
+  !!value &&
+  key !== "common.page" &&
+  key !== "common.itemsPerPage" &&
+  !key.startsWith("common.orderBy");
+
+export const countActiveListFilters = (searchParams: URLSearchParams) => {
+  let count = 0;
+  for (const [key, value] of searchParams.entries()) {
+    if (isListFilterParam(key, value)) count += 1;
+  }
+  return count;
+};
+
 export const buildFilterChips = (
   searchParams: URLSearchParams,
 ): FilterChip[] => {
   const chips: FilterChip[] = [];
 
   for (const [key, value] of searchParams.entries()) {
-    if (key.startsWith("common.") || !value) continue;
+    if (!isListFilterParam(key, value) || key === "common.query") continue;
 
     if (key in REF_PARAM_LABELS) {
       chips.push({ key, label: REF_PARAM_LABELS[key], value });
@@ -73,14 +96,20 @@ export const buildFilterChips = (
       continue;
     }
 
-    if (value === "true") {
+    if (value === "true" || value === "false") {
       chips.push({
         key,
-        label: BOOLEAN_PARAM_LABELS[key] ?? key,
-        value: "Yes",
+        label: BOOLEAN_PARAM_LABELS[key] ?? formatParamLabel(key),
+        value: value === "true" ? "Yes" : "No",
       });
       continue;
     }
+
+    chips.push({
+      key,
+      label: REF_PARAM_LABELS[key] ?? formatParamLabel(key),
+      value: TYPE_LABEL_MAP[value] ?? value,
+    });
   }
 
   return chips;

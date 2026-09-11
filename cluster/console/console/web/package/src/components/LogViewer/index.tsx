@@ -18,9 +18,12 @@ import { AuthenticationLogC } from "../AuthenticationLogViewer";
 import { ComponentLogC } from "../ComponentLogViewer";
 import AccessLogSummary from "../LogSummary/AccessLogSummary";
 import AuthenticationLogSummary from "../LogSummary/AuthenticationLogSummary";
+import AuditLogSummary from "../LogSummary/AuditLogSummary";
 import ComponentLogSummary from "../LogSummary/ComponentLogSummary";
 import Paginator from "../Paginator";
 import { parseQueryString } from "../ResourceLayout/queryParse";
+import { Button } from "@mantine/core";
+import { ListLoading } from "../Loading";
 
 type objectRef = {
   uid?: string;
@@ -82,8 +85,24 @@ export default () => {
     refetchInterval: 60000,
   });
 
-  if (!qry.data || qry.isLoading) {
-    return <></>;
+  if (qry.isLoading) {
+    return <ListLoading label="logs" />;
+  }
+
+  if (qry.isError && !qry.data) {
+    return (
+      <div
+        role="alert"
+        className="flex min-h-64 flex-col items-center justify-center gap-3 rounded-xl border border-red-200 bg-red-50 px-6 text-center"
+      >
+        <p className="text-sm font-semibold text-red-800">
+          Logs could not be loaded.
+        </p>
+        <Button size="compact-sm" variant="outline" color="red" onClick={() => qry.refetch()}>
+          Try again
+        </Button>
+      </div>
+    );
   }
 
   return (
@@ -101,7 +120,7 @@ export default () => {
                   namespaceRef={r.namespaceRef}
                   sessionRef={r.sessionRef}
                   deviceRef={r.deviceRef}
-                  userRef={r.deviceRef}
+                  userRef={r.userRef}
                   regionRef={r.regionRef}
                   policyRef={r.policyRef}
                   from={r.from}
@@ -116,7 +135,7 @@ export default () => {
                 <AuthenticationLogSummary
                   sessionRef={r.sessionRef}
                   deviceRef={r.deviceRef}
-                  userRef={r.deviceRef}
+                  userRef={r.userRef}
                   identityProviderRef={r.identityProviderRef}
                   credentialRef={r.credentialRef}
                   authenticatorRef={r.authenticatorRef}
@@ -132,18 +151,27 @@ export default () => {
               );
             })
 
+            .with(`AuditLog`, () => {
+              const r = req as VisibilityP.ListAuditLogRequest;
+              return (
+                <AuditLogSummary
+                  sessionRef={r.sessionRef}
+                  deviceRef={r.deviceRef}
+                  userRef={r.userRef}
+                  resourceRef={r.resourceRef}
+                  from={r.from}
+                  to={r.to}
+                />
+              );
+            })
+
             .otherwise(() => (
               <></>
             ))}
         </div>
       )}
 
-      {qry.data && qry.data.response.listResponseMeta && (
-        <div className="mt-4 flex items-center justify-center">
-          <Paginator meta={qry.data.response.listResponseMeta} />
-        </div>
-      )}
-      <div className="ml-4 mt-4">
+      <div className="mt-4">
         {qry.data && qry.data.response.items.length > 0 && (
           <div>
             {qry.data.response.items.map((x) =>

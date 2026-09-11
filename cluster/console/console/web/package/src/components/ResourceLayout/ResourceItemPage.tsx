@@ -17,10 +17,14 @@ import {
   ShieldUser,
   Terminal,
 } from "lucide-react";
-import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { match } from "ts-pattern";
 import PageWrap from "../PageWrap";
-import { ResourceOverviewSkeleton } from "./ResourceItemMainPage";
+import {
+  ResourceLoadError,
+  ResourceNotFound,
+  ResourceOverviewSkeleton,
+} from "./ResourceItemMainPage";
 import { useContextResource } from "./utils";
 
 interface Tab {
@@ -92,7 +96,10 @@ const getActiveTab = (pathname: string): string => {
 
 const buildTabs = (resource: Resource): Tab[] => {
   const tabs = [...BASE_TABS];
-  if (!getResourceComponentInfoFromResource(resource)?.unEditable) {
+  if (
+    !resource.metadata?.isSystem &&
+    !getResourceComponentInfoFromResource(resource)?.unEditable
+  ) {
     tabs.push({
       value: "edit",
       label: "Configure",
@@ -163,9 +170,23 @@ const ResourceItemSkeleton = () => (
 
 const ResourceItemPage = () => {
   const ctx = useContextResource();
+  const location = useLocation();
 
-  if (ctx?.isError) return <Navigate to="/" replace />;
   if (!ctx) return null;
+  if (ctx.isError) {
+    const fallbackPath = `/${location.pathname.split("/").filter(Boolean).slice(0, 2).join("/")}`;
+    const stateReturnTo = (location.state as { returnTo?: unknown } | null)
+      ?.returnTo;
+    const parentPath =
+      typeof stateReturnTo === "string" && stateReturnTo.startsWith(fallbackPath)
+        ? stateReturnTo
+        : fallbackPath;
+    return (ctx.error as { code?: string })?.code === "NOT_FOUND" ? (
+      <ResourceNotFound parentPath={parentPath} />
+    ) : (
+      <ResourceLoadError error={ctx.error} retry={() => ctx.refetch()} />
+    );
+  }
 
   return (
     <PageWrap qry={ctx} skeleton={<ResourceItemSkeleton />}>

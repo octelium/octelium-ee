@@ -114,7 +114,7 @@ const ResourceEditPage = (props: {
           item={ctx.data}
           specComponent={props.specComponent}
           dataComponent={props.dataComponent}
-          readOnly={props.readOnly}
+          readOnly={props.readOnly || !!ctx.data.metadata?.isSystem}
         />
       )}
     </PageWrap>
