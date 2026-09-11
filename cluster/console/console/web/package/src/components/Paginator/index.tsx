@@ -126,13 +126,13 @@ export const FilterChips = ({
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      <span className="shrink-0 text-xs font-normal text-slate-500">
+      <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.06em] text-slate-500">
         Filters
       </span>
       {chips.map((chip) => (
         <span
           key={chip.key}
-          className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white py-0.5 pl-2 pr-1 text-xs font-normal text-slate-700"
+          className="inline-flex items-center gap-1 rounded border border-slate-200 bg-slate-50 py-px pl-1.5 pr-1 text-[10px] font-medium leading-4 text-slate-600"
         >
           <span className="font-semibold text-slate-500">{chip.label}:</span>
           <span>{chip.value}</span>
@@ -140,10 +140,10 @@ export const FilterChips = ({
             type="button"
             onClick={() => onRemove(chip.key)}
             aria-label={`Remove ${chip.label} filter`}
-            className="ml-0.5 flex h-4 w-4 cursor-pointer items-center justify-center rounded text-slate-500 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-900"
+            className="ml-0.5 flex h-3.5 w-3.5 cursor-pointer items-center justify-center rounded text-slate-400 transition-colors duration-150 hover:bg-slate-200 hover:text-slate-800"
             title={`Remove ${chip.label} filter`}
           >
-            <X size={10} strokeWidth={2.5} />
+            <X size={9} strokeWidth={2.5} />
           </button>
         </span>
       ))}

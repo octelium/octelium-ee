@@ -4,8 +4,13 @@ import {
   AccessLog_Entry_Common_Status,
   AccessLog_Entry_Info_DNS_Type,
   AccessLog_Entry_Info_MySQL_Type,
+  AccessLog_Entry_Info_MCP_Type,
   AccessLog_Entry_Info_Postgres_Type,
+  AccessLog_Entry_Info_SOCKS5_AddressType,
+  AccessLog_Entry_Info_SOCKS5_Type,
   AccessLog_Entry_Info_SSH_Type,
+  AccessLog_Entry_Info_TCP_Type,
+  AccessLog_Entry_Info_UDP_Type,
   Service_Spec_Mode,
 } from "@/apis/corev1/corev1";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
@@ -62,6 +67,19 @@ export function convertBytes(
   );
   return `${(bytes / Math.pow(base, i)).toFixed(Math.max(0, decimals))} ${units[i]}`;
 }
+
+const durationBetween = (startedAt?: Timestamp, endedAt?: Timestamp) => {
+  if (!startedAt || !endedAt) return undefined;
+  const milliseconds =
+    (Number(endedAt.seconds) - Number(startedAt.seconds)) * 1000 +
+    (endedAt.nanos - startedAt.nanos) / 1_000_000;
+  if (!Number.isFinite(milliseconds) || milliseconds < 0) return undefined;
+  if (milliseconds < 1000) return `${Math.round(milliseconds)} ms`;
+  if (milliseconds < 60_000) {
+    return `${(milliseconds / 1000).toFixed(milliseconds < 10_000 ? 2 : 1)} s`;
+  }
+  return `${(milliseconds / 60_000).toFixed(1)} min`;
+};
 
 export const getPolicyReason = (arg?: AccessLog_Entry_Common_Reason_Type) =>
   match(arg)
@@ -129,7 +147,14 @@ const getProtoLabel = (mode?: Service_Spec_Mode): string =>
     .with(Service_Spec_Mode.UDP, () => "UDP")
     .with(Service_Spec_Mode.GRPC, () => "gRPC")
     .with(Service_Spec_Mode.DNS, () => "DNS")
-    .otherwise(() => "");
+    .with(Service_Spec_Mode.SOCKS5, () => "SOCKS5")
+    .with(Service_Spec_Mode.RDP_WEB, () => "RDP Web")
+    .with(Service_Spec_Mode.MCP, () => "MCP")
+    .with(Service_Spec_Mode.LLM, () => "LLM")
+    .with(Service_Spec_Mode.RDP, () => "RDP")
+    .otherwise((value) =>
+      value ? Service_Spec_Mode[value].replaceAll("_", " ") : "",
+    );
 
 const DetailField = ({
   label,
@@ -140,13 +165,13 @@ const DetailField = ({
   children: React.ReactNode;
   mono?: boolean;
 }) => (
-  <div className="flex min-h-14 min-w-0 flex-col gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-card">
-    <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
+  <div className="min-w-0">
+    <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.06em] text-slate-500">
       {label}
     </span>
     <span
       className={twMerge(
-        "min-w-0 break-words text-xs font-semibold leading-5 text-slate-700",
+        "mt-0.5 block min-w-0 break-words text-xs font-semibold leading-5 text-slate-700",
         mono && "font-mono",
       )}
     >
@@ -166,7 +191,7 @@ const HttpMethodBadge = ({ method }: { method: string }) => {
   return (
     <span
       className={twMerge(
-        "text-micro font-normal px-1.5 py-px rounded border font-mono",
+        "rounded-md border px-1.5 py-px font-mono text-[10px] font-semibold leading-4",
         colors[method.toUpperCase()] ??
           "bg-slate-50 text-slate-600 border-slate-200",
       )}
@@ -192,30 +217,68 @@ const HttpStatusBadge = ({ code }: { code: number }) => {
   );
 };
 
+const ContextChip = ({ label }: { label: string }) => (
+  <span className="rounded border border-slate-200 bg-slate-50 px-1.5 py-px text-[10px] font-semibold leading-4 text-slate-600">
+    {label}
+  </span>
+);
+
 const AccessLogDetails = ({ accessLog }: { accessLog: AccessLog }) => {
   const x = accessLog;
   const common = x.entry?.common;
   const info = x.entry?.info;
 
   return (
-    <div className="border-t border-slate-200 bg-slate-50/70 px-4 py-4 sm:px-5">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <div>
-          <h4 className="text-body font-semibold text-slate-700">
-            Log details
-          </h4>
-        </div>
+    <div className="border-t border-slate-200 bg-slate-50/70">
+      <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-3.5 py-2.5 sm:px-4">
+        <h4 className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+          Event details
+        </h4>
         <Editor item={x} />
       </div>
 
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 px-3.5 py-3 sm:grid-cols-2 sm:px-4 lg:grid-cols-3 xl:grid-cols-4">
+        {x.metadata?.id && (
+          <DetailField label="Log ID">
+            <CopyText value={x.metadata.id} />
+          </DetailField>
+        )}
         {common?.connectionID && (
           <DetailField label="Connection ID">{common.connectionID}</DetailField>
         )}
+        {common?.sessionID && (
+          <DetailField label="Session ID">{common.sessionID}</DetailField>
+        )}
+        {common?.startedAt && (
+          <DetailField label="Started">
+            <TimeAgo rfc3339={common.startedAt} />
+          </DetailField>
+        )}
+        {common?.endedAt && (
+          <DetailField label="Ended">
+            <TimeAgo rfc3339={common.endedAt} />
+          </DetailField>
+        )}
+        {durationBetween(common?.startedAt, common?.endedAt) && (
+          <DetailField label="Duration">
+            {durationBetween(common?.startedAt, common?.endedAt)}
+          </DetailField>
+        )}
+        {common && common.sequence > 0 && (
+          <DetailField label="Connection sequence">
+            {common.sequence.toLocaleString()}
+          </DetailField>
+        )}
+        {(common?.isPublic || common?.isAnonymous) && (
+          <div className="flex min-w-0 flex-wrap items-end gap-1.5">
+            {common.isPublic && <ContextChip label="Public" />}
+            {common.isAnonymous && <ContextChip label="Anonymous" />}
+          </div>
+        )}
 
         {common?.sessionRef && (
-          <div className="col-span-full flex min-h-14 min-w-0 flex-col gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
-            <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
+          <div className="col-span-full min-w-0 border-t border-slate-200 pt-3">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">
               Session
             </span>
             <CardSession itemRef={common.sessionRef} />
@@ -223,17 +286,36 @@ const AccessLogDetails = ({ accessLog }: { accessLog: AccessLog }) => {
         )}
 
         {common?.serviceRef && (
-          <div className="col-span-full flex min-h-14 min-w-0 flex-col gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
-            <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
+          <div className="col-span-full min-w-0 border-t border-slate-200 pt-3">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">
               Service
             </span>
             <CardService itemRef={common.serviceRef} />
           </div>
         )}
 
+        {(common?.namespaceRef || common?.regionRef) && (
+          <div className="col-span-full min-w-0 border-t border-slate-200 pt-3">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+              Scope
+            </span>
+            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+              {common.namespaceRef && (
+                <ResourceListLabel
+                  label="Namespace"
+                  itemRef={common.namespaceRef}
+                />
+              )}
+              {common.regionRef && (
+                <ResourceListLabel label="Region" itemRef={common.regionRef} />
+              )}
+            </div>
+          </div>
+        )}
+
         {common?.reason?.details?.type.oneofKind === "policyMatch" && (
-          <div className="flex min-h-14 min-w-0 flex-col gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
-            <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
+          <div className="min-w-0 border-t border-slate-200 pt-3 sm:col-span-2 lg:col-span-3 xl:col-span-4">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">
               Policy
             </span>
             {common.reason.details.type.policyMatch.type.oneofKind ===
@@ -259,11 +341,35 @@ const AccessLogDetails = ({ accessLog }: { accessLog: AccessLog }) => {
         )}
 
         {info?.type.oneofKind && (
-          <div className="col-span-full flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-100/60 p-3">
-            <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-600">
+          <div className="col-span-full border-t border-slate-200 pt-3">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">
               Protocol details
             </span>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {info.type.oneofKind === "tcp" && (
+          <>
+            <DetailField label="Event type">
+              {AccessLog_Entry_Info_TCP_Type[info.type.tcp.type]}
+            </DetailField>
+            {info.type.tcp.receivedBytes > 0 && (
+              <DetailField label="Received">
+                {convertBytes(info.type.tcp.receivedBytes)}
+              </DetailField>
+            )}
+            {info.type.tcp.sentBytes > 0 && (
+              <DetailField label="Sent">
+                {convertBytes(info.type.tcp.sentBytes)}
+              </DetailField>
+            )}
+          </>
+        )}
+
+        {info.type.oneofKind === "udp" && (
+          <DetailField label="Event type">
+            {AccessLog_Entry_Info_UDP_Type[info.type.udp.type]}
+          </DetailField>
+        )}
+
         {info.type.oneofKind === "http" && (
           <>
             {info.type.http.request?.path && (
@@ -440,7 +546,117 @@ const AccessLogDetails = ({ accessLog }: { accessLog: AccessLog }) => {
         )}
 
         {info.type.oneofKind === "ssh" && info.type.ssh.type && (
-          <DetailField label="SSH type">{info.type.ssh.type}</DetailField>
+          <>
+            <DetailField label="SSH type">
+              {AccessLog_Entry_Info_SSH_Type[info.type.ssh.type]}
+            </DetailField>
+            {info.type.ssh.details.oneofKind === "start" && (
+              <>
+                <DetailField label="Requested user">
+                  {info.type.ssh.details.start.requestedUser}
+                </DetailField>
+                <DetailField label="Effective user">
+                  {info.type.ssh.details.start.user}
+                </DetailField>
+              </>
+            )}
+            {info.type.ssh.details.oneofKind === "directTCPIPStart" && (
+              <DetailField label="Destination">
+                {info.type.ssh.details.directTCPIPStart.host}:
+                {info.type.ssh.details.directTCPIPStart.port}
+              </DetailField>
+            )}
+            {info.type.ssh.details.oneofKind === "sessionRequestExec" && (
+              <DetailField label="Command">
+                {info.type.ssh.details.sessionRequestExec.command}
+              </DetailField>
+            )}
+            {info.type.ssh.details.oneofKind === "sessionRequestSubsystem" && (
+              <DetailField label="Subsystem">
+                {info.type.ssh.details.sessionRequestSubsystem.name}
+              </DetailField>
+            )}
+          </>
+        )}
+
+        {info.type.oneofKind === "socks5" && (
+          <>
+            <DetailField label="Event type">
+              {AccessLog_Entry_Info_SOCKS5_Type[info.type.socks5.type]}
+            </DetailField>
+            {(info.type.socks5.host || info.type.socks5.port > 0) && (
+              <DetailField label="Destination">
+                {info.type.socks5.host || "—"}
+                {info.type.socks5.port > 0 ? `:${info.type.socks5.port}` : ""}
+              </DetailField>
+            )}
+            {info.type.socks5.addressType > 0 && (
+              <DetailField label="Address type">
+                {AccessLog_Entry_Info_SOCKS5_AddressType[
+                  info.type.socks5.addressType
+                ]}
+              </DetailField>
+            )}
+            {(info.type.socks5.upstreamHost ||
+              info.type.socks5.upstreamPort > 0) && (
+              <DetailField label="Upstream">
+                {info.type.socks5.upstreamHost || "—"}
+                {info.type.socks5.upstreamPort > 0
+                  ? `:${info.type.socks5.upstreamPort}`
+                  : ""}
+              </DetailField>
+            )}
+            {info.type.socks5.receivedBytes > 0 && (
+              <DetailField label="Received">
+                {convertBytes(info.type.socks5.receivedBytes)}
+              </DetailField>
+            )}
+            {info.type.socks5.sentBytes > 0 && (
+              <DetailField label="Sent">
+                {convertBytes(info.type.socks5.sentBytes)}
+              </DetailField>
+            )}
+          </>
+        )}
+
+        {info.type.oneofKind === "mcp" && (
+          <>
+            <DetailField label="Event type">
+              {AccessLog_Entry_Info_MCP_Type[info.type.mcp.type]}
+            </DetailField>
+            {info.type.mcp.method && (
+              <DetailField label="Method">{info.type.mcp.method}</DetailField>
+            )}
+            {info.type.mcp.name && (
+              <DetailField label="Target">{info.type.mcp.name}</DetailField>
+            )}
+            {info.type.mcp.protocolVersion && (
+              <DetailField label="Protocol version">
+                {info.type.mcp.protocolVersion}
+              </DetailField>
+            )}
+            {info.type.mcp.requestID && (
+              <DetailField label="Request ID">
+                {info.type.mcp.requestID}
+              </DetailField>
+            )}
+            {info.type.mcp.resultType && (
+              <DetailField label="Result">{info.type.mcp.resultType}</DetailField>
+            )}
+            {info.type.mcp.isProtocolError && (
+              <DetailField label="Protocol error">
+                {info.type.mcp.errorCode}: {info.type.mcp.errorMessage}
+              </DetailField>
+            )}
+            {info.type.mcp.client && (
+              <DetailField label="Client">
+                {[info.type.mcp.client.title || info.type.mcp.client.name,
+                  info.type.mcp.client.version]
+                  .filter(Boolean)
+                  .join(" ")}
+              </DetailField>
+            )}
+          </>
         )}
             </div>
           </div>
@@ -468,8 +684,8 @@ export const AccessLogC = ({ accessLog }: { accessLog: AccessLog }) => {
       (AccessLog_Entry_Common_Reason_Type.TYPE_UNKNOWN_REASON as number);
   const sourceRef = common.userRef ?? common.sessionRef;
   const sourceName = sourceRef?.name ?? sourceRef?.uid;
-  const sourceLabel = common.userRef ? "User" : "Session";
   const serviceName = common.serviceRef?.name ?? common.serviceRef?.uid;
+  const duration = durationBetween(common.startedAt, common.endedAt);
   let operation: string | undefined;
   let target: string | undefined;
   let response: React.ReactNode;
@@ -514,12 +730,10 @@ export const AccessLogC = ({ accessLog }: { accessLog: AccessLog }) => {
   return (
     <div
       className={twMerge(
-        "mb-2 overflow-hidden rounded-xl border border-l-4 bg-white",
-        "shadow-card transition-[border-color,box-shadow] duration-200 ease-out",
-        "hover:border-slate-300 hover:shadow-raised",
-        isAllowed
-          ? "border-slate-200 border-l-emerald-400"
-          : "border-red-200/80 border-l-red-500 shadow-card",
+        "mb-1.5 overflow-hidden rounded-lg border bg-white",
+        "transition-[border-color,background-color,box-shadow] duration-200 ease-out",
+        "hover:border-slate-300 hover:bg-slate-50/50 hover:shadow-card",
+        isAllowed ? "border-slate-200" : "border-red-200/80 shadow-card",
         expanded && "border-slate-300 shadow-raised",
       )}
     >
@@ -527,111 +741,105 @@ export const AccessLogC = ({ accessLog }: { accessLog: AccessLog }) => {
         type="button"
         aria-expanded={expanded}
         aria-controls={detailsID}
-        className="group flex w-full cursor-pointer items-start gap-3 px-3.5 py-3 text-left outline-none transition-colors duration-200 hover:bg-slate-50/50 focus-visible:bg-blue-50/40 sm:px-4"
+        className="group flex w-full cursor-pointer items-center gap-3 px-3 py-2.5 text-left outline-none transition-colors duration-200 hover:bg-slate-50/70 focus-visible:bg-slate-50"
         onClick={() => setExpanded((v) => !v)}
       >
         <span
+          aria-hidden="true"
           className={twMerge(
-            "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border",
-            isAllowed
-              ? "border-emerald-200 bg-emerald-50 text-emerald-600"
-              : "border-red-200 bg-red-50 text-red-600",
+            "h-9 w-1 shrink-0 rounded-full",
+            isAllowed ? "bg-emerald-500" : "bg-red-500",
           )}
-        >
-          {isAllowed ? (
-            <ShieldCheck size={16} strokeWidth={2.4} />
-          ) : (
-            <ShieldX size={16} strokeWidth={2.4} />
-          )}
-        </span>
+        />
 
-        <span className="flex min-w-0 flex-1 flex-col gap-2">
-          <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5">
+        <span className="flex min-w-0 flex-1 flex-col gap-1">
+          <span className="flex min-w-0 flex-wrap items-center gap-1.5">
+            <span className="flex min-w-0 items-center gap-1.5 text-body font-semibold text-slate-800">
+              <span className="max-w-44 truncate" title={sourceName}>
+                {sourceName ?? (common.isAnonymous ? "Anonymous" : "Unknown source")}
+              </span>
+              <ArrowRight size={12} className="shrink-0 text-slate-300" />
+              <span className="max-w-48 truncate" title={serviceName}>
+                {serviceName ?? "Unknown service"}
+              </span>
+            </span>
             <span
               className={twMerge(
-                "rounded-md border px-2 py-1 text-micro font-semibold",
+                "inline-flex items-center gap-1 rounded-md border px-1.5 py-px text-[10px] font-semibold leading-4",
                 isAllowed
                   ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                   : "border-red-200 bg-red-50 text-red-700",
               )}
             >
+              {isAllowed ? (
+                <ShieldCheck size={9} strokeWidth={2.5} />
+              ) : (
+                <ShieldX size={9} strokeWidth={2.5} />
+              )}
               {isAllowed ? "Allowed" : "Denied"}
             </span>
-
-            <span className="flex min-w-0 items-center gap-1.5 text-body font-semibold text-slate-700">
-              {sourceName ? (
-                <>
-                  <span className="shrink-0 text-micro font-semibold uppercase tracking-[0.05em] text-slate-500">
-                    {sourceLabel}
-                  </span>
-                  <span className="max-w-40 truncate font-mono text-xs">
-                    {sourceName}
-                  </span>
-                </>
-              ) : (
-                <span className="text-slate-500">Unknown source</span>
-              )}
-              <ArrowRight size={12} className="shrink-0 text-slate-300" />
-              <span className="max-w-44 truncate font-mono text-xs text-blue-700">
-                {serviceName ?? "Unknown service"}
-              </span>
-            </span>
-
-            {common.namespaceRef?.name && (
-              <span className="hidden truncate text-micro font-normal text-slate-500 sm:inline">
-                in {common.namespaceRef.name}
-              </span>
-            )}
-          </span>
-
-          <span className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1.5">
             {protoLabel && (
-              <span className="rounded-md border border-slate-200 bg-slate-100 px-1.5 py-0.5 font-mono text-micro font-normal text-slate-600">
+              <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-px font-mono text-[10px] font-semibold leading-4 text-slate-600">
                 {protoLabel}
               </span>
             )}
+            {operation && <HttpMethodBadge method={operation} />}
+            {common.isPublic && <ContextChip label="Public" />}
+          </span>
 
-            {operation && (
-              <span className="font-mono text-xs font-normal text-slate-600">
-                {operation}
-              </span>
-            )}
+          <span className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] font-medium text-slate-500">
             {target && (
-              <span className="max-w-64 truncate font-mono text-xs font-medium text-slate-500">
+              <span className="max-w-72 truncate font-mono" title={target}>
                 {target}
               </span>
             )}
-            {response}
-
             {hasReason && (
-              <span className="truncate text-xs font-normal text-slate-500">
+              <span className="max-w-56 truncate" title={reason}>
                 {reason}
               </span>
             )}
+            {common.namespaceRef?.name && (
+              <span className="truncate">{common.namespaceRef.name}</span>
+            )}
+            {x.metadata?.createdAt && (
+              <TimeAgo rfc3339={x.metadata.createdAt} />
+            )}
           </span>
         </span>
+
+        {(response || duration) && (
+          <span className="hidden shrink-0 items-center gap-4 sm:flex">
+            {response && (
+              <span className="text-right">
+                <span className="block text-[9px] font-semibold uppercase tracking-[0.06em] text-slate-500">
+                  Response
+                </span>
+                <span className="block text-xs font-semibold tabular-nums text-slate-700">
+                  {response}
+                </span>
+              </span>
+            )}
+            {duration && (
+              <span className="text-right">
+                <span className="block text-[9px] font-semibold uppercase tracking-[0.06em] text-slate-500">
+                  Duration
+                </span>
+                <span className="block text-xs font-semibold tabular-nums text-slate-700">
+                  {duration}
+                </span>
+              </span>
+            )}
+          </span>
+        )}
 
         <motion.span
           animate={{ rotate: expanded ? 180 : 0 }}
           transition={{ duration: 0.35, ease: "easeOut" }}
-          className="mt-2 flex shrink-0 text-slate-500 transition-colors duration-200 group-hover:text-slate-600"
+          className="flex shrink-0 text-slate-500 transition-colors duration-200 group-hover:text-slate-700"
         >
           <ChevronDown size={15} strokeWidth={2.25} />
         </motion.span>
       </button>
-
-      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 border-t border-slate-100 bg-slate-50/40 px-4 py-1.5 pl-[60px] text-micro font-normal text-slate-500">
-        <TimeAgo rfc3339={x.metadata!.createdAt} />
-        <span aria-hidden="true" className="text-slate-300">
-          ·
-        </span>
-        <span className="flex min-w-0 items-center gap-1 font-mono">
-          <span className="shrink-0 uppercase tracking-[0.05em]">Log ID</span>
-          <span className="min-w-0 truncate text-slate-500">
-            <CopyText value={x.metadata!.id} />
-          </span>
-        </span>
-      </div>
 
       <AnimatePresence initial={false}>
         {expanded && (

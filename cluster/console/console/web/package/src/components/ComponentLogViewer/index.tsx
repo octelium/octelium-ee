@@ -14,7 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Select } from "@mantine/core";
 import dayjs from "dayjs";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, RefreshCw, ScrollText } from "lucide-react";
+import { ChevronDown, RefreshCw } from "lucide-react";
 import * as React from "react";
 import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
@@ -34,13 +34,13 @@ const DetailField = ({
   children: React.ReactNode;
   mono?: boolean;
 }) => (
-  <div className="flex min-h-14 min-w-0 flex-col gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-card">
-    <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
+  <div className="min-w-0">
+    <span className="text-[10px] font-semibold uppercase tracking-[0.07em] text-slate-500">
       {label}
     </span>
     <span
       className={twMerge(
-        "min-w-0 break-words text-xs font-semibold leading-5 text-slate-700",
+        "mt-0.5 block min-w-0 break-words text-xs font-semibold leading-5 text-slate-700",
         mono && "font-mono",
       )}
     >
@@ -55,44 +55,37 @@ const getLevelMeta = (level: Level) =>
   match(level)
     .with(ComponentLog_Entry_Level.DEBUG, () => ({
       label: "Debug",
-      border: "border-l-slate-400",
-      icon: "text-slate-500",
+      bar: "bg-slate-400",
       badge: "bg-slate-50 text-slate-600 border-slate-200",
     }))
     .with(ComponentLog_Entry_Level.INFO, () => ({
       label: "Info",
-      border: "border-l-sky-400",
-      icon: "text-sky-500",
+      bar: "bg-sky-500",
       badge: "bg-sky-50 text-sky-700 border-sky-200",
     }))
     .with(ComponentLog_Entry_Level.WARN, () => ({
       label: "Warn",
-      border: "border-l-amber-400",
-      icon: "text-amber-500",
+      bar: "bg-amber-500",
       badge: "bg-amber-50 text-amber-700 border-amber-200",
     }))
     .with(ComponentLog_Entry_Level.ERROR, () => ({
       label: "Error",
-      border: "border-l-red-500",
-      icon: "text-red-500",
+      bar: "bg-red-500",
       badge: "bg-red-50 text-red-700 border-red-200",
     }))
     .with(ComponentLog_Entry_Level.PANIC, () => ({
       label: "Panic",
-      border: "border-l-red-700",
-      icon: "text-red-700",
+      bar: "bg-red-700",
       badge: "bg-red-100 text-red-800 border-red-300",
     }))
     .with(ComponentLog_Entry_Level.FATAL, () => ({
       label: "Fatal",
-      border: "border-l-red-900",
-      icon: "text-red-900",
+      bar: "bg-red-900",
       badge: "bg-red-200 text-red-900 border-red-400",
     }))
     .otherwise(() => ({
       label: ComponentLog_Entry_Level[level],
-      border: "border-l-slate-300",
-      icon: "text-slate-500",
+      bar: "bg-slate-300",
       badge: "bg-slate-50 text-slate-500 border-slate-200",
     }));
 
@@ -120,16 +113,30 @@ const ComponentLogDetails = ({ log }: { log: ComponentLog }) => {
   const entry = x.entry;
 
   return (
-    <div className="border-t border-slate-200 bg-slate-50/70 px-4 py-4 sm:px-5">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <h4 className="text-body font-semibold text-slate-700">
-          Log details
+    <div className="border-t border-slate-200 bg-slate-50/70">
+      <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-3.5 py-2.5 sm:px-4">
+        <h4 className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+          Event details
         </h4>
         <Editor item={x} />
       </div>
 
-      <div className="grid grid-cols-1 gap-2">
-
+      <div className="grid grid-cols-1 gap-3 px-3.5 py-3 sm:grid-cols-2 sm:px-4 lg:grid-cols-3">
+        {x.metadata?.id && (
+          <DetailField label="Log ID" mono>
+            <CopyText value={x.metadata.id} />
+          </DetailField>
+        )}
+        {entry?.time && (
+          <DetailField label="Event time">
+            <TimeAgo rfc3339={entry.time} />
+          </DetailField>
+        )}
+        {x.metadata?.createdAt && (
+          <DetailField label="Recorded time">
+            <TimeAgo rfc3339={x.metadata.createdAt} />
+          </DetailField>
+        )}
         {entry?.message && (
           <DetailField label="Message" mono={false}>
             {entry.message}
@@ -137,11 +144,11 @@ const ComponentLogDetails = ({ log }: { log: ComponentLog }) => {
         )}
 
         {entry?.component && (
-          <div className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-100/60 p-3">
-            <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-600">
+          <div className="col-span-full border-t border-slate-200 pt-3">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">
               Component
             </span>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {entry.component.namespace && (
                 <DetailField label="Namespace" mono>
                   {entry.component.namespace}
@@ -162,11 +169,11 @@ const ComponentLogDetails = ({ log }: { log: ComponentLog }) => {
         )}
 
         {(entry?.function || entry?.file) && (
-          <div className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-100/60 p-3">
-            <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-600">
+          <div className="col-span-full border-t border-slate-200 pt-3">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">
               Source location
             </span>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
               {entry.function && (
                 <DetailField label="Function" mono>
                   {entry.function}
@@ -184,11 +191,11 @@ const ComponentLogDetails = ({ log }: { log: ComponentLog }) => {
 
         {entry?.fields?.fields &&
           Object.keys(entry.fields.fields).length > 0 && (
-            <div className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-100/60 p-3">
-              <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-600">
+            <div className="col-span-full border-t border-slate-200 pt-3">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">
                 Fields
               </span>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <StructFields fields={entry.fields.fields} />
               </div>
             </div>
@@ -222,35 +229,32 @@ export const ComponentLogC = ({ log }: { log: ComponentLog }) => {
   return (
     <div
       className={twMerge(
-        "mb-2 overflow-hidden rounded-xl border border-l-4 border-slate-200 bg-white",
-        meta.border,
-        "shadow-card transition-[border-color,box-shadow] duration-200 ease-out",
-        "hover:border-slate-300 hover:shadow-raised",
-        expanded &&
-          "border-slate-300 shadow-raised",
+        "mb-1.5 overflow-hidden rounded-lg border border-slate-200 bg-white",
+        "transition-[border-color,background-color,box-shadow] duration-200 ease-out",
+        "hover:border-slate-300 hover:bg-slate-50/50 hover:shadow-card",
+        expanded && "border-slate-300 shadow-card",
       )}
     >
       <button
         type="button"
         aria-expanded={expanded}
         aria-controls={detailsID}
-        className="group flex w-full cursor-pointer items-start gap-3 px-3.5 py-3 text-left outline-none transition-colors duration-200 hover:bg-slate-50/50 focus-visible:bg-blue-50/40 sm:px-4"
+        className="group flex w-full cursor-pointer items-center gap-3 px-3 py-2.5 text-left outline-none transition-colors duration-200 hover:bg-slate-50/50 focus-visible:bg-blue-50/40"
         onClick={() => setExpanded((v) => !v)}
       >
-        <span
-          className={twMerge(
-            "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border",
-            meta.badge,
-          )}
-        >
-          <ScrollText size={16} strokeWidth={2.4} />
-        </span>
+        <span className={twMerge("h-9 w-1 shrink-0 rounded-full", meta.bar)} />
 
-        <span className="flex min-w-0 flex-1 flex-col gap-2">
-          <span className="flex min-w-0 flex-wrap items-center gap-2">
+        <span className="flex min-w-0 flex-1 flex-col gap-1">
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span
+              className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-900"
+              title={entry.message}
+            >
+              {entry.message || "No message provided"}
+            </span>
             <span
               className={twMerge(
-                "shrink-0 rounded-md border px-2 py-1 text-micro font-semibold",
+                "shrink-0 rounded border px-1.5 py-px text-[10px] font-semibold leading-4",
                 meta.badge,
               )}
             >
@@ -258,18 +262,15 @@ export const ComponentLogC = ({ log }: { log: ComponentLog }) => {
             </span>
 
             {componentName && (
-              <span className="max-w-64 truncate rounded-md border border-slate-200 bg-slate-100 px-2 py-1 font-mono text-xs font-normal text-slate-600">
+              <span className="max-w-56 truncate rounded border border-slate-200 bg-slate-50 px-1.5 py-px font-mono text-[10px] font-medium leading-4 text-slate-600">
                 {componentName}
               </span>
             )}
           </span>
 
-          <span className="line-clamp-2 text-body font-semibold leading-5 text-slate-700">
-            {entry.message || "No message provided"}
-          </span>
-
-          {(entry.function || entry.file) && (
-            <span className="flex min-w-0 flex-wrap items-center gap-x-2 text-micro font-medium text-slate-500">
+          <span className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px] font-medium text-slate-500">
+            {(entry.function || entry.file) && (
+              <>
               {entry.function && (
                 <span className="max-w-56 truncate font-mono font-semibold text-slate-500">
                   {entry.function}
@@ -281,31 +282,33 @@ export const ComponentLogC = ({ log }: { log: ComponentLog }) => {
                   {entry.line ? `:${entry.line}` : ""}
                 </span>
               )}
-            </span>
-          )}
+              </>
+            )}
+            {(entry.time || x.metadata?.createdAt) && (
+              <TimeAgo rfc3339={entry.time ?? x.metadata!.createdAt} />
+            )}
+          </span>
         </span>
+
+        {entry.fields?.fields && Object.keys(entry.fields.fields).length > 0 && (
+          <span className="hidden shrink-0 text-right sm:block">
+            <span className="block text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+              Fields
+            </span>
+            <span className="block text-xs font-semibold text-slate-700">
+              {Object.keys(entry.fields.fields).length}
+            </span>
+          </span>
+        )}
 
         <motion.span
           animate={{ rotate: expanded ? 180 : 0 }}
           transition={{ duration: 0.35, ease: "easeOut" }}
-          className="mt-2 flex shrink-0 text-slate-500 transition-colors duration-200 group-hover:text-slate-600"
+          className="flex shrink-0 text-slate-400 transition-colors duration-200 group-hover:text-slate-600"
         >
           <ChevronDown size={15} strokeWidth={2.25} />
         </motion.span>
       </button>
-
-      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 border-t border-slate-100 bg-slate-50/40 px-4 py-1.5 pl-[60px] text-micro font-normal text-slate-500">
-        <TimeAgo rfc3339={x.metadata!.createdAt} />
-        <span aria-hidden="true" className="text-slate-300">
-          ·
-        </span>
-        <span className="flex min-w-0 items-center gap-1 font-mono">
-          <span className="shrink-0 uppercase tracking-[0.05em]">Log ID</span>
-          <span className="min-w-0 truncate text-slate-500">
-            <CopyText value={x.metadata!.id} />
-          </span>
-        </span>
-      </div>
 
       <AnimatePresence initial={false}>
         {expanded && (

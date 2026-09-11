@@ -1,5 +1,7 @@
 import {
   Authenticator_Status_Type,
+  Credential_Spec_Type,
+  IdentityProvider_Status_Type,
   Session_Status_Authentication_Info_AAL,
   Session_Status_Authentication_Info_Authenticator_Mode,
   Session_Status_Authentication_Info_Type,
@@ -22,7 +24,7 @@ import { getResourceRef } from "@/utils/pb";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, RefreshCw, ShieldUser } from "lucide-react";
+import { ChevronDown, RefreshCw } from "lucide-react";
 import * as React from "react";
 import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
@@ -44,13 +46,13 @@ const DetailField = ({
   children: React.ReactNode;
   mono?: boolean;
 }) => (
-  <div className="flex min-h-14 min-w-0 flex-col gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-card">
-    <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
+  <div className="min-w-0">
+    <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.06em] text-slate-500">
       {label}
     </span>
     <span
       className={twMerge(
-        "min-w-0 break-words text-xs font-semibold leading-5 text-slate-700",
+        "mt-0.5 block min-w-0 break-words text-xs font-semibold leading-5 text-slate-700",
         mono && "font-mono",
       )}
     >
@@ -126,7 +128,7 @@ const AuthTypeBadge = ({
   return (
     <span
       className={twMerge(
-        "text-micro font-semibold px-1.5 py-px rounded border shrink-0",
+        "shrink-0 rounded-md border px-1.5 py-px text-[10px] font-semibold leading-4",
         className,
       )}
     >
@@ -136,7 +138,7 @@ const AuthTypeBadge = ({
 };
 
 const BoolChip = ({ label }: { label: string }) => (
-  <span className="text-micro font-semibold px-1.5 py-px rounded border bg-emerald-50 text-emerald-700 border-emerald-200">
+  <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-px text-[10px] font-semibold leading-4 text-slate-600">
     {label}
   </span>
 );
@@ -151,19 +153,29 @@ const AuthenticationLogDetails = ({
   const info = entry?.authentication?.info;
 
   return (
-    <div className="border-t border-slate-200 bg-slate-50/70 px-4 py-4 sm:px-5">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <h4 className="text-body font-semibold text-slate-700">
-          Log details
+    <div className="border-t border-slate-200 bg-slate-50/70">
+      <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-3.5 py-2.5 sm:px-4">
+        <h4 className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+          Event details
         </h4>
         <Editor item={x} />
       </div>
 
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 px-3.5 py-3 sm:grid-cols-2 sm:px-4 lg:grid-cols-3 xl:grid-cols-4">
+        {x.metadata?.id && (
+          <DetailField label="Log ID" mono>
+            <CopyText value={x.metadata.id} />
+          </DetailField>
+        )}
+        {entry && (
+          <DetailField label="Authentication number">
+            #{entry.authenticationIndex + 1}
+          </DetailField>
+        )}
 
         {entry?.sessionRef && (
-          <div className="col-span-full flex min-h-14 min-w-0 flex-col gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
-            <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
+          <div className="col-span-full min-w-0 border-t border-slate-200 pt-3">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">
               Session
             </span>
             <CardSession itemRef={entry.sessionRef} />
@@ -171,8 +183,8 @@ const AuthenticationLogDetails = ({
         )}
 
         {(entry?.userRef || entry?.deviceRef) && (
-          <div className="col-span-full flex min-h-14 min-w-0 flex-col gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
-            <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
+          <div className="col-span-full min-w-0 border-t border-slate-200 pt-3">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">
               Identity context
             </span>
             <div className="flex flex-wrap items-center gap-1.5">
@@ -187,11 +199,11 @@ const AuthenticationLogDetails = ({
         )}
 
         {info && (
-          <div className="col-span-full flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-100/60 p-3">
-            <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-600">
+          <div className="col-span-full border-t border-slate-200 pt-3">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">
               Authentication details
             </span>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {info?.aal != null &&
           info.aal !== Session_Status_Authentication_Info_AAL.AAL_UNSET && (
             <DetailField label="AAL">{getAALName(info.aal)}</DetailField>
@@ -217,6 +229,15 @@ const AuthenticationLogDetails = ({
 
         {info?.details.oneofKind === "identityProvider" && (
           <>
+            {info.details.identityProvider.type != null && (
+              <DetailField label="Provider type">
+                {
+                  IdentityProvider_Status_Type[
+                    info.details.identityProvider.type
+                  ]
+                }
+              </DetailField>
+            )}
             {info.details.identityProvider.email && (
               <DetailField label="Email">
                 {info.details.identityProvider.email}
@@ -242,6 +263,11 @@ const AuthenticationLogDetails = ({
 
         {info?.details.oneofKind === "credential" && (
           <>
+            {info.details.credential.type != null && (
+              <DetailField label="Credential type">
+                {Credential_Spec_Type[info.details.credential.type]}
+              </DetailField>
+            )}
             {info.details.credential.credentialRef && (
               <div className="flex flex-col gap-0.5">
                 <span className="text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">
@@ -321,6 +347,58 @@ const AuthenticationLogDetails = ({
             </div>
           </div>
         )}
+
+        {info?.details.oneofKind === "external" &&
+          info.details.external.ownerRef && (
+            <div className="col-span-full min-w-0 border-t border-slate-200 pt-3">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+                External owner
+              </span>
+              <ResourceListLabel itemRef={info.details.external.ownerRef} />
+            </div>
+          )}
+
+        {info?.geoip && (
+          <div className="col-span-full border-t border-slate-200 pt-3">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+              Network location
+            </span>
+            <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {info.geoip.ip && (
+                <DetailField label="IP address" mono>
+                  {info.geoip.ip}
+                </DetailField>
+              )}
+              {(info.geoip.city?.name || info.geoip.country?.name) && (
+                <DetailField label="Location">
+                  {[info.geoip.city?.name, info.geoip.country?.name]
+                    .filter(Boolean)
+                    .join(", ")}
+                </DetailField>
+              )}
+              {(info.geoip.region?.name || info.geoip.region?.code) && (
+                <DetailField label="Region">
+                  {info.geoip.region.name || info.geoip.region.code}
+                </DetailField>
+              )}
+              {(info.geoip.network?.asn ||
+                info.geoip.network?.organization ||
+                info.geoip.network?.isp) && (
+                <DetailField label="Network">
+                  {[
+                    info.geoip.network.asn
+                      ? `AS${info.geoip.network.asn}`
+                      : undefined,
+                    info.geoip.network.organization,
+                    info.geoip.network.isp,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </DetailField>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -347,13 +425,26 @@ export const AuthenticationLogC = ({
       : null;
   const userName = entry.userRef?.name ?? entry.userRef?.uid;
   const sessionName = entry.sessionRef?.name ?? entry.sessionRef?.uid;
+  const detailName =
+    info?.details.oneofKind === "identityProvider"
+      ? info.details.identityProvider.email ||
+        info.details.identityProvider.identityProviderRef?.name
+      : info?.details.oneofKind === "credential"
+        ? info.details.credential.credentialRef?.name ||
+          info.details.credential.tokenID
+        : info?.details.oneofKind === "authenticator"
+          ? info.details.authenticator.authenticatorRef?.name
+          : undefined;
+  const location = [info?.geoip?.city?.name, info?.geoip?.country?.code]
+    .filter(Boolean)
+    .join(", ");
 
   return (
     <div
       className={twMerge(
-        "mb-2 overflow-hidden rounded-xl border border-l-4 border-slate-200 border-l-sky-400 bg-white",
-        "shadow-card transition-[border-color,box-shadow] duration-200 ease-out",
-        "hover:border-slate-300 hover:shadow-raised",
+        "mb-1.5 overflow-hidden rounded-lg border border-slate-200 bg-white",
+        "transition-[border-color,background-color,box-shadow] duration-200 ease-out",
+        "hover:border-slate-300 hover:bg-slate-50/50 hover:shadow-card",
         expanded &&
           "border-slate-300 shadow-raised",
       )}
@@ -362,48 +453,22 @@ export const AuthenticationLogC = ({
         type="button"
         aria-expanded={expanded}
         aria-controls={detailsID}
-        className="group flex w-full cursor-pointer items-start gap-3 px-3.5 py-3 text-left outline-none transition-colors duration-200 hover:bg-slate-50/50 focus-visible:bg-blue-50/40 sm:px-4"
+        className="group flex w-full cursor-pointer items-center gap-3 px-3 py-2.5 text-left outline-none transition-colors duration-200 hover:bg-slate-50/70 focus-visible:bg-slate-50"
         onClick={() => setExpanded((v) => !v)}
       >
-        <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-sky-200 bg-sky-50 text-sky-600">
-          <ShieldUser size={16} strokeWidth={2.4} />
-        </span>
+        <span
+          aria-hidden="true"
+          className="h-9 w-1 shrink-0 rounded-full bg-sky-500"
+        />
 
-        <span className="flex min-w-0 flex-1 flex-col gap-2">
-          <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5">
-            <span className="rounded-md border border-sky-200 bg-sky-50 px-2 py-1 text-micro font-semibold text-sky-700">
-              Authentication
+        <span className="flex min-w-0 flex-1 flex-col gap-1">
+          <span className="flex min-w-0 flex-wrap items-center gap-1.5">
+            <span
+              className="max-w-56 truncate text-body font-semibold text-slate-800"
+              title={userName}
+            >
+              {userName ?? "Unknown user"}
             </span>
-
-            {userName ? (
-              <span className="flex min-w-0 items-center gap-1.5">
-                <span className="shrink-0 text-micro font-semibold uppercase tracking-[0.05em] text-slate-500">
-                  User
-                </span>
-                <span className="max-w-48 truncate font-mono text-xs font-semibold text-slate-700">
-                  {userName}
-                </span>
-              </span>
-            ) : (
-              <span className="text-xs font-normal text-slate-500">
-                Unknown user
-              </span>
-            )}
-
-            {sessionName && (
-              <span className="hidden min-w-0 items-center gap-1.5 sm:flex">
-                <span className="text-slate-300">·</span>
-                <span className="shrink-0 text-micro font-semibold uppercase tracking-[0.05em] text-slate-500">
-                  Session
-                </span>
-                <span className="max-w-36 truncate font-mono text-xs font-medium text-slate-500">
-                  {sessionName}
-                </span>
-              </span>
-            )}
-          </span>
-
-          <span className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1.5">
             {authType != null &&
               authType !==
                 Session_Status_Authentication_Info_Type.TYPE_UNSET && (
@@ -411,46 +476,53 @@ export const AuthenticationLogC = ({
               )}
 
             {aal && (
-              <span className="shrink-0 rounded-md bg-slate-800 px-1.5 py-0.5 font-mono text-micro font-semibold text-slate-100">
+              <span className="shrink-0 rounded-md border border-slate-300 bg-slate-100 px-1.5 py-px font-mono text-[10px] font-semibold leading-4 text-slate-700">
                 {aal}
               </span>
             )}
+          </span>
 
+          <span className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] font-medium text-slate-500">
+            <span>Authentication #{entry.authenticationIndex + 1}</span>
+            {sessionName && (
+              <span className="max-w-44 truncate" title={sessionName}>
+                Session {sessionName}
+              </span>
+            )}
             {info?.downstream?.ipAddress && (
-              <span className="font-mono text-xs font-normal text-slate-500">
+              <span className="font-mono">
                 {info.downstream.ipAddress}
               </span>
             )}
-
             {info?.downstream?.clientVersion && (
-              <span className="text-xs font-medium text-slate-500">
-                Client {info.downstream.clientVersion}
-              </span>
+              <span>Client {info.downstream.clientVersion}</span>
+            )}
+            {location && <span>{location}</span>}
+            {x.metadata?.createdAt && (
+              <TimeAgo rfc3339={x.metadata.createdAt} />
             )}
           </span>
         </span>
+
+        {detailName && (
+          <span className="hidden max-w-48 shrink-0 text-right sm:block">
+            <span className="block text-[9px] font-semibold uppercase tracking-[0.06em] text-slate-500">
+              Authentication source
+            </span>
+            <span className="block truncate text-xs font-semibold text-slate-700">
+              {detailName}
+            </span>
+          </span>
+        )}
 
         <motion.span
           animate={{ rotate: expanded ? 180 : 0 }}
           transition={{ duration: 0.35, ease: "easeOut" }}
-          className="mt-2 flex shrink-0 text-slate-500 transition-colors duration-200 group-hover:text-slate-600"
+          className="flex shrink-0 text-slate-500 transition-colors duration-200 group-hover:text-slate-700"
         >
           <ChevronDown size={15} strokeWidth={2.25} />
         </motion.span>
       </button>
-
-      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 border-t border-slate-100 bg-slate-50/40 px-4 py-1.5 pl-[60px] text-micro font-normal text-slate-500">
-        <TimeAgo rfc3339={x.metadata!.createdAt} />
-        <span aria-hidden="true" className="text-slate-300">
-          ·
-        </span>
-        <span className="flex min-w-0 items-center gap-1 font-mono">
-          <span className="shrink-0 uppercase tracking-[0.05em]">Log ID</span>
-          <span className="min-w-0 truncate text-slate-500">
-            <CopyText value={x.metadata!.id} />
-          </span>
-        </span>
-      </div>
 
       <AnimatePresence initial={false}>
         {expanded && (
