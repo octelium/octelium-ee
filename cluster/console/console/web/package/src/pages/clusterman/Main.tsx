@@ -383,7 +383,7 @@ const UpgradeCluster = (props: { upgradeInProgress?: boolean }) => {
     <>
       <Button
         variant="filled"
-        color="dark"
+        color="ink"
         leftSection={<ArrowUpCircle size={15} strokeWidth={2.5} />}
         disabled={props.upgradeInProgress || versions.isLoading}
         onClick={handleOpen}
@@ -405,7 +405,7 @@ const UpgradeCluster = (props: { upgradeInProgress?: boolean }) => {
         styles={{
           content: {
             borderRadius: "12px",
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-slate-200)",
             overflow: "hidden",
             display: "flex",
             flexDirection: "column",
@@ -578,7 +578,7 @@ const UpgradeCluster = (props: { upgradeInProgress?: boolean }) => {
 
             <Button
               variant="filled"
-              color="dark"
+              color="ink"
               size="sm"
               leftSection={<ArrowUpCircle size={13} strokeWidth={2.5} />}
               disabled={!confirmed || !hasSelection}

@@ -23,7 +23,7 @@ import resourceJSONSchema from "../../jsonschema";
 const fontTheme = EditorView.theme(
   {
     "&": {
-      backgroundColor: "#282c34",
+      backgroundColor: "var(--color-code)",
       height: "100%",
     },
     ".cm-content": {
@@ -36,7 +36,7 @@ const fontTheme = EditorView.theme(
     },
     ".cm-scroller": {
       overflow: "auto",
-      backgroundColor: "#282c34",
+      backgroundColor: "var(--color-code)",
     },
   },
   { dark: true },
@@ -112,7 +112,7 @@ const Editor = (props: {
   ];
 
   return (
-    <div className="w-full rounded-lg overflow-hidden border border-slate-700 bg-[#282c34]">
+    <div className="w-full rounded-lg overflow-hidden border border-code-border bg-code">
       <CodeMirror
         value={props.value}
         autoFocus={props.autoFocus ?? true}

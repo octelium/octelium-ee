@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./utils/theme/colors.css";
 
 @theme {
   --text-micro: 0.6875rem;
@@ -8,13 +9,13 @@
 
   --font-weight-normal: 500;
 
-  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.05);
-  --shadow-raised: 0 4px 12px rgba(15, 23, 42, 0.08);
-  --shadow-overlay: 0 16px 40px rgba(15, 23, 42, 0.14);
-
   --default-transition-duration: 150ms;
 
   --page-max-width: 1440px;
+}
+
+body {
+  background-color: var(--color-canvas);
 }
 
 .xterm.terminal {
@@ -47,81 +48,81 @@ input[type="range"]::-webkit-slider-thumb {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #0f172a;
+  background: var(--color-slate-900);
   cursor: pointer;
-  border: 2px solid #ffffff;
+  border: 2px solid var(--color-white);
 }
 
 input[type="range"]::-moz-range-thumb {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #0f172a;
+  background: var(--color-slate-900);
   cursor: pointer;
-  border: 2px solid #ffffff;
+  border: 2px solid var(--color-white);
 }
 
 .mantine-Input-input::placeholder {
-  color: #94a3b8;
+  color: var(--color-slate-400);
   font-weight: 400;
 }
 
 .mantine-Input-input:focus,
 .mantine-Input-input[data-focus] {
-  border-color: #0f172a;
-  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.12);
+  border-color: var(--color-slate-900);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-slate-900) 12%, transparent);
   outline: none;
 }
 
 .mantine-Input-input[data-error],
 .mantine-Input-input[data-error]:focus {
-  border-color: #dc2626;
-  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.12);
+  border-color: var(--color-red-600);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-red-600) 12%, transparent);
 }
 
 .mantine-Input-input:disabled,
 .mantine-Input-input[data-disabled] {
-  background-color: #f8fafc;
-  color: #94a3b8;
-  border-color: #e2e8f0;
+  background-color: var(--color-slate-50);
+  color: var(--color-slate-400);
+  border-color: var(--color-slate-200);
   cursor: not-allowed;
   opacity: 1;
 }
 
 .mantine-SegmentedControl-label[data-active] {
-  color: #0f172a;
+  color: var(--color-slate-900);
 }
 
 .mantine-SegmentedControl-label[data-disabled] {
-  color: #cbd5e1;
+  color: var(--color-slate-300);
 }
 
 .mantine-Pagination-control:hover:not([data-active]) {
-  background-color: #f8fafc;
-  border-color: #cbd5e1;
+  background-color: var(--color-slate-50);
+  border-color: var(--color-slate-300);
 }
 
 .mantine-Pagination-control[data-active] {
-  background-color: #0f172a !important;
-  border-color: #0f172a !important;
-  color: #ffffff !important;
+  background-color: var(--color-slate-900) !important;
+  border-color: var(--color-slate-900) !important;
+  color: var(--color-white) !important;
 }
 
 .mantine-Button-root:focus-visible,
 .mantine-ActionIcon-root:focus-visible {
-  outline: 2px solid #64748b;
+  outline: 2px solid var(--color-slate-500);
   outline-offset: 2px;
 }
 
 .mantine-Select-option[data-combobox-selected],
 .mantine-MultiSelect-option[data-combobox-selected],
 .mantine-Combobox-option[data-combobox-selected] {
-  background-color: #0f172a;
-  color: #ffffff;
+  background-color: var(--color-slate-900);
+  color: var(--color-white);
 }
 
 .mantine-Select-option[data-combobox-active],
 .mantine-MultiSelect-option[data-combobox-active],
 .mantine-Combobox-option[data-combobox-active] {
-  background-color: #f1f5f9;
+  background-color: var(--color-slate-100);
 }

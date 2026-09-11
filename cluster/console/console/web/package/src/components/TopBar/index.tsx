@@ -54,7 +54,7 @@ const TopBar = () => {
         className="flex flex-none items-center"
         aria-label="Go to home"
       >
-        <Logo className="h-auto w-[92px] sm:w-[120px] lg:w-[152px]" />
+        <Logo className="h-auto w-[92px] text-slate-900 sm:w-[120px] lg:w-[152px]" />
       </Link>
 
       <div className="flex-1" />
@@ -72,7 +72,7 @@ const TopBar = () => {
               </span>
             )}
 
-            <div className="h-7 w-7 shrink-0 overflow-hidden rounded-full ring-2 ring-white ring-offset-1 ring-offset-slate-100 transition-[box-shadow] duration-150 group-hover:ring-slate-300 sm:h-8 sm:w-8">
+            <div className="h-7 w-7 shrink-0 overflow-hidden rounded-full ring-2 ring-white ring-offset-1 ring-offset-canvas transition-[box-shadow] duration-150 group-hover:ring-slate-300 sm:h-8 sm:w-8">
               {picURL ? (
                 <img
                   src={picURL}

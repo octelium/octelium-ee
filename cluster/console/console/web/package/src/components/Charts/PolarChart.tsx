@@ -5,6 +5,13 @@ import {
   PolarComponent,
   TooltipComponent,
 } from "echarts/components";
+import {
+  CHART_FONT,
+  CHART_INK,
+  CHART_TOOLTIP,
+  sliceColors,
+  useChartColorScheme,
+} from "@/utils/charts/palette";
 import * as echarts from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 
@@ -16,13 +23,14 @@ echarts.use([
   CanvasRenderer,
 ]);
 
-const SLICE_COLORS = ["#1d4ed8", "#60a5fa", "#bfdbfe", "#dbeafe"];
-
 const PolarChart = (props: {
   data: { name: string; value: number }[];
   title?: string;
 }) => {
   const { data, title } = props;
+
+  const colorScheme = useChartColorScheme();
+  const slices = sliceColors();
 
   if (!data || data.length === 0) return null;
 
@@ -52,14 +60,14 @@ const PolarChart = (props: {
       axisLine: { show: false },
       axisTick: { show: false },
       axisLabel: {
-        color: "#64748b",
+        color: CHART_INK.muted,
         fontSize: 11,
         fontWeight: 700,
-        fontFamily: "Ubuntu, sans-serif",
+        fontFamily: CHART_FONT,
       },
       splitLine: {
         show: true,
-        lineStyle: { color: "#f1f5f9", type: "solid" },
+        lineStyle: { color: CHART_INK.track, type: "solid" },
       },
     },
 
@@ -72,18 +80,14 @@ const PolarChart = (props: {
           <div style="font-weight:700;margin-bottom:4px;font-family:Ubuntu,sans-serif">${params.name}</div>
           <div style="display:flex;align-items:baseline;gap:6px;">
             <span style="font-size:16px;font-weight:700;">${params.value.toLocaleString()}</span>
-            <span style="font-size:11px;color:#64748b">${pct}%</span>
+            <span style="font-size:11px;color:${CHART_INK.onDarkMuted}">${pct}%</span>
           </div>
         `;
       },
-      backgroundColor: "#1e293b",
-      borderColor: "#334155",
+      backgroundColor: CHART_TOOLTIP.backgroundColor,
+      borderColor: CHART_TOOLTIP.borderColor,
       borderWidth: 1,
-      textStyle: {
-        color: "#f8fafc",
-        fontSize: 12,
-        fontFamily: "Ubuntu, sans-serif",
-      },
+      textStyle: CHART_TOOLTIP.textStyle,
       extraCssText: "border-radius:6px; padding:8px 12px;",
     },
 
@@ -93,12 +97,12 @@ const PolarChart = (props: {
         data: data.map((x, i) => ({
           value: x.value,
           itemStyle: {
-            color: SLICE_COLORS[i % SLICE_COLORS.length],
+            color: slices[i % slices.length],
             borderRadius: [0, 4, 4, 0],
           },
           emphasis: {
             itemStyle: {
-              color: SLICE_COLORS[i % SLICE_COLORS.length],
+              color: slices[i % slices.length],
               opacity: 0.85,
             },
           },
@@ -109,10 +113,10 @@ const PolarChart = (props: {
           show: true,
           position: "middle",
           formatter: (params: any) => params.value.toLocaleString(),
-          color: "#ffffff",
+          color: CHART_INK.onAccent,
           fontSize: 10,
           fontWeight: 700,
-          fontFamily: "Ubuntu, sans-serif",
+          fontFamily: CHART_FONT,
         },
         roundCap: true,
       },
@@ -127,6 +131,7 @@ const PolarChart = (props: {
         </p>
       )}
       <ReactEChartsCore
+        key={colorScheme}
         echarts={echarts}
         option={option}
         style={{ height: "220px", width: "100%" }}
@@ -141,7 +146,7 @@ const PolarChart = (props: {
           >
             <span
               className="w-2 h-2 rounded-full shrink-0"
-              style={{ background: SLICE_COLORS[i % SLICE_COLORS.length] }}
+              style={{ background: slices[i % slices.length] }}
             />
             {item.name} — {item.value.toLocaleString()}
           </span>

@@ -3,7 +3,12 @@ import { GaugeChart as GaugeChartC } from "echarts/charts";
 import { TooltipComponent } from "echarts/components";
 import * as echarts from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
-import { CHART_INK, STATUS_COLORS } from "@/utils/charts/palette";
+import {
+  CHART_INK,
+  CHART_TOOLTIP,
+  STATUS_COLORS,
+  useChartColorScheme,
+} from "@/utils/charts/palette";
 
 echarts.use([CanvasRenderer, GaugeChartC, TooltipComponent]);
 
@@ -21,6 +26,8 @@ const GaugeChart = (props: {
   total: number;
 }) => {
   const { total, num, title, name } = props;
+
+  const colorScheme = useChartColorScheme();
   const pct = total === 0 ? 0 : (num / total) * 100;
   const pctDisplay = parseFloat(pct.toFixed(1));
   const color = getGaugeColor(pctDisplay);
@@ -28,15 +35,11 @@ const GaugeChart = (props: {
   const option = {
     tooltip: {
       formatter: () =>
-        `<strong>${name}</strong><br/>${num.toLocaleString()} / ${total.toLocaleString()} &nbsp;<span style="color:#64748b">${pctDisplay}%</span>`,
-      backgroundColor: "#1e293b",
-      borderColor: "#334155",
+        `<strong>${name}</strong><br/>${num.toLocaleString()} / ${total.toLocaleString()} &nbsp;<span style="color:${CHART_INK.onDarkMuted}">${pctDisplay}%</span>`,
+      backgroundColor: CHART_TOOLTIP.backgroundColor,
+      borderColor: CHART_TOOLTIP.borderColor,
       borderWidth: 1,
-      textStyle: {
-        color: "#f8fafc",
-        fontSize: 12,
-        fontFamily: "Ubuntu, sans-serif",
-      },
+      textStyle: CHART_TOOLTIP.textStyle,
       extraCssText: "border-radius:6px; padding:8px 12px;",
     },
 
@@ -57,7 +60,7 @@ const GaugeChart = (props: {
             width: 10,
             color: [
               [pct / 100, color],
-              [1, "#f1f5f9"],
+              [1, CHART_INK.track],
             ],
           },
         },
@@ -116,6 +119,7 @@ const GaugeChart = (props: {
         </p>
       )}
       <ReactEChartsCore
+        key={colorScheme}
         echarts={echarts}
         option={option}
         style={{ height: "180px", width: "100%" }}

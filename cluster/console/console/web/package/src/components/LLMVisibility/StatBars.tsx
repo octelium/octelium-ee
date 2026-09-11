@@ -1,6 +1,6 @@
 import { ObjectReference } from "@/apis/metav1/metav1";
 import { Stats } from "@/apis/visibilityv1/llm/vllmv1";
-import { SERIES_COLORS } from "@/utils/charts/palette";
+import { seriesColor, useChartColorScheme } from "@/utils/charts/palette";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import * as React from "react";
@@ -30,6 +30,7 @@ const StatBars = (props: {
   onSelect?: (item: StatBarItem) => void;
   renderLabel?: (item: StatBarItem) => React.ReactNode;
 }) => {
+  useChartColorScheme();
   const [expanded, setExpanded] = React.useState(false);
 
   const rows = React.useMemo(() => {
@@ -68,8 +69,8 @@ const StatBars = (props: {
     const width = peak <= 0 ? 0 : Math.max(1.5, (row.value / peak) * 100);
     const share = ratio(row.value, total);
     const color = props.colored
-      ? SERIES_COLORS[index % SERIES_COLORS.length]
-      : "#2563eb";
+      ? seriesColor(index)
+      : seriesColor(0);
 
     const label = isOther
       ? "Other"
@@ -86,7 +87,7 @@ const StatBars = (props: {
           <span
             aria-hidden="true"
             className="h-2 w-2 shrink-0 rounded-full ring-2 ring-white"
-            style={{ backgroundColor: isOther ? "#cbd5e1" : color }}
+            style={{ backgroundColor: isOther ? "var(--color-slate-300)" : color }}
           />
           <span
             className={twMerge(

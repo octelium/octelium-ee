@@ -213,7 +213,7 @@ const Paginator = (props: {
             value={Math.min(Math.max(meta.page + 1, 1), totalPages)}
             withEdges
             radius="md"
-            color="dark"
+            color="ink"
             onChange={(v) => {
               if (props.onPageChange) {
                 props.onPageChange(v - 1);

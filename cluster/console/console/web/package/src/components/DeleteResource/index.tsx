@@ -124,9 +124,9 @@ const DeleteResource = (props: {
         transitionProps={{ transition: "pop", duration: 250 }}
         styles={{
           content: {
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-slate-200)",
             borderRadius: "14px",
-            boxShadow: "0 24px 64px rgba(15,23,42,0.18)",
+            boxShadow: "var(--shadow-modal)",
             overflow: "hidden",
           },
         }}
@@ -244,12 +244,12 @@ const DeleteResource = (props: {
                 }}
                 styles={{
                   label: {
-                    color: "#334155",
+                    color: "var(--color-slate-700)",
                     fontSize: "0.75rem",
                     fontWeight: 700,
                   },
                   description: {
-                    color: "#94a3b8",
+                    color: "var(--color-slate-400)",
                     fontSize: "0.67rem",
                     fontWeight: 600,
                     marginTop: 2,

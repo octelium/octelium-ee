@@ -176,7 +176,7 @@ const SelectionBar = (props: {
       leftSection={<X size={12} strokeWidth={2.5} />}
       disabled={props.isDeleting}
       onClick={props.onClear}
-      styles={{ root: { color: "#e2e8f0" } }}
+      styles={{ root: { color: "var(--color-slate-200)" } }}
     >
       Clear
     </Button>
@@ -214,7 +214,7 @@ const ResourceListToolbar = (props: {
   const hasSelection = (props.selectedCount ?? 0) > 0;
 
   return (
-    <div className="sticky top-[60px] z-20 -mx-1 mb-4 flex flex-col gap-2.5 border-b border-slate-200 bg-slate-100/95 px-1 pb-3 pt-1 backdrop-blur supports-[backdrop-filter]:bg-slate-100/80">
+    <div className="sticky top-[60px] z-20 -mx-1 mb-4 flex flex-col gap-2.5 border-b border-slate-200 bg-canvas/95 px-1 pb-3 pt-1 backdrop-blur supports-[backdrop-filter]:bg-canvas/80">
       <div className="flex items-end justify-between gap-3">
         <div className="min-w-0">
           <h1 className="truncate text-lg font-semibold tracking-tight text-slate-950">
@@ -236,7 +236,7 @@ const ResourceListToolbar = (props: {
         {props.canCreate && (
           <Button
             variant="filled"
-            color="dark"
+            color="ink"
             className="shrink-0 !shadow-[0_8px_20px_-6px_rgba(15,23,42,0.35)]"
             leftSection={<Plus size={14} />}
             onClick={props.onCreate}

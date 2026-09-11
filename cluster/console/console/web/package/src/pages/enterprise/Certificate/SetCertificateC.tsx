@@ -78,7 +78,7 @@ export const SetCertificateC = (props: { item: Certificate }) => {
         styles={{
           content: {
             borderRadius: 14,
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-slate-200)",
             overflow: "hidden",
             maxHeight: "92vh",
           },
@@ -169,7 +169,7 @@ export const SetCertificateC = (props: { item: Certificate }) => {
               </Button>
               <Button
                 type="button"
-                color="dark"
+                color="ink"
                 size="sm"
                 disabled={!canSubmit}
                 loading={mutationSet.isPending}

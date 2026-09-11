@@ -12,7 +12,7 @@ interface AnimatedConnectorProps {
 const AnimatedConnector = ({
   dotSize = 3,
   dotSpacing = 14,
-  color = "#64748b",
+  color = "var(--color-slate-500)",
   speed = 1.4,
   className = "w-full",
   orientation = "horizontal",
@@ -49,7 +49,7 @@ const AnimatedConnector = ({
           y1={horizontal ? "50%" : dotSize}
           x2={horizontal ? `calc(100% - ${dotSize}px)` : "50%"}
           y2={horizontal ? "50%" : `calc(100% - ${dotSize}px)`}
-          stroke="#e2e8f0"
+          className="stroke-slate-200"
           strokeWidth={1.5}
           strokeLinecap="round"
         />
@@ -58,7 +58,7 @@ const AnimatedConnector = ({
           y1={horizontal ? "50%" : dotSize}
           x2={horizontal ? `calc(100% - ${dotSize}px)` : "50%"}
           y2={horizontal ? "50%" : `calc(100% - ${dotSize}px)`}
-          stroke={color}
+          style={{ stroke: color }}
           strokeWidth={dotSize}
           strokeLinecap="round"
           strokeDasharray={`1 ${dotSpacing - 1}`}
@@ -68,16 +68,16 @@ const AnimatedConnector = ({
           cx={horizontal ? dotSize : "50%"}
           cy={horizontal ? "50%" : dotSize}
           r={dotSize}
-          fill="#ffffff"
-          stroke={color}
+          className="fill-white"
+          style={{ stroke: color }}
           strokeWidth={1.5}
         />
         <circle
           cx={horizontal ? `calc(100% - ${dotSize}px)` : "50%"}
           cy={horizontal ? "50%" : `calc(100% - ${dotSize}px)`}
           r={dotSize + 1}
-          fill={color}
-          stroke="#ffffff"
+          className="stroke-white"
+          style={{ fill: color }}
           strokeWidth={2}
         />
       </svg>

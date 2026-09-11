@@ -42,7 +42,7 @@ export default () => {
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-slate-100 antialiased">
+    <div className="flex min-h-screen w-full flex-col bg-canvas antialiased">
       <title>Octelium Console</title>
       <ScrollRestoration />
 
@@ -57,7 +57,7 @@ export default () => {
         padding="md"
       >
         <AppShell.Header
-          className="!bg-slate-100 border-b border-slate-200"
+          className="!bg-canvas border-b border-slate-200"
           style={{ zIndex: 200 }}
         >
           <div className="flex h-full flex-row items-center">
@@ -73,7 +73,7 @@ export default () => {
 
         <AppShell.Navbar
           p="md"
-          className="!bg-slate-100"
+          className="!bg-canvas"
           style={{ zIndex: 10 }}
         >
           <SideBar />

@@ -153,7 +153,7 @@ const CreateUserCredential = (props: { item: CoreC.User }) => {
     <div className="flex items-center">
       <Button
         variant="filled"
-        color="dark"
+        color="ink"
         size="compact-sm"
         leftSection={<Plus size={12} strokeWidth={2.5} />}
         onClick={open}
@@ -192,18 +192,18 @@ const CreateUserCredential = (props: { item: CoreC.User }) => {
           header: {
             borderBottomWidth: "1px",
             borderBottomStyle: "solid",
-            borderBottomColor: "#e2e8f0",
+            borderBottomColor: "var(--color-slate-200)",
             minHeight: "56px",
           },
           body: {
             minHeight: "calc(100dvh - 56px)",
             padding: "16px",
-            backgroundColor: "#f8fafc",
+            backgroundColor: "var(--color-slate-50)",
           },
           content: {
             borderLeftWidth: "1px",
             borderLeftStyle: "solid",
-            borderLeftColor: "#e2e8f0",
+            borderLeftColor: "var(--color-slate-200)",
           },
         }}
       >
@@ -239,7 +239,7 @@ const CreateUserCredential = (props: { item: CoreC.User }) => {
               Cancel
             </Button>
             <Button
-              color="dark"
+              color="ink"
               size="sm"
               leftSection={<KeyRound size={13} strokeWidth={2.5} />}
               loading={mutationCredential.isPending}

@@ -35,7 +35,7 @@ export const ListLoading = (props: { label: string }) => (
       transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
       className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm"
     >
-      <Loader size="sm" color="dark" type="oval" />
+      <Loader size="sm" color="ink" type="oval" />
     </motion.div>
     <span className="text-xs font-semibold tracking-wide text-slate-500">
       Loading {props.label}…
@@ -60,7 +60,7 @@ export const PageLoading = (props: { className?: string }) => (
       transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
       className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm"
     >
-      <Loader size="sm" color="dark" type="oval" />
+      <Loader size="sm" color="ink" type="oval" />
     </motion.div>
   </motion.div>
 );

@@ -2,7 +2,11 @@ import ReactEChartsCore from "echarts-for-react";
 import { GaugeChart as GaugeChartC } from "echarts/charts";
 import * as echarts from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
-import { CHART_INK } from "@/utils/charts/palette";
+import {
+  CHART_INK,
+  seriesColor,
+  useChartColorScheme,
+} from "@/utils/charts/palette";
 
 echarts.use([CanvasRenderer, GaugeChartC]);
 
@@ -19,9 +23,12 @@ const CounterChart = (props: {
     label,
     title,
     suffix = "",
-    color = "#1d4ed8",
+    color,
     valueFormatter,
   } = props;
+
+  const colorScheme = useChartColorScheme();
+  const accent = color ?? seriesColor(0);
 
   const option = {
     series: [
@@ -50,7 +57,7 @@ const CounterChart = (props: {
           valueAnimation: true,
           formatter: (currentValue: number) =>
             `${valueFormatter ? valueFormatter(currentValue) : currentValue}${suffix}`,
-          color,
+          color: accent,
           fontSize: 32,
           fontWeight: 700,
           fontFamily: "Ubuntu, sans-serif",
@@ -69,6 +76,7 @@ const CounterChart = (props: {
         </p>
       )}
       <ReactEChartsCore
+        key={colorScheme}
         echarts={echarts}
         option={option}
         style={{ height: "120px", width: "100%" }}

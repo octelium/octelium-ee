@@ -59,14 +59,14 @@ const SecretTextAreaCustom = (props: {
       error={fileError}
       styles={{
         label: {
-          color: "#475569",
+          color: "var(--color-slate-600)",
           fontSize: "0.72rem",
           fontWeight: 700,
           letterSpacing: "0.02em",
           marginBottom: "5px",
         },
         description: {
-          color: "#94a3b8",
+          color: "var(--color-slate-400)",
           fontSize: "0.68rem",
           fontWeight: 600,
           marginBottom: "6px",
@@ -171,11 +171,11 @@ const SecretTextAreaCustom = (props: {
           styles={{
             input: {
               WebkitTextSecurity: revealed ? "none" : "disc",
-              backgroundColor: "#ffffff",
+              backgroundColor: "var(--color-white)",
               border: 0,
               borderRadius: 0,
               boxShadow: "none",
-              color: "#1e293b",
+              color: "var(--color-slate-800)",
               fontFamily: "Ubuntu, sans-serif",
               fontSize: "0.8rem",
               fontWeight: 600,

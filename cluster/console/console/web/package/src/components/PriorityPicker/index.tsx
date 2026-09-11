@@ -79,7 +79,7 @@ const PriorityPicker = (props: {
           step={1}
           value={value}
           onChange={props.onChange}
-          color="dark"
+          color="ink"
           size="sm"
           label={(next) => {
             const priority = next as Priority;
@@ -95,7 +95,7 @@ const PriorityPicker = (props: {
             markLabel: {
               fontSize: "0.61rem",
               fontWeight: 700,
-              color: "#94a3b8",
+              color: "var(--color-slate-400)",
               whiteSpace: "nowrap",
             },
           }}

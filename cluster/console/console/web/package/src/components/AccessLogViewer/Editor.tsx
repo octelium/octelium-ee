@@ -17,7 +17,7 @@ const editorTheme = EditorView.theme(
   {
     "&": {
       height: "100%",
-      backgroundColor: "#282c34",
+      backgroundColor: "var(--color-code)",
       color: "#abb2bf",
     },
     ".cm-content": {
@@ -28,14 +28,14 @@ const editorTheme = EditorView.theme(
     },
     ".cm-gutters": {
       borderRight: "1px solid rgba(148,163,184,0.12)",
-      backgroundColor: "#282c34",
+      backgroundColor: "var(--color-code)",
       color: "#64748b",
       fontSize: "12px",
     },
     ".cm-scroller": {
       minHeight: "100%",
       overflow: "auto",
-      backgroundColor: "#282c34",
+      backgroundColor: "var(--color-code)",
     },
     ".cm-activeLine": {
       backgroundColor: "rgba(148,163,184,0.06)",
@@ -180,7 +180,7 @@ const Editor = ({ item }: { item: LogItem }) => {
             </CopyButton>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-slate-700 bg-[#282c34] shadow-sm">
+          <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-code-border bg-code shadow-sm">
             <CodeMirror
               value={value}
               autoFocus

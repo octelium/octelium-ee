@@ -46,83 +46,83 @@ export const regoLanguage = StreamLanguage.define({
 
 export const regoHighlight = syntaxHighlighting(
   HighlightStyle.define([
-    { tag: t.keyword, color: "#7c3aed", fontWeight: "bold" },
-    { tag: t.variableName, color: "#1e293b" },
-    { tag: t.atom, color: "#0369a1" },
-    { tag: t.number, color: "#0284c7" },
-    { tag: t.string, color: "#047857" },
-    { tag: t.comment, color: "#64748b", fontStyle: "italic" },
-    { tag: t.operator, color: "#475569", fontWeight: "bold" },
-    { tag: t.punctuation, color: "#475569" },
+    { tag: t.keyword, color: "var(--color-violet-600)", fontWeight: "bold" },
+    { tag: t.variableName, color: "var(--color-slate-800)" },
+    { tag: t.atom, color: "var(--color-sky-700)" },
+    { tag: t.number, color: "var(--color-sky-600)" },
+    { tag: t.string, color: "var(--color-emerald-700)" },
+    { tag: t.comment, color: "var(--color-slate-500)", fontStyle: "italic" },
+    { tag: t.operator, color: "var(--color-slate-600)", fontWeight: "bold" },
+    { tag: t.punctuation, color: "var(--color-slate-600)" },
   ]),
 );
 
 export const regoTheme = EditorView.theme(
   {
     "&": {
-      backgroundColor: "#ffffff !important",
-      color: "#1e293b",
-      border: "1px solid #e2e8f0",
+      backgroundColor: "var(--color-white) !important",
+      color: "var(--color-slate-800)",
+      border: "1px solid var(--color-slate-200)",
       borderRadius: "8px",
       boxShadow: "0 1px 3px rgba(15,23,42,0.05)",
     },
     "&.cm-editor": {
-      backgroundColor: "#ffffff !important",
+      backgroundColor: "var(--color-white) !important",
     },
     ".cm-scroller": {
-      backgroundColor: "#ffffff !important",
+      backgroundColor: "var(--color-white) !important",
     },
     ".cm-content": {
-      backgroundColor: "#ffffff !important",
+      backgroundColor: "var(--color-white) !important",
 
       fontSize: "13px",
-      caretColor: "#0f172a",
+      caretColor: "var(--color-slate-900)",
       padding: "8px 0",
     },
     ".cm-line": {
-      backgroundColor: "#ffffff !important",
+      backgroundColor: "var(--color-white) !important",
       padding: "0 12px",
-      color: "#1e293b",
+      color: "var(--color-slate-800)",
     },
     ".cm-gutters": {
-      backgroundColor: "#f8fafc !important",
-      color: "#94a3b8",
+      backgroundColor: "var(--color-slate-50) !important",
+      color: "var(--color-slate-400)",
       border: "none",
-      borderRight: "1px solid #e2e8f0",
+      borderRight: "1px solid var(--color-slate-200)",
     },
     ".cm-gutter": {
-      backgroundColor: "#f8fafc !important",
+      backgroundColor: "var(--color-slate-50) !important",
     },
     ".cm-gutterElement": {
-      backgroundColor: "#f8fafc !important",
+      backgroundColor: "var(--color-slate-50) !important",
     },
     ".cm-activeLineGutter": {
-      backgroundColor: "#e2e8f0 !important",
-      color: "#475569",
+      backgroundColor: "var(--color-slate-200) !important",
+      color: "var(--color-slate-600)",
     },
     ".cm-activeLine": {
-      backgroundColor: "#f8fafc !important",
+      backgroundColor: "var(--color-slate-50) !important",
     },
     ".cm-selectionBackground, ::selection": {
-      backgroundColor: "#bfdbfe !important",
+      backgroundColor: "var(--color-blue-200) !important",
     },
     ".cm-cursor": {
-      borderLeftColor: "#0f172a",
+      borderLeftColor: "var(--color-slate-900)",
     },
     ".cm-tooltip-autocomplete": {
-      backgroundColor: "#ffffff !important",
-      border: "1px solid #e2e8f0",
+      backgroundColor: "var(--color-white) !important",
+      border: "1px solid var(--color-slate-200)",
       borderRadius: "6px",
       boxShadow: "0 8px 24px rgba(15,23,42,0.14)",
     },
     ".cm-tooltip-autocomplete ul li": {
       fontSize: "12px",
       padding: "3px 10px",
-      color: "#334155",
+      color: "var(--color-slate-700)",
     },
     ".cm-tooltip-autocomplete ul li[aria-selected]": {
-      backgroundColor: "#0f172a !important",
-      color: "#ffffff",
+      backgroundColor: "var(--color-slate-900) !important",
+      color: "var(--color-white)",
     },
   },
   { dark: false },

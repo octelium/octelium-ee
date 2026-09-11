@@ -469,7 +469,7 @@ const PolicyTester = () => {
           loading={mutation.isPending}
           loaderProps={{ children: <Loader2 size={14} /> }}
           rightSection={!mutation.isPending && <ArrowRight size={14} />}
-          color="dark"
+          color="ink"
           radius="md"
           size="sm"
           styles={{
@@ -564,7 +564,7 @@ const PolicyTester = () => {
                   )}
                 </div>
                 <AnimatedConnector
-                  color={resp.isAuthorized ? "#059669" : "#dc2626"}
+                  color={resp.isAuthorized ? "var(--color-emerald-600)" : "var(--color-red-600)"}
                 />
                 <div className="min-w-0 rounded-lg border border-slate-200 bg-slate-50/60 p-2.5">
                   <span className="mb-2 block text-micro font-semibold uppercase tracking-[0.07em] text-slate-500">

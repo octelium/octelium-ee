@@ -130,7 +130,7 @@ const SelectResourceMultiple = (props: {
         styles={{
           dropdown: {
             padding: 6,
-            borderColor: "#e2e8f0",
+            borderColor: "var(--color-slate-200)",
             borderRadius: 12,
           },
           option: {

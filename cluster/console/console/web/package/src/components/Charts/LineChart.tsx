@@ -6,6 +6,8 @@ import {
   CHART_TOOLTIP,
   seriesColor,
   splitLineStyle,
+  useChartColorScheme,
+  withAlpha,
 } from "@/utils/charts/palette";
 import ReactEChartsCore from "echarts-for-react";
 import { BarChart, LineChart as LineChartC } from "echarts/charts";
@@ -61,14 +63,6 @@ const formatTooltipDate = (value: number) =>
     minute: "2-digit",
   });
 
-const withAlpha = (hex: string, alpha: number) => {
-  const value = hex.replace("#", "");
-  const r = parseInt(value.slice(0, 2), 16);
-  const g = parseInt(value.slice(2, 4), 16);
-  const b = parseInt(value.slice(4, 6), 16);
-  return `rgba(${r},${g},${b},${alpha})`;
-};
-
 export const summarizePoints = (points?: DataPoint[]) => {
   const values = (points ?? [])
     .map((item) => item.value)
@@ -91,6 +85,7 @@ const LineChart = ({
   sparkline,
   emptyLabel,
 }: Props) => {
+  const colorScheme = useChartColorScheme();
   const accent = color ?? seriesColor(0);
 
   const data = useMemo(
@@ -198,7 +193,7 @@ const LineChart = ({
             },
             itemStyle: {
               color: accent,
-              borderColor: "#ffffff",
+              borderColor: CHART_INK.surface,
               borderWidth: 2,
             },
             areaStyle: {
@@ -225,7 +220,7 @@ const LineChart = ({
                 formatter: `Avg ${formatNumber(average)}`,
                 position: "insideEndTop",
                 color: CHART_INK.muted,
-                backgroundColor: "rgba(255,255,255,0.92)",
+                backgroundColor: withAlpha(CHART_INK.surface, 0.92),
                 borderRadius: 4,
                 padding: [2, 5],
                 fontSize: 10,
@@ -238,7 +233,7 @@ const LineChart = ({
         },
       ],
     }),
-    [accent, average, data, sparkline, title, variant],
+    [accent, average, colorScheme, data, sparkline, title, variant],
   );
 
   if (data.length === 0) {
@@ -272,6 +267,7 @@ const LineChart = ({
       aria-label={title ?? "Activity over time"}
     >
       <ReactEChartsCore
+        key={colorScheme}
         echarts={echarts}
         option={option}
         style={{ height: "100%", width: "100%" }}

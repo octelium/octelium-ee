@@ -31,10 +31,10 @@ type SummaryEntry = {
 };
 
 const STATUS = {
-  good: "#059669",
-  warning: "#d97706",
-  serious: "#ea580c",
-  critical: "#dc2626",
+  good: "var(--color-emerald-600)",
+  warning: "var(--color-amber-600)",
+  serious: "var(--color-orange-600)",
+  critical: "var(--color-red-600)",
 } as const;
 
 const client = () => getClientVisibilityEnterprise();

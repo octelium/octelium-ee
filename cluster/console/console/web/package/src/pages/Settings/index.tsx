@@ -2,12 +2,18 @@ import CopyText from "@/components/CopyText";
 import TimeAgo from "@/components/TimeAgo";
 import { useAppSelector } from "@/utils/hooks";
 import {
+  SegmentedControl,
+  useMantineColorScheme,
+  type MantineColorScheme,
+} from "@mantine/core";
+import {
   ArrowUpRight,
   BadgeCheck,
   CircleAlert,
   LaptopMinimal,
   Mail,
   ShieldCheck,
+  SunMoon,
   UserRound,
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -63,6 +69,34 @@ const Section = (props: {
   );
 };
 
+const COLOR_SCHEMES = [
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+  { value: "auto", label: "System" },
+];
+
+const Appearance = () => {
+  const { colorScheme, setColorScheme } = useMantineColorScheme();
+
+  return (
+    <Section
+      title="Appearance"
+      description="Pick the console color scheme. The choice is kept on this device only."
+      icon={SunMoon}
+    >
+      <Field label="Color scheme" wide>
+        <SegmentedControl
+          value={colorScheme}
+          onChange={(value) => setColorScheme(value as MantineColorScheme)}
+          data={COLOR_SCHEMES}
+          size="sm"
+          className="w-full max-w-xs"
+        />
+      </Field>
+    </Section>
+  );
+};
+
 export default () => {
   const status = useAppSelector((state) => state.settings.status);
   const user = status?.user;
@@ -82,6 +116,8 @@ export default () => {
             Your signed-in user information has not finished loading yet.
           </p>
         </section>
+
+        <Appearance />
       </main>
     );
   }
@@ -172,6 +208,8 @@ export default () => {
           </Field>
         )}
       </Section>
+
+      <Appearance />
 
       {(metadata.createdAt || metadata.updatedAt || metadata.tags.length > 0) && (
         <Section

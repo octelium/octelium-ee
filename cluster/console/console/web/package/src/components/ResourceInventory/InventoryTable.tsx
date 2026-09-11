@@ -1,4 +1,8 @@
-import { seriesColor, STATUS_COLORS } from "@/utils/charts/palette";
+import {
+  seriesColor,
+  STATUS_COLORS,
+  useChartColorScheme,
+} from "@/utils/charts/palette";
 import { SegmentedControl } from "@mantine/core";
 import { ChevronRight, LucideIcon } from "lucide-react";
 import * as React from "react";
@@ -20,6 +24,7 @@ export type InventoryRow = {
 };
 
 export const CompositionBar = (props: { segments: Segment[]; total: number }) => {
+  useChartColorScheme();
   const shown = props.segments.filter((segment) => segment.value > 0);
   if (shown.length === 0 || props.total === 0) {
     return <span className="text-micro font-normal text-slate-500">—</span>;
@@ -191,7 +196,7 @@ export const InventoryTable = (props: {
                             key={item.label}
                             className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-micro font-semibold"
                             style={{
-                              borderColor: `${item.color ?? STATUS_COLORS.warning}55`,
+                              borderColor: `color-mix(in oklab, ${item.color ?? STATUS_COLORS.warning} 34%, transparent)`,
                               color: item.color ?? STATUS_COLORS.critical,
                             }}
                           >

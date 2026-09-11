@@ -304,7 +304,7 @@ const TimestampPicker = ({
                             fontWeight: 700,
                           },
                           weekday: {
-                            color: "#94a3b8",
+                            color: "var(--color-slate-400)",
                             fontSize: "0.66rem",
                             fontWeight: 700,
                           },
@@ -359,7 +359,7 @@ const TimestampPicker = ({
                       <Button
                         type="submit"
                         fullWidth
-                        color="dark"
+                        color="ink"
                         disabled={!customTimestamp}
                         className="mt-auto"
                       >

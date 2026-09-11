@@ -40,8 +40,12 @@ import DurationPicker from "../DurationPicker";
 import {
   axisLabelStyle,
   CHART_INK,
-  SERIES_COLORS,
+  CHART_TOOLTIP,
+  seriesColor,
+  seriesColors,
   splitLineStyle,
+  useChartColorScheme,
+  withAlpha,
 } from "@/utils/charts/palette";
 
 echarts.use([
@@ -467,6 +471,7 @@ const MetricChart = (props: MetricChartProps) => {
     setStep(props.step);
   }, [durationKey(props.step)]);
 
+  const colorScheme = useChartColorScheme();
   const supportsStep = !isRawCounterOperation(operation);
   const explicitRange =
     tsToMillis(props.from) !== undefined && tsToMillis(props.to) !== undefined
@@ -633,7 +638,7 @@ const MetricChart = (props: MetricChartProps) => {
     const multi = series.length > 1;
 
     return {
-      color: [...SERIES_COLORS],
+      color: seriesColors(),
 
       animation: statistics.pointCount <= 1_000,
       animationDuration: 650,
@@ -656,22 +661,22 @@ const MetricChart = (props: MetricChartProps) => {
       tooltip: {
         trigger: "axis",
         confine: true,
-        backgroundColor: "#0f172a",
-        borderColor: "#334155",
+        backgroundColor: CHART_TOOLTIP.backgroundColor,
+        borderColor: CHART_TOOLTIP.borderColor,
         borderWidth: 1,
         padding: [10, 12],
         textStyle: {
-          color: "#f8fafc",
+          color: CHART_INK.onDark,
           fontSize: 12,
           fontFamily: "Ubuntu, sans-serif",
         },
         extraCssText:
-          "border-radius:10px;box-shadow:0 10px 24px rgba(15,23,42,.18);max-width:320px;",
+          `${CHART_TOOLTIP.extraCssText}max-width:320px;`,
         axisPointer: {
           type: "line",
           snap: true,
           lineStyle: {
-            color: "#60a5fa",
+            color: CHART_INK.marker,
             width: 1,
             type: "dashed",
           },
@@ -693,7 +698,7 @@ const MetricChart = (props: MetricChartProps) => {
 
           const header =
             ts !== undefined
-              ? `<div style="margin-bottom:8px;color:#cbd5e1;font-size:11px;font-weight:700">${new Date(ts).toLocaleString([], {
+              ? `<div style="margin-bottom:8px;color:${CHART_INK.onDarkMuted};font-size:11px;font-weight:700">${new Date(ts).toLocaleString([], {
                   month: "short",
                   day: "numeric",
                   hour: "2-digit",
@@ -716,7 +721,7 @@ const MetricChart = (props: MetricChartProps) => {
                   ? formatValue(rawValue, effectiveUnit)
                   : "—";
 
-              return `<div style="display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:5px"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#cbd5e1;font-size:11px;font-weight:600">${p.marker ?? ""}${escapeHTML(p.seriesName ?? "Metric")}</span><strong style="flex-shrink:0;color:#f8fafc;font-size:12px">${value}</strong></div>`;
+              return `<div style="display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:5px"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${CHART_INK.onDarkMuted};font-size:11px;font-weight:600">${p.marker ?? ""}${escapeHTML(p.seriesName ?? "Metric")}</span><strong style="flex-shrink:0;color:${CHART_INK.onDark};font-size:12px">${value}</strong></div>`;
             })
             .join("");
 
@@ -731,15 +736,15 @@ const MetricChart = (props: MetricChartProps) => {
             itemWidth: 8,
             itemHeight: 8,
             type: "scroll",
-            pageIconColor: "#64748b",
-            pageIconInactiveColor: "#cbd5e1",
+            pageIconColor: CHART_INK.muted,
+            pageIconInactiveColor: CHART_INK.axis,
             pageTextStyle: {
               color: CHART_INK.muted,
               fontFamily: "Ubuntu, sans-serif",
               fontSize: 10,
             },
             textStyle: {
-              color: "#64748b",
+              color: CHART_INK.muted,
               fontSize: 11,
               fontWeight: 600,
               fontFamily: "Ubuntu, sans-serif",
@@ -804,7 +809,7 @@ const MetricChart = (props: MetricChartProps) => {
         progressive: 400,
         progressiveThreshold: 800,
         lineStyle: {
-          color: SERIES_COLORS[i % SERIES_COLORS.length],
+          color: seriesColor(i),
           width: multi ? 2 : 2.5,
           cap: "round",
           join: "round",
@@ -822,21 +827,28 @@ const MetricChart = (props: MetricChartProps) => {
                   x2: 0,
                   y2: 1,
                   colorStops: [
-                    { offset: 0, color: "rgba(37,99,235,0.20)" },
-                    { offset: 0.65, color: "rgba(37,99,235,0.05)" },
-                    { offset: 1, color: "rgba(37,99,235,0)" },
+                    { offset: 0, color: withAlpha(seriesColor(0), 0.2) },
+                    { offset: 0.65, color: withAlpha(seriesColor(0), 0.05) },
+                    { offset: 1, color: withAlpha(seriesColor(0), 0) },
                   ],
                 },
               },
         data: s.data,
         itemStyle: {
-          color: SERIES_COLORS[i % SERIES_COLORS.length],
-          borderColor: "#ffffff",
+          color: seriesColor(i),
+          borderColor: CHART_INK.surface,
           borderWidth: 2,
         },
       })),
     };
-  }, [series, chartRange, effectiveUnit, statistics.pointCount, supportsStep]);
+  }, [
+    series,
+    chartRange,
+    colorScheme,
+    effectiveUnit,
+    statistics.pointCount,
+    supportsStep,
+  ]);
 
   const headerStatistics =
     series.length > 1
@@ -931,6 +943,7 @@ const MetricChart = (props: MetricChartProps) => {
 
           <div className="w-full rounded-xl border border-slate-200/80 bg-slate-50/60 px-1 pt-1 sm:px-2">
             <ReactEChartsCore
+              key={colorScheme}
               echarts={echarts}
               option={option}
               style={{ height, width: "100%" }}

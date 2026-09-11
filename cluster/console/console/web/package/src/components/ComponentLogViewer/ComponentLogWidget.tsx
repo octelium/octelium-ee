@@ -29,7 +29,7 @@ import { Link } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 import { match } from "ts-pattern";
 import ChartPanel from "../Charts/ChartPanel";
-import { STATUS_COLORS } from "@/utils/charts/palette";
+import { STATUS_COLORS, useChartColorScheme } from "@/utils/charts/palette";
 import { LogWidgetHeader } from "../LogWidget";
 import {
   ALL_PERIODS,
@@ -244,6 +244,7 @@ interface ComponentLogHealthWidgetProps {
 }
 
 const ComponentLogHealthWidget = (props: ComponentLogHealthWidgetProps = {}) => {
+  useChartColorScheme();
   const [localPeriodMinutes, setLocalPeriodMinutes] = useState(60);
   const periodMinutes = props.periodMinutes ?? localPeriodMinutes;
   const setPeriodMinutes = props.onPeriodChange ?? setLocalPeriodMinutes;

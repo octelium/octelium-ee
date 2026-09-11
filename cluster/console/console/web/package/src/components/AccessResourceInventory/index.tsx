@@ -22,13 +22,13 @@ type SummaryEntry = {
 };
 
 const STATE_COLORS = {
-  approved: "#059669",
-  rejected: "#dc2626",
-  revoked: "#dc2626",
-  expired: "#64748b",
-  cancelled: "#64748b",
-  revised: "#7c3aed",
-  pending: "#d97706",
+  approved: "var(--color-emerald-600)",
+  rejected: "var(--color-red-600)",
+  revoked: "var(--color-red-600)",
+  expired: "var(--color-slate-500)",
+  cancelled: "var(--color-slate-500)",
+  revised: "var(--color-violet-600)",
+  pending: "var(--color-amber-600)",
 } as const;
 
 const client = () => getClientVisibilityAccess();
@@ -90,7 +90,7 @@ const ENTRIES: SummaryEntry[] = [
           value: num(d?.totalUrgencyHigh),
           color: getUrgencyColor(Request_Spec_Urgency.HIGH),
         },
-        { label: "Past deadline", value: num(d?.totalDeadlinePassed), color: "#dc2626" },
+        { label: "Past deadline", value: num(d?.totalDeadlinePassed), color: "var(--color-red-600)" },
       ],
     }),
   },

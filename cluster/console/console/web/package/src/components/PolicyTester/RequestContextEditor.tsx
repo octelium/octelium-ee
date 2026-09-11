@@ -29,22 +29,22 @@ export type RequestKind =
 
 const fieldStyles = {
   label: {
-    color: "#475569",
+    color: "var(--color-slate-600)",
     fontSize: "0.68rem",
     fontWeight: 700,
     letterSpacing: "0.04em",
     marginBottom: "5px",
   },
   description: {
-    color: "#94a3b8",
+    color: "var(--color-slate-400)",
     fontSize: "0.65rem",
     fontWeight: 600,
   },
   input: {
     minHeight: "38px",
-    borderColor: "#e2e8f0",
+    borderColor: "var(--color-slate-200)",
     borderRadius: "8px",
-    color: "#1e293b",
+    color: "var(--color-slate-800)",
     fontSize: "0.78rem",
     fontWeight: 600,
   },
@@ -720,8 +720,8 @@ const MCPBodyEditor = (props: {
         overlayProps={{ backgroundOpacity: 0.2, blur: 1 }}
         transitionProps={{ transition: "slide-left", duration: 500, exitDuration: 500 }}
         styles={{
-          header: { borderBottom: "1px solid #e2e8f0", minHeight: "56px" },
-          body: { backgroundColor: "#f8fafc", padding: "16px" },
+          header: { borderBottom: "1px solid var(--color-slate-200)", minHeight: "56px" },
+          body: { backgroundColor: "var(--color-slate-50)", padding: "16px" },
         }}
       >
         <div className="space-y-4">
@@ -811,7 +811,7 @@ const MCPBodyEditor = (props: {
             </Button>
             <Button
               type="button"
-              color="dark"
+              color="ink"
               leftSection={<Check size={12} />}
               onClick={() => {
                 props.onApply(body);
@@ -1127,8 +1127,8 @@ const LLMBodyEditor = (props: {
         overlayProps={{ backgroundOpacity: 0.2, blur: 1 }}
         transitionProps={{ transition: "slide-left", duration: 500, exitDuration: 500 }}
         styles={{
-          header: { borderBottom: "1px solid #e2e8f0", minHeight: "56px" },
-          body: { backgroundColor: "#f8fafc", padding: "16px" },
+          header: { borderBottom: "1px solid var(--color-slate-200)", minHeight: "56px" },
+          body: { backgroundColor: "var(--color-slate-50)", padding: "16px" },
         }}
       >
         <div className="space-y-4">
@@ -1298,7 +1298,7 @@ const LLMBodyEditor = (props: {
             </Button>
             <Button
               type="button"
-              color="dark"
+              color="ink"
               leftSection={<Check size={12} />}
               onClick={() => {
                 props.onApply(body);
@@ -2007,8 +2007,8 @@ const RequestContextEditor = ({
           className="min-w-[640px]"
           styles={{
             root: {
-              backgroundColor: "#f1f5f9",
-              border: "1px solid #e2e8f0",
+              backgroundColor: "var(--color-slate-100)",
+              border: "1px solid var(--color-slate-200)",
               borderRadius: "10px",
               padding: "4px",
             },

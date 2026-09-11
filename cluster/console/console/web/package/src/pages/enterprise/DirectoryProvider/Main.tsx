@@ -78,7 +78,7 @@ const SynchronizeButton = (props: { item: EnterpriseC.DirectoryProvider }) => {
   return (
     <Button
       type="button"
-      color="dark"
+      color="ink"
       size="sm"
       leftSection={<RefreshCw size={13} />}
       disabled={props.item.spec?.isDisabled || !p.isSyncable}
@@ -212,7 +212,7 @@ const ScimCredential = (props: { item: EnterpriseC.DirectoryProvider }) => {
             {!token && (
               <Button
                 type="button"
-                color="dark"
+                color="ink"
                 size="sm"
                 disabled={!confirmed}
                 loading={mutation.isPending}

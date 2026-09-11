@@ -47,10 +47,10 @@ export const getUrgencyColor = (
   urgency?: AccessP.Request_Spec_Urgency,
 ): string =>
   match(urgency)
-    .with(AccessP.Request_Spec_Urgency.VERY_LOW, () => "#64748b")
-    .with(AccessP.Request_Spec_Urgency.LOW, () => "#059669")
-    .with(AccessP.Request_Spec_Urgency.NORMAL, () => "#2563eb")
-    .with(AccessP.Request_Spec_Urgency.HIGH, () => "#d97706")
-    .with(AccessP.Request_Spec_Urgency.VERY_HIGH, () => "#ea580c")
-    .with(AccessP.Request_Spec_Urgency.HIGHEST, () => "#dc2626")
-    .otherwise(() => "#94a3b8");
+    .with(AccessP.Request_Spec_Urgency.VERY_LOW, () => "var(--color-slate-500)")
+    .with(AccessP.Request_Spec_Urgency.LOW, () => "var(--color-emerald-600)")
+    .with(AccessP.Request_Spec_Urgency.NORMAL, () => "var(--color-blue-600)")
+    .with(AccessP.Request_Spec_Urgency.HIGH, () => "var(--color-amber-600)")
+    .with(AccessP.Request_Spec_Urgency.VERY_HIGH, () => "var(--color-orange-600)")
+    .with(AccessP.Request_Spec_Urgency.HIGHEST, () => "var(--color-red-600)")
+    .otherwise(() => "var(--color-slate-400)");

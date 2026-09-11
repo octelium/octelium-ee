@@ -104,7 +104,7 @@ const CloneResource = (props: {
         styles={{
           content: {
             borderRadius: "12px",
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-slate-200)",
             overflow: "hidden",
           },
         }}
@@ -160,7 +160,7 @@ const CloneResource = (props: {
             </Button>
             <Button
               variant="filled"
-              color="dark"
+              color="ink"
               size="sm"
               disabled={!canSubmit || mutation.isPending}
               loading={mutation.isPending}

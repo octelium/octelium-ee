@@ -21,6 +21,8 @@ import {
   Textarea,
   TextInput,
   Tooltip,
+  virtualColor,
+  type MantineColorsTuple,
   type MantineTransition,
 } from "@mantine/core";
 
@@ -36,7 +38,7 @@ const labelStyles = {
     fontSize: SIZE_META,
     fontWeight: 600,
     fontFamily: FONT,
-    color: "#334155",
+    color: "var(--color-slate-700)",
     marginBottom: "4px",
   },
   description: {
@@ -44,14 +46,14 @@ const labelStyles = {
     fontWeight: 400,
     fontFamily: FONT,
     lineHeight: 1.45,
-    color: "#64748b",
+    color: "var(--color-slate-500)",
     marginBottom: "6px",
   },
   error: {
     fontSize: SIZE_META,
     fontWeight: 500,
     fontFamily: FONT,
-    color: "#dc2626",
+    color: "var(--color-red-600)",
   },
 };
 
@@ -60,10 +62,10 @@ const inputStyles = {
     fontSize: SIZE_BODY,
     fontWeight: 400,
     fontFamily: FONT,
-    backgroundColor: "#ffffff",
-    border: "1px solid #e2e8f0",
+    backgroundColor: "var(--color-white)",
+    border: "1px solid var(--color-slate-200)",
     borderRadius: "8px",
-    color: "#0f172a",
+    color: "var(--color-slate-900)",
     boxShadow: "none",
     minHeight: "38px",
     transition: "border-color 150ms, box-shadow 150ms",
@@ -95,19 +97,45 @@ const pillStyles = {
     fontSize: SIZE_MICRO,
     fontWeight: 500,
     fontFamily: FONT,
-    backgroundColor: "#f1f5f9",
-    color: "#334155",
-    border: "1px solid #e2e8f0",
+    backgroundColor: "var(--color-slate-100)",
+    color: "var(--color-slate-700)",
+    border: "1px solid var(--color-slate-200)",
     borderRadius: "6px",
   },
 };
+
+const INK_LIGHT: MantineColorsTuple = [
+  "#c9c9c9",
+  "#b8b8b8",
+  "#828282",
+  "#696969",
+  "#424242",
+  "#3b3b3b",
+  "#2e2e2e",
+  "#242424",
+  "#1f1f1f",
+  "#141414",
+];
+
+const INK_DARK: MantineColorsTuple = [
+  "#99a6b8",
+  "#a6b2c3",
+  "#b4bfce",
+  "#c2cbd9",
+  "#cdd5e0",
+  "#d8dfe8",
+  "#dfe5ed",
+  "#e5eaf1",
+  "#eaeff5",
+  "#d4dbe6",
+];
 
 const toggleLabelStyles = {
   label: {
     fontSize: SIZE_BODY,
     fontWeight: 500,
     fontFamily: FONT,
-    color: "#0f172a",
+    color: "var(--color-slate-900)",
   },
   description: labelStyles.description,
 };
@@ -116,8 +144,14 @@ const theme = createTheme({
   fontFamily: FONT,
   fontFamilyMonospace:
     "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-  primaryColor: "dark",
+  primaryColor: "ink",
   autoContrast: true,
+
+  colors: {
+    inkLight: INK_LIGHT,
+    inkDark: INK_DARK,
+    ink: virtualColor({ name: "ink", light: "inkLight", dark: "inkDark" }),
+  },
   defaultRadius: "md",
   cursorType: "pointer",
 
@@ -191,7 +225,7 @@ const theme = createTheme({
         ...toggleLabelStyles,
         input: {
           cursor: "pointer",
-          borderColor: "#cbd5e1",
+          borderColor: "var(--color-slate-300)",
           transition: "background-color 150ms, border-color 150ms",
         },
       },
@@ -202,7 +236,7 @@ const theme = createTheme({
         ...toggleLabelStyles,
         radio: {
           cursor: "pointer",
-          borderColor: "#cbd5e1",
+          borderColor: "var(--color-slate-300)",
           transition: "background-color 150ms, border-color 150ms",
         },
       },
@@ -211,21 +245,21 @@ const theme = createTheme({
     SegmentedControl: SegmentedControl.extend({
       styles: {
         root: {
-          backgroundColor: "#f1f5f9",
-          border: "1px solid #e2e8f0",
+          backgroundColor: "var(--color-slate-100)",
+          border: "1px solid var(--color-slate-200)",
           borderRadius: "10px",
           padding: "3px",
         },
         label: {
           fontSize: SIZE_BODY,
           fontWeight: 600,
-          color: "#64748b",
+          color: "var(--color-slate-500)",
           transition: "color 150ms",
         },
         indicator: {
-          backgroundColor: "#ffffff",
+          backgroundColor: "var(--color-white)",
           borderRadius: "7px",
-          boxShadow: "0 1px 2px rgba(15,23,42,0.12)",
+          boxShadow: "var(--shadow-card)",
           transition: "transform 150ms ease, width 150ms ease",
         },
       },
@@ -237,9 +271,9 @@ const theme = createTheme({
           fontFamily: FONT,
           fontWeight: 600,
           fontSize: SIZE_BODY,
-          border: "1px solid #e2e8f0",
-          backgroundColor: "#ffffff",
-          color: "#475569",
+          border: "1px solid var(--color-slate-200)",
+          backgroundColor: "var(--color-white)",
+          color: "var(--color-slate-600)",
           boxShadow: "none",
           transition: "background-color 150ms, border-color 150ms, color 150ms",
         },
@@ -257,8 +291,8 @@ const theme = createTheme({
       },
       styles: {
         dropdown: {
-          border: "1px solid #e2e8f0",
-          boxShadow: "0 16px 40px rgba(15,23,42,0.14)",
+          border: "1px solid var(--color-slate-200)",
+          boxShadow: "var(--shadow-overlay)",
           padding: "6px",
         },
         item: {
@@ -270,14 +304,14 @@ const theme = createTheme({
           transition: "background-color 150ms, color 150ms",
         },
         label: {
-          color: "#64748b",
+          color: "var(--color-slate-500)",
           fontFamily: FONT,
           fontSize: SIZE_MICRO,
           fontWeight: 600,
           letterSpacing: "0.05em",
           textTransform: "uppercase",
         },
-        divider: { borderColor: "#e2e8f0" },
+        divider: { borderColor: "var(--color-slate-200)" },
       },
     }),
 
@@ -299,7 +333,7 @@ const theme = createTheme({
           fontSize: SIZE_BODY,
           fontWeight: 600,
           fontFamily: FONT,
-          color: "#0f172a",
+          color: "var(--color-slate-900)",
         },
         panel: { fontFamily: FONT },
         control: { transition: "background-color 150ms" },
@@ -330,11 +364,11 @@ const theme = createTheme({
           fontFamily: FONT,
           fontWeight: 400,
           fontSize: SIZE_META,
-          backgroundColor: "#0f172a",
-          color: "#f8fafc",
-          border: "1px solid #1e293b",
+          backgroundColor: "var(--color-slate-900)",
+          color: "var(--color-slate-50)",
+          border: "1px solid var(--color-slate-800)",
           borderRadius: "8px",
-          boxShadow: "0 4px 12px rgba(15,23,42,0.15)",
+          boxShadow: "var(--shadow-raised)",
           padding: "5px 10px",
         },
       },
@@ -350,9 +384,9 @@ const theme = createTheme({
       },
       styles: {
         dropdown: {
-          border: "1px solid #e2e8f0",
+          border: "1px solid var(--color-slate-200)",
           borderRadius: "12px",
-          boxShadow: "0 16px 40px rgba(15,23,42,0.14)",
+          boxShadow: "var(--shadow-overlay)",
           fontFamily: FONT,
         },
       },
@@ -369,13 +403,13 @@ const theme = createTheme({
       },
       styles: {
         dropdown: {
-          border: "1px solid #e2e8f0",
+          border: "1px solid var(--color-slate-200)",
           borderRadius: "12px",
-          boxShadow: "0 16px 40px rgba(15,23,42,0.14)",
+          boxShadow: "var(--shadow-overlay)",
           fontFamily: FONT,
           overflow: "visible",
         },
-        arrow: { border: "1px solid #e2e8f0" },
+        arrow: { border: "1px solid var(--color-slate-200)" },
       },
     }),
   },

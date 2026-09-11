@@ -354,7 +354,7 @@ const ResourceForm = (props: ResourceFormProps) => {
 
           <Button
             variant="filled"
-            color="dark"
+            color="ink"
             leftSection={
               props.isPending ? (
                 <Loader2

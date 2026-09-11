@@ -2,9 +2,12 @@ import { Timestamp } from "@/apis/google/protobuf/timestamp";
 import {
   axisLabelStyle,
   CHART_INK,
-  SERIES_COLORS,
+  CHART_TOOLTIP,
   seriesColor,
+  seriesColors,
   splitLineStyle,
+  useChartColorScheme,
+  withAlpha,
 } from "@/utils/charts/palette";
 import ReactEChartsCore from "echarts-for-react";
 import { BarChart, LineChart as LineChartC } from "echarts/charts";
@@ -67,6 +70,7 @@ const SeriesChart = ({
   valueFormatter = defaultFormatter,
   emptyLabel = "No activity in the selected range",
 }: Props) => {
+  const colorScheme = useChartColorScheme();
   const data = useMemo(
     () =>
       series.map((item) => ({
@@ -96,7 +100,7 @@ const SeriesChart = ({
       animationDuration: 600,
       animationEasing: "cubicOut",
       aria: { enabled: true, decal: { show: false } },
-      color: [...SERIES_COLORS],
+      color: seriesColors(),
       grid: {
         top: data.length > 1 ? 34 : 16,
         right: 14,
@@ -114,7 +118,7 @@ const SeriesChart = ({
               itemHeight: 9,
               itemGap: 14,
               textStyle: {
-                color: "#64748b",
+                color: CHART_INK.muted,
                 fontSize: 10,
                 fontWeight: 700,
                 fontFamily: "Ubuntu, sans-serif",
@@ -124,21 +128,21 @@ const SeriesChart = ({
       tooltip: {
         trigger: "axis",
         confine: true,
-        backgroundColor: "#0f172a",
-        borderColor: "#334155",
+        backgroundColor: CHART_TOOLTIP.backgroundColor,
+        borderColor: CHART_TOOLTIP.borderColor,
         borderWidth: 1,
         padding: [10, 12],
         textStyle: {
-          color: "#f8fafc",
+          color: CHART_INK.onDark,
           fontSize: 12,
           fontFamily: "Ubuntu, sans-serif",
         },
         extraCssText:
-          "border-radius:10px;box-shadow:0 10px 24px rgba(15,23,42,.18);",
+          CHART_TOOLTIP.extraCssText,
         axisPointer: {
           type: variant === "bar" ? "shadow" : "line",
-          lineStyle: { color: "#60a5fa", width: 1, type: "dashed" },
-          shadowStyle: { color: "rgba(37,99,235,0.06)" },
+          lineStyle: { color: CHART_INK.marker, width: 1, type: "dashed" },
+          shadowStyle: { color: withAlpha(seriesColor(0), 0.06) },
         },
         formatter: (
           params: Array<{
@@ -162,13 +166,13 @@ const SeriesChart = ({
                 `<div style="display:flex;align-items:center;gap:10px;justify-content:space-between"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:190px">${item.marker}${escapeHTML(item.seriesName)}</span><b style="font-variant-numeric:tabular-nums">${valueFormatter(item.value[1])}</b></div>`,
             )
             .join("");
-          return `<div style="min-width:190px"><div style="margin-bottom:6px;color:#cbd5e1;font-size:11px;font-weight:700">${header}</div>${rows}</div>`;
+          return `<div style="min-width:190px"><div style="margin-bottom:6px;color:${CHART_INK.onDarkMuted};font-size:11px;font-weight:700">${header}</div>${rows}</div>`;
         },
       },
       xAxis: {
         type: "time",
         boundaryGap: variant === "bar" ? ["3%", "3%"] : false,
-        axisLine: { lineStyle: { color: "#e2e8f0" } },
+        axisLine: { lineStyle: { color: CHART_INK.grid } },
         axisTick: { show: false },
         axisLabel: {
           color: CHART_INK.muted,
@@ -214,8 +218,8 @@ const SeriesChart = ({
           ...(data.length === 1 && {
             areaStyle: {
               color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: "rgba(37,99,235,0.20)" },
-                { offset: 1, color: "rgba(37,99,235,0)" },
+                { offset: 0, color: withAlpha(seriesColor(0), 0.2) },
+                { offset: 1, color: withAlpha(seriesColor(0), 0) },
               ]),
             },
           }),
@@ -230,7 +234,7 @@ const SeriesChart = ({
         }),
       })),
     }),
-    [data, stacked, valueFormatter, variant],
+    [colorScheme, data, stacked, valueFormatter, variant],
   );
 
   if (isEmpty) {
@@ -250,6 +254,7 @@ const SeriesChart = ({
       style={{ height }}
     >
       <ReactEChartsCore
+        key={colorScheme}
         echarts={echarts}
         option={option}
         style={{ height: "100%", width: "100%" }}

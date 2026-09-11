@@ -440,18 +440,18 @@ const ExpressionC = (props: {
           exitDuration: 500,
         }}
         styles={{
-          header: { borderBottom: "1px solid #e2e8f0", minHeight: "56px" },
+          header: { borderBottom: "1px solid var(--color-slate-200)", minHeight: "56px" },
           body: {
             minHeight: "calc(100dvh - 56px)",
             padding: 0,
             display: "flex",
             flexDirection: "column",
-            backgroundColor: "#f8fafc",
+            backgroundColor: "var(--color-slate-50)",
           },
           content: {
             display: "flex",
             flexDirection: "column",
-            borderLeft: "1px solid #e2e8f0",
+            borderLeft: "1px solid var(--color-slate-200)",
           },
         }}
       >
@@ -482,7 +482,7 @@ const ExpressionC = (props: {
                 </Button>
                 <Button
                   type="button"
-                  color="dark"
+                  color="ink"
                   leftSection={<Check size={12} />}
                   disabled={!changed}
                   onClick={() => {

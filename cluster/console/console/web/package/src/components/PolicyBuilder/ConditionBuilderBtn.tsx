@@ -83,9 +83,9 @@ const ConditionBuilderBtn = (props: {
         styles={{
           body: { padding: 0 },
           content: {
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-slate-200)",
             borderRadius: "14px",
-            boxShadow: "0 24px 64px rgba(15,23,42,0.18)",
+            boxShadow: "var(--shadow-modal)",
             overflow: "hidden",
           },
         }}
@@ -118,7 +118,7 @@ const ConditionBuilderBtn = (props: {
               </Button>
               <Button
                 type="button"
-                color="dark"
+                color="ink"
                 size="compact-sm"
                 leftSection={
                   mutation.isPending ? (

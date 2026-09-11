@@ -363,7 +363,7 @@ const DurationPicker = ({
                   <Button
                     type="submit"
                     fullWidth
-                    color="dark"
+                    color="ink"
                     disabled={!customIsValid}
                     className="mt-3"
                   >

@@ -171,18 +171,18 @@ const ResourceYAML = (props: {
           exitDuration: 500,
         }}
         styles={{
-          header: { borderBottom: "1px solid #e2e8f0", minHeight: "56px" },
+          header: { borderBottom: "1px solid var(--color-slate-200)", minHeight: "56px" },
           body: {
             minHeight: "calc(100dvh - 56px)",
             padding: "16px",
             display: "flex",
             flexDirection: "column",
-            backgroundColor: "#f8fafc",
+            backgroundColor: "var(--color-slate-50)",
           },
           content: {
             display: "flex",
             flexDirection: "column",
-            borderLeft: "1px solid #e2e8f0",
+            borderLeft: "1px solid var(--color-slate-200)",
           },
         }}
       >
@@ -291,7 +291,7 @@ const ResourceYAML = (props: {
               <Button
                 size="compact-sm"
                 variant="filled"
-                color="dark"
+                color="ink"
                 leftSection={
                   mutationUpdate.isPending ? (
                     <Loader2

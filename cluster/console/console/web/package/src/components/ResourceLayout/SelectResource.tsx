@@ -116,7 +116,7 @@ const SelectResource = (props: {
         type="button"
         size="compact-sm"
         variant="subtle"
-        color="dark"
+        color="ink"
         leftSection={<Plus size={14} strokeWidth={2.2} />}
         onClick={openCreate}
       >
@@ -230,7 +230,7 @@ const SelectResource = (props: {
         styles={{
           dropdown: {
             padding: 6,
-            borderColor: "#e2e8f0",
+            borderColor: "var(--color-slate-200)",
             borderRadius: 12,
           },
           option: {

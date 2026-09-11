@@ -48,7 +48,7 @@ export const IssueC = (props: { item: Certificate }) => {
       <Button
         type="button"
         size="compact-sm"
-        color="dark"
+        color="ink"
         leftSection={<RefreshCcw size={13} />}
         onClick={open}
       >
@@ -108,7 +108,7 @@ export const IssueC = (props: { item: Certificate }) => {
             </Button>
             <Button
               type="button"
-              color="dark"
+              color="ink"
               size="sm"
               onClick={() => mutationGenerate.mutate()}
               loading={mutationGenerate.isPending}

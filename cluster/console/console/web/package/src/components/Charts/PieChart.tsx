@@ -4,7 +4,12 @@ import { AriaComponent, TooltipComponent } from "echarts/components";
 import * as echarts from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 import { useMemo } from "react";
-import { CHART_INK, seriesColor } from "@/utils/charts/palette";
+import {
+  CHART_INK,
+  CHART_TOOLTIP,
+  seriesColor,
+  useChartColorScheme,
+} from "@/utils/charts/palette";
 
 echarts.use([PieChartC, CanvasRenderer, AriaComponent, TooltipComponent]);
 
@@ -34,6 +39,7 @@ const escapeHTML = (value: string) =>
   );
 
 const PieChart = ({ data, title }: PieChartProps) => {
+  const colorScheme = useChartColorScheme();
   const chartData = useMemo(
     () =>
       data
@@ -68,8 +74,8 @@ const PieChart = ({ data, title }: PieChartProps) => {
       tooltip: {
         trigger: "item",
         confine: true,
-        backgroundColor: "#0f172a",
-        borderColor: "#334155",
+        backgroundColor: CHART_TOOLTIP.backgroundColor,
+        borderColor: CHART_TOOLTIP.borderColor,
         borderWidth: 1,
         padding: [10, 12],
         textStyle: {
@@ -78,10 +84,10 @@ const PieChart = ({ data, title }: PieChartProps) => {
           fontSize: 12,
         },
         extraCssText:
-          "border-radius:10px;box-shadow:0 10px 24px rgba(15,23,42,.18);",
+          CHART_TOOLTIP.extraCssText,
         formatter: (params: { name: string; value: number }) => {
           const percentage = ((params.value / total) * 100).toFixed(1);
-          return `<div style="min-width:112px"><div style="margin-bottom:5px;color:#cbd5e1;font-size:11px;font-weight:700">${escapeHTML(params.name)}</div><div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px"><span style="font-size:16px;font-weight:700">${formatNumber(params.value)}</span><span style="color:#93c5fd;font-size:11px;font-weight:700">${percentage}%</span></div></div>`;
+          return `<div style="min-width:112px"><div style="margin-bottom:5px;color:${CHART_INK.onDarkMuted};font-size:11px;font-weight:700">${escapeHTML(params.name)}</div><div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px"><span style="font-size:16px;font-weight:700">${formatNumber(params.value)}</span><span style="color:${CHART_INK.marker};font-size:11px;font-weight:700">${percentage}%</span></div></div>`;
         },
       },
       series: [
@@ -93,7 +99,7 @@ const PieChart = ({ data, title }: PieChartProps) => {
           minAngle: 2,
           padAngle: 2,
           itemStyle: {
-            borderColor: "#f8fafc",
+            borderColor: CHART_INK.surface,
             borderRadius: 4,
             borderWidth: 2,
           },
@@ -125,14 +131,14 @@ const PieChart = ({ data, title }: PieChartProps) => {
             scaleSize: 5,
             itemStyle: {
               shadowBlur: 12,
-              shadowColor: "rgba(15, 23, 42, 0.14)",
+              shadowColor: CHART_INK.shadow,
             },
           },
           data: chartData,
         },
       ],
     }),
-    [chartData, title, total],
+    [chartData, colorScheme, title, total],
   );
 
   if (total === 0) {
@@ -164,6 +170,7 @@ const PieChart = ({ data, title }: PieChartProps) => {
       <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-3">
         <div className="h-44 min-w-40 flex-[0_1_190px]">
           <ReactEChartsCore
+            key={colorScheme}
             echarts={echarts}
             option={option}
             style={{ height: "100%", width: "100%" }}

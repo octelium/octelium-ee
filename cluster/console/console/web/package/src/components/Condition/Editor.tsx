@@ -41,12 +41,12 @@ const celLanguage = StreamLanguage.define({
 
 const celHighlight = syntaxHighlighting(
   HighlightStyle.define([
-    { tag: t.keyword, color: "#7c3aed", fontWeight: "bold" },
-    { tag: t.string, color: "#059669" },
-    { tag: t.number, color: "#0284c7" },
-    { tag: t.variableName, color: "#1e293b" },
-    { tag: t.comment, color: "#94a3b8", fontStyle: "italic" },
-    { tag: t.operator, color: "#475569", fontWeight: "bold" },
+    { tag: t.keyword, color: "var(--color-violet-600)", fontWeight: "bold" },
+    { tag: t.string, color: "var(--color-emerald-600)" },
+    { tag: t.number, color: "var(--color-sky-600)" },
+    { tag: t.variableName, color: "var(--color-slate-800)" },
+    { tag: t.comment, color: "var(--color-slate-400)", fontStyle: "italic" },
+    { tag: t.operator, color: "var(--color-slate-600)", fontWeight: "bold" },
   ]),
 );
 
@@ -103,20 +103,20 @@ const celKeymap = keymap.of([
 
 const celBaseTheme = EditorView.theme({
   "&": {
-    backgroundColor: "#ffffff",
-    border: "1px solid #e2e8f0",
+    backgroundColor: "var(--color-white)",
+    border: "1px solid var(--color-slate-200)",
     borderRadius: "6px",
     boxShadow: "0 1px 3px rgba(15,23,42,0.05)",
   },
   "&.cm-focused": {
     outline: "none",
-    borderColor: "#94a3b8",
+    borderColor: "var(--color-slate-400)",
     boxShadow: "0 0 0 2px rgba(148,163,184,0.2)",
   },
   ".cm-content": {
     fontSize: "13px",
     padding: "8px 10px",
-    caretColor: "#0f172a",
+    caretColor: "var(--color-slate-900)",
   },
   ".cm-line": { padding: "0" },
   ".cm-tooltip": {
@@ -125,8 +125,8 @@ const celBaseTheme = EditorView.theme({
     boxShadow: "none !important",
   },
   ".cm-tooltip.cm-tooltip-autocomplete": {
-    backgroundColor: "#ffffff !important",
-    border: "1px solid #e2e8f0 !important",
+    backgroundColor: "var(--color-white) !important",
+    border: "1px solid var(--color-slate-200) !important",
     borderRadius: "10px !important",
     boxShadow:
       "0 12px 32px rgba(15,23,42,0.14), 0 2px 8px rgba(15,23,42,0.08) !important",
@@ -141,26 +141,26 @@ const celBaseTheme = EditorView.theme({
     overflowY: "auto",
     margin: "0",
     padding: "0",
-    backgroundColor: "#ffffff !important",
+    backgroundColor: "var(--color-white) !important",
   },
   ".cm-tooltip.cm-tooltip-autocomplete > ul > li": {
     padding: "6px 10px !important",
-    color: "#334155 !important",
+    color: "var(--color-slate-700) !important",
     borderRadius: "6px",
     margin: "1px 0",
     display: "flex",
     alignItems: "center",
     lineHeight: "1.4",
     cursor: "pointer",
-    backgroundColor: "#ffffff !important",
+    backgroundColor: "var(--color-white) !important",
   },
   ".cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected]": {
-    backgroundColor: "#0f172a !important",
-    color: "#ffffff !important",
+    backgroundColor: "var(--color-slate-900) !important",
+    color: "var(--color-white) !important",
   },
   ".cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected] .cm-completionDetail":
     {
-      color: "#94a3b8 !important",
+      color: "var(--color-slate-400) !important",
     },
   ".cm-completionIcon": { display: "none" },
   ".cm-completionLabel": {
@@ -169,7 +169,7 @@ const celBaseTheme = EditorView.theme({
     flex: "1",
   },
   ".cm-completionDetail": {
-    color: "#94a3b8",
+    color: "var(--color-slate-400)",
     fontSize: "11px",
     marginLeft: "10px",
     fontStyle: "normal",
@@ -177,11 +177,11 @@ const celBaseTheme = EditorView.theme({
   },
   ".cm-completionMatchedText": {
     textDecoration: "none",
-    color: "#1d4ed8",
+    color: "var(--color-blue-700)",
     fontWeight: "800",
   },
   "li[aria-selected] .cm-completionMatchedText": {
-    color: "#93c5fd",
+    color: "var(--color-blue-300)",
   },
 });
 

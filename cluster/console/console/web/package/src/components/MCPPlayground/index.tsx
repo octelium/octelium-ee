@@ -553,13 +553,13 @@ const MCPPlayground = (props: { service: Service }) => {
           exitDuration: 500,
         }}
         styles={{
-          header: { borderBottom: "1px solid #e2e8f0", minHeight: "56px" },
+          header: { borderBottom: "1px solid var(--color-slate-200)", minHeight: "56px" },
           body: {
             minHeight: "calc(100dvh - 56px)",
             padding: "16px",
-            backgroundColor: "#f8fafc",
+            backgroundColor: "var(--color-slate-50)",
           },
-          content: { borderLeft: "1px solid #e2e8f0" },
+          content: { borderLeft: "1px solid var(--color-slate-200)" },
         }}
       >
         <div className="space-y-4">

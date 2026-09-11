@@ -14,7 +14,11 @@ import {
   ComponentLog_Entry_Level,
 } from "@/apis/corev1/corev1";
 import LineChart from "@/components/Charts/LineChart";
-import { seriesColor, STATUS_COLORS } from "@/utils/charts/palette";
+import {
+  seriesColor,
+  STATUS_COLORS,
+  useChartColorScheme,
+} from "@/utils/charts/palette";
 import {
   getClientVisibilityAccessLog,
   getClientVisibilityAuditLog,
@@ -195,6 +199,7 @@ const mergePoints = (...series: Point[][]): Point[] => {
 
 const ClusterHealth = (props: { periodMinutes: number }) => {
   const { periodMinutes } = props;
+  useChartColorScheme();
   const { curFrom, curTo, prevFrom, prevTo } = buildTimestamps(periodMinutes);
   const interval = getAutoInterval(periodMinutes);
   const rangeLabel = periodLabel(periodMinutes);
