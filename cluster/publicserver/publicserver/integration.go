@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/octelium/octelium-ee/cluster/common/accessintg"
+	"github.com/octelium/octelium-ee/cluster/common/accessintg/ingress"
 	"go.uber.org/zap"
 )
 
@@ -66,7 +67,12 @@ func (s *Server) handleIntegration(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		zap.L().Debug("Could not handle an inbound integration request",
 			zap.String("integrationID", integrationID), zap.Error(err))
-		w.WriteHeader(http.StatusUnauthorized)
+
+		if ingress.IsAuthError(err) {
+			w.WriteHeader(http.StatusUnauthorized)
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		return
 	}
 

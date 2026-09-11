@@ -201,6 +201,13 @@ func (c *Controller) deliver(ctx context.Context, integration *accessv1.Integrat
 			itm.Metadata.Name)
 	}
 
+	if target != nil && (target.Spec.IntegrationRef == nil ||
+		target.Spec.IntegrationRef.Uid != integration.Metadata.Uid) {
+		return nil, errors.Errorf(
+			"The IntegrationTarget %s no longer belongs to the Integration %s",
+			target.Metadata.Name, integration.Metadata.Name)
+	}
+
 	recipientID, err := c.getRecipientID(ctx, integration, provider, itm)
 	if err != nil {
 		return nil, err

@@ -135,6 +135,10 @@ func (p *Provider) CreatePresentation(ctx context.Context,
 		return nil, err
 	}
 
+	if resp.TS == "" {
+		return nil, errors.Errorf("Slack did not return a message timestamp")
+	}
+
 	recipientID := resp.Channel
 	if recipientID == "" {
 		recipientID = channel

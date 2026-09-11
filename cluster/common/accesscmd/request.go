@@ -47,6 +47,10 @@ func CreateRequest(ctx context.Context, opts *CreateRequestOpts) (*accessv1.Requ
 		return nil, grpcutils.InvalidArg("Nil Spec")
 	}
 
+	if !IsUserEligible(opts.Requester) {
+		return nil, grpcutils.Unauthorized("You are not allowed to create access Requests")
+	}
+
 	spec := pbutils.Clone(opts.Spec).(*accessv1.Request_Spec)
 
 	if opts.ForSubject {

@@ -68,7 +68,8 @@ func (p *Provider) DecodeInbound(ctx context.Context,
 		}, nil
 	}
 
-	if !hasStatusChange(payload) {
+	externalStatus, ok := statusChange(payload)
+	if !ok {
 		return &accessintg.Inbound{
 			Response: emptyResponse(),
 		}, nil
@@ -85,6 +86,7 @@ func (p *Provider) DecodeInbound(ctx context.Context,
 			ExternalActorID:  payload.User.AccountID,
 			ExternalEventID:  eventID,
 			ExternalObjectID: payload.Issue.Key,
+			ExternalStatus:   externalStatus,
 		},
 	}, nil
 }
@@ -116,18 +118,25 @@ func (p *Provider) verifySignature(in *accessintg.InboundRequest) error {
 	return nil
 }
 
-func hasStatusChange(payload *webhookPayload) bool {
+func statusChange(payload *webhookPayload) (string, bool) {
 	if payload.Changelog == nil {
-		return false
+		return "", false
 	}
 
 	for _, item := range payload.Changelog.Items {
-		if strings.EqualFold(item.Field, "status") {
-			return true
+		if !strings.EqualFold(item.Field, "status") {
+			continue
 		}
+
+		status := strings.TrimSpace(item.ToString)
+		if status == "" {
+			return "", false
+		}
+
+		return status, true
 	}
 
-	return false
+	return "", false
 }
 
 func emptyResponse() *accessintg.InboundResponse {

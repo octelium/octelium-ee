@@ -10,6 +10,7 @@ package access
 
 import (
 	"context"
+	"strings"
 
 	"github.com/octelium/octelium/apis/main/accessv1"
 	"github.com/octelium/octelium/apis/main/metav1"
@@ -128,6 +129,12 @@ func (s *ServerMain) UpdateIntegrationTarget(ctx context.Context,
 		return nil, err
 	}
 
+	if item.Spec.IntegrationRef != nil &&
+		item.Spec.IntegrationRef.Uid != integration.Metadata.Uid {
+		return nil, grpcutils.InvalidArg(
+			"The Integration of the IntegrationTarget cannot be changed")
+	}
+
 	apisrvcommon.MetadataUpdate(item.Metadata, req.Metadata)
 	item.Spec = req.Spec
 	item.Status.Type = integration.Status.Type
@@ -210,6 +217,12 @@ func (s *ServerMain) validateIntegrationTarget(ctx context.Context,
 		if err := validateIntegrationStr(typ.GetRejectStatus(), false,
 			"The Jira rejectStatus"); err != nil {
 			return nil, err
+		}
+		if typ.GetApproveStatus() != "" &&
+			strings.EqualFold(strings.TrimSpace(typ.GetApproveStatus()),
+				strings.TrimSpace(typ.GetRejectStatus())) {
+			return nil, grpcutils.InvalidArg(
+				"The Jira approveStatus and rejectStatus must be different")
 		}
 
 	case *accessv1.IntegrationTarget_Spec_Webhook_:

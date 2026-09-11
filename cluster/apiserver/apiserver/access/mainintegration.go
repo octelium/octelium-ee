@@ -360,5 +360,13 @@ func validateIntegrationURL(arg string) error {
 		return grpcutils.InvalidArg("The URL scheme must be http or https")
 	}
 
+	if u.User != nil {
+		return grpcutils.InvalidArg("The URL must not contain any credentials")
+	}
+
+	if u.Fragment != "" || strings.Contains(arg, "#") {
+		return grpcutils.InvalidArg("The URL must not contain any fragment")
+	}
+
 	return nil
 }

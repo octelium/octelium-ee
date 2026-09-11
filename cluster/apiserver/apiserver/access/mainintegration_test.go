@@ -19,6 +19,7 @@ import (
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/pkg/apiutils/umetav1"
+	"github.com/octelium/octelium/pkg/common/pbutils"
 	"github.com/octelium/octelium/pkg/grpcerr"
 	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/stretchr/testify/assert"
@@ -80,6 +81,35 @@ func tstCreateSlackIntegration(ctx context.Context, t *testing.T,
 		},
 		Spec: tstSlackIntegrationSpec(
 			tstCreateSecret(ctx, t, octeliumC), tstCreateSecret(ctx, t, octeliumC)),
+	})
+	assert.Nil(t, err, "%+v", err)
+
+	return item
+}
+
+func tstCreateJiraIntegration(ctx context.Context, t *testing.T,
+	octeliumC octeliumc.ClientInterface) *accessv1.Integration {
+	item, err := octeliumC.AccessC().CreateIntegration(ctx, &accessv1.Integration{
+		Metadata: &metav1.Metadata{
+			Name: utilrand.GetRandomStringCanonical(8),
+		},
+		Spec: &accessv1.Integration_Spec{
+			Type: &accessv1.Integration_Spec_Jira_{
+				Jira: &accessv1.Integration_Spec_Jira{
+					Url:   "https://example.atlassian.net",
+					Email: "admin@octelium.com",
+					ApiToken: &accessv1.Integration_Spec_Jira_APIToken{
+						Type: &accessv1.Integration_Spec_Jira_APIToken_FromSecret{
+							FromSecret: tstCreateSecret(ctx, t, octeliumC),
+						},
+					},
+				},
+			},
+		},
+		Status: &accessv1.Integration_Status{
+			Id:   utilrand.GetRandomStringCanonical(24),
+			Type: accessv1.Integration_Status_JIRA,
+		},
 	})
 	assert.Nil(t, err, "%+v", err)
 
@@ -253,7 +283,57 @@ func TestIntegrationTarget(t *testing.T) {
 	}
 
 	{
+		other := tstCreateSlackIntegration(ctx, t, srv, octeliumC)
+
+		next := pbutils.Clone(item).(*accessv1.IntegrationTarget)
+		next.Spec.IntegrationRef = umetav1.GetObjectReference(other)
+
+		_, err := srv.UpdateIntegrationTarget(ctx, next)
+		assert.NotNil(t, err)
+		assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
+
+		itemG, err := srv.GetIntegrationTarget(ctx, &metav1.GetOptions{Uid: item.Metadata.Uid})
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, integration.Metadata.Uid, itemG.Spec.IntegrationRef.Uid)
+	}
+
+	{
 		_, err := srv.DeleteIntegrationTarget(ctx, &metav1.DeleteOptions{Uid: item.Metadata.Uid})
+		assert.Nil(t, err, "%+v", err)
+	}
+}
+
+func TestIntegrationTargetJiraStatuses(t *testing.T) {
+	ctx, srv, octeliumC := newIntegrationTest(t)
+
+	integration := tstCreateJiraIntegration(ctx, t, octeliumC)
+
+	newTarget := func(approveStatus, rejectStatus string) *accessv1.IntegrationTarget {
+		return &accessv1.IntegrationTarget{
+			Metadata: &metav1.Metadata{
+				Name: utilrand.GetRandomStringCanonical(8),
+			},
+			Spec: &accessv1.IntegrationTarget_Spec{
+				IntegrationRef: umetav1.GetObjectReference(integration),
+				Type: &accessv1.IntegrationTarget_Spec_Jira_{
+					Jira: &accessv1.IntegrationTarget_Spec_Jira{
+						ProjectKey:    "OPS",
+						ApproveStatus: approveStatus,
+						RejectStatus:  rejectStatus,
+					},
+				},
+			},
+		}
+	}
+
+	{
+		_, err := srv.CreateIntegrationTarget(ctx, newTarget("Approved", "approved"))
+		assert.NotNil(t, err)
+		assert.True(t, grpcerr.IsInvalidArg(err), "%+v", err)
+	}
+
+	{
+		_, err := srv.CreateIntegrationTarget(ctx, newTarget("Approved", "Rejected"))
 		assert.Nil(t, err, "%+v", err)
 	}
 }

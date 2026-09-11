@@ -6799,13 +6799,20 @@ type Integration_Spec_Webhook struct {
 	// Required.
 	Url string `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
 	// SigningSecret is the secret that the Cluster signs its outbound
-	// deliveries with using HMAC-SHA256 over the raw request body. The
-	// signature is sent in the `X-Octelium-Signature` header together with
-	// the `X-Octelium-Timestamp` header. Required.
+	// deliveries with. The signature is a HMAC-SHA256 over the canonical
+	// string `{timestamp}:{body}` where `timestamp` is the Unix time in
+	// seconds of the delivery and `body` is the raw request body. The
+	// signature is sent in the `X-Octelium-Signature` header in the form
+	// `sha256={hex}` together with the `X-Octelium-Timestamp` header which
+	// carries the same `timestamp` that is used in the canonical string.
+	// Receivers must reject the deliveries whose timestamps are older than
+	// 5 minutes and must compare the signatures in constant time.
+	// Required.
 	SigningSecret *Integration_Spec_Webhook_SigningSecret `protobuf:"bytes,2,opt,name=signingSecret,proto3" json:"signingSecret,omitempty"`
 	// InboundSecret is the secret that the external system signs its
-	// requests to the Cluster with using the same scheme as the outbound
-	// deliveries. It is required in order to accept any inbound request.
+	// requests to the Cluster with using the same canonical string, headers
+	// and 5-minute skew of the outbound deliveries. It is required in order
+	// to accept any inbound request.
 	InboundSecret *Integration_Spec_Webhook_InboundSecret `protobuf:"bytes,3,opt,name=inboundSecret,proto3" json:"inboundSecret,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -7571,12 +7578,18 @@ type IntegrationTarget_Spec_Jira struct {
 	// issues. It defaults to `Task`.
 	IssueTypeName string `protobuf:"bytes,2,opt,name=issueTypeName,proto3" json:"issueTypeName,omitempty"`
 	// ApproveStatus is the name of the Jira status which, once an issue
-	// reaches it, submits an approving decision to the Cluster. It is only
-	// used by the INTERACTIVE review Surfaces.
+	// transitions to it, submits an approving decision to the Cluster. The
+	// decision is read from the status transition of the webhook event
+	// itself and not from the current status of the issue. It is only used
+	// by the INTERACTIVE review Surfaces. It must differ from
+	// `rejectStatus`.
 	ApproveStatus string `protobuf:"bytes,3,opt,name=approveStatus,proto3" json:"approveStatus,omitempty"`
 	// RejectStatus is the name of the Jira status which, once an issue
-	// reaches it, submits a rejecting decision to the Cluster. It is only
-	// used by the INTERACTIVE review Surfaces.
+	// transitions to it, submits a rejecting decision to the Cluster. The
+	// decision is read from the status transition of the webhook event
+	// itself and not from the current status of the issue. It is only used
+	// by the INTERACTIVE review Surfaces. It must differ from
+	// `approveStatus`.
 	RejectStatus  string `protobuf:"bytes,4,opt,name=rejectStatus,proto3" json:"rejectStatus,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

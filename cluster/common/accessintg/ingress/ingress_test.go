@@ -442,3 +442,125 @@ func TestInboundDisabledIntegration(t *testing.T) {
 		i.interaction(t, "octelium-access-approve", "b0123", "trig-1"))
 	assert.NotNil(t, err)
 }
+
+func (i *ingressTest) createService(t *testing.T) *corev1.Service {
+	svc, err := i.octeliumC.CoreC().CreateService(i.ctx, &corev1.Service{
+		Metadata: &metav1.Metadata{
+			Name: fmt.Sprintf("%s.default", utilrand.GetRandomStringCanonical(8)),
+		},
+		Spec:   &corev1.Service_Spec{},
+		Status: &corev1.Service_Status{},
+	})
+	assert.Nil(t, err, "%+v", err)
+
+	return svc
+}
+
+func (i *ingressTest) command(t *testing.T, text string) *accessintg.InboundRequest {
+	body := []byte(url.Values{
+		"team_id":    []string{tstTeamID},
+		"user_id":    []string{tstSlackUserID},
+		"trigger_id": []string{utilrand.GetRandomStringCanonical(12)},
+		"text":       []string{text},
+	}.Encode())
+
+	now := time.Now()
+	timestamp := fmt.Sprintf("%d", now.Unix())
+
+	mac := hmac.New(sha256.New, []byte(tstSigningSecret))
+	mac.Write([]byte("v0:"))
+	mac.Write([]byte(timestamp))
+	mac.Write([]byte(":"))
+	mac.Write(body)
+
+	return &accessintg.InboundRequest{
+		Method: http.MethodPost,
+		Path:   []string{"slack", "commands"},
+		Header: http.Header{
+			"Content-Type":              []string{"application/x-www-form-urlencoded"},
+			"X-Slack-Request-Timestamp": []string{timestamp},
+			"X-Slack-Signature":         []string{fmt.Sprintf("v0=%s", hex.EncodeToString(mac.Sum(nil)))},
+		},
+		Body: body,
+		Now:  now,
+	}
+}
+
+func (i *ingressTest) listRequests(t *testing.T, usr *corev1.User) []*accessv1.Request {
+	itemList, err := i.octeliumC.AccessC().ListRequest(i.ctx, &rmetav1.ListOptions{
+		Filters: []*rmetav1.ListOptions_Filter{
+			urscsrv.FilterStatusUserUID(usr.Metadata.Uid),
+		},
+	})
+	assert.Nil(t, err, "%+v", err)
+
+	return itemList.Items
+}
+
+func TestInboundCreateRequest(t *testing.T) {
+	i := newIngressTest(t)
+
+	usr := i.createUser(t)
+	i.createIdentity(t, usr, tstSlackUserID)
+	svc := i.createService(t)
+
+	resp, err := i.srv.Handle(i.ctx, i.integration.Status.Id,
+		i.command(t, fmt.Sprintf("request svc:%s need it", svc.Metadata.Name)))
+	assert.Nil(t, err, "%+v", err)
+	assert.Contains(t, tstResponseText(t, resp), "was created")
+
+	assert.Equal(t, 1, len(i.listRequests(t, usr)))
+}
+
+func TestInboundCreateRequestByDisabledUser(t *testing.T) {
+	i := newIngressTest(t)
+
+	usr := i.createUser(t)
+	usr.Spec.IsDisabled = true
+	usr, err := i.octeliumC.CoreC().UpdateUser(i.ctx, usr)
+	assert.Nil(t, err, "%+v", err)
+
+	i.createIdentity(t, usr, tstSlackUserID)
+	svc := i.createService(t)
+
+	resp, err := i.srv.Handle(i.ctx, i.integration.Status.Id,
+		i.command(t, fmt.Sprintf("request svc:%s need it", svc.Metadata.Name)))
+	assert.Nil(t, err, "%+v", err)
+	assert.Contains(t, tstResponseText(t, resp), "not allowed")
+
+	assert.Equal(t, 0, len(i.listRequests(t, usr)))
+}
+
+func TestInboundCreateRequestByLockedUser(t *testing.T) {
+	i := newIngressTest(t)
+
+	usr := i.createUser(t)
+	usr.Status.IsLocked = true
+	usr, err := i.octeliumC.CoreC().UpdateUser(i.ctx, usr)
+	assert.Nil(t, err, "%+v", err)
+
+	i.createIdentity(t, usr, tstSlackUserID)
+	svc := i.createService(t)
+
+	resp, err := i.srv.Handle(i.ctx, i.integration.Status.Id,
+		i.command(t, fmt.Sprintf("request svc:%s need it", svc.Metadata.Name)))
+	assert.Nil(t, err, "%+v", err)
+	assert.Contains(t, tstResponseText(t, resp), "not allowed")
+
+	assert.Equal(t, 0, len(i.listRequests(t, usr)))
+}
+
+func TestInboundCreateRequestOutOfRangeDuration(t *testing.T) {
+	i := newIngressTest(t)
+
+	usr := i.createUser(t)
+	i.createIdentity(t, usr, tstSlackUserID)
+	svc := i.createService(t)
+
+	resp, err := i.srv.Handle(i.ctx, i.integration.Status.Id,
+		i.command(t, fmt.Sprintf("request svc:%s --duration=2000000h need it", svc.Metadata.Name)))
+	assert.Nil(t, err, "%+v", err)
+	assert.Contains(t, tstResponseText(t, resp), "out of range")
+
+	assert.Equal(t, 0, len(i.listRequests(t, usr)))
+}

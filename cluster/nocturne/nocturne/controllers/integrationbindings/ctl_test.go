@@ -467,3 +467,30 @@ func TestBindingReviewSurfaceIsNotDeliveredForTerminalRequest(t *testing.T) {
 	assert.Empty(t, binding.Status.ExternalID)
 	assert.Equal(t, int64(0), b.slack.postMessages.Load())
 }
+
+func TestBindingIsNotDeliveredToARetargetedIntegrationTarget(t *testing.T) {
+	b := newBindingTest(t)
+
+	req := b.createRequest(t)
+	binding := b.createBinding(t, req)
+
+	other, err := b.octeliumC.AccessC().CreateIntegration(b.ctx, &accessv1.Integration{
+		Metadata: &metav1.Metadata{
+			Name: utilrand.GetRandomStringCanonical(8),
+		},
+		Spec:   pbutils.Clone(b.integration.Spec).(*accessv1.Integration_Spec),
+		Status: pbutils.Clone(b.integration.Status).(*accessv1.Integration_Status),
+	})
+	assert.Nil(t, err, "%+v", err)
+
+	b.target.Spec.IntegrationRef = umetav1.GetObjectReference(other)
+	_, err = b.octeliumC.AccessC().UpdateIntegrationTarget(b.ctx, b.target)
+	assert.Nil(t, err, "%+v", err)
+
+	assert.Nil(t, b.ctrl.Reconcile(b.ctx, binding))
+	assert.Equal(t, int64(0), b.slack.postMessages.Load())
+
+	itemG := b.getBinding(t, binding.Metadata.Uid)
+	assert.Equal(t, accessv1.IntegrationBinding_Status_PENDING, itemG.Status.State)
+	assert.NotEmpty(t, itemG.Status.LastError)
+}

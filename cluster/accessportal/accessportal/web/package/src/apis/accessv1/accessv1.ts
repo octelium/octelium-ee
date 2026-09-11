@@ -2242,17 +2242,24 @@ export interface Integration_Spec_Webhook {
     url: string;
     /**
      * SigningSecret is the secret that the Cluster signs its outbound
-     * deliveries with using HMAC-SHA256 over the raw request body. The
-     * signature is sent in the `X-Octelium-Signature` header together with
-     * the `X-Octelium-Timestamp` header. Required.
+     * deliveries with. The signature is a HMAC-SHA256 over the canonical
+     * string `{timestamp}:{body}` where `timestamp` is the Unix time in
+     * seconds of the delivery and `body` is the raw request body. The
+     * signature is sent in the `X-Octelium-Signature` header in the form
+     * `sha256={hex}` together with the `X-Octelium-Timestamp` header which
+     * carries the same `timestamp` that is used in the canonical string.
+     * Receivers must reject the deliveries whose timestamps are older than
+     * 5 minutes and must compare the signatures in constant time.
+     * Required.
      *
      * @generated from protobuf field: octelium.api.main.access.v1.Integration.Spec.Webhook.SigningSecret signingSecret = 2
      */
     signingSecret?: Integration_Spec_Webhook_SigningSecret;
     /**
      * InboundSecret is the secret that the external system signs its
-     * requests to the Cluster with using the same scheme as the outbound
-     * deliveries. It is required in order to accept any inbound request.
+     * requests to the Cluster with using the same canonical string, headers
+     * and 5-minute skew of the outbound deliveries. It is required in order
+     * to accept any inbound request.
      *
      * @generated from protobuf field: octelium.api.main.access.v1.Integration.Spec.Webhook.InboundSecret inboundSecret = 3
      */
@@ -2729,16 +2736,22 @@ export interface IntegrationTarget_Spec_Jira {
     issueTypeName: string;
     /**
      * ApproveStatus is the name of the Jira status which, once an issue
-     * reaches it, submits an approving decision to the Cluster. It is only
-     * used by the INTERACTIVE review Surfaces.
+     * transitions to it, submits an approving decision to the Cluster. The
+     * decision is read from the status transition of the webhook event
+     * itself and not from the current status of the issue. It is only used
+     * by the INTERACTIVE review Surfaces. It must differ from
+     * `rejectStatus`.
      *
      * @generated from protobuf field: string approveStatus = 3
      */
     approveStatus: string;
     /**
      * RejectStatus is the name of the Jira status which, once an issue
-     * reaches it, submits a rejecting decision to the Cluster. It is only
-     * used by the INTERACTIVE review Surfaces.
+     * transitions to it, submits a rejecting decision to the Cluster. The
+     * decision is read from the status transition of the webhook event
+     * itself and not from the current status of the issue. It is only used
+     * by the INTERACTIVE review Surfaces. It must differ from
+     * `approveStatus`.
      *
      * @generated from protobuf field: string rejectStatus = 4
      */

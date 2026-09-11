@@ -46,6 +46,9 @@ func ResolveResourceQuery(ctx context.Context, octeliumC octeliumc.ClientInterfa
 		if err == nil {
 			return ret, nil
 		}
+		if !grpcerr.IsInvalidArg(err) {
+			return nil, err
+		}
 
 		return resolveCatalogResource(ctx, octeliumC, name)
 

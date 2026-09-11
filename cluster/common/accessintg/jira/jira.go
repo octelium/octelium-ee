@@ -176,6 +176,10 @@ func (p *Provider) CreatePresentation(ctx context.Context,
 		return nil, err
 	}
 
+	if issue == nil || issue.Key == "" {
+		return nil, errors.Errorf("Jira did not return an issue key")
+	}
+
 	return &accessintg.DeliveryResult{
 		ExternalID:          issue.Key,
 		ExternalURL:         fmt.Sprintf("%s/browse/%s", p.siteURL, issue.Key),
@@ -231,16 +235,10 @@ func (p *Provider) ResolveDecision(ctx context.Context, action *accessintg.Actio
 		return accessv1.Review_Spec_DECISION_UNSET, err
 	}
 
-	issue, err := p.api.getIssue(ctx, action.ExternalObjectID)
-	if err != nil {
-		return accessv1.Review_Spec_DECISION_UNSET, err
-	}
-
-	if issue == nil || issue.Fields == nil || issue.Fields.Status == nil {
+	status := strings.TrimSpace(action.ExternalStatus)
+	if status == "" {
 		return accessv1.Review_Spec_DECISION_UNSET, nil
 	}
-
-	status := issue.Fields.Status.Name
 
 	switch {
 	case spec.ApproveStatus != "" && strings.EqualFold(status, spec.ApproveStatus):

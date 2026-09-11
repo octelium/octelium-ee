@@ -115,11 +115,11 @@
                 },
                 "approveStatus": {
                     "type": "string",
-                    "description": "ApproveStatus is the name of the Jira status which, once an issue reaches it, submits an approving decision to the Cluster. It is only used by the INTERACTIVE review Surfaces."
+                    "description": "ApproveStatus is the name of the Jira status which, once an issue transitions to it, submits an approving decision to the Cluster. The decision is read from the status transition of the webhook event itself and not from the current status of the issue. It is only used by the INTERACTIVE review Surfaces. It must differ from `rejectStatus`."
                 },
                 "rejectStatus": {
                     "type": "string",
-                    "description": "RejectStatus is the name of the Jira status which, once an issue reaches it, submits a rejecting decision to the Cluster. It is only used by the INTERACTIVE review Surfaces."
+                    "description": "RejectStatus is the name of the Jira status which, once an issue transitions to it, submits a rejecting decision to the Cluster. The decision is read from the status transition of the webhook event itself and not from the current status of the issue. It is only used by the INTERACTIVE review Surfaces. It must differ from `approveStatus`."
                 }
             },
             "additionalProperties": false,

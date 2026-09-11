@@ -316,12 +316,12 @@
                 "signingSecret": {
                     "$ref": "#/definitions/octelium.api.main.access.v1.Integration.Spec.Webhook.SigningSecret",
                     "additionalProperties": false,
-                    "description": "SigningSecret is the secret that the Cluster signs its outbound deliveries with using HMAC-SHA256 over the raw request body. The signature is sent in the `X-Octelium-Signature` header together with the `X-Octelium-Timestamp` header. Required."
+                    "description": "SigningSecret is the secret that the Cluster signs its outbound deliveries with. The signature is a HMAC-SHA256 over the canonical string `{timestamp}:{body}` where `timestamp` is the Unix time in seconds of the delivery and `body` is the raw request body. The signature is sent in the `X-Octelium-Signature` header in the form `sha256={hex}` together with the `X-Octelium-Timestamp` header which carries the same `timestamp` that is used in the canonical string. Receivers must reject the deliveries whose timestamps are older than 5 minutes and must compare the signatures in constant time. Required."
                 },
                 "inboundSecret": {
                     "$ref": "#/definitions/octelium.api.main.access.v1.Integration.Spec.Webhook.InboundSecret",
                     "additionalProperties": false,
-                    "description": "InboundSecret is the secret that the external system signs its requests to the Cluster with using the same scheme as the outbound deliveries. It is required in order to accept any inbound request."
+                    "description": "InboundSecret is the secret that the external system signs its requests to the Cluster with using the same canonical string, headers and 5-minute skew of the outbound deliveries. It is required in order to accept any inbound request."
                 }
             },
             "additionalProperties": false,

@@ -11,6 +11,7 @@ package access
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/octelium/octelium-ee/cluster/common/accessintg"
 	"github.com/octelium/octelium-ee/cluster/common/accessintg/registry"
@@ -279,6 +280,8 @@ func (s *ServerMain) validateIntegrationIdentity(ctx context.Context,
 		}
 		return grpcutils.InternalWithErr(err)
 	}
+
+	req.Spec.ExternalID = strings.TrimSpace(req.Spec.ExternalID)
 
 	if err := validateIntegrationStr(req.Spec.ExternalID, true, "The externalID"); err != nil {
 		return err

@@ -26,6 +26,23 @@ import (
 
 const providerCacheTTL = 5 * time.Minute
 
+type authError struct {
+	err error
+}
+
+func (e *authError) Error() string {
+	return e.err.Error()
+}
+
+func authErrf(format string, a ...any) error {
+	return &authError{err: errors.Errorf(format, a...)}
+}
+
+func IsAuthError(err error) bool {
+	var ret *authError
+	return errors.As(err, &ret)
+}
+
 type Server struct {
 	octeliumC     octeliumc.ClientInterface
 	clusterDomain string
@@ -56,7 +73,7 @@ func (s *Server) Handle(ctx context.Context, integrationID string,
 	}
 
 	if integration.Spec.IsDisabled {
-		return nil, errors.Errorf("The Integration %s is disabled", integration.Metadata.Name)
+		return nil, authErrf("The Integration %s is disabled", integration.Metadata.Name)
 	}
 
 	provider, err := s.getProvider(ctx, integration)
@@ -66,18 +83,18 @@ func (s *Server) Handle(ctx context.Context, integrationID string,
 
 	handler, ok := provider.(accessintg.InboundHandler)
 	if !ok {
-		return nil, errors.Errorf("The Integration %s does not accept inbound requests",
+		return nil, authErrf("The Integration %s does not accept inbound requests",
 			integration.Metadata.Name)
 	}
 
 	in, err = stripProviderPath(provider, in)
 	if err != nil {
-		return nil, err
+		return nil, &authError{err: err}
 	}
 
 	inbound, err := handler.DecodeInbound(ctx, in)
 	if err != nil {
-		return nil, err
+		return nil, &authError{err: err}
 	}
 
 	if inbound.Response != nil || inbound.Action == nil {
@@ -114,7 +131,7 @@ func (s *Server) executeAction(ctx context.Context, integration *accessv1.Integr
 func (s *Server) getIntegration(ctx context.Context,
 	integrationID string) (*accessv1.Integration, error) {
 	if integrationID == "" {
-		return nil, errors.Errorf("No Integration identifier was provided")
+		return nil, authErrf("No Integration identifier was provided")
 	}
 
 	itemList, err := s.octeliumC.AccessC().ListIntegration(ctx, &rmetav1.ListOptions{
@@ -127,7 +144,7 @@ func (s *Server) getIntegration(ctx context.Context,
 	}
 
 	if len(itemList.Items) != 1 {
-		return nil, errors.Errorf("No such Integration")
+		return nil, authErrf("No such Integration")
 	}
 
 	return itemList.Items[0], nil

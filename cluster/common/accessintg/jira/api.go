@@ -38,6 +38,9 @@ func newAPIClient(baseURL, email, apiToken string) *apiClient {
 			[]byte(fmt.Sprintf("%s:%s", email, apiToken))),
 		hc: &http.Client{
 			Timeout: 30 * time.Second,
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
 		},
 	}
 }
@@ -49,18 +52,9 @@ type jiraUser struct {
 	Active       bool   `json:"active,omitempty"`
 }
 
-type jiraStatus struct {
-	Name string `json:"name,omitempty"`
-}
-
-type jiraIssueFields struct {
-	Status *jiraStatus `json:"status,omitempty"`
-}
-
 type jiraIssue struct {
-	ID     string           `json:"id,omitempty"`
-	Key    string           `json:"key,omitempty"`
-	Fields *jiraIssueFields `json:"fields,omitempty"`
+	ID  string `json:"id,omitempty"`
+	Key string `json:"key,omitempty"`
 }
 
 func (c *apiClient) do(ctx context.Context, method, path string,
@@ -176,20 +170,6 @@ func (c *apiClient) updateIssue(ctx context.Context, key string, fields map[stri
 		nil, map[string]any{
 			"fields": fields,
 		}, nil)
-}
-
-func (c *apiClient) getIssue(ctx context.Context, key string) (*jiraIssue, error) {
-	ret := &jiraIssue{}
-	err := c.do(ctx, http.MethodGet, fmt.Sprintf("/rest/api/3/issue/%s", url.PathEscape(key)),
-		url.Values{"fields": []string{"status"}}, nil, ret)
-	if err != nil {
-		if errors.Is(err, errNotFound) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	return ret, nil
 }
 
 func (c *apiClient) addComment(ctx context.Context, key string, body any) error {

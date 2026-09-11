@@ -67,6 +67,14 @@ func (c *Controller) reconcile(ctx context.Context, rev *accessv1.Review, force 
 		return nil
 	}
 
+	rev, err := c.getReview(ctx, rev)
+	if err != nil {
+		return err
+	}
+	if rev == nil || rev.Spec.Decision == accessv1.Review_Spec_DECISION_UNSET {
+		return nil
+	}
+
 	req, err := c.getRequest(ctx, rev.Status.RequestRef)
 	if err != nil {
 		return err
@@ -176,6 +184,16 @@ func (c *Controller) applyApproval(
 
 	step := actionReview.Steps[int(req.Status.Review.CurrentStep)]
 
+	rejected, err := c.isStepRejected(ctx, req, step, currentStepReviews)
+	if err != nil {
+		return err
+	}
+
+	if rejected {
+		c.setState(req, accessv1.Request_Status_State_REJECTED)
+		return nil
+	}
+
 	approved, err := c.isStepApproved(ctx, req, step, currentStepReviews)
 	if err != nil {
 		return err
@@ -244,6 +262,30 @@ func (c *Controller) getCurrentStepReviews(
 	}
 
 	return ret, nil
+}
+
+func (c *Controller) isStepRejected(
+	ctx context.Context,
+	req *accessv1.Request,
+	step *accessv1.Policy_Spec_Rule_Action_Review_Step,
+	reviews []*accessv1.Review,
+) (bool, error) {
+	for _, rev := range reviews {
+		if rev.Spec.Decision != accessv1.Review_Spec_DECISION_REJECT {
+			continue
+		}
+
+		ok, err := c.isEligibleReviewer(ctx, rev.Status.UserRef, step, req)
+		if err != nil {
+			return false, err
+		}
+
+		if ok {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 func (c *Controller) isStepApproved(
@@ -392,6 +434,25 @@ func (c *Controller) isStepApprovedCount(
 	}
 
 	return uint32(len(approvals)) >= step.ApprovalCount, nil
+}
+
+func (c *Controller) getReview(ctx context.Context,
+	rev *accessv1.Review) (*accessv1.Review, error) {
+	if rev.Metadata == nil || rev.Metadata.Uid == "" {
+		return rev, nil
+	}
+
+	item, err := c.octeliumC.AccessC().GetReview(ctx, &rmetav1.GetOptions{
+		Uid: rev.Metadata.Uid,
+	})
+	if err != nil {
+		if grpcerr.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return item, nil
 }
 
 func (c *Controller) getRequest(ctx context.Context, ref *metav1.ObjectReference) (*accessv1.Request, error) {

@@ -92,6 +92,7 @@ type Action struct {
 
 	BindingName      string
 	ExternalObjectID string
+	ExternalStatus   string
 
 	Decision      accessv1.Review_Spec_Decision
 	Justification string

@@ -11,6 +11,7 @@ package ingress
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/octelium/octelium-ee/cluster/common/accesscmd"
 	"github.com/octelium/octelium-ee/cluster/common/accessintg"
@@ -27,6 +28,8 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc/status"
 )
+
+const maxActionDurationSeconds = 60 * 60 * 24 * 30 * 12 * 100
 
 func (s *Server) setReviewDecision(ctx context.Context, integration *accessv1.Integration,
 	provider accessintg.Provider,
@@ -170,9 +173,16 @@ func (s *Server) createRequest(ctx context.Context, integration *accessv1.Integr
 	}
 
 	if action.Duration > 0 {
+		seconds := int64(action.Duration / time.Second)
+		if seconds < 1 || seconds > maxActionDurationSeconds {
+			return &accessintg.ActionResult{
+				Message: "The duration is out of range.",
+			}, nil
+		}
+
 		spec.Duration = &metav1.Duration{
 			Type: &metav1.Duration_Seconds{
-				Seconds: uint32(action.Duration.Seconds()),
+				Seconds: uint32(seconds),
 			},
 		}
 	}

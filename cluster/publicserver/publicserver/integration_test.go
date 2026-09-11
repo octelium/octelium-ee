@@ -161,4 +161,51 @@ func TestHandleIntegration(t *testing.T) {
 		srv.ServeHTTP(w, r)
 		assert.Equal(t, http.StatusMethodNotAllowed, w.Code)
 	}
+
+	{
+		broken, err := srv.octeliumC.AccessC().CreateIntegration(ctx, &accessv1.Integration{
+			Metadata: &metav1.Metadata{
+				Name: utilrand.GetRandomStringCanonical(8),
+			},
+			Spec: &accessv1.Integration_Spec{
+				Type: &accessv1.Integration_Spec_Slack_{
+					Slack: &accessv1.Integration_Spec_Slack{
+						BotToken: &accessv1.Integration_Spec_Slack_BotToken{
+							Type: &accessv1.Integration_Spec_Slack_BotToken_FromSecret{
+								FromSecret: utilrand.GetRandomStringCanonical(8),
+							},
+						},
+						SigningSecret: &accessv1.Integration_Spec_Slack_SigningSecret{
+							Type: &accessv1.Integration_Spec_Slack_SigningSecret_FromSecret{
+								FromSecret: sec.Metadata.Name,
+							},
+						},
+					},
+				},
+			},
+			Status: &accessv1.Integration_Status{
+				Id:   utilrand.GetRandomStringCanonical(24),
+				Type: accessv1.Integration_Status_SLACK,
+				Capabilities: []accessv1.Integration_Status_Capability{
+					accessv1.Integration_Status_INTERACTIVE_REVIEW,
+				},
+			},
+		})
+		assert.Nil(t, err, "%+v", err)
+
+		body := []byte(`{"type":"url_verification","challenge":"abc123"}`)
+		w := doRequest(fmt.Sprintf("%s%s/slack/events", integrationPathPrefix,
+			broken.Status.Id), body, true, "application/json")
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+	}
+
+	{
+		integration.Spec.IsDisabled = true
+		_, err := srv.octeliumC.AccessC().UpdateIntegration(ctx, integration)
+		assert.Nil(t, err, "%+v", err)
+
+		body := []byte(`{"type":"url_verification","challenge":"abc123"}`)
+		w := doRequest(fmt.Sprintf("%s/slack/events", basePath), body, true, "application/json")
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+	}
 }

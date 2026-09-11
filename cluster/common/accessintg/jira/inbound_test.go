@@ -20,6 +20,7 @@ import (
 
 	"github.com/octelium/octelium-ee/cluster/common/accessintg"
 	"github.com/octelium/octelium/apis/main/accessv1"
+	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -109,4 +110,69 @@ func TestCapabilitiesWithoutWebhookSecret(t *testing.T) {
 	capabilities := Capabilities(spec)
 	assert.Contains(t, capabilities, accessv1.Integration_Status_NOTIFICATION)
 	assert.NotContains(t, capabilities, accessv1.Integration_Status_INTERACTIVE_REVIEW)
+}
+
+func TestDecodeCarriesTheEventStatus(t *testing.T) {
+	ctx := context.Background()
+	p := tstProvider()
+
+	in := tstRequest(p, `{"webhookEvent":"jira:issue_updated","timestamp":1700000000,`+
+		`"issue":{"id":"1","key":"OPS-12"},"user":{"accountId":"acc-1"},`+
+		`"changelog":{"id":"99","items":[{"field":"status","toString":"Rejected"}]}}`)
+
+	ret, err := p.DecodeInbound(ctx, in)
+	assert.Nil(t, err, "%+v", err)
+	assert.Equal(t, "Rejected", ret.Action.ExternalStatus)
+}
+
+func TestDecodeEmptyStatusChangeIsIgnored(t *testing.T) {
+	ctx := context.Background()
+	p := tstProvider()
+
+	in := tstRequest(p, `{"webhookEvent":"jira:issue_updated","timestamp":1700000000,`+
+		`"issue":{"id":"1","key":"OPS-12"},"user":{"accountId":"acc-1"},`+
+		`"changelog":{"id":"99","items":[{"field":"status","toString":""}]}}`)
+
+	ret, err := p.DecodeInbound(ctx, in)
+	assert.Nil(t, err, "%+v", err)
+	assert.Nil(t, ret.Action)
+}
+
+func TestResolveDecisionFromTheEventStatus(t *testing.T) {
+	ctx := context.Background()
+	p := tstProvider()
+
+	target := &accessv1.IntegrationTarget{
+		Metadata: &metav1.Metadata{Name: "tgt"},
+		Spec: &accessv1.IntegrationTarget_Spec{
+			Type: &accessv1.IntegrationTarget_Spec_Jira_{
+				Jira: &accessv1.IntegrationTarget_Spec_Jira{
+					ProjectKey:    "OPS",
+					ApproveStatus: "Approved",
+					RejectStatus:  "Rejected",
+				},
+			},
+		},
+	}
+
+	decision, err := p.ResolveDecision(ctx, &accessintg.Action{
+		ExternalObjectID: "OPS-12",
+		ExternalStatus:   "approved",
+	}, target)
+	assert.Nil(t, err, "%+v", err)
+	assert.Equal(t, accessv1.Review_Spec_DECISION_APPROVE, decision)
+
+	decision, err = p.ResolveDecision(ctx, &accessintg.Action{
+		ExternalObjectID: "OPS-12",
+		ExternalStatus:   "Rejected",
+	}, target)
+	assert.Nil(t, err, "%+v", err)
+	assert.Equal(t, accessv1.Review_Spec_DECISION_REJECT, decision)
+
+	decision, err = p.ResolveDecision(ctx, &accessintg.Action{
+		ExternalObjectID: "OPS-12",
+		ExternalStatus:   "In Progress",
+	}, target)
+	assert.Nil(t, err, "%+v", err)
+	assert.Equal(t, accessv1.Review_Spec_DECISION_UNSET, decision)
 }

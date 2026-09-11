@@ -11,6 +11,7 @@ package slack
 import (
 	"fmt"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/octelium/octelium-ee/cluster/common/accessintg"
 	"github.com/octelium/octelium/apis/main/accessv1"
@@ -213,5 +214,10 @@ func truncate(arg string, maxLen int) string {
 		return arg
 	}
 
-	return fmt.Sprintf("%s...", arg[:maxLen])
+	ret := arg[:maxLen]
+	for len(ret) > 0 && !utf8.ValidString(ret) {
+		ret = ret[:len(ret)-1]
+	}
+
+	return fmt.Sprintf("%s...", ret)
 }
