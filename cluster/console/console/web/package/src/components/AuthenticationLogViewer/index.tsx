@@ -33,6 +33,7 @@ import CopyText from "../CopyText";
 import AuthenticationLogSummary from "../LogSummary/AuthenticationLogSummary";
 import { ResourceListLabel } from "../ResourceList";
 import TimeAgo from "../TimeAgo";
+import { CompactSummary } from "../Summary";
 
 const DetailField = ({
   label,
@@ -350,7 +351,7 @@ export const AuthenticationLogC = ({
   return (
     <div
       className={twMerge(
-        "mb-2 overflow-hidden rounded-xl border border-slate-200 bg-white",
+        "mb-2 overflow-hidden rounded-xl border border-l-4 border-slate-200 border-l-sky-400 bg-white",
         "shadow-card transition-[border-color,box-shadow] duration-200 ease-out",
         "hover:border-slate-300 hover:shadow-raised",
         expanded &&
@@ -616,41 +617,36 @@ const DoAuthenticationLogViewer = (props: {
   authenticatorRef?: ObjectReference;
   itemsPerPage?: number;
   from?: Timestamp;
+  page?: number;
+  onPageChange?: (page: number) => void;
+  query?: string;
 }) => {
-  const [page, setPage] = React.useState(0);
+  const [page, setPage] = React.useState(props.page ?? 0);
 
   React.useEffect(() => {
-    setPage(0);
-  }, [
-    props.userRef?.uid,
-    props.userRef?.name,
-    props.sessionRef?.uid,
-    props.sessionRef?.name,
-    props.deviceRef?.uid,
-    props.deviceRef?.name,
-    props.identityProviderRef?.uid,
-    props.identityProviderRef?.name,
-    props.credentialRef?.uid,
-    props.credentialRef?.name,
-    props.authenticatorRef?.uid,
-    props.authenticatorRef?.name,
-    props.from?.seconds,
-    props.from?.nanos,
-  ]);
+    setPage(props.page ?? 0);
+  }, [props.page]);
+
+  const changePage = (nextPage: number) => {
+    setPage(nextPage);
+    props.onPageChange?.(nextPage);
+  };
 
   const qry = useQuery({
     queryKey: [
       "visibility",
       "listAuthenticationLog",
-      props.userRef?.uid,
-      props.sessionRef?.uid,
-      props.deviceRef?.uid,
-      props.identityProviderRef?.uid,
-      props.credentialRef?.uid,
-      props.authenticatorRef?.uid,
-      page,
-      props.from?.seconds,
-      props.from?.nanos,
+      {
+        userRef: props.userRef,
+        sessionRef: props.sessionRef,
+        deviceRef: props.deviceRef,
+        identityProviderRef: props.identityProviderRef,
+        credentialRef: props.credentialRef,
+        authenticatorRef: props.authenticatorRef,
+        page,
+        from: props.from,
+        query: props.query,
+      },
     ],
     queryFn: async () => {
       if (isDev()) {
@@ -709,7 +705,8 @@ const DoAuthenticationLogViewer = (props: {
             authenticatorRef: props.authenticatorRef,
             common: {
               page,
-              itemsPerPage: props.itemsPerPage ?? 100,
+              itemsPerPage: props.itemsPerPage ?? 25,
+              query: props.query,
             },
             from: props.from,
           }),
@@ -729,8 +726,8 @@ const DoAuthenticationLogViewer = (props: {
           {totalCount ? `${totalCount.toLocaleString()} entries` : "No entries"}
         </span>
         <button
+          type="button"
           onClick={() => {
-            setPage(0);
             qry.refetch();
           }}
           disabled={qry.isLoading}
@@ -750,13 +747,15 @@ const DoAuthenticationLogViewer = (props: {
           role="alert"
           className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700"
         >
-          Authentication logs could not be loaded. Refresh to try again.
+          {qry.data
+            ? "Refresh failed. Showing the last loaded authentication logs."
+            : "Authentication logs could not be loaded. Refresh to try again."}
         </div>
       )}
 
-      {!qry.data || qry.isLoading ? (
+      {qry.isLoading && !qry.data ? (
         <ListLoading label="authentication logs" />
-      ) : (
+      ) : qry.data ? (
         <>
           {qry.data?.items.map((x) => (
             <AuthenticationLogC key={x.metadata!.id} authLog={x} />
@@ -770,12 +769,13 @@ const DoAuthenticationLogViewer = (props: {
             </div>
           )}
         </>
-      )}
+      ) : null}
 
       {qry.data?.listResponseMeta && (
         <Paginator
           meta={qry.data.listResponseMeta}
-          onPageChange={setPage}
+          onPageChange={changePage}
+          showFilters={false}
         />
       )}
     </div>
@@ -790,6 +790,8 @@ export const AuthenticationLogList = (props: {
   credentialRef?: ObjectReference;
   authenticatorRef?: ObjectReference;
   itemsPerPage?: number;
+  page?: number;
+  onPageChange?: (page: number) => void;
   periodMinutes?: number;
 }) => {
   const [localFrom, setLocalFrom] = React.useState<Timestamp>(
@@ -813,7 +815,10 @@ export const AuthenticationLogList = (props: {
           <span className="shrink-0 text-xs font-semibold uppercase tracking-[0.05em] text-slate-500">
             Since
           </span>
-          <SelectFromTimestamp onUpdate={setLocalFrom} />
+          <SelectFromTimestamp
+            initialValue="6 hour"
+            onUpdate={setLocalFrom}
+          />
         </div>
       )}
       <DoAuthenticationLogViewer {...props} from={from} />
@@ -829,6 +834,9 @@ const AuthenticationLogViewer = (props: {
   credentialRef?: ObjectReference;
   authenticatorRef?: ObjectReference;
   itemsPerPage?: number;
+  page?: number;
+  onPageChange?: (page: number) => void;
+  query?: string;
 }) => {
   const [from, setFrom] = React.useState<Timestamp>(
     Timestamp.fromDate(dayjs().subtract(6, "hour").toDate()),
@@ -840,18 +848,28 @@ const AuthenticationLogViewer = (props: {
         <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 shrink-0">
           Since
         </span>
-        <SelectFromTimestamp onUpdate={setFrom} />
+        <SelectFromTimestamp
+          initialValue="6 hour"
+          onUpdate={(value) => {
+            setFrom(value);
+            props.onPageChange?.(0);
+          }}
+        />
       </div>
 
-      <AuthenticationLogSummary
-        userRef={props.userRef}
-        sessionRef={props.sessionRef}
-        deviceRef={props.deviceRef}
-        identityProviderRef={props.identityProviderRef}
-        credentialRef={props.credentialRef}
-        authenticatorRef={props.authenticatorRef}
-        from={from}
-      />
+      {!props.query && (
+        <CompactSummary>
+          <AuthenticationLogSummary
+            userRef={props.userRef}
+            sessionRef={props.sessionRef}
+            deviceRef={props.deviceRef}
+            identityProviderRef={props.identityProviderRef}
+            credentialRef={props.credentialRef}
+            authenticatorRef={props.authenticatorRef}
+            from={from}
+          />
+        </CompactSummary>
+      )}
 
       <DoAuthenticationLogViewer
         userRef={props.userRef}
@@ -861,6 +879,10 @@ const AuthenticationLogViewer = (props: {
         credentialRef={props.credentialRef}
         authenticatorRef={props.authenticatorRef}
         from={from}
+        itemsPerPage={props.itemsPerPage}
+        page={props.page}
+        onPageChange={props.onPageChange}
+        query={props.query}
       />
     </div>
   );

@@ -10,14 +10,13 @@ import {
   refetchIntervalChart,
 } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, Boxes, Laptop, ScrollText, Users } from "lucide-react";
+import { Boxes, ScrollText, Users } from "lucide-react";
 import { SummaryItemCount, SummaryItemCountWrap } from "../Summary";
 
 const AuditLogSummary = (props: {
   userRef?: ObjectReference;
   deviceRef?: ObjectReference;
   sessionRef?: ObjectReference;
-  serviceRef?: ObjectReference;
   resourceRef?: ObjectReference;
   from?: Timestamp;
   to?: Timestamp;
@@ -53,7 +52,6 @@ const AuditLogSummary = (props: {
     const refs: Array<[string, ObjectReference | undefined]> = [
       ["userRef", props.userRef],
       ["sessionRef", props.sessionRef],
-      ["serviceRef", props.serviceRef],
       ["resourceRef", props.resourceRef],
       ["deviceRef", props.deviceRef],
     ];
@@ -65,67 +63,25 @@ const AuditLogSummary = (props: {
     return query ? `/visibility/auditlogs?${query}` : "/visibility/auditlogs";
   };
 
-  /*
-  React.useEffect(() => {
-    qry.refetch();
-  }, []);
-  */
-
   return (
-    <div>
-      {/**
-       <div className="flex items-center mb-6">
-        <div className="font-bold text-slate-700 text-shadow-2xs text-xl">
-          Summary
-        </div>
-        <Button
-          size="compact-sm"
-          variant="outline"
-          className="ml-2 shadow-md"
-          loading={qry.isLoading}
-          onClick={() => {
-            qry.refetch();
-          }}
-        >
-          <MdRefresh />
-        </Button>
-      </div>
-       **/}
-      <div className="ml-4 mt-4">
-        {qry.data && (
-          <div className="w-full flex items-center">
-            <SummaryItemCountWrap>
-              <SummaryItemCount
-                count={qry.data.totalNumber}
-                icon={ScrollText}
-                to={auditLogsPath()}
-              >
-                Total
-              </SummaryItemCount>
-
-              <SummaryItemCount count={qry.data.totalResource} icon={Boxes}>
-                Resources
-              </SummaryItemCount>
-              {!(props.userRef || props.deviceRef || props.sessionRef) && (
-                <SummaryItemCount count={qry.data.totalUser} icon={Users}>
-                  Users
-                </SummaryItemCount>
-              )}
-
-              {!props.deviceRef && (
-                <SummaryItemCount count={qry.data.totalDevice} icon={Laptop}>
-                  Devices
-                </SummaryItemCount>
-              )}
-              {!props.sessionRef && (
-                <SummaryItemCount count={qry.data.totalSession} icon={Activity}>
-                  Sessions
-                </SummaryItemCount>
-              )}
-            </SummaryItemCountWrap>
-          </div>
-        )}
-      </div>
+    <div className="min-h-[58px]">
+      {qry.data ? (
+        <SummaryItemCountWrap>
+          <SummaryItemCount showZero count={qry.data.totalNumber} icon={ScrollText} to={auditLogsPath()}>
+            Total changes
+          </SummaryItemCount>
+          <SummaryItemCount showZero count={qry.data.totalResource} icon={Boxes}>
+            Resources affected
+          </SummaryItemCount>
+          <SummaryItemCount showZero count={qry.data.totalUser} icon={Users}>
+            Actors
+          </SummaryItemCount>
+        </SummaryItemCountWrap>
+      ) : qry.isError ? (
+        <p className="text-xs font-semibold text-red-600">Summary unavailable</p>
+      ) : (
+        <div className="h-[58px] animate-pulse rounded-lg bg-slate-100" />
+      )}
     </div>
   );
 };

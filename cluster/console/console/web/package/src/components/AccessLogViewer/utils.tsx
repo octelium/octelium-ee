@@ -164,7 +164,6 @@ export const SelectFromTimestamp = (props: {
 
   return (
     <Select
-      className="ml-4"
       value={from}
       size={`xs`}
       label={props.label}
@@ -172,7 +171,7 @@ export const SelectFromTimestamp = (props: {
       searchable
       rightSection={<LuTimer />}
       data={timeRangePickList}
-      clearable
+      clearable={!!props.onClear}
       onChange={(v) => {
         if (!v) {
           setFrom(undefined);

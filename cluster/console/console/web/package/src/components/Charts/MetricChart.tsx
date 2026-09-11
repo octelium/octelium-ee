@@ -23,7 +23,7 @@ import {
   getClientVisibilityMetrics,
   refetchIntervalChart,
 } from "@/utils/client";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import ReactEChartsCore from "echarts-for-react";
 import { LineChart as LineChartC } from "echarts/charts";
 import {
@@ -559,6 +559,7 @@ const MetricChart = (props: MetricChartProps) => {
     refetchInterval: autoRefresh ? refetchIntervalChart : false,
     refetchIntervalInBackground: false,
     retry: retryMetricQuery,
+    placeholderData: keepPreviousData,
   });
 
   const effectiveUnit =

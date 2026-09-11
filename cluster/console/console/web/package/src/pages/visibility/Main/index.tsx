@@ -73,40 +73,55 @@ export default () => {
 
   return (
     <div className="flex w-full flex-col gap-4 py-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <SegmentedControl
-          value={tab}
-          onChange={(value) => patchParams({ tab: value })}
-          data={TABS.map((item) => {
-            const Icon = item.icon;
-            return {
-              value: item.value,
-              label: (
-                <span className="flex items-center justify-center gap-2 px-1.5 py-0.5">
-                  <Icon size={14} strokeWidth={2.5} />
-                  <span>{item.label}</span>
-                </span>
-              ),
-            };
-          })}
-        />
+      <header className="rounded-xl border border-slate-200 bg-white px-4 py-3.5 shadow-card">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-lg font-semibold tracking-tight text-slate-950">
+              Visibility
+            </h1>
+            <p className="mt-0.5 text-xs leading-5 text-slate-500">
+              Cluster health, security activity, inventory, and runtime metrics.
+            </p>
+          </div>
 
-        {tab === "logs" && (
-          <Select
-            size="xs"
-            aria-label="Time range"
-            allowDeselect={false}
-            checkIconPosition="right"
-            value={String(periodMinutes)}
-            onChange={(value) => value && setPeriodMinutes(Number(value))}
-            data={ALL_PERIODS.map((option) => ({
-              value: String(option.minutes),
-              label: `Last ${option.label}`,
-            }))}
-            className="w-36"
+          {tab === "logs" && (
+            <Select
+              size="xs"
+              aria-label="Time range"
+              allowDeselect={false}
+              checkIconPosition="right"
+              value={String(periodMinutes)}
+              onChange={(value) => value && setPeriodMinutes(Number(value))}
+              data={ALL_PERIODS.map((option) => ({
+                value: String(option.minutes),
+                label: `Last ${option.label}`,
+              }))}
+              className="w-36"
+            />
+          )}
+        </div>
+
+        <div className="mt-3 overflow-x-auto border-t border-slate-100 pt-3">
+          <SegmentedControl
+            value={tab}
+            onChange={(value) =>
+              patchParams({ tab: value === "logs" ? null : value })
+            }
+            data={TABS.map((item) => {
+              const Icon = item.icon;
+              return {
+                value: item.value,
+                label: (
+                  <span className="flex items-center justify-center gap-2 px-1.5 py-0.5">
+                    <Icon size={14} strokeWidth={2.5} />
+                    <span>{item.label}</span>
+                  </span>
+                ),
+              };
+            })}
           />
-        )}
-      </div>
+        </div>
+      </header>
 
       <AnimatePresence mode="wait">
         {tab === "logs" ? (

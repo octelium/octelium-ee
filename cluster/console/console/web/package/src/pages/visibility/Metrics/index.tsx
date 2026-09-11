@@ -38,7 +38,11 @@ import {
   Switch,
   Tooltip,
 } from "@mantine/core";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import {
   Activity,
   ChevronDown,
@@ -51,6 +55,7 @@ import {
   Waypoints,
 } from "lucide-react";
 import * as React from "react";
+import { useSearchParams } from "react-router-dom";
 
 type View = "overview" | "traffic" | "octovigil" | "rscserver" | "components";
 type Range = "15m" | "1h" | "6h" | "24h";
@@ -63,6 +68,36 @@ type ResourceOperation =
   | "create"
   | "update"
   | "delete";
+
+const VIEWS: View[] = [
+  "overview",
+  "traffic",
+  "octovigil",
+  "rscserver",
+  "components",
+];
+const RANGES: Range[] = ["15m", "1h", "6h", "24h"];
+const RESOLUTIONS: Resolution[] = ["auto", "1m", "5m", "15m"];
+const TRAFFIC_DETAILS: TrafficDetail[] = [
+  "decisions",
+  "streams",
+  "http",
+  "dns",
+];
+const RESOURCE_OPERATIONS: ResourceOperation[] = [
+  "all",
+  "get",
+  "list",
+  "create",
+  "update",
+  "delete",
+];
+
+const fromParam = <T extends string>(
+  value: string | null,
+  values: readonly T[],
+  fallback: T,
+): T => (value && values.includes(value as T) ? (value as T) : fallback);
 
 const componentsByNamespace: Record<string, string[]> = {
   octelium: [
@@ -240,6 +275,7 @@ const MetricStat = ({
     refetchInterval: autoRefresh ? refetchIntervalChart : false,
     refetchIntervalInBackground: false,
     retry: retryMetricQuery,
+    placeholderData: keepPreviousData,
   });
   const value = React.useMemo(() => {
     const points = query.data?.series[0]?.points;
@@ -300,19 +336,29 @@ const MetricStat = ({
 };
 
 const Metrics = () => {
-  const [view, setView] = React.useState<View>("overview");
-  const [range, setRange] = React.useState<Range>("6h");
-  const [resolution, setResolution] = React.useState<Resolution>("auto");
-  const [componentType, setComponentType] = React.useState<string | null>(null);
-  const [componentNamespace, setComponentNamespace] = React.useState<
-    string | null
-  >(null);
-  const [serviceName, setServiceName] = React.useState<string>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const view = fromParam(searchParams.get("metrics.view"), VIEWS, "overview");
+  const range = fromParam(searchParams.get("metrics.range"), RANGES, "6h");
+  const resolution = fromParam(
+    searchParams.get("metrics.resolution"),
+    RESOLUTIONS,
+    "auto",
+  );
+  const componentType = searchParams.get("metrics.componentType") || null;
+  const componentNamespace =
+    searchParams.get("metrics.componentNamespace") || null;
+  const serviceName = searchParams.get("metrics.service") || undefined;
   const [serviceMode, setServiceMode] = React.useState<Service_Spec_Mode>();
-  const [trafficDetail, setTrafficDetail] =
-    React.useState<TrafficDetail>("decisions");
-  const [resourceOperation, setResourceOperation] =
-    React.useState<ResourceOperation>("all");
+  const trafficDetail = fromParam(
+    searchParams.get("metrics.trafficDetail"),
+    TRAFFIC_DETAILS,
+    "decisions",
+  );
+  const resourceOperation = fromParam(
+    searchParams.get("metrics.operation"),
+    RESOURCE_OPERATIONS,
+    "all",
+  );
   const [autoRefresh, setAutoRefresh] = React.useState(true);
   const [runtimeExpanded, setRuntimeExpanded] = React.useState(false);
   const [visible, setVisible] = React.useState(
@@ -322,6 +368,18 @@ const Metrics = () => {
   const showComponentFilters = view === "components";
   const showServiceFilter = view === "traffic";
 
+  const patchParams = React.useCallback(
+    (patch: Record<string, string | null>) => {
+      const next = new URLSearchParams(searchParams);
+      Object.entries(patch).forEach(([key, value]) => {
+        if (value === null) next.delete(key);
+        else next.set(key, value);
+      });
+      setSearchParams(next, { replace: true, preventScrollReset: true });
+    },
+    [searchParams, setSearchParams],
+  );
+
   React.useEffect(() => {
     const update = () => setVisible(document.visibilityState === "visible");
     document.addEventListener("visibilitychange", update);
@@ -329,8 +387,9 @@ const Metrics = () => {
   }, []);
 
   React.useEffect(() => {
-    if (range === "15m" && resolution === "15m") setResolution("auto");
-  }, [range, resolution]);
+    if (range === "15m" && resolution === "15m")
+      patchParams({ "metrics.resolution": null });
+  }, [range, resolution, patchParams]);
 
   const lookbackSeconds = ranges[range];
   const step = React.useMemo(
@@ -461,7 +520,11 @@ const Metrics = () => {
             <SegmentedControl
               fullWidth
               value={range}
-              onChange={(value) => setRange(value as Range)}
+              onChange={(value) =>
+                patchParams({
+                  "metrics.range": value === "6h" ? null : value,
+                })
+              }
               data={["15m", "1h", "6h", "24h"]}
             />
           </div>
@@ -472,7 +535,10 @@ const Metrics = () => {
             <Select
               value={resolution}
               onChange={(value) =>
-                setResolution((value ?? "auto") as Resolution)
+                patchParams({
+                  "metrics.resolution":
+                    !value || value === "auto" ? null : value,
+                })
               }
               data={[
                 { value: "auto", label: "Auto" },
@@ -494,12 +560,16 @@ const Metrics = () => {
                 clearable
                 value={componentNamespace}
                 onChange={(value) => {
-                  setComponentNamespace(value);
                   const availableTypes = value
                     ? (componentsByNamespace[value] ?? [])
                     : [...new Set(Object.values(componentsByNamespace).flat())];
-                  if (componentType && !availableTypes.includes(componentType))
-                    setComponentType(null);
+                  patchParams({
+                    "metrics.componentNamespace": value,
+                    "metrics.componentType":
+                      componentType && availableTypes.includes(componentType)
+                        ? componentType
+                        : null,
+                  });
                 }}
                 data={[
                   { value: "octelium", label: "Core" },
@@ -517,7 +587,9 @@ const Metrics = () => {
                 clearable
                 searchable
                 value={componentType}
-                onChange={setComponentType}
+                onChange={(value) =>
+                  patchParams({ "metrics.componentType": value })
+                }
                 data={componentOptions}
               />
             </>
@@ -530,7 +602,9 @@ const Metrics = () => {
               clearable
               defaultValue={serviceName}
               onChange={(item) => {
-                setServiceName(item?.metadata?.name);
+                patchParams({
+                  "metrics.service": item?.metadata?.name ?? null,
+                });
                 setServiceMode(
                   (item as { spec?: { mode?: Service_Spec_Mode } } | undefined)
                     ?.spec?.mode,
@@ -544,7 +618,11 @@ const Metrics = () => {
       <div className="overflow-x-auto pb-1">
         <SegmentedControl
           value={view}
-          onChange={(value) => setView(value as View)}
+          onChange={(value) =>
+            patchParams({
+              "metrics.view": value === "overview" ? null : value,
+            })
+          }
           data={[
             { value: "overview", label: "Overview" },
             { value: "traffic", label: "Services" },
@@ -809,7 +887,12 @@ const Metrics = () => {
             <div className="flex justify-center">
               <SegmentedControl
                 value={trafficDetail}
-                onChange={(value) => setTrafficDetail(value as TrafficDetail)}
+                onChange={(value) =>
+                  patchParams({
+                    "metrics.trafficDetail":
+                      value === "decisions" ? null : value,
+                  })
+                }
                 data={[
                   { value: "decisions", label: "Decisions" },
                   { value: "streams", label: "Connections" },
@@ -1079,7 +1162,9 @@ const Metrics = () => {
             <SegmentedControl
               value={resourceOperation}
               onChange={(value) =>
-                setResourceOperation(value as ResourceOperation)
+                patchParams({
+                  "metrics.operation": value === "all" ? null : value,
+                })
               }
               data={[
                 { value: "all", label: "All" },

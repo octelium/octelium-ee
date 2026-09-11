@@ -42,7 +42,7 @@ const ResourceItemDrawer = () => {
       opened={opened}
       onClose={requestClose}
       position="right"
-      size="min(900px, 100vw)"
+      size="min(960px, 100vw)"
       transitionProps={{
         transition: "slide-left",
         duration: 250,

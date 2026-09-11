@@ -243,8 +243,7 @@ const SchemaProperty = (props: {
   );
 };
 
-const ResourceSchema = (props: { item: Resource }) => {
-  const [opened, setOpened] = React.useState(false);
+export const ResourceSchemaContent = (props: { item: Resource }) => {
   const [loading, setLoading] = React.useState(false);
   const [schema, setSchema] = React.useState<SchemaNode>();
   const [error, setError] = React.useState<string>();
@@ -254,6 +253,7 @@ const ResourceSchema = (props: { item: Resource }) => {
   const loadSchema = React.useCallback(async () => {
     const rawSchema = resourceJSONSchema(props.item) as SchemaNode | undefined;
     if (!rawSchema) {
+      setLoading(false);
       setError("A schema is not available for this resource type yet.");
       return;
     }
@@ -280,15 +280,96 @@ const ResourceSchema = (props: { item: Resource }) => {
     setSchema(undefined);
     setError(undefined);
     setQuery("");
-    if (opened) void loadSchema();
-  }, [loadSchema, opened, resourceKey]);
-
-  const open = () => {
-    setOpened(true);
-  };
+    void loadSchema();
+  }, [loadSchema, resourceKey]);
 
   const rootProperties = Object.entries(schema?.properties ?? {});
   const required = new Set(schema?.required ?? []);
+
+  return (
+    <div className="space-y-4 p-3 sm:p-4">
+      <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm">
+        <div className="flex items-start gap-3">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-white">
+            <Braces size={15} />
+          </span>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-slate-800">
+              {props.item.kind} fields
+            </p>
+            <p className="mt-0.5 text-micro font-normal leading-5 text-slate-500">
+              Expand a field to inspect its type, description, defaults, and
+              nested values.
+            </p>
+          </div>
+        </div>
+        {schema && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            <Badge variant="light" color="gray">
+              {rootProperties.length} top-level fields
+            </Badge>
+            {required.size > 0 && (
+              <Badge variant="light" color="red">
+                {required.size} required
+              </Badge>
+            )}
+          </div>
+        )}
+      </div>
+
+      {schema && rootProperties.length > 0 && (
+        <TextInput
+          placeholder="Search fields or descriptions"
+          leftSection={<Search size={14} />}
+          value={query}
+          onChange={(event) =>
+            setQuery(event.currentTarget.value.toLowerCase())
+          }
+          rightSection={
+            query ? <Check size={13} className="text-emerald-500" /> : undefined
+          }
+        />
+      )}
+
+      {loading && (
+        <div className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-8 text-sm font-semibold text-slate-500">
+          <Loader size={16} />
+          Loading schema…
+        </div>
+      )}
+
+      {!loading && error && (
+        <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-sm font-semibold text-amber-800">
+          <CircleHelp size={16} className="mt-0.5 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {!loading && !error && schema && rootProperties.length > 0 && (
+        <div className="rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
+          {rootProperties.map(([name, child]) => (
+            <SchemaProperty
+              key={name}
+              name={name}
+              schema={child}
+              required={required.has(name)}
+              query={query}
+            />
+          ))}
+        </div>
+      )}
+
+      {!loading && !error && schema && rootProperties.length === 0 && (
+        <div className="rounded-xl border border-slate-200 bg-white px-4 py-8 text-center text-sm font-semibold text-slate-500">
+          This schema does not expose any object fields.
+        </div>
+      )}
+    </div>
+  );
+};
+
+const ResourceSchema = (props: { item: Resource }) => {
+  const [opened, setOpened] = React.useState(false);
 
   return (
     <>
@@ -297,7 +378,7 @@ const ResourceSchema = (props: { item: Resource }) => {
         variant="outline"
         size="compact-xs"
         leftSection={<Braces size={11} strokeWidth={2.5} />}
-        onClick={open}
+        onClick={() => setOpened(true)}
       >
         Schema
       </Button>
@@ -328,85 +409,13 @@ const ResourceSchema = (props: { item: Resource }) => {
           header: { borderBottom: "1px solid #e2e8f0", minHeight: "56px" },
           body: {
             minHeight: "calc(100dvh - 56px)",
-            padding: "16px",
+            padding: 0,
             backgroundColor: "#f8fafc",
           },
           content: { borderLeft: "1px solid #e2e8f0" },
         }}
       >
-        <div className="space-y-4">
-          <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm">
-            <div className="flex items-start gap-3">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-white">
-                <Braces size={15} />
-              </span>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-slate-800">
-                  {props.item.kind} fields
-                </p>
-                <p className="mt-0.5 text-micro font-normal leading-5 text-slate-500">
-                  Expand a field to inspect its type, description, defaults, and nested values.
-                </p>
-              </div>
-            </div>
-            {schema && (
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                <Badge variant="light" color="gray">
-                  {rootProperties.length} top-level fields
-                </Badge>
-                {required.size > 0 && (
-                  <Badge variant="light" color="red">
-                    {required.size} required
-                  </Badge>
-                )}
-              </div>
-            )}
-          </div>
-
-          {schema && rootProperties.length > 0 && (
-            <TextInput
-              placeholder="Search fields or descriptions"
-              leftSection={<Search size={14} />}
-              value={query}
-              onChange={(event) => setQuery(event.currentTarget.value.toLowerCase())}
-              rightSection={query ? <Check size={13} className="text-emerald-500" /> : undefined}
-            />
-          )}
-
-          {loading && (
-            <div className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-8 text-sm font-semibold text-slate-500">
-              <Loader size={16} />
-              Loading schema…
-            </div>
-          )}
-
-          {!loading && error && (
-            <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-sm font-semibold text-amber-800">
-              <CircleHelp size={16} className="mt-0.5 shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
-
-          {!loading && !error && schema && rootProperties.length > 0 && (
-            <div className="rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
-              {rootProperties.map(([name, child]) => (
-                <SchemaProperty
-                  key={name}
-                  name={name}
-                  schema={child}
-                  required={required.has(name)}
-                  query={query}
-                />
-              ))}
-            </div>
-          )}
-
-          {!loading && !error && schema && rootProperties.length === 0 && (
-            <div className="rounded-xl border border-slate-200 bg-white px-4 py-8 text-center text-sm font-semibold text-slate-500">
-              This schema does not expose any object fields.
-            </div>
-          )}
-        </div>
+        <ResourceSchemaContent item={props.item} />
       </Drawer>
     </>
   );

@@ -4,12 +4,21 @@ import {
   toObjectRef,
   useLogListReq,
 } from "@/components/AccessLogViewer/listReq";
+import LogPageShell, {
+  useLogPageParams,
+} from "@/components/LogViewer/LogPageShell";
+import { ShieldCheck } from "lucide-react";
 
 export default () => {
   const req = useLogListReq();
+  const pagination = useLogPageParams();
 
   return (
-    <div className="w-full">
+    <LogPageShell
+      title="Access logs"
+      description="Authorization decisions and request activity across Services, identities, and Policies."
+      icon={ShieldCheck}
+    >
       <AccessLogViewer
         userRef={toObjectRef(req?.userRef)}
         sessionRef={toObjectRef(req?.sessionRef)}
@@ -19,7 +28,11 @@ export default () => {
         regionRef={toObjectRef(req?.regionRef)}
         policyRef={toObjectRef(req?.policyRef)}
         status={req?.status as AccessLogStatusFilter | undefined}
+        query={req?.common?.query}
+        itemsPerPage={25}
+        page={pagination.page}
+        onPageChange={pagination.setPage}
       />
-    </div>
+    </LogPageShell>
   );
 };

@@ -38,6 +38,7 @@ import CopyText from "../CopyText";
 import AccessLogSummary from "../LogSummary/AccessLogSummary";
 import { ResourceListLabel } from "../ResourceList";
 import TimeAgo from "../TimeAgo";
+import { CompactSummary } from "../Summary";
 import Editor from "./Editor";
 import {
   accessLogStatusValue,
@@ -50,12 +51,16 @@ export function convertBytes(
   options: { useBinaryUnits?: boolean; decimals?: number } = {},
 ): string {
   const { useBinaryUnits = false, decimals = 2 } = options;
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 Bytes";
   const base = useBinaryUnits ? 1024 : 1000;
   const units = useBinaryUnits
     ? ["Bytes", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"]
     : ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(base));
-  return `${(bytes / Math.pow(base, i)).toFixed(decimals)} ${units[i]}`;
+  const i = Math.min(
+    units.length - 1,
+    Math.floor(Math.log(bytes) / Math.log(base)),
+  );
+  return `${(bytes / Math.pow(base, i)).toFixed(Math.max(0, decimals))} ${units[i]}`;
 }
 
 export const getPolicyReason = (arg?: AccessLog_Entry_Common_Reason_Type) =>
@@ -509,12 +514,12 @@ export const AccessLogC = ({ accessLog }: { accessLog: AccessLog }) => {
   return (
     <div
       className={twMerge(
-        "mb-2 overflow-hidden rounded-xl border bg-white",
+        "mb-2 overflow-hidden rounded-xl border border-l-4 bg-white",
         "shadow-card transition-[border-color,box-shadow] duration-200 ease-out",
         "hover:border-slate-300 hover:shadow-raised",
         isAllowed
-          ? "border-slate-200"
-          : "border-red-200/80 shadow-card",
+          ? "border-slate-200 border-l-emerald-400"
+          : "border-red-200/80 border-l-red-500 shadow-card",
         expanded && "border-slate-300 shadow-raised",
       )}
     >
@@ -867,30 +872,20 @@ const DoAccessLogViewer = (props: {
   itemsPerPage?: number;
   from?: Timestamp;
   status?: AccessLogStatusFilter;
+  query?: string;
+  page?: number;
+  onPageChange?: (page: number) => void;
 }) => {
-  const [page, setPage] = React.useState(0);
+  const [page, setPage] = React.useState(props.page ?? 0);
 
   React.useEffect(() => {
-    setPage(0);
-  }, [
-    props.userRef?.uid,
-    props.userRef?.name,
-    props.sessionRef?.uid,
-    props.sessionRef?.name,
-    props.serviceRef?.uid,
-    props.serviceRef?.name,
-    props.namespaceRef?.uid,
-    props.namespaceRef?.name,
-    props.regionRef?.uid,
-    props.regionRef?.name,
-    props.deviceRef?.uid,
-    props.deviceRef?.name,
-    props.policyRef?.uid,
-    props.policyRef?.name,
-    props.from?.seconds,
-    props.from?.nanos,
-    props.status,
-  ]);
+    setPage(props.page ?? 0);
+  }, [props.page]);
+
+  const changePage = (nextPage: number) => {
+    setPage(nextPage);
+    props.onPageChange?.(nextPage);
+  };
 
   const qry = useQuery({
     queryKey: ["visibility", "listAccessLog", { ...props, page }],
@@ -930,7 +925,11 @@ const DoAccessLogViewer = (props: {
         regionRef: props.regionRef,
         policyRef: props.policyRef,
         deviceRef: props.deviceRef,
-        common: { page, itemsPerPage: props.itemsPerPage ?? 100 },
+        common: {
+          page,
+          itemsPerPage: props.itemsPerPage ?? 25,
+          query: props.query,
+        },
         from: props.from,
         status: accessLogStatusValue(props.status ?? "all"),
       });
@@ -951,8 +950,8 @@ const DoAccessLogViewer = (props: {
           {totalCount ? `${totalCount.toLocaleString()} entries` : "No entries"}
         </span>
         <button
+          type="button"
           onClick={() => {
-            setPage(0);
             qry.refetch();
           }}
           disabled={qry.isLoading}
@@ -972,13 +971,15 @@ const DoAccessLogViewer = (props: {
           role="alert"
           className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700"
         >
-          Access logs could not be loaded. Refresh to try again.
+          {qry.data
+            ? "Refresh failed. Showing the last loaded access logs."
+            : "Access logs could not be loaded. Refresh to try again."}
         </div>
       )}
 
-      {!qry.data || qry.isLoading ? (
+      {qry.isLoading && !qry.data ? (
         <ListLoading label="access logs" />
-      ) : (
+      ) : qry.data ? (
         <div className="w-full">
           {qry.data?.items.map((x) => (
             <AccessLogC key={x.metadata!.id} accessLog={x} />
@@ -991,13 +992,14 @@ const DoAccessLogViewer = (props: {
             </div>
           )}
         </div>
-      )}
+      ) : null}
 
       {qry.data?.listResponseMeta && (
         <div className="mt-4">
           <Paginator
             meta={qry.data.listResponseMeta}
-            onPageChange={setPage}
+            onPageChange={changePage}
+            showFilters={false}
           />
         </div>
       )}
@@ -1016,6 +1018,7 @@ export const AccessLogList = (props: {
   itemsPerPage?: number;
   periodMinutes?: number;
   status?: AccessLogStatusFilter;
+  query?: string;
 }) => {
   const [localFrom, setLocalFrom] = React.useState<Timestamp>(
     Timestamp.fromDate(dayjs().subtract(6, "hour").toDate()),
@@ -1039,7 +1042,10 @@ export const AccessLogList = (props: {
           <span className="shrink-0 text-xs font-semibold uppercase tracking-[0.05em] text-slate-500">
             Since
           </span>
-          <SelectFromTimestamp onUpdate={setLocalFrom} />
+          <SelectFromTimestamp
+            initialValue="6 hour"
+            onUpdate={setLocalFrom}
+          />
         </div>
       )}
       <DoAccessLogViewer {...props} from={from} />
@@ -1057,7 +1063,9 @@ const AccessLogViewer = (props: {
   policyRef?: ObjectReference;
   itemsPerPage?: number;
   page?: number;
+  onPageChange?: (page: number) => void;
   status?: AccessLogStatusFilter;
+  query?: string;
 }) => {
   const [from, setFrom] = React.useState<Timestamp>(
     Timestamp.fromDate(dayjs().subtract(6, "hour").toDate()),
@@ -1069,19 +1077,29 @@ const AccessLogViewer = (props: {
         <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 shrink-0">
           Since
         </span>
-        <SelectFromTimestamp onUpdate={setFrom} />
+        <SelectFromTimestamp
+          initialValue="6 hour"
+          onUpdate={(value) => {
+            setFrom(value);
+            props.onPageChange?.(0);
+          }}
+        />
       </div>
 
-      <AccessLogSummary
-        userRef={props.userRef}
-        sessionRef={props.sessionRef}
-        serviceRef={props.serviceRef}
-        namespaceRef={props.namespaceRef}
-        regionRef={props.regionRef}
-        policyRef={props.policyRef}
-        deviceRef={props.deviceRef}
-        from={from}
-      />
+      {!props.query && (
+        <CompactSummary>
+          <AccessLogSummary
+            userRef={props.userRef}
+            sessionRef={props.sessionRef}
+            serviceRef={props.serviceRef}
+            namespaceRef={props.namespaceRef}
+            regionRef={props.regionRef}
+            policyRef={props.policyRef}
+            deviceRef={props.deviceRef}
+            from={from}
+          />
+        </CompactSummary>
+      )}
 
       <DoAccessLogViewer
         userRef={props.userRef}
@@ -1093,6 +1111,10 @@ const AccessLogViewer = (props: {
         deviceRef={props.deviceRef}
         from={from}
         status={props.status}
+        query={props.query}
+        itemsPerPage={props.itemsPerPage}
+        page={props.page}
+        onPageChange={props.onPageChange}
       />
     </div>
   );

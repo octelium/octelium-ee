@@ -52,6 +52,7 @@ const Editor = (props: {
   schemaMode?: "full" | "spec" | "status" | "metadata";
   minHeight?: string;
   maxHeight?: string;
+  autoFocus?: boolean;
 }) => {
   const minHeight = props.minHeight ?? "300px";
   const maxHeight = props.maxHeight ?? "600px";
@@ -114,7 +115,7 @@ const Editor = (props: {
     <div className="w-full rounded-lg overflow-hidden border border-slate-700 bg-[#282c34]">
       <CodeMirror
         value={props.value}
-        autoFocus
+        autoFocus={props.autoFocus ?? true}
         readOnly={props.readOnly}
         className="w-full"
         maxHeight={maxHeight}

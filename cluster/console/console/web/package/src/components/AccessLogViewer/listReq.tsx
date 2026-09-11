@@ -1,4 +1,4 @@
-import { useLocation, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { parseQueryString } from "../ResourceLayout/queryParse";
 import { ObjectReference } from "@/apis/metav1/metav1";
 import type { AccessLogStatusFilter } from "./utils";
@@ -13,8 +13,6 @@ export const useLogListReq = () => {
 
   const searchParamsStr = searchParams.toString();
 
-  const loc = useLocation();
-
   if (searchParamsStr.length < 1) {
     return undefined;
   }
@@ -25,6 +23,7 @@ export const useLogListReq = () => {
     common?: {
       page?: number;
       itemsPerPage?: number;
+      query?: string;
     };
     namespaceRef?: objectRef;
     userRef?: objectRef;
@@ -38,6 +37,7 @@ export const useLogListReq = () => {
     deviceRef?: objectRef;
     policyRef?: objectRef;
     status?: string;
+    level?: string;
   }>(searchParams.toString());
 
   if (parsedQry.common && parsedQry.common.page && parsedQry.common.page > 0) {

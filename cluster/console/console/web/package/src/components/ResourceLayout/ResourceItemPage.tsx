@@ -132,16 +132,22 @@ const ResourceMainBar = (props: { resource: Resource }) => {
   const loc = useLocation();
   const activeTab = getActiveTab(loc.pathname);
   const tabs = buildTabs(props.resource);
+  const resourcePath = `/${loc.pathname
+    .split("/")
+    .filter(Boolean)
+    .slice(0, 3)
+    .join("/")}`;
 
   return (
-    <div className="-mx-1 max-w-full overflow-x-auto px-1 pb-1">
+    <div className="sticky -top-4 z-20 -mx-4 max-w-[calc(100%+2rem)] overflow-x-auto border-b border-slate-200 bg-slate-50/95 px-4 py-2 backdrop-blur">
       <SegmentedControl
         value={activeTab}
         styles={{ root: { minWidth: "max-content" } }}
         onChange={(v) => {
           const tab = tabs.find((t) => t.value === v);
           if (tab) {
-            navigate(tab.path, {
+            const search = loc.search;
+            navigate(`${resourcePath}${tab.path ? `/${tab.path}` : ""}${search}`, {
               state: loc.state,
               preventScrollReset: true,
             });
@@ -191,7 +197,7 @@ const ResourceItemPage = () => {
   return (
     <PageWrap qry={ctx} skeleton={<ResourceItemSkeleton />}>
       {ctx.data && (
-        <div className="w-full flex flex-col gap-6">
+        <div className="flex w-full flex-col gap-6">
           <ResourceMainBar resource={ctx.data} />
           <Outlet />
         </div>

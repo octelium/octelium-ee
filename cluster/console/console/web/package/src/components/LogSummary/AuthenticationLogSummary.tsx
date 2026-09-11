@@ -11,17 +11,10 @@ import {
 } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Activity,
-  Cpu,
-  Fingerprint,
-  KeyRound,
   LogIn,
-  Network,
   RefreshCw,
   Shield,
   ShieldCheck,
-  Timer,
-  Users,
 } from "lucide-react";
 import { SummaryItemCount, SummaryItemCountWrap } from "../Summary";
 
@@ -84,109 +77,38 @@ const AuthenticationLogSummary = (props: {
       : "/visibility/authenticationlogs";
   };
 
-  /*
-  React.useEffect(() => {
-    qry.refetch();
-  }, []);
-  */
-
   return (
-    <div>
-      {/**
-       <div className="flex items-center mb-6">
-        <div className="font-bold text-slate-700 text-shadow-2xs text-xl">
-          Summary
-        </div>
-        <Button
-          size="compact-sm"
-          variant="outline"
-          className="ml-2 shadow-md"
-          loading={qry.isLoading}
-          onClick={() => {
-            qry.refetch();
-          }}
-        >
-          <MdRefresh />
-        </Button>
-      </div>
-       **/}
-      <div className="ml-4 mt-4">
-        {qry.data && (
-          <div className="w-full flex items-center">
-            <SummaryItemCountWrap>
-              <SummaryItemCount
-                count={qry.data.totalNumber}
-                icon={LogIn}
-                to={authenticationLogsPath()}
-              >
-                Total
-              </SummaryItemCount>
-
-              {!props.identityProviderRef && (
-                <SummaryItemCount count={qry.data.totalIdentityProvider} icon={Network}>
-                  IdentityProviders
-                </SummaryItemCount>
-              )}
-              <SummaryItemCount count={qry.data.totalAuthenticator} icon={Fingerprint}>
-                Authenticators
-              </SummaryItemCount>
-              <SummaryItemCount count={qry.data.totalCredential} icon={KeyRound}>
-                Credentials
-              </SummaryItemCount>
-
-              <SummaryItemCount count={qry.data.totalAuthenticatorFIDO} icon={Fingerprint}>
-                FIDO
-              </SummaryItemCount>
-              <SummaryItemCount count={qry.data.totalAuthenticatorTOTP} icon={Timer}>
-                TOTP
-              </SummaryItemCount>
-              <SummaryItemCount count={qry.data.totalAuthenticatorTPM} icon={Cpu}>
-                TPM
-              </SummaryItemCount>
-
-              <SummaryItemCount count={qry.data.totalAAL1} icon={Shield}>
-                AAL1
-              </SummaryItemCount>
-              <SummaryItemCount count={qry.data.totalAAL2} icon={Shield}>
-                AAL2
-              </SummaryItemCount>
-              <SummaryItemCount count={qry.data.totalAAL3} icon={ShieldCheck}>
-                AAL3
-              </SummaryItemCount>
-
-              <SummaryItemCount count={qry.data.totalAuthenticatorPasskey} icon={KeyRound}>
-                Passkey
-              </SummaryItemCount>
-
-              <SummaryItemCount count={qry.data.totalAuthenticatorMFA} icon={ShieldCheck}>
-                MFA
-              </SummaryItemCount>
-
-              <SummaryItemCount
-                count={qry.data.totalNumber - qry.data.totalReauthentication}
-                icon={LogIn}
-              >
-                Logins
-              </SummaryItemCount>
-
-              <SummaryItemCount count={qry.data.totalReauthentication} icon={RefreshCw}>
-                Re-Authentications
-              </SummaryItemCount>
-
-              {!(props.userRef || props.deviceRef || props.sessionRef) && (
-                <SummaryItemCount count={qry.data.totalUser} icon={Users}>
-                  Users
-                </SummaryItemCount>
-              )}
-              {!props.sessionRef && (
-                <SummaryItemCount count={qry.data.totalSession} icon={Activity}>
-                  Sessions
-                </SummaryItemCount>
-              )}
-            </SummaryItemCountWrap>
-          </div>
-        )}
-      </div>
+    <div className="min-h-[58px]">
+      {qry.data ? (
+        <SummaryItemCountWrap>
+          <SummaryItemCount showZero count={qry.data.totalNumber} icon={LogIn} to={authenticationLogsPath()}>
+            Total events
+          </SummaryItemCount>
+          <SummaryItemCount
+            showZero
+            count={Math.max(
+              0,
+              qry.data.totalNumber - qry.data.totalReauthentication,
+            )}
+            icon={LogIn}
+          >
+            Logins
+          </SummaryItemCount>
+          <SummaryItemCount showZero count={qry.data.totalReauthentication} icon={RefreshCw}>
+            Re-authentications
+          </SummaryItemCount>
+          <SummaryItemCount showZero count={qry.data.totalAAL2} icon={Shield}>
+            AAL2
+          </SummaryItemCount>
+          <SummaryItemCount showZero count={qry.data.totalAAL3} icon={ShieldCheck}>
+            AAL3
+          </SummaryItemCount>
+        </SummaryItemCountWrap>
+      ) : qry.isError ? (
+        <p className="text-xs font-semibold text-red-600">Summary unavailable</p>
+      ) : (
+        <div className="h-[58px] animate-pulse rounded-lg bg-slate-100" />
+      )}
     </div>
   );
 };

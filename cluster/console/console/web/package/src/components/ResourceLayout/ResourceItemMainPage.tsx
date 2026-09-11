@@ -4,8 +4,18 @@ import {
   ResourceInfoMainItem,
   ResourceMainInfo,
 } from "@/pages/utils/types";
-import { Resource } from "@/utils/pb";
-import { EyeOff, ShieldAlert, Tag } from "lucide-react";
+import { Resource, resourceToYAML } from "@/utils/pb";
+import { Button, CopyButton, SegmentedControl } from "@mantine/core";
+import {
+  Braces,
+  Check,
+  Copy,
+  EyeOff,
+  FileCode2,
+  Info,
+  ShieldAlert,
+  Tag,
+} from "lucide-react";
 import * as React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
@@ -13,14 +23,24 @@ import CopyText from "../CopyText";
 import DeleteResource from "../DeleteResource";
 import PageWrap from "../PageWrap";
 import { ResourceListLabel } from "../ResourceList";
-import ResourceYAML from "../ResourceYAML";
-import ResourceSchema from "../ResourceSchema";
 import TimeAgo from "../TimeAgo";
 import CloneResource from "./CloneResource";
 import ResourceStatus from "./ResourceStatus";
 import { useContextResource } from "./utils";
 
 const METADATA_GROUP = "Metadata";
+type OverviewSection = "details" | "metadata" | "yaml" | "schema";
+const ResourceSchemaContent = React.lazy(() =>
+  import("../ResourceSchema").then((module) => ({
+    default: module.ResourceSchemaContent,
+  })),
+);
+const Editor = React.lazy(() => import("../Editor"));
+
+const timestampsEqual = (
+  a?: { seconds: number; nanos: number },
+  b?: { seconds: number; nanos: number },
+) => a?.seconds === b?.seconds && a?.nanos === b?.nanos;
 
 const isEmptyValue = (value: React.ReactNode) =>
   value === null ||
@@ -199,7 +219,7 @@ const buildMetadataItems = (md: Metadata): ResourceInfoMainItem[] => {
           },
         ]
       : []),
-    ...(md.updatedAt
+    ...(md.updatedAt && !timestampsEqual(md.updatedAt, md.createdAt)
       ? [
           {
             label: "Updated",
@@ -438,6 +458,7 @@ const ResourceOverview = (props: {
 }) => {
   const { resource: item, info } = props;
   const md = item.metadata!;
+  const [section, setSection] = React.useState<OverviewSection>("details");
 
   const specificItems = (info.items ?? []).filter(
     (entry) => !isEmptyValue(entry.value),
@@ -460,12 +481,10 @@ const ResourceOverview = (props: {
   };
 
   for (const entry of detailItems) push(entry.group ?? defaultGroup, entry);
-  for (const entry of buildMetadataItems(md)) push(METADATA_GROUP, entry);
+  const metadataItems = buildMetadataItems(md);
 
   const order = info.groupOrder ?? [];
   groups.sort((a, b) => {
-    if (a.title === METADATA_GROUP) return 1;
-    if (b.title === METADATA_GROUP) return -1;
     const ai = order.indexOf(a.title);
     const bi = order.indexOf(b.title);
     if (ai === -1 && bi === -1) return 0;
@@ -531,10 +550,8 @@ const ResourceOverview = (props: {
                 <props.mainAction item={item} />
               </React.Suspense>
             )}
-            <ResourceYAML item={item} size="xs" />
-            <ResourceSchema item={item} />
             {props.cloneable && <CloneResource item={item} />}
-            {!props.unDeletable && (
+            {!props.unDeletable && !md.isSystem && (
               <DeleteResource
                 item={item}
                 btnSize="compact-xs"
@@ -546,14 +563,122 @@ const ResourceOverview = (props: {
           </div>
         </header>
 
-        {primaryItems.length > 0 && <PrimaryTiles items={primaryItems} />}
+        <div className="border-b border-slate-200 bg-white p-2">
+          <SegmentedControl
+            fullWidth
+            value={section}
+            onChange={(value) => setSection(value as OverviewSection)}
+            aria-label="Overview content"
+            data={[
+              {
+                value: "details",
+                label: (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Info size={13} />
+                    Details
+                  </span>
+                ),
+              },
+              { value: "metadata", label: "Metadata" },
+              {
+                value: "yaml",
+                label: (
+                  <span className="inline-flex items-center gap-1.5">
+                    <FileCode2 size={13} />
+                    YAML
+                  </span>
+                ),
+              },
+              {
+                value: "schema",
+                label: (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Braces size={13} />
+                    Schema
+                  </span>
+                ),
+              },
+            ]}
+          />
+        </div>
 
-        {groups.map((group) => (
-          <React.Fragment key={group.title}>
-            <SectionHeading title={group.title} />
-            <InfoGrid items={group.items} />
-          </React.Fragment>
-        ))}
+        {section === "details" && (
+          <>
+            {primaryItems.length > 0 && <PrimaryTiles items={primaryItems} />}
+            {groups.map((group) => (
+              <React.Fragment key={group.title}>
+                <SectionHeading title={group.title} />
+                <InfoGrid items={group.items} />
+              </React.Fragment>
+            ))}
+            {primaryItems.length === 0 && groups.length === 0 && (
+              <div className="px-4 py-10 text-center text-sm text-slate-500">
+                No kind-specific details are available for this resource.
+              </div>
+            )}
+          </>
+        )}
+
+        {section === "metadata" && (
+          <div>
+            <SectionHeading title={METADATA_GROUP} />
+            <InfoGrid items={metadataItems} />
+          </div>
+        )}
+
+        {section === "yaml" && (
+          <div className="space-y-3 p-3 sm:p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-800">
+                  Resource YAML
+                </h2>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Read-only representation of the current resource.
+                </p>
+              </div>
+              <CopyButton value={resourceToYAML(item)}>
+                {({ copied, copy }) => (
+                  <Button
+                    size="compact-xs"
+                    variant="default"
+                    leftSection={
+                      copied ? <Check size={12} /> : <Copy size={12} />
+                    }
+                    onClick={copy}
+                  >
+                    {copied ? "Copied" : "Copy YAML"}
+                  </Button>
+                )}
+              </CopyButton>
+            </div>
+            <React.Suspense
+              fallback={
+                <div className="h-[420px] animate-pulse rounded-xl bg-slate-100" />
+              }
+            >
+              <Editor
+                item={item}
+                value={resourceToYAML(item)}
+                mode="yaml"
+                readOnly
+                autoFocus={false}
+                minHeight="420px"
+                maxHeight="calc(100dvh - 290px)"
+              />
+            </React.Suspense>
+          </div>
+        )}
+
+        {section === "schema" && (
+          <React.Suspense
+            fallback={
+              <div className="m-4 h-28 animate-pulse rounded-xl bg-slate-100" />
+            }
+          >
+            <ResourceSchemaContent item={item} />
+          </React.Suspense>
+        )}
       </section>
     </div>
   );

@@ -27,6 +27,8 @@ import CardSession from "../Card/CardSession";
 import CopyText from "../CopyText";
 import { ResourceListLabel } from "../ResourceList";
 import TimeAgo from "../TimeAgo";
+import { CompactSummary } from "../Summary";
+import AuditLogSummary from "../LogSummary/AuditLogSummary";
 
 const DetailField = ({
   label,
@@ -168,7 +170,7 @@ export const AuditLogC = ({ auditLog }: { auditLog: AuditLog }) => {
   return (
     <div
       className={twMerge(
-        "mb-2 overflow-hidden rounded-xl border border-slate-200 bg-white",
+        "mb-2 overflow-hidden rounded-xl border border-l-4 border-slate-200 border-l-violet-400 bg-white",
         "shadow-card transition-[border-color,box-shadow] duration-200 ease-out",
         "hover:border-slate-300 hover:shadow-raised",
         expanded &&
@@ -381,11 +383,12 @@ const getListAuditLogResponseTest = async () => {
 const AuditLogViewer = (props: {
   userRef?: ObjectReference;
   sessionRef?: ObjectReference;
-  serviceRef?: ObjectReference;
   resourceRef?: ObjectReference;
   deviceRef?: ObjectReference;
   itemsPerPage?: number;
   page?: number;
+  onPageChange?: (page: number) => void;
+  query?: string;
   periodMinutes?: number;
   onPeriodChange?: (value: number) => void;
 }) => {
@@ -405,14 +408,13 @@ const AuditLogViewer = (props: {
   const from = controlledFrom ?? localFrom;
 
   React.useEffect(() => {
-    setPage(0);
+    setPage(props.page ?? 0);
   }, [
+    props.page,
     props.userRef?.uid,
     props.userRef?.name,
     props.sessionRef?.uid,
     props.sessionRef?.name,
-    props.serviceRef?.uid,
-    props.serviceRef?.name,
     props.resourceRef?.uid,
     props.resourceRef?.name,
     props.deviceRef?.uid,
@@ -425,13 +427,15 @@ const AuditLogViewer = (props: {
     queryKey: [
       "visibility",
       "listAuditLog",
-      props.userRef?.uid,
-      props.sessionRef?.uid,
-      props.serviceRef?.uid,
-      props.resourceRef?.uid,
-      props.deviceRef?.uid,
-      page,
-      from ? Timestamp.toDate(from).toISOString() : undefined,
+      {
+        userRef: props.userRef,
+        sessionRef: props.sessionRef,
+        resourceRef: props.resourceRef,
+        deviceRef: props.deviceRef,
+        page,
+        from: Timestamp.toDate(from).toISOString(),
+        query: props.query,
+      },
     ],
     queryFn: async () => {
       if (isDev()) {
@@ -465,7 +469,8 @@ const AuditLogViewer = (props: {
         ListAuditLogRequest.create({
           common: {
             page,
-            itemsPerPage: props.itemsPerPage ?? 100,
+            itemsPerPage: props.itemsPerPage ?? 25,
+            query: props.query,
           },
           userRef: props.userRef,
           sessionRef: props.sessionRef,
@@ -478,6 +483,10 @@ const AuditLogViewer = (props: {
     },
     refetchInterval: 60000,
   });
+  const changePage = (nextPage: number) => {
+    setPage(nextPage);
+    props.onPageChange?.(nextPage);
+  };
   const totalCount = Number(
     qry.data?.listResponseMeta?.totalCount ?? qry.data?.items.length ?? 0,
   );
@@ -489,8 +498,26 @@ const AuditLogViewer = (props: {
           <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 shrink-0">
             Since
           </span>
-          <SelectFromTimestamp onUpdate={setLocalFrom} />
+          <SelectFromTimestamp
+            initialValue="6 hour"
+            onUpdate={(value) => {
+              setLocalFrom(value);
+              changePage(0);
+            }}
+          />
         </div>
+      )}
+
+      {!props.query && (
+        <CompactSummary>
+          <AuditLogSummary
+            userRef={props.userRef}
+            sessionRef={props.sessionRef}
+            resourceRef={props.resourceRef}
+            deviceRef={props.deviceRef}
+            from={from}
+          />
+        </CompactSummary>
       )}
 
       <div className="w-full">
@@ -499,6 +526,7 @@ const AuditLogViewer = (props: {
             {totalCount ? `${totalCount.toLocaleString()} entries` : "No entries"}
           </span>
           <button
+            type="button"
             onClick={() => qry.refetch()}
             disabled={qry.isLoading}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-normal text-slate-500 border border-slate-200 bg-white hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 transition-colors duration-150 cursor-pointer shadow-card disabled:opacity-50"
@@ -517,13 +545,15 @@ const AuditLogViewer = (props: {
             role="alert"
             className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700"
           >
-            Audit logs could not be loaded. Refresh to try again.
+            {qry.data
+              ? "Refresh failed. Showing the last loaded audit logs."
+              : "Audit logs could not be loaded. Refresh to try again."}
           </div>
         )}
 
-        {!qry.data || qry.isLoading ? (
+        {qry.isLoading && !qry.data ? (
           <ListLoading label="audit logs" />
-        ) : (
+        ) : qry.data ? (
           <>
             {qry.data?.items.map((x) => (
               <AuditLogC key={x.metadata!.id} auditLog={x} />
@@ -537,11 +567,15 @@ const AuditLogViewer = (props: {
               </div>
             )}
           </>
-        )}
+        ) : null}
       </div>
 
       {qry.data?.listResponseMeta && (
-        <Paginator meta={qry.data.listResponseMeta} onPageChange={setPage} />
+        <Paginator
+          meta={qry.data.listResponseMeta}
+          onPageChange={changePage}
+          showFilters={false}
+        />
       )}
     </div>
   );

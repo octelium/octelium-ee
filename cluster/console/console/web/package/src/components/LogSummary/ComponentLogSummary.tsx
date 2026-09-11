@@ -10,15 +10,7 @@ import {
   refetchIntervalChart,
 } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Bug,
-  CircleAlert,
-  Info,
-  OctagonAlert,
-  Skull,
-  Terminal,
-  TriangleAlert,
-} from "lucide-react";
+import { CircleAlert, OctagonAlert, Skull, Terminal, TriangleAlert } from "lucide-react";
 import { SummaryItemCount, SummaryItemCountWrap } from "../Summary";
 
 const ComponentLogSummary = (props: {
@@ -49,12 +41,11 @@ const ComponentLogSummary = (props: {
   });
 
   return (
-    <div>
-      <div className="ml-4 mt-4">
-        {qry.data && (
-          <div className="w-full flex items-center">
-            <SummaryItemCountWrap>
+    <div className="min-h-[58px]">
+      {qry.data ? (
+        <SummaryItemCountWrap>
               <SummaryItemCount
+                showZero
                 count={qry.data.totalNumber}
                 icon={Terminal}
                 to={`/visibility/componentlogs`}
@@ -63,21 +54,7 @@ const ComponentLogSummary = (props: {
               </SummaryItemCount>
 
               <SummaryItemCount
-                count={qry.data.totalDebug}
-                icon={Bug}
-                to={`/visibility/componentlogs?level=DEBUG`}
-              >
-                Debug
-              </SummaryItemCount>
-              <SummaryItemCount
-                count={qry.data.totalInfo}
-                icon={Info}
-                to={`/visibility/componentlogs?level=INFO`}
-              >
-                Info
-              </SummaryItemCount>
-
-              <SummaryItemCount
+                showZero
                 count={qry.data.totalWarn}
                 icon={TriangleAlert}
                 to={`/visibility/componentlogs?level=WARN`}
@@ -86,6 +63,7 @@ const ComponentLogSummary = (props: {
               </SummaryItemCount>
 
               <SummaryItemCount
+                showZero
                 count={qry.data.totalError}
                 icon={CircleAlert}
                 to={`/visibility/componentlogs?level=ERROR`}
@@ -94,6 +72,7 @@ const ComponentLogSummary = (props: {
               </SummaryItemCount>
 
               <SummaryItemCount
+                showZero
                 count={qry.data.totalPanic}
                 icon={OctagonAlert}
                 to={`/visibility/componentlogs?level=PANIC`}
@@ -101,16 +80,19 @@ const ComponentLogSummary = (props: {
                 Panic
               </SummaryItemCount>
               <SummaryItemCount
+                showZero
                 count={qry.data.totalFatal}
                 icon={Skull}
                 to={`/visibility/componentlogs?level=FATAL`}
               >
                 Fatal
               </SummaryItemCount>
-            </SummaryItemCountWrap>
-          </div>
-        )}
-      </div>
+        </SummaryItemCountWrap>
+      ) : qry.isError ? (
+        <p className="text-xs font-semibold text-red-600">Summary unavailable</p>
+      ) : (
+        <div className="h-[58px] animate-pulse rounded-lg bg-slate-100" />
+      )}
     </div>
   );
 };

@@ -10,16 +10,7 @@ import {
   refetchIntervalChart,
 } from "@/utils/client";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Activity,
-  Laptop,
-  Layers3,
-  Server,
-  Shield,
-  ShieldCheck,
-  ShieldX,
-  Users,
-} from "lucide-react";
+import { Activity, ShieldCheck, ShieldX } from "lucide-react";
 import { SummaryItemCount, SummaryItemCountWrap } from "../Summary";
 
 const AccessLogSummary = (props: {
@@ -80,63 +71,25 @@ const AccessLogSummary = (props: {
     return query ? `/visibility/accesslogs?${query}` : "/visibility/accesslogs";
   };
 
-  /*
-  React.useEffect(() => {
-    qry.refetch();
-  }, []);
-  */
-
   return (
-    <div>
-      <div className="ml-4 mt-4">
-        {qry.data && (
-          <div className="w-full flex items-center">
-            <SummaryItemCountWrap>
-              <SummaryItemCount count={qry.data.totalNumber} icon={Activity} to={accessLogsPath()}>
-                Total
-              </SummaryItemCount>
-
-              <SummaryItemCount count={qry.data.totalAllowed} icon={ShieldCheck} to={accessLogsPath("ALLOWED")}>
-                Allowed
-              </SummaryItemCount>
-              <SummaryItemCount count={qry.data.totalDenied} icon={ShieldX} to={accessLogsPath("DENIED")}>
-                Denied
-              </SummaryItemCount>
-              {!(props.userRef || props.deviceRef || props.sessionRef) && (
-                <SummaryItemCount count={qry.data.totalUser} icon={Users}>
-                  Users
-                </SummaryItemCount>
-              )}
-              {!props.sessionRef && (
-                <SummaryItemCount count={qry.data.totalSession} icon={Activity}>
-                  Sessions
-                </SummaryItemCount>
-              )}
-              {!(props.deviceRef || props.sessionRef) && (
-                <SummaryItemCount count={qry.data.totalDevice} icon={Laptop}>
-                  Devices
-                </SummaryItemCount>
-              )}
-
-              {!props.policyRef && (
-                <SummaryItemCount count={qry.data.totalMatchPolicy} icon={Shield}>
-                  Policies
-                </SummaryItemCount>
-              )}
-              {!props.serviceRef && (
-                <SummaryItemCount count={qry.data.totalService} icon={Server}>
-                  Services
-                </SummaryItemCount>
-              )}
-              {!(props.namespaceRef || props.serviceRef) && (
-                <SummaryItemCount count={qry.data.totalNamespace} icon={Layers3}>
-                  Namespaces
-                </SummaryItemCount>
-              )}
-            </SummaryItemCountWrap>
-          </div>
-        )}
-      </div>
+    <div className="min-h-[58px]">
+      {qry.data ? (
+        <SummaryItemCountWrap>
+          <SummaryItemCount showZero count={qry.data.totalNumber} icon={Activity} to={accessLogsPath()}>
+            Total requests
+          </SummaryItemCount>
+          <SummaryItemCount showZero count={qry.data.totalAllowed} icon={ShieldCheck} to={accessLogsPath("ALLOWED")}>
+            Allowed
+          </SummaryItemCount>
+          <SummaryItemCount showZero count={qry.data.totalDenied} icon={ShieldX} to={accessLogsPath("DENIED")}>
+            Denied
+          </SummaryItemCount>
+        </SummaryItemCountWrap>
+      ) : qry.isError ? (
+        <p className="text-xs font-semibold text-red-600">Summary unavailable</p>
+      ) : (
+        <div className="h-[58px] animate-pulse rounded-lg bg-slate-100" />
+      )}
     </div>
   );
 };

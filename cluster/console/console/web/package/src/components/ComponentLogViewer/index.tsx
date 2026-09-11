@@ -1,5 +1,6 @@
 import { ComponentLog, ComponentLog_Entry_Level } from "@/apis/corev1/corev1";
 import { Timestamp } from "@/apis/google/protobuf/timestamp";
+import { Value } from "@/apis/google/protobuf/struct";
 import {
   ListComponentLogRequest,
   ListComponentLogResponse,
@@ -10,6 +11,7 @@ import { isDev } from "@/utils";
 import { getClientCore, getClientVisibilityComponentLog } from "@/utils/client";
 import { getResourceRef } from "@/utils/pb";
 import { useQuery } from "@tanstack/react-query";
+import { Select } from "@mantine/core";
 import dayjs from "dayjs";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, RefreshCw, ScrollText } from "lucide-react";
@@ -20,6 +22,8 @@ import Editor from "../AccessLogViewer/Editor";
 import { SelectFromTimestamp } from "../AccessLogViewer/utils";
 import CopyText from "../CopyText";
 import TimeAgo from "../TimeAgo";
+import ComponentLogSummary from "../LogSummary/ComponentLogSummary";
+import { CompactSummary } from "../Summary";
 
 const DetailField = ({
   label,
@@ -92,16 +96,21 @@ const getLevelMeta = (level: Level) =>
       badge: "bg-slate-50 text-slate-500 border-slate-200",
     }));
 
-const StructFields = ({ fields }: { fields: Record<string, unknown> }) => {
+const StructFields = ({ fields }: { fields: Record<string, Value> }) => {
   const entries = Object.entries(fields);
   if (entries.length === 0) return null;
   return (
     <>
-      {entries.map(([k, v]) => (
-        <DetailField key={k} label={k} mono>
-          {typeof v === "object" ? JSON.stringify(v) : String(v)}
-        </DetailField>
-      ))}
+      {entries.map(([k, v]) => {
+        const value = Value.toJson(v);
+        return (
+          <DetailField key={k} label={k} mono>
+            {typeof value === "object"
+              ? JSON.stringify(value)
+              : String(value ?? "null")}
+          </DetailField>
+        );
+      })}
     </>
   );
 };
@@ -180,11 +189,7 @@ const ComponentLogDetails = ({ log }: { log: ComponentLog }) => {
                 Fields
               </span>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                <StructFields
-                  fields={
-                    entry.fields.fields as unknown as Record<string, unknown>
-                  }
-                />
+                <StructFields fields={entry.fields.fields} />
               </div>
             </div>
           )}
@@ -217,7 +222,8 @@ export const ComponentLogC = ({ log }: { log: ComponentLog }) => {
   return (
     <div
       className={twMerge(
-        "mb-2 overflow-hidden rounded-xl border border-slate-200 bg-white",
+        "mb-2 overflow-hidden rounded-xl border border-l-4 border-slate-200 bg-white",
+        meta.border,
         "shadow-card transition-[border-color,box-shadow] duration-200 ease-out",
         "hover:border-slate-300 hover:shadow-raised",
         expanded &&
@@ -320,15 +326,39 @@ export const ComponentLogC = ({ log }: { log: ComponentLog }) => {
   );
 };
 
-const ComponentLogViewer = (props: { itemsPerPage?: number }) => {
-  const [page, setPage] = React.useState(0);
+const LEVEL_OPTIONS = [
+  { value: "all", label: "All severities" },
+  { value: String(ComponentLog_Entry_Level.DEBUG), label: "Debug" },
+  { value: String(ComponentLog_Entry_Level.INFO), label: "Info" },
+  { value: String(ComponentLog_Entry_Level.WARN), label: "Warn" },
+  { value: String(ComponentLog_Entry_Level.ERROR), label: "Error" },
+  { value: String(ComponentLog_Entry_Level.PANIC), label: "Panic" },
+  { value: String(ComponentLog_Entry_Level.FATAL), label: "Fatal" },
+];
+
+const ComponentLogViewer = (props: {
+  itemsPerPage?: number;
+  level?: ComponentLog_Entry_Level;
+  onLevelChange?: (level?: ComponentLog_Entry_Level) => void;
+  page?: number;
+  onPageChange?: (page: number) => void;
+  query?: string;
+}) => {
+  const [page, setPage] = React.useState(props.page ?? 0);
+  const [level, setLevel] = React.useState<ComponentLog_Entry_Level | undefined>(
+    props.level,
+  );
   const [from, setFrom] = React.useState<Timestamp>(
     Timestamp.fromDate(dayjs().subtract(6, "hour").toDate()),
   );
 
-  React.useEffect(() => {
-    setPage(0);
-  }, [from.seconds, from.nanos]);
+  React.useEffect(() => setLevel(props.level), [props.level]);
+  React.useEffect(() => setPage(props.page ?? 0), [props.page]);
+
+  const changePage = (nextPage: number) => {
+    setPage(nextPage);
+    props.onPageChange?.(nextPage);
+  };
 
   const qry = useQuery({
     queryKey: [
@@ -336,6 +366,8 @@ const ComponentLogViewer = (props: { itemsPerPage?: number }) => {
       "listComponentLog",
       page,
       from ? Timestamp.toDate(from).toISOString() : undefined,
+      level,
+      props.query,
     ],
     queryFn: async () => {
       if (isDev()) {
@@ -356,7 +388,7 @@ const ComponentLogViewer = (props: { itemsPerPage?: number }) => {
                   type: "nocturne",
                   uid: "abc-123",
                 },
-                level: ComponentLog_Entry_Level.INFO,
+              level: level ?? ComponentLog_Entry_Level.INFO,
                 message: "Component is starting...",
                 function: "main.Run",
                 file: "cmd/nocturne/main.go",
@@ -372,35 +404,71 @@ const ComponentLogViewer = (props: { itemsPerPage?: number }) => {
           ListComponentLogRequest.create({
             common: {
               page,
-              itemsPerPage: props.itemsPerPage ?? 100,
+              itemsPerPage: props.itemsPerPage ?? 25,
+              query: props.query,
             },
             from,
+            level,
           }),
         );
       return response;
     },
     refetchInterval: 60000,
   });
+  const totalCount = Number(
+    qry.data?.listResponseMeta?.totalCount ?? qry.data?.items.length ?? 0,
+  );
 
   return (
     <div className="w-full flex flex-col gap-6">
-      <div className="flex items-center gap-3">
-        <span className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-500 shrink-0">
-          Since
-        </span>
-        <SelectFromTimestamp onUpdate={setFrom} />
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="flex items-center gap-3">
+          <span className="shrink-0 text-xs font-semibold uppercase tracking-[0.05em] text-slate-500">
+            Since
+          </span>
+          <SelectFromTimestamp
+            initialValue="6 hour"
+            onUpdate={(value) => {
+              setFrom(value);
+              changePage(0);
+            }}
+          />
+        </div>
+        <Select
+          size="xs"
+          label="Severity"
+          aria-label="Component log severity"
+          allowDeselect={false}
+          value={level === undefined ? "all" : String(level)}
+          onChange={(value) => {
+            const next =
+              value && value !== "all"
+                ? (Number(value) as ComponentLog_Entry_Level)
+                : undefined;
+            setLevel(next);
+            setPage(0);
+            if (props.onLevelChange) props.onLevelChange(next);
+            else props.onPageChange?.(0);
+          }}
+          data={LEVEL_OPTIONS}
+          className="w-40"
+        />
       </div>
+
+      {!props.query && (
+        <CompactSummary>
+          <ComponentLogSummary from={from} />
+        </CompactSummary>
+      )}
 
       <div className="w-full">
         <div className="flex items-center justify-between mb-4">
           <span className="text-xs font-normal text-slate-500 tabular-nums">
-            {qry.data?.items.length
-              ? `${qry.data.items.length.toLocaleString()} entries`
-              : ""}
+            {totalCount ? `${totalCount.toLocaleString()} entries` : "No entries"}
           </span>
           <button
+            type="button"
             onClick={() => {
-              setPage(0);
               qry.refetch();
             }}
             disabled={qry.isLoading}
@@ -415,15 +483,26 @@ const ComponentLogViewer = (props: { itemsPerPage?: number }) => {
           </button>
         </div>
 
-        {!qry.data || qry.isLoading ? (
+        {qry.isError && (
+          <div
+            role="alert"
+            className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700"
+          >
+            {qry.data
+              ? "Refresh failed. Showing the last available entries."
+              : "Component logs could not be loaded. Use Refresh to try again."}
+          </div>
+        )}
+
+        {qry.isLoading && !qry.data ? (
           <ListLoading label="component logs" />
-        ) : (
+        ) : qry.data ? (
           <>
-            {qry.data?.items.map((x) => (
+            {qry.data.items.map((x) => (
               <ComponentLogC key={x.metadata!.id} log={x} />
             ))}
 
-            {qry.isSuccess && qry.data?.items.length === 0 && (
+            {qry.isSuccess && qry.data.items.length === 0 && (
               <div className="flex items-center justify-center py-16">
                 <span className="text-body font-semibold uppercase tracking-[0.08em] text-slate-500">
                   No component log entries found
@@ -431,11 +510,15 @@ const ComponentLogViewer = (props: { itemsPerPage?: number }) => {
               </div>
             )}
           </>
-        )}
+        ) : null}
       </div>
 
       {qry.data?.listResponseMeta && (
-        <Paginator meta={qry.data.listResponseMeta} onPageChange={setPage} />
+        <Paginator
+          meta={qry.data.listResponseMeta}
+          onPageChange={changePage}
+          showFilters={false}
+        />
       )}
     </div>
   );
