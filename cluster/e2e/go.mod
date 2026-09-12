@@ -4,11 +4,11 @@ go 1.26.6
 
 require (
 	github.com/go-resty/resty/v2 v2.17.2
-	github.com/octelium/octelium/apis v0.0.0-20260906082728-d5d07d2c3141
-	github.com/octelium/octelium/cluster/common v0.0.0-20260906082728-d5d07d2c3141
-	github.com/octelium/octelium/cluster/e2e v0.0.0-20260906082728-d5d07d2c3141
-	github.com/octelium/octelium/octelium-go v0.0.0-20260906082728-d5d07d2c3141
-	github.com/octelium/octelium/pkg v0.0.0-20260906082728-d5d07d2c3141
+	github.com/octelium/octelium/apis v0.42.0
+	github.com/octelium/octelium/cluster/common v0.0.0-20260912095159-4af4f27d984c
+	github.com/octelium/octelium/cluster/e2e v0.0.0-20260912095159-4af4f27d984c
+	github.com/octelium/octelium/octelium-go v0.0.0-20260912095159-4af4f27d984c
+	github.com/octelium/octelium/pkg v0.0.0-20260912095159-4af4f27d984c
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.12.1
 	go.uber.org/zap v1.28.0
@@ -69,7 +69,7 @@ require (
 	github.com/google/jsonschema-go v0.4.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674 // indirect
-	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0 // indirect
+	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.4 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
@@ -89,8 +89,8 @@ require (
 	github.com/nats-io/nats.go v1.46.1 // indirect
 	github.com/nats-io/nkeys v0.4.11 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
-	github.com/octelium/octelium/client/common v0.0.0-20260906082728-d5d07d2c3141 // indirect
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260906082728-d5d07d2c3141 // indirect
+	github.com/octelium/octelium/client/common v0.0.0-20260912095159-4af4f27d984c // indirect
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260912095159-4af4f27d984c // indirect
 	github.com/openai/openai-go/v3 v3.2.0 // indirect
 	github.com/paulmach/orb v0.11.1 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect
@@ -158,5 +158,3 @@ replace github.com/octelium/octelium-ee/cluster/apiserver => ../apiserver
 replace github.com/octelium/octelium-ee/cluster/rscserver => ../rscserver
 
 replace github.com/octelium/octelium-ee/pkg => ../../pkg
-
-replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20241209162323-e6fa225c2576

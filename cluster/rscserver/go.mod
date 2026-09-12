@@ -6,9 +6,9 @@ require (
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium-ee/pkg v0.0.0-00010101000000-000000000000
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20260906082728-d5d07d2c3141
-	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260906082728-d5d07d2c3141
-	github.com/octelium/octelium/pkg v0.0.0-20260906082728-d5d07d2c3141
+	github.com/octelium/octelium/cluster/common v0.0.0-20260912095159-4af4f27d984c
+	github.com/octelium/octelium/cluster/rscserver v0.0.0-20260912095159-4af4f27d984c
+	github.com/octelium/octelium/pkg v0.0.0-20260912095159-4af4f27d984c
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.8.1
 	go.uber.org/zap v1.28.0
@@ -26,13 +26,14 @@ require (
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0 // indirect
+	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.4 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/lib/pq v1.12.3 // indirect
 	github.com/redis/go-redis/v9 v9.22.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.7.0 // indirect
+	github.com/stretchr/objx v0.1.1 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/otel v1.46.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc v0.22.0 // indirect
@@ -61,5 +62,3 @@ replace github.com/octelium/octelium/apis => ../../apis
 replace github.com/octelium/octelium-ee/cluster/common => ../common
 
 replace github.com/octelium/octelium-ee/pkg => ../../pkg
-
-replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20241209162323-e6fa225c2576

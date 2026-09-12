@@ -4,8 +4,8 @@ go 1.26.6
 
 require (
 	github.com/octelium/octelium/apis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/cluster/common v0.0.0-20260906082728-d5d07d2c3141
-	github.com/octelium/octelium/pkg v0.0.0-20260906082728-d5d07d2c3141
+	github.com/octelium/octelium/cluster/common v0.0.0-20260912095159-4af4f27d984c
+	github.com/octelium/octelium/pkg v0.0.0-20260912095159-4af4f27d984c
 	github.com/pkg/errors v0.9.1
 	go.uber.org/zap v1.28.0
 	golang.org/x/oauth2 v0.36.0 // indirect
@@ -14,9 +14,9 @@ require (
 require (
 	github.com/octelium/octelium-ee/cluster/common v0.0.0-20250516172457-ae6f09fa68bf
 	github.com/octelium/octelium-ee/cluster/genesis v0.0.0-00010101000000-000000000000
-	github.com/octelium/octelium/client/common v0.0.0-20260906082728-d5d07d2c3141
-	github.com/octelium/octelium/client/octops v0.0.0-20260906082728-d5d07d2c3141
-	github.com/octelium/octelium/cluster/genesis v0.0.0-20260906082728-d5d07d2c3141
+	github.com/octelium/octelium/client/common v0.0.0-20260912095159-4af4f27d984c
+	github.com/octelium/octelium/client/octops v0.0.0-20260912095159-4af4f27d984c
+	github.com/octelium/octelium/cluster/genesis v0.0.0-20260912095159-4af4f27d984c
 	github.com/spf13/cobra v1.10.2
 	k8s.io/api v0.37.0
 	k8s.io/apimachinery v0.37.0
@@ -72,7 +72,7 @@ require (
 	github.com/google/gnostic-models v0.7.1 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0 // indirect
+	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.4 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect

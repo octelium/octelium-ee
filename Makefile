@@ -191,9 +191,11 @@ gen-go-rsc:
 		--go_out=apis/rsc/rvectorv1 --go-grpc_out=apis/rsc/rvectorv1 $(PROTO_GO_OPT_GRPC)
 
 gen-go-client:
-	mkdir -p apis/client/cliconfigv1
+	mkdir -p apis/client/cliconfigv1 apis/client/daemonv1
 	protoc -I . -I $(PROTO_IN_CLIENT)/configv1 configv1.proto \
 		--go_out=apis/client/cliconfigv1 --go-grpc_out=apis/client/cliconfigv1 $(PROTO_GO_OPT)
+	protoc -I . -I $(PROTO_IN_CLIENT)/daemonv1 daemonv1.proto \
+		--go_out=apis/client/daemonv1 --go-grpc_out=apis/client/daemonv1 $(PROTO_GO_OPT_GRPC)
 
 cp-pb:
 	cp -r ../pb/apis/protobuf ./apis
