@@ -157,7 +157,7 @@ const TimestampPicker = ({
                 minWidth: "220px",
                 cursor: "pointer",
                 textAlign: "left",
-                "&:hover": { borderColor: "#cbd5e1" },
+                "&:hover": { borderColor: "var(--color-slate-300)" },
               },
             }}
           >
@@ -279,7 +279,7 @@ const TimestampPicker = ({
                         styles={{
                           calendarHeader: { fontSize: "0.78rem", fontWeight: 700 },
                           weekday: {
-                            color: "#94a3b8",
+                            color: "var(--color-slate-400)",
                             fontSize: "0.66rem",
                             fontWeight: 700,
                           },
@@ -332,7 +332,7 @@ const TimestampPicker = ({
                       <Button
                         type="submit"
                         fullWidth
-                        color="dark"
+                        color="ink"
                         disabled={!customTimestamp}
                         className="mt-auto"
                       >

@@ -49,7 +49,7 @@ const Sidebar = (props: { onNavigate?: () => void }) => (
                   twMerge(
                     "flex items-center gap-2.5 px-3 py-2 rounded-lg text-[0.8rem] font-bold transition-colors duration-150",
                     isActive
-                      ? "bg-slate-900 text-white shadow-[0_1px_3px_rgba(15,23,42,0.18)]"
+                      ? "bg-slate-900 text-white shadow-card"
                       : "text-slate-500 hover:text-slate-900 hover:bg-slate-100",
                   )
                 }

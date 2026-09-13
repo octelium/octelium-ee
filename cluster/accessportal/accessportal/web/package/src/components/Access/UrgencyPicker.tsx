@@ -20,7 +20,7 @@ const UrgencyPicker = (props: {
           className={twMerge(
             "flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border px-1.5 text-[0.68rem] font-bold transition-[background-color,border-color,color] duration-150",
             selected
-              ? "border-slate-900 bg-slate-900 text-white shadow-[0_1px_3px_rgba(15,23,42,0.2)]"
+              ? "border-slate-900 bg-slate-900 text-white shadow-card"
               : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50",
           )}
         >

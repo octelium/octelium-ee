@@ -1,11 +1,23 @@
-import { Button } from "@mantine/core";
-import { ExternalLink, Globe, LockKeyhole, UserRound } from "lucide-react";
+import {
+  Button,
+  SegmentedControl,
+  useMantineColorScheme,
+  type MantineColorScheme,
+} from "@mantine/core";
+import {
+  ExternalLink,
+  Globe,
+  LockKeyhole,
+  SunMoon,
+  UserRound,
+} from "lucide-react";
 
 import {
   Avatar,
   Badge,
   BackLink,
   CopyValue,
+  Field,
   InfoGrid,
   KeyValue,
   Note,
@@ -14,6 +26,33 @@ import {
 } from "@/ui";
 import { getDomain, isDev } from "@/utils";
 import { useAppSelector } from "@/utils/hooks";
+import { COLOR_SCHEMES } from "@/utils/theme/colorScheme";
+
+const Appearance = () => {
+  const { colorScheme, setColorScheme } = useMantineColorScheme();
+
+  return (
+    <SectionCard
+      title="Appearance"
+      description="How this portal looks on this device"
+      icon={<SunMoon size={14} strokeWidth={2.4} />}
+      tone="amber"
+    >
+      <Field
+        label="Color scheme"
+        description="System follows the color scheme of your operating system. The choice is kept in this browser only."
+      >
+        <SegmentedControl
+          value={colorScheme}
+          onChange={(value) => setColorScheme(value as MantineColorScheme)}
+          data={COLOR_SCHEMES}
+          size="sm"
+          className="w-full max-w-xs"
+        />
+      </Field>
+    </SectionCard>
+  );
+};
 
 const Settings = () => {
   const settings = useAppSelector((state) => state.settings);
@@ -94,6 +133,8 @@ const Settings = () => {
             </Button>
           </div>
         </SectionCard>
+
+        <Appearance />
       </div>
     </div>
   );

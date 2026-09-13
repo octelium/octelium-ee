@@ -224,7 +224,7 @@ const Reviews = () => {
             value={page}
             total={totalPages}
             onChange={(value) => setParam("page", String(value), "1")}
-            color="dark"
+            color="ink"
             size="sm"
             radius="md"
           />

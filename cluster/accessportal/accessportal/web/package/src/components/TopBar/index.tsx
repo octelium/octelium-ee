@@ -24,7 +24,7 @@ const TopBar = () => {
         className="flex-none flex items-center"
         aria-label="Go to home"
       >
-        <Logo className="w-[120px] md:w-[160px] h-auto" />
+        <Logo className="w-[120px] md:w-[160px] h-auto text-slate-900" />
       </Link>
 
       <div className="flex-1 flex items-center"></div>
@@ -44,7 +44,7 @@ const TopBar = () => {
         <div
           className={twMerge(
             "w-8 h-8 rounded-full shrink-0 overflow-hidden",
-            "ring-2 ring-white ring-offset-1 ring-offset-slate-100",
+            "ring-2 ring-white ring-offset-1 ring-offset-canvas",
             "transition-[ring] duration-150",
             "group-hover:ring-slate-300",
           )}

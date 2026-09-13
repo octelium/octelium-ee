@@ -154,7 +154,7 @@ const EditRequestModal = (props: {
           </Button>
           <Button
             variant="filled"
-            color="dark"
+            color="ink"
             leftSection={<Save size={13} strokeWidth={2.6} />}
             loading={mutation.isPending}
             disabled={justification.length > MAX_JUSTIFICATION}

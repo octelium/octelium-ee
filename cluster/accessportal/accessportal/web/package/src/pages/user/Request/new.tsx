@@ -68,7 +68,7 @@ const CatalogCard = (props: {
     className={twMerge(
       "flex w-full items-center gap-2 rounded-lg border px-3 py-2.5 transition-[border-color,box-shadow,background-color] duration-150",
       props.selected
-        ? "border-slate-900 bg-slate-50 shadow-[0_2px_8px_rgba(15,23,42,0.10)]"
+        ? "border-slate-900 bg-slate-50 shadow-raised"
         : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50",
     )}
   >
@@ -104,7 +104,7 @@ const CatalogCard = (props: {
         type="button"
         onClick={props.onDetails}
         aria-label={`View details for ${props.title}`}
-        className="flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 text-[0.68rem] font-bold text-slate-600 shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition-[border-color,background-color,color] hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+        className="flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 text-[0.68rem] font-bold text-slate-600 shadow-card transition-[border-color,background-color,color] hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
       >
         <PanelRightOpen size={14} strokeWidth={2.4} />
         <span className="hidden sm:inline">Contents</span>
@@ -511,7 +511,7 @@ const NewRequest = () => {
             <Button
               fullWidth
               variant="filled"
-              color="dark"
+              color="ink"
               leftSection={<Send size={14} strokeWidth={2.6} />}
               disabled={!!blocker}
               loading={createMutation.isPending}

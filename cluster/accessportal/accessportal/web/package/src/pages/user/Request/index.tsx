@@ -272,7 +272,7 @@ const Requests = () => {
             <RefreshButton onClick={() => qry.refetch()} loading={qry.isFetching} />
             <Button
               variant="filled"
-              color="dark"
+              color="ink"
               leftSection={<Plus size={14} strokeWidth={2.8} />}
               onClick={() => navigate("/user/new")}
             >
@@ -343,7 +343,7 @@ const Requests = () => {
               !items.length ? (
                 <Button
                   variant="filled"
-                  color="dark"
+                  color="ink"
                   leftSection={<Plus size={14} strokeWidth={2.8} />}
                   onClick={() => navigate("/user/new")}
                 >
@@ -371,7 +371,7 @@ const Requests = () => {
             value={page}
             total={totalPages}
             onChange={(value) => setParam("page", String(value), "1")}
-            color="dark"
+            color="ink"
             size="sm"
             radius="md"
           />

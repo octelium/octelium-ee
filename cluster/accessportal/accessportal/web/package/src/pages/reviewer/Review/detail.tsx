@@ -237,7 +237,7 @@ const ReviewDetail = () => {
                 <div className="flex items-center gap-2">
                   <Button
                     variant="filled"
-                    color="dark"
+                    color="ink"
                     leftSection={<Check size={14} strokeWidth={2.8} />}
                     loading={updateMutation.isPending}
                     onClick={() => {

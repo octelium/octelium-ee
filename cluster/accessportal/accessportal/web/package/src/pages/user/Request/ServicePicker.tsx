@@ -35,7 +35,7 @@ const ServiceCard = (props: {
       className={twMerge(
         "flex w-full min-w-0 flex-wrap items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-[border-color,box-shadow,background-color] duration-150",
         props.selected
-          ? "border-slate-900 bg-slate-50 shadow-[0_2px_8px_rgba(15,23,42,0.10)]"
+          ? "border-slate-900 bg-slate-50 shadow-raised"
           : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50",
       )}
     >

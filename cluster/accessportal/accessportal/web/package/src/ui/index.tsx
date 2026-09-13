@@ -108,9 +108,9 @@ export const Card = (props: {
   <div
     onClick={props.onClick}
     className={twMerge(
-      "rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+      "rounded-xl border border-slate-200 bg-white shadow-card",
       props.interactive &&
-        "cursor-pointer transition-[border-color,box-shadow,transform] duration-150 hover:border-slate-300 hover:shadow-[0_4px_16px_rgba(15,23,42,0.08)]",
+        "cursor-pointer transition-[border-color,box-shadow,transform] duration-150 hover:border-slate-300 hover:shadow-raised",
       props.className,
     )}
   >
@@ -553,10 +553,10 @@ export const StatTile = (props: {
   );
 
   const className = twMerge(
-    "rounded-xl border bg-white px-3.5 py-3 text-left shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+    "rounded-xl border bg-white px-3.5 py-3 text-left shadow-card",
     props.active ? "border-slate-900" : "border-slate-200",
     props.onClick &&
-      "cursor-pointer transition-[border-color,box-shadow] duration-150 hover:border-slate-300 hover:shadow-[0_2px_10px_rgba(15,23,42,0.07)]",
+      "cursor-pointer transition-[border-color,box-shadow] duration-150 hover:border-slate-300 hover:shadow-raised",
   );
 
   return props.onClick ? (
@@ -654,7 +654,7 @@ export const SearchInput = (props: {
       onChange={(event) => props.onChange(event.target.value)}
       placeholder={props.placeholder}
       aria-label={props.ariaLabel ?? props.placeholder}
-      className="h-9 w-full rounded-md border border-slate-200 bg-white pl-9 pr-8 text-[0.78rem] font-semibold text-slate-700 shadow-[0_1px_3px_rgba(15,23,42,0.05)] outline-none transition-[border-color,box-shadow] duration-150 placeholder:font-medium placeholder:text-slate-400 focus:border-slate-400 focus:shadow-[0_0_0_2px_rgba(148,163,184,0.18)]"
+      className="h-9 w-full rounded-md border border-slate-200 bg-white pl-9 pr-8 text-[0.78rem] font-semibold text-slate-700 shadow-card outline-none transition-[border-color,box-shadow] duration-150 placeholder:font-medium placeholder:text-slate-400 focus:border-slate-400 focus:shadow-[0_0_0_2px_var(--color-slate-200)]"
     />
     {props.value && (
       <button
@@ -828,7 +828,7 @@ export const ConfirmDialog = (props: {
       </Button>
       <Button
         variant="filled"
-        color={props.danger === false ? "dark" : "red"}
+        color={props.danger === false ? "ink" : "red"}
         loading={props.loading}
         onClick={props.onConfirm}
       >

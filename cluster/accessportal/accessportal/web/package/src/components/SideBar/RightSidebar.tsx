@@ -60,7 +60,7 @@ export default () => {
         styles={{
           content: {
             borderRadius: "12px",
-            border: "1px solid #e2e8f0",
+            border: "1px solid var(--color-slate-200)",
             overflow: "hidden",
           },
         }}
