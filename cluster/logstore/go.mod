@@ -1,6 +1,6 @@
 module github.com/octelium/octelium-ee/cluster/logstore
 
-go 1.26.6
+go 1.26.8
 
 require (
 	github.com/doug-martin/goqu/v9 v9.19.0
