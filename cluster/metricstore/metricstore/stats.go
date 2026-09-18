@@ -73,7 +73,7 @@ func (s *Server) logDiagnostics(ctx context.Context) {
 	}
 
 	if usage, err := s.readStorageUsage(ctx); err == nil {
-		fields = append(fields, usage.zapFields()...)
+		fields = append(fields, usage.ZapFields()...)
 	} else {
 		zap.L().Debug("Could not read metricstore storage usage", zap.Error(err))
 	}

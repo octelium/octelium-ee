@@ -26,6 +26,9 @@ const (
 	minimumDuckDBMemoryLimitBytes     = int64(64 << 20)
 	maximumDuckDBMemoryLimitBytes     = int64(4 << 30)
 	defaultDuckDBMaxTempDirectorySize = "4GB"
+	defaultMaxTempDirectoryBytes      = int64(4 << 30)
+	minimumTempDirectoryBytes         = int64(256 << 20)
+	tempDirectoryVolumeRatio          = 25
 )
 
 type DuckDBOpts struct {
@@ -56,7 +59,12 @@ func GetDuckDBDSNWithOpts(o *DuckDBOpts) string {
 
 	maxTempDirectorySize := strings.TrimSpace(o.MaxTempDirectorySize)
 	if maxTempDirectorySize == "" {
-		maxTempDirectorySize = defaultDuckDBMaxTempDirectorySize
+		volumeBytes, _, err := StatfsBytes(dir)
+		if err != nil {
+			volumeBytes = 0
+		}
+		maxTempDirectorySize = FormatDuckDBBytes(
+			DetectTempDirectoryLimitBytes(volumeBytes, defaultMaxTempDirectoryBytes))
 	}
 
 	values := url.Values{}
@@ -100,6 +108,24 @@ func DetectDuckDBMemoryLimitBytes() int64 {
 	}
 
 	return defaultDuckDBMemoryLimitBytes
+}
+
+func DetectTempDirectoryLimitBytes(volumeBytes uint64, maximumBytes int64) int64 {
+	if maximumBytes <= 0 {
+		maximumBytes = defaultMaxTempDirectoryBytes
+	}
+	if volumeBytes == 0 || volumeBytes > uint64(maximumBytes)*100 {
+		return maximumBytes
+	}
+
+	ret := int64(volumeBytes) * tempDirectoryVolumeRatio / 100
+	if ret < minimumTempDirectoryBytes {
+		ret = minimumTempDirectoryBytes
+	}
+	if ret > maximumBytes {
+		ret = maximumBytes
+	}
+	return ret
 }
 
 func FormatDuckDBBytes(val int64) string {

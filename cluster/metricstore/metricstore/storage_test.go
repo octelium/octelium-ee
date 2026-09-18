@@ -156,36 +156,6 @@ ON CONFLICT (id) DO UPDATE SET updated_at = EXCLUDED.updated_at
 	return conn
 }
 
-func TestStorageUsageRatio(t *testing.T) {
-	for _, tst := range []struct {
-		usage storageUsage
-		ratio float64
-	}{
-		{usage: storageUsage{}, ratio: 0},
-		{usage: storageUsage{totalBytes: 1000, availableBytes: 1000}, ratio: 0},
-		{usage: storageUsage{totalBytes: 1000, availableBytes: 100}, ratio: 0.9},
-		{usage: storageUsage{totalBytes: 1000, availableBytes: 50, reusableBytes: 350}, ratio: 0.6},
-		{usage: storageUsage{totalBytes: 1000}, ratio: 1},
-		{usage: storageUsage{totalBytes: 1000, availableBytes: 900, reusableBytes: 900}, ratio: 0},
-	} {
-		assert.InDelta(t, tst.ratio, tst.usage.usedRatio(), 0.0001)
-	}
-
-	usage := storageUsage{totalBytes: 1000, availableBytes: 100, reusableBytes: 200}
-	assert.Equal(t, uint64(300), usage.freeBytes())
-	assert.Len(t, usage.zapFields(), 4)
-}
-
-func TestStatfsBytes(t *testing.T) {
-	totalBytes, availableBytes, err := statfsBytes(t.TempDir())
-	require.NoError(t, err)
-	assert.NotZero(t, totalBytes)
-	assert.LessOrEqual(t, availableBytes, totalBytes)
-
-	_, _, err = statfsBytes(filepath.Join(t.TempDir(), "does-not-exist"))
-	assert.NotNil(t, err)
-}
-
 func TestReadStorageUsage(t *testing.T) {
 	s := newTestStorageServer(t)
 	ctx := context.Background()
@@ -194,9 +164,9 @@ func TestReadStorageUsage(t *testing.T) {
 
 	usage, err := s.readStorageUsage(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, uint64(1000), usage.totalBytes)
-	assert.Equal(t, uint64(400), usage.availableBytes)
-	assert.Zero(t, usage.reusableBytes)
+	assert.Equal(t, uint64(1000), usage.TotalBytes)
+	assert.Equal(t, uint64(400), usage.AvailableBytes)
+	assert.Zero(t, usage.ReusableBytes)
 
 	_, err = s.db.ExecContext(ctx,
 		`INSERT INTO metric_number_points SELECT md5(i::VARCHAR), i, i, NULL, md5((i*7)::VARCHAR), i, NULL
@@ -210,8 +180,8 @@ FROM range(150000) tbl(i)`)
 
 	usage, err = s.readStorageUsage(ctx)
 	require.NoError(t, err)
-	assert.NotZero(t, usage.reusableBytes)
-	assert.Equal(t, usage.availableBytes+usage.reusableBytes, usage.freeBytes())
+	assert.NotZero(t, usage.ReusableBytes)
+	assert.Equal(t, usage.AvailableBytes+usage.ReusableBytes, usage.FreeBytes())
 }
 
 func TestReadStorageUsageWithoutDatabasePath(t *testing.T) {
@@ -219,8 +189,8 @@ func TestReadStorageUsageWithoutDatabasePath(t *testing.T) {
 
 	usage, err := s.readStorageUsage(context.Background())
 	require.NoError(t, err)
-	assert.Zero(t, usage.totalBytes)
-	assert.Zero(t, usage.usedRatio())
+	assert.Zero(t, usage.TotalBytes)
+	assert.Zero(t, usage.UsedRatio())
 }
 
 func TestCheckpointStorageWithActiveWriteTransaction(t *testing.T) {

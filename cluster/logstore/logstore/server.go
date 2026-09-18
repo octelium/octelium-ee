@@ -50,8 +50,11 @@ type Server struct {
 	clusterDomain   string
 	genCache        *cache.Cache
 	db              *sql.DB
+	dbPath          string
 	cleanupDuration time.Duration
 	querySem        chan struct{}
+
+	statfsFn func(path string) (uint64, uint64, error)
 }
 
 func newServer(ctx context.Context, octeliumC octeliumc.ClientInterface) (*Server, error) {
@@ -71,7 +74,10 @@ func newServer(ctx context.Context, octeliumC octeliumc.ClientInterface) (*Serve
 
 	ret.clusterDomain = cc.Status.Domain
 
-	ret.db, err = sql.Open("duckdb", ovutils.GetDuckDBDSNWithOpts(&ovutils.DuckDBOpts{}))
+	dsn := ovutils.GetDuckDBDSNWithOpts(&ovutils.DuckDBOpts{})
+	ret.dbPath = ovutils.GetDuckDBDatabasePath(dsn)
+
+	ret.db, err = sql.Open("duckdb", dsn)
 	if err != nil {
 		return nil, err
 	}
@@ -109,11 +115,16 @@ func (s *Server) Run(ctx context.Context) error {
 		return err
 	}
 
+	if err := s.applyStoragePressureCleanup(ctx); err != nil {
+		zap.L().Warn("Could not apply the LogStore storage pressure cleanup", zap.Error(err))
+	}
+
 	if err := s.initGRPC(ctx); err != nil {
 		return err
 	}
 
 	go s.startCleanupLoop(ctx)
+	go s.startStoragePressureLoop(ctx)
 
 	return nil
 }
@@ -256,6 +267,27 @@ var maxDBAuditLogs = 100_000
 var maxDBComponentLogs = 100_000
 var maxDBComponentLogsDebug = 10_000
 
+type maxCleanup struct {
+	table string
+	where string
+	limit int
+}
+
+func getCleanupMaxCounts() []*maxCleanup {
+	return []*maxCleanup{
+		{table: "access_logs", limit: maxDBAccessLogs},
+		{table: "component_logs", limit: maxDBComponentLogs},
+		{
+			table: "component_logs",
+			where: fmt.Sprintf(`(rsc->'entry'->>'level') = '%s'`,
+				corev1.ComponentLog_Entry_DEBUG.String()),
+			limit: maxDBComponentLogsDebug,
+		},
+		{table: "audit_logs", limit: maxDBAuditLogs},
+		{table: "authentication_logs", limit: maxDBAuthenticationLogs},
+	}
+}
+
 func (s *Server) doCleanup(ctx context.Context) error {
 	monthAgo := pbutils.Now().AsTime().Add(-1 * s.cleanupDuration).UTC().Format(time.RFC3339Nano)
 
@@ -283,39 +315,22 @@ func (s *Server) doCleanup(ctx context.Context) error {
 	}
 
 	{
-		type maxCleanup struct {
-			table string
-			where string
-			limit int
-		}
-
-		for _, c := range []maxCleanup{
-			{table: "access_logs", limit: maxDBAccessLogs},
-			{table: "component_logs", limit: maxDBComponentLogs},
-			{
-				table: "component_logs",
-				where: fmt.Sprintf(`(rsc->'entry'->>'level') = '%s'`,
-					corev1.ComponentLog_Entry_DEBUG.String()),
-				limit: maxDBComponentLogsDebug,
-			},
-			{table: "audit_logs", limit: maxDBAuditLogs},
-			{table: "authentication_logs", limit: maxDBAuthenticationLogs},
-		} {
-			if err := s.cleanupByMaxCount(ctx, c.table, c.where, c.limit); err != nil {
+		for _, c := range getCleanupMaxCounts() {
+			if _, err := s.cleanupByMaxCount(ctx, c.table, c.where, c.limit); err != nil {
 				zap.L().Warn("Could not cleanup by max",
 					zap.String("table", c.table), zap.String("where", c.where), zap.Error(err))
 			}
 		}
 	}
 
-	if _, err := s.db.ExecContext(ctx, "CHECKPOINT"); err != nil {
-		zap.L().Error("Could not checkpoint", zap.Error(err))
+	if err := s.checkpointStorage(ctx); err != nil {
+		zap.L().Warn("Could not checkpoint", zap.Error(err))
 	}
 
 	return nil
 }
 
-func (s *Server) cleanupByMaxCount(ctx context.Context, table, where string, limit int) error {
+func (s *Server) cleanupByMaxCount(ctx context.Context, table, where string, limit int) (int64, error) {
 	whereClause := ""
 	if where != "" {
 		whereClause = fmt.Sprintf(" WHERE %s", where)
@@ -324,18 +339,18 @@ func (s *Server) cleanupByMaxCount(ctx context.Context, table, where string, lim
 	var count int
 	if err := s.db.QueryRowContext(ctx,
 		fmt.Sprintf(`SELECT count(*) FROM %s%s`, table, whereClause)).Scan(&count); err != nil {
-		return err
+		return 0, err
 	}
 
 	if count <= limit {
-		return nil
+		return 0, nil
 	}
 
 	var cutoff string
 	if err := s.db.QueryRowContext(ctx,
 		fmt.Sprintf(`SELECT rsc->'metadata'->>'createdAt' FROM %s%s ORDER BY (rsc->'metadata'->>'createdAt') DESC LIMIT 1 OFFSET %d`,
 			table, whereClause, limit-1)).Scan(&cutoff); err != nil {
-		return err
+		return 0, err
 	}
 
 	deleteWhere := `(rsc->'metadata'->>'createdAt') < $1`
@@ -343,8 +358,16 @@ func (s *Server) cleanupByMaxCount(ctx context.Context, table, where string, lim
 		deleteWhere = fmt.Sprintf(`%s AND %s`, where, deleteWhere)
 	}
 
-	_, err := s.db.ExecContext(ctx,
+	result, err := s.db.ExecContext(ctx,
 		fmt.Sprintf(`DELETE FROM %s WHERE %s`, table, deleteWhere), cutoff)
+	if err != nil {
+		return 0, err
+	}
 
-	return err
+	deleted, err := result.RowsAffected()
+	if err != nil {
+		return 0, nil
+	}
+
+	return deleted, nil
 }

@@ -10,13 +10,10 @@ package metricstore
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
-	"path/filepath"
 	"strings"
-	"syscall"
 	"time"
 
+	"github.com/octelium/octelium-ee/cluster/common/ovutils"
 	"go.uber.org/zap"
 )
 
@@ -28,80 +25,13 @@ const (
 	forceCheckpointTimeout     = 2 * time.Minute
 )
 
-type storageUsage struct {
-	totalBytes     uint64
-	availableBytes uint64
-	reusableBytes  uint64
-}
-
-func (u *storageUsage) freeBytes() uint64 {
-	return u.availableBytes + u.reusableBytes
-}
-
-func (u *storageUsage) usedRatio() float64 {
-	if u.totalBytes == 0 {
-		return 0
-	}
-	free := u.freeBytes()
-	if free >= u.totalBytes {
-		return 0
-	}
-	return float64(u.totalBytes-free) / float64(u.totalBytes)
-}
-
-func (u *storageUsage) zapFields() []zap.Field {
-	return []zap.Field{
-		zap.Uint64("storageTotalBytes", u.totalBytes),
-		zap.Uint64("storageAvailableBytes", u.availableBytes),
-		zap.Uint64("storageReusableBytes", u.reusableBytes),
-		zap.Float64("storageUsedRatio", u.usedRatio()),
-	}
-}
-
-func statfsBytes(path string) (uint64, uint64, error) {
-	var stat syscall.Statfs_t
-	if err := syscall.Statfs(path, &stat); err != nil {
-		return 0, 0, err
-	}
-	if stat.Bsize <= 0 {
-		return 0, 0, fmt.Errorf("invalid filesystem block size for %s", path)
+func (s *Server) readStorageUsage(ctx context.Context) (*ovutils.StorageUsage, error) {
+	database := ""
+	if s.dbConfig != nil {
+		database = s.dbConfig.database
 	}
 
-	blockSize := uint64(stat.Bsize)
-	return stat.Blocks * blockSize, stat.Bavail * blockSize, nil
-}
-
-func (s *Server) readStorageUsage(ctx context.Context) (*storageUsage, error) {
-	if s.dbConfig == nil || s.dbConfig.database == "" {
-		return &storageUsage{}, nil
-	}
-
-	statfsFn := s.statfsFn
-	if statfsFn == nil {
-		statfsFn = statfsBytes
-	}
-
-	totalBytes, availableBytes, err := statfsFn(filepath.Dir(s.dbConfig.database))
-	if err != nil {
-		return nil, err
-	}
-
-	ret := &storageUsage{
-		totalBytes:     totalBytes,
-		availableBytes: availableBytes,
-	}
-
-	var blockSize sql.NullInt64
-	var freeBlocks sql.NullInt64
-	if err := s.db.QueryRowContext(ctx,
-		`SELECT block_size, free_blocks FROM pragma_database_size()`).Scan(&blockSize, &freeBlocks); err != nil {
-		return nil, err
-	}
-	if blockSize.Int64 > 0 && freeBlocks.Int64 > 0 {
-		ret.reusableBytes = uint64(blockSize.Int64) * uint64(freeBlocks.Int64)
-	}
-
-	return ret, nil
+	return ovutils.ReadStorageUsage(ctx, s.db, database, s.statfsFn)
 }
 
 func (s *Server) runStoragePressureLoop(ctx context.Context) {
@@ -129,12 +59,12 @@ func (s *Server) applyStoragePressureRetention(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if usage.usedRatio() < storagePressureHighRatio {
+	if usage.UsedRatio() < storagePressureHighRatio {
 		return nil
 	}
 
 	zap.L().Warn("MetricStore storage is nearly full. Trimming the oldest metric data points",
-		usage.zapFields()...)
+		usage.ZapFields()...)
 
 	for retention := rawMetricRetention / 2; ; retention = retention / 2 {
 		if retention < minimumRawMetricRetention {
@@ -164,9 +94,9 @@ func (s *Server) applyStoragePressureRetention(ctx context.Context) error {
 				append([]zap.Field{
 					zap.Duration("retention", retention),
 					zap.Int64("deletedDataPoints", deleted),
-				}, usage.zapFields()...)...)
+				}, usage.ZapFields()...)...)
 
-			if usage.usedRatio() <= storagePressureTargetRatio {
+			if usage.UsedRatio() <= storagePressureTargetRatio {
 				return nil
 			}
 		}
@@ -178,7 +108,7 @@ func (s *Server) applyStoragePressureRetention(ctx context.Context) error {
 
 	zap.L().Warn("MetricStore storage is still nearly full after trimming the oldest metric data points",
 		append([]zap.Field{zap.Duration("minimumRetention", minimumRawMetricRetention)},
-			usage.zapFields()...)...)
+			usage.ZapFields()...)...)
 
 	return nil
 }

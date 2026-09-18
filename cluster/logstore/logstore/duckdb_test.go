@@ -541,15 +541,21 @@ func TestCleanupByMaxCount(t *testing.T) {
 	}
 
 	{
-		assert.Nil(t, ts.srv.cleanupByMaxCount(ts.ctx, "audit_logs", "", 10))
+		deleted, err := ts.srv.cleanupByMaxCount(ts.ctx, "audit_logs", "", 10)
+		assert.Nil(t, err, "%+v", err)
+		assert.Zero(t, deleted)
 		assert.Equal(t, 10, getTableCount(t, ts.srv, "audit_logs"))
 
-		assert.Nil(t, ts.srv.cleanupByMaxCount(ts.ctx, "audit_logs", "", 25))
+		deleted, err = ts.srv.cleanupByMaxCount(ts.ctx, "audit_logs", "", 25)
+		assert.Nil(t, err, "%+v", err)
+		assert.Zero(t, deleted)
 		assert.Equal(t, 10, getTableCount(t, ts.srv, "audit_logs"))
 	}
 
 	{
-		assert.Nil(t, ts.srv.cleanupByMaxCount(ts.ctx, "audit_logs", "", 4))
+		deleted, err := ts.srv.cleanupByMaxCount(ts.ctx, "audit_logs", "", 4)
+		assert.Nil(t, err, "%+v", err)
+		assert.Equal(t, int64(6), deleted)
 		assert.Equal(t, 4, getTableCount(t, ts.srv, "audit_logs"))
 
 		resp, err := ts.srv.listAuditLog(ts.ctx, &visibilityv1.ListAuditLogRequest{})
@@ -568,7 +574,9 @@ func TestCleanupByMaxCount(t *testing.T) {
 				newAuthenticationLog(&authenticationLogOptions{CreatedAt: now})))
 		}
 
-		assert.Nil(t, ts.srv.cleanupByMaxCount(ts.ctx, "authentication_logs", "", 2))
+		deleted, err := ts.srv.cleanupByMaxCount(ts.ctx, "authentication_logs", "", 2)
+		assert.Nil(t, err, "%+v", err)
+		assert.Zero(t, deleted)
 		assert.Equal(t, 5, getTableCount(t, ts.srv, "authentication_logs"))
 	}
 }
