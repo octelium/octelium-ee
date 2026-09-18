@@ -24,6 +24,12 @@ const (
 	retentionInterval        = 30 * time.Minute
 )
 
+var metricPointTables = []string{
+	"metric_number_points",
+	"metric_histogram_points",
+	"metric_exponential_histogram_points",
+}
+
 func (s *Server) initDB(ctx context.Context) error {
 	if err := s.rejectLegacySchema(ctx); err != nil {
 		return err
@@ -368,53 +374,66 @@ func (s *Server) runRetentionLoop(ctx context.Context) {
 }
 
 func (s *Server) applyRetention(ctx context.Context) error {
+	s.retentionMu.Lock()
+	defer s.retentionMu.Unlock()
+
 	cutoff := time.Now().UTC().Add(-(rawMetricRetention + retentionInterval))
-	pointTables := []string{
-		"metric_number_points",
-		"metric_histogram_points",
-		"metric_exponential_histogram_points",
+
+	deleted, err := s.deleteMetricPointsBefore(ctx, cutoff)
+	if err != nil {
+		return err
+	}
+	if deleted == 0 {
+		return nil
 	}
 
+	if err := s.deleteOrphanedMetricMetadata(ctx, cutoff); err != nil {
+		return err
+	}
+
+	return s.checkpointStorage(ctx)
+}
+
+func (s *Server) deleteMetricPointsBefore(ctx context.Context, cutoff time.Time) (int64, error) {
 	deleted := int64(0)
-	for _, table := range pointTables {
+
+	for _, table := range metricPointTables {
 		result, err := s.db.ExecContext(ctx, `DELETE FROM `+table+` WHERE ingested_at < ?`, metricTimeToDB(cutoff))
 		if err != nil {
-			return err
+			return deleted, err
 		}
 		if count, err := result.RowsAffected(); err == nil {
 			deleted += count
 		}
 	}
 
+	return deleted, nil
+}
+
+func (s *Server) deleteOrphanedMetricMetadata(ctx context.Context, cutoff time.Time) error {
 	cleanupStatements := []string{
 		`DELETE FROM metric_series_attributes
-		 WHERE series_id NOT IN (
+		 WHERE updated_at < ? AND series_id NOT IN (
 			SELECT series_id FROM metric_number_points
 			UNION SELECT series_id FROM metric_histogram_points
 			UNION SELECT series_id FROM metric_exponential_histogram_points
 		 )`,
 		`DELETE FROM metric_series
-		 WHERE id NOT IN (
+		 WHERE updated_at < ? AND id NOT IN (
 			SELECT series_id FROM metric_number_points
 			UNION SELECT series_id FROM metric_histogram_points
 			UNION SELECT series_id FROM metric_exponential_histogram_points
 		 )`,
 		`DELETE FROM metric_attribute_keys
-		 WHERE (descriptor_id, key) NOT IN (
+		 WHERE last_seen_at < ? AND (descriptor_id, key) NOT IN (
 			SELECT DISTINCT descriptor_id, key FROM metric_series_attributes
 		 )`,
 		`DELETE FROM metric_descriptors
-		 WHERE id NOT IN (SELECT DISTINCT descriptor_id FROM metric_series)`,
+		 WHERE updated_at < ? AND id NOT IN (SELECT DISTINCT descriptor_id FROM metric_series)`,
 	}
 
 	for _, statement := range cleanupStatements {
-		if _, err := s.db.ExecContext(ctx, statement); err != nil {
-			return err
-		}
-	}
-
-	if deleted > 0 {
-		if _, err := s.db.ExecContext(ctx, `CHECKPOINT`); err != nil {
+		if _, err := s.db.ExecContext(ctx, statement, metricTimeToDB(cutoff)); err != nil {
 			return err
 		}
 	}

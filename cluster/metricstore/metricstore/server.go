@@ -42,6 +42,9 @@ type Server struct {
 	listener  net.Listener
 	metricSrv *srvMetric
 
+	statfsFn    func(path string) (uint64, uint64, error)
+	retentionMu sync.Mutex
+
 	workerCtx    context.Context
 	workerCancel context.CancelFunc
 	workerWG     sync.WaitGroup
@@ -99,6 +102,10 @@ func (s *Server) Run(ctx context.Context) error {
 		return err
 	}
 
+	if err := s.applyStoragePressureRetention(ctx); err != nil {
+		zap.L().Warn("Could not apply metricstore storage pressure retention", zap.Error(err))
+	}
+
 	if err := s.initGRPC(ctx); err != nil {
 		s.workerCancel()
 		if s.metricSrv != nil {
@@ -114,6 +121,12 @@ func (s *Server) Run(ctx context.Context) error {
 	go func() {
 		defer s.workerWG.Done()
 		s.runRetentionLoop(s.workerCtx)
+	}()
+
+	s.workerWG.Add(1)
+	go func() {
+		defer s.workerWG.Done()
+		s.runStoragePressureLoop(s.workerCtx)
 	}()
 
 	s.workerWG.Add(1)

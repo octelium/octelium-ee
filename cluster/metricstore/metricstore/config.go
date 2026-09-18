@@ -26,7 +26,9 @@ const (
 	defaultDuckDBMemoryLimitBytes = int64(512 << 20)
 	minimumDuckDBMemoryLimitBytes = int64(64 << 20)
 	maximumDuckDBMemoryLimitBytes = int64(4 << 30)
-	defaultMaxTempDirectorySize   = "20GB"
+	maximumTempDirectoryBytes     = int64(20 << 30)
+	minimumTempDirectoryBytes     = int64(256 << 20)
+	tempDirectoryVolumeRatio      = 25
 )
 
 type metricStoreDBConfig struct {
@@ -112,7 +114,11 @@ func getMetricStoreDBConfig() (*metricStoreDBConfig, error) {
 
 	maxTempSize := strings.TrimSpace(os.Getenv("OCTELIUM_METRICSTORE_DUCKDB_MAX_TEMP_SIZE"))
 	if maxTempSize == "" {
-		maxTempSize = defaultMaxTempDirectorySize
+		volumeBytes, _, err := statfsBytes(dir)
+		if err != nil {
+			volumeBytes = 0
+		}
+		maxTempSize = formatDuckDBBytes(detectTempDirectoryLimit(volumeBytes))
 	}
 
 	values := url.Values{}
@@ -167,6 +173,21 @@ func detectDuckDBMemoryLimit() int64 {
 	}
 
 	return defaultDuckDBMemoryLimitBytes
+}
+
+func detectTempDirectoryLimit(volumeBytes uint64) int64 {
+	if volumeBytes == 0 || volumeBytes > uint64(maximumTempDirectoryBytes)*100 {
+		return maximumTempDirectoryBytes
+	}
+
+	ret := int64(volumeBytes) * tempDirectoryVolumeRatio / 100
+	if ret < minimumTempDirectoryBytes {
+		ret = minimumTempDirectoryBytes
+	}
+	if ret > maximumTempDirectoryBytes {
+		ret = maximumTempDirectoryBytes
+	}
+	return ret
 }
 
 func formatDuckDBBytes(val int64) string {

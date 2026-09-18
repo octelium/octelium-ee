@@ -72,6 +72,12 @@ func (s *Server) logDiagnostics(ctx context.Context) {
 		)
 	}
 
+	if usage, err := s.readStorageUsage(ctx); err == nil {
+		fields = append(fields, usage.zapFields()...)
+	} else {
+		zap.L().Debug("Could not read metricstore storage usage", zap.Error(err))
+	}
+
 	rows, err := s.db.QueryContext(ctx, `
 SELECT tag, memory_usage_bytes, temporary_storage_bytes
 FROM duckdb_memory()
