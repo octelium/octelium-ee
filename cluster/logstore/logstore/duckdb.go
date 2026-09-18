@@ -26,26 +26,10 @@ import (
 	"github.com/octelium/octelium/apis/main/visibilityv1/vmetav1"
 	"github.com/octelium/octelium/cluster/common/apivalidation"
 	"github.com/octelium/octelium/cluster/common/grpcutils"
-	"github.com/octelium/octelium/cluster/common/vutils"
 	"github.com/octelium/octelium/pkg/common/pbutils"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
-
-func getLogInsertQuery(table logTable) (string, error) {
-	switch table {
-	case logTableAccess:
-		return `INSERT INTO access_logs VALUES ($1)`, nil
-	case logTableComponent:
-		return `INSERT INTO component_logs VALUES ($1)`, nil
-	case logTableAuthentication:
-		return `INSERT INTO authentication_logs VALUES ($1)`, nil
-	case logTableAudit:
-		return `INSERT INTO audit_logs VALUES ($1)`, nil
-	default:
-		return "", errors.Errorf("Invalid log table: %d", table)
-	}
-}
 
 func (s *Server) insertLogBatches(ctx context.Context, batches []*pendingLogBatch) error {
 	tx, err := s.db.BeginTx(ctx, nil)
@@ -107,25 +91,45 @@ func (s *Server) insertAccessLog(accessLogJSON []byte) error {
 		return nil
 	}
 
-	_, err := s.db.Exec(`INSERT INTO access_logs VALUES ($1)`, string(accessLogJSON))
+	query, err := getLogInsertQuery(logTableAccess)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.db.Exec(query, string(accessLogJSON))
 
 	return err
 }
 
 func (s *Server) insertComponentLog(logJSON []byte) error {
-	_, err := s.db.Exec(`INSERT INTO component_logs VALUES ($1)`, string(logJSON))
+	query, err := getLogInsertQuery(logTableComponent)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.db.Exec(query, string(logJSON))
 
 	return err
 }
 
 func (s *Server) insertAuthenticationLog(logJSON []byte) error {
-	_, err := s.db.Exec(`INSERT INTO authentication_logs VALUES ($1)`, string(logJSON))
+	query, err := getLogInsertQuery(logTableAuthentication)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.db.Exec(query, string(logJSON))
 
 	return err
 }
 
 func (s *Server) insertAuditLog(logJSON []byte) error {
-	_, err := s.db.Exec(`INSERT INTO audit_logs VALUES ($1)`, string(logJSON))
+	query, err := getLogInsertQuery(logTableAudit)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.db.Exec(query, string(logJSON))
 
 	return err
 }
@@ -160,35 +164,35 @@ func (s *Server) listAccessLog(ctx context.Context, req *visibilityv1.ListAccess
 
 	var filters []exp.Expression
 
-	filters, err = appendRefFilter(filters, req.UserRef, nil, "entry.common.userRef")
+	filters, err = appendRefFilter(filters, req.UserRef, nil, colUserUID, "entry.common.userRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.DeviceRef, nil, "entry.common.deviceRef")
+	filters, err = appendRefFilter(filters, req.DeviceRef, nil, colDeviceUID, "entry.common.deviceRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.SessionRef, nil, "entry.common.sessionRef")
+	filters, err = appendRefFilter(filters, req.SessionRef, nil, colSessionUID, "entry.common.sessionRef")
 	if err != nil {
 		return nil, err
 	}
 	filters, err = appendRefFilter(filters, req.ServiceRef, &apivalidation.CheckGetOptionsOpts{
 		ParentsMust: 1,
-	}, "entry.common.serviceRef")
+	}, colServiceUID, "entry.common.serviceRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.NamespaceRef, nil, "entry.common.namespaceRef")
+	filters, err = appendRefFilter(filters, req.NamespaceRef, nil, colNamespaceUID, "entry.common.namespaceRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.RegionRef, nil, "entry.common.regionRef")
+	filters, err = appendRefFilter(filters, req.RegionRef, nil, colRegionUID, "entry.common.regionRef")
 	if err != nil {
 		return nil, err
 	}
 	filters, err = appendRefFilter(filters, req.PolicyRef, &apivalidation.CheckGetOptionsOpts{
 		ParentsMax: 8,
-	}, "entry.common.reason.details.policyMatch.policy.policyRef")
+	}, colPolicyUID, "entry.common.reason.details.policyMatch.policy.policyRef")
 	if err != nil {
 		return nil, err
 	}
@@ -196,17 +200,11 @@ func (s *Server) listAccessLog(ctx context.Context, req *visibilityv1.ListAccess
 	if req.Status != corev1.AccessLog_Entry_Common_STATUS_UNSET {
 		switch req.Status {
 		case corev1.AccessLog_Entry_Common_ALLOWED, corev1.AccessLog_Entry_Common_DENIED:
-			filters = append(filters, goqu.L(`rsc->>'$.entry.common.status'`).Eq(req.Status.String()))
+			filters = append(filters, goqu.L(colStatus).Eq(req.Status.String()))
 		}
 	}
 
-	if req.From != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Gte(req.From.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
-
-	if req.To != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
+	filters = appendTimeFilters(filters, req.From, req.To)
 
 	totalCount, err := s.countLogs(ctx, "access_logs", filters)
 	if err != nil {
@@ -240,9 +238,9 @@ func (s *Server) listAccessLog(ctx context.Context, req *visibilityv1.ListAccess
 	{
 		switch {
 		case req.Common.OrderBy != nil && req.Common.OrderBy.Mode == vmetav1.CommonListOptions_OrderBy_ASC:
-			ds = ds.Order(goqu.L(`rsc->>'$.metadata.createdAt'`).Asc())
+			ds = ds.Order(goqu.L(colCreatedAt).Asc())
 		default:
-			ds = ds.Order(goqu.L(`rsc->>'$.metadata.createdAt'`).Desc())
+			ds = ds.Order(goqu.L(colCreatedAt).Desc())
 		}
 
 	}
@@ -298,36 +296,30 @@ func (s *Server) listSSHSession(ctx context.Context, req *visibilityv1.ListSSHSe
 	var filters []exp.Expression
 	var err error
 
-	filters, err = appendRefFilter(filters, req.UserRef, nil, "entry.common.userRef")
+	filters, err = appendRefFilter(filters, req.UserRef, nil, colUserUID, "entry.common.userRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.DeviceRef, nil, "entry.common.deviceRef")
+	filters, err = appendRefFilter(filters, req.DeviceRef, nil, colDeviceUID, "entry.common.deviceRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.SessionRef, nil, "entry.common.sessionRef")
+	filters, err = appendRefFilter(filters, req.SessionRef, nil, colSessionUID, "entry.common.sessionRef")
 	if err != nil {
 		return nil, err
 	}
 	filters, err = appendRefFilter(filters, req.ServiceRef, &apivalidation.CheckGetOptionsOpts{
 		ParentsMust: 1,
-	}, "entry.common.serviceRef")
+	}, colServiceUID, "entry.common.serviceRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.NamespaceRef, nil, "entry.common.namespaceRef")
+	filters, err = appendRefFilter(filters, req.NamespaceRef, nil, colNamespaceUID, "entry.common.namespaceRef")
 	if err != nil {
 		return nil, err
 	}
 
-	if req.From != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Gte(req.From.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
-
-	if req.To != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
+	filters = appendTimeFilters(filters, req.From, req.To)
 
 	{
 		filters = append(filters, goqu.L(`rsc->>'$.entry.common.sessionID'`).IsNotNull())
@@ -340,8 +332,8 @@ func (s *Server) listSSHSession(ctx context.Context, req *visibilityv1.ListSSHSe
 			goqu.L(`first(rsc) AS rsc_f`),
 			// goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.entry.info.ssh.type' = 'SESSION_RECORDING') AS count`),
 			goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.entry.common.sessionID')) AS count`),
-			goqu.L(`min(rsc->>'$.metadata.createdAt') FILTER (WHERE rsc->>'$.entry.info.ssh.type' = 'SESSION_START') AS created_at`),
-			goqu.L(`max(rsc->>'$.metadata.createdAt') FILTER (WHERE rsc->>'$.entry.info.ssh.type' = 'SESSION_END') AS ended_at`),
+			goqu.L(`min(created_at) FILTER (WHERE rsc->>'$.entry.info.ssh.type' = 'SESSION_START') AS started_at`),
+			goqu.L(`max(created_at) FILTER (WHERE rsc->>'$.entry.info.ssh.type' = 'SESSION_END') AS ended_at`),
 			// goqu.L(`json_extract(rsc, '$.metadata.createdAt') FILTER (WHERE rsc->>'$.entry.info.ssh.type' = 'SESSION_START') AS created_at`),
 			// goqu.L(`json_extract(rsc, '$.metadata.createdAt') FILTER (WHERE rsc->>'$.entry.info.ssh.type' = 'SESSION_END') AS ended_at`),
 			// goqu.L(`json_extract(rsc, '$.entry.info.ssh.type') AS session_type`),
@@ -369,7 +361,7 @@ func (s *Server) listSSHSession(ctx context.Context, req *visibilityv1.ListSSHSe
 	}
 
 	{
-		ds = ds.Order(goqu.L(`created_at`).Desc())
+		ds = ds.Order(goqu.L(`started_at`).Desc())
 	}
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -391,8 +383,8 @@ func (s *Server) listSSHSession(ctx context.Context, req *visibilityv1.ListSSHSe
 		var sessionID string
 		rsc := make(map[string]any)
 		var count int
-		var createdAt *string
-		var endedAt *string
+		var createdAt *time.Time
+		var endedAt *time.Time
 		// var sessionType string
 
 		err := rows.Scan(&sessionID, &rsc, &count, &createdAt, &endedAt)
@@ -419,13 +411,13 @@ func (s *Server) listSSHSession(ctx context.Context, req *visibilityv1.ListSSHSe
 				if createdAt == nil {
 					return nil
 				}
-				return pbutils.Timestamp(vutils.MustParseTime(*createdAt))
+				return pbutils.Timestamp(*createdAt)
 			}(),
 			EndedAt: func() *timestamppb.Timestamp {
 				if endedAt == nil {
 					return nil
 				}
-				return pbutils.Timestamp(vutils.MustParseTime(*endedAt))
+				return pbutils.Timestamp(*endedAt)
 			}(),
 			SessionRef: accessLog.Entry.Common.SessionRef,
 			DeviceRef:  accessLog.Entry.Common.DeviceRef,
@@ -495,9 +487,7 @@ func (s *Server) listSSHSessionRecording(ctx context.Context, req *visibilityv1.
 		}
 	*/
 
-	if req.From != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Gte(req.From.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
+	filters = appendTimeFilters(filters, req.From, nil)
 
 	{
 		filters = append(filters, goqu.L(`rsc->>'$.entry.common.sessionID'`).Eq(req.SessionID),
@@ -530,7 +520,7 @@ func (s *Server) listSSHSessionRecording(ctx context.Context, req *visibilityv1.
 	}
 
 	{
-		ds = ds.Order(goqu.L(`rsc->>'$.metadata.createdAt'`).Asc())
+		ds = ds.Order(goqu.L(colCreatedAt).Asc())
 	}
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -590,35 +580,35 @@ func (s *Server) getSummaryAccessLog(ctx context.Context, req *visibilityv1.GetA
 	var filters []exp.Expression
 	var err error
 
-	filters, err = appendRefFilter(filters, req.UserRef, nil, "entry.common.userRef")
+	filters, err = appendRefFilter(filters, req.UserRef, nil, colUserUID, "entry.common.userRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.DeviceRef, nil, "entry.common.deviceRef")
+	filters, err = appendRefFilter(filters, req.DeviceRef, nil, colDeviceUID, "entry.common.deviceRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.SessionRef, nil, "entry.common.sessionRef")
+	filters, err = appendRefFilter(filters, req.SessionRef, nil, colSessionUID, "entry.common.sessionRef")
 	if err != nil {
 		return nil, err
 	}
 	filters, err = appendRefFilter(filters, req.ServiceRef, &apivalidation.CheckGetOptionsOpts{
 		ParentsMust: 1,
-	}, "entry.common.serviceRef")
+	}, colServiceUID, "entry.common.serviceRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.NamespaceRef, nil, "entry.common.namespaceRef")
+	filters, err = appendRefFilter(filters, req.NamespaceRef, nil, colNamespaceUID, "entry.common.namespaceRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.RegionRef, nil, "entry.common.regionRef")
+	filters, err = appendRefFilter(filters, req.RegionRef, nil, colRegionUID, "entry.common.regionRef")
 	if err != nil {
 		return nil, err
 	}
 	filters, err = appendRefFilter(filters, req.PolicyRef, &apivalidation.CheckGetOptionsOpts{
 		ParentsMax: 8,
-	}, "entry.common.reason.details.policyMatch.policy.policyRef")
+	}, colPolicyUID, "entry.common.reason.details.policyMatch.policy.policyRef")
 	if err != nil {
 		return nil, err
 	}
@@ -659,24 +649,18 @@ func (s *Server) getSummaryAccessLog(ctx context.Context, req *visibilityv1.GetA
 		}
 	*/
 
-	if req.From != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Gte(req.From.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
-
-	if req.To != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
+	filters = appendTimeFilters(filters, req.From, req.To)
 
 	ds := goqu.From("access_logs").Where(filters...).Select(
 		goqu.L(`COUNT(*) AS count_total`),
-		goqu.L(`COUNT(*) FILTER (WHERE json_extract_string(rsc, '$.entry.common.status') = 'ALLOWED') AS count_allowed`),
-		goqu.L(`COUNT(*) FILTER (WHERE json_extract_string(rsc, '$.entry.common.status') = 'DENIED') AS count_denied`),
-		goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.entry.common.userRef.uid')) AS count_user`),
-		goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.entry.common.sessionRef.uid')) AS count_session`),
-		goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.entry.common.deviceRef.uid')) AS count_device`),
-		goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.entry.common.serviceRef.uid')) AS count_service`),
-		goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.entry.common.namespaceRef.uid')) AS count_namespace`),
-		goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.entry.common.reason.details.policyMatch.policy.policyRef.uid')) AS count_match_policy`),
+		goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'ALLOWED') AS count_allowed`, colStatus)),
+		goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'DENIED') AS count_denied`, colStatus)),
+		goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_user`, colUserUID)),
+		goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_session`, colSessionUID)),
+		goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_device`, colDeviceUID)),
+		goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_service`, colServiceUID)),
+		goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_namespace`, colNamespaceUID)),
+		goqu.L(fmt.Sprintf(`COUNT(DISTINCT %s) AS count_match_policy`, colPolicyUID)),
 	)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -713,27 +697,27 @@ func (s *Server) getSummaryAuthenticationLog(ctx context.Context, req *visibilit
 	var filters []exp.Expression
 	var err error
 
-	filters, err = appendRefFilter(filters, req.UserRef, nil, "entry.userRef")
+	filters, err = appendRefFilter(filters, req.UserRef, nil, "", "entry.userRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.DeviceRef, nil, "entry.deviceRef")
+	filters, err = appendRefFilter(filters, req.DeviceRef, nil, "", "entry.deviceRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.SessionRef, nil, "entry.sessionRef")
+	filters, err = appendRefFilter(filters, req.SessionRef, nil, "", "entry.sessionRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.IdentityProviderRef, nil, "entry.authentication.info.identityProvider.identityProviderRef")
+	filters, err = appendRefFilter(filters, req.IdentityProviderRef, nil, "", "entry.authentication.info.identityProvider.identityProviderRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.AuthenticatorRef, nil, "entry.authentication.info.authenticator.authenticatorRef")
+	filters, err = appendRefFilter(filters, req.AuthenticatorRef, nil, "", "entry.authentication.info.authenticator.authenticatorRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.CredentialRef, nil, "entry.authentication.info.credential.credentialRef")
+	filters, err = appendRefFilter(filters, req.CredentialRef, nil, "", "entry.authentication.info.credential.credentialRef")
 	if err != nil {
 		return nil, err
 	}
@@ -756,13 +740,7 @@ func (s *Server) getSummaryAuthenticationLog(ctx context.Context, req *visibilit
 		}
 	*/
 
-	if req.From != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Gte(req.From.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
-
-	if req.To != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
+	filters = appendTimeFilters(filters, req.From, req.To)
 
 	ds := goqu.From("authentication_logs").Where(filters...).Select(
 		goqu.L(`COUNT(*) AS count_total`),
@@ -832,27 +810,27 @@ func (s *Server) listAuthenticationLog(ctx context.Context, req *visibilityv1.Li
 	var filters []exp.Expression
 	var err error
 
-	filters, err = appendRefFilter(filters, req.UserRef, nil, "entry.userRef")
+	filters, err = appendRefFilter(filters, req.UserRef, nil, "", "entry.userRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.DeviceRef, nil, "entry.deviceRef")
+	filters, err = appendRefFilter(filters, req.DeviceRef, nil, "", "entry.deviceRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.SessionRef, nil, "entry.sessionRef")
+	filters, err = appendRefFilter(filters, req.SessionRef, nil, "", "entry.sessionRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.IdentityProviderRef, nil, "entry.authentication.info.identityProvider.identityProviderRef")
+	filters, err = appendRefFilter(filters, req.IdentityProviderRef, nil, "", "entry.authentication.info.identityProvider.identityProviderRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.AuthenticatorRef, nil, "entry.authentication.info.authenticator.authenticatorRef")
+	filters, err = appendRefFilter(filters, req.AuthenticatorRef, nil, "", "entry.authentication.info.authenticator.authenticatorRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.CredentialRef, nil, "entry.authentication.info.credential.credentialRef")
+	filters, err = appendRefFilter(filters, req.CredentialRef, nil, "", "entry.authentication.info.credential.credentialRef")
 	if err != nil {
 		return nil, err
 	}
@@ -871,13 +849,7 @@ func (s *Server) listAuthenticationLog(ctx context.Context, req *visibilityv1.Li
 		}
 	*/
 
-	if req.From != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Gte(req.From.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
-
-	if req.To != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
+	filters = appendTimeFilters(filters, req.From, req.To)
 
 	totalCount, err := s.countLogs(ctx, "authentication_logs", filters)
 	if err != nil {
@@ -911,9 +883,9 @@ func (s *Server) listAuthenticationLog(ctx context.Context, req *visibilityv1.Li
 	{
 		switch {
 		case req.Common.OrderBy != nil && req.Common.OrderBy.Mode == vmetav1.CommonListOptions_OrderBy_ASC:
-			ds = ds.Order(goqu.L(`rsc->>'$.metadata.createdAt'`).Asc())
+			ds = ds.Order(goqu.L(colCreatedAt).Asc())
 		default:
-			ds = ds.Order(goqu.L(`rsc->>'$.metadata.createdAt'`).Desc())
+			ds = ds.Order(goqu.L(colCreatedAt).Desc())
 		}
 
 	}
@@ -969,21 +941,21 @@ func (s *Server) listAuditLog(ctx context.Context, req *visibilityv1.ListAuditLo
 	var filters []exp.Expression
 	var err error
 
-	filters, err = appendRefFilter(filters, req.UserRef, nil, "entry.userRef")
+	filters, err = appendRefFilter(filters, req.UserRef, nil, "", "entry.userRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.DeviceRef, nil, "entry.deviceRef")
+	filters, err = appendRefFilter(filters, req.DeviceRef, nil, "", "entry.deviceRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.SessionRef, nil, "entry.sessionRef")
+	filters, err = appendRefFilter(filters, req.SessionRef, nil, "", "entry.sessionRef")
 	if err != nil {
 		return nil, err
 	}
 	filters, err = appendRefFilter(filters, req.ResourceRef, &apivalidation.CheckGetOptionsOpts{
 		ParentsMax: 8,
-	}, "entry.resourceRef")
+	}, "", "entry.resourceRef")
 	if err != nil {
 		return nil, err
 	}
@@ -1006,13 +978,7 @@ func (s *Server) listAuditLog(ctx context.Context, req *visibilityv1.ListAuditLo
 		}
 	*/
 
-	if req.From != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Gte(req.From.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
-
-	if req.To != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
+	filters = appendTimeFilters(filters, req.From, req.To)
 
 	totalCount, err := s.countLogs(ctx, "audit_logs", filters)
 	if err != nil {
@@ -1046,9 +1012,9 @@ func (s *Server) listAuditLog(ctx context.Context, req *visibilityv1.ListAuditLo
 	{
 		switch {
 		case req.Common.OrderBy != nil && req.Common.OrderBy.Mode == vmetav1.CommonListOptions_OrderBy_ASC:
-			ds = ds.Order(goqu.L(`rsc->>'$.metadata.createdAt'`).Asc())
+			ds = ds.Order(goqu.L(colCreatedAt).Asc())
 		default:
-			ds = ds.Order(goqu.L(`rsc->>'$.metadata.createdAt'`).Desc())
+			ds = ds.Order(goqu.L(colCreatedAt).Desc())
 		}
 
 	}
@@ -1137,16 +1103,10 @@ func (s *Server) listComponentLog(ctx context.Context, req *visibilityv1.ListCom
 
 	var filters []exp.Expression
 
-	if req.From != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Gte(req.From.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
-
-	if req.To != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
+	filters = appendTimeFilters(filters, req.From, req.To)
 
 	if req.Level != corev1.ComponentLog_Entry_LEVEL_UNSET {
-		filters = append(filters, goqu.L(`rsc->>'$.entry.level'`).Eq(req.Level.String()))
+		filters = append(filters, goqu.L(colLevel).Eq(req.Level.String()))
 	}
 
 	totalCount, err := s.countLogs(ctx, "component_logs", filters)
@@ -1181,9 +1141,9 @@ func (s *Server) listComponentLog(ctx context.Context, req *visibilityv1.ListCom
 	{
 		switch {
 		case req.Common.OrderBy != nil && req.Common.OrderBy.Mode == vmetav1.CommonListOptions_OrderBy_ASC:
-			ds = ds.Order(goqu.L(`rsc->>'$.metadata.createdAt'`).Asc())
+			ds = ds.Order(goqu.L(colCreatedAt).Asc())
 		default:
-			ds = ds.Order(goqu.L(`rsc->>'$.metadata.createdAt'`).Desc())
+			ds = ds.Order(goqu.L(colCreatedAt).Desc())
 		}
 
 	}
@@ -1243,15 +1203,15 @@ func (s *Server) getSSHSession(ctx context.Context, req *visibilityv1.GetSSHSess
 			goqu.L(`first(rsc) AS rsc_f`),
 			// goqu.L(`COUNT(*) FILTER (WHERE rsc->>'$.entry.info.ssh.type' = 'SESSION_RECORDING') AS count`),
 			goqu.L(`COUNT(DISTINCT json_extract_string(rsc, '$.entry.common.sessionID')) AS count`),
-			goqu.L(`min(rsc->>'$.metadata.createdAt') FILTER (WHERE rsc->>'$.entry.info.ssh.type' = 'SESSION_START') AS created_at`),
-			goqu.L(`max(rsc->>'$.metadata.createdAt') FILTER (WHERE rsc->>'$.entry.info.ssh.type' = 'SESSION_END') AS ended_at`),
+			goqu.L(`min(created_at) FILTER (WHERE rsc->>'$.entry.info.ssh.type' = 'SESSION_START') AS started_at`),
+			goqu.L(`max(created_at) FILTER (WHERE rsc->>'$.entry.info.ssh.type' = 'SESSION_END') AS ended_at`),
 			// goqu.L(`json_extract(rsc, '$.metadata.createdAt') FILTER (WHERE rsc->>'$.entry.info.ssh.type' = 'SESSION_START') AS created_at`),
 			// goqu.L(`json_extract(rsc, '$.metadata.createdAt') FILTER (WHERE rsc->>'$.entry.info.ssh.type' = 'SESSION_END') AS ended_at`),
 			// goqu.L(`json_extract(rsc, '$.entry.info.ssh.type') AS session_type`),
 		).GroupBy(goqu.L(`session_id`))
 
 	{
-		ds = ds.Order(goqu.L(`created_at`).Desc())
+		ds = ds.Order(goqu.L(`started_at`).Desc())
 	}
 
 	ds = ds.Limit(1)
@@ -1264,8 +1224,8 @@ func (s *Server) getSSHSession(ctx context.Context, req *visibilityv1.GetSSHSess
 	var sessionID string
 	rsc := make(map[string]any)
 	var count int
-	var createdAt *string
-	var endedAt *string
+	var createdAt *time.Time
+	var endedAt *time.Time
 
 	if err := s.db.QueryRowContext(ctx, sqln, sqlargs...).Scan(&sessionID, &rsc, &count, &createdAt, &endedAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -1293,13 +1253,13 @@ func (s *Server) getSSHSession(ctx context.Context, req *visibilityv1.GetSSHSess
 			if createdAt == nil {
 				return nil
 			}
-			return pbutils.Timestamp(vutils.MustParseTime(*createdAt))
+			return pbutils.Timestamp(*createdAt)
 		}(),
 		EndedAt: func() *timestamppb.Timestamp {
 			if endedAt == nil {
 				return nil
 			}
-			return pbutils.Timestamp(vutils.MustParseTime(*endedAt))
+			return pbutils.Timestamp(*endedAt)
 		}(),
 		SessionRef: accessLog.Entry.Common.SessionRef,
 		DeviceRef:  accessLog.Entry.Common.DeviceRef,
@@ -1312,7 +1272,8 @@ func (s *Server) getSSHSession(ctx context.Context, req *visibilityv1.GetSSHSess
 	return ret, nil
 }
 
-func appendRefFilter(filters []exp.Expression, ref *metav1.ObjectReference, o *apivalidation.CheckGetOptionsOpts, pth string) ([]exp.Expression, error) {
+func appendRefFilter(filters []exp.Expression, ref *metav1.ObjectReference,
+	o *apivalidation.CheckGetOptionsOpts, column, pth string) ([]exp.Expression, error) {
 	if ref == nil {
 		return filters, nil
 	}
@@ -1325,16 +1286,30 @@ func appendRefFilter(filters []exp.Expression, ref *metav1.ObjectReference, o *a
 	}
 
 	if ref.Uid != "" {
-		filterName := fmt.Sprintf(`rsc->>'$.%s.uid'`, pth)
-		filters = append(filters, goqu.L(filterName).Eq(ref.Uid))
+		if column != "" {
+			filters = append(filters, goqu.L(column).Eq(ref.Uid))
+		} else {
+			filters = append(filters, goqu.L(fmt.Sprintf(`rsc->>'$.%s.uid'`, pth)).Eq(ref.Uid))
+		}
 	}
 
 	if ref.Name != "" {
-		filterName := fmt.Sprintf(`rsc->>'$.%s.name'`, pth)
-		filters = append(filters, goqu.L(filterName).Eq(ref.Name))
+		filters = append(filters, goqu.L(fmt.Sprintf(`rsc->>'$.%s.name'`, pth)).Eq(ref.Name))
 	}
 
 	return filters, nil
+}
+
+func appendTimeFilters(filters []exp.Expression, from, to *timestamppb.Timestamp) []exp.Expression {
+	if from != nil {
+		filters = append(filters, goqu.L(colCreatedAt).Gte(from.AsTime().UTC()))
+	}
+
+	if to != nil {
+		filters = append(filters, goqu.L(colCreatedAt).Lte(to.AsTime().UTC()))
+	}
+
+	return filters
 }
 
 func (s *Server) getSummaryComponentLog(ctx context.Context, req *visibilityv1.GetComponentLogSummaryRequest) (*visibilityv1.GetComponentLogSummaryResponse, error) {
@@ -1343,23 +1318,17 @@ func (s *Server) getSummaryComponentLog(ctx context.Context, req *visibilityv1.G
 	var filters []exp.Expression
 	var err error
 
-	if req.From != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Gte(req.From.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
-
-	if req.To != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
+	filters = appendTimeFilters(filters, req.From, req.To)
 
 	ds := goqu.From("component_logs").Where(filters...).Select(
 		goqu.L(`COUNT(*) AS count_total`),
 
-		goqu.L(`COUNT(*) FILTER (WHERE json_extract_string(rsc, '$.entry.level') = 'DEBUG') AS count_debug`),
-		goqu.L(`COUNT(*) FILTER (WHERE json_extract_string(rsc, '$.entry.level') = 'INFO') AS count_info`),
-		goqu.L(`COUNT(*) FILTER (WHERE json_extract_string(rsc, '$.entry.level') = 'WARN') AS count_warning`),
-		goqu.L(`COUNT(*) FILTER (WHERE json_extract_string(rsc, '$.entry.level') = 'ERROR') AS count_error`),
-		goqu.L(`COUNT(*) FILTER (WHERE json_extract_string(rsc, '$.entry.level') = 'PANIC') AS count_panic`),
-		goqu.L(`COUNT(*) FILTER (WHERE json_extract_string(rsc, '$.entry.level') = 'FATAL') AS count_fatal`),
+		goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'DEBUG') AS count_debug`, colLevel)),
+		goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'INFO') AS count_info`, colLevel)),
+		goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'WARN') AS count_warning`, colLevel)),
+		goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'ERROR') AS count_error`, colLevel)),
+		goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'PANIC') AS count_panic`, colLevel)),
+		goqu.L(fmt.Sprintf(`COUNT(*) FILTER (WHERE %s = 'FATAL') AS count_fatal`, colLevel)),
 	)
 
 	sqln, sqlargs, err := ds.ToSQL()
@@ -1396,26 +1365,20 @@ func (s *Server) getSummaryAuditLog(ctx context.Context, req *visibilityv1.GetAu
 	var filters []exp.Expression
 	var err error
 
-	filters, err = appendRefFilter(filters, req.UserRef, nil, "entry.userRef")
+	filters, err = appendRefFilter(filters, req.UserRef, nil, "", "entry.userRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.DeviceRef, nil, "entry.deviceRef")
+	filters, err = appendRefFilter(filters, req.DeviceRef, nil, "", "entry.deviceRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.SessionRef, nil, "entry.sessionRef")
+	filters, err = appendRefFilter(filters, req.SessionRef, nil, "", "entry.sessionRef")
 	if err != nil {
 		return nil, err
 	}
 
-	if req.From != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Gte(req.From.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
-
-	if req.To != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
+	filters = appendTimeFilters(filters, req.From, req.To)
 
 	ds := goqu.From("audit_logs").Where(filters...).Select(
 		goqu.L(`COUNT(*) AS count_total`),

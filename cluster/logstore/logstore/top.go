@@ -11,7 +11,6 @@ package logstore
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
@@ -29,34 +28,28 @@ func (s *Server) listAccessLogTopUser(ctx context.Context, req *visibilityv1.Lis
 
 	filters, err = appendRefFilter(filters, req.ServiceRef, &apivalidation.CheckGetOptionsOpts{
 		ParentsMust: 1,
-	}, "entry.common.serviceRef")
+	}, colServiceUID, "entry.common.serviceRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.NamespaceRef, nil, "entry.common.namespaceRef")
+	filters, err = appendRefFilter(filters, req.NamespaceRef, nil, colNamespaceUID, "entry.common.namespaceRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.RegionRef, nil, "entry.common.regionRef")
+	filters, err = appendRefFilter(filters, req.RegionRef, nil, colRegionUID, "entry.common.regionRef")
 	if err != nil {
 		return nil, err
 	}
 	filters, err = appendRefFilter(filters, req.PolicyRef, &apivalidation.CheckGetOptionsOpts{
 		ParentsMax: 8,
-	}, "entry.common.reason.details.policyMatch.policy.policyRef")
+	}, colPolicyUID, "entry.common.reason.details.policyMatch.policy.policyRef")
 	if err != nil {
 		return nil, err
 	}
 
-	if req.From != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Gte(req.From.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
+	filters = appendTimeFilters(filters, req.From, req.To)
 
-	if req.To != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
-
-	res, err := s.getTop(ctx, "access_logs", 10, "entry.common.userRef", filters)
+	res, err := s.getTop(ctx, "access_logs", 10, colUserUID, "entry.common.userRef", filters)
 	if err != nil {
 		return nil, err
 	}
@@ -85,39 +78,33 @@ func (s *Server) listAccessLogTopService(ctx context.Context, req *visibilityv1.
 	var filters []exp.Expression
 	var err error
 
-	filters, err = appendRefFilter(filters, req.UserRef, nil, "entry.common.userRef")
+	filters, err = appendRefFilter(filters, req.UserRef, nil, colUserUID, "entry.common.userRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.DeviceRef, nil, "entry.common.deviceRef")
+	filters, err = appendRefFilter(filters, req.DeviceRef, nil, colDeviceUID, "entry.common.deviceRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.SessionRef, nil, "entry.common.sessionRef")
+	filters, err = appendRefFilter(filters, req.SessionRef, nil, colSessionUID, "entry.common.sessionRef")
 	if err != nil {
 		return nil, err
 	}
 
-	filters, err = appendRefFilter(filters, req.RegionRef, nil, "entry.common.regionRef")
+	filters, err = appendRefFilter(filters, req.RegionRef, nil, colRegionUID, "entry.common.regionRef")
 	if err != nil {
 		return nil, err
 	}
 	filters, err = appendRefFilter(filters, req.PolicyRef, &apivalidation.CheckGetOptionsOpts{
 		ParentsMax: 8,
-	}, "entry.common.reason.details.policyMatch.policy.policyRef")
+	}, colPolicyUID, "entry.common.reason.details.policyMatch.policy.policyRef")
 	if err != nil {
 		return nil, err
 	}
 
-	if req.From != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Gte(req.From.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
+	filters = appendTimeFilters(filters, req.From, req.To)
 
-	if req.To != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
-
-	res, err := s.getTop(ctx, "access_logs", 10, "entry.common.serviceRef", filters)
+	res, err := s.getTop(ctx, "access_logs", 10, colServiceUID, "entry.common.serviceRef", filters)
 	if err != nil {
 		return nil, err
 	}
@@ -146,42 +133,36 @@ func (s *Server) listAccessLogTopPolicy(ctx context.Context, req *visibilityv1.L
 	var filters []exp.Expression
 	var err error
 
-	filters, err = appendRefFilter(filters, req.UserRef, nil, "entry.common.userRef")
+	filters, err = appendRefFilter(filters, req.UserRef, nil, colUserUID, "entry.common.userRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.DeviceRef, nil, "entry.common.deviceRef")
+	filters, err = appendRefFilter(filters, req.DeviceRef, nil, colDeviceUID, "entry.common.deviceRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.SessionRef, nil, "entry.common.sessionRef")
+	filters, err = appendRefFilter(filters, req.SessionRef, nil, colSessionUID, "entry.common.sessionRef")
 	if err != nil {
 		return nil, err
 	}
 	filters, err = appendRefFilter(filters, req.ServiceRef, &apivalidation.CheckGetOptionsOpts{
 		ParentsMust: 1,
-	}, "entry.common.serviceRef")
+	}, colServiceUID, "entry.common.serviceRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.NamespaceRef, nil, "entry.common.namespaceRef")
+	filters, err = appendRefFilter(filters, req.NamespaceRef, nil, colNamespaceUID, "entry.common.namespaceRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.RegionRef, nil, "entry.common.regionRef")
+	filters, err = appendRefFilter(filters, req.RegionRef, nil, colRegionUID, "entry.common.regionRef")
 	if err != nil {
 		return nil, err
 	}
 
-	if req.From != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Gte(req.From.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
+	filters = appendTimeFilters(filters, req.From, req.To)
 
-	if req.To != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
-
-	res, err := s.getTop(ctx, "access_logs", 10, "entry.common.reason.details.policyMatch.policy.policyRef", filters)
+	res, err := s.getTop(ctx, "access_logs", 10, colPolicyUID, "entry.common.reason.details.policyMatch.policy.policyRef", filters)
 	if err != nil {
 		return nil, err
 	}
@@ -210,45 +191,39 @@ func (s *Server) listAccessLogTopSession(ctx context.Context, req *visibilityv1.
 	var filters []exp.Expression
 	var err error
 
-	filters, err = appendRefFilter(filters, req.UserRef, nil, "entry.common.userRef")
+	filters, err = appendRefFilter(filters, req.UserRef, nil, colUserUID, "entry.common.userRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.DeviceRef, nil, "entry.common.deviceRef")
+	filters, err = appendRefFilter(filters, req.DeviceRef, nil, colDeviceUID, "entry.common.deviceRef")
 	if err != nil {
 		return nil, err
 	}
 
 	filters, err = appendRefFilter(filters, req.ServiceRef, &apivalidation.CheckGetOptionsOpts{
 		ParentsMust: 1,
-	}, "entry.common.serviceRef")
+	}, colServiceUID, "entry.common.serviceRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.NamespaceRef, nil, "entry.common.namespaceRef")
+	filters, err = appendRefFilter(filters, req.NamespaceRef, nil, colNamespaceUID, "entry.common.namespaceRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.RegionRef, nil, "entry.common.regionRef")
+	filters, err = appendRefFilter(filters, req.RegionRef, nil, colRegionUID, "entry.common.regionRef")
 	if err != nil {
 		return nil, err
 	}
 	filters, err = appendRefFilter(filters, req.PolicyRef, &apivalidation.CheckGetOptionsOpts{
 		ParentsMax: 8,
-	}, "entry.common.reason.details.policyMatch.policy.policyRef")
+	}, colPolicyUID, "entry.common.reason.details.policyMatch.policy.policyRef")
 	if err != nil {
 		return nil, err
 	}
 
-	if req.From != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Gte(req.From.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
+	filters = appendTimeFilters(filters, req.From, req.To)
 
-	if req.To != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
-
-	res, err := s.getTop(ctx, "access_logs", 10, "entry.common.sessionRef", filters)
+	res, err := s.getTop(ctx, "access_logs", 10, colSessionUID, "entry.common.sessionRef", filters)
 	if err != nil {
 		return nil, err
 	}
@@ -277,28 +252,22 @@ func (s *Server) listAuthenticationLogTopUser(ctx context.Context, req *visibili
 	var filters []exp.Expression
 	var err error
 
-	filters, err = appendRefFilter(filters, req.IdentityProviderRef, nil, "entry.authentication.info.identityProvider.identityProviderRef")
+	filters, err = appendRefFilter(filters, req.IdentityProviderRef, nil, "", "entry.authentication.info.identityProvider.identityProviderRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.AuthenticatorRef, nil, "entry.authentication.info.authenticator.authenticatorRef")
+	filters, err = appendRefFilter(filters, req.AuthenticatorRef, nil, "", "entry.authentication.info.authenticator.authenticatorRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.CredentialRef, nil, "entry.authentication.info.credential.credentialRef")
+	filters, err = appendRefFilter(filters, req.CredentialRef, nil, "", "entry.authentication.info.credential.credentialRef")
 	if err != nil {
 		return nil, err
 	}
 
-	if req.From != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Gte(req.From.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
+	filters = appendTimeFilters(filters, req.From, req.To)
 
-	if req.To != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
-
-	res, err := s.getTop(ctx, "authentication_logs", 10, "entry.userRef", filters)
+	res, err := s.getTop(ctx, "authentication_logs", 10, "", "entry.userRef", filters)
 	if err != nil {
 		return nil, err
 	}
@@ -327,36 +296,30 @@ func (s *Server) listAuthenticationLogTopCredential(ctx context.Context, req *vi
 	var filters []exp.Expression
 	var err error
 
-	filters, err = appendRefFilter(filters, req.UserRef, nil, "entry.userRef")
+	filters, err = appendRefFilter(filters, req.UserRef, nil, "", "entry.userRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.DeviceRef, nil, "entry.deviceRef")
+	filters, err = appendRefFilter(filters, req.DeviceRef, nil, "", "entry.deviceRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.SessionRef, nil, "entry.sessionRef")
+	filters, err = appendRefFilter(filters, req.SessionRef, nil, "", "entry.sessionRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.IdentityProviderRef, nil, "entry.authentication.info.identityProvider.identityProviderRef")
+	filters, err = appendRefFilter(filters, req.IdentityProviderRef, nil, "", "entry.authentication.info.identityProvider.identityProviderRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.AuthenticatorRef, nil, "entry.authentication.info.authenticator.authenticatorRef")
+	filters, err = appendRefFilter(filters, req.AuthenticatorRef, nil, "", "entry.authentication.info.authenticator.authenticatorRef")
 	if err != nil {
 		return nil, err
 	}
 
-	if req.From != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Gte(req.From.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
+	filters = appendTimeFilters(filters, req.From, req.To)
 
-	if req.To != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
-
-	res, err := s.getTop(ctx, "authentication_logs", 10, "entry.authentication.info.credential.credentialRef", filters)
+	res, err := s.getTop(ctx, "authentication_logs", 10, "", "entry.authentication.info.credential.credentialRef", filters)
 	if err != nil {
 		return nil, err
 	}
@@ -385,40 +348,34 @@ func (s *Server) listAuthenticationLogTopIdentityProvider(ctx context.Context, r
 	var filters []exp.Expression
 	var err error
 
-	filters, err = appendRefFilter(filters, req.UserRef, nil, "entry.userRef")
+	filters, err = appendRefFilter(filters, req.UserRef, nil, "", "entry.userRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.DeviceRef, nil, "entry.deviceRef")
+	filters, err = appendRefFilter(filters, req.DeviceRef, nil, "", "entry.deviceRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.SessionRef, nil, "entry.sessionRef")
+	filters, err = appendRefFilter(filters, req.SessionRef, nil, "", "entry.sessionRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.IdentityProviderRef, nil, "entry.authentication.info.identityProvider.identityProviderRef")
+	filters, err = appendRefFilter(filters, req.IdentityProviderRef, nil, "", "entry.authentication.info.identityProvider.identityProviderRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.AuthenticatorRef, nil, "entry.authentication.info.authenticator.authenticatorRef")
+	filters, err = appendRefFilter(filters, req.AuthenticatorRef, nil, "", "entry.authentication.info.authenticator.authenticatorRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.CredentialRef, nil, "entry.authentication.info.credential.credentialRef")
+	filters, err = appendRefFilter(filters, req.CredentialRef, nil, "", "entry.authentication.info.credential.credentialRef")
 	if err != nil {
 		return nil, err
 	}
 
-	if req.From != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Gte(req.From.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
+	filters = appendTimeFilters(filters, req.From, req.To)
 
-	if req.To != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
-
-	res, err := s.getTop(ctx, "authentication_logs", 10, "entry.identityProviderRef", filters)
+	res, err := s.getTop(ctx, "authentication_logs", 10, "", "entry.identityProviderRef", filters)
 	if err != nil {
 		return nil, err
 	}
@@ -447,20 +404,14 @@ func (s *Server) listAuditLogTopUser(ctx context.Context, req *visibilityv1.List
 	var filters []exp.Expression
 	var err error
 
-	filters, err = appendRefFilter(filters, req.ResourceRef, nil, "entry.resourceRef")
+	filters, err = appendRefFilter(filters, req.ResourceRef, nil, "", "entry.resourceRef")
 	if err != nil {
 		return nil, err
 	}
 
-	if req.From != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Gte(req.From.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
+	filters = appendTimeFilters(filters, req.From, req.To)
 
-	if req.To != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
-
-	res, err := s.getTop(ctx, "audit_logs", 10, "entry.userRef", filters)
+	res, err := s.getTop(ctx, "audit_logs", 10, "", "entry.userRef", filters)
 	if err != nil {
 		return nil, err
 	}
@@ -489,20 +440,14 @@ func (s *Server) listAuditLogTopSession(ctx context.Context, req *visibilityv1.L
 	var filters []exp.Expression
 	var err error
 
-	filters, err = appendRefFilter(filters, req.ResourceRef, nil, "entry.resourceRef")
+	filters, err = appendRefFilter(filters, req.ResourceRef, nil, "", "entry.resourceRef")
 	if err != nil {
 		return nil, err
 	}
 
-	if req.From != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Gte(req.From.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
+	filters = appendTimeFilters(filters, req.From, req.To)
 
-	if req.To != nil {
-		filters = append(filters, goqu.L(`rsc->>'$.metadata.createdAt'`).Lte(req.To.AsTime().UTC().Format(time.RFC3339Nano)))
-	}
-
-	res, err := s.getTop(ctx, "audit_logs", 10, "entry.sessionRef", filters)
+	res, err := s.getTop(ctx, "audit_logs", 10, "", "entry.sessionRef", filters)
 	if err != nil {
 		return nil, err
 	}
@@ -533,17 +478,23 @@ type getTopResultItem struct {
 	Count int
 }
 
-func (s *Server) getTop(ctx context.Context, table string, n int, field string, filters []exp.Expression) (*getTopResult, error) {
+func (s *Server) getTop(ctx context.Context, table string, n int,
+	column, field string, filters []exp.Expression) (*getTopResult, error) {
 	dialect := goqu.Dialect("postgres")
+
+	expr := fmt.Sprintf("json_extract_string(rsc, '$.%s.uid')", field)
+	if column != "" {
+		expr = column
+	}
 
 	ds := dialect.From(table).
 		Select(
-			goqu.L(fmt.Sprintf("json_extract_string(rsc, '$.%s.uid')", field)).As("uid"),
+			goqu.L(expr).As("uid"),
 			goqu.L("COUNT(*)").As("count"),
 		).
-		Where(goqu.L(fmt.Sprintf("json_extract_string(rsc, '$.%s.uid') IS NOT NULL", field))).
+		Where(goqu.L(fmt.Sprintf("%s IS NOT NULL", expr))).
 		Where(filters...).
-		GroupBy(goqu.L(fmt.Sprintf("json_extract_string(rsc, '$.%s.uid')", field))).
+		GroupBy(goqu.L(expr)).
 		Order(goqu.L("count").Desc()).
 		Limit(uint(n))
 

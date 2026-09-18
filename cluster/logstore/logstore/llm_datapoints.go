@@ -24,7 +24,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-const llmExprCreatedAtTimestamp = `CAST(json_extract(rsc, '$.metadata.createdAt') AS TIMESTAMP)`
+const llmExprCreatedAtTimestamp = colCreatedAt
 
 func getLLMDataPointRange(f *vllmv1.Filter) (time.Time, time.Time) {
 	var from, to time.Time

@@ -219,7 +219,8 @@ func TestAccessLogQueriesComprehensive(t *testing.T) {
 	}
 
 	{
-		resp, err := ts.srv.getTop(ts.ctx, "access_logs", 10, "entry.common.reason.details.policyMatch.policy.policyRef", nil)
+		resp, err := ts.srv.getTop(ts.ctx, "access_logs", 10, colPolicyUID,
+			"entry.common.reason.details.policyMatch.policy.policyRef", nil)
 		assert.Nil(t, err, "%+v", err)
 		assert.Len(t, resp.items, 1)
 		assert.Equal(t, policyRef.Uid, resp.items[0].UID)
@@ -369,14 +370,16 @@ func TestAuthenticationLogQueriesComprehensive(t *testing.T) {
 	}
 
 	{
-		resp, err := ts.srv.getTop(ts.ctx, "authentication_logs", 10, "entry.authentication.info.credential.credentialRef", nil)
+		resp, err := ts.srv.getTop(ts.ctx, "authentication_logs", 10, "",
+			"entry.authentication.info.credential.credentialRef", nil)
 		assert.Nil(t, err, "%+v", err)
 		assert.Len(t, resp.items, 2)
 		assert.Equal(t, credentialRef1.Uid, resp.items[0].UID)
 	}
 
 	{
-		resp, err := ts.srv.getTop(ts.ctx, "authentication_logs", 10, "entry.authentication.info.identityProvider.identityProviderRef", nil)
+		resp, err := ts.srv.getTop(ts.ctx, "authentication_logs", 10, "",
+			"entry.authentication.info.identityProvider.identityProviderRef", nil)
 		assert.Nil(t, err, "%+v", err)
 		assert.Len(t, resp.items, 2)
 		assert.Equal(t, identityProviderRef1.Uid, resp.items[0].UID)

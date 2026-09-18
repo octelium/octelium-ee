@@ -95,35 +95,35 @@ func (s *Server) getAccessLogDataPoint(ctx context.Context, req *visibilityv1.Ge
 	var filters []exp.Expression
 	var err error
 
-	filters, err = appendRefFilter(filters, req.UserRef, nil, "entry.common.userRef")
+	filters, err = appendRefFilter(filters, req.UserRef, nil, colUserUID, "entry.common.userRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.DeviceRef, nil, "entry.common.deviceRef")
+	filters, err = appendRefFilter(filters, req.DeviceRef, nil, colDeviceUID, "entry.common.deviceRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.SessionRef, nil, "entry.common.sessionRef")
+	filters, err = appendRefFilter(filters, req.SessionRef, nil, colSessionUID, "entry.common.sessionRef")
 	if err != nil {
 		return nil, err
 	}
 	filters, err = appendRefFilter(filters, req.ServiceRef, &apivalidation.CheckGetOptionsOpts{
 		ParentsMust: 1,
-	}, "entry.common.serviceRef")
+	}, colServiceUID, "entry.common.serviceRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.NamespaceRef, nil, "entry.common.namespaceRef")
+	filters, err = appendRefFilter(filters, req.NamespaceRef, nil, colNamespaceUID, "entry.common.namespaceRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.RegionRef, nil, "entry.common.regionRef")
+	filters, err = appendRefFilter(filters, req.RegionRef, nil, colRegionUID, "entry.common.regionRef")
 	if err != nil {
 		return nil, err
 	}
 	filters, err = appendRefFilter(filters, req.PolicyRef, &apivalidation.CheckGetOptionsOpts{
 		ParentsMax: 8,
-	}, "entry.common.reason.details.policyMatch.policy.policyRef")
+	}, colPolicyUID, "entry.common.reason.details.policyMatch.policy.policyRef")
 	if err != nil {
 		return nil, err
 	}
@@ -174,27 +174,27 @@ func (s *Server) getAuthenticationLogDataPoint(ctx context.Context, req *visibil
 	var filters []exp.Expression
 	var err error
 
-	filters, err = appendRefFilter(filters, req.UserRef, nil, "entry.userRef")
+	filters, err = appendRefFilter(filters, req.UserRef, nil, "", "entry.userRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.DeviceRef, nil, "entry.deviceRef")
+	filters, err = appendRefFilter(filters, req.DeviceRef, nil, "", "entry.deviceRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.SessionRef, nil, "entry.sessionRef")
+	filters, err = appendRefFilter(filters, req.SessionRef, nil, "", "entry.sessionRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.IdentityProviderRef, nil, "entry.authentication.info.identityProvider.identityProviderRef")
+	filters, err = appendRefFilter(filters, req.IdentityProviderRef, nil, "", "entry.authentication.info.identityProvider.identityProviderRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.AuthenticatorRef, nil, "entry.authentication.info.authenticator.authenticatorRef")
+	filters, err = appendRefFilter(filters, req.AuthenticatorRef, nil, "", "entry.authentication.info.authenticator.authenticatorRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.CredentialRef, nil, "entry.authentication.info.credential.credentialRef")
+	filters, err = appendRefFilter(filters, req.CredentialRef, nil, "", "entry.authentication.info.credential.credentialRef")
 	if err != nil {
 		return nil, err
 	}
@@ -241,19 +241,19 @@ func (s *Server) getAuditLogDataPoint(ctx context.Context, req *visibilityv1.Get
 	var filters []exp.Expression
 	var err error
 
-	filters, err = appendRefFilter(filters, req.UserRef, nil, "entry.userRef")
+	filters, err = appendRefFilter(filters, req.UserRef, nil, "", "entry.userRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.DeviceRef, nil, "entry.deviceRef")
+	filters, err = appendRefFilter(filters, req.DeviceRef, nil, "", "entry.deviceRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.SessionRef, nil, "entry.sessionRef")
+	filters, err = appendRefFilter(filters, req.SessionRef, nil, "", "entry.sessionRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, req.ResourceRef, nil, "entry.resourceRef")
+	filters, err = appendRefFilter(filters, req.ResourceRef, nil, "", "entry.resourceRef")
 	if err != nil {
 		return nil, err
 	}
@@ -344,13 +344,13 @@ func (s *Server) getDataPoints(ctx context.Context,
 
 	query := dialect.From(tableName).
 		Select(
-			goqu.L(fmt.Sprintf("time_bucket(INTERVAL '%s', CAST(json_extract(rsc, '$.metadata.createdAt') AS TIMESTAMP))", intervalStr)).As("timestamp"),
+			goqu.L(fmt.Sprintf("time_bucket(INTERVAL '%s', %s)", intervalStr, colCreatedAt)).As("timestamp"),
 			goqu.COUNT("*").As("count"),
 		).
 		Where(filters...).
 		Where(
-			goqu.L("CAST(json_extract(rsc, '$.metadata.createdAt') AS TIMESTAMP) >= ?", fromTime),
-			goqu.L("CAST(json_extract(rsc, '$.metadata.createdAt') AS TIMESTAMP) < ?", toTime),
+			goqu.L(fmt.Sprintf("%s >= ?", colCreatedAt), fromTime),
+			goqu.L(fmt.Sprintf("%s < ?", colCreatedAt), toTime),
 		).
 		GroupBy(goqu.L("timestamp")).
 		Order(goqu.L("timestamp").Asc())

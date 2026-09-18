@@ -242,7 +242,7 @@ func (s *Server) initDB(ctx context.Context) error {
 		return err
 	}
 
-	return nil
+	return s.initLogColumns(ctx)
 }
 
 func (s *Server) startCleanupLoop(ctx context.Context) {
@@ -279,8 +279,7 @@ func getCleanupMaxCounts() []*maxCleanup {
 		{table: "component_logs", limit: maxDBComponentLogs},
 		{
 			table: "component_logs",
-			where: fmt.Sprintf(`(rsc->'entry'->>'level') = '%s'`,
-				corev1.ComponentLog_Entry_DEBUG.String()),
+			where: fmt.Sprintf(`%s = '%s'`, colLevel, corev1.ComponentLog_Entry_DEBUG.String()),
 			limit: maxDBComponentLogsDebug,
 		},
 		{table: "audit_logs", limit: maxDBAuditLogs},
@@ -289,28 +288,14 @@ func getCleanupMaxCounts() []*maxCleanup {
 }
 
 func (s *Server) doCleanup(ctx context.Context) error {
-	monthAgo := pbutils.Now().AsTime().Add(-1 * s.cleanupDuration).UTC().Format(time.RFC3339Nano)
+	monthAgo := pbutils.Now().AsTime().Add(-1 * s.cleanupDuration).UTC()
 
 	{
-		if _, err := s.db.ExecContext(ctx,
-			fmt.Sprintf(`DELETE FROM access_logs WHERE rsc->'metadata'->>'createdAt' < '%s'`, monthAgo)); err != nil {
-			zap.L().Warn("Could not cleanup access_logs", zap.Error(err))
-		}
-
-		if _, err := s.db.ExecContext(ctx,
-			fmt.Sprintf(`DELETE FROM component_logs WHERE rsc->'metadata'->>'createdAt' < '%s'`, monthAgo)); err != nil {
-			zap.L().Warn("Could not cleanup component_logs", zap.Error(err))
-		}
-
-		if _, err := s.db.ExecContext(ctx,
-			fmt.Sprintf(`DELETE FROM audit_logs WHERE rsc->'metadata'->>'createdAt' < '%s'`, monthAgo)); err != nil {
-			zap.L().Warn("Could not cleanup audit_logs", zap.Error(err))
-		}
-
-		if _, err := s.db.ExecContext(ctx,
-			fmt.Sprintf(`DELETE FROM authentication_logs WHERE rsc->'metadata'->>'createdAt' < '%s'`, monthAgo)); err != nil {
-			zap.L().Warn("Could not cleanup authentication_logs", zap.Error(err))
-
+		for _, table := range getLogTables() {
+			if _, err := s.db.ExecContext(ctx,
+				fmt.Sprintf(`DELETE FROM %s WHERE %s < ?`, table, colCreatedAt), monthAgo); err != nil {
+				zap.L().Warn("Could not cleanup logs", zap.String("table", table), zap.Error(err))
+			}
 		}
 	}
 
@@ -346,14 +331,14 @@ func (s *Server) cleanupByMaxCount(ctx context.Context, table, where string, lim
 		return 0, nil
 	}
 
-	var cutoff string
+	var cutoff time.Time
 	if err := s.db.QueryRowContext(ctx,
-		fmt.Sprintf(`SELECT rsc->'metadata'->>'createdAt' FROM %s%s ORDER BY (rsc->'metadata'->>'createdAt') DESC LIMIT 1 OFFSET %d`,
-			table, whereClause, limit-1)).Scan(&cutoff); err != nil {
+		fmt.Sprintf(`SELECT %s FROM %s%s ORDER BY %s DESC LIMIT 1 OFFSET %d`,
+			colCreatedAt, table, whereClause, colCreatedAt, limit-1)).Scan(&cutoff); err != nil {
 		return 0, err
 	}
 
-	deleteWhere := `(rsc->'metadata'->>'createdAt') < $1`
+	deleteWhere := fmt.Sprintf(`%s < $1`, colCreatedAt)
 	if where != "" {
 		deleteWhere = fmt.Sprintf(`%s AND %s`, where, deleteWhere)
 	}

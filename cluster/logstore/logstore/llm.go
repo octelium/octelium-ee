@@ -10,7 +10,6 @@ package logstore
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/doug-martin/goqu/v9"
 	"github.com/doug-martin/goqu/v9/exp"
@@ -75,8 +74,8 @@ func llmListHas(expr, val string) string {
 }
 
 var (
-	llmExprCreatedAt   = llmJSONStr("metadata.createdAt")
-	llmExprStatus      = llmJSONEnum("entry.common.status", corev1.AccessLog_Entry_Common_STATUS_UNSET)
+	llmExprCreatedAt   = colCreatedAt
+	llmExprStatus      = colStatus
 	llmExprReasonType  = llmJSONEnum("entry.common.reason.type", corev1.AccessLog_Entry_Common_Reason_TYPE_UNKNOWN_REASON)
 	llmExprIsPublic    = llmJSONBool("entry.common.isPublic")
 	llmExprIsAnonymous = llmJSONBool("entry.common.isAnonymous")
@@ -772,35 +771,35 @@ func getLLMFilters(f *vllmv1.Filter) ([]exp.Expression, error) {
 
 	var err error
 
-	filters, err = appendRefFilter(filters, f.UserRef, nil, "entry.common.userRef")
+	filters, err = appendRefFilter(filters, f.UserRef, nil, colUserUID, "entry.common.userRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, f.DeviceRef, nil, "entry.common.deviceRef")
+	filters, err = appendRefFilter(filters, f.DeviceRef, nil, colDeviceUID, "entry.common.deviceRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, f.SessionRef, nil, "entry.common.sessionRef")
+	filters, err = appendRefFilter(filters, f.SessionRef, nil, colSessionUID, "entry.common.sessionRef")
 	if err != nil {
 		return nil, err
 	}
 	filters, err = appendRefFilter(filters, f.ServiceRef, &apivalidation.CheckGetOptionsOpts{
 		ParentsMust: 1,
-	}, "entry.common.serviceRef")
+	}, colServiceUID, "entry.common.serviceRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, f.NamespaceRef, nil, "entry.common.namespaceRef")
+	filters, err = appendRefFilter(filters, f.NamespaceRef, nil, colNamespaceUID, "entry.common.namespaceRef")
 	if err != nil {
 		return nil, err
 	}
-	filters, err = appendRefFilter(filters, f.RegionRef, nil, "entry.common.regionRef")
+	filters, err = appendRefFilter(filters, f.RegionRef, nil, colRegionUID, "entry.common.regionRef")
 	if err != nil {
 		return nil, err
 	}
 	filters, err = appendRefFilter(filters, f.PolicyRef, &apivalidation.CheckGetOptionsOpts{
 		ParentsMax: 8,
-	}, "entry.common.reason.details.policyMatch.policy.policyRef")
+	}, colPolicyUID, "entry.common.reason.details.policyMatch.policy.policyRef")
 	if err != nil {
 		return nil, err
 	}
@@ -811,10 +810,10 @@ func getLLMFilters(f *vllmv1.Filter) ([]exp.Expression, error) {
 	}
 
 	if f.From != nil {
-		filters = append(filters, goqu.L(llmExprCreatedAt).Gte(f.From.AsTime().UTC().Format(time.RFC3339Nano)))
+		filters = append(filters, goqu.L(llmExprCreatedAt).Gte(f.From.AsTime().UTC()))
 	}
 	if f.To != nil {
-		filters = append(filters, goqu.L(llmExprCreatedAt).Lt(f.To.AsTime().UTC().Format(time.RFC3339Nano)))
+		filters = append(filters, goqu.L(llmExprCreatedAt).Lt(f.To.AsTime().UTC()))
 	}
 
 	if len(f.Protocols) > 0 {

@@ -53,6 +53,9 @@ func llmDimensionDataset(dim *llmDimension, filters []exp.Expression) *goqu.Sele
 		selects = append(selects, goqu.L(dim.name).As("dim_name"))
 	}
 	selects = append(selects, goqu.C("rsc"))
+	for _, column := range getLogTableColumns(llmTable) {
+		selects = append(selects, goqu.C(column.name))
+	}
 
 	return llmDialect().From(llmTable).Where(filters...).Select(selects...).As("llm_dim")
 }

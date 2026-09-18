@@ -88,7 +88,7 @@ func TestReadStorageUsageReportsReusableBytes(t *testing.T) {
 	ts.srv.statfsFn = fixedTestStatfs(1<<30, 1<<29)
 
 	_, err := ts.srv.db.ExecContext(ts.ctx, `
-INSERT INTO access_logs
+INSERT INTO access_logs (rsc)
 SELECT json_object('n', i, 'v', md5((i*7)::VARCHAR), 'w', md5((i*13)::VARCHAR))
 FROM range(300000) tbl(i)`)
 	assert.Nil(t, err, "%+v", err)
@@ -117,7 +117,7 @@ func beginBlockingCatalogTx(t *testing.T, srv *Server) *sql.Conn {
 	_, err = conn.ExecContext(ctx, `CREATE TABLE blocking_logs (rsc JSON)`)
 	assert.Nil(t, err, "%+v", err)
 
-	_, err = conn.ExecContext(ctx, `INSERT INTO access_logs VALUES ('{"id": "pending"}')`)
+	_, err = conn.ExecContext(ctx, `INSERT INTO access_logs (rsc) VALUES ('{"id": "pending"}')`)
 	assert.Nil(t, err, "%+v", err)
 
 	return conn
@@ -136,7 +136,7 @@ func TestCheckpointStorageWithConcurrentWrites(t *testing.T) {
 	_, err = conn.ExecContext(ts.ctx, `BEGIN TRANSACTION`)
 	assert.Nil(t, err, "%+v", err)
 
-	_, err = conn.ExecContext(ts.ctx, `INSERT INTO access_logs VALUES ('{"id": "pending"}')`)
+	_, err = conn.ExecContext(ts.ctx, `INSERT INTO access_logs (rsc) VALUES ('{"id": "pending"}')`)
 	assert.Nil(t, err, "%+v", err)
 
 	assert.Nil(t, ts.srv.checkpointStorage(ts.ctx))

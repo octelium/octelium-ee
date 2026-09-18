@@ -94,7 +94,7 @@ func marshalLog(t *testing.T, msg proto.Message) []byte {
 func insertLogJSON(t *testing.T, srv *Server, table string, data []byte) {
 	t.Helper()
 
-	_, err := srv.db.Exec(fmt.Sprintf("INSERT INTO %s VALUES ($1)", table), string(data))
+	_, err := srv.db.Exec(getLogTableInsertQuery(table), string(data))
 	assert.Nil(t, err, "%+v", err)
 }
 
@@ -1169,7 +1169,7 @@ func TestTop(t *testing.T) {
 	}
 
 	{
-		res, err := srv.getTop(ctx, "access_logs", 10, "entry.common.userRef", nil)
+		res, err := srv.getTop(ctx, "access_logs", 10, colUserUID, "entry.common.userRef", nil)
 		assert.Nil(t, err)
 
 		assert.True(t, len(res.items) > 0)
