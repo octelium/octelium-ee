@@ -10,7 +10,6 @@ package logstore
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
@@ -23,8 +22,7 @@ const (
 	storagePressureTargetRatio = 0.8
 	maximumCleanupDivisor      = 128
 	minimumCleanupLimit        = 1000
-	checkpointAttempts         = 8
-	checkpointRetryDelay       = 500 * time.Millisecond
+	forceCheckpointTimeout     = 2 * time.Minute
 )
 
 func (s *Server) readStorageUsage(ctx context.Context) (*ovutils.StorageUsage, error) {
@@ -110,31 +108,5 @@ func (s *Server) applyStoragePressureCleanup(ctx context.Context) error {
 }
 
 func (s *Server) checkpointStorage(ctx context.Context) error {
-	var err error
-
-	for i := 0; i < checkpointAttempts; i++ {
-		if i > 0 {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case <-time.After(checkpointRetryDelay):
-			}
-		}
-
-		if _, err = s.db.ExecContext(ctx, `CHECKPOINT`); err == nil {
-			return nil
-		}
-		if !isBlockedCheckpointErr(err) {
-			return err
-		}
-	}
-
-	zap.L().Debug("Could not checkpoint the LogStore while other write transactions are active",
-		zap.Error(err))
-
-	return nil
-}
-
-func isBlockedCheckpointErr(err error) bool {
-	return err != nil && strings.Contains(err.Error(), "Cannot CHECKPOINT")
+	return ovutils.CheckpointDuckDB(ctx, s.db, forceCheckpointTimeout)
 }

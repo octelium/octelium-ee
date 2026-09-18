@@ -17,6 +17,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/octelium/octelium-ee/cluster/common/ovutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -204,7 +205,7 @@ func TestCheckpointStorageWithActiveWriteTransaction(t *testing.T) {
 
 	_, err := s.db.ExecContext(ctx, `CHECKPOINT`)
 	require.NotNil(t, err)
-	assert.True(t, isBlockedCheckpointErr(err))
+	assert.True(t, ovutils.IsBlockedCheckpointErr(err))
 
 	committed := make(chan struct{})
 	go func() {
@@ -217,13 +218,6 @@ func TestCheckpointStorageWithActiveWriteTransaction(t *testing.T) {
 	<-committed
 
 	assert.Equal(t, int64(1), testTableCount(t, s, "metric_series"))
-}
-
-func TestIsBlockedCheckpointErr(t *testing.T) {
-	assert.False(t, isBlockedCheckpointErr(nil))
-	assert.False(t, isBlockedCheckpointErr(fmt.Errorf("IO Error: could not write to the database file")))
-	assert.True(t, isBlockedCheckpointErr(fmt.Errorf(
-		"TransactionContext Error: Cannot CHECKPOINT: there are other write transactions active")))
 }
 
 func TestApplyRetentionWithActiveWriteTransaction(t *testing.T) {

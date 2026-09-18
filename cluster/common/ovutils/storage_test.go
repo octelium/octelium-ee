@@ -10,6 +10,7 @@ package ovutils
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
 	"testing"
 
@@ -51,6 +52,13 @@ func TestReadStorageUsageWithoutDatabasePath(t *testing.T) {
 	assert.Nil(t, err, "%+v", err)
 	assert.Zero(t, usage.TotalBytes)
 	assert.Zero(t, usage.UsedRatio())
+}
+
+func TestIsBlockedCheckpointErr(t *testing.T) {
+	assert.False(t, IsBlockedCheckpointErr(nil))
+	assert.False(t, IsBlockedCheckpointErr(errors.New("IO Error: could not write to the database file")))
+	assert.True(t, IsBlockedCheckpointErr(errors.New(
+		"TransactionContext Error: Cannot CHECKPOINT: there are other write transactions active")))
 }
 
 func TestDetectTempDirectoryLimitBytes(t *testing.T) {

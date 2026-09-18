@@ -15,9 +15,12 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+	"time"
 
 	"go.uber.org/zap"
 )
+
+const defaultForceCheckpointTimeout = 2 * time.Minute
 
 type StorageUsage struct {
 	TotalBytes     uint64
@@ -101,6 +104,27 @@ func ReadStorageUsage(ctx context.Context, db *sql.DB, databasePath string,
 		AvailableBytes: availableBytes,
 		ReusableBytes:  reusableBytes,
 	}, nil
+}
+
+func CheckpointDuckDB(ctx context.Context, db *sql.DB, forceTimeout time.Duration) error {
+	_, err := db.ExecContext(ctx, `CHECKPOINT`)
+	if err == nil || !IsBlockedCheckpointErr(err) {
+		return err
+	}
+
+	if forceTimeout <= 0 {
+		forceTimeout = defaultForceCheckpointTimeout
+	}
+
+	forceCtx, cancel := context.WithTimeout(ctx, forceTimeout)
+	defer cancel()
+
+	_, err = db.ExecContext(forceCtx, `FORCE CHECKPOINT`)
+	return err
+}
+
+func IsBlockedCheckpointErr(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "Cannot CHECKPOINT")
 }
 
 func GetDuckDBDatabasePath(dsn string) string {

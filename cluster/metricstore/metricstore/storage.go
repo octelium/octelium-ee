@@ -10,7 +10,6 @@ package metricstore
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/octelium/octelium-ee/cluster/common/ovutils"
@@ -114,18 +113,5 @@ func (s *Server) applyStoragePressureRetention(ctx context.Context) error {
 }
 
 func (s *Server) checkpointStorage(ctx context.Context) error {
-	_, err := s.db.ExecContext(ctx, `CHECKPOINT`)
-	if err == nil || !isBlockedCheckpointErr(err) {
-		return err
-	}
-
-	forceCtx, cancel := context.WithTimeout(ctx, forceCheckpointTimeout)
-	defer cancel()
-
-	_, err = s.db.ExecContext(forceCtx, `FORCE CHECKPOINT`)
-	return err
-}
-
-func isBlockedCheckpointErr(err error) bool {
-	return err != nil && strings.Contains(err.Error(), "Cannot CHECKPOINT")
+	return ovutils.CheckpointDuckDB(ctx, s.db, forceCheckpointTimeout)
 }

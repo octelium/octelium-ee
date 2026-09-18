@@ -10,10 +10,11 @@ package logstore
 
 import (
 	"context"
-	"fmt"
+	"database/sql"
 	"testing"
 	"time"
 
+	"github.com/octelium/octelium-ee/cluster/common/ovutils"
 	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/stretchr/testify/assert"
 )
@@ -88,12 +89,13 @@ func TestReadStorageUsageReportsReusableBytes(t *testing.T) {
 
 	_, err := ts.srv.db.ExecContext(ts.ctx, `
 INSERT INTO access_logs
-SELECT json_object('id', md5(i::VARCHAR), 'v', md5((i*7)::VARCHAR), 'w', md5((i*13)::VARCHAR))
+SELECT json_object('n', i, 'v', md5((i*7)::VARCHAR), 'w', md5((i*13)::VARCHAR))
 FROM range(300000) tbl(i)`)
 	assert.Nil(t, err, "%+v", err)
 	assert.Nil(t, ts.srv.checkpointStorage(ts.ctx))
 
-	_, err = ts.srv.db.ExecContext(ts.ctx, `DELETE FROM access_logs WHERE rsc->>'id' < '8'`)
+	_, err = ts.srv.db.ExecContext(ts.ctx,
+		`DELETE FROM access_logs WHERE CAST(rsc->>'n' AS BIGINT) < 240000`)
 	assert.Nil(t, err, "%+v", err)
 	assert.Nil(t, ts.srv.checkpointStorage(ts.ctx))
 
@@ -102,7 +104,26 @@ FROM range(300000) tbl(i)`)
 	assert.NotZero(t, usage.ReusableBytes)
 }
 
-func TestCheckpointStorageWithActiveWriteTransaction(t *testing.T) {
+func beginBlockingCatalogTx(t *testing.T, srv *Server) *sql.Conn {
+	t.Helper()
+	ctx := context.Background()
+
+	conn, err := srv.db.Conn(ctx)
+	assert.Nil(t, err, "%+v", err)
+
+	_, err = conn.ExecContext(ctx, `BEGIN TRANSACTION`)
+	assert.Nil(t, err, "%+v", err)
+
+	_, err = conn.ExecContext(ctx, `CREATE TABLE blocking_logs (rsc JSON)`)
+	assert.Nil(t, err, "%+v", err)
+
+	_, err = conn.ExecContext(ctx, `INSERT INTO access_logs VALUES ('{"id": "pending"}')`)
+	assert.Nil(t, err, "%+v", err)
+
+	return conn
+}
+
+func TestCheckpointStorageWithConcurrentWrites(t *testing.T) {
 	ts := newTestServer(t)
 	if ts == nil {
 		return
@@ -118,14 +139,30 @@ func TestCheckpointStorageWithActiveWriteTransaction(t *testing.T) {
 	_, err = conn.ExecContext(ts.ctx, `INSERT INTO access_logs VALUES ('{"id": "pending"}')`)
 	assert.Nil(t, err, "%+v", err)
 
-	_, err = ts.srv.db.ExecContext(ts.ctx, `CHECKPOINT`)
+	assert.Nil(t, ts.srv.checkpointStorage(ts.ctx))
+
+	_, err = conn.ExecContext(ts.ctx, `COMMIT`)
+	assert.Nil(t, err, "%+v", err)
+	assert.Equal(t, 1, getTableCount(t, ts.srv, "access_logs"))
+}
+
+func TestCheckpointStorageWaitsForBlockingTransaction(t *testing.T) {
+	ts := newTestServer(t)
+	if ts == nil {
+		return
+	}
+
+	conn := beginBlockingCatalogTx(t, ts.srv)
+	defer conn.Close()
+
+	_, err := ts.srv.db.ExecContext(ts.ctx, `CHECKPOINT`)
 	assert.NotNil(t, err)
-	assert.True(t, isBlockedCheckpointErr(err))
+	assert.True(t, ovutils.IsBlockedCheckpointErr(err))
 
 	committed := make(chan struct{})
 	go func() {
 		defer close(committed)
-		time.Sleep(checkpointRetryDelay)
+		time.Sleep(200 * time.Millisecond)
 		_, _ = conn.ExecContext(context.Background(), `COMMIT`)
 	}()
 
@@ -135,37 +172,23 @@ func TestCheckpointStorageWithActiveWriteTransaction(t *testing.T) {
 	assert.Equal(t, 1, getTableCount(t, ts.srv, "access_logs"))
 }
 
-func TestCheckpointStorageGivesUpWhileWriteTransactionIsOpen(t *testing.T) {
+func TestCheckpointStorageGivesUpOnContextCancellation(t *testing.T) {
 	ts := newTestServer(t)
 	if ts == nil {
 		return
 	}
 
-	conn, err := ts.srv.db.Conn(ts.ctx)
-	assert.Nil(t, err, "%+v", err)
+	conn := beginBlockingCatalogTx(t, ts.srv)
 	defer conn.Close()
 
-	_, err = conn.ExecContext(ts.ctx, `BEGIN TRANSACTION`)
-	assert.Nil(t, err, "%+v", err)
-
-	_, err = conn.ExecContext(ts.ctx, `INSERT INTO access_logs VALUES ('{"id": "pending"}')`)
-	assert.Nil(t, err, "%+v", err)
-
-	ctx, cancel := context.WithTimeout(ts.ctx, 2*checkpointRetryDelay)
+	ctx, cancel := context.WithTimeout(ts.ctx, time.Second)
 	defer cancel()
 
 	assert.NotNil(t, ts.srv.checkpointStorage(ctx))
 
-	_, err = conn.ExecContext(ts.ctx, `COMMIT`)
+	_, err := conn.ExecContext(ts.ctx, `COMMIT`)
 	assert.Nil(t, err, "%+v", err)
 	assert.Equal(t, 1, getTableCount(t, ts.srv, "access_logs"))
-}
-
-func TestIsBlockedCheckpointErr(t *testing.T) {
-	assert.False(t, isBlockedCheckpointErr(nil))
-	assert.False(t, isBlockedCheckpointErr(fmt.Errorf("IO Error: could not write to the database file")))
-	assert.True(t, isBlockedCheckpointErr(fmt.Errorf(
-		"TransactionContext Error: Cannot CHECKPOINT: there are other write transactions active")))
 }
 
 func TestApplyStoragePressureCleanupBelowWatermark(t *testing.T) {
