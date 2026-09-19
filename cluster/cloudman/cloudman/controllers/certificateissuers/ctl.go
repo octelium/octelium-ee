@@ -19,30 +19,34 @@ import (
 
 type Controller struct {
 	octeliumC octeliumc.ClientInterface
+	acmeC     acmec.CertificateIssuerSetter
 }
 
 func NewController(
 	octeliumC octeliumc.ClientInterface,
+	acmeC acmec.CertificateIssuerSetter,
 ) *Controller {
 	return &Controller{
 		octeliumC: octeliumC,
+		acmeC:     acmeC,
 	}
 }
 
 func (c *Controller) OnAdd(ctx context.Context, iss *enterprisev1.CertificateIssuer) error {
-	if iss.Spec.GetAcme() == nil || iss.Status.State == enterprisev1.CertificateIssuer_Status_READY {
+	if iss.Spec.GetAcme() == nil {
 		return nil
 	}
 
-	return acmec.RegisterAccount(ctx, c.octeliumC, iss, false)
+	return c.acmeC.SetCertificateIssuer(ctx, iss, false)
 }
 
 func (c *Controller) OnUpdate(ctx context.Context, new, old *enterprisev1.CertificateIssuer) error {
-	if pbutils.IsEqual(new.Spec.GetAcme(), old.Spec.GetAcme()) {
+	if new.Spec.GetAcme() == nil {
 		return nil
 	}
 
-	return acmec.RegisterAccount(ctx, c.octeliumC, new, true)
+	return c.acmeC.SetCertificateIssuer(ctx, new,
+		!pbutils.IsEqual(new.Spec.GetAcme(), old.Spec.GetAcme()))
 }
 
 func (c *Controller) OnDelete(ctx context.Context, iss *enterprisev1.CertificateIssuer) error {

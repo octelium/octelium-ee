@@ -14,7 +14,6 @@ import (
 	"github.com/octelium/octelium-ee/cluster/cloudman/cloudman/acmec"
 	regioncontroller "github.com/octelium/octelium-ee/cluster/cloudman/cloudman/controllers/regions"
 	"github.com/octelium/octelium-ee/cluster/cloudman/cloudman/dnss"
-	"github.com/octelium/octelium-ee/cluster/common/certutils"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
@@ -26,13 +25,16 @@ import (
 
 type Controller struct {
 	octeliumC octeliumc.ClientInterface
+	acmeC     acmec.DNSProviderSetter
 }
 
 func NewController(
 	octeliumC octeliumc.ClientInterface,
+	acmeC acmec.DNSProviderSetter,
 ) *Controller {
 	return &Controller{
 		octeliumC: octeliumC,
+		acmeC:     acmeC,
 	}
 }
 
@@ -49,21 +51,8 @@ func (c *Controller) OnUpdate(ctx context.Context, new, old *enterprisev1.DNSPro
 	{
 		zap.L().Debug("Initializing issuing certs after DNSProvider update")
 
-		crtList, err := c.octeliumC.EnterpriseC().ListCertificate(ctx, &rmetav1.ListOptions{})
-		if err != nil {
-			return err
-		}
-
-		for _, crt := range crtList.Items {
-			crt, err := certutils.DoIssueCertificate(ctx, c.octeliumC, crt)
-			if err != nil {
-				zap.L().Warn("Could not doIssueCertificate", zap.Error(err), zap.Any("crt", crt))
-				continue
-			}
-
-			if err := acmec.IssueCertificate(ctx, c.octeliumC, crt); err != nil {
-				zap.L().Warn("Could not issueCrt", zap.Error(err), zap.Any("crt", crt))
-			}
+		if err := c.acmeC.SetDNSProvider(ctx); err != nil {
+			zap.L().Warn("Could not setDNSProvider", zap.Error(err))
 		}
 	}
 	{

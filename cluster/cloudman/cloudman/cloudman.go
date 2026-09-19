@@ -12,6 +12,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/octelium/octelium-ee/cluster/cloudman/cloudman/acmec"
 	isscontroller "github.com/octelium/octelium-ee/cluster/cloudman/cloudman/controllers/certificateissuers"
 	crtcontroller "github.com/octelium/octelium-ee/cluster/cloudman/cloudman/controllers/certificates"
 	cccontroller "github.com/octelium/octelium-ee/cluster/cloudman/cloudman/controllers/cluster_config"
@@ -31,8 +32,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
-
-	"github.com/octelium/octelium-ee/cluster/cloudman/cloudman/watcher"
 )
 
 func Run(ctx context.Context) error {
@@ -45,16 +44,17 @@ func Run(ctx context.Context) error {
 		return err
 	}
 
-	watcher.InitWatcher(octeliumC).Run(ctx)
+	acmeC := acmec.NewController(octeliumC)
+	acmeC.Run(ctx)
 
 	svcCtl := svccontroller.NewController(octeliumC)
 	ccCtl := cccontroller.NewController(octeliumC)
 	regionCtl := regioncontroller.NewController(octeliumC)
 	gwCtl := gwcontroller.NewController(octeliumC)
-	crtCtl := crtcontroller.NewController(octeliumC)
-	issCtl := isscontroller.NewController(octeliumC)
+	crtCtl := crtcontroller.NewController(octeliumC, acmeC)
+	issCtl := isscontroller.NewController(octeliumC, acmeC)
 	nsCtl := nscontroller.NewController(octeliumC)
-	dnsPCtl := dnspcontroller.NewController(octeliumC)
+	dnsPCtl := dnspcontroller.NewController(octeliumC, acmeC)
 
 	if err := waitForDefaultCertificateIssuer(ctx, octeliumC); err != nil {
 		zap.L().Warn("Could not waitForDefaultCertificateIssuer", zap.Error(err))

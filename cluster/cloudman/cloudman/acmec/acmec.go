@@ -11,277 +11,63 @@ package acmec
 import (
 	"context"
 	"crypto"
-	"encoding/json"
+	stderrors "errors"
 	"fmt"
-	"net/http"
+	"sync"
 	"time"
 
-	aazure "github.com/Azure/go-autorest/autorest/azure"
-	awscfg "github.com/aws/aws-sdk-go-v2/config"
-	awsroute53 "github.com/aws/aws-sdk-go-v2/service/route53"
-
-	"github.com/aws/aws-sdk-go-v2/aws"
-	awscred "github.com/aws/aws-sdk-go-v2/credentials"
-	"github.com/go-acme/lego/v4/certificate"
-	"github.com/go-acme/lego/v4/challenge"
 	"github.com/go-acme/lego/v4/challenge/dns01"
-	"github.com/go-acme/lego/v4/lego"
-	"github.com/go-acme/lego/v4/providers/dns/azure"
-	"github.com/go-acme/lego/v4/providers/dns/cloudflare"
-	"github.com/go-acme/lego/v4/providers/dns/digitalocean"
-	"github.com/go-acme/lego/v4/providers/dns/gcloud"
-	"github.com/go-acme/lego/v4/providers/dns/linode"
-	"github.com/go-acme/lego/v4/providers/dns/ovh"
-	"github.com/go-acme/lego/v4/providers/dns/route53"
 	"github.com/go-acme/lego/v4/registration"
-	"github.com/octelium/octelium-ee/cluster/cloudman/cloudman/cloudmanutils"
-	"github.com/octelium/octelium-ee/cluster/common/certutils"
 	"github.com/octelium/octelium-ee/cluster/common/octeliumc"
-	"github.com/octelium/octelium-ee/pkg/apiutils/uenterprisev1"
-	"github.com/octelium/octelium/apis/main/corev1"
 	"github.com/octelium/octelium/apis/main/enterprisev1"
-	"github.com/octelium/octelium/apis/main/metav1"
 	"github.com/octelium/octelium/apis/rsc/rmetav1"
-	"github.com/octelium/octelium/cluster/common/apivalidation"
-	"github.com/octelium/octelium/pkg/apiutils/ucorev1"
-	"github.com/octelium/octelium/pkg/apiutils/umetav1"
-	"github.com/octelium/octelium/pkg/common/pbutils"
-	"github.com/octelium/octelium/pkg/grpcerr"
-	utils_cert "github.com/octelium/octelium/pkg/utils/cert"
-	"github.com/octelium/octelium/pkg/utils/utilrand"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	"golang.org/x/oauth2/google"
-	"google.golang.org/api/dns/v1"
 )
 
-func (c *ACMEClient) getProvider(ctx context.Context) (challenge.Provider, error) {
+const (
+	defaultWorkerCount = 4
+	workQueueSize      = 32
+	listItemsPerPage   = 100
 
-	provider, err := cloudmanutils.GetDefaultDNSProvider(ctx, c.octeliumC)
-	if err != nil {
-		return nil, err
-	}
+	attemptTimeout       = 45 * time.Minute
+	statusUpdateTimeout  = 30 * time.Second
+	statusUpdateRetries  = 8
+	statusUpdateInterval = 250 * time.Millisecond
 
-	switch provider.Spec.Type.(type) {
-	case *enterprisev1.DNSProvider_Spec_Cloudflare_:
+	resyncInterval     = 3 * time.Minute
+	staleIssuanceAfter = 1 * time.Hour
+	renewBefore        = 21 * 24 * time.Hour
 
-		sec, err := c.octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
-			Name: provider.Spec.GetCloudflare().GetApiToken().GetFromSecret(),
-		})
-		if err != nil {
-			return nil, err
-		}
+	minRetryDelay = 30 * time.Second
+	maxRetryDelay = 6 * time.Hour
 
-		return cloudflare.NewDNSProviderConfig(&cloudflare.Config{
-			AuthEmail:          provider.Spec.GetCloudflare().Email,
-			AuthToken:          uenterprisev1.ToSecret(sec).GetValueStr(),
-			TTL:                120,
-			PropagationTimeout: 2 * time.Minute,
-			PollingInterval:    2 * time.Second,
-			HTTPClient: &http.Client{
-				Timeout: 30 * time.Second,
-			},
-		})
-	case *enterprisev1.DNSProvider_Spec_Digitalocean:
-		cfg := digitalocean.NewDefaultConfig()
+	acmeHTTPTimeout       = 2 * time.Minute
+	acmeOrderTimeout      = 10 * time.Minute
+	dnsPropagationTimeout = 10 * time.Minute
+	dnsQueryTimeout       = 20 * time.Second
+)
 
-		sec, err := c.octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
-			Name: provider.Spec.GetDigitalocean().GetApiToken().GetFromSecret(),
-		})
-		if err != nil {
-			return nil, err
-		}
-		cfg.AuthToken = uenterprisev1.ToSecret(sec).GetValueStr()
+var recursiveNameservers = []string{"8.8.8.8", "1.1.1.1", "9.9.9.9"}
 
-		return digitalocean.NewDNSProviderConfig(cfg)
-	case *enterprisev1.DNSProvider_Spec_Google_:
-		cfg := gcloud.NewDefaultConfig()
-		cfg.Project = provider.Spec.GetGoogle().Project
+var dns01Once sync.Once
 
-		sec, err := c.octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
-			Name: provider.Spec.GetGoogle().GetServiceAccount().GetFromSecret(),
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		conf, err := google.JWTConfigFromJSON(
-			[]byte(uenterprisev1.ToSecret(sec).GetValueStr()), dns.NdevClouddnsReadwriteScope)
-		if err != nil {
-			return nil, err
-		}
-
-		cfg.HTTPClient = conf.Client(context.Background())
-		/*
-			if provider.Spec.GetGoogle().GetServiceAccountBase64() != "" {
-
-
-			} else {
-				httpC, err := google.DefaultClient(context.Background(), dns.NdevClouddnsReadwriteScope)
-				if err != nil {
-					return nil, err
-				}
-				cfg.HTTPClient = httpC
-			}
-		*/
-
-		return gcloud.NewDNSProviderConfig(cfg)
-	case *enterprisev1.DNSProvider_Spec_Azure_:
-		azureCfg := provider.Spec.GetAzure()
-
-		sec, err := c.octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
-			Name: provider.Spec.GetAzure().GetClientSecret().GetFromSecret(),
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		cfg := azure.NewDefaultConfig()
-		cfg.ClientID = azureCfg.ClientID
-		cfg.ClientSecret = uenterprisev1.ToSecret(sec).GetValueStr()
-		cfg.SubscriptionID = azureCfg.SubscriptionID
-		cfg.ResourceGroup = azureCfg.ResourceGroupName
-		cfg.TenantID = azureCfg.TenantID
-
-		var environment aazure.Environment
-		switch azureCfg.Cloud {
-		case "china":
-			environment = aazure.ChinaCloud
-		case "german":
-			environment = aazure.GermanCloud
-		case "public", "":
-			environment = aazure.PublicCloud
-		case "usgovernment":
-			environment = aazure.USGovernmentCloud
-		default:
-			return nil, errors.Errorf("Invalid azure cloud: %s", azureCfg.Cloud)
-		}
-
-		cfg.ResourceManagerEndpoint = environment.ResourceManagerEndpoint
-		cfg.ActiveDirectoryEndpoint = environment.ActiveDirectoryEndpoint
-
-		return azure.NewDNSProviderConfig(cfg)
-	case *enterprisev1.DNSProvider_Spec_Aws:
-		spec := provider.Spec.GetAws()
-		cfg := route53.NewDefaultConfig()
-
-		sec, err := c.octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
-			Name: provider.Spec.GetAws().GetSecretAccessKey().GetFromSecret(),
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		acfg, err := awscfg.LoadDefaultConfig(ctx,
-			awscfg.WithRegion(spec.Region),
-			awscfg.WithCredentialsProvider(awscred.StaticCredentialsProvider{
-				Value: aws.Credentials{
-					AccessKeyID:     spec.AccessKeyID,
-					SecretAccessKey: uenterprisev1.ToSecret(sec).GetValueStr(),
-				},
-			}))
-		if err != nil {
-			return nil, err
-		}
-
-		route53C := awsroute53.NewFromConfig(acfg)
-		cfg.Client = route53C
-
-		return route53.NewDNSProviderConfig(cfg)
-	case *enterprisev1.DNSProvider_Spec_Linode_:
-		cfg := linode.NewDefaultConfig()
-
-		sec, err := c.octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
-			Name: provider.Spec.GetLinode().GetApiToken().GetFromSecret(),
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		cfg.Token = uenterprisev1.ToSecret(sec).GetValueStr()
-
-		return linode.NewDNSProviderConfig(cfg)
-	case *enterprisev1.DNSProvider_Spec_Ovh:
-		ovhC := provider.Spec.GetOvh()
-		sec, err := c.octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
-			Name: provider.Spec.GetOvh().GetApplicationSecret().GetFromSecret(),
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		cfg := ovh.NewDefaultConfig()
-		cfg.APIEndpoint = ovhC.Endpoint
-		cfg.ApplicationKey = ovhC.ApplicationKey
-		cfg.ApplicationSecret = uenterprisev1.ToSecret(sec).GetValueStr()
-		cfg.ConsumerKey = ovhC.ConsumerKey
-
-		return ovh.NewDNSProviderConfig(cfg)
-
-		/*
-			case *enterprisev1.DNSProvider_Spec_Alibaba_:
-				aliC := provider.Spec.GetAlibaba()
-				sec, err := c.octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
-					Name: provider.Spec.GetAlibaba().GetAccessKeySecret().GetFromSecret(),
-				})
-				if err != nil {
-					return nil, err
-				}
-
-				cfg := alidns.NewDefaultConfig()
-				cfg.APIKey = aliC.AccessKeyID
-				cfg.SecretKey = uenterprisev1.ToSecret(sec).GetValueStr()
-				cfg.RegionID = aliC.RegionID
-
-				return alidns.NewDNSProviderConfig(cfg)
-		*/
-	default:
-		return nil, errors.Errorf("Invalid provider type for: %s", provider.Metadata.Name)
-	}
-
+type CertificateSetter interface {
+	SetCertificate(ctx context.Context, crt *enterprisev1.Certificate) error
 }
 
-func (c *ACMEClient) getLegoClient(ctx context.Context, iss *enterprisev1.CertificateIssuer) (*lego.Client, error) {
-
-	acc, err := c.getACMEAccount(ctx, iss)
-	if err != nil {
-		return nil, err
-	}
-
-	cfg := lego.NewConfig(acc)
-
-	cfg.CADirURL = uenterprisev1.ToCertificateIssuer(iss).GetDirectoryURL()
-
-	return lego.NewClient(cfg)
+type CertificateIssuerSetter interface {
+	SetCertificateIssuer(ctx context.Context, iss *enterprisev1.CertificateIssuer, force bool) error
 }
 
-func (c *ACMEClient) getACMEAccount(ctx context.Context, iss *enterprisev1.CertificateIssuer) (*Account, error) {
-	if iss.Status.GetAcme() == nil || iss.Status.GetAcme().SecretRef == nil {
-		return nil, errors.Errorf("Issuer has no ACME secret")
-	}
+type DNSProviderSetter interface {
+	SetDNSProvider(ctx context.Context) error
+}
 
-	var acc Account
-
-	secret, err := c.octeliumC.EnterpriseC().GetSecret(ctx, &rmetav1.GetOptions{
-		Uid: iss.Status.GetAcme().SecretRef.Uid,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	if err := json.Unmarshal(secret.Data.GetDataMap().Map["account"], &acc); err != nil {
-		return nil, err
-	}
-
-	privateKey, err := utils_cert.ParsePrivateKeyPEM(secret.Data.GetDataMap().Map["privateKey"])
-	if err != nil {
-		return nil, err
-	}
-
-	acc.key = privateKey
-	zap.L().Debug("Successfully found ACME account", zap.Any("iss", iss))
-
-	return &acc, nil
+type Interface interface {
+	CertificateSetter
+	CertificateIssuerSetter
+	DNSProviderSetter
 }
 
 type Account struct {
@@ -302,307 +88,546 @@ func (a *Account) GetRegistration() *registration.Resource {
 	return a.Registration
 }
 
-type ACMEClient struct {
-	c         *lego.Client
+type workType uint8
+
+const (
+	workTypeCertificate workType = iota + 1
+	workTypeCertificateIssuer
+)
+
+type workKey struct {
+	typ workType
+	uid string
+}
+
+func (k workKey) String() string {
+	switch k.typ {
+	case workTypeCertificate:
+		return fmt.Sprintf("Certificate/%s", k.uid)
+	case workTypeCertificateIssuer:
+		return fmt.Sprintf("CertificateIssuer/%s", k.uid)
+	default:
+		return fmt.Sprintf("Unknown/%s", k.uid)
+	}
+}
+
+type Controller struct {
 	octeliumC octeliumc.ClientInterface
-	crt       *enterprisev1.Certificate
+
+	workerCount int
+	workCh      chan workKey
+	wakeCh      chan struct{}
+
+	runOnce sync.Once
+	wg      sync.WaitGroup
+
+	mu          sync.Mutex
+	stopped     bool
+	pending     map[workKey]struct{}
+	active      map[workKey]struct{}
+	dirty       map[workKey]struct{}
+	failures    map[workKey]uint32
+	notBefore   map[workKey]time.Time
+	timers      map[workKey]*time.Timer
+	issuerForce map[string]struct{}
+
+	locks *keyedLocker
 }
 
-func NewACMEClient(ctx context.Context, octeliumC octeliumc.ClientInterface, crt *enterprisev1.Certificate) (*ACMEClient, error) {
-
-	ret := &ACMEClient{
-		octeliumC: octeliumC,
-		crt:       crt,
+func NewController(octeliumC octeliumc.ClientInterface) *Controller {
+	return &Controller{
+		octeliumC:   octeliumC,
+		workerCount: defaultWorkerCount,
+		workCh:      make(chan workKey, workQueueSize),
+		wakeCh:      make(chan struct{}, 1),
+		pending:     make(map[workKey]struct{}),
+		active:      make(map[workKey]struct{}),
+		dirty:       make(map[workKey]struct{}),
+		failures:    make(map[workKey]uint32),
+		notBefore:   make(map[workKey]time.Time),
+		timers:      make(map[workKey]*time.Timer),
+		issuerForce: make(map[string]struct{}),
+		locks:       newKeyedLocker(),
 	}
-	if crt.Status.CertificateIssuerRef == nil {
-		return nil, errors.Errorf("nil CertificateIssuerRef")
-	}
-
-	issuer, err := getReadyIssuer(ctx, octeliumC, crt.Status.CertificateIssuerRef)
-	if err != nil {
-		return nil, err
-	}
-
-	c, err := ret.getLegoClient(ctx, issuer)
-	if err != nil {
-		return nil, err
-	}
-	ret.c = c
-
-	provider, err := ret.getProvider(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := c.Challenge.SetDNS01Provider(provider,
-		dns01.AddRecursiveNameservers([]string{"8.8.8.8", "1.1.1.1"}),
-		dns01.AddDNSTimeout(120*time.Second),
-	); err != nil {
-		return nil, err
-	}
-
-	zap.L().Debug("Successfully initialized ACME client", zap.Any("crt", crt))
-
-	return ret, nil
 }
 
-func getReadyIssuer(ctx context.Context, octeliumC octeliumc.ClientInterface, issuerRef *metav1.ObjectReference) (*enterprisev1.CertificateIssuer, error) {
+func (c *Controller) Run(ctx context.Context) {
+	c.runOnce.Do(func() {
+		setDNS01Defaults()
+		go c.doRun(ctx)
+	})
+}
 
-	ctx, cancel := context.WithTimeout(ctx, 20*time.Minute)
-	defer cancel()
+func (c *Controller) doRun(ctx context.Context) {
+	zap.L().Info("Starting the ACME Controller",
+		zap.Int("workers", c.workerCount))
+
+	for range c.workerCount {
+		c.wg.Add(1)
+		go c.runWorker(ctx)
+	}
+
+	c.wg.Add(1)
+	go c.runResync(ctx)
+
+	defer func() {
+		c.shutdown()
+		c.wg.Wait()
+		zap.L().Info("The ACME Controller is done")
+	}()
 
 	for {
-		issuer, err := octeliumC.EnterpriseC().GetCertificateIssuer(ctx, apivalidation.ObjectReferenceToRGetOptions(issuerRef))
-		if err != nil {
-			return nil, err
-		}
-		if issuer.Spec.GetAcme() == nil {
-			return nil, errors.Errorf("Issuer type is not ACME")
-		}
-		if issuer.Status.State == enterprisev1.CertificateIssuer_Status_READY {
-			return issuer, nil
+		if key, ok := c.takePending(); ok {
+			select {
+			case <-ctx.Done():
+				return
+			case c.workCh <- key:
+			}
+			continue
 		}
 
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err()
-		case <-time.After(10 * time.Second):
+			return
+		case <-c.wakeCh:
 		}
 	}
 }
 
-func (c *ACMEClient) IssueCertificate(ctx context.Context) error {
-	var err error
-	crt := c.crt
+func (c *Controller) runWorker(ctx context.Context) {
+	defer c.wg.Done()
 
-	if crt.Status.Issuance == nil ||
-		crt.Status.Issuance.State != enterprisev1.Certificate_Status_Issuance_ISSUANCE_REQUESTED {
-		zap.L().Info("No need to issue the Certificate. Exiting..", zap.Any("crt", crt))
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case key := <-c.workCh:
+			c.runOne(ctx, key)
+		}
+	}
+}
+
+func (c *Controller) runOne(ctx context.Context, key workKey) {
+	defer c.finish(key)
+
+	attemptCtx, cancel := context.WithTimeout(ctx, attemptTimeout)
+	defer cancel()
+
+	var err error
+	switch key.typ {
+	case workTypeCertificate:
+		err = c.reconcileCertificate(attemptCtx, key.uid)
+	case workTypeCertificateIssuer:
+		err = c.reconcileCertificateIssuer(attemptCtx, key.uid)
+	default:
+		err = &permanentError{
+			err: errors.Errorf("Invalid ACME work type: %d", key.typ),
+		}
+	}
+
+	if err == nil {
+		c.resetFailures(key)
+		return
+	}
+
+	if ctx.Err() != nil {
+		return
+	}
+
+	delay := c.scheduleRetry(key, err)
+	zap.L().Warn("Could not reconcile the ACME resource. Trying again later...",
+		zap.String("key", key.String()),
+		zap.Duration("retryAfter", delay),
+		zap.Error(err))
+}
+
+func (c *Controller) runResync(ctx context.Context) {
+	defer c.wg.Done()
+
+	ticker := time.NewTicker(resyncInterval)
+	defer ticker.Stop()
+
+	for {
+		if err := c.resync(ctx); err != nil && ctx.Err() == nil {
+			zap.L().Warn("Could not resync the ACME resources", zap.Error(err))
+		}
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+	}
+}
+
+func (c *Controller) resync(ctx context.Context) error {
+	now := time.Now()
+
+	if err := c.listCertificates(ctx, nil, func(crt *enterprisev1.Certificate) error {
+		if !needsReconcile(crt, now) {
+			return nil
+		}
+
+		c.enqueue(workKey{
+			typ: workTypeCertificate,
+			uid: crt.Metadata.Uid,
+		}, false)
+
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	seenIssuers := make(map[string]struct{})
+
+	if err := c.listCertificateIssuers(ctx, func(iss *enterprisev1.CertificateIssuer) error {
+		if iss.Spec.GetAcme() == nil {
+			return nil
+		}
+
+		seenIssuers[iss.Metadata.Uid] = struct{}{}
+
+		c.enqueue(workKey{
+			typ: workTypeCertificateIssuer,
+			uid: iss.Metadata.Uid,
+		}, false)
+
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	c.cleanupIssuerForce(seenIssuers)
+
+	return nil
+}
+
+func (c *Controller) SetCertificate(ctx context.Context, crt *enterprisev1.Certificate) error {
+	if crt == nil || crt.Metadata == nil || crt.Metadata.Uid == "" {
+		return errors.Errorf("Invalid Certificate")
+	}
+
+	if !isACMECertificate(crt) {
 		return nil
 	}
 
-	domains, err := c.preIssueCrt(ctx)
-	if err != nil {
-		return err
+	key := workKey{
+		typ: workTypeCertificate,
+		uid: crt.Metadata.Uid,
 	}
 
-	crtRsc, err := c.doIssueCrt(ctx, domains)
-	if err != nil {
-		zap.L().Warn("Could not doIssueCrt", zap.Error(err))
-		{
-			crt.Status.Issuance.IssuanceCompletedAt = pbutils.Now()
-			crt.Status.Issuance.State = enterprisev1.Certificate_Status_Issuance_FAILED
-			crt.Status.FailedIssuances = crt.Status.FailedIssuances + 1
+	c.enqueue(key, isIssuanceRequested(crt))
 
-			crt, err := c.octeliumC.EnterpriseC().UpdateCertificate(ctx, crt)
-			if err != nil {
+	return nil
+}
+
+func (c *Controller) SetCertificateIssuer(ctx context.Context,
+	iss *enterprisev1.CertificateIssuer, force bool) error {
+	if iss == nil || iss.Metadata == nil || iss.Metadata.Uid == "" {
+		return errors.Errorf("Invalid CertificateIssuer")
+	}
+
+	if iss.Spec.GetAcme() == nil {
+		return nil
+	}
+
+	if force {
+		c.mu.Lock()
+		c.issuerForce[iss.Metadata.Uid] = struct{}{}
+		c.mu.Unlock()
+	}
+
+	c.enqueue(workKey{
+		typ: workTypeCertificateIssuer,
+		uid: iss.Metadata.Uid,
+	}, force)
+
+	return nil
+}
+
+func (c *Controller) SetDNSProvider(ctx context.Context) error {
+	return c.listCertificates(ctx, nil, func(crt *enterprisev1.Certificate) error {
+		if !isACMECertificate(crt) {
+			return nil
+		}
+
+		key := workKey{
+			typ: workTypeCertificate,
+			uid: crt.Metadata.Uid,
+		}
+
+		c.mu.Lock()
+		delete(c.failures, key)
+		c.mu.Unlock()
+
+		c.enqueue(key, true)
+
+		return nil
+	})
+}
+
+func (c *Controller) enqueue(key workKey, force bool) {
+	if key.uid == "" || key.typ == 0 {
+		return
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.stopped {
+		return
+	}
+
+	if force {
+		delete(c.notBefore, key)
+		c.stopTimerLocked(key)
+	}
+
+	if _, ok := c.active[key]; ok {
+		c.dirty[key] = struct{}{}
+		return
+	}
+
+	if at, ok := c.notBefore[key]; ok && time.Now().Before(at) {
+		c.startTimerLocked(key, at)
+		return
+	}
+
+	delete(c.notBefore, key)
+
+	if _, ok := c.pending[key]; ok {
+		return
+	}
+
+	c.pending[key] = struct{}{}
+	c.signalLocked()
+}
+
+func (c *Controller) takePending() (workKey, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	for key := range c.pending {
+		delete(c.pending, key)
+		c.active[key] = struct{}{}
+		return key, true
+	}
+
+	return workKey{}, false
+}
+
+func (c *Controller) finish(key workKey) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	delete(c.active, key)
+
+	if _, ok := c.dirty[key]; !ok {
+		return
+	}
+	delete(c.dirty, key)
+
+	if c.stopped {
+		return
+	}
+
+	if at, ok := c.notBefore[key]; ok && time.Now().Before(at) {
+		c.startTimerLocked(key, at)
+		return
+	}
+
+	c.pending[key] = struct{}{}
+	c.signalLocked()
+}
+
+func (c *Controller) scheduleRetry(key workKey, err error) time.Duration {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.failures[key] = c.failures[key] + 1
+	delay := getRetryDelay(c.failures[key], err)
+	at := time.Now().Add(delay)
+
+	c.notBefore[key] = at
+	c.stopTimerLocked(key)
+
+	if !c.stopped {
+		c.startTimerLocked(key, at)
+	}
+
+	return delay
+}
+
+func (c *Controller) resetFailures(key workKey) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	delete(c.failures, key)
+	delete(c.notBefore, key)
+	c.stopTimerLocked(key)
+}
+
+func (c *Controller) startTimerLocked(key workKey, at time.Time) {
+	if _, ok := c.timers[key]; ok {
+		return
+	}
+
+	c.timers[key] = time.AfterFunc(time.Until(at), func() {
+		c.onRetryTimer(key)
+	})
+}
+
+func (c *Controller) stopTimerLocked(key workKey) {
+	if timer, ok := c.timers[key]; ok {
+		timer.Stop()
+		delete(c.timers, key)
+	}
+}
+
+func (c *Controller) onRetryTimer(key workKey) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	delete(c.timers, key)
+
+	if c.stopped {
+		return
+	}
+
+	if at, ok := c.notBefore[key]; ok && time.Now().Before(at) {
+		c.startTimerLocked(key, at)
+		return
+	}
+
+	delete(c.notBefore, key)
+
+	if _, ok := c.active[key]; ok {
+		c.dirty[key] = struct{}{}
+		return
+	}
+
+	if _, ok := c.pending[key]; ok {
+		return
+	}
+
+	c.pending[key] = struct{}{}
+	c.signalLocked()
+}
+
+func (c *Controller) signalLocked() {
+	select {
+	case c.wakeCh <- struct{}{}:
+	default:
+	}
+}
+
+func (c *Controller) shutdown() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.stopped = true
+
+	for key := range c.timers {
+		c.stopTimerLocked(key)
+	}
+}
+
+func (c *Controller) cleanupIssuerForce(seen map[string]struct{}) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	for uid := range c.issuerForce {
+		if _, ok := seen[uid]; !ok {
+			delete(c.issuerForce, uid)
+		}
+	}
+}
+
+func (c *Controller) hasIssuerForce(uid string) bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	_, ok := c.issuerForce[uid]
+	return ok
+}
+
+func (c *Controller) clearIssuerForce(uid string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	delete(c.issuerForce, uid)
+}
+
+func (c *Controller) listCertificates(ctx context.Context,
+	filters []*rmetav1.ListOptions_Filter,
+	fn func(*enterprisev1.Certificate) error) error {
+
+	for page := uint32(0); ; page++ {
+		lst, err := c.octeliumC.EnterpriseC().ListCertificate(ctx, &rmetav1.ListOptions{
+			Filters:      filters,
+			Paginate:     true,
+			Page:         page,
+			ItemsPerPage: listItemsPerPage,
+		})
+		if err != nil {
+			return err
+		}
+
+		for _, crt := range lst.Items {
+			if crt.Metadata == nil {
+				continue
+			}
+			if err := fn(crt); err != nil {
 				return err
 			}
-			c.crt = crt
 		}
 
-		return err
+		if !lst.GetListResponseMeta().GetHasMore() {
+			return nil
+		}
 	}
-
-	zap.L().Debug("Successful doIssueCrt", zap.Any("crt", crt))
-
-	if err := c.postIssueCrt(ctx, crtRsc.Certificate, crtRsc.PrivateKey); err != nil {
-		return err
-	}
-
-	zap.L().Info("Successfully issued Certificate", zap.Any("crt", crt))
-	return nil
 }
 
-func (c *ACMEClient) preIssueCrt(ctx context.Context) ([]string, error) {
-	crt := c.crt
-	zap.L().Debug("Starting to issue Certificate", zap.Any("cert", crt))
+func (c *Controller) listCertificateIssuers(ctx context.Context,
+	fn func(*enterprisev1.CertificateIssuer) error) error {
 
-	cc, err := c.octeliumC.CoreV1Utils().GetClusterConfig(ctx)
-	if err != nil {
-		return nil, err
-	}
-	domain := cc.Status.Domain
-
-	var domains []string
-
-	switch {
-	case crt.Status.ServiceRef != nil:
-		svc, err := c.octeliumC.CoreC().GetService(ctx,
-			apivalidation.ObjectReferenceToRGetOptions(crt.Status.ServiceRef))
-		if err != nil {
-			return nil, err
-		}
-
-		domains = []string{
-			fmt.Sprintf("%s.%s", svc.Status.PrimaryHostname, domain),
-			fmt.Sprintf("%s.local.%s", svc.Status.PrimaryHostname, domain),
-		}
-
-		if svc.Status.ManagedService != nil && svc.Status.ManagedService.HasSubdomain {
-			domains = append(domains,
-				fmt.Sprintf("*.%s.%s", svc.Status.PrimaryHostname, domain),
-				fmt.Sprintf("*.%s.local.%s", svc.Status.PrimaryHostname, domain),
-			)
-
-		}
-
-	case crt.Status.ServiceRef == nil && crt.Status.NamespaceRef != nil:
-		domains = []string{
-			fmt.Sprintf("*.%s.%s", crt.Status.NamespaceRef.Name, domain),
-			fmt.Sprintf("*.%s.local.%s", crt.Status.NamespaceRef.Name, domain),
-		}
-		if crt.Status.NamespaceRef.Name == "default" {
-			domains = append(domains, []string{
-				fmt.Sprintf("*.%s", domain),
-				fmt.Sprintf("*.local.%s", domain),
-			}...)
-
-			domains = append([]string{
-				domain,
-			}, domains...)
-		}
-	default:
-		return nil, errors.Errorf("Could not find the domains for the crt: %s", crt.Metadata.Name)
-	}
-
-	crt.Status.Issuance.IssuanceStartedAt = pbutils.Now()
-	crt.Status.Issuance.State = enterprisev1.Certificate_Status_Issuance_ISSUING
-
-	c.crt, err = c.octeliumC.EnterpriseC().UpdateCertificate(ctx, crt)
-	if err != nil {
-		return nil, err
-	}
-
-	return domains, nil
-}
-
-func (c *ACMEClient) postIssueCrt(ctx context.Context, cert, privateKey []byte) error {
-	crt := c.crt
-	x509Crt, err := utils_cert.ParsePEMCertificate(string(cert))
-	if err != nil {
-		return errors.Errorf("Could not parse PEM of issued crt: %+v", err)
-	}
-
-	var sec *corev1.Secret
-	sec, err = c.octeliumC.CoreC().GetSecret(ctx, &rmetav1.GetOptions{
-		Name: uenterprisev1.ToCertificate(crt).GetSecretName(),
-	})
-	if err != nil {
-		if !grpcerr.IsNotFound(err) {
-			return err
-		}
-
-		sec = &corev1.Secret{
-			Metadata: &metav1.Metadata{
-				Name:           uenterprisev1.ToCertificate(crt).GetSecretName(),
-				IsSystem:       true,
-				IsUserHidden:   true,
-				IsSystemHidden: true,
-				SystemLabels: map[string]string{
-					"octelium-cert": "true",
-				},
-			},
-			Spec:   &corev1.Secret_Spec{},
-			Status: &corev1.Secret_Status{},
-		}
-		ucorev1.ToSecret(sec).SetCertificate(string(cert), string(privateKey))
-		sec, err = c.octeliumC.CoreC().CreateSecret(ctx, sec)
-		if err != nil {
-			return err
-		}
-	} else {
-		ucorev1.ToSecret(sec).SetCertificate(string(cert), string(privateKey))
-		sec.Metadata.IsSystem = true
-		sec, err = c.octeliumC.CoreC().UpdateSecret(ctx, sec)
-		if err != nil {
-			return err
-		}
-	}
-
-	crt.Status.Issuance.State = enterprisev1.Certificate_Status_Issuance_SUCCESS
-
-	if info, err := certutils.GetInfo(string(cert), string(privateKey)); err == nil {
-		crt.Status.Info = info
-	} else {
-		zap.L().Warn("Could not get cert info", zap.Error(err))
-	}
-
-	crt.Status.Issuance.IssuanceCompletedAt = pbutils.Now()
-	crt.Status.Issuance.ExpiresAt = pbutils.Timestamp(x509Crt.NotAfter)
-
-	crt.Status.SuccessfulIssuances = crt.Status.SuccessfulIssuances + 1
-	crt.Status.SecretRef = umetav1.GetObjectReference(sec)
-
-	c.crt, err = c.octeliumC.EnterpriseC().UpdateCertificate(ctx, crt)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (c *ACMEClient) doIssueCrt(ctx context.Context, domains []string) (*certificate.Resource, error) {
-
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
-	defer cancel()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return nil, errors.Errorf("timeout or context cancellation while issuing certificate: %+v", ctx.Err())
-		default:
-		}
-
-		zap.L().Debug("Starting issuing certificate",
-			zap.Any("crt", c.crt),
-			zap.Strings("domains", domains),
-		)
-
-		rsc, err := c.c.Certificate.Obtain(certificate.ObtainRequest{
-			Domains: domains,
-			Bundle:  true,
+	for page := uint32(0); ; page++ {
+		lst, err := c.octeliumC.EnterpriseC().ListCertificateIssuer(ctx, &rmetav1.ListOptions{
+			Paginate:     true,
+			Page:         page,
+			ItemsPerPage: listItemsPerPage,
 		})
-		if err == nil {
-			zap.L().Debug("Successfully obtained crt from the ACME server", zap.Any("crt", c.crt))
-			return rsc, nil
+		if err != nil {
+			return err
 		}
 
-		zap.L().Warn("Could not obtain cert. Trying again...",
-			zap.Error(err),
-			zap.Any("crt", c.crt),
-			zap.Strings("domains", domains),
-		)
+		for _, iss := range lst.Items {
+			if iss.Metadata == nil || iss.Spec == nil {
+				continue
+			}
+			if err := fn(iss); err != nil {
+				return err
+			}
+		}
 
-		select {
-		case <-ctx.Done():
-			return nil, errors.Errorf("ctx done or timeout n doIssuerCrt: %+v", ctx.Err())
-		case <-time.After(10 * time.Second):
+		if !lst.GetListResponseMeta().GetHasMore() {
+			return nil
 		}
 	}
 }
 
-func IssueCertificate(ctx context.Context, octeliumC octeliumc.ClientInterface, crt *enterprisev1.Certificate) error {
+func (c *Controller) detachedContext(ctx context.Context) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.WithoutCancel(ctx), statusUpdateTimeout)
+}
 
-	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Hour)
-		defer cancel()
+func setDNS01Defaults() {
+	dns01Once.Do(func() {
+		_ = dns01.AddDNSTimeout(dnsQueryTimeout)(nil)
+		_ = dns01.AddRecursiveNameservers(recursiveNameservers)(nil)
+	})
+}
 
-		zap.L().Info("Starting ACME IssueCertificate", zap.Any("crt", crt))
-
-		time.Sleep(time.Duration(utilrand.GetRandomRangeMath(1, 8)) * time.Second)
-
-		acmeC, err := NewACMEClient(ctx, octeliumC, crt)
-		if err != nil {
-			zap.L().Warn("Could not create ACME client", zap.Error(err), zap.Any("crt", crt))
-			return
-		}
-
-		if err := acmeC.IssueCertificate(ctx); err != nil {
-			zap.L().Warn("Could not issue ACME certificate", zap.Error(err), zap.Any("crt", crt))
-		} else {
-			zap.L().Info("Successfully issued ACME certificate", zap.Any("crt", crt))
-		}
-	}()
-
-	return nil
+func isCanceled(err error) bool {
+	return stderrors.Is(err, context.Canceled) ||
+		stderrors.Is(err, context.DeadlineExceeded)
 }

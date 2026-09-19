@@ -23,13 +23,16 @@ import (
 
 type Controller struct {
 	octeliumC octeliumc.ClientInterface
+	acmeC     acmec.CertificateSetter
 }
 
 func NewController(
 	octeliumC octeliumc.ClientInterface,
+	acmeC acmec.CertificateSetter,
 ) *Controller {
 	return &Controller{
 		octeliumC: octeliumC,
+		acmeC:     acmeC,
 	}
 }
 
@@ -78,12 +81,17 @@ func (c *Controller) handleIssuance(ctx context.Context, crt *enterprisev1.Certi
 			Uid: crt.Status.CertificateIssuerRef.Uid,
 		})
 		if err != nil {
+			if grpcerr.IsNotFound(err) {
+				zap.L().Debug("The certIssuer does not exist. Nothing to be done",
+					zap.Any("crt", crt))
+				return nil
+			}
 			return err
 		}
 
 		switch iss.Spec.Type.(type) {
 		case *enterprisev1.CertificateIssuer_Spec_Acme:
-			if err := acmec.IssueCertificate(ctx, c.octeliumC, crt); err != nil {
+			if err := c.acmeC.SetCertificate(ctx, crt); err != nil {
 				return err
 			}
 		default:
