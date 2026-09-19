@@ -983,6 +983,11 @@
                     "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.SemanticRouter",
                     "additionalProperties": false,
                     "description": "SemanticRouter is the outcome of the SemanticRouter Plugin"
+                },
+                "translation": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Translation",
+                    "additionalProperties": false,
+                    "description": "Translation is the record of a request whose upstream protocol differed from the one that the downstream used. It is unset for the requests that were not translated at all."
                 }
             },
             "additionalProperties": false,
@@ -1022,8 +1027,8 @@
             },
             "additionalProperties": false,
             "type": "object",
-            "title": "Guardrail",
-            "description": "Guardrail is the outcome that one Guardrail Plugin reached on one leg of the exchange. A request carries one of them per applied Plugin and leg rather than a single summary, since a redaction that one Plugin performed is a security event in its own right and it would be lost by a record that only kept the strongest outcome of the request."
+            "title": "Note that the Usage, ResponseID, RawFinishReason and Model.Reported\n fields of a translated entry are the ones that the upstream itself\n reported rather than the ones that the translated response carried,\n since a translation regenerates the response identifier and spells\n the completion status in the downstream's own vocabulary. The Usage\n counts therefore follow the accounting of the UpstreamProtocol\n rather than of the entry's own `protocol` field, which matters for\n the cache token counts that the two protocols account for\n differently.",
+            "description": "Note that the Usage, ResponseID, RawFinishReason and Model.Reported fields of a translated entry are the ones that the upstream itself reported rather than the ones that the translated response carried, since a translation regenerates the response identifier and spells the completion status in the downstream's own vocabulary. The Usage counts therefore follow the accounting of the UpstreamProtocol rather than of the entry's own `protocol` field, which matters for the cache token counts that the two protocols account for differently.  Guardrail is the outcome that one Guardrail Plugin reached on one leg of the exchange. A request carries one of them per applied Plugin and leg rather than a single summary, since a redaction that one Plugin performed is a security event in its own right and it would be lost by a record that only kept the strongest outcome of the request."
         },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Model": {
             "properties": {
@@ -1227,6 +1232,47 @@
             "title": "Tools",
             "description": "Tools is the tool surface that the request carried"
         },
+        "octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Translation": {
+            "properties": {
+                "upstreamProtocol": {
+                    "enum": [
+                        "PROTOCOL_UNSET",
+                        "OPENAI",
+                        "ANTHROPIC",
+                        "GEMINI",
+                        "BEDROCK"
+                    ],
+                    "type": "string",
+                    "title": "Protocol",
+                    "description": "Protocol is the inference API protocol served by the Service."
+                },
+                "upstreamRoute": {
+                    "enum": [
+                        "ROUTE_UNSET",
+                        "CHAT_COMPLETIONS",
+                        "RESPONSES",
+                        "COMPLETIONS",
+                        "EMBEDDINGS",
+                        "MODERATIONS",
+                        "MODELS_LIST",
+                        "MODELS_GET",
+                        "MESSAGES",
+                        "COUNT_TOKENS",
+                        "GENERATE_CONTENT",
+                        "EMBED_CONTENT",
+                        "CONVERSE",
+                        "INVOKE_MODEL"
+                    ],
+                    "type": "string",
+                    "title": "Route",
+                    "description": "Route is the canonical inference API route of the request. It names the exact surface that the request arrived on, which the Operation field deliberately does not, so it is what a rule that has to distinguish two routes of the same protocol reads."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Translation",
+            "description": "Translation is the record of a request whose upstream protocol differed from the one that the downstream used. It is only set for the requests that Octelium actually translated, so its absence means that the upstream spoke the entry's own `protocol` field. The downstream protocol and route are deliberately not repeated here, since the entry already carries them."
+        },
         "octelium.api.main.core.v1.AccessLog.Entry.Info.LLM.Usage": {
             "properties": {
                 "state": {
@@ -1426,6 +1472,10 @@
                     "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Info.MySQL.PrepareStatement",
                     "additionalProperties": false,
                     "description": "PrepareStatement shows the details of a command that prepares a statement"
+                },
+                "isTruncated": {
+                    "type": "boolean",
+                    "description": "IsTruncated shows whether the recorded statement text was truncated since it exceeded the maximum recorded length"
                 }
             },
             "additionalProperties": false,
@@ -1587,6 +1637,10 @@
                     "$ref": "#/definitions/octelium.api.main.core.v1.AccessLog.Entry.Info.Postgres.Parse",
                     "additionalProperties": false,
                     "description": "Parse shows the details of the parse message"
+                },
+                "isTruncated": {
+                    "type": "boolean",
+                    "description": "IsTruncated shows whether the recorded statement text was truncated since it exceeded the maximum recorded length"
                 }
             },
             "additionalProperties": false,

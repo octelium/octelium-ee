@@ -2621,6 +2621,11 @@
                     "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Embedding",
                     "additionalProperties": false,
                     "description": "Embedding sets how the semantic representations of the requests are generated. It is the default of the Service: a SemanticCache or a SemanticRouter Plugin that sets an `embedding` of its own uses that one instead. A Plugin which needs an embedding while neither is set is rejected rather than silently disabled."
+                },
+                "translation": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.LLM.Translation",
+                    "additionalProperties": false,
+                    "description": "Translation converts the requests and the responses between the protocol that the Service serves to its downstreams and the protocol that its upstream speaks. If not set, which is the default, the two are the same protocol and nothing is translated. This field has to be set in the \"default\" or global Configuration (as opposed to named dynamic Configs) in order to actually work."
                 }
             },
             "additionalProperties": false,
@@ -3072,7 +3077,7 @@
                 }
             ],
             "title": "Plugin",
-            "description": "Plugin provides a dynamic, per-request way to manipulate the inference requests and responses. A Service can have one or more Plugins, including multiple Plugins of the same type. Unlike the Configuration fields, which apply to every request that the Configuration serves, every Plugin carries its own Condition which decides whether that Plugin is invoked for a specific request. The Plugins that are not specific to the inference semantics (e.g. Lua, ExtProc, RateLimit) reuse the HTTP mode's own Plugin types as is, and they deliberately keep the same field names and the same field numbers that they have in the HTTP mode's Plugin. The Cache Plugin is the only HTTP Plugin that has no counterpart here since generic HTTP caching understands neither the authorization scope nor the model, tool and sampling parameters that make up a correct inference cache key. The SemanticCache Plugin is the inference-aware replacement of it. The inference-specific Plugins (i.e. Prompt, Tools, Guardrail, Model, Reasoning, TokenRateLimit, SemanticCache and SemanticRouter) are invoked in a fixed order that does not depend on the order of the Plugin list: every Guardrail first, then every Tools, then the SemanticRouter, then every Prompt, then every Model, then every Reasoning, then the SemanticCache and finally every TokenRateLimit. A Guardrail therefore always inspects the request before the Service has added anything of its own to it, a SemanticRouter always decides from what the downstream asked rather than from what the Service then added, a SemanticCache always keys on the request that the upstream would actually receive, a TokenRateLimit always counts the request that the upstream actually receives and never counts a request that the cache served instead, and a later Plugin always observes the mutations of the earlier ones, including through its own Condition and through the request context that its own expressions read. The Model Plugin is the exception: it rewrites the model of the request that is proxied to the upstream rather than the model that the request context carries, so the `ctx.request.llm.model` field that a Condition and an expression read is always the model that the downstream itself requested. That is deliberate, since the record of a request is the record of what was asked for rather than of what the Service turned it into, and a Reasoning Plugin therefore decides from the requested model. The SemanticRouter Plugin behaves in the same way for the same reason. Two Plugins of the same type are invoked in the order in which they are listed, so the last Model or Reasoning Plugin that is invoked is the one whose value is served. The TokenRateLimit Plugin is the exception to that as well, since a quota that a later Plugin could overwrite would be no quota at all: every TokenRateLimit Plugin whose Condition matches is enforced and the request is served only if all of them admit it. The SemanticCache and the SemanticRouter Plugins are the opposite exception: the first one of either type whose Condition matches is the one that is applied and the rest are skipped, since a second cache lookup or a second routing decision would either repeat work that was already done or silently discard its result. The Model and the Reasoning Plugins are the per-request form of the Configuration's own `model` and `reasoning` fields: the Configuration field is the default of every request that the Configuration serves and a Plugin whose Condition matches overwrites it. The two exist side by side because they answer different questions: a Configuration field states what the Service is, while a Plugin states what a particular request gets. The SemanticRouter sits between the two where the model is concerned: it overwrites the Configuration's own `model` field and a Model Plugin overwrites it in turn, so the model of a request is decided by what the Service is by default, then by what the request means, and finally by whatever a Model Plugin states explicitly. The TokenRateLimit, the SemanticCache and the SemanticRouter Plugins deliberately have no Configuration counterpart of their own, since each of them is only meaningful for the requests that a Condition selects: use a Plugin whose Condition is `matchAny` in order to apply one to every request. The Configuration's own `embedding` field is not such a counterpart: it is the default embedding configuration that the SemanticCache and the SemanticRouter Plugins read whenever they set none of their own, so that a Service which uses both of them describes its embedding backend once. Note that the Plugins which reuse the HTTP mode's own types sit outside that order and outside the Guardrail boundary: they run before every inference-specific Plugin on the request and after every one of them on the response. A Lua or an ExtProc Plugin can therefore rewrite a response that a Guardrail has already inspected, and a Direct Plugin answers a request that no Guardrail has seen. That boundary is deliberate, since those Plugins carry the logic of the Service itself rather than the content of the downstream or of the upstream, but a Service that uses them to carry inference content has to inspect that content itself."
+            "description": "Plugin provides a dynamic, per-request way to manipulate the inference requests and responses. A Service can have one or more Plugins, including multiple Plugins of the same type. Unlike the Configuration fields, which apply to every request that the Configuration serves, every Plugin carries its own Condition which decides whether that Plugin is invoked for a specific request. The Plugins that are not specific to the inference semantics (e.g. Lua, ExtProc, RateLimit) reuse the HTTP mode's own Plugin types as is, and they deliberately keep the same field names and the same field numbers that they have in the HTTP mode's Plugin. The Cache Plugin is the only HTTP Plugin that has no counterpart here since generic HTTP caching understands neither the authorization scope nor the model, tool and sampling parameters that make up a correct inference cache key. The SemanticCache Plugin is the inference-aware replacement of it. The inference-specific Plugins (i.e. Prompt, Tools, Guardrail, Model, Reasoning, TokenRateLimit, SemanticCache and SemanticRouter) are invoked in a fixed order that does not depend on the order of the Plugin list: every Guardrail first, then every Tools, then the SemanticRouter, then every Prompt, then every Model, then every Reasoning, then the SemanticCache and finally every TokenRateLimit. A Guardrail therefore always inspects the request before the Service has added anything of its own to it, a SemanticRouter always decides from what the downstream asked rather than from what the Service then added, a SemanticCache always keys on the request that the upstream would actually receive, a TokenRateLimit always counts the request that the upstream actually receives and never counts a request that the cache served instead, and a later Plugin always observes the mutations of the earlier ones, including through its own Condition and through the request context that its own expressions read. The Model Plugin is the exception: it rewrites the model of the request that is proxied to the upstream rather than the model that the request context carries, so the `ctx.request.llm.model` field that a Condition and an expression read is always the model that the downstream itself requested. That is deliberate, since the record of a request is the record of what was asked for rather than of what the Service turned it into, and a Reasoning Plugin therefore decides from the requested model. The SemanticRouter Plugin behaves in the same way for the same reason. Two Plugins of the same type are invoked in the order in which they are listed, so the last Model or Reasoning Plugin that is invoked is the one whose value is served. The TokenRateLimit Plugin is the exception to that as well, since a quota that a later Plugin could overwrite would be no quota at all: every TokenRateLimit Plugin whose Condition matches is enforced and the request is served only if all of them admit it. The SemanticCache and the SemanticRouter Plugins are the opposite exception: the first one of either type whose Condition matches is the one that is applied and the rest are skipped, since a second cache lookup or a second routing decision would either repeat work that was already done or silently discard its result. The Model and the Reasoning Plugins are the per-request form of the Configuration's own `model` and `reasoning` fields: the Configuration field is the default of every request that the Configuration serves and a Plugin whose Condition matches overwrites it. The two exist side by side because they answer different questions: a Configuration field states what the Service is, while a Plugin states what a particular request gets. The SemanticRouter sits between the two where the model is concerned: it overwrites the Configuration's own `model` field and a Model Plugin overwrites it in turn, so the model of a request is decided by what the Service is by default, then by what the request means, and finally by whatever a Model Plugin states explicitly. The TokenRateLimit, the SemanticCache and the SemanticRouter Plugins deliberately have no Configuration counterpart of their own, since each of them is only meaningful for the requests that a Condition selects: use a Plugin whose Condition is `matchAny` in order to apply one to every request. The Configuration's own `embedding` field is not such a counterpart: it is the default embedding configuration that the SemanticCache and the SemanticRouter Plugins read whenever they set none of their own, so that a Service which uses both of them describes its embedding backend once. A `translation`, whenever the Configuration sets one, sits outside that order as well: it is applied to a request after every inference-specific Plugin and to a response before every one of them, so that every Plugin reads and writes the protocol that the downstream itself used rather than the one that the upstream speaks. Note that the Plugins which reuse the HTTP mode's own types sit outside that order and outside the Guardrail boundary: they run before every inference-specific Plugin on the request and after every one of them on the response. A Lua or an ExtProc Plugin can therefore rewrite a response that a Guardrail has already inspected, and a Direct Plugin answers a request that no Guardrail has seen. That boundary is deliberate, since those Plugins carry the logic of the Service itself rather than the content of the downstream or of the upstream, but a Service that uses them to carry inference content has to inspect that content itself."
         },
         "octelium.api.main.core.v1.Service.Spec.Config.LLM.Plugin.Guardrail": {
             "properties": {
@@ -4028,6 +4033,30 @@
             "title": "Reasoning",
             "description": "Reasoning sets the reasoning, or thinking, configuration of the request before it is proxied to the upstream. It is the mechanism by which the Service, rather than the downstream, decides how much a model is allowed to think, which is the largest controllable component of both the latency and the cost of a reasoning model. Every model expresses reasoning in its own way: some accept an ordinal effort, others accept a numeric token budget, and the same provider routinely changes which of the two a model family accepts from one generation to the next. The protocol does not decide it either, since a protocol that is a transport over the models of several vendors carries whatever each of those models defines rather than a reasoning configuration of its own. A Reasoning is therefore written once, as an intent that belongs to no model in particular, and Octelium encodes that intent in whatever the model that actually serves the request accepts. The intent is resolved by a single rule: Octelium serves the closest configuration that the model accepts and that does not exceed the configured one, and it rejects the request whenever the model accepts nothing at or below it. A `level` that the model does not offer is therefore served as the strongest level below it that the model does offer rather than dropped, a `tokenBudget` larger than the largest budget of the model is lowered to that budget, and a `tokenBudget` smaller than the smallest one is served as disabled reasoning wherever the model can stop reasoning at all. Nothing is ever resolved upwards, since a Service that configured little reasoning is not asking for whatever larger amount the model happens to offer, and nothing is silently dropped, since a dropped configuration lets the model think as much as it likes. Note that a Reasoning overwrites whatever the downstream requested rather than merging with it, and that it applies to the operations that carry a reasoning configuration at all: it is a no-op for the other operations rather than an error, since a Service usually serves a mixture of them."
         },
+        "octelium.api.main.core.v1.Service.Spec.Config.LLM.Translation": {
+            "properties": {
+                "upstreamProtocol": {
+                    "enum": [
+                        "PROTOCOL_UNSET",
+                        "OPENAI",
+                        "ANTHROPIC",
+                        "GEMINI",
+                        "BEDROCK"
+                    ],
+                    "type": "string",
+                    "title": "Protocol",
+                    "description": "Protocol is the inference API protocol served by the Service."
+                },
+                "defaultMaxOutputTokens": {
+                    "type": "integer",
+                    "description": "DefaultMaxOutputTokens is the maximum output token count that is served to an upstream whose protocol requires one while the downstream protocol allows omitting it, which is the case for an ANTHROPIC upstream serving the requests of an OPENAI downstream. It is only used for the requests that declare no output limit of their own. Zero uses Octelium's own default. Note that it is a translation behavior rather than something that the downstream asked for, so the `ctx.request.llm.maxOutputTokens` field and the AccessLogs keep reporting zero for such a request, and that the `limits.maxOutputTokens` field bounds it in the same way that it bounds a downstream's own limit. It is only needed for an ANTHROPIC upstream, since the other protocols let a request declare no output limit at all. Note also that a reasoning token budget which the Service itself decided is added on top of it, since a model whose output limit does not exceed its own reasoning budget rejects the request outright."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Translation",
+            "description": "Translation converts the inference requests and responses between the protocol that the Service serves to its downstreams, which is the `protocol` field, and the protocol that its upstream speaks. Without it the two are the same protocol and Octelium proxies the requests to the upstream in whichever protocol it accepted them from the downstreams, which is the default. It is what lets an OpenAI SDK client, an Anthropic SDK client and a coding agent that speaks one of them reach an upstream that serves the other one, with every Policy, Plugin and AccessLog of the Service continuing to read the request exactly as the downstream sent it. A translation is applied after every inference-specific Plugin, so a Guardrail inspects what the downstream wrote, a Prompt and a Tools Plugin manipulate the downstream's own protocol, a SemanticCache stores the response in the downstream's own protocol, and the conversion to the upstream protocol is the last thing that happens to a request before its credentials and its path are applied. Octelium translates a deliberately bounded subset rather than every field of every protocol, and it rejects the requests that carry a feature outside that subset instead of silently dropping it, since a request that is quietly turned into a materially different one is worse than a request that is refused. The subset is the text, image, system instruction, multi-turn history, client tool, tool call, tool result, tool choice, stop sequence, output limit, sampling, streaming and usage surface that the protocols have in common. The provider-specific features that no other protocol defines (e.g. the OpenAI logprobs, logit biases, penalties, seeds and structured outputs, the Anthropic top_k sampling, thinking blocks, assistant prefills, documents, citations and server tools, the Gemini safety settings, cached content, multiple candidates and built-in tools, and the Bedrock guardrail configuration, prompt variables and additional model request fields) are rejected. The prompt cache controls of a protocol that the target protocol does not define are dropped rather than rejected, since they change what a request costs rather than what it generates. The tool schemas are proxied verbatim rather than rewritten, so a schema that the target model does not accept is rejected by the provider itself rather than silently stripped of its constraints. Note that the Gemini models which sign their tool calls require that signature to be returned on the next turn of the conversation, while no other protocol has anywhere to carry it. Octelium therefore retains those signatures itself, bound to the Session that received them and to the upstream model that issued them, for as long as a turn plausibly continues, and restores them into the translated requests. Nothing of the reasoning content itself is ever exposed to a downstream that did not receive it. Note that a reasoning configuration that a downstream requested for itself is translated only where the two protocols express reasoning in the same terms, which the API of a model that accepts an ordinal effort and the API of a model that accepts a numeric token budget do not. Set the Service's own `reasoning` field, or a Reasoning Plugin, in order to own the reasoning configuration of the translated requests: it is resolved against the upstream protocol and encoded into the upstream request, which is exactly the case that a portable Level is written for."
+        },
         "octelium.api.main.core.v1.Service.Spec.Config.LLM.Visibility": {
             "properties": {
                 "enableRequestBody": {
@@ -4459,6 +4488,16 @@
                 "isTLS": {
                     "type": "boolean",
                     "description": "IsTLS connects to the upstream over TLS. It must be enabled if the upstream database is listening over TLS."
+                },
+                "visibility": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.MySQL.Visibility",
+                    "additionalProperties": false,
+                    "description": "Visibility sets the visibility/access logging specific options"
+                },
+                "authorization": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.MySQL.Authorization",
+                    "additionalProperties": false,
+                    "description": "Authorization sets MySQL-specific authorization configuration"
                 }
             },
             "additionalProperties": false,
@@ -4535,6 +4574,36 @@
             "title": "Password",
             "description": "Password is the password of the upstream MySQL server"
         },
+        "octelium.api.main.core.v1.Service.Spec.Config.MySQL.Authorization": {
+            "properties": {
+                "mode": {
+                    "enum": [
+                        "MODE_UNSET",
+                        "ALL",
+                        "NONE"
+                    ],
+                    "type": "string",
+                    "title": "Mode",
+                    "description": "Mode sets when the authorization is enforced"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Authorization",
+            "description": "Authorization sets the MySQL-specific authorization configuration"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.MySQL.Visibility": {
+            "properties": {
+                "disableQuery": {
+                    "type": "boolean",
+                    "description": "DisableQuery disables recording the statement text of the query and prepare statement commands in the access logs. The access log entries themselves are still recorded without the statement text. This is recommended for databases whose statements routinely embed credentials or other sensitive values."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Visibility",
+            "description": "Visibility sets the MySQL-specific access logging configuration"
+        },
         "octelium.api.main.core.v1.Service.Spec.Config.Postgres": {
             "properties": {
                 "user": {
@@ -4554,7 +4623,9 @@
                     "enum": [
                         "SSL_MODE_UNSET",
                         "DISABLE",
-                        "REQUIRE"
+                        "REQUIRE",
+                        "VERIFY_CA",
+                        "VERIFY_FULL"
                     ],
                     "type": "string",
                     "title": "SSL Mode",
@@ -4564,6 +4635,11 @@
                     "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Postgres.Authorization",
                     "additionalProperties": false,
                     "description": "Authorization sets PostgreSQL-specific authorization configuration"
+                },
+                "visibility": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.Service.Spec.Config.Postgres.Visibility",
+                    "additionalProperties": false,
+                    "description": "Visibility sets the visibility/access logging specific options"
                 }
             },
             "additionalProperties": false,
@@ -4657,6 +4733,18 @@
             "type": "object",
             "title": "Authorization",
             "description": "Authorization sets the PostgreSQL-specific authorization configuration"
+        },
+        "octelium.api.main.core.v1.Service.Spec.Config.Postgres.Visibility": {
+            "properties": {
+                "disableQuery": {
+                    "type": "boolean",
+                    "description": "DisableQuery disables recording the statement text of the query and parse messages in the access logs. The access log entries themselves are still recorded without the statement text. This is recommended for databases whose statements routinely embed credentials or other sensitive values."
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Visibility",
+            "description": "Visibility sets the PostgreSQL-specific access logging configuration"
         },
         "octelium.api.main.core.v1.Service.Spec.Config.RDP": {
             "properties": {

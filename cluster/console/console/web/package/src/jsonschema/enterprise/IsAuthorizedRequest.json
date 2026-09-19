@@ -472,6 +472,11 @@
                     "additionalProperties": false,
                     "description": "LLM is the LLM gateway specific details."
                 },
+                "mysql": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.MySQL",
+                    "additionalProperties": false,
+                    "description": "MySQL is the MySQL specific details."
+                },
                 "ip": {
                     "type": "string",
                     "description": "IP is the IP address of the downstream that issued the request"
@@ -529,6 +534,11 @@
                                         "required": [
                                             "llm"
                                         ]
+                                    },
+                                    {
+                                        "required": [
+                                            "mysql"
+                                        ]
                                     }
                                 ]
                             }
@@ -576,6 +586,11 @@
                         {
                             "required": [
                                 "llm"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "mysql"
                             ]
                         }
                     ]
@@ -918,6 +933,107 @@
             "type": "object",
             "title": "Client",
             "description": "Client is the client information reported by the downstream itself"
+        },
+        "octelium.api.main.core.v1.RequestContext.Request.MySQL": {
+            "properties": {
+                "query": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.MySQL.Query",
+                    "additionalProperties": false,
+                    "description": "Query is the details of a query command"
+                },
+                "prepareStatement": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.MySQL.PrepareStatement",
+                    "additionalProperties": false,
+                    "description": "PrepareStatement is the details of a command that prepares a statement"
+                },
+                "initDB": {
+                    "$ref": "#/definitions/octelium.api.main.core.v1.RequestContext.Request.MySQL.InitDB",
+                    "additionalProperties": false,
+                    "description": "InitDB is the details of a command that changes the default database"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "allOf": [
+                {
+                    "oneOf": [
+                        {
+                            "not": {
+                                "anyOf": [
+                                    {
+                                        "required": [
+                                            "query"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "prepareStatement"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "initDB"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "required": [
+                                "query"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "prepareStatement"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "initDB"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "title": "My SQL",
+            "description": "MySQL is the MySQL-specific request details"
+        },
+        "octelium.api.main.core.v1.RequestContext.Request.MySQL.InitDB": {
+            "properties": {
+                "database": {
+                    "type": "string",
+                    "description": "Database is the database name requested by the downstream"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Init DB",
+            "description": "InitDB is the details of a command that changes the default database"
+        },
+        "octelium.api.main.core.v1.RequestContext.Request.MySQL.PrepareStatement": {
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Query is the SQL query itself"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Prepare Statement",
+            "description": "PrepareStatement is the details of a command that prepares a statement"
+        },
+        "octelium.api.main.core.v1.RequestContext.Request.MySQL.Query": {
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Query is the SQL query itself"
+                }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "title": "Query",
+            "description": "Query is the details of a query command"
         },
         "octelium.api.main.core.v1.RequestContext.Request.Postgres": {
             "properties": {
