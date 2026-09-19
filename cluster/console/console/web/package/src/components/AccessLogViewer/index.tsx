@@ -1128,6 +1128,7 @@ export const getListAccessLogResponseTest = async () => {
             oneofKind: "postgres",
             postgres: {
               type: 1,
+              isTruncated: false,
               details: {
                 oneofKind: "query",
                 query: {

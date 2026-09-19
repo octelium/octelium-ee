@@ -20,6 +20,7 @@ import {
   KeyRound,
   LaptopMinimal,
   Layers,
+  LayoutDashboard,
   Library,
   LockKeyhole,
   LockOpen,
@@ -228,8 +229,30 @@ export default function Sidebar() {
   const ActiveIcon = activeSection.icon;
   const items = activeSection?.items ?? [];
 
+  const isOverview = loc.pathname === "/";
+
   return (
     <div className="min-h-full w-full flex flex-col">
+      <Link
+        to="/"
+        viewTransition
+        className={`text-body font-semibold ${twMerge(
+          "mb-3 flex w-full items-center gap-2",
+          "py-2 px-2.5 rounded-lg",
+          "transition-colors duration-150",
+          isOverview
+            ? "bg-slate-900 text-white shadow-sm"
+            : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/70",
+        )}`}
+      >
+        <LayoutDashboard
+          size={15}
+          className="shrink-0"
+          strokeWidth={isOverview ? 2.5 : 2}
+        />
+        <span>Overview</span>
+      </Link>
+
       <div ref={dropdownRef} className="relative mb-7">
         <button
           ref={triggerRef}

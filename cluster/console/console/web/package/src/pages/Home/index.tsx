@@ -1,5 +1,10 @@
-import { Navigate } from "react-router-dom";
+import { PageLoading } from "@/components/Loading";
+import * as React from "react";
 
-export default () => {
-  return <Navigate to={`/core`} />;
-};
+const Dashboard = React.lazy(() => import("./Dashboard"));
+
+export default () => (
+  <React.Suspense fallback={<PageLoading />}>
+    <Dashboard />
+  </React.Suspense>
+);

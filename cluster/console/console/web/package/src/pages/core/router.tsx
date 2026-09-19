@@ -23,7 +23,7 @@ import serviceRouter from "./Service/router";
 import sessionRouter from "./Session/router";
 import userRouter from "./User/router";
 
-import MainPage from "../visibility/Main";
+import MainPage from "./index";
 import Summary from "./Summary";
 
 import ResourceItemActionsPage from "@/components/ResourceLayout/ResourceActions";

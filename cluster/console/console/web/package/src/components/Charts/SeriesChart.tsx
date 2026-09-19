@@ -39,6 +39,7 @@ export interface Series {
 
 export interface Props {
   series: Series[];
+  colors?: string[];
   height?: number;
   stacked?: boolean;
   variant?: "line" | "bar";
@@ -64,6 +65,7 @@ const escapeHTML = (value: string) =>
 
 const SeriesChart = ({
   series,
+  colors,
   height = 260,
   stacked = false,
   variant = "line",
@@ -100,7 +102,7 @@ const SeriesChart = ({
       animationDuration: 600,
       animationEasing: "cubicOut",
       aria: { enabled: true, decal: { show: false } },
-      color: seriesColors(),
+      color: colors ?? seriesColors(),
       grid: {
         top: data.length > 1 ? 34 : 16,
         right: 14,
@@ -218,8 +220,8 @@ const SeriesChart = ({
           ...(data.length === 1 && {
             areaStyle: {
               color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: withAlpha(seriesColor(0), 0.2) },
-                { offset: 1, color: withAlpha(seriesColor(0), 0) },
+                { offset: 0, color: withAlpha(colors?.[0] ?? seriesColor(0), 0.2) },
+                { offset: 1, color: withAlpha(colors?.[0] ?? seriesColor(0), 0) },
               ]),
             },
           }),
@@ -229,12 +231,12 @@ const SeriesChart = ({
           barMaxWidth: 20,
           itemStyle: {
             borderRadius: stacked ? [0, 0, 0, 0] : [4, 4, 1, 1],
-            color: seriesColor(index),
+            color: colors?.[index] ?? seriesColor(index),
           },
         }),
       })),
     }),
-    [colorScheme, data, stacked, valueFormatter, variant],
+    [colors, colorScheme, data, stacked, valueFormatter, variant],
   );
 
   if (isEmpty) {
